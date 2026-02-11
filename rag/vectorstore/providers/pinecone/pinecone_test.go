@@ -293,3 +293,79 @@ func TestNewFromConfig(t *testing.T) {
 	assert.Equal(t, "my-key", store.apiKey)
 	assert.Equal(t, "my_ns", store.namespace)
 }
+
+func TestStore_Search_InvalidJSON(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{invalid json`))
+	})
+	defer srv.Close()
+
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unmarshal")
+}
+
+func TestRegistry_Factory(t *testing.T) {
+	// Test that the init() registered factory works.
+	store, err := vectorstore.New("pinecone", config.ProviderConfig{
+		BaseURL: "https://example.pinecone.io",
+		APIKey:  "test-key",
+		Options: map[string]any{
+			"namespace": "test_ns",
+		},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, store)
+
+	// Verify it's actually a Pinecone store.
+	pineconeStore, ok := store.(*Store)
+	require.True(t, ok)
+	assert.Equal(t, "https://example.pinecone.io", pineconeStore.baseURL)
+	assert.Equal(t, "test-key", pineconeStore.apiKey)
+	assert.Equal(t, "test_ns", pineconeStore.namespace)
+}
+
+func TestStore_Add_WithoutNamespace(t *testing.T) {
+	var receivedBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewDecoder(r.Body).Decode(&receivedBody)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"upsertedCount":1}`))
+	}))
+	defer srv.Close()
+
+	store := New(srv.URL, "key", WithHTTPClient(srv.Client()))
+	// No namespace set.
+
+	docs := []schema.Document{{ID: "doc1", Content: "test"}}
+	embeddings := [][]float32{{0.1, 0.2}}
+
+	err := store.Add(context.Background(), docs, embeddings)
+	require.NoError(t, err)
+
+	_, hasNamespace := receivedBody["namespace"]
+	assert.False(t, hasNamespace, "empty namespace should not be included")
+}
+
+func TestStore_Search_NoContentInMetadata(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]any{
+			"matches": []map[string]any{
+				{
+					"id":       "doc1",
+					"score":    0.95,
+					"metadata": map[string]any{"category": "A"},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, "", results[0].Content)
+	assert.Equal(t, "A", results[0].Metadata["category"])
+}

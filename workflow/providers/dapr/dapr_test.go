@@ -255,6 +255,107 @@ func TestSaveError(t *testing.T) {
 	}
 }
 
+func TestLoad_GetStateError(t *testing.T) {
+	client := newMockStateClient()
+	client.err = fmt.Errorf("get state failed")
+	store := NewWithClient(client, "")
+
+	_, err := store.Load(context.Background(), "wf-1")
+	if err == nil {
+		t.Fatal("expected error from GetState")
+	}
+}
+
+func TestLoad_UnmarshalError(t *testing.T) {
+	client := newMockStateClient()
+	store := NewWithClient(client, "")
+	ctx := context.Background()
+
+	// Inject invalid JSON directly into the mock store.
+	client.mu.Lock()
+	client.store["wf-corrupt"] = []byte("{invalid json")
+	client.mu.Unlock()
+
+	// Add to index so List can find it.
+	store.mu.Lock()
+	store.ids["wf-corrupt"] = true
+	store.mu.Unlock()
+
+	_, err := store.Load(ctx, "wf-corrupt")
+	if err == nil {
+		t.Fatal("expected unmarshal error")
+	}
+}
+
+func TestDelete_Error(t *testing.T) {
+	client := newMockStateClient()
+	store := NewWithClient(client, "")
+	ctx := context.Background()
+
+	// Save a workflow first.
+	store.Save(ctx, workflow.WorkflowState{WorkflowID: "wf-1"})
+
+	// Inject error and attempt delete.
+	client.err = fmt.Errorf("delete state failed")
+	err := store.Delete(ctx, "wf-1")
+	if err == nil {
+		t.Fatal("expected error from DeleteState")
+	}
+}
+
+func TestList_WithLoadError(t *testing.T) {
+	client := newMockStateClient()
+	store := NewWithClient(client, "")
+	ctx := context.Background()
+
+	// Save two valid workflows.
+	store.Save(ctx, workflow.WorkflowState{WorkflowID: "wf-1", Status: workflow.StatusRunning})
+	store.Save(ctx, workflow.WorkflowState{WorkflowID: "wf-2", Status: workflow.StatusCompleted})
+
+	// Inject corrupt JSON for wf-1.
+	client.mu.Lock()
+	client.store["wf-1"] = []byte("{corrupt")
+	client.mu.Unlock()
+
+	// List should skip wf-1 (unmarshal error) and return only wf-2.
+	results, err := store.List(ctx, workflow.WorkflowFilter{})
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(results) != 1 {
+		t.Errorf("expected 1 result (skipping corrupt), got %d", len(results))
+	}
+	if len(results) == 1 && results[0].WorkflowID != "wf-2" {
+		t.Errorf("expected wf-2, got %s", results[0].WorkflowID)
+	}
+}
+
+func TestList_NilStateFilter(t *testing.T) {
+	client := newMockStateClient()
+	store := NewWithClient(client, "")
+	ctx := context.Background()
+
+	// Save one valid workflow.
+	store.Save(ctx, workflow.WorkflowState{WorkflowID: "wf-1", Status: workflow.StatusRunning})
+
+	// Add a key to the index that has no data in the store (empty Value).
+	store.mu.Lock()
+	store.ids["wf-nil"] = true
+	store.mu.Unlock()
+
+	// List should skip wf-nil (nil state) and return only wf-1.
+	results, err := store.List(ctx, workflow.WorkflowFilter{})
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(results) != 1 {
+		t.Errorf("expected 1 result (skipping nil state), got %d", len(results))
+	}
+	if len(results) == 1 && results[0].WorkflowID != "wf-1" {
+		t.Errorf("expected wf-1, got %s", results[0].WorkflowID)
+	}
+}
+
 func TestInterfaceCompliance(t *testing.T) {
 	var _ workflow.WorkflowStore = (*Store)(nil)
 }

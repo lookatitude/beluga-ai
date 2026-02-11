@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -584,3 +585,163 @@ func (t *funcTool) Execute(ctx context.Context, input map[string]any) (*tool.Res
 }
 
 var _ tool.Tool = (*funcTool)(nil)
+
+// TestExecutor_Run_ToolExecuteError tests tool execution error path.
+func TestExecutor_Run_ToolExecuteError(t *testing.T) {
+	p := &funcPlanner{
+		planFn: func(ctx context.Context, state PlannerState) ([]Action, error) {
+			if len(state.Observations) > 0 {
+				return []Action{{Type: ActionFinish, Message: "done"}}, nil
+			}
+			return []Action{{
+				Type: ActionTool,
+				ToolCall: &schema.ToolCall{
+					ID:        "call-1",
+					Name:      "failing-tool",
+					Arguments: `{}`,
+				},
+			}}, nil
+		},
+	}
+
+	failingTool := &funcTool{
+		name: "failing-tool",
+		fn: func(ctx context.Context, args map[string]any) (*tool.Result, error) {
+			return nil, errors.New("tool execution failed")
+		},
+	}
+
+	e := NewExecutor(WithExecutorPlanner(p))
+
+	var gotToolResult bool
+	for event, err := range e.Run(context.Background(), "test", "agent-1", []tool.Tool{failingTool}, nil, Hooks{}) {
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if event.Type == EventToolResult && event.ToolResult != nil && event.ToolResult.IsError {
+			gotToolResult = true
+		}
+	}
+
+	if !gotToolResult {
+		t.Error("expected error tool result")
+	}
+}
+
+// TestExecutor_buildMessages_NonToolObservation tests buildMessages skipping non-tool observations.
+func TestExecutor_buildMessages_NonToolObservation(t *testing.T) {
+	e := NewExecutor()
+	state := PlannerState{
+		Input:    "test",
+		Messages: []schema.Message{schema.NewHumanMessage("initial")},
+		Observations: []Observation{
+			{
+				Action: Action{Type: ActionRespond, Message: "response"},
+			},
+		},
+	}
+
+	msgs := e.buildMessages(state)
+	// Should only have the initial message (non-tool observations are skipped)
+	if len(msgs) != 1 {
+		t.Errorf("expected 1 message, got %d", len(msgs))
+	}
+}
+
+// TestExecutor_Run_Timeout_ViaContext tests timeout via context.
+func TestExecutor_Run_Timeout_ViaContext(t *testing.T) {
+	p := &funcPlanner{
+		planFn: func(ctx context.Context, state PlannerState) ([]Action, error) {
+			// Check context to see if it's cancelled
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(100 * time.Millisecond):
+				return []Action{{Type: ActionFinish, Message: "done"}}, nil
+			}
+		},
+	}
+
+	e := NewExecutor(WithExecutorPlanner(p), WithExecutorTimeout(0)) // No timeout set
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	defer cancel()
+
+	var gotErr error
+	for _, err := range e.Run(ctx, "test", "agent-1", nil, nil, Hooks{}) {
+		if err != nil {
+			gotErr = err
+			break
+		}
+	}
+
+	if gotErr == nil {
+		t.Fatal("expected context timeout error")
+	}
+}
+
+// TestExecutor_Run_ReplanAfterFirstIteration tests that Replan is called after first iteration.
+func TestExecutor_Run_ReplanAfterFirstIteration(t *testing.T) {
+	planCalls := 0
+	replanCalls := 0
+
+	p := &funcPlanner{
+		planFn: func(ctx context.Context, state PlannerState) ([]Action, error) {
+			if state.Iteration == 0 {
+				planCalls++
+				return []Action{{Type: ActionRespond, Message: "plan"}}, nil
+			}
+			replanCalls++
+			return []Action{{Type: ActionFinish, Message: "replan"}}, nil
+		},
+	}
+
+	e := NewExecutor(WithExecutorPlanner(p))
+
+	for range e.Run(context.Background(), "test", "agent-1", nil, nil, Hooks{}) {
+	}
+
+	if planCalls != 1 {
+		t.Errorf("plan calls = %d, want 1", planCalls)
+	}
+	if replanCalls != 1 {
+		t.Errorf("replan calls = %d, want 1", replanCalls)
+	}
+}
+
+// TestExecutor_Run_buildMessages_MultipleObservations tests buildMessages with multiple observations.
+func TestExecutor_Run_buildMessages_MultipleObservations(t *testing.T) {
+	observationCount := 0
+	p := &funcPlanner{
+		planFn: func(ctx context.Context, state PlannerState) ([]Action, error) {
+			observationCount = len(state.Observations)
+			if len(state.Observations) >= 2 {
+				return []Action{{Type: ActionFinish, Message: "done"}}, nil
+			}
+			return []Action{{
+				Type: ActionTool,
+				ToolCall: &schema.ToolCall{
+					ID:        fmt.Sprintf("call-%d", len(state.Observations)+1),
+					Name:      "test",
+					Arguments: `{}`,
+				},
+			}}, nil
+		},
+	}
+
+	testTool := &funcTool{
+		name: "test",
+		fn: func(ctx context.Context, args map[string]any) (*tool.Result, error) {
+			return tool.TextResult("ok"), nil
+		},
+	}
+
+	e := NewExecutor(WithExecutorPlanner(p))
+
+	for range e.Run(context.Background(), "test", "agent-1", []tool.Tool{testTool}, nil, Hooks{}) {
+	}
+
+	if observationCount < 2 {
+		t.Errorf("expected at least 2 observations to accumulate, got %d", observationCount)
+	}
+}

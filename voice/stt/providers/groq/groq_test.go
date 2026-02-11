@@ -3,6 +3,7 @@ package groq
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -125,6 +126,26 @@ func TestTranscribe(t *testing.T) {
 		assert.Contains(t, err.Error(), "401")
 	})
 
+	t.Run("invalid json response", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{invalid json`))
+		}))
+		defer srv.Close()
+
+		e, err := New(stt.Config{
+			Extra: map[string]any{
+				"api_key":  "gsk-test",
+				"base_url": srv.URL,
+			},
+		})
+		require.NoError(t, err)
+
+		_, err = e.Transcribe(context.Background(), []byte("audio"))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "decode response")
+	})
+
 	t.Run("context cancelled", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			time.Sleep(100 * time.Millisecond)
@@ -195,6 +216,106 @@ func TestTranscribeStream(t *testing.T) {
 		}
 		assert.Equal(t, 0, count)
 	})
+
+	t.Run("audio stream error", func(t *testing.T) {
+		e, err := New(stt.Config{
+			Extra: map[string]any{"api_key": "gsk-test"},
+		})
+		require.NoError(t, err)
+
+		audioStream := func(yield func([]byte, error) bool) {
+			yield(nil, fmt.Errorf("audio read error"))
+		}
+
+		var gotErr error
+		for _, err := range e.TranscribeStream(context.Background(), audioStream) {
+			if err != nil {
+				gotErr = err
+				break
+			}
+		}
+		require.Error(t, gotErr)
+		assert.Contains(t, gotErr.Error(), "audio read error")
+	})
+
+	t.Run("context cancelled during stream", func(t *testing.T) {
+		e, err := New(stt.Config{
+			Extra: map[string]any{"api_key": "gsk-test"},
+		})
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		audioStream := func(yield func([]byte, error) bool) {
+			yield([]byte("chunk"), nil)
+		}
+
+		var gotErr error
+		for _, err := range e.TranscribeStream(ctx, audioStream) {
+			if err != nil {
+				gotErr = err
+				break
+			}
+		}
+		require.Error(t, gotErr)
+		assert.ErrorIs(t, gotErr, context.Canceled)
+	})
+
+	t.Run("transcribe error", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("server error"))
+		}))
+		defer srv.Close()
+
+		e, err := New(stt.Config{
+			Extra: map[string]any{
+				"api_key":  "gsk-test",
+				"base_url": srv.URL,
+			},
+		})
+		require.NoError(t, err)
+
+		audioStream := func(yield func([]byte, error) bool) {
+			yield([]byte("chunk"), nil)
+		}
+
+		var gotErr error
+		for _, err := range e.TranscribeStream(context.Background(), audioStream) {
+			if err != nil {
+				gotErr = err
+				break
+			}
+		}
+		require.Error(t, gotErr)
+	})
+
+	t.Run("empty text result", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(whisperResponse{Text: ""})
+		}))
+		defer srv.Close()
+
+		e, err := New(stt.Config{
+			Extra: map[string]any{
+				"api_key":  "gsk-test",
+				"base_url": srv.URL,
+			},
+		})
+		require.NoError(t, err)
+
+		audioStream := func(yield func([]byte, error) bool) {
+			yield([]byte("chunk"), nil)
+		}
+
+		var count int
+		for range e.TranscribeStream(context.Background(), audioStream) {
+			count++
+		}
+		assert.Equal(t, 0, count)
+	})
 }
 
 func TestRegistry(t *testing.T) {
@@ -208,5 +329,19 @@ func TestRegistry(t *testing.T) {
 			}
 		}
 		assert.True(t, found, "expected 'groq' in registered providers: %v", names)
+	})
+
+	t.Run("new via registry", func(t *testing.T) {
+		engine, err := stt.New("groq", stt.Config{
+			Extra: map[string]any{"api_key": "gsk-test"},
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, engine)
+	})
+
+	t.Run("new via registry error", func(t *testing.T) {
+		_, err := stt.New("groq", stt.Config{})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "api_key is required")
 	})
 }

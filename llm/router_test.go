@@ -2,6 +2,7 @@ package llm
 
 import (
 	"context"
+	"errors"
 	"iter"
 	"testing"
 
@@ -227,5 +228,134 @@ func TestRouter_BindTools(t *testing.T) {
 	bound := r.BindTools(tools)
 	if bound.ModelID() != "router" {
 		t.Errorf("expected router, got %q", bound.ModelID())
+	}
+}
+
+// TestRouter_Stream_Success tests Router.Stream with successful stream.
+func TestRouter_Stream_Success(t *testing.T) {
+	models := []ChatModel{
+		&stubModel{
+			id: "a",
+			streamFn: func(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) iter.Seq2[schema.StreamChunk, error] {
+				return func(yield func(schema.StreamChunk, error) bool) {
+					yield(schema.StreamChunk{Delta: "ok"}, nil)
+				}
+			},
+		},
+	}
+	r := NewRouter(WithModels(models...))
+
+	var deltas []string
+	for chunk, err := range r.Stream(context.Background(), nil) {
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		deltas = append(deltas, chunk.Delta)
+	}
+	if len(deltas) != 1 || deltas[0] != "ok" {
+		t.Errorf("unexpected deltas: %v", deltas)
+	}
+}
+
+// TestRouter_Stream_Error tests Router.Stream when underlying model returns error.
+func TestRouter_Stream_Error(t *testing.T) {
+	models := []ChatModel{
+		&stubModel{
+			id: "a",
+			streamFn: func(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) iter.Seq2[schema.StreamChunk, error] {
+				return func(yield func(schema.StreamChunk, error) bool) {
+					yield(schema.StreamChunk{}, errors.New("stream error"))
+				}
+			},
+		},
+	}
+	r := NewRouter(WithModels(models...))
+
+	var gotErr error
+	for _, err := range r.Stream(context.Background(), nil) {
+		if err != nil {
+			gotErr = err
+			break
+		}
+	}
+	if gotErr == nil {
+		t.Fatal("expected error from stream")
+	}
+}
+
+// TestFailoverRouter_Stream_NonRetryablePassthrough tests FailoverRouter.Stream doesn't retry on non-retryable error.
+func TestFailoverRouter_Stream_NonRetryablePassthrough(t *testing.T) {
+	nonRetryable := core.NewError("test", core.ErrAuth, "auth", nil)
+
+	models := []ChatModel{
+		&stubModel{
+			id: "failing",
+			streamFn: func(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) iter.Seq2[schema.StreamChunk, error] {
+				return func(yield func(schema.StreamChunk, error) bool) {
+					yield(schema.StreamChunk{}, nonRetryable)
+				}
+			},
+		},
+		&stubModel{id: "backup"},
+	}
+
+	fr := NewFailoverRouter(models...)
+
+	var gotErr error
+	for _, err := range fr.Stream(context.Background(), nil) {
+		if err != nil {
+			gotErr = err
+			break
+		}
+	}
+	if gotErr == nil {
+		t.Fatal("expected non-retryable error to stop failover")
+	}
+	if !errors.Is(gotErr, nonRetryable) {
+		t.Errorf("expected non-retryable error, got: %v", gotErr)
+	}
+}
+
+// TestFailoverRouter_Stream_AllModelsFail tests FailoverRouter.Stream when all models fail.
+func TestFailoverRouter_Stream_AllModelsFail(t *testing.T) {
+	retryableErr := core.NewError("test", core.ErrTimeout, "timeout", nil)
+
+	models := []ChatModel{
+		&stubModel{
+			id: "a",
+			streamFn: func(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) iter.Seq2[schema.StreamChunk, error] {
+				return func(yield func(schema.StreamChunk, error) bool) {
+					yield(schema.StreamChunk{}, retryableErr)
+				}
+			},
+		},
+		&stubModel{
+			id: "b",
+			streamFn: func(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) iter.Seq2[schema.StreamChunk, error] {
+				return func(yield func(schema.StreamChunk, error) bool) {
+					yield(schema.StreamChunk{}, retryableErr)
+				}
+			},
+		},
+	}
+
+	fr := NewFailoverRouter(models...)
+
+	var gotErr error
+	for _, err := range fr.Stream(context.Background(), nil) {
+		if err != nil {
+			gotErr = err
+			break
+		}
+	}
+	if gotErr == nil {
+		t.Fatal("expected error when all models fail")
+	}
+	var coreErr *core.Error
+	if !errors.As(gotErr, &coreErr) {
+		t.Fatalf("expected core.Error, got %T", gotErr)
+	}
+	if coreErr.Code != core.ErrProviderDown {
+		t.Errorf("expected ErrProviderDown, got %v", coreErr.Code)
 	}
 }

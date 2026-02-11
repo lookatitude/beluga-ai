@@ -317,3 +317,105 @@ func TestBaseAgent_Invoke_RuntimeOptions(t *testing.T) {
 func TestBaseAgent_ImplementsAgent(t *testing.T) {
 	var _ Agent = (*BaseAgent)(nil)
 }
+
+// TestBaseAgent_Stream_WithRuntimeOptions tests Stream with runtime options.
+func TestBaseAgent_Stream_WithRuntimeOptions(t *testing.T) {
+	baseModel := &testLLM{
+		generateFn: func(ctx context.Context, msgs []schema.Message) (*schema.AIMessage, error) {
+			return schema.NewAIMessage("base response"), nil
+		},
+	}
+
+	a := New("test-agent", WithLLM(baseModel), WithPlanner(NewReActPlanner(baseModel)))
+
+	runtimeModel := &testLLM{
+		generateFn: func(ctx context.Context, msgs []schema.Message) (*schema.AIMessage, error) {
+			return schema.NewAIMessage("runtime response"), nil
+		},
+	}
+
+	var finalText string
+	// Runtime options need to include both LLM and planner
+	for event, err := range a.Stream(context.Background(), "test", WithLLM(runtimeModel), WithPlanner(NewReActPlanner(runtimeModel))) {
+		if err != nil {
+			t.Fatalf("Stream error: %v", err)
+		}
+		if event.Type == EventText {
+			finalText = event.Text
+		}
+	}
+
+	if finalText != "runtime response" {
+		t.Errorf("final text = %q, want %q", finalText, "runtime response")
+	}
+}
+
+// TestBaseAgent_resolvePlanner_ByNameError tests resolvePlanner with invalid name.
+func TestBaseAgent_resolvePlanner_ByNameError(t *testing.T) {
+	model := &testLLM{}
+	a := New("test-agent", WithLLM(model), WithPlannerName("nonexistent"))
+
+	_, err := a.resolvePlanner(a.config)
+	if err == nil {
+		t.Fatal("expected error for nonexistent planner name")
+	}
+}
+
+// TestBaseAgent_stream_ExecutorError tests stream with executor error.
+func TestBaseAgent_stream_ExecutorError(t *testing.T) {
+	model := &testLLM{
+		generateFn: func(ctx context.Context, msgs []schema.Message) (*schema.AIMessage, error) {
+			return nil, errors.New("LLM failed")
+		},
+	}
+
+	a := New("test-agent", WithLLM(model), WithPlanner(NewReActPlanner(model)))
+
+	var gotErr error
+	for _, err := range a.stream(context.Background(), "test", a.config) {
+		if err != nil {
+			gotErr = err
+			break
+		}
+	}
+
+	if gotErr == nil {
+		t.Fatal("expected error from LLM failure in stream")
+	}
+}
+
+// TestBaseAgent_stream_WithHandoffs tests stream with handoffs.
+func TestBaseAgent_stream_WithHandoffs(t *testing.T) {
+	model := &testLLM{
+		generateFn: func(ctx context.Context, msgs []schema.Message) (*schema.AIMessage, error) {
+			return schema.NewAIMessage("response"), nil
+		},
+	}
+
+	targetAgent := &mockAgent{id: "target"}
+	a := New("test-agent",
+		WithLLM(model),
+		WithPlanner(NewReActPlanner(model)),
+		WithHandoffs([]Handoff{HandoffTo(targetAgent, "transfer to target")}),
+	)
+
+	toolCount := len(a.Tools())
+	if toolCount != 1 {
+		t.Errorf("expected 1 tool (handoff), got %d", toolCount)
+	}
+
+	var gotEvent bool
+	for event, err := range a.stream(context.Background(), "test", a.config) {
+		if err != nil {
+			t.Fatalf("Stream error: %v", err)
+		}
+		gotEvent = true
+		if event.Type == EventDone {
+			break
+		}
+	}
+
+	if !gotEvent {
+		t.Error("expected at least one event")
+	}
+}

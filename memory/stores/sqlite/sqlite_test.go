@@ -290,6 +290,164 @@ func TestNilMetadata(t *testing.T) {
 	// Should not crash on nil metadata.
 }
 
+func TestSearch_Error(t *testing.T) {
+	ctx := context.Background()
+	db, err := sql.Open("sqlite", ":memory:")
+	require.NoError(t, err)
+	store, err := New(Config{DB: db})
+	require.NoError(t, err)
+	// Don't call EnsureTable → table doesn't exist → query will fail.
+	_, err = store.Search(ctx, "query", 10)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "sqlite: search:")
+}
+
+func TestAll_Error(t *testing.T) {
+	ctx := context.Background()
+	db, err := sql.Open("sqlite", ":memory:")
+	require.NoError(t, err)
+	store, err := New(Config{DB: db})
+	require.NoError(t, err)
+	// Don't call EnsureTable → table doesn't exist → query will fail.
+	_, err = store.All(ctx)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "sqlite: all:")
+}
+
+func TestClear_Error(t *testing.T) {
+	ctx := context.Background()
+	db, err := sql.Open("sqlite", ":memory:")
+	require.NoError(t, err)
+	store, err := New(Config{DB: db})
+	require.NoError(t, err)
+	// Don't call EnsureTable → table doesn't exist → delete will fail.
+	err = store.Clear(ctx)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "sqlite: clear:")
+}
+
+func TestAppend_Error(t *testing.T) {
+	ctx := context.Background()
+	db, err := sql.Open("sqlite", ":memory:")
+	require.NoError(t, err)
+	store, err := New(Config{DB: db})
+	require.NoError(t, err)
+	// Don't call EnsureTable → table doesn't exist → insert will fail.
+	err = store.Append(ctx, schema.NewHumanMessage("hello"))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "sqlite: append:")
+}
+
+func TestScanMessages_UnknownRole(t *testing.T) {
+	ctx := context.Background()
+	store := newTestStore(t)
+
+	// Insert a row with unknown role directly.
+	_, err := store.db.ExecContext(ctx,
+		"INSERT INTO messages (role, content, metadata, created_at) VALUES (?, ?, ?, ?)",
+		"observer", `{"parts":[{"type":"text","text":"hello"}]}`, `null`, "2024-01-01T00:00:00Z",
+	)
+	require.NoError(t, err)
+
+	msgs, err := store.All(ctx)
+	require.NoError(t, err)
+	require.Len(t, msgs, 1)
+	// Unknown role defaults to HumanMessage.
+	assert.Equal(t, schema.RoleHuman, msgs[0].GetRole())
+}
+
+func TestScanMessages_EmptyMetadata(t *testing.T) {
+	ctx := context.Background()
+	store := newTestStore(t)
+
+	// Insert a row with empty metadata string.
+	_, err := store.db.ExecContext(ctx,
+		"INSERT INTO messages (role, content, metadata, created_at) VALUES (?, ?, ?, ?)",
+		"human", `{"parts":[{"type":"text","text":"hello"}]}`, "", "2024-01-01T00:00:00Z",
+	)
+	require.NoError(t, err)
+
+	msgs, err := store.All(ctx)
+	require.NoError(t, err)
+	require.Len(t, msgs, 1)
+	assert.Nil(t, msgs[0].GetMetadata())
+}
+
+func TestScanMessages_NullMetadata(t *testing.T) {
+	ctx := context.Background()
+	store := newTestStore(t)
+
+	_, err := store.db.ExecContext(ctx,
+		"INSERT INTO messages (role, content, metadata, created_at) VALUES (?, ?, ?, ?)",
+		"human", `{"parts":[{"type":"text","text":"hello"}]}`, "null", "2024-01-01T00:00:00Z",
+	)
+	require.NoError(t, err)
+
+	msgs, err := store.All(ctx)
+	require.NoError(t, err)
+	require.Len(t, msgs, 1)
+	assert.Nil(t, msgs[0].GetMetadata())
+}
+
+func TestScanMessages_BadContentJSON(t *testing.T) {
+	ctx := context.Background()
+	store := newTestStore(t)
+
+	_, err := store.db.ExecContext(ctx,
+		"INSERT INTO messages (role, content, metadata, created_at) VALUES (?, ?, ?, ?)",
+		"human", `not json`, `null`, "2024-01-01T00:00:00Z",
+	)
+	require.NoError(t, err)
+
+	_, err = store.All(ctx)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "sqlite: unmarshal content:")
+}
+
+func TestScanMessages_BadMetadataJSON(t *testing.T) {
+	ctx := context.Background()
+	store := newTestStore(t)
+
+	_, err := store.db.ExecContext(ctx,
+		"INSERT INTO messages (role, content, metadata, created_at) VALUES (?, ?, ?, ?)",
+		"human", `{"parts":[{"type":"text","text":"hello"}]}`, `not json`, "2024-01-01T00:00:00Z",
+	)
+	require.NoError(t, err)
+
+	_, err = store.All(ctx)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "sqlite: unmarshal metadata:")
+}
+
+func TestAppendAndRetrieveToolMessage(t *testing.T) {
+	ctx := context.Background()
+	store := newTestStore(t)
+
+	err := store.Append(ctx, schema.NewToolMessage("tc1", "result data"))
+	require.NoError(t, err)
+
+	msgs, err := store.All(ctx)
+	require.NoError(t, err)
+	require.Len(t, msgs, 1)
+
+	toolMsg, ok := msgs[0].(*schema.ToolMessage)
+	require.True(t, ok)
+	assert.Equal(t, "tc1", toolMsg.ToolCallID)
+}
+
+func TestAppendAndRetrieveSystemMessage(t *testing.T) {
+	ctx := context.Background()
+	store := newTestStore(t)
+
+	err := store.Append(ctx, schema.NewSystemMessage("you are helpful"))
+	require.NoError(t, err)
+
+	msgs, err := store.All(ctx)
+	require.NoError(t, err)
+	require.Len(t, msgs, 1)
+	assert.Equal(t, schema.RoleSystem, msgs[0].GetRole())
+}
+
 // textOf extracts concatenated text from a message.
 func textOf(msg schema.Message) string {
 	var parts []string

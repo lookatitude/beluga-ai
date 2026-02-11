@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // mockMemory is a simple in-memory implementation for testing.
@@ -531,4 +533,309 @@ func TestWithHooks_AllOperations(t *testing.T) {
 
 func TestHookedMemory_InterfaceCompliance(t *testing.T) {
 	var _ Memory = (*hookedMemory)(nil)
+}
+
+// TestHookedMemory_Load_OnError tests that Load's OnError hook is called
+// and can modify the error. This covers lines 73-74 in middleware.go.
+func TestHookedMemory_Load_OnError(t *testing.T) {
+	originalErr := errors.New("load error")
+	mock := &mockMemory{loadErr: originalErr}
+	modifiedErr := errors.New("modified load error")
+
+	var onErrorCalled bool
+	hooks := Hooks{
+		OnError: func(ctx context.Context, err error) error {
+			onErrorCalled = true
+			if err == originalErr {
+				return modifiedErr
+			}
+			return err
+		},
+	}
+
+	wrapped := WithHooks(hooks)(mock)
+
+	ctx := context.Background()
+	msgs, err := wrapped.Load(ctx, "test query")
+	require.Error(t, err)
+	assert.Equal(t, modifiedErr, err)
+	assert.Nil(t, msgs)
+	assert.True(t, onErrorCalled)
+}
+
+// TestHookedMemory_Load_AfterLoad tests that AfterLoad hook is called
+// with results. This covers lines 78-79 in middleware.go.
+func TestHookedMemory_Load_AfterLoad(t *testing.T) {
+	mock := &mockMemory{}
+
+	var afterLoadCalled bool
+	var receivedMsgs []schema.Message
+	var receivedQuery string
+	var receivedErr error
+
+	hooks := Hooks{
+		AfterLoad: func(ctx context.Context, query string, msgs []schema.Message, err error) {
+			afterLoadCalled = true
+			receivedQuery = query
+			receivedMsgs = msgs
+			receivedErr = err
+		},
+	}
+
+	wrapped := WithHooks(hooks)(mock)
+
+	ctx := context.Background()
+	msgs, err := wrapped.Load(ctx, "test query")
+	require.NoError(t, err)
+	assert.True(t, afterLoadCalled)
+	assert.Equal(t, "test query", receivedQuery)
+	assert.Len(t, receivedMsgs, 1)
+	assert.Nil(t, receivedErr)
+	assert.Equal(t, msgs, receivedMsgs)
+}
+
+// TestHookedMemory_Search_OnError tests that Search's OnError hook is called
+// and can suppress the error. This covers lines 97-98 in middleware.go.
+func TestHookedMemory_Search_OnError(t *testing.T) {
+	originalErr := errors.New("search error")
+	mock := &mockMemory{searchErr: originalErr}
+
+	var onErrorCalled bool
+	hooks := Hooks{
+		OnError: func(ctx context.Context, err error) error {
+			onErrorCalled = true
+			// Suppress the error by returning nil
+			return nil
+		},
+	}
+
+	wrapped := WithHooks(hooks)(mock)
+
+	ctx := context.Background()
+	docs, err := wrapped.Search(ctx, "test query", 5)
+	require.NoError(t, err) // Error was suppressed
+	assert.Nil(t, docs)
+	assert.True(t, onErrorCalled)
+}
+
+// TestHookedMemory_Search_AfterSearch tests that AfterSearch hook is called
+// with results. This covers lines 102-103 in middleware.go.
+func TestHookedMemory_Search_AfterSearch(t *testing.T) {
+	mock := &mockMemory{}
+
+	var afterSearchCalled bool
+	var receivedDocs []schema.Document
+	var receivedQuery string
+	var receivedK int
+	var receivedErr error
+
+	hooks := Hooks{
+		AfterSearch: func(ctx context.Context, query string, k int, docs []schema.Document, err error) {
+			afterSearchCalled = true
+			receivedQuery = query
+			receivedK = k
+			receivedDocs = docs
+			receivedErr = err
+		},
+	}
+
+	wrapped := WithHooks(hooks)(mock)
+
+	ctx := context.Background()
+	docs, err := wrapped.Search(ctx, "test query", 5)
+	require.NoError(t, err)
+	assert.True(t, afterSearchCalled)
+	assert.Equal(t, "test query", receivedQuery)
+	assert.Equal(t, 5, receivedK)
+	assert.Len(t, receivedDocs, 1)
+	assert.Nil(t, receivedErr)
+	assert.Equal(t, docs, receivedDocs)
+}
+
+// TestHookedMemory_Clear_OnError tests that Clear's OnError hook is called
+// and can modify the error. This covers lines 121-122 in middleware.go.
+func TestHookedMemory_Clear_OnError(t *testing.T) {
+	originalErr := errors.New("clear error")
+	mock := &mockMemory{clearErr: originalErr}
+	modifiedErr := errors.New("modified clear error")
+
+	var onErrorCalled bool
+	hooks := Hooks{
+		OnError: func(ctx context.Context, err error) error {
+			onErrorCalled = true
+			if err == originalErr {
+				return modifiedErr
+			}
+			return err
+		},
+	}
+
+	wrapped := WithHooks(hooks)(mock)
+
+	ctx := context.Background()
+	err := wrapped.Clear(ctx)
+	require.Error(t, err)
+	assert.Equal(t, modifiedErr, err)
+	assert.True(t, onErrorCalled)
+}
+
+// TestHookedMemory_Clear_AfterClear tests that AfterClear hook is called.
+// This covers lines 126-127 in middleware.go.
+func TestHookedMemory_Clear_AfterClear(t *testing.T) {
+	mock := &mockMemory{}
+
+	var afterClearCalled bool
+	var receivedErr error
+
+	hooks := Hooks{
+		AfterClear: func(ctx context.Context, err error) {
+			afterClearCalled = true
+			receivedErr = err
+		},
+	}
+
+	wrapped := WithHooks(hooks)(mock)
+
+	ctx := context.Background()
+	err := wrapped.Clear(ctx)
+	require.NoError(t, err)
+	assert.True(t, afterClearCalled)
+	assert.Nil(t, receivedErr)
+}
+
+// TestHookedMemory_AfterLoad_WithError tests AfterLoad receives error
+func TestHookedMemory_AfterLoad_WithError(t *testing.T) {
+	loadErr := errors.New("load failed")
+	mock := &mockMemory{loadErr: loadErr}
+
+	var afterLoadCalled bool
+	var receivedErr error
+
+	hooks := Hooks{
+		AfterLoad: func(ctx context.Context, query string, msgs []schema.Message, err error) {
+			afterLoadCalled = true
+			receivedErr = err
+		},
+	}
+
+	wrapped := WithHooks(hooks)(mock)
+
+	ctx := context.Background()
+	_, err := wrapped.Load(ctx, "query")
+	require.Error(t, err)
+	assert.True(t, afterLoadCalled)
+	assert.Equal(t, loadErr, receivedErr)
+}
+
+// TestHookedMemory_AfterSearch_WithError tests AfterSearch receives error
+func TestHookedMemory_AfterSearch_WithError(t *testing.T) {
+	searchErr := errors.New("search failed")
+	mock := &mockMemory{searchErr: searchErr}
+
+	var afterSearchCalled bool
+	var receivedErr error
+
+	hooks := Hooks{
+		AfterSearch: func(ctx context.Context, query string, k int, docs []schema.Document, err error) {
+			afterSearchCalled = true
+			receivedErr = err
+		},
+	}
+
+	wrapped := WithHooks(hooks)(mock)
+
+	ctx := context.Background()
+	_, err := wrapped.Search(ctx, "query", 5)
+	require.Error(t, err)
+	assert.True(t, afterSearchCalled)
+	assert.Equal(t, searchErr, receivedErr)
+}
+
+// TestHookedMemory_AfterClear_WithError tests AfterClear receives error
+func TestHookedMemory_AfterClear_WithError(t *testing.T) {
+	clearErr := errors.New("clear failed")
+	mock := &mockMemory{clearErr: clearErr}
+
+	var afterClearCalled bool
+	var receivedErr error
+
+	hooks := Hooks{
+		AfterClear: func(ctx context.Context, err error) {
+			afterClearCalled = true
+			receivedErr = err
+		},
+	}
+
+	wrapped := WithHooks(hooks)(mock)
+
+	ctx := context.Background()
+	err := wrapped.Clear(ctx)
+	require.Error(t, err)
+	assert.True(t, afterClearCalled)
+	assert.Equal(t, clearErr, receivedErr)
+}
+
+// TestHookedMemory_BeforeLoad_Error tests that BeforeLoad error aborts Load.
+// This covers lines 64-66 in middleware.go.
+func TestHookedMemory_BeforeLoad_Error(t *testing.T) {
+	mock := &mockMemory{}
+	beforeErr := errors.New("before load error")
+
+	hooks := Hooks{
+		BeforeLoad: func(ctx context.Context, query string) error {
+			return beforeErr
+		},
+	}
+
+	wrapped := WithHooks(hooks)(mock)
+
+	ctx := context.Background()
+	msgs, err := wrapped.Load(ctx, "query")
+	require.Error(t, err)
+	assert.Equal(t, beforeErr, err)
+	assert.Nil(t, msgs)
+	assert.False(t, mock.loadCalled) // Load should not be called
+}
+
+// TestHookedMemory_BeforeSearch_Error tests that BeforeSearch error aborts Search.
+// This covers lines 88-90 in middleware.go.
+func TestHookedMemory_BeforeSearch_Error(t *testing.T) {
+	mock := &mockMemory{}
+	beforeErr := errors.New("before search error")
+
+	hooks := Hooks{
+		BeforeSearch: func(ctx context.Context, query string, k int) error {
+			return beforeErr
+		},
+	}
+
+	wrapped := WithHooks(hooks)(mock)
+
+	ctx := context.Background()
+	docs, err := wrapped.Search(ctx, "query", 5)
+	require.Error(t, err)
+	assert.Equal(t, beforeErr, err)
+	assert.Nil(t, docs)
+	assert.False(t, mock.searchCalled) // Search should not be called
+}
+
+// TestHookedMemory_BeforeClear_Error tests that BeforeClear error aborts Clear.
+// This covers lines 112-114 in middleware.go.
+func TestHookedMemory_BeforeClear_Error(t *testing.T) {
+	mock := &mockMemory{}
+	beforeErr := errors.New("before clear error")
+
+	hooks := Hooks{
+		BeforeClear: func(ctx context.Context) error {
+			return beforeErr
+		},
+	}
+
+	wrapped := WithHooks(hooks)(mock)
+
+	ctx := context.Background()
+	err := wrapped.Clear(ctx)
+	require.Error(t, err)
+	assert.Equal(t, beforeErr, err)
+	assert.False(t, mock.clearCalled) // Clear should not be called
 }

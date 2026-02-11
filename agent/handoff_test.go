@@ -2,10 +2,13 @@ package agent
 
 import (
 	"context"
+	"errors"
+	"iter"
 	"strings"
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/tool"
 )
 
 func TestHandoffsToTools_GeneratesCorrectNames(t *testing.T) {
@@ -260,6 +263,28 @@ func TestParseHandoffInput(t *testing.T) {
 	}
 }
 
+func TestWithHandoffContext(t *testing.T) {
+	ctx := context.Background()
+	data := map[string]any{"key": "value", "count": 42}
+
+	ctx = WithHandoffContext(ctx, data)
+
+	got := ctx.Value(handoffContextKey{})
+	if got == nil {
+		t.Fatal("expected non-nil context value")
+	}
+	m, ok := got.(map[string]any)
+	if !ok {
+		t.Fatalf("expected map[string]any, got %T", got)
+	}
+	if m["key"] != "value" {
+		t.Errorf("expected key=value, got %v", m["key"])
+	}
+	if m["count"] != 42 {
+		t.Errorf("expected count=42, got %v", m["count"])
+	}
+}
+
 func TestHandoffsToTools_Empty(t *testing.T) {
 	tools := HandoffsToTools(nil)
 	if len(tools) != 0 {
@@ -271,3 +296,110 @@ func TestHandoffsToTools_Empty(t *testing.T) {
 		t.Errorf("expected empty tools, got %d", len(tools))
 	}
 }
+
+// TestHandoffsToTools_Execute_OnHandoffError tests OnHandoff error path.
+func TestHandoffsToTools_Execute_OnHandoffError(t *testing.T) {
+	target := &mockAgent{id: "helper"}
+	handoff := Handoff{
+		TargetAgent: target,
+		OnHandoff: func(ctx context.Context) error {
+			return errors.New("handoff callback failed")
+		},
+	}
+
+	tools := HandoffsToTools([]Handoff{handoff})
+	result, err := tools[0].Execute(context.Background(), map[string]any{"message": "test"})
+
+	if err == nil {
+		t.Fatal("expected error from OnHandoff callback failure")
+	}
+	if err.Error() != "handoff callback failed" {
+		t.Errorf("error = %q, want %q", err.Error(), "handoff callback failed")
+	}
+	if result != nil {
+		t.Error("expected nil result on callback error")
+	}
+}
+
+// TestHandoffsToTools_Execute_TargetInvokeError tests target agent invoke error.
+func TestHandoffsToTools_Execute_TargetInvokeError(t *testing.T) {
+	target := &errorAgent{id: "failing", err: errors.New("invoke failed")}
+	handoff := HandoffTo(target, "test")
+
+	tools := HandoffsToTools([]Handoff{handoff})
+	result, err := tools[0].Execute(context.Background(), map[string]any{"message": "test"})
+
+	if err == nil {
+		t.Fatal("expected error from target invoke failure")
+	}
+	if result != nil {
+		t.Error("expected nil result on invoke error")
+	}
+}
+
+// TestHandoffsToTools_Execute_WithHandoffContext tests handoff context usage.
+func TestHandoffsToTools_Execute_WithHandoffContext(t *testing.T) {
+	target := &streamMockAgent{id: "target", result: "ok"}
+
+	var capturedInput HandoffInput
+	handoff := Handoff{
+		TargetAgent: target,
+		InputFilter: func(input HandoffInput) HandoffInput {
+			capturedInput = input
+			return input
+		},
+	}
+
+	tools := HandoffsToTools([]Handoff{handoff})
+
+	ctx := WithHandoffContext(context.Background(), map[string]any{
+		"source": "agent-1",
+		"priority": "high",
+	})
+
+	_, err := tools[0].Execute(ctx, map[string]any{"message": "hello"})
+	if err != nil {
+		t.Fatalf("Execute error: %v", err)
+	}
+
+	if capturedInput.Context == nil {
+		t.Fatal("expected context to be populated")
+	}
+	if capturedInput.Context["source"] != "agent-1" {
+		t.Errorf("context source = %v, want %q", capturedInput.Context["source"], "agent-1")
+	}
+}
+
+// errorAgent is a test agent that returns an error on Invoke.
+type errorAgent struct {
+	id  string
+	err error
+}
+
+func (a *errorAgent) ID() string {
+	return a.id
+}
+
+func (a *errorAgent) Invoke(ctx context.Context, input string, opts ...Option) (string, error) {
+	return "", a.err
+}
+
+func (a *errorAgent) Stream(ctx context.Context, input string, opts ...Option) iter.Seq2[Event, error] {
+	return func(yield func(Event, error) bool) {
+		yield(Event{Type: EventError, AgentID: a.id}, a.err)
+	}
+}
+
+func (a *errorAgent) Persona() Persona {
+	return Persona{}
+}
+
+func (a *errorAgent) Tools() []tool.Tool {
+	return nil
+}
+
+func (a *errorAgent) Children() []Agent {
+	return nil
+}
+
+var _ Agent = (*errorAgent)(nil)

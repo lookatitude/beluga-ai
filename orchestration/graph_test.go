@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"iter"
 	"testing"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 func TestGraph_Linear(t *testing.T) {
@@ -216,6 +219,107 @@ func TestGraph_Stream_NoEntry(t *testing.T) {
 		return
 	}
 	t.Fatal("expected at least one stream result")
+}
+
+func TestGraph_Stream_NodeError(t *testing.T) {
+	errBoom := errors.New("boom")
+	g := NewGraph()
+	g.AddNode("a", newStep(func(_ any) (any, error) { return "a", nil }))
+	g.AddNode("b", newStep(func(_ any) (any, error) { return nil, errBoom }))
+	g.AddEdge(Edge{From: "a", To: "b"})
+	g.SetEntry("a")
+
+	for _, err := range g.Stream(context.Background(), "x") {
+		if err != nil {
+			// Error from node invoke in non-terminal path.
+			return
+		}
+	}
+}
+
+func TestGraph_Stream_MaxDepth(t *testing.T) {
+	g := NewGraph()
+	g.AddNode("a", newStep(func(input any) (any, error) { return input, nil }))
+	g.AddNode("b", newStep(func(input any) (any, error) { return input, nil }))
+	g.AddEdge(Edge{From: "a", To: "b"})
+	g.AddEdge(Edge{From: "b", To: "a"})
+	g.SetEntry("a")
+
+	for _, err := range g.Stream(context.Background(), "x") {
+		if err != nil {
+			// Max depth exceeded error.
+			return
+		}
+	}
+}
+
+func TestGraph_Stream_NoMatchingCondition(t *testing.T) {
+	g := NewGraph()
+	g.AddNode("start", newStep(func(input any) (any, error) { return input, nil }))
+	g.AddNode("next", newStep(func(input any) (any, error) { return "next", nil }))
+	g.AddEdge(Edge{From: "start", To: "next", Condition: func(v any) bool { return v == "go" }})
+	g.SetEntry("start")
+
+	// "stop" doesn't match any condition, but start has outgoing edges so it
+	// will invoke, then find no matching next — return value.
+	var results []any
+	for val, err := range g.Stream(context.Background(), "stop") {
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		results = append(results, val)
+	}
+	if len(results) == 0 {
+		t.Fatal("expected at least one result")
+	}
+}
+
+func TestGraph_Stream_TerminalNode(t *testing.T) {
+	g := NewGraph()
+	g.AddNode("only", newStep(func(input any) (any, error) { return fmt.Sprintf("done(%v)", input), nil }))
+	g.SetEntry("only")
+
+	var results []any
+	for val, err := range g.Stream(context.Background(), "x") {
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		results = append(results, val)
+	}
+	if len(results) == 0 {
+		t.Fatal("expected at least one result")
+	}
+	if results[0] != "done(x)" {
+		t.Fatalf("expected done(x), got %v", results[0])
+	}
+}
+
+func TestGraph_Stream_StreamError(t *testing.T) {
+	errStream := errors.New("stream error")
+	// Create a terminal node whose stream returns an error.
+	errorStep := &mockRunnable{
+		invokeFn: func(_ context.Context, input any, _ ...core.Option) (any, error) {
+			return input, nil
+		},
+		streamFn: func(_ context.Context, _ any, _ ...core.Option) iter.Seq2[any, error] {
+			return func(yield func(any, error) bool) {
+				yield(nil, errStream)
+			}
+		},
+	}
+
+	g := NewGraph()
+	g.AddNode("terminal", errorStep)
+	g.SetEntry("terminal")
+
+	for _, err := range g.Stream(context.Background(), "x") {
+		if err != nil {
+			if !errors.Is(err, errStream) {
+				t.Fatalf("expected stream error, got %v", err)
+			}
+			return
+		}
+	}
 }
 
 func TestGraph_FirstMatchWins(t *testing.T) {

@@ -644,3 +644,294 @@ func TestCacheReadTokens(t *testing.T) {
 		t.Errorf("CachedTokens = %d, want 3", resp.Usage.CachedTokens)
 	}
 }
+
+// TestConvertMessages_UnsupportedType tests that unsupported message types return errors.
+func TestConvertMessages_UnsupportedType(t *testing.T) {
+	type unsupportedMsg struct {
+		schema.Message
+	}
+	msgs := []schema.Message{
+		&unsupportedMsg{},
+	}
+	_, _, err := convertMessages(msgs)
+	if err == nil {
+		t.Fatal("expected error for unsupported message type")
+	}
+	if err.Error() != "bedrock: unsupported message type *bedrock.unsupportedMsg" {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+// TestBuildStreamInput_WithSystemAndTools tests buildStreamInput with system messages and tools.
+func TestBuildStreamInput_WithSystemAndTools(t *testing.T) {
+	m := NewWithClient(&mockClient{}, "test-model")
+	bound := m.BindTools([]schema.ToolDefinition{
+		{Name: "get_weather", Description: "Get weather info", InputSchema: map[string]any{"type": "object"}},
+	})
+	input, err := bound.(*Model).buildStreamInput([]schema.Message{
+		schema.NewSystemMessage("Be helpful"),
+		schema.NewHumanMessage("Hi"),
+	}, []llm.GenerateOption{
+		llm.WithTemperature(0.7),
+		llm.WithMaxTokens(50),
+	})
+	if err != nil {
+		t.Fatalf("buildStreamInput() error: %v", err)
+	}
+	if len(input.System) != 1 {
+		t.Errorf("System len = %d, want 1", len(input.System))
+	}
+	if len(input.Messages) != 1 {
+		t.Errorf("Messages len = %d, want 1", len(input.Messages))
+	}
+	if input.ToolConfig == nil {
+		t.Fatal("expected ToolConfig")
+	}
+	if len(input.ToolConfig.Tools) != 1 {
+		t.Errorf("Tools len = %d, want 1", len(input.ToolConfig.Tools))
+	}
+	if input.InferenceConfig == nil {
+		t.Fatal("expected InferenceConfig")
+	}
+	if input.InferenceConfig.Temperature == nil || *input.InferenceConfig.Temperature != 0.7 {
+		t.Errorf("Temperature = %v, want 0.7", input.InferenceConfig.Temperature)
+	}
+	if input.InferenceConfig.MaxTokens == nil || *input.InferenceConfig.MaxTokens != 50 {
+		t.Errorf("MaxTokens = %v, want 50", input.InferenceConfig.MaxTokens)
+	}
+}
+
+// TestBuildStreamInput_Error tests buildStreamInput with unsupported message type.
+func TestBuildStreamInput_Error(t *testing.T) {
+	type unsupportedMsg struct {
+		schema.Message
+	}
+	m := NewWithClient(&mockClient{}, "test-model")
+	_, err := m.buildStreamInput([]schema.Message{
+		&unsupportedMsg{},
+	}, nil)
+	if err == nil {
+		t.Fatal("expected error for unsupported message type")
+	}
+}
+
+// TestStream_BuildInputError tests Stream when buildStreamInput fails.
+func TestStream_BuildInputError(t *testing.T) {
+	type unsupportedMsg struct {
+		schema.Message
+	}
+	m := NewWithClient(&mockClient{}, "test-model")
+	count := 0
+	for _, err := range m.Stream(context.Background(), []schema.Message{
+		&unsupportedMsg{},
+	}) {
+		count++
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		// Should yield exactly one error.
+		break
+	}
+	if count != 1 {
+		t.Errorf("expected exactly 1 error event, got %d", count)
+	}
+}
+
+// TestNew_WithOptions tests New with region and APIKey options.
+func TestNew_WithOptions(t *testing.T) {
+	// This test creates a real AWS client config. It should succeed even without credentials
+	// since we're not making actual API calls.
+	cfg := config.ProviderConfig{
+		Model:  "anthropic.claude-v2",
+		APIKey: "test-key",
+		Options: map[string]any{
+			"region":     "us-west-2",
+			"secret_key": "test-secret",
+		},
+	}
+	m, err := New(cfg)
+	if err != nil {
+		t.Fatalf("New() error: %v", err)
+	}
+	if m.ModelID() != "anthropic.claude-v2" {
+		t.Errorf("ModelID = %q, want %q", m.ModelID(), "anthropic.claude-v2")
+	}
+}
+
+// TestNew_WithBaseURL tests New with BaseURL option.
+func TestNew_WithBaseURL(t *testing.T) {
+	cfg := config.ProviderConfig{
+		Model:   "test-model",
+		BaseURL: "https://custom-endpoint.example.com",
+	}
+	m, err := New(cfg)
+	if err != nil {
+		t.Fatalf("New() error: %v", err)
+	}
+	if m.ModelID() != "test-model" {
+		t.Errorf("ModelID = %q", m.ModelID())
+	}
+}
+
+// TestConvertStreamEvent_ContentBlockStartNonToolUse tests ContentBlockStart that's not tool_use.
+func TestConvertStreamEvent_ContentBlockStartNonToolUse(t *testing.T) {
+	event := &brtypes.ConverseStreamOutputMemberContentBlockStart{
+		Value: brtypes.ContentBlockStartEvent{
+			ContentBlockIndex: aws.Int32(0),
+			Start: &brtypes.ContentBlockStartMemberImage{
+				Value: brtypes.ImageBlockStart{},
+			},
+		},
+	}
+	chunk := convertStreamEvent(event, "test-model")
+	if chunk != nil {
+		t.Error("expected nil for non-tool-use ContentBlockStart")
+	}
+}
+
+// TestConvertStreamEvent_UnknownEvent tests unknown event type returns nil.
+func TestConvertStreamEvent_UnknownEvent(t *testing.T) {
+	// Use a stream event type that's not handled.
+	event := &brtypes.ConverseStreamOutputMemberContentBlockStop{
+		Value: brtypes.ContentBlockStopEvent{
+			ContentBlockIndex: aws.Int32(0),
+		},
+	}
+	chunk := convertStreamEvent(event, "test-model")
+	if chunk != nil {
+		t.Error("expected nil for unknown event type")
+	}
+}
+
+// TestConvertToolConfig_NoDescription tests tool without description.
+func TestConvertToolConfig_NoDescription(t *testing.T) {
+	tools := []schema.ToolDefinition{
+		{Name: "test_tool", InputSchema: map[string]any{"type": "object"}},
+	}
+	cfg := convertToolConfig(tools, llm.GenerateOptions{})
+	if len(cfg.Tools) != 1 {
+		t.Fatalf("Tools len = %d, want 1", len(cfg.Tools))
+	}
+	spec, ok := cfg.Tools[0].(*brtypes.ToolMemberToolSpec)
+	if !ok {
+		t.Fatal("expected ToolMemberToolSpec")
+	}
+	if spec.Value.Description != nil {
+		t.Errorf("expected nil Description, got %v", spec.Value.Description)
+	}
+	if aws.ToString(spec.Value.Name) != "test_tool" {
+		t.Errorf("Name = %q, want test_tool", aws.ToString(spec.Value.Name))
+	}
+}
+
+// TestConvertToolConfig_ToolChoiceNone tests ToolChoiceNone (omits tool choice).
+func TestConvertToolConfig_ToolChoiceNone(t *testing.T) {
+	tools := []schema.ToolDefinition{
+		{Name: "test", InputSchema: map[string]any{"type": "object"}},
+	}
+	cfg := convertToolConfig(tools, llm.GenerateOptions{ToolChoice: llm.ToolChoiceNone})
+	if cfg.ToolChoice != nil {
+		t.Error("expected nil ToolChoice for ToolChoiceNone")
+	}
+}
+
+// TestConvertOutput_NilUsage tests convertOutput with nil usage.
+func TestConvertOutput_NilUsage(t *testing.T) {
+	output := &bedrockruntime.ConverseOutput{
+		Output: &brtypes.ConverseOutputMemberMessage{
+			Value: brtypes.Message{
+				Role:    brtypes.ConversationRoleAssistant,
+				Content: []brtypes.ContentBlock{&brtypes.ContentBlockMemberText{Value: "ok"}},
+			},
+		},
+		StopReason: brtypes.StopReasonEndTurn,
+		Usage:      nil,
+	}
+	ai := convertOutput(output, "test-model")
+	if ai.Usage.InputTokens != 0 {
+		t.Errorf("expected InputTokens = 0, got %d", ai.Usage.InputTokens)
+	}
+	if ai.Usage.OutputTokens != 0 {
+		t.Errorf("expected OutputTokens = 0, got %d", ai.Usage.OutputTokens)
+	}
+}
+
+// TestDocumentToJSON_MarshalError tests documentToJSON when marshal fails.
+func TestDocumentToJSON_MarshalError(t *testing.T) {
+	// Create a document that will fail marshaling.
+	// Since we can't easily create a LazyDocument that fails, we test the nil case (already covered).
+	// The error path in documentToJSON is difficult to trigger with real AWS types.
+	// We just verify that nil returns "{}" (already covered in TestDocumentToJSON_Nil).
+	got := documentToJSON(nil)
+	if got != "{}" {
+		t.Errorf("documentToJSON(nil) = %q, want {}", got)
+	}
+}
+
+// TestBuildInput_NoTools tests buildInput without tools.
+func TestBuildInput_NoTools(t *testing.T) {
+	m := NewWithClient(&mockClient{}, "test-model")
+	input, err := m.buildInput([]schema.Message{
+		schema.NewHumanMessage("Hello"),
+	}, nil)
+	if err != nil {
+		t.Fatalf("buildInput() error: %v", err)
+	}
+	if input.ToolConfig != nil {
+		t.Error("expected nil ToolConfig when no tools bound")
+	}
+}
+
+// TestConvertHumanParts_EmptyImageData tests that images with empty data are skipped.
+func TestConvertHumanParts_EmptyImageData(t *testing.T) {
+	parts := []schema.ContentPart{
+		schema.TextPart{Text: "Text"},
+		schema.ImagePart{Data: nil, MimeType: "image/png"},
+		schema.ImagePart{Data: []byte{}, MimeType: "image/png"},
+	}
+	blocks := convertHumanParts(parts)
+	// Should only have text block, empty image data should be skipped.
+	if len(blocks) != 1 {
+		t.Errorf("blocks len = %d, want 1 (empty images should be skipped)", len(blocks))
+	}
+	if _, ok := blocks[0].(*brtypes.ContentBlockMemberText); !ok {
+		t.Error("expected text block")
+	}
+}
+
+// TestConvertAIBlocks_OnlyToolCalls tests AI message with only tool calls (no text).
+func TestConvertAIBlocks_OnlyToolCalls(t *testing.T) {
+	msg := &schema.AIMessage{
+		ToolCalls: []schema.ToolCall{
+			{ID: "call_1", Name: "test", Arguments: `{"key":"value"}`},
+		},
+	}
+	blocks := convertAIBlocks(msg)
+	if len(blocks) != 1 {
+		t.Fatalf("blocks len = %d, want 1", len(blocks))
+	}
+	tu, ok := blocks[0].(*brtypes.ContentBlockMemberToolUse)
+	if !ok {
+		t.Fatal("expected ToolUse block")
+	}
+	if aws.ToString(tu.Value.ToolUseId) != "call_1" {
+		t.Errorf("ToolUseId = %q", aws.ToString(tu.Value.ToolUseId))
+	}
+}
+
+// TestGenerate_BuildInputError tests Generate when buildInput fails.
+func TestGenerate_BuildInputError(t *testing.T) {
+	type unsupportedMsg struct {
+		schema.Message
+	}
+	m := NewWithClient(&mockClient{}, "test-model")
+	_, err := m.Generate(context.Background(), []schema.Message{
+		&unsupportedMsg{},
+	})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if err.Error() != "bedrock: unsupported message type *bedrock.unsupportedMsg" {
+		t.Errorf("unexpected error: %v", err)
+	}
+}

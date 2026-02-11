@@ -2,10 +2,12 @@ package stt
 
 import (
 	"context"
+	"errors"
 	"iter"
 	"testing"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/voice"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -56,6 +58,31 @@ func TestRegistry_UnknownProvider(t *testing.T) {
 	_, err := New("nonexistent-stt-provider", Config{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown provider")
+}
+
+func TestRegistry_PanicOnEmptyName(t *testing.T) {
+	assert.Panics(t, func() {
+		Register("", func(cfg Config) (STT, error) {
+			return &mockSTT{}, nil
+		})
+	})
+}
+
+func TestRegistry_PanicOnNilFactory(t *testing.T) {
+	assert.Panics(t, func() {
+		Register("test-stt-nil-factory", nil)
+	})
+}
+
+func TestRegistry_PanicOnDuplicate(t *testing.T) {
+	Register("test-stt-dup-check", func(cfg Config) (STT, error) {
+		return &mockSTT{}, nil
+	})
+	assert.Panics(t, func() {
+		Register("test-stt-dup-check", func(cfg Config) (STT, error) {
+			return &mockSTT{}, nil
+		})
+	})
 }
 
 func TestList(t *testing.T) {
@@ -155,6 +182,32 @@ func TestComposeHooks_ErrorHandling(t *testing.T) {
 	assert.Equal(t, []string{"hooks1", "hooks2"}, called)
 	// The original error is returned at the end if no hook returns an error.
 	assert.Error(t, err)
+}
+
+func TestComposeHooks_OnError_ShortCircuit(t *testing.T) {
+	var called []string
+	interceptedErr := errors.New("intercepted")
+
+	hooks1 := Hooks{
+		OnError: func(ctx context.Context, err error) error {
+			called = append(called, "hooks1")
+			return interceptedErr // non-nil: short-circuits
+		},
+	}
+
+	hooks2 := Hooks{
+		OnError: func(ctx context.Context, err error) error {
+			called = append(called, "hooks2")
+			return nil
+		},
+	}
+
+	composed := ComposeHooks(hooks1, hooks2)
+	err := composed.OnError(context.Background(), assert.AnError)
+
+	// Only hooks1 should be called; hooks2 is short-circuited.
+	assert.Equal(t, []string{"hooks1"}, called)
+	assert.Equal(t, interceptedErr, err)
 }
 
 func TestTranscriptEvent(t *testing.T) {
@@ -293,4 +346,208 @@ func TestMockSTT_ContextCancellation(t *testing.T) {
 	}
 
 	assert.LessOrEqual(t, count, 10, "stream should stop shortly after cancellation")
+}
+
+// --- AsFrameProcessor tests ---
+
+func TestAsFrameProcessor_AudioToText(t *testing.T) {
+	mock := &mockSTT{
+		transcribeFunc: func(ctx context.Context, audio []byte, opts ...Option) (string, error) {
+			return "hello world", nil
+		},
+	}
+
+	proc := AsFrameProcessor(mock)
+
+	in := make(chan voice.Frame, 5)
+	out := make(chan voice.Frame, 5)
+
+	in <- voice.NewAudioFrame([]byte{0x01, 0x02}, 16000)
+	close(in)
+
+	err := proc.Process(context.Background(), in, out)
+	require.NoError(t, err)
+
+	var frames []voice.Frame
+	for f := range out {
+		frames = append(frames, f)
+	}
+
+	require.Len(t, frames, 1)
+	assert.Equal(t, voice.FrameText, frames[0].Type)
+	assert.Equal(t, "hello world", frames[0].Text())
+}
+
+func TestAsFrameProcessor_NonAudioPassThrough(t *testing.T) {
+	mock := &mockSTT{}
+
+	proc := AsFrameProcessor(mock)
+
+	in := make(chan voice.Frame, 5)
+	out := make(chan voice.Frame, 5)
+
+	// Send a text frame and a control frame — both should pass through.
+	in <- voice.NewTextFrame("some text")
+	in <- voice.NewControlFrame(voice.SignalStart)
+	close(in)
+
+	err := proc.Process(context.Background(), in, out)
+	require.NoError(t, err)
+
+	var frames []voice.Frame
+	for f := range out {
+		frames = append(frames, f)
+	}
+
+	require.Len(t, frames, 2)
+	assert.Equal(t, voice.FrameText, frames[0].Type)
+	assert.Equal(t, "some text", frames[0].Text())
+	assert.Equal(t, voice.FrameControl, frames[1].Type)
+	assert.Equal(t, voice.SignalStart, frames[1].Signal())
+}
+
+func TestAsFrameProcessor_EmptyTranscription(t *testing.T) {
+	mock := &mockSTT{
+		transcribeFunc: func(ctx context.Context, audio []byte, opts ...Option) (string, error) {
+			return "", nil // empty transcription
+		},
+	}
+
+	proc := AsFrameProcessor(mock)
+
+	in := make(chan voice.Frame, 5)
+	out := make(chan voice.Frame, 5)
+
+	in <- voice.NewAudioFrame([]byte{0x01}, 16000)
+	close(in)
+
+	err := proc.Process(context.Background(), in, out)
+	require.NoError(t, err)
+
+	// No output frames should be produced for empty transcription.
+	var frames []voice.Frame
+	for f := range out {
+		frames = append(frames, f)
+	}
+
+	assert.Empty(t, frames)
+}
+
+func TestAsFrameProcessor_TranscribeError(t *testing.T) {
+	mock := &mockSTT{
+		transcribeFunc: func(ctx context.Context, audio []byte, opts ...Option) (string, error) {
+			return "", errors.New("transcription failed")
+		},
+	}
+
+	proc := AsFrameProcessor(mock)
+
+	in := make(chan voice.Frame, 5)
+	out := make(chan voice.Frame, 5)
+
+	in <- voice.NewAudioFrame([]byte{0x01}, 16000)
+	close(in)
+
+	err := proc.Process(context.Background(), in, out)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "stt: transcribe:")
+	assert.Contains(t, err.Error(), "transcription failed")
+}
+
+func TestAsFrameProcessor_ContextCancellation(t *testing.T) {
+	mock := &mockSTT{}
+
+	proc := AsFrameProcessor(mock)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	in := make(chan voice.Frame) // unbuffered so select blocks
+	out := make(chan voice.Frame, 5)
+
+	go func() {
+		time.Sleep(10 * time.Millisecond)
+		cancel()
+	}()
+
+	err := proc.Process(ctx, in, out)
+	assert.ErrorIs(t, err, context.Canceled)
+}
+
+func TestAsFrameProcessor_InputClosedReturnsNil(t *testing.T) {
+	mock := &mockSTT{}
+
+	proc := AsFrameProcessor(mock)
+
+	in := make(chan voice.Frame)
+	out := make(chan voice.Frame, 5)
+
+	// Close input immediately.
+	close(in)
+
+	err := proc.Process(context.Background(), in, out)
+	require.NoError(t, err)
+}
+
+func TestAsFrameProcessor_MultipleAudioFrames(t *testing.T) {
+	callCount := 0
+	mock := &mockSTT{
+		transcribeFunc: func(ctx context.Context, audio []byte, opts ...Option) (string, error) {
+			callCount++
+			return "text" + string(rune('0'+callCount)), nil
+		},
+	}
+
+	proc := AsFrameProcessor(mock)
+
+	in := make(chan voice.Frame, 5)
+	out := make(chan voice.Frame, 10)
+
+	in <- voice.NewAudioFrame([]byte{0x01}, 16000)
+	in <- voice.NewAudioFrame([]byte{0x02}, 16000)
+	in <- voice.NewAudioFrame([]byte{0x03}, 16000)
+	close(in)
+
+	err := proc.Process(context.Background(), in, out)
+	require.NoError(t, err)
+
+	var frames []voice.Frame
+	for f := range out {
+		frames = append(frames, f)
+	}
+
+	require.Len(t, frames, 3)
+	assert.Equal(t, "text1", frames[0].Text())
+	assert.Equal(t, "text2", frames[1].Text())
+	assert.Equal(t, "text3", frames[2].Text())
+}
+
+func TestAsFrameProcessor_WithOptions(t *testing.T) {
+	var capturedOpts []Option
+	mock := &mockSTT{
+		transcribeFunc: func(ctx context.Context, audio []byte, opts ...Option) (string, error) {
+			capturedOpts = opts
+			cfg := ApplyOptions(opts...)
+			return "lang:" + cfg.Language, nil
+		},
+	}
+
+	proc := AsFrameProcessor(mock, WithLanguage("fr"))
+
+	in := make(chan voice.Frame, 5)
+	out := make(chan voice.Frame, 5)
+
+	in <- voice.NewAudioFrame([]byte{0x01}, 16000)
+	close(in)
+
+	err := proc.Process(context.Background(), in, out)
+	require.NoError(t, err)
+
+	require.NotEmpty(t, capturedOpts)
+
+	var frames []voice.Frame
+	for f := range out {
+		frames = append(frames, f)
+	}
+
+	require.Len(t, frames, 1)
+	assert.Equal(t, "lang:fr", frames[0].Text())
 }

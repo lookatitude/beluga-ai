@@ -441,6 +441,285 @@ func TestInterrupt(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestStartWithOptions(t *testing.T) {
+	t.Run("with instructions and tools", func(t *testing.T) {
+		srv := newWSServer(t, func(conn *websocket.Conn) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			// Read session.update and verify it contains instructions and tools.
+			_, data, err := conn.Read(ctx)
+			if err != nil {
+				return
+			}
+			var msg map[string]any
+			json.Unmarshal(data, &msg)
+			assert.Equal(t, "session.update", msg["type"])
+
+			session := msg["session"].(map[string]any)
+			assert.Equal(t, "You are a helpful assistant", session["instructions"])
+			assert.Equal(t, "nova", session["voice"])
+
+			tools := session["tools"].([]any)
+			require.Len(t, tools, 1)
+			tool := tools[0].(map[string]any)
+			assert.Equal(t, "function", tool["type"])
+			assert.Equal(t, "get_weather", tool["name"])
+
+			time.Sleep(100 * time.Millisecond)
+			conn.Close(websocket.StatusNormalClosure, "")
+		})
+		defer srv.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+		e, err := New(s2s.Config{
+			Extra: map[string]any{
+				"api_key":  "sk-test",
+				"base_url": wsURL,
+			},
+		})
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		session, err := e.Start(ctx,
+			s2s.WithVoice("nova"),
+			s2s.WithInstructions("You are a helpful assistant"),
+			s2s.WithTools([]schema.ToolDefinition{
+				{
+					Name:        "get_weather",
+					Description: "Get weather for a city",
+					InputSchema: map[string]any{
+						"type": "object",
+						"properties": map[string]any{
+							"city": map[string]any{"type": "string"},
+						},
+					},
+				},
+			}),
+		)
+		require.NoError(t, err)
+		defer session.Close()
+	})
+}
+
+func TestReadLoopEvents(t *testing.T) {
+	t.Run("error event with message", func(t *testing.T) {
+		srv := newWSServer(t, func(conn *websocket.Conn) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			conn.Read(ctx) // session.update
+
+			event := map[string]any{
+				"type": "error",
+				"error": map[string]any{
+					"type":    "invalid_request_error",
+					"message": "rate limit exceeded",
+				},
+			}
+			data, _ := json.Marshal(event)
+			conn.Write(ctx, websocket.MessageText, data)
+
+			time.Sleep(100 * time.Millisecond)
+			conn.Close(websocket.StatusNormalClosure, "")
+		})
+		defer srv.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+		e, err := New(s2s.Config{
+			Extra: map[string]any{
+				"api_key":  "sk-test",
+				"base_url": wsURL,
+			},
+		})
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		session, err := e.Start(ctx)
+		require.NoError(t, err)
+		defer session.Close()
+
+		select {
+		case event := <-session.Recv():
+			assert.Equal(t, s2s.EventError, event.Type)
+			assert.Contains(t, event.Error.Error(), "rate limit exceeded")
+		case <-time.After(3 * time.Second):
+			t.Fatal("timeout waiting for error event")
+		}
+	})
+
+	t.Run("error event with nil error field", func(t *testing.T) {
+		srv := newWSServer(t, func(conn *websocket.Conn) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			conn.Read(ctx) // session.update
+
+			event := map[string]any{
+				"type": "error",
+			}
+			data, _ := json.Marshal(event)
+			conn.Write(ctx, websocket.MessageText, data)
+
+			time.Sleep(100 * time.Millisecond)
+			conn.Close(websocket.StatusNormalClosure, "")
+		})
+		defer srv.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+		e, err := New(s2s.Config{
+			Extra: map[string]any{
+				"api_key":  "sk-test",
+				"base_url": wsURL,
+			},
+		})
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		session, err := e.Start(ctx)
+		require.NoError(t, err)
+		defer session.Close()
+
+		select {
+		case event := <-session.Recv():
+			assert.Equal(t, s2s.EventError, event.Type)
+			assert.Contains(t, event.Error.Error(), "unknown error")
+		case <-time.After(3 * time.Second):
+			t.Fatal("timeout waiting for error event")
+		}
+	})
+
+	t.Run("connection error emits error event", func(t *testing.T) {
+		srv := newWSServer(t, func(conn *websocket.Conn) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			conn.Read(ctx) // session.update
+
+			// Close abruptly.
+			conn.Close(websocket.StatusInternalError, "server crash")
+		})
+		defer srv.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+		e, err := New(s2s.Config{
+			Extra: map[string]any{
+				"api_key":  "sk-test",
+				"base_url": wsURL,
+			},
+		})
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		session, err := e.Start(ctx)
+		require.NoError(t, err)
+		defer session.Close()
+
+		select {
+		case event := <-session.Recv():
+			assert.Equal(t, s2s.EventError, event.Type)
+			assert.Contains(t, event.Error.Error(), "openai realtime: read:")
+		case <-time.After(3 * time.Second):
+			t.Fatal("timeout waiting for connection error event")
+		}
+	})
+}
+
+func TestSendTextWriteError(t *testing.T) {
+	srv := newWSServer(t, func(conn *websocket.Conn) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		conn.Read(ctx) // session.update
+
+		time.Sleep(200 * time.Millisecond)
+		conn.Close(websocket.StatusNormalClosure, "")
+	})
+	defer srv.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+	e, err := New(s2s.Config{
+		Extra: map[string]any{
+			"api_key":  "sk-test",
+			"base_url": wsURL,
+		},
+	})
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	session, err := e.Start(ctx)
+	require.NoError(t, err)
+
+	// Close the session, then try to send text — should fail.
+	session.Close()
+	time.Sleep(50 * time.Millisecond)
+
+	err = session.SendText(ctx, "hello after close")
+	assert.Error(t, err)
+}
+
+func TestInterruptWriteError(t *testing.T) {
+	srv := newWSServer(t, func(conn *websocket.Conn) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		conn.Read(ctx) // session.update
+
+		time.Sleep(200 * time.Millisecond)
+		conn.Close(websocket.StatusNormalClosure, "")
+	})
+	defer srv.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+	e, err := New(s2s.Config{
+		Extra: map[string]any{
+			"api_key":  "sk-test",
+			"base_url": wsURL,
+		},
+	})
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	session, err := e.Start(ctx)
+	require.NoError(t, err)
+
+	// Close, then interrupt — should fail.
+	session.Close()
+	time.Sleep(50 * time.Millisecond)
+
+	err = session.Interrupt(ctx)
+	assert.Error(t, err)
+}
+
+func TestStartDialError(t *testing.T) {
+	e, err := New(s2s.Config{
+		Extra: map[string]any{
+			"api_key":  "sk-test",
+			"base_url": "ws://127.0.0.1:1",
+		},
+	})
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	_, err = e.Start(ctx)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "openai realtime: websocket dial:")
+}
+
 func TestRegistry(t *testing.T) {
 	t.Run("registered as openai_realtime", func(t *testing.T) {
 		names := s2s.List()
@@ -452,5 +731,21 @@ func TestRegistry(t *testing.T) {
 			}
 		}
 		assert.True(t, found, "expected 'openai_realtime' in registered providers: %v", names)
+	})
+
+	t.Run("duplicate registration panics", func(t *testing.T) {
+		assert.Panics(t, func() {
+			s2s.Register("openai_realtime", func(cfg s2s.Config) (s2s.S2S, error) {
+				return nil, nil
+			})
+		})
+	})
+
+	t.Run("factory creates engine", func(t *testing.T) {
+		engine, err := s2s.New("openai_realtime", s2s.Config{
+			Extra: map[string]any{"api_key": "sk-test"},
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, engine)
 	})
 }

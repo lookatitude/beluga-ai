@@ -295,3 +295,301 @@ func TestNewFromConfig(t *testing.T) {
 	assert.Equal(t, "my_ns", store.namespace)
 	assert.Equal(t, "my_doc", store.docType)
 }
+
+func TestNewFromConfig_RegistryFactory(t *testing.T) {
+	// Test that the init() registry factory works
+	vs, err := vectorstore.New("vespa", config.ProviderConfig{
+		BaseURL: "http://localhost:8080",
+	})
+	require.NoError(t, err)
+	assert.NotNil(t, vs)
+}
+
+func TestNewFromConfig_RegistryFactory_Error(t *testing.T) {
+	// Test that the init() registry factory returns error for missing base_url
+	_, err := vectorstore.New("vespa", config.ProviderConfig{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "base_url")
+}
+
+func TestStore_Search_WithDotProductStrategy(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		ranking := r.URL.Query().Get("ranking")
+		assert.Equal(t, "dotProduct(embedding)", ranking)
+
+		resp := map[string]any{
+			"root": map[string]any{
+				"children": []map[string]any{
+					{
+						"id":        "doc1",
+						"relevance": 0.95,
+						"fields":    map[string]any{"content": "test"},
+					},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2}, 5,
+		vectorstore.WithStrategy(vectorstore.DotProduct))
+	require.NoError(t, err)
+	assert.Len(t, results, 1)
+}
+
+func TestStore_Search_WithEuclideanStrategy(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		ranking := r.URL.Query().Get("ranking")
+		assert.Equal(t, "euclidean(embedding)", ranking)
+
+		resp := map[string]any{
+			"root": map[string]any{
+				"children": []map[string]any{
+					{
+						"id":        "doc1",
+						"relevance": 0.85,
+						"fields":    map[string]any{"content": "test"},
+					},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2}, 5,
+		vectorstore.WithStrategy(vectorstore.Euclidean))
+	require.NoError(t, err)
+	assert.Len(t, results, 1)
+}
+
+func TestStore_Search_WithFilter(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		yql := r.URL.Query().Get("yql")
+		assert.Contains(t, yql, `category = "A"`)
+		assert.Contains(t, yql, `priority = "high"`)
+
+		resp := map[string]any{
+			"root": map[string]any{
+				"children": []map[string]any{
+					{
+						"id":        "doc1",
+						"relevance": 0.95,
+						"fields": map[string]any{
+							"content":  "filtered",
+							"category": "A",
+							"priority": "high",
+						},
+					},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2}, 5,
+		vectorstore.WithFilter(map[string]any{"category": "A", "priority": "high"}))
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, "doc1", results[0].ID)
+}
+
+func TestStore_Search_InvalidJSON(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{invalid json`))
+	})
+	defer srv.Close()
+
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2}, 5)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unmarshal")
+}
+
+func TestStore_Search_NoMetadata(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]any{
+			"root": map[string]any{
+				"children": []map[string]any{
+					{
+						"id":        "doc1",
+						"relevance": 0.95,
+						"fields": map[string]any{
+							"content":   "only content",
+							"embedding": []float64{0.1, 0.2},
+						},
+					},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2}, 5)
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, "only content", results[0].Content)
+	assert.Nil(t, results[0].Metadata)
+}
+
+func TestStore_doPut_MarshalError(t *testing.T) {
+	store := New("http://localhost:8080")
+	// Use a value that cannot be marshaled (e.g., a channel)
+	invalidBody := map[string]any{
+		"fields": map[string]any{
+			"invalid": make(chan int),
+		},
+	}
+	err := store.doPut(context.Background(), "/test", invalidBody)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "marshal")
+}
+
+func TestFloat32SliceToFloat64(t *testing.T) {
+	tests := []struct {
+		name  string
+		input []float32
+	}{
+		{name: "empty slice", input: []float32{}},
+		{name: "single value", input: []float32{0.5}},
+		{name: "multiple values", input: []float32{0.125, 0.25, 0.5}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := float32SliceToFloat64(tt.input)
+			assert.Len(t, got, len(tt.input))
+			for i, v := range tt.input {
+				assert.Equal(t, float64(v), got[i])
+			}
+		})
+	}
+}
+
+func TestFormatVectorParam(t *testing.T) {
+	tests := []struct {
+		name  string
+		input []float32
+		want  string
+	}{
+		{
+			name:  "empty vector",
+			input: []float32{},
+			want:  "[]",
+		},
+		{
+			name:  "single value",
+			input: []float32{0.5},
+			want:  "[0.5]",
+		},
+		{
+			name:  "multiple values",
+			input: []float32{0.1, 0.2, 0.3},
+			want:  "[0.1,0.2,0.3]",
+		},
+		{
+			name:  "negative values",
+			input: []float32{-0.1, 0.2, -0.3},
+			want:  "[-0.1,0.2,-0.3]",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := formatVectorParam(tt.input)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestDocPath(t *testing.T) {
+	tests := []struct {
+		name      string
+		namespace string
+		docType   string
+		id        string
+		want      string
+	}{
+		{
+			name:      "simple id",
+			namespace: "ns1",
+			docType:   "doc1",
+			id:        "abc123",
+			want:      "/document/v1/ns1/doc1/docid/abc123",
+		},
+		{
+			name:      "id with special chars",
+			namespace: "ns1",
+			docType:   "doc1",
+			id:        "id with spaces",
+			want:      "/document/v1/ns1/doc1/docid/id%20with%20spaces",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			store := New("http://localhost:8080",
+				WithNamespace(tt.namespace),
+				WithDocType(tt.docType),
+			)
+			got := store.docPath(tt.id)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestStore_Search_MissingContentField(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]any{
+			"root": map[string]any{
+				"children": []map[string]any{
+					{
+						"id":        "doc1",
+						"relevance": 0.95,
+						"fields": map[string]any{
+							"other_field": "value",
+						},
+					},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2}, 5)
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, "", results[0].Content)
+	assert.Equal(t, "value", results[0].Metadata["other_field"])
+}
+
+func TestStore_Delete_HTTPClientError(t *testing.T) {
+	// Use a mock client that returns an error
+	store := New("http://localhost:8080")
+	store.client = &errorHTTPClient{err: assert.AnError}
+
+	err := store.Delete(context.Background(), []string{"doc1"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "delete")
+}
+
+func TestStore_Add_HTTPClientError(t *testing.T) {
+	// Use a mock client that returns an error
+	store := New("http://localhost:8080")
+	store.client = &errorHTTPClient{err: assert.AnError}
+
+	err := store.Add(context.Background(),
+		[]schema.Document{{ID: "doc1", Content: "test"}},
+		[][]float32{{0.1, 0.2}})
+	require.Error(t, err)
+}
+
+// errorHTTPClient is a mock client that always returns an error
+type errorHTTPClient struct {
+	err error
+}
+
+func (c *errorHTTPClient) Do(req *http.Request) (*http.Response, error) {
+	return nil, c.err
+}

@@ -164,3 +164,106 @@ func TestAttrsToOTel(t *testing.T) {
 		})
 	}
 }
+
+func TestInitTracer_WithoutExporter(t *testing.T) {
+	// InitTracer without exporter should succeed (no-op)
+	shutdown, err := InitTracer("no-exporter-service")
+	if err != nil {
+		t.Fatalf("InitTracer without exporter: %v", err)
+	}
+	if shutdown == nil {
+		t.Fatal("expected non-nil shutdown func")
+	}
+	shutdown()
+
+	// Verify tracer works
+	ctx, span := StartSpan(context.Background(), "test-span", nil)
+	if ctx == nil {
+		t.Fatal("expected non-nil context")
+	}
+	span.End()
+}
+
+func TestInitTracer_WithBatchedExport(t *testing.T) {
+	// Test batched export (default when syncExport is false)
+	exporter := tracetest.NewInMemoryExporter()
+	shutdown, err := InitTracer("batched-service",
+		WithSpanExporter(exporter),
+		// Omit WithSyncExport() to test batched path
+	)
+	if err != nil {
+		t.Fatalf("InitTracer with batched export: %v", err)
+	}
+	defer shutdown()
+
+	_, span := StartSpan(context.Background(), "batched-span", nil)
+	span.End()
+
+	// Note: batched spans may not be available immediately,
+	// but we're just testing that the code path doesn't error
+}
+
+func TestInitTracer_MultipleInits(t *testing.T) {
+	// Test multiple InitTracer calls (should reinit)
+	exporter1 := tracetest.NewInMemoryExporter()
+	shutdown1, err := InitTracer("service-1", WithSpanExporter(exporter1), WithSyncExport())
+	if err != nil {
+		t.Fatalf("first InitTracer: %v", err)
+	}
+	shutdown1()
+
+	// Second init with different service name
+	exporter2 := tracetest.NewInMemoryExporter()
+	shutdown2, err := InitTracer("service-2", WithSpanExporter(exporter2), WithSyncExport())
+	if err != nil {
+		t.Fatalf("second InitTracer: %v", err)
+	}
+	defer shutdown2()
+
+	// Verify tracer works after reinit
+	ctx, span := StartSpan(context.Background(), "after-reinit", Attrs{
+		AttrAgentName: "test",
+	})
+	_ = ctx // ctx carries span for downstream propagation
+	span.End()
+
+	spans := exporter2.GetSpans()
+	if len(spans) != 1 {
+		t.Errorf("expected 1 span in second exporter, got %d", len(spans))
+	}
+}
+
+func TestInitTracer_AllOptions(t *testing.T) {
+	// Test all options together
+	exporter := tracetest.NewInMemoryExporter()
+	shutdown, err := InitTracer("full-options-service",
+		WithSpanExporter(exporter),
+		WithSampler(sdktrace.AlwaysSample()),
+		WithSyncExport(),
+	)
+	if err != nil {
+		t.Fatalf("InitTracer with all options: %v", err)
+	}
+	defer shutdown()
+
+	ctx, span := StartSpan(context.Background(), "full-test", Attrs{
+		AttrSystem:        "test-system",
+		AttrOperationName: "test-op",
+		AttrAgentName:     "test-agent",
+	})
+	_ = ctx // ctx carries span for downstream propagation
+	span.SetAttributes(Attrs{
+		AttrInputTokens:  100,
+		AttrOutputTokens: 50,
+	})
+	span.SetStatus(StatusOK, "success")
+	span.End()
+
+	spans := exporter.GetSpans()
+	if len(spans) != 1 {
+		t.Fatalf("expected 1 span, got %d", len(spans))
+	}
+	if spans[0].Name != "full-test" {
+		t.Errorf("expected span name 'full-test', got %q", spans[0].Name)
+	}
+}

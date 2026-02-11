@@ -3,6 +3,7 @@ package lmnt
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -148,6 +149,42 @@ func TestSynthesize(t *testing.T) {
 		_, err = e.Synthesize(ctx, "test")
 		require.Error(t, err)
 	})
+
+	t.Run("with format option", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			body, _ := io.ReadAll(r.Body)
+			var req synthesizeRequest
+			json.Unmarshal(body, &req)
+			assert.Equal(t, "wav", req.Format)
+			w.Write([]byte("audio"))
+		}))
+		defer srv.Close()
+
+		e, err := New(tts.Config{
+			Extra: map[string]any{
+				"api_key":  "test-key",
+				"base_url": srv.URL,
+			},
+		})
+		require.NoError(t, err)
+
+		_, err = e.Synthesize(context.Background(), "test", tts.WithFormat(tts.FormatWAV))
+		require.NoError(t, err)
+	})
+
+	t.Run("connection error", func(t *testing.T) {
+		e, err := New(tts.Config{
+			Extra: map[string]any{
+				"api_key":  "test-key",
+				"base_url": "http://localhost:1",
+			},
+		})
+		require.NoError(t, err)
+
+		_, err = e.Synthesize(context.Background(), "test")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "request failed")
+	})
 }
 
 func TestSynthesizeStream(t *testing.T) {
@@ -208,6 +245,105 @@ func TestSynthesizeStream(t *testing.T) {
 		}
 		assert.Equal(t, 1, count)
 	})
+
+	t.Run("text stream error", func(t *testing.T) {
+		e, err := New(tts.Config{
+			Extra: map[string]any{
+				"api_key":  "test-key",
+				"base_url": "http://localhost:1",
+			},
+		})
+		require.NoError(t, err)
+
+		textStream := func(yield func(string, error) bool) {
+			yield("", fmt.Errorf("stream error"))
+		}
+
+		for _, err := range e.SynthesizeStream(context.Background(), textStream) {
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "stream error")
+			break
+		}
+	})
+
+	t.Run("context cancelled", func(t *testing.T) {
+		e, err := New(tts.Config{
+			Extra: map[string]any{
+				"api_key":  "test-key",
+				"base_url": "http://localhost:1",
+			},
+		})
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		textStream := func(yield func(string, error) bool) {
+			yield("hello", nil)
+		}
+
+		for _, err := range e.SynthesizeStream(ctx, textStream) {
+			require.Error(t, err)
+			break
+		}
+	})
+
+	t.Run("synthesis error propagated", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("server error"))
+		}))
+		defer srv.Close()
+
+		e, err := New(tts.Config{
+			Extra: map[string]any{
+				"api_key":  "test-key",
+				"base_url": srv.URL,
+			},
+		})
+		require.NoError(t, err)
+
+		textStream := func(yield func(string, error) bool) {
+			yield("hello", nil)
+		}
+
+		for _, err := range e.SynthesizeStream(context.Background(), textStream) {
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "500")
+			break
+		}
+	})
+
+	t.Run("consumer stops early", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("audio"))
+		}))
+		defer srv.Close()
+
+		e, err := New(tts.Config{
+			Extra: map[string]any{
+				"api_key":  "test-key",
+				"base_url": srv.URL,
+			},
+		})
+		require.NoError(t, err)
+
+		textStream := func(yield func(string, error) bool) {
+			if !yield("first", nil) {
+				return
+			}
+			yield("second", nil)
+		}
+
+		var count int
+		for chunk, err := range e.SynthesizeStream(context.Background(), textStream) {
+			require.NoError(t, err)
+			assert.NotEmpty(t, chunk)
+			count++
+			break
+		}
+		assert.Equal(t, 1, count)
+	})
 }
 
 func TestRegistry(t *testing.T) {
@@ -221,5 +357,13 @@ func TestRegistry(t *testing.T) {
 			}
 		}
 		assert.True(t, found, "expected 'lmnt' in registered providers: %v", names)
+	})
+
+	t.Run("create via registry", func(t *testing.T) {
+		e, err := tts.New("lmnt", tts.Config{
+			Extra: map[string]any{"api_key": "registry-key"},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, e)
 	})
 }

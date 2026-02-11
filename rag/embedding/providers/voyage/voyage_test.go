@@ -295,3 +295,66 @@ func TestEmbed_OutOfOrderIndices(t *testing.T) {
 	assert.InDelta(t, float32(0.1), vecs[0][0], 0.001)
 	assert.InDelta(t, float32(0.4), vecs[1][0], 0.001)
 }
+
+func TestEmbedSingle_ErrorFromEmbed(t *testing.T) {
+	ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusPaymentRequired)
+		fmt.Fprint(w, `{"message":"insufficient credits"}`)
+	})
+
+	emb, err := New(config.ProviderConfig{
+		APIKey:  "test-key",
+		BaseURL: ts.URL,
+	})
+	require.NoError(t, err)
+
+	_, err = emb.EmbedSingle(context.Background(), "hello")
+	assert.Error(t, err)
+}
+
+func TestNew_CustomTimeout(t *testing.T) {
+	emb, err := New(config.ProviderConfig{
+		APIKey:  "test-key",
+		Timeout: 30000000000,
+	})
+	require.NoError(t, err)
+	assert.NotNil(t, emb)
+}
+
+func TestNew_EmptyInputType(t *testing.T) {
+	emb, err := New(config.ProviderConfig{
+		APIKey: "test-key",
+		Options: map[string]any{
+			"input_type": "",
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "document", emb.inputType)
+}
+
+func TestEmbed_IndexOutOfBounds(t *testing.T) {
+	ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]any{
+			"object": "list",
+			"data": []map[string]any{
+				{"object": "embedding", "embedding": []float32{0.1, 0.2}, "index": 0},
+				{"object": "embedding", "embedding": []float32{0.3, 0.4}, "index": 99},
+			},
+			"model": "voyage-2",
+			"usage": map[string]any{"total_tokens": 5},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	emb, err := New(config.ProviderConfig{
+		APIKey:  "test-key",
+		BaseURL: ts.URL,
+	})
+	require.NoError(t, err)
+
+	vecs, err := emb.Embed(context.Background(), []string{"first", "second"})
+	require.NoError(t, err)
+	require.Len(t, vecs, 2)
+	assert.NotNil(t, vecs[0])
+}

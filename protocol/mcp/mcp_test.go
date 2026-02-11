@@ -3,8 +3,12 @@ package mcp
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tool"
@@ -348,5 +352,254 @@ func TestNewServer_Defaults(t *testing.T) {
 	}
 	if srv.version != "2.0.0" {
 		t.Errorf("expected version '2.0.0', got %q", srv.version)
+	}
+}
+
+// --- Client error path tests ---
+
+func TestClient_Initialize_ConnectionError(t *testing.T) {
+	client := NewClient("http://127.0.0.1:1")
+	_, err := client.Initialize(context.Background())
+	if err == nil {
+		t.Fatal("expected error for connection failure")
+	}
+}
+
+func TestClient_ListTools_ConnectionError(t *testing.T) {
+	client := NewClient("http://127.0.0.1:1")
+	_, err := client.ListTools(context.Background())
+	if err == nil {
+		t.Fatal("expected error for connection failure")
+	}
+}
+
+func TestClient_CallTool_ConnectionError(t *testing.T) {
+	client := NewClient("http://127.0.0.1:1")
+	_, err := client.CallTool(context.Background(), "echo", nil)
+	if err == nil {
+		t.Fatal("expected error for connection failure")
+	}
+}
+
+func TestClient_CallTool_DecodeError(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("not json"))
+	}))
+	defer ts.Close()
+
+	client := NewClient(ts.URL)
+	_, err := client.CallTool(context.Background(), "echo", nil)
+	if err == nil {
+		t.Fatal("expected error for invalid JSON response")
+	}
+}
+
+func TestFromMCP_InitializeError(t *testing.T) {
+	_, err := FromMCP(context.Background(), "http://127.0.0.1:1")
+	if err == nil {
+		t.Fatal("expected error for connection failure")
+	}
+}
+
+func TestFromMCP_ListToolsError(t *testing.T) {
+	// Server that responds to initialize but fails on tools/list.
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req Request
+		json.NewDecoder(r.Body).Decode(&req)
+
+		if req.Method == "initialize" {
+			resp := Response{
+				JSONRPC: "2.0",
+				ID:      req.ID,
+				Result: InitializeResult{
+					ProtocolVersion: "2025-03-26",
+					Capabilities:    ServerCapabilities{Tools: &ToolCapability{}},
+				},
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(resp)
+		} else {
+			resp := Response{
+				JSONRPC: "2.0",
+				ID:      req.ID,
+				Error:   &RPCError{Code: CodeInternalError, Message: "list failed"},
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(resp)
+		}
+	}))
+	defer ts.Close()
+
+	_, err := FromMCP(context.Background(), ts.URL)
+	if err == nil {
+		t.Fatal("expected error for ListTools failure")
+	}
+}
+
+// --- Server error path tests ---
+
+func TestServer_InvalidJSON(t *testing.T) {
+	_, ts := setupTestServer()
+	defer ts.Close()
+
+	resp, err := http.Post(ts.URL, "application/json", strings.NewReader("not json"))
+	if err != nil {
+		t.Fatalf("POST: %v", err)
+	}
+	defer resp.Body.Close()
+
+	var rpcResp Response
+	json.NewDecoder(resp.Body).Decode(&rpcResp)
+	if rpcResp.Error == nil || rpcResp.Error.Code != CodeParseError {
+		t.Errorf("expected parse error, got %+v", rpcResp.Error)
+	}
+}
+
+func TestServer_InvalidJSONRPCVersion(t *testing.T) {
+	_, ts := setupTestServer()
+	defer ts.Close()
+
+	body, _ := json.Marshal(Request{JSONRPC: "1.0", ID: 1, Method: "initialize"})
+	resp, err := http.Post(ts.URL, "application/json", strings.NewReader(string(body)))
+	if err != nil {
+		t.Fatalf("POST: %v", err)
+	}
+	defer resp.Body.Close()
+
+	var rpcResp Response
+	json.NewDecoder(resp.Body).Decode(&rpcResp)
+	if rpcResp.Error == nil || rpcResp.Error.Code != CodeInvalidRequest {
+		t.Errorf("expected invalid request error, got %+v", rpcResp.Error)
+	}
+}
+
+func TestServer_ToolsCall_ExecuteError(t *testing.T) {
+	srv := NewServer("test", "1.0.0")
+	srv.AddTool(&mockTool{
+		name:        "errortool",
+		description: "Always errors",
+		inputSchema: map[string]any{"type": "object"},
+		executeFn: func(_ context.Context, _ map[string]any) (*tool.Result, error) {
+			return nil, fmt.Errorf("execution failed")
+		},
+	})
+	ts := httptest.NewServer(srv.Handler())
+	defer ts.Close()
+
+	client := NewClient(ts.URL)
+	_, err := client.CallTool(context.Background(), "errortool", nil)
+	if err == nil {
+		t.Fatal("expected error for tool execution failure")
+	}
+}
+
+func TestServer_ToolsCall_InvalidParams(t *testing.T) {
+	_, ts := setupTestServer()
+	defer ts.Close()
+
+	// Send a tools/call with params that can't be unmarshaled to ToolCallParams.
+	body, _ := json.Marshal(Request{
+		JSONRPC: "2.0",
+		ID:      1,
+		Method:  "tools/call",
+		Params:  "not an object",
+	})
+	resp, err := http.Post(ts.URL, "application/json", strings.NewReader(string(body)))
+	if err != nil {
+		t.Fatalf("POST: %v", err)
+	}
+	defer resp.Body.Close()
+
+	var rpcResp Response
+	json.NewDecoder(resp.Body).Decode(&rpcResp)
+	if rpcResp.Error == nil || rpcResp.Error.Code != CodeInvalidParams {
+		t.Errorf("expected invalid params error, got %+v", rpcResp.Error)
+	}
+}
+
+func TestServer_Serve_ContextCancel(t *testing.T) {
+	srv := NewServer("test", "1.0.0")
+	srv.AddTool(newTestTool())
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- srv.Serve(ctx, "127.0.0.1:0")
+	}()
+
+	time.Sleep(50 * time.Millisecond)
+	cancel()
+
+	select {
+	case err := <-errCh:
+		if err != context.Canceled {
+			t.Errorf("expected context.Canceled, got %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("Serve did not return after context cancel")
+	}
+}
+
+func TestServer_Serve_InvalidAddr(t *testing.T) {
+	srv := NewServer("test", "1.0.0")
+	err := srv.Serve(context.Background(), "256.256.256.256:0")
+	if err == nil {
+		t.Fatal("expected error for invalid address")
+	}
+}
+
+func TestMcpTool_Execute_NonTextContent(t *testing.T) {
+	// Server that returns non-text content items.
+	srv := NewServer("test", "1.0.0")
+	srv.AddTool(&mockTool{
+		name:        "binary",
+		description: "Returns non-text content",
+		inputSchema: map[string]any{"type": "object"},
+		executeFn: func(_ context.Context, _ map[string]any) (*tool.Result, error) {
+			return &tool.Result{
+				Content: []schema.ContentPart{
+					schema.TextPart{Text: "text result"},
+				},
+				IsError: false,
+			}, nil
+		},
+	})
+	ts := httptest.NewServer(srv.Handler())
+	defer ts.Close()
+
+	tools, err := FromMCP(context.Background(), ts.URL)
+	if err != nil {
+		t.Fatalf("FromMCP: %v", err)
+	}
+
+	result, err := tools[0].Execute(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if len(result.Content) != 1 {
+		t.Errorf("expected 1 content part, got %d", len(result.Content))
+	}
+}
+
+func TestClient_RpcError(t *testing.T) {
+	// Server that returns an RPC error for all methods.
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req Request
+		json.NewDecoder(r.Body).Decode(&req)
+		resp := Response{
+			JSONRPC: "2.0",
+			ID:      req.ID,
+			Error:   &RPCError{Code: CodeInternalError, Message: "internal error"},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer ts.Close()
+
+	client := NewClient(ts.URL)
+	_, err := client.Initialize(context.Background())
+	if err == nil {
+		t.Fatal("expected error for RPC error response")
 	}
 }

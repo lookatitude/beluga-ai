@@ -253,3 +253,66 @@ func TestRegistry_Integration(t *testing.T) {
 func TestInterfaceCompliance(t *testing.T) {
 	var _ embedding.Embedder = (*Embedder)(nil)
 }
+
+func TestEmbedSingle_ErrorFromEmbed(t *testing.T) {
+	ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"message":"invalid input"}`)
+	})
+
+	emb, err := New(config.ProviderConfig{
+		APIKey:  "test-key",
+		BaseURL: ts.URL,
+	})
+	require.NoError(t, err)
+
+	_, err = emb.EmbedSingle(context.Background(), "hello")
+	assert.Error(t, err)
+}
+
+func TestNew_CustomTimeout(t *testing.T) {
+	emb, err := New(config.ProviderConfig{
+		APIKey:  "test-key",
+		Timeout: 30000000000,
+	})
+	require.NoError(t, err)
+	assert.NotNil(t, emb)
+}
+
+func TestNew_CustomModel(t *testing.T) {
+	emb, err := New(config.ProviderConfig{
+		APIKey: "test-key",
+		Model:  "mistral-embed",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "mistral-embed", emb.model)
+	assert.Equal(t, 1024, emb.Dimensions())
+}
+
+func TestEmbed_IndexOutOfBounds(t *testing.T) {
+	ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]any{
+			"id":     "embd-123",
+			"object": "list",
+			"data": []map[string]any{
+				{"object": "embedding", "embedding": []float32{0.1, 0.2}, "index": 0},
+				{"object": "embedding", "embedding": []float32{0.3, 0.4}, "index": 99},
+			},
+			"model": "mistral-embed",
+			"usage": map[string]any{"prompt_tokens": 5, "total_tokens": 5},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	emb, err := New(config.ProviderConfig{
+		APIKey:  "test-key",
+		BaseURL: ts.URL,
+	})
+	require.NoError(t, err)
+
+	vecs, err := emb.Embed(context.Background(), []string{"first", "second"})
+	require.NoError(t, err)
+	require.Len(t, vecs, 2)
+	assert.NotNil(t, vecs[0])
+}

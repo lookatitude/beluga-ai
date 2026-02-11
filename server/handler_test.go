@@ -189,6 +189,32 @@ func TestHandleStream(t *testing.T) {
 			t.Errorf("expected final 'event: done' in response body, got:\n%s", respBody)
 		}
 	})
+
+	t.Run("event with empty type defaults to message", func(t *testing.T) {
+		a := &mockAgent{
+			id: "test",
+			events: []agent.Event{
+				{Type: "", Text: "some text", AgentID: "test"},
+			},
+		}
+		handler := NewAgentHandler(a)
+
+		body := `{"input":"hi"}`
+		req := httptest.NewRequest(http.MethodPost, "/stream", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		handler.ServeHTTP(w, req)
+
+		respBody := w.Body.String()
+		// Should have "event: message" due to default.
+		if !strings.Contains(respBody, "event: message") {
+			t.Errorf("expected 'event: message' for empty event type, got:\n%s", respBody)
+		}
+		if !strings.Contains(respBody, "some text") {
+			t.Errorf("expected 'some text' in response body, got:\n%s", respBody)
+		}
+	})
 }
 
 // errorStreamAgent emits a single error from Stream.

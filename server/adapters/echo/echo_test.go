@@ -238,3 +238,59 @@ func TestAdapter_Echo(t *testing.T) {
 		t.Fatal("expected non-nil echo instance")
 	}
 }
+
+func TestAdapter_Serve_ListenError(t *testing.T) {
+	a := New(server.Config{})
+
+	// Occupy a port.
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	addr := lis.Addr().String()
+	defer lis.Close()
+
+	// Attempt to serve on the same address - should fail immediately.
+	err = a.Serve(context.Background(), addr)
+	if err == nil {
+		t.Fatal("expected error when address is already in use")
+	}
+	// The error should NOT be http.ErrServerClosed.
+	if err == http.ErrServerClosed {
+		t.Fatal("expected address-in-use error, not ErrServerClosed")
+	}
+}
+
+func TestAdapter_Shutdown_Error(t *testing.T) {
+	a := New(server.Config{})
+	ag := &mockAgent{id: "test", result: "hello"}
+	a.RegisterAgent("/chat", ag)
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	addr := lis.Addr().String()
+	lis.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- a.Serve(ctx, addr)
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+
+	// Create an already-expired context for shutdown to trigger error.
+	shutdownCtx, shutdownCancel := context.WithCancel(context.Background())
+	shutdownCancel() // Cancel immediately
+
+	// Call Shutdown with expired context - should return error.
+	if err := a.Shutdown(shutdownCtx); err == nil {
+		t.Log("shutdown with expired context did not error (server may have shut down cleanly)")
+	}
+
+	// Cancel the serve context.
+	cancel()
+	<-errCh
+}

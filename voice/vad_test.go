@@ -172,3 +172,105 @@ func TestComputeRMS(t *testing.T) {
 		t.Errorf("computeRMS(nil) = %f, want 0", rms)
 	}
 }
+
+func TestRegisterVADPanicEmptyName(t *testing.T) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Fatal("RegisterVAD with empty name should panic")
+		}
+		msg, ok := r.(string)
+		if !ok || msg != "voice: RegisterVAD called with empty name" {
+			t.Errorf("panic message = %q, want empty name message", msg)
+		}
+	}()
+	RegisterVAD("", func(_ map[string]any) (VAD, error) { return nil, nil })
+}
+
+func TestRegisterVADPanicNilFactory(t *testing.T) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Fatal("RegisterVAD with nil factory should panic")
+		}
+		msg, ok := r.(string)
+		if !ok || msg != "voice: RegisterVAD called with nil factory for test-nil" {
+			t.Errorf("panic message = %q, want nil factory message", msg)
+		}
+	}()
+	RegisterVAD("test-nil", nil)
+}
+
+func TestRegisterVADPanicDuplicate(t *testing.T) {
+	// First register a unique name.
+	uniqueName := "test-dup-vad"
+	RegisterVAD(uniqueName, func(_ map[string]any) (VAD, error) {
+		return NewEnergyVAD(EnergyVADConfig{}), nil
+	})
+
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Fatal("RegisterVAD with duplicate name should panic")
+		}
+		msg, ok := r.(string)
+		if !ok || msg != "voice: RegisterVAD called twice for "+uniqueName {
+			t.Errorf("panic message = %q, want duplicate message", msg)
+		}
+	}()
+	// Register same name again → should panic.
+	RegisterVAD(uniqueName, func(_ map[string]any) (VAD, error) {
+		return NewEnergyVAD(EnergyVADConfig{}), nil
+	})
+}
+
+func TestNewVADEnergyWithIntThreshold(t *testing.T) {
+	// The init() energy factory handles int threshold values.
+	vad, err := NewVAD("energy", map[string]any{"threshold": 2000})
+	if err != nil {
+		t.Fatalf("NewVAD('energy') error = %v", err)
+	}
+	if vad == nil {
+		t.Fatal("NewVAD('energy') returned nil")
+	}
+}
+
+func TestNewVADEnergyWithNoConfig(t *testing.T) {
+	// The init() energy factory with nil config uses defaults.
+	vad, err := NewVAD("energy", map[string]any{})
+	if err != nil {
+		t.Fatalf("NewVAD('energy') error = %v", err)
+	}
+	if vad == nil {
+		t.Fatal("NewVAD('energy') returned nil")
+	}
+}
+
+func TestEnergyVADOngoingSpeech(t *testing.T) {
+	// Test the ongoing speech path: two consecutive loud frames.
+	vad := NewEnergyVAD(EnergyVADConfig{Threshold: 500})
+	ctx := context.Background()
+
+	loud := generateSinePCM(480, 5000, 440, 16000)
+
+	// First call: silence → speech → SpeechStart
+	r1, err := vad.DetectActivity(ctx, loud)
+	if err != nil {
+		t.Fatalf("DetectActivity() error = %v", err)
+	}
+	if r1.EventType != VADSpeechStart {
+		t.Errorf("first call: EventType = %q, want %q", r1.EventType, VADSpeechStart)
+	}
+
+	// Second call: speech → speech → ongoing speech (still SpeechStart)
+	r2, err := vad.DetectActivity(ctx, loud)
+	if err != nil {
+		t.Fatalf("DetectActivity() error = %v", err)
+	}
+	if r2.EventType != VADSpeechStart {
+		t.Errorf("second call: EventType = %q, want %q (ongoing)", r2.EventType, VADSpeechStart)
+	}
+	if !r2.IsSpeech {
+		t.Error("second call: IsSpeech should be true for ongoing speech")
+	}
+}

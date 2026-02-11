@@ -2,6 +2,7 @@ package hitl
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 )
@@ -369,4 +370,239 @@ type testNotifier struct {
 
 func (n *testNotifier) Notify(ctx context.Context, req InteractionRequest) error {
 	return n.fn(ctx, req)
+}
+
+func TestRegister_EmptyName(t *testing.T) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Fatal("expected panic for empty name")
+		}
+	}()
+	Register("", func(cfg Config) (Manager, error) { return nil, nil })
+}
+
+func TestRegister_NilFactory(t *testing.T) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Fatal("expected panic for nil factory")
+		}
+	}()
+	Register("nil-factory-test", nil)
+}
+
+func TestRegister_Duplicate(t *testing.T) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Fatal("expected panic for duplicate registration")
+		}
+	}()
+	// "default" is already registered in init().
+	Register("default", func(cfg Config) (Manager, error) { return nil, nil })
+}
+
+func TestShouldApprove_UnknownActionRisk(t *testing.T) {
+	mgr := NewManager()
+	mgr.AddPolicy(ApprovalPolicy{
+		ToolPattern:   "test_*",
+		MinConfidence: 0.5,
+		MaxRiskLevel:  RiskReadOnly,
+	})
+
+	// Use an unknown risk level for the action.
+	approved, err := mgr.ShouldApprove(context.Background(), "test_tool", 0.9, RiskLevel("unknown_risk"))
+	if err != nil {
+		t.Fatalf("ShouldApprove: %v", err)
+	}
+	if approved {
+		t.Error("expected false for unknown action risk level")
+	}
+}
+
+func TestShouldApprove_UnknownPolicyRisk(t *testing.T) {
+	mgr := NewManager()
+	mgr.AddPolicy(ApprovalPolicy{
+		ToolPattern:   "test_*",
+		MinConfidence: 0.5,
+		MaxRiskLevel:  RiskLevel("custom_risk"),
+	})
+
+	// Known action risk, unknown policy risk.
+	approved, err := mgr.ShouldApprove(context.Background(), "test_tool", 0.9, RiskReadOnly)
+	if err != nil {
+		t.Fatalf("ShouldApprove: %v", err)
+	}
+	if approved {
+		t.Error("expected false for unknown policy risk level")
+	}
+}
+
+func TestRequestInteraction_OnRequestHookError(t *testing.T) {
+	mgr := NewManager(
+		WithManagerHooks(Hooks{
+			OnRequest: func(_ context.Context, _ InteractionRequest) error {
+				return fmt.Errorf("request blocked by hook")
+			},
+		}),
+	)
+
+	_, err := mgr.RequestInteraction(context.Background(), InteractionRequest{
+		ID:       "blocked-req",
+		ToolName: "test",
+	})
+	if err == nil {
+		t.Fatal("expected error from OnRequest hook")
+	}
+}
+
+func TestRequestInteraction_AutoApproveWithOnApproveHook(t *testing.T) {
+	var approved bool
+	mgr := NewManager(
+		WithManagerHooks(Hooks{
+			OnApprove: func(_ context.Context, _ InteractionRequest, _ InteractionResponse) {
+				approved = true
+			},
+		}),
+	)
+	mgr.AddPolicy(ApprovalPolicy{
+		ToolPattern:   "safe_*",
+		MinConfidence: 0.5,
+		MaxRiskLevel:  RiskReadOnly,
+	})
+
+	resp, err := mgr.RequestInteraction(context.Background(), InteractionRequest{
+		ToolName:   "safe_read",
+		Confidence: 0.9,
+		RiskLevel:  RiskReadOnly,
+	})
+	if err != nil {
+		t.Fatalf("RequestInteraction: %v", err)
+	}
+	if resp.Decision != DecisionApprove {
+		t.Errorf("expected approve, got %s", resp.Decision)
+	}
+	if !approved {
+		t.Error("expected OnApprove hook to be called for auto-approve")
+	}
+}
+
+func TestRequestInteraction_NotifierError(t *testing.T) {
+	var onErrorCalled bool
+	mgr := NewManager(
+		WithNotifier(&testNotifier{fn: func(_ context.Context, _ InteractionRequest) error {
+			return fmt.Errorf("notify failed")
+		}}),
+		WithTimeout(50*time.Millisecond),
+		WithManagerHooks(Hooks{
+			OnError: func(_ context.Context, err error) error {
+				onErrorCalled = true
+				return nil // suppress
+			},
+		}),
+	)
+
+	// Will timeout since no one responds, but notifier error should be handled.
+	_, _ = mgr.RequestInteraction(context.Background(), InteractionRequest{
+		ID:       "notifier-err",
+		ToolName: "test",
+	})
+
+	if !onErrorCalled {
+		t.Error("expected OnError hook to be called for notifier error")
+	}
+}
+
+func TestRequestInteraction_IDGeneration(t *testing.T) {
+	mgr := NewManager()
+	mgr.AddPolicy(ApprovalPolicy{
+		ToolPattern:   "*",
+		MinConfidence: 0.0,
+		MaxRiskLevel:  RiskIrreversible,
+	})
+
+	// Request without ID should get auto-generated one.
+	resp, err := mgr.RequestInteraction(context.Background(), InteractionRequest{
+		ToolName:   "test",
+		Confidence: 0.5,
+		RiskLevel:  RiskReadOnly,
+	})
+	if err != nil {
+		t.Fatalf("RequestInteraction: %v", err)
+	}
+	if resp.RequestID == "" {
+		t.Error("expected non-empty auto-generated request ID")
+	}
+}
+
+func TestManager_WithNotifierConfig(t *testing.T) {
+	// Test init() path with notifier in config.
+	mgr, err := New("default", Config{
+		DefaultTimeout: time.Second,
+		Notifier:       NewLogNotifier(nil),
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if mgr == nil {
+		t.Fatal("expected non-nil manager")
+	}
+}
+
+func TestManager_ApproveHookOnResponse(t *testing.T) {
+	var approveHookCalled bool
+	mgr := NewManager(
+		WithTimeout(5*time.Second),
+		WithManagerHooks(Hooks{
+			OnApprove: func(_ context.Context, _ InteractionRequest, _ InteractionResponse) {
+				approveHookCalled = true
+			},
+		}),
+	)
+
+	req := InteractionRequest{
+		ID:       "approve-hook-req",
+		Type:     TypeApproval,
+		ToolName: "test_tool",
+	}
+
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		mgr.Respond(context.Background(), "approve-hook-req", InteractionResponse{
+			Decision: DecisionApprove,
+		})
+	}()
+
+	resp, err := mgr.RequestInteraction(context.Background(), req)
+	if err != nil {
+		t.Fatalf("RequestInteraction: %v", err)
+	}
+	if resp.Decision != DecisionApprove {
+		t.Errorf("expected approve, got %s", resp.Decision)
+	}
+	if !approveHookCalled {
+		t.Error("expected OnApprove hook to be called on human response")
+	}
+}
+
+func TestManager_TimeoutHook(t *testing.T) {
+	var timeoutHookCalled bool
+	mgr := NewManager(
+		WithTimeout(50*time.Millisecond),
+		WithManagerHooks(Hooks{
+			OnTimeout: func(_ context.Context, _ InteractionRequest) {
+				timeoutHookCalled = true
+			},
+		}),
+	)
+
+	_, _ = mgr.RequestInteraction(context.Background(), InteractionRequest{
+		ID:       "timeout-hook-req",
+		ToolName: "test",
+	})
+
+	if !timeoutHookCalled {
+		t.Error("expected OnTimeout hook to be called")
+	}
 }

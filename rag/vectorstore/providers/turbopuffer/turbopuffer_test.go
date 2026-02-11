@@ -289,3 +289,129 @@ func TestNewFromConfig_WithBaseURL(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "https://custom.turbopuffer.com", store.baseURL)
 }
+
+func TestStore_Search_MultipleFilters(t *testing.T) {
+	var receivedBody map[string]any
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		json.NewDecoder(r.Body).Decode(&receivedBody)
+		json.NewEncoder(w).Encode([]any{})
+	})
+	defer srv.Close()
+
+	filter := map[string]any{"category": "A", "status": "active"}
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5,
+		vectorstore.WithFilter(filter))
+	require.NoError(t, err)
+
+	filters, ok := receivedBody["filters"]
+	require.True(t, ok, "filters should be in request body")
+
+	// With multiple filters, should be ["And", filter1, filter2].
+	filtersList := filters.([]any)
+	assert.Equal(t, "And", filtersList[0])
+	assert.GreaterOrEqual(t, len(filtersList), 2)
+}
+
+func TestStore_Search_WithThreshold(t *testing.T) {
+	var receivedBody map[string]any
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		json.NewDecoder(r.Body).Decode(&receivedBody)
+		json.NewEncoder(w).Encode([]any{})
+	})
+	defer srv.Close()
+
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5,
+		vectorstore.WithThreshold(0.7))
+	require.NoError(t, err)
+
+	threshold, ok := receivedBody["distance_threshold"]
+	require.True(t, ok)
+	assert.Equal(t, 0.7, threshold)
+}
+
+func TestStore_Search_InvalidJSON(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{invalid json`))
+	})
+	defer srv.Close()
+
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unmarshal")
+}
+
+func TestRegistry_Factory(t *testing.T) {
+	// Test that the init() registered factory works.
+	store, err := vectorstore.New("turbopuffer", config.ProviderConfig{
+		BaseURL: "https://api.turbopuffer.com/v1",
+		APIKey:  "test-key",
+		Options: map[string]any{
+			"namespace": "test_ns",
+		},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, store)
+
+	// Verify it's actually a Turbopuffer store.
+	tpStore, ok := store.(*Store)
+	require.True(t, ok)
+	assert.Equal(t, "https://api.turbopuffer.com/v1", tpStore.baseURL)
+	assert.Equal(t, "test-key", tpStore.apiKey)
+	assert.Equal(t, "test_ns", tpStore.namespace)
+}
+
+func TestFiltersToAny(t *testing.T) {
+	filters := [][]any{
+		{"category", "Eq", "A"},
+		{"status", "Eq", "active"},
+	}
+
+	result := filtersToAny(filters)
+	require.Len(t, result, 2)
+	assert.Equal(t, filters[0], result[0])
+	assert.Equal(t, filters[1], result[1])
+}
+
+func TestStore_Add_WithNilMetadata(t *testing.T) {
+	var receivedBody map[string]any
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		json.NewDecoder(r.Body).Decode(&receivedBody)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok"}`))
+	})
+	defer srv.Close()
+
+	docs := []schema.Document{
+		{ID: "doc1", Content: "hello"},
+		{ID: "doc2", Content: "world", Metadata: map[string]any{"key": "val"}},
+	}
+	embeddings := [][]float32{{0.1, 0.2}, {0.3, 0.4}}
+
+	err := store.Add(context.Background(), docs, embeddings)
+	require.NoError(t, err)
+
+	attrs := receivedBody["attributes"].(map[string]any)
+	assert.Contains(t, attrs, "content")
+	assert.Contains(t, attrs, "key")
+}
+
+func TestStore_Search_NoAttributeContent(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		results := []map[string]any{
+			{
+				"id":         "doc1",
+				"dist":       0.1,
+				"attributes": map[string]any{"category": "A"},
+			},
+		}
+		json.NewEncoder(w).Encode(results)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, "", results[0].Content)
+	assert.Equal(t, "A", results[0].Metadata["category"])
+}

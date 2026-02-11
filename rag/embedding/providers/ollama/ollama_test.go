@@ -207,3 +207,77 @@ func TestRegistry_Integration(t *testing.T) {
 func TestInterfaceCompliance(t *testing.T) {
 	var _ embedding.Embedder = (*Embedder)(nil)
 }
+
+func TestEmbedSingle_ErrorResponse(t *testing.T) {
+	ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, `{"error":"model not found"}`)
+	})
+
+	emb, err := New(config.ProviderConfig{
+		BaseURL: ts.URL,
+	})
+	require.NoError(t, err)
+
+	_, err = emb.EmbedSingle(context.Background(), "hello")
+	assert.Error(t, err)
+}
+
+func TestEmbedSingle_EmptyEmbeddings(t *testing.T) {
+	ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{
+			"model":      "nomic-embed-text",
+			"embeddings": [][]float32{},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	emb, err := New(config.ProviderConfig{
+		BaseURL: ts.URL,
+	})
+	require.NoError(t, err)
+
+	_, err = emb.EmbedSingle(context.Background(), "hello")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "empty response")
+}
+
+func TestNew_CustomTimeout(t *testing.T) {
+	emb, err := New(config.ProviderConfig{
+		Timeout: 30000000000,
+	})
+	require.NoError(t, err)
+	assert.NotNil(t, emb)
+}
+
+func TestNew_CustomBaseURL(t *testing.T) {
+	emb, err := New(config.ProviderConfig{
+		BaseURL: "http://custom-host:11434",
+	})
+	require.NoError(t, err)
+	assert.NotNil(t, emb)
+}
+
+func TestEmbed_PartialFailure(t *testing.T) {
+	callCount := 0
+	ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		if callCount == 2 {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, `{"error":"server error"}`)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, ollamaResponse([][]float32{{0.1, 0.2}}))
+	})
+
+	emb, err := New(config.ProviderConfig{
+		BaseURL: ts.URL,
+	})
+	require.NoError(t, err)
+
+	_, err = emb.Embed(context.Background(), []string{"first", "second"})
+	assert.Error(t, err)
+}

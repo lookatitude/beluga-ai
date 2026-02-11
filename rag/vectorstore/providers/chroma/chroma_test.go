@@ -309,3 +309,218 @@ func TestStore_CustomTenantDatabase(t *testing.T) {
 	assert.Equal(t, "custom_tenant", store.tenant)
 	assert.Equal(t, "custom_db", store.database)
 }
+
+func TestStore_ResolveCollectionID_NoCollectionNameOrID(t *testing.T) {
+	store := New("http://localhost:8000")
+	// No collection name or ID set, should error
+	_, err := store.resolveCollectionID(context.Background())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "collection name or ID is required")
+}
+
+func TestStore_ResolveCollectionID_AlreadyResolved(t *testing.T) {
+	store := New("http://localhost:8000", WithCollectionID("existing-id"))
+	colID, err := store.resolveCollectionID(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, "existing-id", colID)
+}
+
+func TestStore_ResolveCollectionID_CallsEnsureCollection(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]any{"id": "new-col-id", "name": "test_col"}
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer srv.Close()
+
+	store := New(srv.URL,
+		WithCollection("test_col"),
+		WithHTTPClient(srv.Client()),
+	)
+
+	colID, err := store.resolveCollectionID(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, "new-col-id", colID)
+	assert.Equal(t, "new-col-id", store.collectionID)
+}
+
+func TestStore_EnsureCollection_ServerError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error":"failed to create collection"}`))
+	}))
+	defer srv.Close()
+
+	store := New(srv.URL,
+		WithCollection("test_col"),
+		WithHTTPClient(srv.Client()),
+	)
+
+	err := store.EnsureCollection(context.Background())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "500")
+}
+
+func TestStore_EnsureCollection_InvalidJSON(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"invalid json`))
+	}))
+	defer srv.Close()
+
+	store := New(srv.URL,
+		WithCollection("test_col"),
+		WithHTTPClient(srv.Client()),
+	)
+
+	err := store.EnsureCollection(context.Background())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unmarshal")
+}
+
+func TestStore_Add_ResolveCollectionError(t *testing.T) {
+	store := New("http://localhost:8000")
+	// No collection name or ID, should fail during resolve
+	err := store.Add(context.Background(),
+		[]schema.Document{{ID: "doc1", Content: "test"}},
+		[][]float32{{0.1, 0.2, 0.3}},
+	)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "collection name or ID is required")
+}
+
+func TestStore_Search_ResolveCollectionError(t *testing.T) {
+	store := New("http://localhost:8000")
+	// No collection name or ID, should fail during resolve
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "collection name or ID is required")
+}
+
+func TestStore_Search_InvalidJSON(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"invalid json`))
+	})
+	defer srv.Close()
+
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unmarshal")
+}
+
+func TestStore_Delete_ResolveCollectionError(t *testing.T) {
+	store := New("http://localhost:8000")
+	// No collection name or ID, should fail during resolve
+	err := store.Delete(context.Background(), []string{"doc1"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "collection name or ID is required")
+}
+
+func TestStore_DoJSON_NilBody(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"result":"ok"}`))
+	}))
+	defer srv.Close()
+
+	store := New(srv.URL, WithHTTPClient(srv.Client()))
+	resp, err := store.doJSON(context.Background(), http.MethodGet, "/test", nil)
+	require.NoError(t, err)
+	assert.Contains(t, string(resp), "ok")
+}
+
+func TestRegistry_Factory(t *testing.T) {
+	// Test the factory function from registry
+	store, err := vectorstore.New("chroma", config.ProviderConfig{
+		BaseURL: "http://localhost:8000",
+		Options: map[string]any{
+			"collection": "test",
+		},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, store)
+	_, ok := store.(*Store)
+	assert.True(t, ok, "should return *chroma.Store")
+}
+
+func TestRegistry_FactoryError(t *testing.T) {
+	// Test factory error path (missing base_url)
+	_, err := vectorstore.New("chroma", config.ProviderConfig{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "base_url")
+}
+
+func TestStore_ResolveCollectionID_EnsureCollectionError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error":"collection creation failed"}`))
+	}))
+	defer srv.Close()
+
+	store := New(srv.URL,
+		WithCollection("test_col"),
+		WithHTTPClient(srv.Client()),
+	)
+
+	_, err := store.resolveCollectionID(context.Background())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "500")
+}
+
+func TestStore_DoJSON_MarshalError(t *testing.T) {
+	store := New("http://localhost:8000")
+	// Create an unmarshalable body (channels can't be marshaled)
+	badBody := map[string]any{
+		"channel": make(chan int),
+	}
+	_, err := store.doJSON(context.Background(), http.MethodPost, "/test", badBody)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "marshal")
+}
+
+func TestStore_DoJSON_InvalidURL(t *testing.T) {
+	store := New("http://[::1]:namedport") // Invalid URL
+	_, err := store.doJSON(context.Background(), http.MethodGet, "/test", nil)
+	require.Error(t, err)
+}
+
+// errorReadCloser is a test io.ReadCloser that always returns an error
+type errorReadCloser struct{}
+
+func (errorReadCloser) Read(p []byte) (n int, err error) {
+	return 0, assert.AnError
+}
+
+func (errorReadCloser) Close() error { return nil }
+
+// mockHTTPClient implements HTTPClient for testing
+type mockHTTPClient struct {
+	DoFunc func(req *http.Request) (*http.Response, error)
+}
+
+func (m *mockHTTPClient) Do(req *http.Request) (*http.Response, error) {
+	return m.DoFunc(req)
+}
+
+func TestStore_DoJSON_ReadBodyError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	// Custom HTTP client that returns a response with unreadable body
+	customClient := &mockHTTPClient{
+		DoFunc: func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       errorReadCloser{},
+				Header:     make(http.Header),
+			}, nil
+		},
+	}
+
+	store := New(srv.URL, WithHTTPClient(customClient))
+	_, err := store.doJSON(context.Background(), http.MethodGet, "/test", nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "read response")
+}

@@ -422,3 +422,76 @@ func TestCRAGRetriever_FallbackSearch_CustomTopK(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 5, requestedK, "Should use custom TopK for web search")
 }
+
+func TestCRAGRetriever_ScoreDocument_InvalidFloat(t *testing.T) {
+	inner := &mockRetriever{
+		retrieveFn: func(ctx context.Context, query string, opts ...retriever.Option) ([]schema.Document, error) {
+			return makeDocs("doc1"), nil
+		},
+	}
+
+	model := &mockChatModel{
+		generateFn: func(ctx context.Context, msgs []schema.Message, opts ...llm.GenerateOption) (*schema.AIMessage, error) {
+			return schema.NewAIMessage("not-a-number"), nil
+		},
+	}
+
+	web := &mockWebSearcher{}
+
+	r := retriever.NewCRAGRetriever(inner, model, web)
+	_, err := r.Retrieve(context.Background(), "query")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "crag evaluate")
+}
+
+func TestCRAGRetriever_FallbackSearch_WebError(t *testing.T) {
+	inner := &mockRetriever{
+		retrieveFn: func(ctx context.Context, query string, opts ...retriever.Option) ([]schema.Document, error) {
+			return nil, nil // Empty results trigger fallback
+		},
+	}
+
+	model := &mockChatModel{}
+
+	expectedErr := errors.New("web search failure")
+	web := &mockWebSearcher{
+		searchFn: func(ctx context.Context, query string, k int) ([]schema.Document, error) {
+			return nil, expectedErr
+		},
+	}
+
+	r := retriever.NewCRAGRetriever(inner, model, web)
+	_, err := r.Retrieve(context.Background(), "query")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "crag web search")
+}
+
+func TestCRAGRetriever_FallbackSearch_WithAfterHook(t *testing.T) {
+	// Test that AfterRetrieve hook is called in fallback path with no web searcher.
+	var afterCalled bool
+	var capturedDocs []schema.Document
+
+	hooks := retriever.Hooks{
+		AfterRetrieve: func(ctx context.Context, docs []schema.Document, err error) {
+			afterCalled = true
+			capturedDocs = docs
+		},
+	}
+
+	inner := &mockRetriever{
+		retrieveFn: func(ctx context.Context, query string, opts ...retriever.Option) ([]schema.Document, error) {
+			return nil, nil
+		},
+	}
+
+	model := &mockChatModel{}
+
+	r := retriever.NewCRAGRetriever(inner, model, nil, retriever.WithCRAGHooks(hooks))
+	_, err := r.Retrieve(context.Background(), "query")
+
+	require.NoError(t, err)
+	assert.True(t, afterCalled)
+	assert.Nil(t, capturedDocs)
+}

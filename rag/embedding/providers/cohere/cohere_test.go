@@ -260,3 +260,40 @@ func TestEmbed_AuthorizationHeader(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "Bearer my-secret-key", authHeader)
 }
+
+func TestEmbedSingle_ErrorFromEmbed(t *testing.T) {
+	ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusTooManyRequests)
+		fmt.Fprint(w, `{"message":"rate limit exceeded"}`)
+	})
+
+	emb, err := New(config.ProviderConfig{
+		APIKey:  "test-key",
+		BaseURL: ts.URL,
+	})
+	require.NoError(t, err)
+
+	_, err = emb.EmbedSingle(context.Background(), "hello")
+	assert.Error(t, err)
+}
+
+func TestNew_CustomTimeout(t *testing.T) {
+	emb, err := New(config.ProviderConfig{
+		APIKey:  "test-key",
+		Timeout: 30000000000,
+	})
+	require.NoError(t, err)
+	assert.NotNil(t, emb)
+}
+
+func TestNew_EmptyInputType(t *testing.T) {
+	emb, err := New(config.ProviderConfig{
+		APIKey: "test-key",
+		Options: map[string]any{
+			"input_type": "",
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "search_document", emb.inputType)
+}

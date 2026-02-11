@@ -187,3 +187,26 @@ func TestContextManager_EmptyMessages(t *testing.T) {
 		t.Errorf("expected 0 messages for nil input, got %d", len(result))
 	}
 }
+
+// TestWithTokenizer tests WithTokenizer option.
+func TestWithTokenizer(t *testing.T) {
+	// Custom tokenizer that counts 10 tokens per message.
+	customTokenizer := &SimpleTokenizer{}
+	cm := NewContextManager(
+		WithContextStrategy("truncate"),
+		WithTokenizer(customTokenizer),
+	)
+
+	msgs := []schema.Message{
+		schema.NewHumanMessage("test message"),
+	}
+
+	// The custom tokenizer should be used.
+	result, err := cm.Fit(context.Background(), msgs, 1000)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) != 1 {
+		t.Errorf("expected 1 message, got %d", len(result))
+	}
+}

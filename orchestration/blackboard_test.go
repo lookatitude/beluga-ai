@@ -219,3 +219,80 @@ func TestBlackboard_SetOverwrite(t *testing.T) {
 		t.Fatalf("expected v2, got %v", v)
 	}
 }
+
+func TestBlackboard_Stream_NoAgents(t *testing.T) {
+	termination := func(_ map[string]any) bool { return false }
+	bb := NewBlackboard(termination)
+
+	for _, err := range bb.Stream(context.Background(), "x") {
+		if err == nil {
+			t.Fatal("expected error for no agents")
+		}
+		return
+	}
+	t.Fatal("expected at least one stream result")
+}
+
+func TestBlackboard_Stream_AgentError(t *testing.T) {
+	errAgent := errors.New("agent failed")
+	a1 := &bbMockAgent{id: "broken", invokeFn: func(_ context.Context, _ string) (string, error) {
+		return "", errAgent
+	}}
+
+	termination := func(_ map[string]any) bool { return false }
+	bb := NewBlackboard(termination, a1)
+
+	for _, err := range bb.Stream(context.Background(), "x") {
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		if !errors.Is(err, errAgent) {
+			t.Fatalf("expected agent error, got %v", err)
+		}
+		return
+	}
+	t.Fatal("expected at least one stream result")
+}
+
+func TestBlackboard_Stream_ImmediateTermination(t *testing.T) {
+	a1 := &bbMockAgent{id: "worker"}
+	termination := func(_ map[string]any) bool { return true }
+
+	bb := NewBlackboard(termination, a1)
+	var results []any
+	for val, err := range bb.Stream(context.Background(), "x") {
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		results = append(results, val)
+	}
+	if len(results) == 0 {
+		t.Fatal("expected at least one result (terminal board state)")
+	}
+}
+
+func TestBlackboard_Stream_ConsumerBreak(t *testing.T) {
+	a1 := &bbMockAgent{id: "worker"}
+	termination := func(_ map[string]any) bool { return false }
+
+	bb := NewBlackboard(termination, a1).WithMaxRounds(10)
+	count := 0
+	for _, err := range bb.Stream(context.Background(), "x") {
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		count++
+		break // Consumer breaks early.
+	}
+	if count != 1 {
+		t.Fatalf("expected 1 result before break, got %d", count)
+	}
+}
+
+func TestBlackboard_WithMaxRounds_Zero(t *testing.T) {
+	termination := func(_ map[string]any) bool { return true }
+	bb := NewBlackboard(termination).WithMaxRounds(0)
+	if bb.maxRounds != 10 { // default should be preserved
+		t.Fatalf("expected maxRounds=10, got %d", bb.maxRounds)
+	}
+}

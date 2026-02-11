@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -19,16 +20,14 @@ import (
 // Compile-time interface check.
 var _ memory.MessageStore = (*MessageStore)(nil)
 
-// mockCursor implements the minimum needed to work with cursor.All.
-// We use a real approach: store the docs and return them via All.
-
-// mockCollection is an in-memory mock of the Collection interface.
-type mockCollection struct {
+// cursorCollection is an in-memory mock that returns real mongo.Cursor objects
+// via NewCursorFromDocuments, enabling full testing of allDocs/All/Search.
+type cursorCollection struct {
 	mu   sync.Mutex
 	docs []messageDoc
 }
 
-func (m *mockCollection) InsertOne(_ context.Context, document any, _ ...options.Lister[options.InsertOneOptions]) (*mongo.InsertOneResult, error) {
+func (m *cursorCollection) InsertOne(_ context.Context, document any, _ ...options.Lister[options.InsertOneOptions]) (*mongo.InsertOneResult, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	doc, ok := document.(messageDoc)
@@ -39,15 +38,31 @@ func (m *mockCollection) InsertOne(_ context.Context, document any, _ ...options
 	return &mongo.InsertOneResult{}, nil
 }
 
-func (m *mockCollection) Find(_ context.Context, _ any, _ ...options.Lister[options.FindOptions]) (*mongo.Cursor, error) {
-	// We can't create a real mongo.Cursor from in-memory data.
-	// Instead, return nil and we'll override All() method.
-	// This doesn't work directly with the mongo driver's Cursor type.
-	// So we take a different approach: we override allDocs in tests.
-	return nil, nil
+func (m *cursorCollection) Find(_ context.Context, _ any, _ ...options.Lister[options.FindOptions]) (*mongo.Cursor, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	// Sort by sequence number.
+	sorted := make([]messageDoc, len(m.docs))
+	copy(sorted, m.docs)
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].Seq < sorted[j].Seq
+	})
+
+	// Convert to BSON documents for the cursor.
+	bsonDocs := make([]any, len(sorted))
+	for i, doc := range sorted {
+		raw, err := bson.Marshal(doc)
+		if err != nil {
+			return nil, err
+		}
+		bsonDocs[i] = bson.Raw(raw)
+	}
+
+	return mongo.NewCursorFromDocuments(bsonDocs, nil, nil)
 }
 
-func (m *mockCollection) DeleteMany(_ context.Context, _ any, _ ...options.Lister[options.DeleteManyOptions]) (*mongo.DeleteResult, error) {
+func (m *cursorCollection) DeleteMany(_ context.Context, _ any, _ ...options.Lister[options.DeleteManyOptions]) (*mongo.DeleteResult, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	count := int64(len(m.docs))
@@ -55,54 +70,12 @@ func (m *mockCollection) DeleteMany(_ context.Context, _ any, _ ...options.Liste
 	return &mongo.DeleteResult{DeletedCount: count}, nil
 }
 
-func (m *mockCollection) sorted() []messageDoc {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	sorted := make([]messageDoc, len(m.docs))
-	copy(sorted, m.docs)
-	sort.Slice(sorted, func(i, j int) bool {
-		return sorted[i].Seq < sorted[j].Seq
-	})
-	return sorted
-}
-
-// testStore wraps MessageStore but overrides allDocs to work with the mock.
-type testStore struct {
-	*MessageStore
-	mock *mockCollection
-}
-
-func newTestStore(t *testing.T) *testStore {
+func newTestStore(t *testing.T) *MessageStore {
 	t.Helper()
-	mc := &mockCollection{}
+	mc := &cursorCollection{}
 	store, err := New(Config{Collection: mc})
 	require.NoError(t, err)
-	return &testStore{MessageStore: store, mock: mc}
-}
-
-func (ts *testStore) All(ctx context.Context) ([]schema.Message, error) {
-	docs := ts.mock.sorted()
-	msgs := make([]schema.Message, 0, len(docs))
-	for _, doc := range docs {
-		msgs = append(msgs, unmarshalDoc(doc))
-	}
-	return msgs, nil
-}
-
-func (ts *testStore) Search(ctx context.Context, query string, k int) ([]schema.Message, error) {
-	docs := ts.mock.sorted()
-	q := strings.ToLower(query)
-	var results []schema.Message
-	for _, doc := range docs {
-		msg := unmarshalDoc(doc)
-		if q == "" || containsText(msg, q) {
-			results = append(results, msg)
-			if len(results) >= k {
-				break
-			}
-		}
-	}
-	return results, nil
+	return store
 }
 
 func TestNew(t *testing.T) {
@@ -113,7 +86,7 @@ func TestNew(t *testing.T) {
 	})
 
 	t.Run("valid config", func(t *testing.T) {
-		store, err := New(Config{Collection: &mockCollection{}})
+		store, err := New(Config{Collection: &cursorCollection{}})
 		require.NoError(t, err)
 		assert.NotNil(t, store)
 	})
@@ -338,6 +311,151 @@ func TestFromBsonM(t *testing.T) {
 		result := fromBsonM(m)
 		assert.Equal(t, map[string]any{"key": "value"}, result)
 	})
+}
+
+// errorCollection is a mock that returns errors for all operations.
+type errorCollection struct {
+	insertErr  error
+	findErr    error
+	deleteErr  error
+}
+
+func (e *errorCollection) InsertOne(_ context.Context, _ any, _ ...options.Lister[options.InsertOneOptions]) (*mongo.InsertOneResult, error) {
+	return nil, e.insertErr
+}
+
+func (e *errorCollection) Find(_ context.Context, _ any, _ ...options.Lister[options.FindOptions]) (*mongo.Cursor, error) {
+	return nil, e.findErr
+}
+
+func (e *errorCollection) DeleteMany(_ context.Context, _ any, _ ...options.Lister[options.DeleteManyOptions]) (*mongo.DeleteResult, error) {
+	return nil, e.deleteErr
+}
+
+func TestAppend_InsertError(t *testing.T) {
+	ec := &errorCollection{insertErr: fmt.Errorf("connection refused")}
+	store, err := New(Config{Collection: ec})
+	require.NoError(t, err)
+
+	err = store.Append(context.Background(), schema.NewHumanMessage("hello"))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "mongodb: insert:")
+}
+
+func TestAll_FindError(t *testing.T) {
+	ec := &errorCollection{findErr: fmt.Errorf("find failed")}
+	store, err := New(Config{Collection: ec})
+	require.NoError(t, err)
+
+	msgs, err := store.All(context.Background())
+	assert.Error(t, err)
+	assert.Nil(t, msgs)
+	assert.Contains(t, err.Error(), "mongodb: find:")
+}
+
+func TestSearch_FindError(t *testing.T) {
+	ec := &errorCollection{findErr: fmt.Errorf("find failed")}
+	store, err := New(Config{Collection: ec})
+	require.NoError(t, err)
+
+	msgs, err := store.Search(context.Background(), "query", 10)
+	assert.Error(t, err)
+	assert.Nil(t, msgs)
+	assert.Contains(t, err.Error(), "mongodb: find:")
+}
+
+func TestClear_DeleteError(t *testing.T) {
+	ec := &errorCollection{deleteErr: fmt.Errorf("delete failed")}
+	store, err := New(Config{Collection: ec})
+	require.NoError(t, err)
+
+	err = store.Clear(context.Background())
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "mongodb: clear:")
+}
+
+func TestUnmarshalDoc_DefaultRole(t *testing.T) {
+	doc := messageDoc{
+		Role:  "observer",
+		Parts: []partDoc{{Type: "text", Text: "hello"}},
+	}
+	msg := unmarshalDoc(doc)
+	// Unknown role defaults to HumanMessage.
+	assert.Equal(t, schema.RoleHuman, msg.GetRole())
+	human, ok := msg.(*schema.HumanMessage)
+	require.True(t, ok)
+	require.Len(t, human.Parts, 1)
+	tp, ok := human.Parts[0].(schema.TextPart)
+	require.True(t, ok)
+	assert.Equal(t, "hello", tp.Text)
+}
+
+func TestUnmarshalDoc_NilMetadata(t *testing.T) {
+	doc := messageDoc{
+		Role:  "human",
+		Parts: []partDoc{{Type: "text", Text: "hello"}},
+	}
+	msg := unmarshalDoc(doc)
+	assert.Nil(t, msg.GetMetadata())
+}
+
+func TestContainsText_NoMatch(t *testing.T) {
+	msg := schema.NewHumanMessage("hello world")
+	assert.False(t, containsText(msg, "xyz"))
+}
+
+func TestContainsText_Empty(t *testing.T) {
+	msg := &schema.HumanMessage{Parts: []schema.ContentPart{}}
+	assert.False(t, containsText(msg, "any"))
+}
+
+func TestMarshalMessage_SystemMessage(t *testing.T) {
+	store := newTestStore(t)
+	msg := schema.NewSystemMessage("be helpful")
+	doc := store.marshalMessage(msg)
+	assert.Equal(t, "system", doc.Role)
+	assert.NotZero(t, doc.Seq)
+}
+
+func TestMarshalMessage_ToolMessage(t *testing.T) {
+	store := newTestStore(t)
+	msg := schema.NewToolMessage("tc1", "tool result")
+	doc := store.marshalMessage(msg)
+	assert.Equal(t, "tool", doc.Role)
+	assert.Equal(t, "tc1", doc.ToolCallID)
+}
+
+func TestUnmarshalDoc_SystemMessage(t *testing.T) {
+	doc := messageDoc{
+		Role:     "system",
+		Parts:    []partDoc{{Type: "text", Text: "be helpful"}},
+		Metadata: bson.M{"key": "val"},
+	}
+	msg := unmarshalDoc(doc)
+	assert.Equal(t, schema.RoleSystem, msg.GetRole())
+	sys, ok := msg.(*schema.SystemMessage)
+	require.True(t, ok)
+	assert.Equal(t, "val", sys.Metadata["key"])
+}
+
+func TestUnmarshalDoc_ToolMessage(t *testing.T) {
+	doc := messageDoc{
+		Role:       "tool",
+		Parts:      []partDoc{{Type: "text", Text: "result"}},
+		ToolCallID: "tc1",
+	}
+	msg := unmarshalDoc(doc)
+	assert.Equal(t, schema.RoleTool, msg.GetRole())
+	toolMsg, ok := msg.(*schema.ToolMessage)
+	require.True(t, ok)
+	assert.Equal(t, "tc1", toolMsg.ToolCallID)
+}
+
+func TestSequenceIncrement(t *testing.T) {
+	store := newTestStore(t)
+	msg1 := store.marshalMessage(schema.NewHumanMessage("first"))
+	msg2 := store.marshalMessage(schema.NewHumanMessage("second"))
+	assert.Less(t, msg1.Seq, msg2.Seq)
 }
 
 func textOf(msg schema.Message) string {

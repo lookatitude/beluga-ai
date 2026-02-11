@@ -318,3 +318,142 @@ func TestNewFromConfig_MissingBaseURL(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "base_url")
 }
+
+func TestNewFromConfig_InvalidConnectionString(t *testing.T) {
+	cfg := config.ProviderConfig{
+		BaseURL: "invalid://connection/string",
+	}
+	_, err := NewFromConfig(cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "connect")
+}
+
+func TestStore_EnsureTable_TableCreationError(t *testing.T) {
+	store, mock := newTestStore(t)
+	defer mock.Close()
+
+	mock.ExpectExec("CREATE EXTENSION IF NOT EXISTS vector").
+		WillReturnResult(pgxmock.NewResult("CREATE EXTENSION", 0))
+	mock.ExpectExec("CREATE TABLE IF NOT EXISTS test_docs").
+		WillReturnError(fmt.Errorf("disk full"))
+
+	err := store.EnsureTable(context.Background())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "disk full")
+}
+
+func TestStore_Search_ScanError(t *testing.T) {
+	store, mock := newTestStore(t)
+	defer mock.Close()
+
+	rows := pgxmock.NewRows([]string{"id", "content", "metadata", "score"}).
+		AddRow("doc1", "hello", []byte("{}"), 0.95).
+		RowError(0, fmt.Errorf("scan failed"))
+
+	mock.ExpectQuery("SELECT id, content, metadata").
+		WithArgs(pgxmock.AnyArg(), 5).
+		WillReturnRows(rows)
+
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "scan")
+}
+
+func TestStore_Search_UnmarshalError(t *testing.T) {
+	store, mock := newTestStore(t)
+	defer mock.Close()
+
+	invalidJSON := []byte("{invalid json")
+	rows := pgxmock.NewRows([]string{"id", "content", "metadata", "score"}).
+		AddRow("doc1", "hello", invalidJSON, 0.95)
+
+	mock.ExpectQuery("SELECT id, content, metadata").
+		WithArgs(pgxmock.AnyArg(), 5).
+		WillReturnRows(rows)
+
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unmarshal metadata")
+}
+
+func TestStore_Search_RowsError(t *testing.T) {
+	store, mock := newTestStore(t)
+	defer mock.Close()
+
+	rows := pgxmock.NewRows([]string{"id", "content", "metadata", "score"}).
+		AddRow("doc1", "hello", []byte("{}"), 0.95).
+		AddRow("doc2", "world", []byte("{}"), 0.80)
+
+	mock.ExpectQuery("SELECT id, content, metadata").
+		WithArgs(pgxmock.AnyArg(), 5).
+		WillReturnRows(rows.CloseError(fmt.Errorf("rows error")))
+
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "rows error")
+}
+
+func TestStore_Search_MultipleFilters(t *testing.T) {
+	store, mock := newTestStore(t)
+	defer mock.Close()
+
+	metaJSON, _ := json.Marshal(map[string]any{"category": "A", "lang": "en"})
+	rows := pgxmock.NewRows([]string{"id", "content", "metadata", "score"}).
+		AddRow("doc1", "hello", metaJSON, 0.95)
+
+	mock.ExpectQuery("SELECT id, content, metadata").
+		WithArgs(pgxmock.AnyArg(), 5, pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnRows(rows)
+
+	filter := map[string]any{"category": "A", "lang": "en"}
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5,
+		vectorstore.WithFilter(filter))
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, "doc1", results[0].ID)
+}
+
+func TestStore_Search_EmptyMetadata(t *testing.T) {
+	store, mock := newTestStore(t)
+	defer mock.Close()
+
+	rows := pgxmock.NewRows([]string{"id", "content", "metadata", "score"}).
+		AddRow("doc1", "hello", []byte(nil), 0.95)
+
+	mock.ExpectQuery("SELECT id, content, metadata").
+		WithArgs(pgxmock.AnyArg(), 5).
+		WillReturnRows(rows)
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Nil(t, results[0].Metadata)
+}
+
+func TestRegistry_FactorySuccess(t *testing.T) {
+	// Test that the registered factory can be looked up and called
+	_, err := vectorstore.New("pgvector", config.ProviderConfig{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "base_url")
+}
+
+// unmarshalableType has a MarshalJSON method that always returns an error.
+type unmarshalableType struct{}
+
+func (u unmarshalableType) MarshalJSON() ([]byte, error) {
+	return nil, fmt.Errorf("marshal error")
+}
+
+func TestStore_Add_MarshalError(t *testing.T) {
+	store, mock := newTestStore(t)
+	defer mock.Close()
+
+	docs := []schema.Document{
+		{ID: "doc1", Content: "test", Metadata: map[string]any{"bad": unmarshalableType{}}},
+	}
+	embeddings := [][]float32{{0.1, 0.2, 0.3}}
+
+	err := store.Add(context.Background(), docs, embeddings)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "marshal metadata")
+}

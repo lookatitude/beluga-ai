@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	coherego "github.com/cohere-ai/cohere-go/v2"
 	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
@@ -431,5 +432,213 @@ func TestGenerate_ErrorHandling(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected error for 500 response")
+	}
+}
+
+func TestConvertResponse_Nil(t *testing.T) {
+	result := convertResponse(nil, "test-model")
+	if result.ModelID != "test-model" {
+		t.Errorf("ModelID = %q, want %q", result.ModelID, "test-model")
+	}
+	if len(result.Parts) != 0 {
+		t.Errorf("Parts len = %d, want 0", len(result.Parts))
+	}
+}
+
+func TestConvertToCohereMessage_ToolMessage(t *testing.T) {
+	msg := schema.NewToolMessage("call-123", "tool-result")
+	cm := convertToCohereMessage(msg)
+	if cm == nil {
+		t.Fatal("expected non-nil Cohere message")
+	}
+	if cm.Role != "USER" {
+		t.Errorf("Role = %q, want USER", cm.Role)
+	}
+	if cm.User == nil || cm.User.Message != "tool-result" {
+		t.Error("User message not set correctly")
+	}
+}
+
+func TestConvertToCohereMessage_UnsupportedType(t *testing.T) {
+	msg := schema.NewSystemMessage("system")
+	cm := convertToCohereMessage(msg)
+	if cm != nil {
+		t.Errorf("expected nil for SystemMessage, got %v", cm)
+	}
+}
+
+func TestSplitMessages_MultipleSystem(t *testing.T) {
+	msgs := []schema.Message{
+		schema.NewSystemMessage("You are helpful"),
+		schema.NewSystemMessage("Be concise"),
+		schema.NewHumanMessage("Hello"),
+	}
+	preamble, history, message := splitMessages(msgs)
+	if preamble != "You are helpful\nBe concise" {
+		t.Errorf("preamble = %q, want %q", preamble, "You are helpful\nBe concise")
+	}
+	if len(history) != 0 {
+		t.Errorf("history len = %d, want 0", len(history))
+	}
+	if message != "Hello" {
+		t.Errorf("message = %q, want Hello", message)
+	}
+}
+
+func TestSplitMessages_LastIsAI(t *testing.T) {
+	msgs := []schema.Message{
+		schema.NewHumanMessage("Hello"),
+		schema.NewAIMessage("Hi there"),
+	}
+	preamble, history, message := splitMessages(msgs)
+	if preamble != "" {
+		t.Errorf("preamble = %q, want empty", preamble)
+	}
+	if len(history) != 1 {
+		t.Errorf("history len = %d, want 1", len(history))
+	}
+	if message != "Hi there" {
+		t.Errorf("message = %q, want %q", message, "Hi there")
+	}
+}
+
+func TestSplitMessages_LastIsTool(t *testing.T) {
+	msgs := []schema.Message{
+		schema.NewHumanMessage("Search for Go"),
+		schema.NewToolMessage("call-1", "Results: ..."),
+	}
+	preamble, history, message := splitMessages(msgs)
+	if preamble != "" {
+		t.Errorf("preamble = %q, want empty", preamble)
+	}
+	if len(history) != 1 {
+		t.Errorf("history len = %d, want 1", len(history))
+	}
+	if message != "Results: ..." {
+		t.Errorf("message = %q, want %q", message, "Results: ...")
+	}
+}
+
+func TestBuildStreamRequest_WithOptions(t *testing.T) {
+	m, _ := New(config.ProviderConfig{
+		Model: "command-r-plus", APIKey: "test",
+	})
+	msgs := []schema.Message{schema.NewHumanMessage("Hi")}
+	opts := []llm.GenerateOption{
+		llm.WithTemperature(0.8),
+		llm.WithMaxTokens(200),
+		llm.WithTopP(0.9),
+		llm.WithStopSequences("STOP"),
+	}
+	req := m.buildStreamRequest(msgs, opts)
+	if req.Temperature == nil || *req.Temperature != 0.8 {
+		t.Errorf("Temperature = %v, want 0.8", req.Temperature)
+	}
+	if req.MaxTokens == nil || *req.MaxTokens != 200 {
+		t.Errorf("MaxTokens = %v, want 200", req.MaxTokens)
+	}
+	if req.P == nil || *req.P != 0.9 {
+		t.Errorf("P = %v, want 0.9", req.P)
+	}
+	if len(req.StopSequences) != 1 || req.StopSequences[0] != "STOP" {
+		t.Errorf("StopSequences = %v, want [STOP]", req.StopSequences)
+	}
+}
+
+func TestBuildStreamRequest_WithTools(t *testing.T) {
+	m, _ := New(config.ProviderConfig{
+		Model: "command-r-plus", APIKey: "test",
+	})
+	bound := m.BindTools([]schema.ToolDefinition{
+		{Name: "search", Description: "search the web"},
+	}).(*Model)
+	msgs := []schema.Message{schema.NewHumanMessage("Hi")}
+	req := bound.buildStreamRequest(msgs, nil)
+	if len(req.Tools) != 1 {
+		t.Errorf("Tools len = %d, want 1", len(req.Tools))
+	}
+	if req.Tools[0].Name != "search" {
+		t.Errorf("Tool name = %q, want search", req.Tools[0].Name)
+	}
+}
+
+func TestApplyOptions_TopP(t *testing.T) {
+	req := &coherego.ChatRequest{}
+	topP := 0.95
+	opts := llm.GenerateOptions{TopP: &topP}
+	applyOptions(req, opts)
+	if req.P == nil || *req.P != 0.95 {
+		t.Errorf("P = %v, want 0.95", req.P)
+	}
+}
+
+func TestApplyOptions_StopSequences(t *testing.T) {
+	req := &coherego.ChatRequest{}
+	opts := llm.GenerateOptions{StopSequences: []string{"END", "DONE"}}
+	applyOptions(req, opts)
+	if len(req.StopSequences) != 2 {
+		t.Errorf("StopSequences len = %d, want 2", len(req.StopSequences))
+	}
+	if req.StopSequences[0] != "END" || req.StopSequences[1] != "DONE" {
+		t.Errorf("StopSequences = %v, want [END, DONE]", req.StopSequences)
+	}
+}
+
+func TestStream_ErrorHandling(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, `{"message": "stream error"}`)
+	}))
+	defer ts.Close()
+
+	m, _ := New(config.ProviderConfig{
+		Model: "command-r-plus", APIKey: "test", BaseURL: ts.URL,
+	})
+	msgs := []schema.Message{schema.NewHumanMessage("Hi")}
+	for _, err := range m.Stream(context.Background(), msgs) {
+		if err == nil {
+			t.Fatal("expected error from stream")
+		}
+		// Error returned, test passes
+		break
+	}
+}
+
+func TestGenerate_WithToolsAndOptions(t *testing.T) {
+	var receivedBody map[string]any
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewDecoder(r.Body).Decode(&receivedBody)
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, chatResponse("ok"))
+	}))
+	defer ts.Close()
+
+	m, _ := New(config.ProviderConfig{
+		Model: "command-r-plus", APIKey: "test", BaseURL: ts.URL,
+	})
+	bound := m.BindTools([]schema.ToolDefinition{
+		{Name: "search", Description: "search the web"},
+	})
+	topP := 0.85
+	_, err := bound.Generate(context.Background(), []schema.Message{
+		schema.NewHumanMessage("Hi"),
+	}, llm.WithTopP(topP), llm.WithStopSequences("STOP"))
+	if err != nil {
+		t.Fatalf("Generate() error: %v", err)
+	}
+	if tools, ok := receivedBody["tools"].([]any); ok {
+		if len(tools) != 1 {
+			t.Errorf("tools len = %d, want 1", len(tools))
+		}
+	}
+	if p, ok := receivedBody["p"].(float64); ok {
+		if p != 0.85 {
+			t.Errorf("p = %v, want 0.85", p)
+		}
+	}
+	if stops, ok := receivedBody["stop_sequences"].([]any); ok {
+		if len(stops) != 1 {
+			t.Errorf("stop_sequences len = %d, want 1", len(stops))
+		}
 	}
 }

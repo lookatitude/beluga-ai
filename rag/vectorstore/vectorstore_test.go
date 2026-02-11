@@ -370,6 +370,35 @@ func TestMiddleware_HooksAbort(t *testing.T) {
 	}
 }
 
+func TestMiddleware_HooksDelete(t *testing.T) {
+	store := newTestStore(t)
+	ctx := context.Background()
+
+	// Add a doc first.
+	err := store.Add(ctx, []schema.Document{{ID: "1", Content: "test"}}, [][]float32{{1.0, 0.0}})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	hooks := vectorstore.Hooks{}
+	wrapped := vectorstore.ApplyMiddleware(store, vectorstore.WithHooks(hooks))
+
+	// Delete through the hooked store.
+	err = wrapped.Delete(ctx, []string{"1"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify the doc was deleted.
+	results, err := wrapped.Search(ctx, []float32{1.0, 0.0}, 10)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(results) != 0 {
+		t.Fatalf("expected 0 results after delete, got %d", len(results))
+	}
+}
+
 func TestSearchOptions(t *testing.T) {
 	cfg := &vectorstore.SearchConfig{}
 
