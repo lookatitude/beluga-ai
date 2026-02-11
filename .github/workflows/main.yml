@@ -375,6 +375,9 @@ jobs:
     name: Commit Generated Reports
     needs: [generate-reports, deploy]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v6
 
@@ -383,9 +386,20 @@ jobs:
         with:
           name: reports
 
-      - name: Commit reports
-        uses: stefanzweifel/git-auto-commit-action@v7
+      - name: Create PR for report updates
+        uses: peter-evans/create-pull-request@v7
         with:
-          commit_message: "chore(ci): update CODE-QUALITY.md and SECURITY.md [skip ci]"
-          file_pattern: "CODE-QUALITY.md SECURITY.md"
-          branch: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ci/update-reports
+          base: main
+          delete-branch: true
+          title: "chore(ci): update CODE-QUALITY.md and SECURITY.md"
+          commit-message: "chore(ci): update CODE-QUALITY.md and SECURITY.md [skip ci]"
+          body: |
+            Auto-generated report updates from the main CI pipeline.
+
+            - Update `CODE-QUALITY.md`
+            - Update `SECURITY.md`
+          add-paths: |
+            CODE-QUALITY.md
+            SECURITY.md
