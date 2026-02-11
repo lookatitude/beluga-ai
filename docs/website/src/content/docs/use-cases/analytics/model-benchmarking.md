@@ -3,11 +3,15 @@ title: Model Benchmarking Dashboard
 description: Compare LLM performance, cost, and quality across providers to make data-driven model selection decisions.
 ---
 
-AI platforms need to select the right LLM for each use case based on actual performance data, not intuition. Manual benchmarking is time-consuming and inconsistent across providers, leading to suboptimal cost/performance trade-offs. A model benchmarking dashboard automates testing across providers, tracks comprehensive metrics, and generates comparative reports for data-driven model selection.
+LLM providers release new models and update existing ones frequently — performance characteristics shift, pricing changes, and new capabilities appear. Teams that benchmark models once during initial selection make decisions based on stale data. A model that was the best choice six months ago may now be outperformed by a cheaper alternative, or a provider's latency profile may have degraded.
+
+Manual benchmarking compounds the problem: each provider has different API semantics, error formats, and usage reporting. Running tests by hand produces inconsistent results that are hard to compare across providers and impossible to track over time.
+
+An automated benchmarking dashboard runs standardized test suites against all configured providers on a schedule, collects comparable metrics (latency, tokens, cost, quality), and generates comparative reports that reveal which model delivers the best cost-quality tradeoff for each category of request.
 
 ## Solution Architecture
 
-Beluga AI provides a unified interface across LLM providers, making it easy to benchmark multiple models with consistent metrics. The system executes benchmark suites against all providers, collects performance data (latency, tokens, cost, quality), stores time-series results, and generates comparative analytics.
+Beluga AI's registry pattern and unified `llm.ChatModel` interface eliminate provider-specific client code. The benchmark runner initializes providers through `llm.New()`, executes identical prompts against each, and collects standardized metrics. Because all providers implement the same interface, adding a new provider to the benchmark suite is a single `llm.New()` call — no adapter code required.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐

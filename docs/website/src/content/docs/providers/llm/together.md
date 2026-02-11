@@ -5,6 +5,8 @@ description: "Integration guide for Together AI's open-source model hosting with
 
 The Together AI provider connects Beluga AI to Together's inference platform, which hosts a wide selection of open-source models. Together exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output.
 
+Choose Together AI when you want access to a broad catalog of open-source models (Llama, Mixtral, Qwen, and more) with "Turbo" variants optimized for speed. Together is a good choice for prototyping across different model architectures and for workloads where open-weight model access is important.
+
 ## Installation
 
 ```bash

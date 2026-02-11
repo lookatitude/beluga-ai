@@ -3,7 +3,9 @@ title: Mock ChatModel for UI Testing
 description: Create mock ChatModel implementations for fast, deterministic UI testing without external API calls or costs.
 ---
 
-Testing AI-powered UIs against live LLM APIs is slow, expensive, and non-deterministic. Mock `ChatModel` implementations let you test your application's UI components, conversation flows, and error handling with fast, repeatable results and zero API costs.
+Live LLM APIs are slow (hundreds of milliseconds per call), expensive (per-token costs add up across CI runs), and non-deterministic (the same prompt can produce different outputs). These properties make them unsuitable for unit tests, UI component tests, and integration test suites that need to run reliably on every commit.
+
+Mock `ChatModel` implementations solve this by providing fast, deterministic, free replacements that implement the same `llm.ChatModel` interface as real providers. Because Beluga AI uses interface-based design, swapping a real provider for a mock requires changing one line of code.
 
 ## Overview
 

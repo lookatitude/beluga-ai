@@ -3,11 +3,13 @@ title: Intelligent Document Processing
 description: Automate document classification, entity extraction, and semantic search with Beluga AI's RAG and LLM pipelines.
 ---
 
-Organizations process thousands of documents daily — contracts, invoices, reports, emails, and regulatory filings. Manual processing is slow, error-prone, and does not scale. An intelligent document processing (IDP) pipeline automates extraction, classification, and indexing, making documents instantly searchable and actionable.
+Organizations process thousands of documents daily — contracts, invoices, reports, emails, and regulatory filings. Manual processing creates bottlenecks: a single analyst can classify and extract data from 20-30 documents per hour, accuracy varies with fatigue, and documents sit in queues for days before reaching the right department. Searching historical documents means knowing which folder to look in, making institutional knowledge fragile and person-dependent.
+
+An intelligent document processing (IDP) pipeline automates extraction, classification, and indexing, making documents instantly searchable by meaning rather than filename. The pipeline turns unstructured documents into structured, queryable data within seconds of ingestion.
 
 ## Solution Architecture
 
-The pipeline chains four stages: load documents from any source, classify them using an LLM, extract structured entities using structured output, and index them in a vector store for semantic retrieval. Each stage is a `core.Runnable` step composed into an orchestration chain.
+The pipeline chains four stages: load documents from any source, classify them using an LLM, extract structured entities using structured output, and index them in a vector store for semantic retrieval. Each stage is a `core.Runnable` step composed into an orchestration chain. This staged design allows each component to be tested independently and replaced without affecting the rest of the pipeline — for example, swapping pgvector for Qdrant changes only the vector store provider, not the classification or extraction logic.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -27,7 +29,7 @@ The pipeline chains four stages: load documents from any source, classify them u
 
 ## Document Loading
 
-Beluga AI's loader package supports multiple document formats through its registry pattern. Each format is a provider that registers via `init()`.
+Beluga AI's loader package supports multiple document formats through its registry pattern (`Register()` + `New()` + `List()`). Each format is a provider that registers via `init()`, so adding PDF, HTML, or CSV support is a matter of importing the provider package — no factory configuration or manual wiring required.
 
 ```go
 package main
@@ -66,7 +68,7 @@ func loadDocuments(ctx context.Context, source string) ([]schema.Document, error
 
 ## LLM-Powered Classification
 
-Use an LLM with structured output to classify documents into categories and extract tags:
+Rule-based classifiers require maintaining pattern lists for every document type and break when formats change. LLM-based classification adapts to new document types without rule updates. Using `llm.NewStructured[T]` guarantees the response matches the `Classification` struct schema — the LLM returns typed Go data, not raw text that needs parsing and validation:
 
 ```go
 import (
@@ -106,7 +108,7 @@ func classifyDocument(ctx context.Context, model llm.ChatModel, content string) 
 
 ## Entity Extraction
 
-Extract structured entities from documents — amounts, dates, parties, and custom fields — using structured output with a schema that matches your domain:
+Extract structured entities from documents — amounts, dates, parties, and custom fields — using structured output with a schema that matches your domain. The struct's JSON tags define the extraction schema, so the LLM knows exactly what fields to populate and in what format:
 
 ```go
 type InvoiceEntities struct {

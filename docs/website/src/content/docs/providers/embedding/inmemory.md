@@ -5,6 +5,8 @@ description: Deterministic hash-based embeddings for testing and development.
 
 The in-memory embedding provider implements the `embedding.Embedder` interface using a deterministic FNV-1a hash function. It generates reproducible, normalized vectors without any external API calls, making it suitable for unit tests and local development.
 
+Use the in-memory embedder exclusively for testing and development. It produces deterministic output (same text always yields the same vector) but vectors are not semantically meaningful -- this provider is not suitable for production retrieval. It eliminates the need for API keys, network access, or mocking in test suites.
+
 ## Installation
 
 ```bash

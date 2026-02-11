@@ -3,11 +3,15 @@ title: Model A/B Testing Framework
 description: Make data-driven model selection decisions with automated A/B testing, statistical analysis, and comprehensive metrics.
 ---
 
-Model selection based on intuition rather than data causes suboptimal cost-quality trade-offs and 15-20% higher costs than necessary. Without systematic comparison, teams can't identify which model performs best for their specific use case. An A/B testing framework enables controlled experiments, statistical analysis, and data-driven decisions with 95%+ confidence.
+Model selection in production is often based on benchmarks that don't reflect real-world workloads, or worse, on team preference. A model that scores highest on a generic benchmark may underperform for your specific domain — legal text, medical records, code generation — while costing 5-10x more than an adequate alternative. Without controlled experiments on actual production traffic, teams overpay for capability they don't need or under-invest in quality that matters.
+
+The core challenge is isolating model performance from confounding variables: different request types, varying user expectations, and non-deterministic LLM outputs. Naive comparisons (run model A for a week, then model B) conflate temporal effects with model quality.
+
+An A/B testing framework solves this by splitting traffic simultaneously, using consistent hashing so each user sees the same variant throughout the experiment, and applying statistical tests (Welch's t-test) to determine winners with quantified confidence levels.
 
 ## Solution Architecture
 
-Beluga AI's unified LLM interface makes A/B testing straightforward. The traffic splitter routes requests to model A or B using consistent hashing, metrics collectors track performance and cost, and statistical analysis determines the winner with confidence intervals. Experiment results inform model selection and routing strategies.
+Beluga AI's unified `llm.ChatModel` interface means models from different providers share the same API, making A/B comparison straightforward — no adapter code per provider. The traffic splitter uses consistent hashing (MD5 of user ID) for stable variant assignment, OTel metrics track latency, token usage, and cost per variant, and statistical analysis determines winners with confidence intervals.
 
 ```mermaid
 graph TB

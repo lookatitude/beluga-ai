@@ -3,11 +3,15 @@ title: Enterprise RAG Knowledge Base
 description: Build a production RAG pipeline with hybrid search, multi-source ingestion, and semantic retrieval using Beluga AI.
 ---
 
-Organizations accumulate vast amounts of knowledge across documents, wikis, codebases, and databases. Traditional keyword search fails to understand context and semantic relationships, leading to lost productivity and inconsistent decision-making. An enterprise RAG (Retrieval-Augmented Generation) system brings semantic understanding to internal knowledge, enabling employees to ask natural language questions and receive accurate, context-grounded answers.
+Organizations accumulate vast amounts of knowledge across documents, wikis, codebases, and databases. When employees search for information, keyword-based systems return documents that contain the search terms but may not actually answer the question. A search for "how to handle customer refunds" returns every document mentioning "refund" — policy documents, meeting notes, email threads — without understanding which ones actually explain the refund process. This semantic gap between intent and keyword matching leads to lost productivity and inconsistent decision-making.
+
+An enterprise RAG (Retrieval-Augmented Generation) system brings semantic understanding to internal knowledge, enabling employees to ask natural language questions and receive accurate, context-grounded answers. RAG is chosen over fine-tuning the LLM on internal documents because it keeps the knowledge current (new documents are indexed immediately), transparent (answers cite their sources), and controllable (access policies can be enforced at retrieval time).
 
 ## Solution Architecture
 
 Beluga AI provides a complete RAG pipeline: document loaders ingest content from multiple sources, text splitters chunk it into semantically meaningful units, embedders convert text to vectors, vector stores index them for fast similarity search, and retriever strategies combine multiple signals for high-quality results. The LLM generates grounded answers from retrieved context.
+
+Beluga AI defaults to hybrid search (Vector + BM25 + RRF fusion) because neither vector similarity nor keyword matching alone is sufficient. Vector search captures semantic meaning but can miss exact terms (product names, error codes, policy numbers). Keyword search catches exact terms but misses semantic relationships. Reciprocal Rank Fusion (RRF) combines both rankings without requiring score normalization, producing results that satisfy both intent-based and term-based queries.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐

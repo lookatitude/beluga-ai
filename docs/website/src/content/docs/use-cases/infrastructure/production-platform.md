@@ -3,11 +3,15 @@ title: Production Agent Platform
 description: Deploy AI agents at enterprise scale with observability, auth, resilience, and multi-tenancy using Beluga AI.
 ---
 
-Running AI agents in production requires more than just a working prototype. You need reliability (retry, circuit breaker), security (RBAC, ABAC), observability (traces, metrics, logs), multi-tenancy, rate limiting, and health checks. Beluga AI provides production-grade infrastructure packages that work together to create a complete agent platform.
+Moving an AI agent from prototype to production exposes a set of cross-cutting concerns that prototypes ignore. Without retry logic, a single LLM timeout fails the entire user request. Without authorization, any user can invoke any agent with any tool. Without observability, debugging a slow response means reading logs and guessing. Without tenant isolation, one customer's data leaks into another's context window.
+
+These concerns are not optional extras — they are the difference between a demo and a system that handles real traffic. Each layer (resilience, security, observability, multi-tenancy) must compose cleanly with the others: a retry should create child spans in the trace, tenant context should propagate through the guard pipeline, and rate limits should apply per-tenant rather than globally.
+
+Beluga AI provides production-grade infrastructure packages designed to layer around the agent runtime, each following the same registry and middleware patterns so they compose without custom integration code.
 
 ## Platform Architecture
 
-The platform layers Beluga AI's infrastructure packages around the agent runtime:
+The platform layers Beluga AI's infrastructure packages around the agent runtime. Each layer is independent but context-aware — tenant IDs propagate through `context.Context`, OpenTelemetry spans flow through every layer, and resilience policies apply per-provider:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -38,7 +42,7 @@ The platform layers Beluga AI's infrastructure packages around the agent runtime
 
 ## OpenTelemetry Instrumentation
 
-Beluga AI uses OpenTelemetry GenAI semantic conventions (`gen_ai.*` attributes) for all LLM and agent operations. Traces flow through every layer — from HTTP request to agent execution to LLM call to tool invocation.
+When an agent request is slow, you need to know whether the bottleneck is the LLM call, tool execution, retrieval, or guard pipeline. Beluga AI uses OpenTelemetry GenAI semantic conventions (`gen_ai.*` attributes) for all LLM and agent operations, creating a trace that flows through every layer — from HTTP request to agent execution to LLM call to tool invocation. This means standard observability tools (Jaeger, Grafana Tempo, Datadog) can visualize the full request lifecycle without custom instrumentation.
 
 ```go
 package main
@@ -169,7 +173,7 @@ if !allowed {
 
 ## Safety Guard Pipeline
 
-The guard pipeline screens content at three stages: input (before the LLM sees it), output (before the user sees it), and tool (before tools execute).
+LLM-powered systems face safety risks at multiple points: malicious prompts on input, sensitive data in outputs, and dangerous operations through tools. A single-stage filter misses threats that manifest at different stages. Beluga AI's guard pipeline screens content at three stages — input (before the LLM sees it), output (before the user sees it), and tool (before tools execute) — so each risk is caught at the appropriate point in the request lifecycle.
 
 ```go
 import (

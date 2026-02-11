@@ -3,7 +3,9 @@ title: Cross-lingual Document Retrieval
 description: Enable users to search documents in any language and retrieve relevant results across all languages.
 ---
 
-A global knowledge management platform needed to enable users to search documents in any language and retrieve relevant results regardless of the document's original language. Users could only search documents in their own language, causing 30-40% of relevant multilingual content to be missed and reducing knowledge discovery across language barriers. A cross-lingual retrieval system with multilingual embeddings enables search in any language to find documents in all languages with 90%+ relevance.
+A global knowledge management platform needed to enable users to search documents in any language and retrieve relevant results regardless of the document's original language. The conventional approach — translating all documents into a common language or translating every query into every document language — is expensive, lossy (translations miss nuance), and operationally complex (every new language multiplies the translation workload).
+
+Users could only search documents in their own language, causing 30-40% of relevant multilingual content to be missed and reducing knowledge discovery across language barriers. A cross-lingual retrieval system with multilingual embeddings enables search in any language to find documents in all languages with 90%+ relevance. The key insight is using a multilingual embedding model that maps text from different languages into a unified semantic space — a Spanish query and an English document about the same topic produce similar vectors, enabling cross-lingual similarity search without any translation step.
 
 ## Solution Architecture
 

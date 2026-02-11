@@ -3,7 +3,7 @@ title: JSON Schema Validation
 description: Validate Beluga AI message and document structures using JSON Schema with the gojsonschema library.
 ---
 
-Beluga AI's `schema` package defines core types for messages and documents. This guide demonstrates how to validate these structures against JSON Schema definitions using the `gojsonschema` library, ensuring data integrity at the boundaries of your application.
+Malformed input is the most common cause of unexpected LLM behavior. A missing field, wrong type, or truncated message can produce misleading model responses that are expensive to debug. JSON Schema validation catches these issues at the application boundary -- before data reaches the LLM -- providing clear error messages instead of silent failures. This guide demonstrates how to validate Beluga AI message and document structures against JSON Schema definitions using the `gojsonschema` library.
 
 ## Overview
 

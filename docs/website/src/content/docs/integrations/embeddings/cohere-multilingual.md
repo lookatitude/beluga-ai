@@ -3,7 +3,9 @@ title: Cohere Multilingual Embeddings
 description: Generate multilingual text embeddings across 100+ languages using Cohere's embed-multilingual models with Beluga AI's embedding interface.
 ---
 
-Cohere provides high-quality multilingual embedding models that produce vector representations for text in over 100 languages. When integrated with Beluga AI, Cohere embeddings enable cross-language retrieval -- queries in one language can match documents in another -- making them well suited for international RAG applications.
+Most embedding models are trained primarily on English text and degrade on other languages. Cohere's multilingual models are trained across 100+ languages and produce vectors where semantically similar text clusters together regardless of language. This means a query in Spanish can match a document written in French or Japanese.
+
+This cross-language capability is essential for organizations serving international users, processing multilingual knowledge bases, or building customer support systems that need to retrieve answers across language boundaries.
 
 ## Overview
 

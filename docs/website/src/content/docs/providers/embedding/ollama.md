@@ -5,6 +5,8 @@ description: Generate text embeddings locally using Ollama's embedding models.
 
 The Ollama embedding provider implements the `embedding.Embedder` interface using the Ollama REST API. It enables fully local embedding generation with no external API dependencies, making it suitable for development, testing, and privacy-sensitive deployments.
 
+Choose Ollama embeddings for local development, offline environments, or when data cannot leave your network. Running embeddings locally eliminates API costs and network latency, making it well-suited for iterating on RAG pipelines during development. For production, consider cloud providers for higher throughput.
+
 ## Installation
 
 ```bash

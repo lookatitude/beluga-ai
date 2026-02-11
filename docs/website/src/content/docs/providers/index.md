@@ -5,6 +5,8 @@ description: "108 provider integrations across 15 categories: LLMs, embeddings, 
 
 Beluga AI v2 ships with 108 provider implementations across 15 categories. Every provider follows the same registry pattern: import the package, and it auto-registers via `init()`. Switch between providers by changing an import path and configuration — no code changes required.
 
+Each provider page documents configuration options, code examples, and guidance on when to choose that provider. All examples use the `github.com/lookatitude/beluga-ai` module path and handle errors explicitly.
+
 ## Provider Categories
 
 | Category | Providers | Interface | Description |

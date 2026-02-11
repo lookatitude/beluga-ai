@@ -5,6 +5,8 @@ description: "Load versioned prompt templates from JSON files."
 
 The file provider implements the `prompt.PromptManager` interface by loading templates from JSON files in a directory. It supports versioned templates with automatic latest-version resolution and thread-safe concurrent access.
 
+Choose the file provider when you want to manage prompt templates as JSON files in version control. It supports semantic versioning with automatic latest-version resolution and Go `text/template` syntax for variable interpolation. Templates are loaded once on initialization and served from memory, making it suitable for production use with no external dependencies.
+
 ## Installation
 
 ```bash

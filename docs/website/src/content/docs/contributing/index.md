@@ -3,11 +3,11 @@ title: Contributing to Beluga AI
 description: Learn how to contribute to the Beluga AI framework
 ---
 
-Thank you for your interest in contributing to Beluga AI! Every contribution helps make the framework better for the entire community. Whether you're fixing a typo, reporting a bug, or implementing a new feature, your help is valued and appreciated.
+Thank you for your interest in contributing to Beluga AI! Beluga is a large framework — 157 packages and 100+ providers — built by a community that values code quality, consistent patterns, and thorough testing. Every contribution helps make the framework better for Go developers building production AI systems. Whether you're fixing a typo, reporting a bug, or implementing a new feature, your help is valued and appreciated.
 
 ## Ways to Contribute
 
-There are many ways to contribute to Beluga AI, and not all of them involve writing code:
+There are many ways to contribute to Beluga AI, and not all of them involve writing code. The framework benefits as much from clear documentation, well-reported bugs, and community support as it does from code changes:
 
 - **Bug Reports** — Found something that doesn't work? [Open an issue](https://github.com/lookatitude/beluga-ai/issues/new) with a clear description and reproduction steps.
 - **Feature Requests** — Have an idea for a new feature or improvement? Start a discussion or open an issue to share your thoughts.
@@ -36,7 +36,7 @@ All contributors are expected to follow our [Code of Conduct](https://github.com
 
 ## First-Time Contributors
 
-New to Beluga AI or open-source in general? Welcome! Here's how to get started:
+New to Beluga AI or open-source in general? Welcome! The codebase follows consistent patterns across all packages, so once you understand how one package works, that knowledge transfers to all 19 registries. Here's how to get started:
 
 1. Look for issues labeled **[`good-first-issue`](https://github.com/lookatitude/beluga-ai/labels/good-first-issue)** — these are specifically curated for newcomers and include extra context to help you get oriented.
 2. Read the [Development Setup](/contributing/development-setup/) guide to configure your environment.

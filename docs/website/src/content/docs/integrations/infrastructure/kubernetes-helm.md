@@ -5,7 +5,7 @@ description: Deploy Beluga AI services to Kubernetes using Helm charts for repea
 
 ## Overview
 
-This guide walks through creating and deploying Helm charts for Beluga AI services on Kubernetes. Helm provides package management for Kubernetes, letting you template, version, and share deployment configurations. By the end of this guide, you will have a production-ready Helm chart that deploys a Beluga AI REST server with configurable replicas, resource limits, secrets, and service exposure.
+Deploying AI agents to production requires repeatable, auditable infrastructure. Helm charts let you package your Beluga AI services as versioned, configurable Kubernetes releases that can be deployed consistently across development, staging, and production environments. This eliminates manual deployment steps, enforces resource limits to prevent runaway costs, and provides a standard upgrade path for your team. This guide walks through creating and deploying Helm charts for Beluga AI services on Kubernetes. By the end, you will have a production-ready Helm chart that deploys a Beluga AI REST server with configurable replicas, resource limits, secrets, and service exposure.
 
 ## Prerequisites
 

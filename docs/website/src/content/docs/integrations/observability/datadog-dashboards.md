@@ -5,7 +5,7 @@ description: Export Beluga AI OpenTelemetry metrics and traces to Datadog and cr
 
 ## Overview
 
-Beluga AI emits OpenTelemetry traces and metrics for all LLM calls, agent executions, tool invocations, and pipeline operations. This guide shows how to export that telemetry to Datadog and set up dashboards for monitoring AI application health and performance.
+Datadog is the preferred observability platform for teams that need a unified view of AI operations alongside traditional infrastructure metrics. By routing Beluga AI's OpenTelemetry telemetry to Datadog, you get LLM latency, token usage, and agent performance data in the same dashboards where you monitor CPU, memory, and request rates. This eliminates tool-switching and enables cross-correlation between AI behavior and infrastructure health. This guide shows how to export that telemetry to Datadog and set up dashboards for monitoring AI application health and performance.
 
 ## Prerequisites
 

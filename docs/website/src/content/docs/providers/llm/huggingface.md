@@ -5,6 +5,8 @@ description: "Integration guide for HuggingFace Inference API with Beluga AI."
 
 The HuggingFace provider connects Beluga AI to HuggingFace's Inference API, which provides hosted access to thousands of open-source models. HuggingFace exposes an OpenAI-compatible chat completions endpoint, so this provider supports all standard features including streaming and tool calling.
 
+Choose HuggingFace when you need access to specialized or fine-tuned models from the HuggingFace ecosystem. The free Inference API is suitable for prototyping, while Dedicated Inference Endpoints provide production-grade hosting with guaranteed compute for your chosen model.
+
 ## Installation
 
 ```bash

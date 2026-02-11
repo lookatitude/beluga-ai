@@ -3,11 +3,13 @@ title: Safe Children's Story Generator
 description: Multi-layer safety checks achieve 99.5% safety compliance for AI-generated children's content.
 ---
 
-Educational technology platforms need to generate age-appropriate, safe content for children. Story generation sometimes produces inappropriate content, requiring manual review of 100% of stories and causing 2-4 hour delays. Multi-layer safety checking automates content validation, eliminates manual review, and ensures 99%+ safety compliance.
+Educational technology platforms generating stories for children face a safety problem that traditional content filters cannot solve. Keyword blocklists catch obvious violations but miss contextual issues: a story about a "friendly dragon" is fine for 8-year-olds but may frighten a 3-year-old; a tale about "getting lost in the woods" teaches independence to older children but creates anxiety for preschoolers. LLMs amplify this challenge because their output is non-deterministic — the same prompt can produce appropriate content 95% of the time and inappropriate content the remaining 5%. When the audience is children, that 5% failure rate is unacceptable.
+
+Manual review of every generated story addresses safety but destroys the scalability that makes AI generation valuable in the first place. A platform generating 10,000 stories per day cannot sustain 100% human review without delays that make the service unusable.
 
 ## Solution Architecture
 
-Beluga AI's guard package combined with age-specific prompting enables safe content generation. The system builds age-appropriate prompts, generates stories, checks safety using multiple validation layers, and regenerates content if needed until safety criteria are met.
+Beluga AI's `guard/` package provides a composable safety pipeline that applies multiple validation layers in sequence. The architecture separates concerns into three stages: content generation with age-tuned prompts, pattern-based safety filtering for known violations, and age-appropriateness validation for contextual issues. This layered approach is deliberate — fast pattern matching eliminates obvious failures cheaply, while the more expensive age-specific checks only run on content that passes the first gate. If any layer rejects the content, the system regenerates rather than attempting to patch unsafe output, because modifying LLM output risks introducing new problems.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -290,7 +292,7 @@ func loadConceptLists() map[string][]string {
 
 ### Content Filtering Pipeline
 
-Implement a multi-stage content filtering pipeline:
+The validation pipeline applies checks in order of computational cost — fast pattern matching first, then LLM-based safety analysis, then age-appropriateness rules. This ordering minimizes latency for the common case (content that passes all checks) while ensuring obviously unsafe content is caught without invoking expensive checks:
 
 ```go
 func (s *SafeStoryGenerator) validateStory(ctx context.Context, story string, age int) (bool, error) {

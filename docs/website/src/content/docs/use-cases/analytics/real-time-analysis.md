@@ -3,11 +3,15 @@ title: Real-Time Data Analysis
 description: Build an autonomous data analysis agent with tool access to databases, APIs, and streaming data using Beluga AI.
 ---
 
-Business teams need real-time insights from diverse data sources — sales databases, analytics APIs, financial feeds, and operational metrics. Manually collecting, analyzing, and reporting this data is slow and does not scale. An AI agent with tool access can autonomously fetch data, perform calculations, and generate actionable insights on demand.
+Business teams need answers to data questions — "What were our top products last quarter?" or "Which regions show declining retention?" — but getting these answers requires SQL knowledge, API access, statistical computation, and report formatting. Each question becomes a multi-hour request to the analytics team, creating a bottleneck where business decisions wait on data availability.
+
+The gap is not data access but data reasoning: the information exists across databases and APIs, but synthesizing it into an actionable answer requires combining queries, calculations, and domain context. Traditional dashboards answer pre-defined questions; novel questions still require human analysts.
+
+An AI agent with tool access bridges this gap by autonomously deciding which data sources to query, what calculations to perform, and how to synthesize findings into a natural language report — turning ad-hoc data questions into self-service insights.
 
 ## Solution Architecture
 
-Beluga AI's agent framework gives the analysis agent access to tools that connect to databases, REST APIs, and computation engines. The agent uses a planning strategy (ReAct or Self-Discover) to reason about which tools to use, fetches the data, analyzes it, and returns a natural language report with structured findings.
+Beluga AI's agent framework with `tool.NewFuncTool[T]` creates typed tools that the agent can invoke autonomously. The agent uses a ReAct planning strategy to reason about which tools to call, in what order, and how to combine results. Tools are defined with JSON schema descriptions so the LLM understands their capabilities and input requirements. The guard pipeline protects the database with read-only SQL validation.
 
 ```
 ┌──────────────┐
@@ -251,7 +255,7 @@ apiTool := tool.NewFuncTool[APIQueryInput](
 
 ### Safety Guards
 
-Protect the database from harmful queries using Beluga AI's guard pipeline:
+An agent with SQL access could potentially execute destructive queries (DROP TABLE, DELETE). Beluga AI's guard pipeline applies a tool guard that validates SQL input before execution, blocking write operations at the framework level rather than relying on database permissions alone. This defense-in-depth approach catches prompt injection attempts that try to trick the agent into running unauthorized queries:
 
 ```go
 import "github.com/lookatitude/beluga-ai/guard"

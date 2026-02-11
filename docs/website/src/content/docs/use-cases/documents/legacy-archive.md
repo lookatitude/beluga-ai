@@ -3,11 +3,15 @@ title: Legacy Archive Ingestion
 description: Digitize and ingest millions of historical documents from legacy archives into modern RAG systems.
 ---
 
-A financial services company needed to digitize and ingest millions of historical documents from legacy archives (paper files, microfilm, old databases) into a modern RAG system. Legacy archives contained 5M+ documents in 20+ formats, manual digitization would take 5-10 years and cost $2M+, and documents were deteriorating. An automated ingestion system with format detection, batch processing, and quality validation enables processing 5M+ documents in 6 months.
+Financial institutions accumulate decades of documents — loan agreements, regulatory filings, correspondence, audit reports — stored across paper files, microfilm, legacy databases, and obsolete digital formats. These archives contain critical institutional knowledge but are effectively inaccessible: finding a specific document means knowing exactly where to look, and cross-referencing across archives is impractical at scale.
+
+Manual digitization at 5M+ documents would take 5-10 years and cost $2M+, and the physical media continues to deteriorate. The challenge is not just digitization but ingestion into a modern RAG system where documents become semantically searchable — finding all loan modifications related to a specific property type, regardless of which archive or format they were stored in.
+
+An automated ingestion system with format detection, batch processing, and quality validation processes the entire archive in months rather than years, making decades of institutional knowledge immediately queryable.
 
 ## Solution Architecture
 
-Beluga AI's RAG loader package supports multiple document formats through a unified interface. The ingestion system detects document formats, selects appropriate loaders, processes documents in batches, and validates quality before adding to the RAG pipeline.
+Beluga AI's RAG loader package supports multiple document formats through a unified `DocumentLoader` interface. The ingestion system uses format detection to select the appropriate loader for each file, processes documents in configurable batches for memory efficiency, and validates extracted text quality before embedding and indexing. Failed documents are logged for manual review rather than blocking the pipeline.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -233,7 +237,7 @@ func (a *ArchiveIngestionSystem) processBatch(ctx context.Context, files []strin
 
 ## Quality Validation
 
-The validator ensures document quality before ingestion.
+Legacy documents often produce poor OCR output — garbled text, excessive special characters, or nearly empty extractions from damaged pages. Ingesting low-quality text into the vector store degrades retrieval accuracy for all queries. The validator gates ingestion on content quality, filtering out documents that would add noise rather than signal.
 
 ```go
 type QualityValidator struct {

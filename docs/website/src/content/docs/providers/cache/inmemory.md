@@ -5,6 +5,8 @@ description: "Integration guide for the in-memory LRU cache provider in Beluga A
 
 The in-memory provider implements an LRU (Least Recently Used) cache with TTL-based expiration. It uses a doubly-linked list combined with a hash map for O(1) get, set, and eviction operations. Entries expire lazily on access.
 
+Choose the In-Memory cache for development, testing, and single-process deployments where local memoization is sufficient. It provides O(1) operations with LRU eviction and per-entry TTL, and can be combined with `SemanticCache` for embedding-based lookups. No external dependencies are required.
+
 ## Installation
 
 ```bash

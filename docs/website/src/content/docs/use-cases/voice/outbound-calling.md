@@ -3,7 +3,9 @@ title: Automated Outbound Calling
 description: Automate outbound calls for appointment reminders, consent verification, and surveys using Beluga AI's voice pipeline.
 ---
 
-Sales and operations teams often need to make thousands of outbound calls daily for appointment reminders, consent verification, and simple surveys. Manual calling is expensive, inconsistent, and lacks an audit trail. This use case demonstrates automating outbound calls using Beluga AI's voice pipeline with STT/TTS for scripted interactions.
+Sales and operations teams often need to make thousands of outbound calls daily for appointment reminders, consent verification, and simple surveys. Manual calling is expensive ($15-25 per agent-hour), inconsistent (agents deviate from scripts and forget follow-ups), and lacks a reliable audit trail for compliance-sensitive outcomes like consent confirmations. The economics break down at scale: a team of 10 agents can handle roughly 200 calls per day, but demand often exceeds 2,000.
+
+This use case demonstrates automating outbound calls using Beluga AI's voice pipeline with STT/TTS for scripted interactions. STT and TTS are used as separate components (rather than S2S) because the call flow is scripted with explicit branching logic — the system needs to inspect the transcribed text to decide which script branch to follow next.
 
 ## Solution Architecture
 
@@ -21,9 +23,13 @@ graph TB
 
 A job scheduler triggers outbound sessions per contact. Each worker creates a voice pipeline that handles the call through STT/TTS, executing the appropriate script (reminder, consent, or survey). On call completion or timeout, the worker records the disposition.
 
+The worker-based architecture separates scheduling from call execution, allowing independent scaling. Workers are stateless except for the active call, which means they can be horizontally scaled to match call volume without coordination overhead.
+
 ## Implementation
 
 ### Outbound Call Session
+
+The caller wraps STT and TTS engines and exposes per-script methods (e.g., `ExecuteReminder`). Each method follows a synthesize-listen-branch pattern: play the prompt via TTS, listen for a response via streaming STT, and branch based on the transcribed text. The `iter.Seq2[[]byte, error]` audio input allows the caller to work with any audio source — WebSocket, telephony adapter, or test fixture.
 
 ```go
 package main

@@ -5,7 +5,7 @@ sidebar:
   order: 0
 ---
 
-Guides for managing prompt templates, validating schemas, and bridging data between languages.
+Prompts are the primary interface between your application and language models. Managing them as hardcoded strings works for prototypes, but production systems need versioning, validation, and reuse. These guides cover loading templates from files and community hubs, validating structured data at application boundaries, and bridging data between Go and Python services.
 
 | Guide | Description |
 |-------|-------------|

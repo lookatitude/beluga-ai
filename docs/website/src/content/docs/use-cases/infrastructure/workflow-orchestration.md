@@ -3,11 +3,15 @@ title: Distributed Workflow Orchestration
 description: Build distributed workflows with Temporal integration, AI-powered decisions, and comprehensive observability.
 ---
 
-Enterprise applications require complex, long-running workflows that span multiple services, handle failures gracefully, and integrate intelligent decision-making. Traditional orchestration solutions lack AI capabilities and don't integrate well with LLM-based reasoning. Beluga AI provides a complete orchestration layer supporting chains, DAG-based graphs, and Temporal workflows with native LLM integration.
+Enterprise applications require complex, long-running workflows that span multiple services, handle failures gracefully, and integrate intelligent decision-making. A typical order processing system, for example, must validate inventory, check credit, process payment, and fulfill the order — some steps in sequence, others in parallel, all with retry logic and state persistence across potential failures.
+
+Traditional orchestration solutions (cron jobs, message queues, custom state machines) lack AI capabilities. Adding LLM-based decisions to these systems requires bolting on API calls with ad-hoc error handling, losing the benefits of structured workflow management. The result is fragile glue code that's hard to test, monitor, and recover from failures.
+
+Beluga AI provides a complete orchestration layer with three patterns at different complexity levels, each with native LLM integration so AI-powered decisions are first-class workflow activities rather than external API calls.
 
 ## Solution Architecture
 
-Beluga AI's orchestration layer supports three patterns: sequential chains for simple flows, DAG-based graphs for parallel execution with dependencies, and Temporal workflows for distributed, fault-tolerant execution. LLMs integrate naturally as workflow activities, enabling intelligent routing and decision-making within durable workflows.
+Beluga AI's orchestration layer supports three patterns, each suited to different complexity levels: **sequential chains** for linear flows where each step feeds the next, **DAG-based graphs** for parallel execution with explicit dependency edges, and **Temporal workflows** for distributed, fault-tolerant execution that survives process restarts. The choice depends on requirements: chains for simplicity, graphs for throughput, Temporal for durability.
 
 ```mermaid
 graph TB
@@ -25,7 +29,7 @@ graph TB
 
 ## Chain Orchestration
 
-Chains execute steps sequentially, passing output from one step to the next. Use chains for simple linear workflows.
+Chains execute steps sequentially, passing output from one step to the next. Use chains when the workflow is inherently linear — each step depends on the previous step's output and there's no opportunity for parallelism. Chains are the simplest orchestration pattern and the right default when you don't need parallel execution or complex dependency graphs.
 
 ```go
 package main
@@ -120,7 +124,7 @@ func runChain(ctx context.Context) error {
 
 ## Graph Orchestration
 
-Graphs define DAG-based workflows with parallel execution and explicit dependencies. Use graphs when steps can run concurrently.
+Graphs define DAG-based workflows with parallel execution and explicit dependencies. Use graphs when independent steps can run concurrently — for example, checking inventory and verifying credit can happen in parallel since neither depends on the other, but payment processing must wait for both to complete. The graph engine automatically schedules steps based on dependency edges, maximizing throughput without manual goroutine management.
 
 ```go
 func createOrderGraph(ctx context.Context) (orchestration.Graph, error) {
@@ -171,7 +175,7 @@ func (n *CheckInventoryNode) Execute(ctx context.Context, input map[string]any) 
 
 ## Temporal Workflow Integration
 
-For distributed, fault-tolerant workflows, integrate with Temporal. Beluga AI provides helpers for LLM activities within Temporal workflows.
+Chains and graphs run in-process — if the process crashes, in-flight workflow state is lost. For workflows that must survive process restarts, deployments, and infrastructure failures, Temporal provides durable execution with automatic state persistence, replay-based recovery, and exactly-once activity execution. Beluga AI provides helpers for wrapping LLM calls as Temporal activities, so AI-powered decisions get the same durability guarantees as any other workflow step.
 
 ```go
 package main

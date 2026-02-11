@@ -3,11 +3,13 @@ title: Customer Support API Gateway
 description: Build a production REST API gateway with authentication, rate limiting, and request routing using Beluga AI's server package.
 ---
 
-Customer support platforms need secure, scalable API gateways to handle high-volume requests while protecting backend systems from abuse. A gateway implements authentication, authorization, rate limiting, and intelligent routing to ensure security, reliability, and performance. Without proper controls, APIs face security vulnerabilities, abuse through excessive requests, and scalability bottlenecks.
+Exposing AI-powered customer support as an API creates a surface area that is both expensive and vulnerable. Each request triggers LLM inference costing $0.01-0.10, meaning an unauthenticated endpoint can generate thousands of dollars in charges from a single attacker running automated requests. Beyond cost, support APIs handle sensitive customer data (account details, conversation history, PII) that requires role-based access — an agent should see their assigned tickets but not all customer records, while an admin needs broader access. Without proper gateway controls, these APIs face credential stuffing, rate limit abuse, and unauthorized data access.
+
+Traditional API gateway products (Kong, AWS API Gateway) provide generic HTTP controls but lack AI-specific awareness: they cannot enforce per-user token budgets, route requests based on LLM model requirements, or integrate safety guards on request payloads.
 
 ## Solution Architecture
 
-Beluga AI's server package provides REST API infrastructure with middleware support for composable security and routing. The gateway authenticates requests, enforces rate limits, routes to appropriate backends, and provides comprehensive observability through OpenTelemetry instrumentation.
+Beluga AI's `server/` package provides REST API infrastructure with middleware composition following the standard `func(http.Handler) http.Handler` pattern. The middleware approach is composable — authentication, authorization, rate limiting, and observability are independent layers that stack in a defined order. This matters because each concern has different failure semantics: authentication failures return 401, authorization failures return 403, and rate limit failures return 429. Separating them ensures correct HTTP semantics and allows each layer to be tested, monitored, and configured independently.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -77,7 +79,7 @@ func NewCustomerSupportGateway(ctx context.Context) (*CustomerSupportGateway, er
 
 ## Authentication Middleware
 
-Verify API credentials and attach user context to requests:
+Authentication runs first in the middleware chain and attaches user identity to the request context. Subsequent middleware (authorization, rate limiting) depends on this identity, so the ordering is critical — authorization without authentication would fail, and rate limiting without user identity could only limit by IP address:
 
 ```go
 package main

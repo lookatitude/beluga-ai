@@ -5,6 +5,8 @@ description: "Integration guide for LiteLLM universal proxy with Beluga AI."
 
 The LiteLLM provider connects Beluga AI to a [LiteLLM](https://litellm.ai) proxy gateway. LiteLLM provides a unified OpenAI-compatible API in front of 100+ LLM providers, handling format translation, load balancing, spend tracking, and rate limiting. This provider is a thin wrapper that points to your LiteLLM deployment.
 
+Choose LiteLLM when you need centralized LLM management at the infrastructure layer -- spend tracking, rate limiting, virtual API keys, and provider abstraction managed outside your application code. LiteLLM is well-suited for teams with multiple applications sharing LLM access.
+
 ## Installation
 
 ```bash

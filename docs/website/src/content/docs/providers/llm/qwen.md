@@ -5,6 +5,8 @@ description: "Integration guide for Alibaba's Qwen models with Beluga AI."
 
 The Qwen provider connects Beluga AI to Alibaba's Qwen family of models via the DashScope API. Qwen exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output.
 
+Choose Qwen when you need strong multilingual support, especially for Chinese and other Asian languages. Qwen models also offer extended context variants (`qwen-long`) and competitive pricing on the DashScope platform, making them a good choice for multilingual applications and Asian market deployments.
+
 ## Installation
 
 ```bash
@@ -128,11 +130,11 @@ model, err := qwen.New(config.ProviderConfig{
 
 ## Available Models
 
-| Model ID        | Description                     |
-|-----------------|---------------------------------|
-| `qwen-plus`     | Balanced cost and performance   |
-| `qwen-turbo`    | Fast, cost-effective model      |
-| `qwen-max`      | Most capable Qwen model         |
-| `qwen-long`     | Extended context model          |
+| Model ID        | Description                                       |
+|-----------------|---------------------------------------------------|
+| `qwen-plus`     | Balanced cost and performance for general tasks   |
+| `qwen-turbo`    | Fastest, lowest cost per token                    |
+| `qwen-max`      | Most capable, best for complex reasoning          |
+| `qwen-long`     | Extended context window for long documents        |
 
 Refer to [Alibaba Cloud's documentation](https://help.aliyun.com/zh/model-studio/developer-reference/what-is-qwen-llm) for the latest model list.

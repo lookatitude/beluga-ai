@@ -5,7 +5,9 @@ description: Integrate SpaCy's NLP sentence tokenizer with Beluga AI text splitt
 
 ## Overview
 
-This guide covers building a custom text splitter that uses [SpaCy](https://spacy.io) for sentence-aware chunking. Standard character-based splitters may cut text mid-sentence, degrading retrieval quality and LLM comprehension. A sentence-aware splitter groups complete sentences into chunks of a target size, producing semantically coherent segments for embedding and retrieval.
+Chunk quality directly impacts retrieval quality. When a character-based splitter cuts a paragraph mid-sentence, the resulting fragment loses context -- "The treatment was found to be" is meaningless without the sentence completion. This degrades both embedding quality (the vector represents incomplete meaning) and LLM comprehension when the chunk is used as retrieved context.
+
+This guide covers building a custom text splitter that uses [SpaCy](https://spacy.io) for sentence-aware chunking. SpaCy provides linguistic models that identify sentence boundaries accurately across languages, ensuring chunks contain complete thoughts. The splitter groups complete sentences into chunks of a target size, producing semantically coherent segments for embedding and retrieval.
 
 The splitter implements Beluga AI's `TextSplitter` interface, making it compatible with the full RAG pipeline -- from document loading through vector store ingestion.
 

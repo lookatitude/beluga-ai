@@ -5,6 +5,8 @@ description: "Integration guide for Anthropic Claude models with Beluga AI."
 
 The Anthropic provider connects Beluga AI to Anthropic's Claude family of models using the official `anthropic-sdk-go` SDK. It supports chat completions, streaming, tool calling, vision (images via URL or base64), and system messages as a first-class concept.
 
+Choose Anthropic when you need strong reasoning capabilities, large context windows (up to 200K tokens), or prompt caching for cost optimization. Claude models are well-suited for complex agentic workflows, code generation, and tasks requiring careful instruction following.
+
 ## Installation
 
 ```bash

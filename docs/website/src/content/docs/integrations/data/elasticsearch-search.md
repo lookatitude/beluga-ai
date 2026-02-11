@@ -3,7 +3,9 @@ title: Elasticsearch Keyword Search
 description: Integrate Elasticsearch for keyword-based document retrieval in hybrid RAG pipelines with Beluga AI.
 ---
 
-Beluga AI's RAG pipeline can use Elasticsearch for keyword-based document retrieval. Elasticsearch provides full-text search capabilities that complement vector similarity search, enabling hybrid retrieval strategies that combine semantic understanding with exact keyword matching.
+Vector search alone can miss results when users search for specific terms, product codes, or proper nouns that carry exact-match significance. Elasticsearch provides BM25-based full-text search that excels at these keyword-centric queries. Combining Elasticsearch keyword search with vector similarity search in a hybrid retrieval strategy captures both semantic relevance and keyword precision -- improving recall for RAG applications that handle diverse query types.
+
+Choose Elasticsearch when you need keyword search alongside vector search, when your organization already operates Elasticsearch clusters, or when your data has structured fields that benefit from traditional search features like faceting and aggregations.
 
 ## Overview
 

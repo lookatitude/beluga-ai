@@ -3,11 +3,15 @@ title: Token Cost Attribution per User
 description: Track and attribute LLM token costs to individual users and tenants for accurate billing and cost optimization.
 ---
 
-Multi-tenant SaaS platforms need per-user token tracking to bill accurately, identify high-cost users, and optimize LLM spending. System-level token tracking creates billing disputes, prevents cost optimization, and lacks transparency for enterprise customers. User-level cost attribution using OpenTelemetry metrics enables accurate billing, cost visibility, and data-driven optimization.
+When LLM costs appear as a single line item on the infrastructure bill, teams cannot answer basic questions: which feature consumes the most tokens, which customers generate disproportionate cost, and where optimization efforts would have the most impact. Enterprise customers expect usage-based billing with transparent cost breakdowns, but system-level token counters provide no attribution.
+
+The deeper problem is that LLM costs are non-obvious — a chatbot conversation might use 500 tokens or 50,000 depending on conversation length, tool calls, and context window management. Without per-user attribution, billing disputes are unresolvable and cost optimization is guesswork.
+
+User-level cost attribution using OpenTelemetry metrics solves this by attaching user and tenant context to every token counter increment. Costs are attributed at the point of consumption, not estimated after the fact.
 
 ## Solution Architecture
 
-Beluga AI's `o11y/` package integrates with OpenTelemetry to track token usage per request. By attaching user and tenant metadata as metric attributes, the system attributes 100% of token costs to specific users. Cost aggregation pipelines compute per-user spending for billing and dashboards.
+Beluga AI's `o11y/` package integrates with OpenTelemetry for standardized metrics export. The key design choice is implementing cost tracking as LLM middleware (`func(ChatModel) ChatModel`) rather than application-level instrumentation. This middleware pattern means cost tracking is transparent to callers — wrap the model once, and every Generate/Stream call is automatically tracked with user context from `context.Context`. Metrics flow to Prometheus for aggregation and PromQL queries power billing dashboards.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -176,7 +180,7 @@ func (t *TokenCostTracker) TrackCost(
 
 ## Integration with LLM Calls
 
-Integrate cost tracking with LLM middleware:
+The cost tracker integrates as Beluga AI middleware — the standard `func(ChatModel) ChatModel` pattern. This is the recommended approach because it's composable (stack it with other middleware like caching and resilience), transparent (callers don't know tracking is happening), and complete (every LLM call is tracked, not just the ones where developers remembered to add instrumentation):
 
 ```go
 package main

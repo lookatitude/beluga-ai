@@ -3,11 +3,15 @@ title: Multi-tenant API Key Management
 description: Securely manage API keys for thousands of tenants with encryption, isolation, and automated rotation.
 ---
 
-A B2B SaaS platform needed to securely manage API keys for thousands of tenants, each with different access levels, rate limits, and feature permissions. API keys were stored in plaintext, lacked tenant isolation, and required manual rotation, causing security risks and operational overhead. A secure multi-tenant key management system ensures encrypted key storage, complete tenant isolation, and automated key rotation.
+B2B SaaS platforms that expose LLM capabilities to customers face a compound security challenge. Each tenant needs their own API key with isolated access, custom rate limits, and specific feature permissions. The naive approach — storing keys in plaintext config files or environment variables — breaks down quickly: plaintext keys in logs expose credentials, shared rate limits let one tenant starve others, and manual rotation means keys persist months after employees leave.
+
+The deeper problem is operational: with thousands of tenants, key lifecycle management (provisioning, rotation, revocation, expiration) must be automated. Manual processes don't scale, and any delay in revoking a compromised key extends the exposure window.
+
+A secure multi-tenant key management system with AES-GCM encryption at rest, per-tenant isolation, and automated rotation reduces these risks while keeping key lookup fast enough for the request path.
 
 ## Solution Architecture
 
-Beluga AI's configuration package provides encrypted configuration management with tenant isolation. The key manager encrypts keys at rest, maintains per-tenant namespaces, and enables dynamic key rotation without application restarts. In-memory caching with secure memory handling ensures fast key lookups while maintaining security.
+Beluga AI's `config/` package provides encrypted configuration management with hot-reload support. The key manager builds on this foundation: keys are encrypted with AES-256-GCM before storage, looked up by hash (so the plaintext key never needs to be stored in memory after validation), and loaded through the config system's hot-reload mechanism for rotation without restarts. Per-tenant namespaces prevent cross-tenant key access by design.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -160,7 +164,7 @@ func hashAPIKey(key string) string {
 
 ## Encryption and Decryption
 
-The manager uses AES-GCM for authenticated encryption of API keys.
+AES-GCM (Galois/Counter Mode) provides both confidentiality and integrity — if the ciphertext is tampered with, decryption fails rather than silently producing corrupted output. Each encryption operation generates a random nonce, ensuring identical plaintext keys produce different ciphertext. This is critical for preventing pattern analysis attacks on the key store.
 
 ```go
 func (m *APIKeyManager) encryptKey(plaintext string) (string, error) {
@@ -216,7 +220,7 @@ func (m *APIKeyManager) decryptKey(ciphertext string) (string, error) {
 
 ## Key Rotation
 
-Automated key rotation without service disruption:
+Periodic key rotation limits the blast radius of a compromised key — even if an attacker obtains a key, it expires before they can exploit it fully. The rotation mechanism generates a new key, updates the in-memory maps atomically under a lock, and removes the old key. In production, consider adding a grace period where both old and new keys are valid to allow clients time to update.
 
 ```go
 // RotateKey generates a new API key for a tenant.

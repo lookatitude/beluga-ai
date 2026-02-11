@@ -5,6 +5,8 @@ description: "Amazon Nova Sonic S2S provider for bidirectional audio streaming v
 
 Amazon Nova provides native speech-to-speech via the AWS Bedrock Runtime API with Nova Sonic. The provider connects via WebSocket for bidirectional audio streaming, supporting tool calling, input transcription, and user interruption handling.
 
+Choose Amazon Nova S2S when your infrastructure is AWS-native and you want speech-to-speech without leaving the AWS ecosystem. Nova Sonic uses AWS IAM authentication and connects through Bedrock Runtime, fitting naturally into existing AWS deployments. For a provider-agnostic alternative, consider [OpenAI Realtime](/providers/voice/openai-realtime) or [Gemini Live](/providers/voice/gemini-live).
+
 ## Installation
 
 ```go

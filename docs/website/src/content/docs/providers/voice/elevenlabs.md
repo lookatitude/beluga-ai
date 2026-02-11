@@ -5,6 +5,8 @@ description: "ElevenLabs STT and TTS provider for premium voice cloning, synthes
 
 ElevenLabs provides both speech-to-text (via the Scribe engine) and text-to-speech (with voice cloning and premium synthesis). Beluga AI registers two separate providers: `"elevenlabs"` in the STT registry and `"elevenlabs"` in the TTS registry.
 
+Choose ElevenLabs when voice quality is the top priority — particularly for applications requiring natural-sounding speech with voice cloning, custom voices, or multilingual synthesis. The TTS output is widely regarded as among the most expressive available. For lower-latency TTS in real-time pipelines, also evaluate [Cartesia](/providers/voice/cartesia) or [LMNT](/providers/voice/lmnt).
+
 ## Installation
 
 ```go

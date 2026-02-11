@@ -3,11 +3,13 @@ title: Audio-Visual Product Search
 description: Enable customers to search for products using images and voice descriptions with multimodal AI.
 ---
 
-E-commerce platforms lose sales when customers cannot find products through text-only search. Visual queries like "show me something like this" and voice descriptions require multimodal understanding that traditional keyword search cannot provide. Implementing audio-visual search using Beluga AI's multimodal capabilities enables natural product discovery, improves search relevance, and increases conversion rates.
+Customers often know what they want but cannot describe it in search keywords. A shopper holding a competitor's product wants "something like this" — a query that text search cannot answer. Voice descriptions ("I'm looking for a blue ceramic vase, about 12 inches tall") contain rich detail that keyword matching ignores. E-commerce platforms lose sales at these moments because the gap between how customers think about products and how search systems index them is too wide.
+
+Multimodal search bridges this gap by understanding products the way customers do — through visual appearance, spoken descriptions, and contextual text. The LLM extracts semantic features from images and audio, converts them to a unified text description, and vector similarity search finds products that match the meaning rather than the exact words.
 
 ## Solution Architecture
 
-Beluga AI's multimodal support allows LLMs to process images, audio, and text in a single query. Users upload product images or record voice descriptions, the system extracts semantic features, and similarity search finds matching products. The LLM ranks results by relevance to the query.
+Beluga AI's `schema.ContentPart` interface supports text, images, and audio in a single message, letting the LLM process all modalities together. The system uses a vision-capable model (GPT-4o, Claude 3) to extract a semantic description from the multimodal query, then embeds that description and performs vector similarity search against the product catalog. This two-stage approach (LLM description + vector search) separates understanding from matching, making each stage independently improvable.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐

@@ -5,7 +5,7 @@ sidebar:
   order: 0
 ---
 
-Beluga AI integrates with common infrastructure services for secrets management, deployment, caching, messaging, authentication, and HTTP routing. This page covers the key infrastructure integrations.
+AI applications have the same infrastructure requirements as any production service -- secrets management, container orchestration, authentication, caching, and HTTP routing -- plus additional concerns around API key rotation, token budget management, and model failover. Beluga AI integrates with common infrastructure services so you can deploy with confidence using the tools your operations team already knows. This page covers the key infrastructure integrations.
 
 ## HTTP Framework Adapters
 

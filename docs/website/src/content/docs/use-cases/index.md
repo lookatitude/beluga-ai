@@ -3,7 +3,7 @@ title: Use Cases
 description: "66 real-world use cases demonstrating Beluga AI v2 in production scenarios across industries."
 ---
 
-Production-ready use case implementations showing how to build complete systems with Beluga AI. Each use case includes architecture diagrams, full implementation code, and deployment considerations.
+Production-ready use case implementations showing how to build complete systems with Beluga AI. Each use case includes architecture diagrams, full implementation code with correct import paths, and deployment considerations. The examples demonstrate Beluga AI's key architectural patterns — ReAct agents, handoffs-as-tools, MemGPT 3-tier memory, hybrid search with RRF fusion, frame-based voice pipelines, and the 3-stage guard pipeline — applied to real business problems.
 
 ## Use Case Categories
 

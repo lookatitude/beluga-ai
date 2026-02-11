@@ -3,7 +3,7 @@ title: Testing Guide
 description: How to write and run tests for Beluga AI
 ---
 
-Testing is a critical part of the Beluga AI development process. This guide covers how to run tests, write new ones, and follow the testing conventions used throughout the project.
+Testing is a critical part of the Beluga AI development process. With 2,885 tests across 157 packages, the test suite serves as both a safety net and a specification — tests document how each interface behaves, what edge cases are handled, and how components interact. This guide covers how to run tests, write new ones, and follow the testing conventions used throughout the project.
 
 ## Running Tests
 
@@ -27,7 +27,7 @@ go test -v ./agent/... -run TestAgentHandoff
 
 ### File Placement
 
-Test files live alongside the source code they test:
+Test files live alongside the source code they test. This co-location makes it easy to find tests for any source file and ensures that tests are updated when the source changes:
 
 ```
 llm/
@@ -39,7 +39,7 @@ llm/
 
 ### Table-Driven Tests
 
-Table-driven tests are the preferred pattern. They make it easy to add new cases and provide clear failure messages:
+Table-driven tests are the preferred pattern throughout Beluga AI. They make it easy to add new cases, provide clear failure messages that identify which specific case failed, and separate test data from test logic. When you need to test a function with multiple inputs, a table-driven test is almost always the right approach:
 
 ```go
 func TestParseTemperature(t *testing.T) {
@@ -81,7 +81,7 @@ func TestAgent(t *testing.T) {
 
 ## Using Mocks
 
-Every public interface in Beluga AI has a corresponding mock in `internal/testutil/`. Use these mocks in your tests instead of creating ad-hoc implementations:
+Every public interface in Beluga AI has a corresponding mock in `internal/testutil/`. Use these shared mocks in your tests instead of creating ad-hoc implementations. This ensures consistent test behavior across the codebase and reduces the maintenance burden of keeping multiple mock implementations in sync with interface changes:
 
 ```go
 import "github.com/lookatitude/beluga-ai/internal/testutil"
@@ -109,7 +109,7 @@ func TestAgentWithMockModel(t *testing.T) {
 
 ## Integration Tests
 
-Integration tests interact with external services (databases, APIs, etc.) and are separated from unit tests using a build tag.
+Integration tests interact with external services (databases, APIs, etc.) and are separated from unit tests using a build tag. This separation ensures that `make test` runs quickly without requiring external infrastructure, while `make integration-test` provides full end-to-end validation when needed.
 
 ### Build Tag
 
@@ -135,7 +135,7 @@ Integration tests are run in CI on every PR but may require environment variable
 
 ## Fuzz Testing
 
-Fuzz tests help find edge cases and unexpected inputs. Use the standard Go fuzzing framework:
+Fuzz tests help find edge cases and unexpected inputs that table-driven tests might miss. They are especially valuable for parsing functions, serialization logic, and anything that processes untrusted input. Use the standard Go fuzzing framework:
 
 ```bash
 # Run all fuzz tests
@@ -169,7 +169,7 @@ func FuzzParseMessage(f *testing.F) {
 
 ## Benchmarks
 
-Write benchmarks for hot paths such as streaming, tool execution, and retrieval:
+Write benchmarks for hot paths such as streaming, tool execution, and retrieval. Benchmarks are especially important for the `core/` stream utilities and the agent executor loop, where per-event overhead directly impacts latency:
 
 ```bash
 # Run all benchmarks
@@ -200,7 +200,7 @@ func BenchmarkStreamProcessing(b *testing.B) {
 
 ## Code Coverage
 
-Aim for high test coverage, especially for core packages and public APIs:
+Aim for high test coverage, especially for core packages and public APIs. Coverage reports help identify untested code paths, but coverage alone does not guarantee correctness — focus on meaningful assertions that verify behavior, not just line execution:
 
 ```bash
 # Generate coverage report
@@ -214,7 +214,7 @@ Coverage reports are generated in CI and included in PR checks.
 
 ## Testing Streaming Code
 
-Testing `iter.Seq2` based streaming requires collecting events into a slice:
+Testing `iter.Seq2` based streaming requires collecting events into a slice before making assertions. The `collectEvents` helper function below is the standard pattern used throughout the test suite. This pattern converts the push-based iterator into a collected slice that you can assert on with standard Go testing tools:
 
 ```go
 func collectEvents(seq iter.Seq2[schema.Event, error]) ([]schema.Event, error) {

@@ -5,7 +5,9 @@ sidebar:
   order: 0
 ---
 
-Beluga AI provides built-in observability through OpenTelemetry (OTel) using GenAI semantic conventions, structured logging via `slog`, health checks, and LLM-specific trace exporters. The `o11y` package is the central integration point.
+AI applications are uniquely difficult to debug. An agent might produce the wrong answer because of a prompt issue, a retrieval miss, a tool error, or a model hallucination -- and without visibility into the full execution chain, you are guessing. Observability gives you the data to understand what happened, why it happened, and how much it cost.
+
+Beluga AI provides built-in observability through OpenTelemetry (OTel) using GenAI semantic conventions, structured logging via `slog`, health checks, and LLM-specific trace exporters. The `o11y` package is the central integration point, and it works with any OTel-compatible backend.
 
 ## Observability Architecture
 

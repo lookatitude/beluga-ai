@@ -5,6 +5,8 @@ description: "Overview of all supported LLM providers in Beluga AI."
 
 Beluga AI provides a unified `llm.ChatModel` interface across 22 LLM providers. Every provider registers itself via `init()`, so a blank import is sufficient to make it available through the registry.
 
+This unified interface means you can switch providers by changing a single line of configuration -- your application code, middleware, and hooks work identically across all providers. Start with any provider during development and switch to another for production without code changes.
+
 ## How It Works
 
 All providers implement the same interface:
@@ -78,7 +80,7 @@ resp, err := model.Generate(ctx, msgs,
 
 ### Direct API Providers
 
-These providers use their vendor's native SDK:
+These providers use their vendor's native SDK and offer the deepest feature integration, including provider-specific capabilities like vision, prompt caching, and extended context windows:
 
 | Provider | Registry Name | Description |
 |----------|---------------|-------------|
@@ -92,7 +94,7 @@ These providers use their vendor's native SDK:
 
 ### OpenAI-Compatible Providers
 
-These providers expose an OpenAI-compatible API and share a common implementation layer:
+These providers expose an OpenAI-compatible API and share a common implementation layer via Beluga's `internal/openaicompat` package. They all support streaming, tool calling, and structured output through the same code path:
 
 | Provider | Registry Name | Description |
 |----------|---------------|-------------|
@@ -111,13 +113,28 @@ These providers expose an OpenAI-compatible API and share a common implementatio
 
 ### Meta-Providers
 
-These providers delegate to other providers or gateways:
+These providers delegate to other providers or gateways, adding a routing or abstraction layer between your application and the underlying LLM service:
 
 | Provider | Registry Name | Description |
 |----------|---------------|-------------|
 | [Llama](/providers/llm/llama) | `llama` | Meta Llama models via any backend |
 | [Bifrost](/providers/llm/bifrost) | `bifrost` | LLM gateway with load balancing |
 | [LiteLLM](/providers/llm/litellm) | `litellm` | Universal LLM proxy (100+ models) |
+
+## Choosing a Provider
+
+| Use Case | Recommended Provider | Why |
+|---|---|---|
+| General-purpose default | [OpenAI](/providers/llm/openai) | Broadest ecosystem, mature tooling |
+| Strong reasoning and safety | [Anthropic](/providers/llm/anthropic) | Large context, prompt caching |
+| Multimodal (text + images + video) | [Google](/providers/llm/google) | Long context, Google Cloud integration |
+| Enterprise Azure compliance | [Azure OpenAI](/providers/llm/azure) | Private networking, AAD, SLAs |
+| AWS-native deployment | [AWS Bedrock](/providers/llm/bedrock) | IAM roles, multi-provider catalog |
+| Lowest inference latency | [Groq](/providers/llm/groq), [Cerebras](/providers/llm/cerebras) | Custom hardware, fastest tokens/sec |
+| Local/offline development | [Ollama](/providers/llm/ollama) | No API key, no network required |
+| Search-augmented answers | [Perplexity](/providers/llm/perplexity) | Built-in web search |
+| Model comparison and evaluation | [OpenRouter](/providers/llm/openrouter) | Single API key, hundreds of models |
+| Infrastructure-level LLM management | [LiteLLM](/providers/llm/litellm) | Spend tracking, rate limiting, proxy |
 
 ## Middleware
 

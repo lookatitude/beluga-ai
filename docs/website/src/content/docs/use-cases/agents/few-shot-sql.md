@@ -3,11 +3,15 @@ title: Few-Shot SQL Generation
 description: Few-shot learning enables 92% accuracy for natural language to SQL query generation.
 ---
 
-Business intelligence platforms need to enable non-technical users to query databases using natural language. Traditional SQL generation from natural language achieves only 60-70% accuracy and struggles with complex multi-table queries. Few-shot SQL generation uses example-based learning to achieve 90%+ accuracy while handling complex queries and multiple database dialects.
+Business intelligence platforms need to enable non-technical users to query databases using natural language. The alternative — training users on SQL — does not scale, and building custom query builders for every possible question is impractical. Traditional zero-shot SQL generation (sending the question directly to an LLM with schema information) achieves only 60-70% accuracy because the model must infer query patterns, join strategies, and dialect-specific syntax from the schema alone.
+
+Few-shot SQL generation uses example-based learning to achieve 90%+ accuracy while handling complex queries and multiple database dialects. The key insight is that a handful of well-chosen examples teach the LLM the specific query patterns, naming conventions, and join relationships used in your database — context that the schema definition alone cannot convey. Few-shot learning is preferred over fine-tuning because it requires no model training, adapts instantly to new examples, and works across different LLM providers.
 
 ## Solution Architecture
 
 Beluga AI's prompt package combined with LLM-based generation enables few-shot SQL generation. The system selects relevant query examples, constructs prompts with schema information, generates SQL using the LLM, and validates output for correctness.
+
+The pipeline has four stages: example selection (find the most relevant examples for this query), prompt construction (combine schema, examples, and the user's question using `prompt.PromptTemplate`), SQL generation (LLM produces the query), and validation (parse the output to verify syntactic correctness). This separation means each stage can be improved independently — better example selection improves accuracy without changing the prompt template, and better validation catches errors without affecting generation.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -30,7 +34,7 @@ Beluga AI's prompt package combined with LLM-based generation enables few-shot S
 
 ## Few-Shot SQL Generation
 
-The SQL generator selects similar examples based on query intent and constructs a prompt with schema information and examples:
+The SQL generator selects similar examples based on query intent and constructs a prompt with schema information and examples. The prompt template uses Go's `text/template` syntax via Beluga AI's `prompt.NewPromptTemplate`, which ensures consistent prompt formatting across all invocations. Examples are selected per-dialect so the LLM sees syntax patterns matching the target database.
 
 ```go
 package main

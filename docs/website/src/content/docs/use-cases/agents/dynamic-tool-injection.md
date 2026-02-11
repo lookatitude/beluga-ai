@@ -3,11 +3,15 @@ title: Dynamic Tool Instruction Injection
 description: Runtime tool injection enables context-aware agent tool selection with 87% task success rate.
 ---
 
-AI agent platforms often face a challenge: static tool instructions in prompts cannot adapt to available tools, user permissions, or task context. This causes agents to select wrong tools or miss available capabilities, resulting in 30-40% task failure rates. Dynamic tool instruction injection solves this by adapting agent prompts at runtime based on context, permissions, and task requirements.
+AI agent platforms often face a challenge: static tool instructions in prompts cannot adapt to available tools, user permissions, or task context. When an agent sees tools it is not authorized to use, it wastes reasoning steps attempting calls that will fail. When it does not see tools that are available, it cannot leverage capabilities that would resolve the task. This mismatch between visible tools and actual capabilities results in 30-40% task failure rates.
+
+Dynamic tool instruction injection solves this by adapting agent prompts at runtime based on context, permissions, and task requirements. Rather than giving every agent access to every tool (which overwhelms the model's tool selection) or hardcoding tool sets per agent (which cannot adapt to user permissions), the injector selects relevant, authorized tools per request and generates tool instructions dynamically.
 
 ## Solution Architecture
 
 Beluga AI's prompt package combined with tool registry enables dynamic tool injection. The system analyzes task context, filters tools by permissions, and injects relevant tool instructions into agent prompts at runtime. This ensures agents see only authorized, relevant tools for each specific task.
+
+The architecture has three stages: context analysis (what kind of task is this?), permission filtering (what tools is this user allowed to use?), and prompt injection (generate tool instructions from the filtered set). This separation of concerns means permission policies can be updated without touching the relevance logic, and new tools can be added to the registry without modifying the injection pipeline.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -30,7 +34,7 @@ Beluga AI's prompt package combined with tool registry enables dynamic tool inje
 
 ## Tool Injection Implementation
 
-The tool injector analyzes task context, selects relevant tools, filters by permissions, and dynamically injects tool instructions into agent prompts.
+The tool injector analyzes task context, selects relevant tools, filters by permissions, and dynamically injects tool instructions into agent prompts. It uses Beluga AI's prompt template system (`prompt.NewPromptTemplate`) for structured prompt generation and the tool registry (`tool.Registry`) for tool discovery. The permission checker runs between selection and injection, acting as a security boundary that ensures no unauthorized tool instructions reach the agent.
 
 ```go
 package main

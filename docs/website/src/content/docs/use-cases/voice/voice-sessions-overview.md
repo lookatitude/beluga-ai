@@ -3,7 +3,9 @@ title: Voice Sessions
 description: Build production-ready voice agents with real-time audio transport, session management, and comprehensive observability.
 ---
 
-Voice agents have unique challenges compared to text-based AI: users notice delays above 200ms, connections drop on mobile networks, and each session consumes significant resources. A well-implemented voice session system delivers responsive conversations, automatic recovery from failures, efficient resource usage, and clear debugging visibility. This guide covers the architecture and implementation patterns for production voice sessions in Beluga AI.
+Voice agents have unique challenges compared to text-based AI: users notice delays above 200ms, connections drop on mobile networks, and each session consumes significant resources (audio buffers, STT/TTS engine instances, WebSocket connections). Unlike text chat where a dropped connection just means a missed message, a dropped voice connection means the conversation stops entirely — there is no way to asynchronously resume a real-time audio stream.
+
+These constraints drive three architectural requirements: low-latency processing (every stage must be optimized for speed), session resilience (automatic reconnection with state preservation), and resource management (bounded concurrency to prevent overload). A well-implemented voice session system delivers responsive conversations, automatic recovery from failures, efficient resource usage, and clear debugging visibility. This guide covers the architecture and implementation patterns for production voice sessions in Beluga AI.
 
 ## Solution Architecture
 
@@ -46,6 +48,8 @@ graph TB
 ## Implementation
 
 ### Session Manager
+
+The session manager maintains a map of active sessions with concurrent access protection via `sync.RWMutex`. It enforces a hard limit on concurrent sessions to prevent resource exhaustion — voice sessions are significantly more resource-intensive than text sessions due to audio buffers and streaming connections. The `CleanupIdle` method garbage-collects sessions that have gone silent, preventing resource leaks from dropped connections that never received a proper close signal.
 
 ```go
 package main
@@ -122,6 +126,8 @@ func (m *SessionManager) CleanupIdle(ctx context.Context, idleTimeout time.Durat
 ```
 
 ### Voice Session Processing
+
+Each voice session tracks its state (connected, processing, listening, responding, disconnected) and conversation history. State transitions are explicit — the session moves through well-defined states that determine how audio is routed. This state machine approach ensures that the system never tries to play TTS output while simultaneously processing STT input, which would cause echo and confusion.
 
 ```go
 // VoiceSession represents an active voice conversation.
@@ -205,7 +211,7 @@ func buildVoicePipeline(ctx context.Context) (voice.FrameProcessor, error) {
 
 ## Reconnection Handling
 
-Voice sessions must survive network interruptions. Implement reconnection with exponential backoff and state preservation:
+Voice sessions must survive network interruptions, especially on mobile networks where brief disconnections are common. The reconnection strategy uses exponential backoff with a 10-second cap to balance responsiveness (first retry is fast) with server protection (subsequent retries do not overwhelm the server during outages). State is preserved across reconnection attempts so the conversation resumes from where it left off.
 
 ```go
 func (s *VoiceSession) HandleReconnect(ctx context.Context, maxAttempts int, baseDelay time.Duration) error {

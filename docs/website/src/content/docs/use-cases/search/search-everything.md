@@ -3,11 +3,15 @@ title: Internal Search Everything Bot
 description: Build a unified search bot that queries across all internal systems using REST and MCP APIs with Beluga AI's server package.
 ---
 
-Large enterprises maintain knowledge across fragmented systems including documentation, code repositories, wikis, and databases. Employees waste significant time navigating multiple search interfaces, and search relevance suffers when systems operate in silos. A unified search bot aggregates results from all sources, applies intelligent ranking, and provides a single interface for knowledge discovery.
+Large enterprises maintain knowledge across fragmented systems — documentation in Confluence, code in GitHub, discussions in Slack, data in databases, policies in SharePoint. Each system has its own search interface with different query syntax and different result formats. Employees waste significant time switching between search interfaces, and cross-system questions ("who implemented this feature and what was the design rationale?") require manual correlation across multiple tools.
+
+A unified search bot aggregates results from all sources, applies intelligent ranking, and provides a single interface for knowledge discovery. The orchestrator queries systems in parallel (for speed) and uses score-based ranking to merge results into a single relevance-ordered list, regardless of source.
 
 ## Solution Architecture
 
 Beluga AI's server package provides both REST and MCP (Model Context Protocol) APIs for flexible integration. The search orchestrator queries multiple systems in parallel, aggregates results using score-based ranking, and returns unified results with source attribution and relevance scores.
+
+Parallel querying is essential because total latency must be bounded by the slowest source, not the sum of all sources. Score-based ranking (rather than simple interleaving) ensures that a highly relevant result from one source ranks above marginally relevant results from another, regardless of which system responded first.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐

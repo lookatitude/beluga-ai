@@ -3,11 +3,13 @@ title: Multi-channel Marketing Hub
 description: Send unified marketing campaigns across SMS, WhatsApp, and email with automated scheduling and analytics.
 ---
 
-Marketing agencies manage campaigns across multiple messaging channels using separate systems, causing inconsistent branding, delivery failures, and hours of manual work. Campaign performance lacks unified visibility across channels. A multi-channel marketing hub consolidates messaging into a single platform with automated scheduling, consistent templates, and comprehensive analytics.
+A marketing agency running a product launch across SMS, WhatsApp, and email typically manages each channel through its own dashboard — Twilio for SMS, WhatsApp Business API, and SendGrid for email. This fragmentation means the same campaign requires three separate configurations, three different template formats, and three separate analytics views. When the SMS version of a message has a typo, it gets fixed in Twilio but the WhatsApp version remains unchanged. Delivery failures on one channel are invisible from another channel's dashboard, so a campaign that failed to reach 30% of WhatsApp recipients might appear successful from the SMS dashboard alone.
+
+The deeper problem is that channel-specific systems prevent cross-channel intelligence: knowing that a customer already opened the email version should suppress the SMS reminder, but siloed systems cannot coordinate this deduplication.
 
 ## Solution Architecture
 
-Beluga AI provides unified messaging abstractions that work across SMS, WhatsApp, email, and other channels. The system manages campaigns centrally, routes messages to appropriate channels, tracks delivery status, and aggregates performance metrics for cross-channel analysis.
+Beluga AI's `server/` package provides unified messaging backend abstractions with a consistent interface across channels. The key design choice is the `server.MessagingBackend` interface — SMS, WhatsApp, and email backends all implement the same `SendMessage`, `GetOrCreateConversation` contract. This means campaign logic is written once against the interface, and channel-specific behavior (WhatsApp template requirements, SMS character limits, email HTML formatting) is handled by the backend implementations. Delivery tracking and analytics aggregate across all channels into a single view.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐

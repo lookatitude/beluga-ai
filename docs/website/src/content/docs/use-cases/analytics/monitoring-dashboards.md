@@ -3,11 +3,15 @@ title: Monitoring Dashboards for AI Applications
 description: Set up comprehensive monitoring dashboards for Beluga AI applications using Prometheus and Grafana.
 ---
 
-Production AI applications require comprehensive observability to track performance, detect issues, and optimize costs. Without proper monitoring, teams debug blind, cannot identify bottlenecks, and lack visibility into LLM token usage. Implementing monitoring dashboards with OpenTelemetry, Prometheus, and Grafana provides real-time insights into latency, error rates, token consumption, and system health.
+AI applications in production generate metrics that traditional APM tools don't track: token consumption per request, LLM response latency (which varies 10x between simple and complex prompts), cost per feature, and model-specific error rates. Without purpose-built dashboards, teams cannot answer critical operational questions: "Why did LLM costs spike 3x this morning?", "Which agent is consuming the most tokens?", or "Is the rate limit on our Anthropic account affecting P95 latency?"
+
+Standard HTTP metrics (request count, latency, error rate) miss the AI-specific signals that drive cost and quality. Token usage, model selection, guard pipeline rejections, and agent tool calls all need dedicated visualization to make informed operational decisions.
+
+Implementing monitoring dashboards with OpenTelemetry, Prometheus, and Grafana provides real-time insights into these AI-specific metrics alongside standard application health indicators.
 
 ## Solution Architecture
 
-Beluga AI provides built-in OpenTelemetry integration through the `o11y/` package. Applications export metrics to an OpenTelemetry Collector, which forwards them to Prometheus for storage and Grafana for visualization. The GenAI semantic conventions ensure standardized metric naming across all components.
+Beluga AI provides built-in OpenTelemetry integration through the `o11y/` package, using GenAI semantic conventions (`gen_ai.*` attributes) for standardized metric naming. Applications export metrics to an OpenTelemetry Collector, which forwards them to Prometheus for storage and Grafana for visualization. Because all Beluga AI components emit metrics through the same OTel pipeline, a single dashboard can show end-to-end request flow from HTTP ingress through agent execution to LLM response.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐

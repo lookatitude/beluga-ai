@@ -3,7 +3,9 @@ title: OpenAI Assistants API Bridge
 description: Bridge OpenAI's Assistants API with Beluga AI's ChatModel interface to use persistent, stateful assistants with tools, file search, and code execution.
 ---
 
-OpenAI's Assistants API provides persistent, stateful AI assistants with built-in capabilities like tool calling, file search, and code execution. This guide shows how to bridge the Assistants API with Beluga AI's `llm.ChatModel` interface, allowing you to use assistants within Beluga's agent and orchestration systems.
+If your organization has already invested in OpenAI Assistants -- with configured tools, uploaded files, and tuned instructions -- you do not need to recreate that work in Beluga AI. This bridge wraps the Assistants API behind Beluga's `llm.ChatModel` interface so you can use existing assistants within Beluga's agent orchestration, middleware, and routing systems.
+
+This is useful when you want to gradually migrate to Beluga AI, combine Assistants with other LLM providers via the Router, or apply Beluga's middleware (logging, retry, caching) to Assistant calls.
 
 ## Overview
 

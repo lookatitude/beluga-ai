@@ -5,6 +5,8 @@ description: Content moderation using Microsoft Azure AI Content Safety.
 
 The Azure Content Safety provider implements the `guard.Guard` interface using the [Azure AI Content Safety](https://azure.microsoft.com/en-us/products/ai-services/ai-content-safety) API. It evaluates text across four harm categories (Hate, SelfHarm, Sexual, Violence) with configurable severity thresholds.
 
+Choose Azure Content Safety when your organization already uses the Azure ecosystem or needs Microsoft's enterprise compliance certifications. It provides configurable severity thresholds per harm category, making it straightforward to tune strictness for different use cases. For prompt injection detection specifically, consider [Lakera Guard](/providers/guard/lakera). For a self-hosted open-source alternative, consider [LLM Guard](/providers/guard/llmguard).
+
 ## Installation
 
 ```bash

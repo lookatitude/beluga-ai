@@ -3,11 +3,15 @@ title: Multi-Model LLM Gateway
 description: Build a unified LLM gateway with load balancing, failover, rate limiting, and comprehensive observability across multiple providers.
 ---
 
-Applications using multiple LLM providers face complexity managing different APIs, handling rate limits, implementing failover, and monitoring usage across providers. A unified gateway abstracts provider differences, implements intelligent routing, and provides comprehensive observability. Beluga AI's LLM package provides a consistent interface across all providers with built-in routing, resilience, and cost tracking.
+When an application depends on a single LLM provider, every rate limit hit, timeout, or outage becomes a user-facing failure. Multi-provider setups solve availability but introduce new problems: each provider has different APIs, error formats, rate limit semantics, and pricing models. Teams end up writing provider-specific client code scattered across the codebase, with no unified view of cost, latency, or error rates across providers.
+
+A gateway layer centralizes these concerns. All application code talks to one interface, and the gateway handles provider selection, rate limit enforcement, failover, and observability. This separation means adding a new provider or changing routing strategy requires zero application code changes.
+
+Beluga AI's LLM package provides this gateway pattern through its registry and `ChatModel` interface — all providers implement the same interface, so the gateway composes them with standard routing, resilience, and monitoring.
 
 ## Solution Architecture
 
-Beluga AI's LLM gateway provides a single interface for multiple providers. The router selects providers based on availability, cost, or custom logic. Rate limiting prevents quota exhaustion. OpenTelemetry integration provides full observability with metrics and distributed tracing.
+The gateway sits between application code and LLM providers. A pluggable router selects the best provider for each request based on configurable strategy (round-robin for load distribution, cost-based for budget optimization, health-based for reliability). Per-provider rate limiting prevents quota exhaustion before requests reach the provider. OpenTelemetry integration using GenAI semantic conventions (`gen_ai.*` attributes) provides unified observability across all providers.
 
 ```mermaid
 graph TB
@@ -24,7 +28,7 @@ graph TB
 
 ## Gateway Service
 
-Create a gateway that manages multiple LLM providers:
+The gateway uses Beluga AI's registry pattern (`llm.New()`) to create providers by name, keeping initialization uniform. Each provider is stored by name in a map, enabling dynamic addition and removal at runtime. The blank imports (`_ "github.com/lookatitude/beluga-ai/llm/providers/..."`) register providers via `init()` so they're available through the registry without explicit wiring.
 
 ```go
 package main
@@ -180,7 +184,7 @@ func (g *LLMGateway) getAlternativeProviders(exclude string) []string {
 
 ## Provider Routing Strategies
 
-Implement different routing strategies based on your needs:
+The router is defined as an interface (`ProviderRouter`) so strategies are swappable without changing the gateway. This follows the same interface-first pattern used throughout Beluga AI — define the contract, then provide implementations. Three common strategies cover most production needs:
 
 ```go
 type ProviderRouter interface {
@@ -270,7 +274,7 @@ func (r *HealthBasedRouter) SelectProvider(ctx context.Context, providers []stri
 
 ## Rate Limiting
 
-Implement per-provider rate limiting to prevent quota exhaustion:
+LLM providers enforce rate limits (requests per minute, tokens per minute) and return HTTP 429 errors when exceeded. Hitting these limits wastes a round-trip and delays the response. Client-side rate limiting using token bucket algorithms prevents requests from reaching the provider when the quota is near exhaustion, avoiding the latency penalty of server-side rejection.
 
 ```go
 import "golang.org/x/time/rate"
@@ -305,7 +309,7 @@ func (r *RateLimiter) Allow(provider string) bool {
 
 ## Observability with OpenTelemetry
 
-Instrument the gateway for comprehensive observability:
+Gateway-level observability answers questions that per-provider metrics cannot: which provider is cheapest for a given workload, how does failover affect latency, and which routing strategy produces the best cost-quality tradeoff. The gateway records request counts, latency histograms, error rates, and token usage per provider using OTel GenAI semantic conventions, making all metrics comparable across providers in a single dashboard.
 
 ```go
 import (

@@ -5,6 +5,8 @@ description: Generate text embeddings using HuggingFace Inference API with Sente
 
 The Sentence Transformers embedding provider implements the `embedding.Embedder` interface using the HuggingFace Inference API's feature-extraction pipeline. It supports any Sentence Transformers model hosted on HuggingFace, including the popular all-MiniLM, all-mpnet, and BGE model families.
 
+Choose Sentence Transformers when you need access to the widest selection of community embedding models or when you want to use BGE models that rank competitively on MTEB benchmarks. This provider can also target a self-hosted HuggingFace Text Embeddings Inference (TEI) server for full control over hosting.
+
 ## Installation
 
 ```bash

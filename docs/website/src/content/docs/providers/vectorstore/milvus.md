@@ -5,6 +5,8 @@ description: Scalable vector store using Milvus's REST API.
 
 The Milvus provider implements the `vectorstore.VectorStore` interface using the Milvus v2 REST API. Milvus is an open-source vector database designed for scalable similarity search, supporting both self-hosted and managed (Zilliz Cloud) deployments.
 
+Choose Milvus when you need a vector database designed for large-scale deployments with billions of vectors. Milvus supports multiple index types (IVF, HNSW, DiskANN), GPU-accelerated search, and horizontal scaling. Zilliz Cloud provides a managed option for teams that want Milvus capabilities without self-hosting.
+
 ## Installation
 
 ```bash

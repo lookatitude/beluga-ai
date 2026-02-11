@@ -3,7 +3,7 @@ title: Full Architecture
 description: "Extensibility architecture: patterns, providers, tools, and step-by-step guides for extending Beluga AI v2."
 ---
 
-This document describes the extensibility architecture: how every package follows the same patterns, how providers work, how tools work, and step-by-step guides for adding new providers and tools.
+This document describes the extensibility architecture: how every package follows the same patterns, how providers work, how tools work, and step-by-step guides for adding new providers and tools. The goal is that after reading this document, you can add a new provider to any of the 19 registries by following the same steps — the patterns are intentionally uniform so that expertise in one area transfers directly to every other area.
 
 ## Foundational Patterns
 
@@ -24,7 +24,7 @@ graph LR
 
 ### Pattern 1: Interface (the contract)
 
-Every extensible component is a Go interface with 1-4 methods. Small interfaces are testable, composable, and easy to implement.
+Every extensible component is a Go interface with 1-4 methods. Small interfaces are testable, composable, and easy to implement. The "1-4 methods" constraint is enforced deliberately: a small interface is easier to mock in tests, requires less boilerplate for new providers, and makes it clear what the contract actually requires. When a component needs optional capabilities (like batch processing or cancellation), those are checked at runtime via type assertions rather than expanding the base interface.
 
 ```go
 // llm/llm.go — 4 methods
@@ -66,7 +66,7 @@ type Embedder interface {
 
 ### Pattern 2: Registry (discovery and construction)
 
-Every extensible package has a global registry. Providers self-register in `init()`. Users construct instances with `New()`.
+Every extensible package has a global registry. Providers self-register in `init()`. Users construct instances with `New()`. This pattern decouples application code from provider implementations: your code calls `llm.New("openai", cfg)` without importing the OpenAI package directly, making it trivial to swap providers in tests or across environments. The `List()` function enables runtime discovery, which is useful for admin UIs and health checks that need to report which providers are available.
 
 ```go
 // This exact pattern exists in 19 packages across the framework.
@@ -164,7 +164,9 @@ graph TB
 
 ### Pattern 3: Middleware (wrapping)
 
-Middleware wraps an interface to add cross-cutting behavior. The signature is always `func(T) T`.
+Middleware wraps an interface to add cross-cutting behavior. The signature is always `func(T) T`. This is the decorator pattern expressed in Go's type system: because middleware returns the same interface it receives, middleware composes naturally. A retry middleware wrapping a cache middleware wrapping a rate limiter wrapping a provider all satisfy `ChatModel` — the caller sees a single interface regardless of how many layers of behavior are stacked around it.
+
+The application order is outside-in: the last middleware in the `ApplyMiddleware` call becomes the outermost wrapper. This matches how you'd think about it: "retry, then cache, then rate-limit" means retry wraps everything, caching sits in the middle, and rate limiting is closest to the provider.
 
 ```go
 // Definition
@@ -205,6 +207,8 @@ Middleware exists in: `llm`, `tool`, `agent`, `memory`, `orchestration`, `workfl
 ### Pattern 4: Hooks (lifecycle interception)
 
 Hooks are a struct with optional callback function fields. `nil` hooks are skipped. Multiple hooks compose via `ComposeHooks()`.
+
+The struct-with-optional-fields design was chosen over an interface because hook consumers typically only care about one or two lifecycle points. With an interface, every implementation would need stub methods for all the hook points it doesn't use. With a struct, you set only the fields you care about and leave the rest as `nil`. The `ComposeHooks()` function chains multiple hook sets together, running each non-nil callback in order — this lets you layer concerns like "audit logging" and "cost tracking" independently.
 
 ```go
 // Definition — all fields optional
@@ -251,7 +255,7 @@ Hooks exist in: `agent`, `tool`, `memory`, `embedding`, `vectorstore`, `stt`, `t
 
 ### The Primitive: `iter.Seq2[T, error]`
 
-All public streaming APIs use Go 1.23+ range-over-func iterators.
+All public streaming APIs use Go 1.23+ range-over-func iterators. This was chosen over channels for three reasons: no goroutine per stream (zero scheduling overhead), natural backpressure (the `yield` return value stops the producer immediately), and composability (stream transformers like `MapStream` and `FilterStream` compose without allocations). Channels are reserved for internal goroutine communication in voice frame processors and background workers — they never appear in public API return types.
 
 ```go
 // core/stream.go
@@ -329,6 +333,8 @@ graph LR
 
 ## Error Architecture
 
+Errors in agentic systems cross multiple boundaries: provider SDKs, HTTP transports, LLM APIs, tool execution, and guard validation. Without a unified error model, each boundary introduces its own error types, making it impossible to write generic retry logic or error handling. Beluga's error architecture solves this by mapping all errors to a common type at provider boundaries.
+
 ### Typed Errors
 
 ```go
@@ -371,7 +377,7 @@ graph TD
 
 ### Executor Loop
 
-The executor is planner-agnostic. It receives actions from the planner, executes them, collects observations, and asks the planner to replan.
+The executor is planner-agnostic. It receives actions from the planner, executes them, collects observations, and asks the planner to replan. This separation is the key architectural insight: the *what to do next* decision (planning) is independent of the *how to do it* mechanics (execution). The executor handles tool calls, handoffs, streaming events, and hook invocations uniformly, regardless of which reasoning strategy produced the actions.
 
 ```mermaid
 stateDiagram-v2
@@ -415,7 +421,7 @@ All planners register via `agent.RegisterPlanner("react", factory)`.
 
 ### Handoffs as Tools
 
-Handoffs are converted to `transfer_to_{id}` tools that the LLM sees in its tool list.
+Handoffs are converted to `transfer_to_{id}` tools that the LLM sees in its tool list. This design, validated by both the OpenAI Agents SDK and Google ADK, removes the need for explicit routing logic: the LLM uses the same mechanism for calling a tool and for transferring to another agent. The executor handles both uniformly.
 
 ```go
 // Auto-generates transfer_to_support tool
@@ -428,7 +434,7 @@ The LLM decides when to hand off. The executor handles the tool call by invoking
 
 ### Workflow Agents
 
-Deterministic orchestration without LLM — for predictable pipelines.
+Not every orchestration pattern needs LLM reasoning. When the execution flow is deterministic — run these agents in sequence, fan out in parallel, or loop until a condition is met — workflow agents provide predictable pipelines without LLM overhead. They implement the same `Agent` interface, so they compose with LLM-backed agents seamlessly.
 
 ```mermaid
 graph TB
@@ -514,7 +520,7 @@ func (m *Model) mapError(op string, err error) error {
 
 ### How Tools Work
 
-Tools are instances (not factories). They live in a `tool.Registry` which is instance-based (Add/Get/List/Remove), unlike the global factory registries.
+Tools are instances (not factories). They live in a `tool.Registry` which is instance-based (Add/Get/List/Remove), unlike the global factory registries. This distinction matters: LLM providers and embedding models are created from configuration at startup, but tools often carry state (database connections, API clients) and are added or removed dynamically during agent execution. An instance-based registry supports this pattern naturally.
 
 ```mermaid
 graph TB
@@ -531,7 +537,7 @@ graph TB
 
 ### FuncTool — Wrapping Go Functions
 
-`FuncTool` auto-generates JSON Schema from Go struct tags:
+The most common way to create tools is `FuncTool`, which wraps a Go function and auto-generates the JSON Schema that the LLM needs to understand the tool's parameters. Struct tags on the input type provide field names, descriptions, constraints, and defaults — this keeps the schema definition co-located with the handler code instead of requiring a separate schema file:
 
 ```go
 type WeatherInput struct {
@@ -583,6 +589,8 @@ hooks := tool.Hooks{
 ```
 
 ## How To: Add a New LLM Provider
+
+Adding a new LLM provider follows the universal extension contract: implement the interface, register via `init()`, map errors, and write tests. The steps below walk through an LLM provider specifically, but the same structure applies to any of the 19 registries.
 
 ### Step 1: Create the provider package
 
@@ -873,7 +881,7 @@ func New(cfg config.ProviderConfig) (*MyImpl, error) { /* validate config, creat
 
 ### OpenTelemetry Integration
 
-Beluga uses `gen_ai.*` semantic conventions for all AI operations.
+Beluga uses `gen_ai.*` semantic conventions for all AI operations. These conventions were standardized by the OpenTelemetry community specifically for generative AI workloads, ensuring that Beluga's traces and metrics are compatible with any OTel-compliant backend. Every LLM call, tool execution, and agent event automatically creates spans with attributes that identify the provider, model, token counts, and operation type.
 
 ```mermaid
 graph LR
@@ -935,6 +943,8 @@ watcher.Start(ctx)
 
 ## Resilience Architecture
 
+LLM providers are external services with variable reliability: they throttle requests, experience outages, and exhibit tail latency. Resilience patterns address each of these failure modes independently and compose together via middleware.
+
 ### Composable Patterns
 
 ```mermaid
@@ -966,7 +976,7 @@ model = llm.ApplyMiddleware(model,
 
 ## Guard Pipeline
 
-Three-stage safety pipeline. Guards run automatically at each stage.
+Safety threats target different points in the processing chain, so guards must run at multiple stages. Input guards catch prompt injection and PII before the LLM processes them. Output guards validate LLM responses for toxicity and compliance after generation. Tool guards enforce authorization and validate inputs before executing side effects. Each stage operates independently, allowing different safety providers at each point.
 
 ```mermaid
 graph LR
@@ -985,7 +995,7 @@ Guard providers: guardrailsai, lakera, llmguard, azuresafety, nemo.
 
 ## Memory Architecture
 
-Three-tier memory inspired by MemGPT:
+LLMs have finite context windows, but agents need access to information spanning different time horizons and access patterns. The three-tier memory architecture, inspired by MemGPT, addresses this by organizing information by how quickly it needs to be accessible and how much storage it requires:
 
 ```mermaid
 graph TB
@@ -1037,6 +1047,8 @@ sequenceDiagram
 Task lifecycle: `submitted` → `working` → `input-required` → `completed` / `failed` / `canceled`.
 
 ## Design Guarantees
+
+These guarantees are enforced by the CI pipeline and code review process. They ensure that the framework remains predictable as it grows:
 
 1. **No circular imports** — dependency flows strictly downward: foundation → capability → infrastructure → protocol.
 2. **Zero external deps in foundation** — `core/` and `schema/` depend only on stdlib + OTel.

@@ -5,6 +5,8 @@ description: "Integration guide for Cohere models with Beluga AI."
 
 The Cohere provider connects Beluga AI to Cohere's Command R family of models using the official `cohere-go` SDK (v2). Cohere uses a distinct message format where system messages are sent as a preamble, the last user message is the primary input, and prior messages become chat history. The provider handles this mapping transparently.
 
+Choose Cohere when building enterprise search and RAG applications. Command R models are specifically designed for retrieval-augmented generation with strong grounding capabilities and citation support. Cohere also provides matching embedding models for an end-to-end search stack.
+
 ## Installation
 
 ```bash

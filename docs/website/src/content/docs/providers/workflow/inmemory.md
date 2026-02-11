@@ -5,6 +5,8 @@ description: In-process workflow state store for development and testing.
 
 The In-Memory provider implements the `workflow.WorkflowStore` interface using a Go map protected by a read-write mutex. It stores workflow state entirely in process memory, making it ideal for development, testing, and prototyping. State does not persist across process restarts.
 
+Choose the In-Memory workflow store for development, testing, and CI pipelines where no external dependencies are available. It requires zero configuration and provides the full `WorkflowStore` contract. For production deployments requiring durability, consider [Temporal](/providers/workflow/temporal), [NATS](/providers/workflow/nats), or [Kafka](/providers/workflow/kafka).
+
 ## Installation
 
 ```bash

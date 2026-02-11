@@ -3,7 +3,9 @@ title: Integrations
 description: "60 integration guides for connecting Beluga AI v2 with external services, platforms, and infrastructure."
 ---
 
-Detailed integration guides showing how to connect Beluga AI with external services. Each guide covers configuration, authentication, usage patterns, and troubleshooting.
+Beluga AI is designed to work with the systems you already use. These integration guides cover connecting the framework to LLM providers, vector databases, cloud infrastructure, observability platforms, and communication channels. Each guide includes configuration, authentication, working code examples, and troubleshooting for the specific service.
+
+The guides range from drop-in provider registrations (one import line) to custom loaders and retrievers that you build to match your infrastructure.
 
 ## Integration Categories
 
@@ -22,7 +24,7 @@ Detailed integration guides showing how to connect Beluga AI with external servi
 
 ## Integration Pattern
 
-Most integrations follow the same three steps:
+Beluga AI uses a registry-based architecture where providers auto-register via Go's `init()` mechanism. This means most integrations follow the same three steps -- import, configure, create -- regardless of the underlying service:
 
 ```go
 // 1. Import the provider (auto-registers via init())

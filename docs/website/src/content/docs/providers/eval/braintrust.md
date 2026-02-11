@@ -5,6 +5,8 @@ description: "Evaluate LLM outputs using the Braintrust scoring API."
 
 The Braintrust provider connects Beluga AI's evaluation framework to the [Braintrust](https://www.braintrust.dev/) cloud platform. It implements the `eval.Metric` interface by sending samples to the Braintrust scoring API and returning normalized scores.
 
+Choose Braintrust when you want a managed evaluation platform with a dashboard for tracking scores over time. Braintrust supports factuality, relevancy, and other LLM-specific metrics with built-in project organization. For self-hosted evaluation with Python-native metrics, consider [DeepEval](/providers/eval/deepeval). For RAG-specific metrics, consider [RAGAS](/providers/eval/ragas).
+
 ## Installation
 
 ```bash

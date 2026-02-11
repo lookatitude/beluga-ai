@@ -5,9 +5,7 @@ description: Integrate Auth0 and JWT token-based authentication with the Beluga 
 
 ## Overview
 
-This guide covers integrating [Auth0](https://auth0.com) with the Beluga AI `server` package to secure REST API endpoints using JWT (JSON Web Token) authentication. You will implement middleware that validates tokens, extracts user identity, and propagates authentication context through your request pipeline.
-
-Auth0 provides a standards-based identity platform. When combined with Beluga AI's HTTP middleware support, it enables secure, token-based access control for your agent APIs without building authentication infrastructure from scratch.
+Exposing AI agents as API endpoints introduces the same authentication requirements as any public API -- plus the added risk that unauthenticated access can burn through expensive LLM token budgets. Auth0 provides a managed identity platform that handles user authentication, token issuance, and JWKS key rotation, so you can focus on agent logic instead of building auth infrastructure. This guide covers integrating [Auth0](https://auth0.com) with the Beluga AI `server` package to secure REST API endpoints using JWT authentication. You will implement middleware that validates tokens, extracts user identity, and propagates authentication context through your request pipeline.
 
 ## Prerequisites
 

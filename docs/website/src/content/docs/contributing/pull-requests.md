@@ -3,9 +3,11 @@ title: Pull Request Process
 description: Guidelines for submitting pull requests to Beluga AI
 ---
 
-This guide describes the process for submitting changes to Beluga AI, from opening an issue to getting your code merged.
+This guide describes the process for submitting changes to Beluga AI, from opening an issue to getting your code merged. The process is designed to minimize wasted effort: early issue discussion prevents duplicate work, CI checks catch problems before review, and focused PRs are easier to review and merge.
 
 ## Before You Start
+
+These steps save time for both you and the reviewers. A quick issue check prevents duplicate work, and design discussions for larger changes ensure your approach aligns with the framework's architecture before you invest time in implementation.
 
 1. **Check existing issues** — Search [GitHub Issues](https://github.com/lookatitude/beluga-ai/issues) to see if someone is already working on what you have in mind.
 2. **Create an issue** if one doesn't exist. This helps avoid duplicate work and gives maintainers a chance to provide early feedback.
@@ -13,7 +15,7 @@ This guide describes the process for submitting changes to Beluga AI, from openi
 
 ## Branch Naming Convention
 
-Use a descriptive prefix that matches the type of change:
+Branch names use a prefix that matches the type of change. This makes it easy to identify the nature of a branch at a glance in branch listings and CI logs:
 
 | Prefix | Use for |
 |---|---|
@@ -95,6 +97,8 @@ You do **not** need to update the CHANGELOG manually. It is auto-generated from 
 
 ## Review Process
 
+The review process is intentionally sequential: automated checks first, then human review. This ensures that reviewers spend their time on design and correctness, not on formatting or lint issues that machines can catch.
+
 1. **Automated checks** run first — CI must pass before a maintainer reviews.
 2. **A maintainer will review** your PR, usually within a few business days.
 3. **You may receive feedback** — this is normal and part of the collaborative process. Address comments by pushing additional commits.
@@ -102,10 +106,12 @@ You do **not** need to update the CHANGELOG manually. It is auto-generated from 
 
 ### What Reviewers Look For
 
+Reviewers evaluate changes against the framework's consistency guarantees and the patterns described in the [Architecture documentation](/architecture/). In a framework with 19 registries that all follow the same contract, consistency is as important as correctness:
+
 - Correctness and test coverage
-- Adherence to [Code Style](/contributing/code-style/) and project patterns
+- Adherence to [Code Style](/contributing/code-style/) and project patterns (registry, middleware, hooks)
 - Clear, focused scope — one concern per PR
-- Performance implications for hot paths
+- Performance implications for hot paths (streaming, tool execution, retrieval)
 - Backward compatibility
 
 ## CI Checks
@@ -130,8 +136,10 @@ If a CI check fails, click the details link to see the logs and fix the issue.
 
 ## Tips for Good PRs
 
-- **Keep changes small and focused.** A PR that does one thing well is easier to review and less likely to introduce bugs.
+These guidelines come from experience with the review process and reflect what makes PRs merge faster:
+
+- **Keep changes small and focused.** A PR that does one thing well is easier to review and less likely to introduce bugs. In a framework this size, small PRs also reduce merge conflicts.
 - **Write a clear description.** Explain *what* changed and *why*. Reviewers shouldn't have to read every line of code to understand the purpose.
-- **One concern per PR.** Don't mix a bug fix with a refactor or a new feature with a dependency update.
-- **Include before/after examples** when changing behavior — this helps reviewers verify correctness.
+- **One concern per PR.** Don't mix a bug fix with a refactor or a new feature with a dependency update. This also helps with changelog generation — each PR maps cleanly to a changelog entry.
+- **Include before/after examples** when changing behavior — this helps reviewers verify correctness without running the code locally.
 - **Respond to feedback promptly.** If you disagree with a suggestion, explain your reasoning — healthy discussion leads to better code.

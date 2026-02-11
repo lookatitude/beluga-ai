@@ -3,7 +3,9 @@ title: Bilingual Conversation Tutor
 description: Build an AI language tutor with real-time voice conversations and pronunciation feedback using Beluga AI's S2S pipeline.
 ---
 
-Language learning platforms need affordable, always-available practice partners. Human tutors cost $30-50/hour, have limited availability, and cannot provide instant pronunciation feedback. A speech-to-speech (S2S) AI tutor enables natural voice conversations in the target language at a fraction of the cost, with real-time corrections and adaptive difficulty.
+Language learning platforms need affordable, always-available practice partners. The core constraint is that language fluency requires extensive conversational practice — researchers estimate 600-2,200 hours depending on the target language — but human tutors cost $30-50/hour, have limited availability, and cannot provide instant pronunciation feedback. Most learners cannot afford or schedule enough practice hours to achieve fluency.
+
+A speech-to-speech (S2S) AI tutor enables natural voice conversations in the target language at a fraction of the cost, with real-time corrections and adaptive difficulty. S2S is chosen over separate STT+TTS because language tutoring demands the lowest possible latency — conversational pauses longer than 2 seconds break the flow of natural dialogue practice, and S2S eliminates the text-as-intermediate-representation overhead.
 
 ## Solution Architecture
 
@@ -23,9 +25,13 @@ graph TB
 
 The tutor uses Beluga AI's S2S provider for real-time speech-to-speech conversion. Audio flows through pronunciation analysis, which feeds corrections back into the conversation. The level adapter adjusts difficulty based on the student's performance profile.
 
+The architecture routes pronunciation analysis through a tool function rather than a separate pipeline stage. This design allows the S2S model itself to decide when pronunciation feedback is appropriate (mid-conversation, not after every word), producing more natural tutoring interactions than a system that rigidly checks every utterance.
+
 ## Implementation
 
 ### S2S Tutor Setup
+
+The tutor session is created through Beluga AI's S2S registry (`s2s.New("openai", nil)`) and configured with functional options. The pronunciation checking tool is registered as a tool definition that the S2S model can invoke when it detects potential pronunciation issues. The event loop pattern (`session.Recv()`) handles audio output, tool calls, and transcript events in a single unified loop.
 
 ```go
 package main

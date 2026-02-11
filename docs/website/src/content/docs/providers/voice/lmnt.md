@@ -5,6 +5,8 @@ description: "LMNT TTS provider for ultra-low-latency voice synthesis."
 
 LMNT provides ultra-low-latency text-to-speech synthesis optimized for real-time voice applications. The Beluga AI provider uses the LMNT Speech API for synthesis, supporting configurable voice selection, output format, and speech speed.
 
+Choose LMNT when you need the lowest possible TTS latency for real-time conversational agents. LMNT is purpose-built for speed, making it a strong choice for voice pipelines where response time is the primary concern. For broader voice variety or voice cloning, consider [ElevenLabs](/providers/voice/elevenlabs) or [PlayHT](/providers/voice/playht).
+
 ## Installation
 
 ```go

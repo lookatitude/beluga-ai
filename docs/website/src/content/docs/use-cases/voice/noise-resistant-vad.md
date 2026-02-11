@@ -3,7 +3,9 @@ title: Noise-Resistant Voice Activity Detection
 description: Implement reliable voice activity detection in high-noise environments using Silero and RNNoise models.
 ---
 
-Field-service applications, factory floors, and vehicle environments require voice activity detection (VAD) that stays accurate despite high background noise. Standard energy-based VAD produces 22% false positive rates in these conditions. Using Beluga AI's VAD with Silero and RNNoise model-based providers, false triggers drop to 6% while maintaining sub-60ms latency.
+Field-service applications, factory floors, and vehicle environments require voice activity detection (VAD) that stays accurate despite high background noise (85-100+ dB). Standard energy-based VAD — which simply checks if the audio signal exceeds an amplitude threshold — cannot distinguish speech from mechanical noise, fan hum, or engine vibration at these levels, producing 22% false positive rates. Every false trigger wastes downstream STT compute and can cause incorrect command activations in safety-critical environments.
+
+The fundamental limitation of energy-based VAD is that it treats all sound energy equally. Model-based VAD (Silero, RNNoise) learns spectral patterns that distinguish human speech from environmental noise, maintaining accuracy where energy thresholds fail. Using Beluga AI's VAD with Silero and RNNoise model-based providers, false triggers drop to 6% while maintaining sub-60ms latency.
 
 ## Solution Architecture
 
@@ -19,9 +21,13 @@ graph TB
 
 Audio is optionally preprocessed (normalization), then passed to the VAD provider. Silero or RNNoise runs on each audio frame, and threshold/duration parameters filter spurious activations. Results feed application logic (wake word, push-to-talk, command trigger). OpenTelemetry records decisions and errors for tuning dashboards.
 
+The preprocessing step is optional but important in noisy environments: normalizing audio amplitude ensures the VAD model receives input within its expected range, regardless of microphone gain or distance. Without normalization, the same voice at different distances can produce dramatically different model outputs.
+
 ## Implementation
 
 ### Silero VAD Setup
+
+The Silero VAD is configured with a higher threshold (0.55 vs. the default 0.5) and longer `MinSpeechDuration` (200ms) for noisy environments. The higher threshold reduces false triggers from noise bursts, while the longer minimum speech duration filters out brief non-speech sounds that the model might score above threshold. These parameters are deliberately exposed as configuration rather than hardcoded, since optimal values vary by deployment environment.
 
 ```go
 package main

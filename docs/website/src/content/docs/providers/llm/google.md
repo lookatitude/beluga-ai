@@ -5,6 +5,8 @@ description: "Integration guide for Google Gemini models with Beluga AI."
 
 The Google provider connects Beluga AI to Google's Gemini family of models using the official `google.golang.org/genai` SDK. It supports chat completions, streaming, tool calling, vision, and system instructions.
 
+Choose Google Gemini when you need long context windows (up to 1M+ tokens), strong multimodal capabilities across text, images, and video, or integration with Google Cloud services. Gemini Flash models offer a strong balance of speed and quality for cost-sensitive workloads.
+
 ## Installation
 
 ```bash

@@ -3,7 +3,11 @@ title: Interactive Audiobooks
 description: Create dynamic audiobook experiences with character voices and branching storylines using Beluga AI's TTS pipeline.
 ---
 
-Traditional audiobooks are static, single-voice narrations with no interactivity, leading to 40-50% lower engagement than interactive content. Using Beluga AI's TTS pipeline with dynamic narration, distinct character voices, and real-time story branching, audiobook platforms can deliver personalized, interactive experiences that improve engagement by 87%.
+Traditional audiobooks are static, single-voice narrations with no interactivity. Listeners cannot influence the story, characters all sound alike, and there is no mechanism for engagement beyond passive consumption. This leads to 40-50% lower engagement than interactive content and high abandonment rates, particularly for younger audiences accustomed to interactive media.
+
+The core technical challenge is managing multiple TTS voices with consistent character identity across a branching narrative graph. Each story branch requires real-time audio synthesis with the correct voice for each character, and transitions between branches must feel seamless — not like switching between disconnected audio clips.
+
+Using Beluga AI's TTS pipeline with dynamic narration, distinct character voices, and real-time story branching, audiobook platforms can deliver personalized, interactive experiences that improve engagement by 87%.
 
 ## Solution Architecture
 
@@ -21,9 +25,13 @@ graph TB
 
 When a user makes a choice, the story state manager selects the next narrative branch. The content generator produces the story text, which is mapped to character-specific voices and synthesized into audio. The audio streams back to the user, who can make further choices at branching points.
 
+The story graph approach is chosen over linear scripting because it separates narrative structure from audio generation. Authors define branching logic independently of voice configuration, and the voice mapper layer handles character-to-voice assignments. This separation means adding a new character or changing a voice does not require restructuring the story, and new branches can be added without re-generating audio for existing paths.
+
 ## Implementation
 
 ### Character Voice Mapping
+
+Each character in the story is mapped to a specific TTS voice with pitch and speed parameters. This per-character voice configuration ensures consistency — the same character always sounds the same regardless of which story branch the listener is on. The TTS engine's functional options (`WithVoice`, `WithPitch`, `WithSpeed`) allow per-line customization without creating separate engine instances for each character.
 
 ```go
 package main
@@ -75,6 +83,8 @@ func narrateScene(ctx context.Context, engine tts.TTS, scene Scene) error {
 ```
 
 ### Interactive Story Engine
+
+The story engine uses a directed graph where each node contains a scene and a set of outgoing branches. This graph-based model naturally represents branching narratives: nodes are story moments, edges are player choices. State tracking records which nodes have been visited, enabling features like "previously on" recaps or preventing infinite loops in cyclic story structures.
 
 ```go
 // StoryState tracks the current position in a branching story.

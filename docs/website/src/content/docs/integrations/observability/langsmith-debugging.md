@@ -5,7 +5,7 @@ description: Integrate LangSmith with Beluga AI to trace, debug, and analyze LLM
 
 ## Overview
 
-LangSmith provides specialized debugging and tracing for LLM applications. This guide shows how to integrate LangSmith with Beluga AI to capture detailed traces of every LLM call, including input prompts, model responses, latency, and token usage. This is particularly useful during development and testing when you need deep visibility into how your agents interact with language models.
+General-purpose APM tools show you that an LLM call took 800ms, but LangSmith shows you the exact prompt that was sent, the full model response, and how both changed across iterations. This level of detail is essential during development when you are iterating on prompts, debugging unexpected agent behavior, or evaluating response quality. This guide shows how to integrate LangSmith with Beluga AI to capture detailed traces of every LLM call, including input prompts, model responses, latency, and token usage.
 
 ## Prerequisites
 

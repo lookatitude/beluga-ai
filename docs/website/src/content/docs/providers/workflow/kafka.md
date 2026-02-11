@@ -5,6 +5,8 @@ description: Workflow state store using Kafka compacted topics for event-driven 
 
 The Kafka provider implements the `workflow.WorkflowStore` interface using Kafka compacted topics. Workflow state is serialized to JSON and written as messages to a Kafka topic, with the workflow ID as the message key. Kafka's log compaction ensures the latest state for each workflow is retained indefinitely. This provider is well-suited for event-driven architectures where Kafka is already part of the infrastructure.
 
+Choose Kafka when Kafka is already part of your infrastructure and you want workflow state persistence that integrates naturally with your event-driven architecture. Compacted topics provide durable, indefinite state retention with built-in replication. For native key enumeration and simpler operations, consider [NATS](/providers/workflow/nats). For full orchestration, consider [Temporal](/providers/workflow/temporal).
+
 ## Installation
 
 ```bash

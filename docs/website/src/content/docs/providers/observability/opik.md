@@ -5,6 +5,8 @@ description: "Export LLM traces to Opik for observability and workspace-level an
 
 The Opik provider exports LLM call data to [Opik](https://www.comet.com/site/products/opik/), Comet's LLM observability platform. It implements the `o11y.TraceExporter` interface and sends trace data through the Opik REST API with workspace-level routing.
 
+Choose Opik when you want workspace-level trace organization integrated with Comet's experiment tracking platform. Opik routes traces to workspaces via HTTP headers, making it easy to separate team, project, or environment data. It also supports self-hosted deployments. For an open-source self-hostable alternative, consider [Langfuse](/providers/observability/langfuse). For OTel-native local debugging, consider [Phoenix](/providers/observability/phoenix).
+
 ## Installation
 
 ```bash

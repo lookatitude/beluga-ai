@@ -3,7 +3,7 @@ title: Azure Cognitive Services Speech
 description: Integrate Azure Speech Services for text-to-speech with neural voices and SSML support in Beluga AI.
 ---
 
-Azure Cognitive Services Speech provides neural text-to-speech voices with SSML support and multiple languages. This guide covers integrating Azure Speech as a TTS provider within Beluga AI.
+Azure Cognitive Services Speech is the strongest TTS option for enterprises already invested in the Microsoft ecosystem. It offers the widest selection of neural voices (400+ across 140 languages), full SSML support for fine-grained prosody control, and deployment within Azure's compliance boundary. Choose Azure Speech when you need enterprise-grade voice synthesis with SSML customization or when regulatory requirements demand that audio processing stays within Azure. This guide covers integrating Azure Speech as a TTS provider within Beluga AI.
 
 ## Overview
 

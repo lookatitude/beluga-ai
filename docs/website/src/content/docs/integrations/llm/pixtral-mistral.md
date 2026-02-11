@@ -3,7 +3,9 @@ title: Pixtral (Mistral AI Vision)
 description: Integrate Pixtral, Mistral AI's vision-language model, with Beluga AI for multimodal image understanding, visual question answering, and image analysis.
 ---
 
-Pixtral is Mistral AI's vision-language model that enables image understanding and multimodal reasoning. This guide covers integrating Pixtral with Beluga AI for tasks such as visual question answering, image captioning, and scene analysis.
+Many AI applications need to process visual content -- extracting data from screenshots, analyzing product images, reading documents, or understanding diagrams. Pixtral is Mistral AI's vision-language model that handles these tasks through the same API used for text-only Mistral models, making it straightforward to add visual understanding to existing Mistral-based workflows.
+
+Choose Pixtral when you need vision capabilities from a European-hosted provider (relevant for GDPR compliance) or when you are already using Mistral for text generation and want to keep your provider stack consistent.
 
 ## Overview
 

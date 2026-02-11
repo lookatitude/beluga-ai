@@ -5,7 +5,9 @@ description: Integrate OpenAI's Tiktoken tokenizer with Beluga AI text splitters
 
 ## Overview
 
-This guide covers building a custom text splitter that uses [Tiktoken](https://github.com/openai/tiktoken) (OpenAI's byte-pair encoding tokenizer) for token-aware text chunking. Character-based splitters cannot guarantee that chunks fit within an LLM's context window because token and character counts diverge significantly. A token-aware splitter encodes text into tokens, splits at token boundaries, and decodes back to text -- ensuring each chunk stays within the model's token limit.
+LLMs operate on tokens, not characters. A 4,000-character chunk might contain anywhere from 800 to 1,200 tokens depending on the text content and encoding. Character-based splitters cannot guarantee that chunks fit within an LLM's context window, leading to truncation or wasted capacity.
+
+This guide covers building a custom text splitter that uses [Tiktoken](https://github.com/openai/tiktoken) (OpenAI's byte-pair encoding tokenizer) for token-aware text chunking. By encoding text to tokens, splitting at token boundaries, and decoding back to text, the splitter ensures each chunk stays within the model's token limit. This matters most when you need precise control over context window utilization -- for example, when reserving specific token budgets for system prompts, retrieved context, and generation output.
 
 The splitter implements Beluga AI's `TextSplitter` interface and works with any encoding supported by Tiktoken, including `cl100k_base` (GPT-4, GPT-3.5-turbo) and `o200k_base` (GPT-4o).
 

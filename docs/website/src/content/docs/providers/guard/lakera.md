@@ -5,6 +5,8 @@ description: Prompt injection and content safety detection using Lakera Guard.
 
 The Lakera Guard provider implements the `guard.Guard` interface using the [Lakera Guard](https://www.lakera.ai/) API. Lakera Guard provides real-time detection of prompt injections, jailbreak attempts, PII exposure, and harmful content, making it a strong choice for input-stage validation.
 
+Choose Lakera Guard when prompt injection and jailbreak detection are your primary concern. Lakera specializes in real-time input-stage validation with dedicated detection models for injection attempts, PII exposure, and malicious URLs. It is a strong first-line defense in the input stage of a guard pipeline. For broader content moderation across harm categories, consider [Azure Content Safety](/providers/guard/azuresafety). For self-hosted scanning, consider [LLM Guard](/providers/guard/llmguard).
+
 ## Installation
 
 ```bash

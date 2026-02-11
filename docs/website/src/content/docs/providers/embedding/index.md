@@ -5,6 +5,8 @@ description: Overview of all embedding providers available in Beluga AI v2.
 
 Beluga AI v2 provides a unified `embedding.Embedder` interface for converting text into dense vector representations. All providers register via `init()` and are instantiated through the global registry.
 
+The unified interface means your RAG pipeline, vector store integration, and retrieval logic work identically regardless of which embedding provider you choose. Switch providers by changing a single import and configuration value.
+
 ## Interface
 
 ```go
@@ -64,6 +66,19 @@ List all registered providers at runtime:
 names := embedding.List()
 // Returns sorted list: ["cohere", "google", "inmemory", "jina", ...]
 ```
+
+## Choosing a Provider
+
+| Use Case | Recommended Provider |
+|---|---|
+| General-purpose, best cost/quality ratio | [OpenAI](/providers/embedding/openai) |
+| Asymmetric search (separate doc/query embeddings) | [Cohere](/providers/embedding/cohere), [Voyage](/providers/embedding/voyage) |
+| Code retrieval | [Voyage](/providers/embedding/voyage) (`voyage-code-2`) |
+| Multilingual (100+ languages) | [Cohere](/providers/embedding/cohere) (`embed-multilingual-v3.0`) |
+| Local/offline development | [Ollama](/providers/embedding/ollama) |
+| Testing and unit tests | [In-Memory](/providers/embedding/inmemory) |
+| Self-hosted with open-source models | [Sentence Transformers](/providers/embedding/sentence-transformers) |
+| Google Cloud integration | [Google](/providers/embedding/google) |
 
 ## Middleware
 

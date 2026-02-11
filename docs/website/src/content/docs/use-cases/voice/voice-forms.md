@@ -3,7 +3,9 @@ title: Multi-Turn Voice Forms
 description: Collect structured data through natural voice conversations with turn-by-turn validation using Beluga AI's voice pipeline.
 ---
 
-Healthcare providers, insurance companies, and government agencies need to collect structured intake data over the phone. Traditional touch-tone forms are frustrating; users give fragmented answers, change their mind, and go off-topic. A voice-based form system using Beluga AI's voice pipeline manages form state across turns, validates answers in real time, and supports corrections and resumption.
+Healthcare providers, insurance companies, and government agencies need to collect structured intake data over the phone. The data itself is well-defined (name, date of birth, policy number, symptoms), but the collection process is difficult: callers give fragmented answers, change their mind, provide information out of order, and go off-topic. Traditional touch-tone forms force callers into rigid sequences that do not accommodate these natural behaviors, resulting in 38% abandonment rates on forms longer than 5 fields.
+
+A voice-based form system using Beluga AI's voice pipeline manages form state across turns, validates answers in real time, and supports corrections and resumption. The system uses separate STT and TTS components (not S2S) because the form orchestrator needs to inspect the transcribed text for validation before generating the next prompt — this validation step requires text as an intermediate representation.
 
 ## Solution Architecture
 
@@ -25,9 +27,13 @@ graph TB
 
 The voice pipeline handles audio processing (STT, TTS, VAD, turn detection). The form orchestrator manages form state separately from the session layer, advancing through questions, validating answers, and persisting progress for resumption.
 
+Separating form state from session state is a key architectural decision. Sessions are transient (tied to a WebSocket connection), while form state must survive disconnections so callers can resume where they left off. By decoupling them, the form orchestrator can be tested independently of the voice pipeline, and form state can be persisted to any storage backend.
+
 ## Implementation
 
 ### Voice Form System
+
+The form is defined as a sequence of `FormField` structs, each with a prompt, validation function, and required flag. The `Run` method drives a one-question-per-turn loop: synthesize the prompt via TTS, listen for a response via streaming STT, validate the answer, and either advance or reprompt. This sequential, field-by-field approach was chosen over free-form collection because it produces higher completion rates — callers know exactly what information is needed at each step.
 
 ```go
 package main

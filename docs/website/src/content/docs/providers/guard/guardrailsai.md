@@ -5,6 +5,8 @@ description: Content validation using Guardrails AI validators.
 
 The Guardrails AI provider implements the `guard.Guard` interface using the [Guardrails AI](https://www.guardrailsai.com/) platform. Guardrails AI provides a library of validators for PII detection, toxicity filtering, hallucination detection, prompt injection prevention, and custom rules defined via RAIL specifications.
 
+Choose Guardrails AI when you need a modular validation system with composable validators. It can return sanitized content (e.g., PII-redacted output), which is useful for output post-processing rather than simple allow/block decisions. It runs as a local server or via the hosted Guardrails Hub. For real-time prompt injection detection, consider [Lakera Guard](/providers/guard/lakera). For programmable conversation-level rules, consider [NeMo Guardrails](/providers/guard/nemo).
+
 ## Installation
 
 ```bash

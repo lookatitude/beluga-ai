@@ -3,7 +3,9 @@ title: Intelligent Recommendation Engine
 description: Build semantic product recommendations with vector similarity search to solve cold-start problems using Beluga AI's vector store package.
 ---
 
-E-commerce platforms relying on traditional collaborative filtering face cold-start problems with new users and products, deliver limited personalization, and cannot understand semantic product relationships. A semantic recommendation engine uses vector embeddings to represent products and user preferences, enabling content-based recommendations that work from day one and understand why products are similar beyond purchase history.
+E-commerce platforms relying on traditional collaborative filtering face cold-start problems: new products have no purchase history to build recommendations from, and new users have no behavior data to match against. Collaborative filtering answers "users who bought X also bought Y" but cannot explain why or recommend based on product attributes. A new running shoe has zero purchase history, so collaborative filtering cannot recommend it until enough users have bought it — a circular problem.
+
+A semantic recommendation engine uses vector embeddings to represent products and user preferences, enabling content-based recommendations that work from day one. By embedding product descriptions into vector space, the system understands semantic similarity ("lightweight trail runner" is similar to "minimalist hiking shoe") without any purchase data. This approach is complementary to collaborative filtering — the two signals can be combined for hybrid recommendations that leverage both content understanding and behavioral patterns.
 
 ## Solution Architecture
 

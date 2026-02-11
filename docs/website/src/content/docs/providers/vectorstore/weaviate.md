@@ -5,6 +5,8 @@ description: Vector store using Weaviate's GraphQL and REST APIs.
 
 The Weaviate provider implements the `vectorstore.VectorStore` interface using Weaviate's REST and GraphQL APIs. Weaviate supports both vector and hybrid (keyword + vector) search with a schema-based data model.
 
+Choose Weaviate when you need a schema-enforced data model with built-in hybrid search (combining keyword BM25 with vector similarity). Weaviate's GraphQL API and class-based organization make it well-suited for applications with structured document types and complex query patterns.
+
 ## Installation
 
 ```bash

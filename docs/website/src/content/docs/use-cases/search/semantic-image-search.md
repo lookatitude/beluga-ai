@@ -3,7 +3,9 @@ title: Semantic Image Search System
 description: Build intelligent image search with natural language queries using multimodal embeddings and vector similarity.
 ---
 
-E-commerce platforms struggle with keyword-based image search that delivers low relevance and poor user experience. Customers cannot describe what they are looking for using natural language, leading to frustration and lost sales. A semantic image search system uses multimodal embeddings to understand both images and text queries, enabling intuitive search by description rather than exact keywords.
+E-commerce platforms struggle with keyword-based image search because product images contain information that text metadata cannot fully capture — color, style, material texture, spatial arrangement. A customer looking for "a blue velvet couch with mid-century legs" cannot express this through keyword filters alone, and manual tagging every visual attribute of every product is not scalable.
+
+A semantic image search system uses multimodal embeddings to understand both images and text queries, enabling intuitive search by description rather than exact keywords. The key innovation is mapping both images and text into the same embedding space: a photo of a blue velvet couch and the text description "blue velvet mid-century sofa" produce similar vectors, enabling cross-modal similarity search without explicit attribute matching.
 
 ## Solution Architecture
 

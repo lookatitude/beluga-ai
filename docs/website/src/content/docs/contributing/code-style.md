@@ -3,7 +3,7 @@ title: Code Style Guide
 description: Coding conventions and style guidelines for Beluga AI
 ---
 
-Beluga AI follows idiomatic Go conventions with a set of project-specific patterns that ensure consistency across the codebase. This guide covers everything you need to know to write code that fits in.
+Beluga AI follows idiomatic Go conventions with a set of project-specific patterns that ensure consistency across the codebase. With 157 packages and 100+ providers, consistency is not optional — it's what makes the framework learnable. When every package uses the same registry pattern, the same middleware signature, and the same hooks structure, developers can navigate unfamiliar code with confidence. This guide covers everything you need to know to write code that fits in.
 
 ## General Go Conventions
 
@@ -13,7 +13,7 @@ Beluga AI follows idiomatic Go conventions with a set of project-specific patter
 
 ## Interfaces First
 
-Define the interface, then write implementations. Keep interfaces small — ideally 1 to 4 methods.
+Define the interface, then write implementations. Keep interfaces small — ideally 1 to 4 methods. The "small interface" constraint exists because every interface in Beluga has a corresponding mock in `internal/testutil/`, and every provider must implement the full interface. Smaller interfaces mean less boilerplate for mocks, less work for provider authors, and clearer contracts for users. When an interface grows beyond 4 methods, it's a signal to split it or use type assertions for optional capabilities.
 
 ```go
 // ChatModel is the core LLM abstraction.
@@ -27,7 +27,7 @@ Larger interfaces should be composed from smaller ones when possible.
 
 ## Functional Options
 
-Use the `WithX()` pattern for configuration instead of config structs or builders:
+Use the `WithX()` pattern for configuration instead of config structs or builders. Functional options provide backward-compatible API evolution: adding a new `WithTimeout()` option doesn't change any existing function signatures, and options compose naturally when passed as variadic arguments:
 
 ```go
 // Option configures a ChatModel call.
@@ -47,6 +47,8 @@ response, err := model.Generate(ctx, messages, WithTemperature(0.7), WithMaxToke
 
 ## Error Handling
 
+Beluga's error model uses typed errors with retry semantics because agentic systems cross multiple failure boundaries (provider APIs, tool execution, guard validation). Without a unified error model, generic retry middleware cannot determine whether an error from an arbitrary provider is safe to retry.
+
 - Always return `(T, error)`. Never panic for recoverable errors.
 - Use typed errors from `core/errors.go` with `ErrorCode`:
 
@@ -64,7 +66,7 @@ if err != nil && core.IsRetryable(err) {
 
 ## Context Propagation
 
-Every public function's first parameter **must** be `context.Context`. No exceptions:
+Every public function's first parameter **must** be `context.Context`. No exceptions. This enables cancellation propagation from HTTP handlers through agent execution to LLM calls and tool execution. It also carries OpenTelemetry spans for tracing and tenant isolation data for multi-tenant deployments. Omitting context from a public function breaks the entire observability and cancellation chain:
 
 ```go
 // Good
@@ -86,7 +88,7 @@ func (a *Agent) Run(input string) (string, error)
 
 ## No Global State
 
-No mutable global state beyond `init()` registrations. Registry mutations happen **only** in `init()`:
+No mutable global state beyond `init()` registrations. Registry mutations happen **only** in `init()`. This constraint prevents race conditions in concurrent programs and ensures that the set of registered providers is deterministic — it depends on import statements, not on execution order:
 
 ```go
 func init() {
@@ -98,7 +100,7 @@ func init() {
 
 ## Embedding Over Inheritance
 
-Compose behavior via struct embedding, not deep interface hierarchies:
+Go has no inheritance, and Beluga embraces that by using struct embedding for code reuse. `BaseAgent` provides default implementations for common agent operations, and custom agents embed it to get those defaults while overriding only the methods they need to customize:
 
 ```go
 type MyAgent struct {
@@ -109,7 +111,7 @@ type MyAgent struct {
 
 ## Streaming with iter.Seq2
 
-Beluga uses `iter.Seq2[T, error]` (Go 1.23+) for all streaming. **Never** use channels for streaming:
+Beluga uses `iter.Seq2[T, error]` (Go 1.23+) for all public streaming APIs. Channels are reserved for internal goroutine communication only (voice frame processors, background workers). The `iter.Seq2` approach was chosen because it requires no goroutine per stream, provides natural backpressure via the `yield` return value, and composes cleanly with utility functions like `MapStream` and `FilterStream`. **Never** use channels for streaming in public APIs:
 
 ```go
 // Good — iter.Seq2
@@ -136,7 +138,7 @@ Use `iter.Pull()` when pull-based semantics are needed.
 
 ## Registry Pattern
 
-Every extensible package follows this exact pattern:
+Every extensible package follows this exact pattern. There are 19 registries in the framework, and they all use the same three-function contract. This consistency means that understanding the LLM registry immediately teaches you how the embedding, vectorstore, voice, and workflow registries work:
 
 ```go
 var registry = make(map[string]Factory)
@@ -148,7 +150,7 @@ func List() []string { /* return registered names */ }
 
 ## Middleware Pattern
 
-Middleware wraps an interface to add behavior. The signature is always `func(T) T`:
+Middleware wraps an interface to add cross-cutting behavior without modifying the implementation. The signature is always `func(T) T`, which means middleware composes naturally — a retry middleware wrapping a cache middleware wrapping a rate limiter all satisfy the same interface. Note that `ApplyMiddleware` applies right-to-left: the last middleware in the list becomes the outermost wrapper in the call chain:
 
 ```go
 type Middleware func(ChatModel) ChatModel
@@ -163,7 +165,7 @@ func ApplyMiddleware(model ChatModel, mws ...Middleware) ChatModel {
 
 ## Hooks Pattern
 
-Hooks provide lifecycle callbacks. All fields are optional — `nil` hooks are skipped:
+Hooks provide lifecycle callbacks for observation and modification without wrapping the entire interface. Unlike middleware (which intercepts the full call), hooks fire at specific points in the execution lifecycle. All fields are optional — `nil` hooks are skipped, so you only implement the callbacks you need. This struct-with-optional-fields design avoids the boilerplate of interface implementations with stub methods:
 
 ```go
 type Hooks struct {
@@ -192,7 +194,7 @@ Include a usage example in the package-level doc comment (`doc.go`).
 
 ## Commit Message Format
 
-Beluga AI uses [Conventional Commits](https://www.conventionalcommits.org/) for all commit messages. This format enables automatic changelog generation via git-cliff.
+Beluga AI uses [Conventional Commits](https://www.conventionalcommits.org/) for all commit messages. This format is not just a style preference — it enables automatic changelog generation via git-cliff during the release process. Each commit message becomes a changelog entry, grouped by type (`feat`, `fix`, `perf`), so clear and descriptive messages directly improve the quality of release notes.
 
 ### Structure
 

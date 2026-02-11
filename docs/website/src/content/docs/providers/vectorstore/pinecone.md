@@ -5,6 +5,8 @@ description: Managed vector database using Pinecone's REST API.
 
 The Pinecone provider implements the `vectorstore.VectorStore` interface using Pinecone's REST API. Pinecone is a fully managed vector database with automatic scaling, requiring no infrastructure management.
 
+Choose Pinecone when you want a fully managed vector database with zero operational overhead. Pinecone handles scaling, replication, and index optimization automatically. It is well-suited for teams that want to focus on application logic rather than infrastructure, and supports namespaces for multi-tenant data isolation.
+
 ## Installation
 
 ```bash
