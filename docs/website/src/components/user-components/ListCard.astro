@@ -16,7 +16,7 @@ const { title, imageIcon, number, image } = Astro.props;
       />
       <h3 class="text-h5! sm:text-h4! mt-0!">{title}</h3>
     </div>
-    <span>{number} Articles</span>
+    <span class="article-count">{number} Articles</span>
   </div>
 
   {
@@ -53,12 +53,31 @@ const { title, imageIcon, number, image } = Astro.props;
       display: flex;
       flex-direction: column;
       height: 100%;
+      animation: listcard-fadein 0.5s ease both;
     }
+    .list-card:nth-child(1) { animation-delay: 0s; }
+    .list-card:nth-child(2) { animation-delay: 0.08s; }
+    .list-card:nth-child(3) { animation-delay: 0.16s; }
+    .list-card:nth-child(4) { animation-delay: 0.24s; }
+    .list-card:nth-child(5) { animation-delay: 0.32s; }
+    .list-card:nth-child(6) { animation-delay: 0.4s; }
+
+    @keyframes listcard-fadein {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     .list-card-header {
-      background-color: color-mix(
-        in oklab,
-        var(--sl-color-gray-6) 30%,
-        transparent
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--sl-color-gray-6) 35%, transparent),
+        color-mix(in srgb, var(--sl-color-gray-6) 18%, transparent)
       );
       display: flex;
       border-radius: 1rem;
@@ -72,6 +91,17 @@ const { title, imageIcon, number, image } = Astro.props;
       margin: 0 !important;
       font-weight: 500 !important;
     }
+
+    .article-count {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.7rem;
+      border-radius: 9999px;
+      background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+      color: var(--color-primary);
+      white-space: nowrap;
+    }
+
     .list-card-wide {
       grid-column: span 2;
     }

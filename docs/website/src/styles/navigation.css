@@ -31,6 +31,12 @@
 }
 .navbar-scrolled{
   @apply bg-lightmode-body dark:bg-body;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: color-mix(in srgb, var(--sl-color-black) 80%, transparent);
+}
+:root[data-theme="light"] .navbar-scrolled {
+  background: color-mix(in srgb, var(--sl-color-black) 85%, transparent);
 }
 .navbar-brand {
   @apply  text-xl font-semibold flex items-center select-none;
@@ -41,6 +47,7 @@
 
 #nav-menu {
   @apply list-none;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
 }
 .navbar-nav {
   @apply text-center lg:text-left select-none;
@@ -49,6 +56,13 @@
 .nav-link {
   @apply  hover:text-lightmode-primary! dark:hover:text-primary block p-3 cursor-pointer font-medium transition lg:px-2 lg:py-3 no-underline;
   color: color-mix(in srgb, var(--sl-color-white) 90%, transparent);
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.nav-link.active,
+.nav-link[aria-current="page"] {
+  border-image: var(--color-primary-gradient) 1;
+  border-bottom-width: 2px;
 }
 
 .nav-dropdown {
@@ -107,7 +121,8 @@ input#nav-toggle:checked ~ #nav-menu {
   }
 
   span {
-    @apply bg-dark absolute -top-1 left-0 flex h-6 w-6 items-center justify-center rounded-full transition-all duration-300 dark:bg-white;
+    @apply bg-dark absolute -top-1 left-0 flex h-6 w-6 items-center justify-center rounded-full dark:bg-white;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   input:checked + label {

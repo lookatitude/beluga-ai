@@ -1,0 +1,162 @@
+---
+interface Props {
+  labels: string[];
+}
+
+const { labels } = Astro.props;
+const id = `cg-${Math.random().toString(36).slice(2, 9)}`;
+---
+
+<div class="code-group" data-code-group-id={id}>
+  <div class="code-group-tabs" role="tablist">
+    {
+      labels.map((label, idx) => (
+        <button
+          role="tab"
+          class={`code-group-tab ${idx === 0 ? "active" : ""}`}
+          aria-selected={idx === 0 ? "true" : "false"}
+          data-tab-index={idx}
+          tabindex={idx === 0 ? 0 : -1}
+        >
+          {label}
+        </button>
+      ))
+    }
+  </div>
+  <div class="code-group-panels">
+    <slot />
+  </div>
+</div>
+
+<style>
+  @layer starlight.components {
+    .code-group {
+      border: 1px solid var(--sl-color-gray-6);
+      border-radius: 0.75rem;
+      overflow: hidden;
+      margin: 1rem 0;
+    }
+
+    .code-group-tabs {
+      display: flex;
+      background: color-mix(in srgb, var(--sl-color-gray-6) 30%, transparent);
+      border-bottom: 1px solid var(--sl-color-gray-6);
+      padding: 0 0.25rem;
+      gap: 0;
+      overflow-x: auto;
+    }
+
+    .code-group-tab {
+      padding: 0.6rem 1.25rem;
+      background: none;
+      border: none;
+      color: var(--sl-color-gray-3);
+      font-size: var(--sl-text-sm);
+      font-family: inherit;
+      cursor: pointer;
+      position: relative;
+      white-space: nowrap;
+      transition: color 0.2s ease;
+    }
+
+    .code-group-tab::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0.5rem;
+      right: 0.5rem;
+      height: 2px;
+      background: var(--color-primary-gradient);
+      border-radius: 1px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .code-group-tab:hover {
+      color: var(--sl-color-gray-1);
+    }
+
+    .code-group-tab.active {
+      color: var(--sl-color-white);
+      font-weight: 600;
+    }
+
+    .code-group-tab.active::after {
+      opacity: 1;
+    }
+
+    .code-group-panels {
+      padding: 0;
+    }
+
+    .code-group-panels > :global(*) {
+      display: none;
+      margin: 0 !important;
+    }
+
+    .code-group-panels > :global(*:first-child) {
+      display: block;
+    }
+
+    .code-group-panels > :global(.active-panel) {
+      display: block;
+    }
+
+    .code-group-panels > :global(*) :global(.expressive-code) {
+      margin: 0 !important;
+      border-radius: 0 !important;
+      border: none !important;
+    }
+
+    :root[data-theme="light"] .code-group-tabs {
+      background: color-mix(in srgb, var(--sl-color-gray-6) 20%, white);
+    }
+  }
+</style>
+
+<script>
+  document.querySelectorAll("[data-code-group-id]").forEach((group) => {
+    const tabs = group.querySelectorAll<HTMLButtonElement>("[role='tab']");
+    const panels = group.querySelector(".code-group-panels");
+    if (!panels) return;
+    const children = [...panels.children] as HTMLElement[];
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const index = Number(tab.dataset.tabIndex);
+
+        tabs.forEach((t) => {
+          t.classList.remove("active");
+          t.setAttribute("aria-selected", "false");
+          t.tabIndex = -1;
+        });
+        tab.classList.add("active");
+        tab.setAttribute("aria-selected", "true");
+        tab.tabIndex = 0;
+
+        children.forEach((child, i) => {
+          child.classList.toggle("active-panel", i === index);
+          if (i === 0) {
+            child.style.display = i === index ? "block" : "none";
+          }
+        });
+      });
+
+      tab.addEventListener("keydown", (e: KeyboardEvent) => {
+        const currentIndex = [...tabs].indexOf(tab);
+        let nextIndex: number | null = null;
+
+        if (e.key === "ArrowLeft") nextIndex = currentIndex - 1;
+        if (e.key === "ArrowRight") nextIndex = currentIndex + 1;
+        if (e.key === "Home") nextIndex = 0;
+        if (e.key === "End") nextIndex = tabs.length - 1;
+
+        if (nextIndex !== null && tabs[nextIndex]) {
+          e.preventDefault();
+          tabs[nextIndex].click();
+          tabs[nextIndex].focus();
+        }
+      });
+    });
+  });
+</script>

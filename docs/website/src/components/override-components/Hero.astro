@@ -70,11 +70,17 @@ const is404 = Astro.locals.starlightRoute?.id === "404";
       letter-spacing: -4px;
       color: var(--sl-color-white);
     }
+
+    /* Search container with glassmorphism */
     .search-container {
       width: 90%;
       margin: auto;
       border: 1px solid
-        color-mix(in srgb, var(--sl-color-white) 5%, transparent);
+        color-mix(in srgb, var(--sl-color-white) 10%, transparent);
+      background: color-mix(in srgb, var(--sl-color-white) 4%, transparent);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
     }
 
     .badges {
@@ -84,22 +90,62 @@ const is404 = Astro.locals.starlightRoute?.id === "404";
         transparent
       );
     }
+
+    /* Badge styling: slightly larger, hover scale */
     .badge {
       background: color-mix(in srgb, var(--sl-color-white) 7%, transparent);
-      font-size: 14px;
+      font-size: 14.5px;
+      transition: background 0.25s ease, transform 0.25s ease;
     }
     .badge:hover {
       background: color-mix(in srgb, var(--sl-color-white) 15%, transparent);
+      transform: scale(1.05);
     }
 
+    /* Logo container with glow pseudo-element */
     .hero-logo {
       display: flex;
       justify-content: center;
+      position: relative;
     }
+    .hero-logo::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 320px;
+      height: 320px;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(
+        circle,
+        rgba(215, 109, 119, 0.35) 0%,
+        rgba(58, 28, 113, 0.15) 50%,
+        transparent 70%
+      );
+      border-radius: 50%;
+      animation: glow-pulse 4s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Logo image with float animation */
     .hero-logo-img {
       width: 360px;
       height: 360px;
       filter: drop-shadow(0 0 30px rgba(215, 109, 119, 0.3));
+      position: relative;
+      z-index: 1;
+      animation: float 5s ease-in-out infinite;
+    }
+
+    @keyframes glow-pulse {
+      0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.05); }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
     }
 
     @media (max-width: 940px) {
@@ -112,8 +158,23 @@ const is404 = Astro.locals.starlightRoute?.id === "404";
         width: 240px;
         height: 240px;
       }
+      .hero-logo::before {
+        width: 220px;
+        height: 220px;
+      }
       .search-container {
         width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero-logo-img {
+        width: 180px;
+        height: 180px;
+      }
+      .hero-logo::before {
+        width: 160px;
+        height: 160px;
       }
     }
   }

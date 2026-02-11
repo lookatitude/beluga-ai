@@ -16,6 +16,10 @@ h6 {
   color: var(--sl-color-white);
 }
 
+h1, h2, h3 {
+  letter-spacing: -0.02em;
+}
+
 h1,
 .h1 {
   @apply text-h1-sm md:text-h1;
@@ -51,10 +55,44 @@ strong {
   @apply font-semibold;
 }
 
+/* Content paragraphs: readable line length */
+.sl-markdown-content p {
+  max-width: 72ch;
+}
+
+/* Styled horizontal rules */
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--sl-color-gray-5),
+    transparent
+  );
+  margin: 2rem 0;
+}
+
+/* Inline code styling */
 code {
   @apply after:border-none;
 }
+:not(pre) > code {
+  background: color-mix(in srgb, var(--sl-color-gray-6) 50%, transparent);
+  padding: 0.15em 0.4em;
+  border-radius: 0.3em;
+  font-size: 0.9em;
+}
+:root[data-theme="light"] :not(pre) > code {
+  background: color-mix(in srgb, var(--sl-color-gray-6) 70%, transparent);
+}
 
+/* Enhanced blockquote */
+blockquote {
+  border-left: 3px solid transparent;
+  border-image: var(--color-primary-gradient) 1;
+  padding-left: 1rem;
+}
 blockquote > p {
   @apply my-0!;
 }

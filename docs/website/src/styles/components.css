@@ -1,3 +1,39 @@
+/* Utility: gradient text */
+.gradient-text {
+  background: var(--color-primary-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Utility: glass card */
+.glass-card {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: color-mix(in srgb, var(--sl-color-gray-6) 40%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sl-color-white) 8%, transparent);
+  border-radius: 1rem;
+}
+:root[data-theme="light"] .glass-card {
+  background: color-mix(in srgb, var(--sl-color-gray-7, #f6f6f6) 60%, transparent);
+  border-color: color-mix(in srgb, var(--sl-color-black) 8%, transparent);
+}
+
+/* Utility: fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-in {
+  animation: fadeIn 0.5s ease-out both;
+}
+
 .section {
   @apply py-16! xl:py-24!;
 }
@@ -23,6 +59,12 @@
   font-size: 4.8rem;
   line-height: 4.7rem;
   letter-spacing: -3px;
+}
+.section-title.gradient-text {
+  background: var(--color-primary-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .section-description {
@@ -58,8 +100,9 @@
   display: flex;
   align-items: center;
   padding: 1rem 0;
+  padding-left: 0;
   border-bottom: 1px solid var(--sl-color-gray-6);
-  transition: background-color 0.2s ease;
+  transition: background-color 0.3s ease, padding-left 0.3s ease, color 0.3s ease;
   position: relative;
   margin-top: 0 !important;
 }
@@ -78,6 +121,7 @@
     transparent
   );
   color: var(--sl-color-white);
+  padding-left: 0.5rem;
 }
 .list-body li::before {
   content: "";
@@ -97,4 +141,54 @@
 }
 .list-body li:hover::before {
   background-color: var(--sl-color-white);
+}
+
+/* ── Doc content styles ── */
+
+/* Better tables */
+.sl-markdown-content table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--sl-color-gray-6);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  width: 100%;
+}
+.sl-markdown-content table thead tr {
+  background: color-mix(in srgb, var(--sl-color-gray-6) 40%, transparent);
+}
+.sl-markdown-content table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--sl-color-gray-6) 15%, transparent);
+}
+.sl-markdown-content table th,
+.sl-markdown-content table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--sl-color-gray-6);
+}
+.sl-markdown-content table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Better heading anchors */
+.sl-markdown-content :is(h2, h3, h4) a {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.sl-markdown-content :is(h2, h3, h4):hover a {
+  opacity: 1;
+}
+
+/* Better images in docs */
+.sl-markdown-content img {
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--sl-color-black) 25%, transparent);
+}
+
+/* Enhanced Starlight asides/notes */
+.starlight-aside {
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--sl-color-gray-6) 20%, transparent);
+}
+:root[data-theme="light"] .starlight-aside {
+  background: color-mix(in srgb, var(--sl-color-gray-6) 30%, transparent);
 }

@@ -1,19 +1,27 @@
 ---
 interface Props {
 	columns?: number;
+	gap?: "compact" | "default" | "spacious";
 }
 
-const { columns = 2 } = Astro.props;
+const { columns = 2, gap = "default" } = Astro.props;
+
+const gapValues = {
+	compact: "0.75rem",
+	default: "1rem",
+	spacious: "1.5rem",
+};
+const gapValue = gapValues[gap] || gapValues.default;
 ---
 
-<div class="card-grid" style={`--columns: ${columns}`}><slot /></div>
+<div class="card-grid" style={`--columns: ${columns}; --grid-gap: ${gapValue}`}><slot /></div>
 
 <style>
 	@layer starlight.components {
 		.card-grid {
 			display: grid;
-			gap: 1rem;
-			grid-template-columns: 1fr; /* Default: Single column */
+			gap: var(--grid-gap, 1rem);
+			grid-template-columns: 1fr;
 			margin-top: 1.4rem !important;
 		}
 
@@ -21,19 +29,19 @@ const { columns = 2 } = Astro.props;
 			margin-top: 0 !important;
 		}
 
-		/* Small screens - Always single column */
-		@media (max-width: 767px) {
+		/* Mobile - Always single column */
+		@media (max-width: 639px) {
 			.card-grid {
 				grid-template-columns: 1fr !important;
-				gap: 1rem;
+				gap: var(--grid-gap, 1rem);
 			}
 		}
 
-		/* Tablet - 2-3 columns max */
-		@media (min-width: 768px) and (max-width: 1023px) {
+		/* Tablet - 2 columns max */
+		@media (min-width: 640px) and (max-width: 1023px) {
 			.card-grid {
 				grid-template-columns: repeat(min(var(--columns), 2), 1fr);
-				gap: 1.5rem;
+				gap: calc(var(--grid-gap, 1rem) * 1.25);
 			}
 		}
 
@@ -41,7 +49,7 @@ const { columns = 2 } = Astro.props;
 		@media (min-width: 1024px) {
 			.card-grid {
 				grid-template-columns: repeat(var(--columns), 1fr);
-				gap: 1.7rem;
+				gap: calc(var(--grid-gap, 1rem) * 1.5);
 			}
 		}
 
@@ -49,12 +57,10 @@ const { columns = 2 } = Astro.props;
 		@media (min-width: 1440px) {
 			.card-grid {
 				grid-template-columns: repeat(min(var(--columns), 4), 1fr);
-				gap: 1.8rem;
+				gap: calc(var(--grid-gap, 1rem) * 1.5);
 				max-width: 1400px;
 				margin: 0 auto;
 			}
 		}
-
-	
 	}
 </style>
