@@ -1,10 +1,11 @@
-# Beluga AI v2 — Provider Integration Guide
+---
+title: Provider Integration Guide
+description: "Pluggable provider architecture: categories, discovery, and how to add new providers to Beluga AI v2."
+---
 
 Beluga follows a pluggable provider architecture. Every extensible package (LLM, embedding, vector store, voice, etc.) uses the same registry pattern, making it straightforward to add new integrations. This document describes the provider categories, how to discover available providers, and how to add new ones.
 
----
-
-## 1. Provider Categories
+## Provider Categories
 
 Each category maps to a package with a well-defined interface. Providers register via `init()` and are discovered through the registry's `List()` function.
 
@@ -103,9 +104,9 @@ Each category maps to a package with a well-defined interface. Providers registe
 
 ---
 
-## 2. How to Add a Provider
+## How to Add a Provider
 
-Every provider follows the same pattern regardless of category. See the `provider-implementation` skill for detailed templates.
+Every provider follows the same pattern regardless of category. See the [Full Architecture](/architecture/architecture/) for detailed templates.
 
 ### Step 1: Create the provider package
 
@@ -186,7 +187,7 @@ func TestGenerate(t *testing.T) {
 
 ---
 
-## 3. Discovering Available Providers
+## Discovering Available Providers
 
 ### From code
 
@@ -225,7 +226,7 @@ import (
 
 ---
 
-## 4. Summary
+## Provider Summary
 
 | Category | Package | Interface | Count |
 |----------|---------|-----------|-------|

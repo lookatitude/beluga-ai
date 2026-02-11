@@ -275,7 +275,7 @@
           "slug": "architecture"
         },
         {
-          "label": "[document] Concepts",
+          "label": "[document] Design Concepts",
           "slug": "architecture/concepts"
         },
         {
@@ -285,6 +285,10 @@
         {
           "label": "[seti:config] Full Architecture",
           "slug": "architecture/architecture"
+        },
+        {
+          "label": "[seti:plug] Provider Integration",
+          "slug": "architecture/providers"
         }
       ]
     },

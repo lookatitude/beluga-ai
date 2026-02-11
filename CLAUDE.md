@@ -177,6 +177,7 @@ beluga-ai/
 | **Test developer** | Same as Developer; write tests implementations must pass | `test-writer` |
 | **Reviewer** | Same as Developer; review code, provide suggestions | `reviewer` |
 | **Doc writer** | Write package docs, tutorials, API reference | `doc-writer` |
+| **Website developer** | Astro + React + Tailwind specialist; build and adjust the documentation website UI, components, layouts, and styling | `website-developer` |
 
 ### Task to Persona Mapping
 
@@ -194,6 +195,7 @@ beluga-ai/
 - Write tests / mocks / benchmarks --> **Test developer** (`test-writer`)
 - Review code --> **Reviewer** (`reviewer`)
 - Write documentation --> **Doc writer** (`doc-writer`)
+- Build / adjust website UI, components, layouts, styling --> **Website developer** (`website-developer`)
 
 ### Workflow
 
@@ -211,6 +213,7 @@ Architect -> (optionally) Researcher -> Architect produces plan -> Team lead bre
 - `provider-implementation` — Provider registration, error mapping, streaming, testing
 - `streaming-patterns` — iter.Seq2, composition, backpressure, context cancellation
 - `doc-writing` — Documentation structure, examples, enterprise standards
+- `website-development` — Astro, React, Tailwind CSS; website components, layouts, styling
 
 ## Patterns (quick reference)
 

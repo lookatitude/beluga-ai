@@ -17,49 +17,79 @@
   <img src="https://img.shields.io/badge/packages-157-blue" alt="Packages">
 </p>
 
----
+<p align="center">
+  <a href="https://beluga-ai.org">Website</a> &middot;
+  <a href="https://beluga-ai.org/docs">Documentation</a> &middot;
+  <a href="https://github.com/lookatitude/beluga-ai">GitHub</a>
+</p>
+
+<br>
 
 ## What is Beluga AI?
 
-Beluga AI is a Go-native framework for building agentic AI systems. It provides everything you need to create, deploy, and operate AI agents in production: from LLM orchestration and tool calling to voice pipelines, RAG, multi-agent collaboration, and durable workflows.
+Beluga AI is a **Go-native framework** for building agentic AI systems. It provides everything you need to create, deploy, and operate AI agents in production — from LLM orchestration and tool calling to voice pipelines, RAG, multi-agent collaboration, and durable workflows.
 
-The framework combines production patterns from Google ADK, OpenAI Agents SDK, LangGraph, ByteDance Eino, and LiveKit into a unified, idiomatic Go framework. Streaming uses Go 1.23+ `iter.Seq2[T, error]` — no channels, no callbacks. Every component is extensible through a consistent interface + registry + middleware + hooks pattern.
+The framework distills production patterns from **Google ADK**, **OpenAI Agents SDK**, **LangGraph**, **ByteDance Eino**, and **LiveKit** into a unified, idiomatic Go framework. Streaming leverages Go 1.23+ `iter.Seq2[T, error]` — no channels, no callbacks. Every component is extensible through a consistent **interface + registry + middleware + hooks** pattern.
 
-Beluga ships 157 packages, 2,885 tests (all race-free), and 20+ LLM providers out of the box. It's built for teams that need enterprise-grade reliability without leaving the Go ecosystem.
+> **157 packages · 2,885 tests (all race-free) · 20+ LLM providers** — built for teams that need enterprise-grade reliability without leaving the Go ecosystem.
+
+<br>
 
 ## Key Features
 
-**LLM Abstraction** — Unified `ChatModel` interface across 20+ providers (OpenAI, Anthropic, Google, Ollama, Bedrock, Groq, Mistral, DeepSeek, xAI, Cohere, Together, Fireworks, and more). Intelligent routing, structured output, context window management, and prompt cache optimization.
+<table>
+<tr><td width="50%" valign="top">
 
-**Agent Framework** — Pluggable reasoning strategies via the `Planner` interface: ReAct, Reflexion, Self-Discover, Tree-of-Thought, Graph-of-Thought, LATS, and Mixture of Agents. Bring your own strategy with zero framework changes.
+### LLM Abstraction
+Unified `ChatModel` interface across **20+ providers** (OpenAI, Anthropic, Google, Ollama, Bedrock, Groq, Mistral, DeepSeek, xAI, Cohere, and more). Intelligent routing, structured output, context window management, and prompt cache optimization.
 
-**Tool System** — Wrap any Go function as a tool with automatic JSON Schema generation. First-class MCP client with registry-based discovery. Parallel DAG execution for independent tool calls.
+### Agent Framework
+Pluggable reasoning strategies via the `Planner` interface: **ReAct, Reflexion, Self-Discover, Tree-of-Thought, Graph-of-Thought, LATS**, and Mixture of Agents. Bring your own strategy with zero framework changes.
 
-**Multi-Agent Orchestration** — Handoffs-as-tools (OpenAI pattern), supervisor delegation, scatter-gather, DAG workflows, conditional routing, and blackboard patterns. Agents collaborate through typed event streams.
+### Tool System
+Wrap any Go function as a tool with **automatic JSON Schema** generation. First-class MCP client with registry-based discovery. Parallel DAG execution for independent tool calls.
 
-**RAG Pipeline** — Hybrid search (vector + BM25 + RRF fusion) by default. Advanced retrieval strategies: CRAG, Adaptive RAG, HyDE, SEAL-RAG, and GraphRAG. 12+ vector store backends, 8+ embedding providers, contextual retrieval ingestion.
+### Multi-Agent Orchestration
+Handoffs-as-tools (OpenAI pattern), supervisor delegation, scatter-gather, DAG workflows, conditional routing, and blackboard patterns. Agents collaborate through **typed event streams**.
 
-**Voice AI** — Frame-based pipeline architecture: cascading (STT → LLM → TTS), speech-to-speech (OpenAI Realtime, Gemini Live), and hybrid modes. Silero VAD, semantic turn detection. Target <800ms end-to-end latency.
+### RAG Pipeline
+**Hybrid search** (vector + BM25 + RRF fusion) by default. Advanced retrieval: CRAG, Adaptive RAG, HyDE, SEAL-RAG, and GraphRAG. 12+ vector store backends, 8+ embedding providers, contextual retrieval ingestion.
 
-**Memory** — MemGPT three-tier model: Core (always in context, self-editable), Recall (searchable conversation history), and Archival (vector + graph long-term knowledge). Hybrid store for 90% token savings.
+### Voice AI
+Frame-based pipeline: **cascading** (STT &rarr; LLM &rarr; TTS), **speech-to-speech** (OpenAI Realtime, Gemini Live), and hybrid modes. Silero VAD, semantic turn detection. Target <800ms end-to-end latency.
 
-**Protocol Interop** — MCP server and client (Streamable HTTP). A2A server and client (protobuf + gRPC). REST/SSE/WebSocket/gRPC API adapters for Gin, Fiber, Echo, Chi, and Connect-Go.
+### Memory
+**MemGPT three-tier model**: Core (always in context, self-editable), Recall (searchable conversation history), and Archival (vector + graph long-term knowledge). Hybrid store for 90% token savings.
 
-**Safety** — Three-stage guard pipeline (input → output → tool). Prompt injection detection, PII redaction, content filtering, Spotlighting for untrusted input isolation. Capability-based agent sandboxing with default-deny.
+</td><td width="50%" valign="top">
 
-**Durable Execution** — Built-in workflow engine that separates deterministic orchestration from non-deterministic activities (LLM calls, tool invocations). Survives crashes, rate limits, and human-in-the-loop pauses.
+### Protocol Interop
+MCP server and client (Streamable HTTP). A2A server and client (protobuf + gRPC). **REST/SSE/WebSocket/gRPC** adapters for Gin, Fiber, Echo, Chi, and Connect-Go.
 
-**Resilience** — Circuit breakers, hedged requests, adaptive retry with jitter, provider-aware rate limiting (RPM, TPM, concurrent). Middleware-composable on any `ChatModel`.
+### Safety & Guards
+Three-stage guard pipeline (**input &rarr; output &rarr; tool**). Prompt injection detection, PII redaction, content filtering, Spotlighting for untrusted input isolation. Capability-based agent sandboxing with default-deny.
 
-**Observability** — OpenTelemetry GenAI semantic conventions baked into every boundary. Traces, metrics, and structured logging. Adapter support for Langfuse and Arize Phoenix.
+### Durable Execution
+Built-in workflow engine separating deterministic orchestration from non-deterministic activities (LLM calls, tool invocations). **Survives crashes, rate limits, and human-in-the-loop pauses.**
 
-**Human-in-the-Loop** — Confidence-based approval policies per tool. Configurable risk levels, auto-approve thresholds, and notification dispatch (Slack, email, webhook).
+### Resilience
+Circuit breakers, hedged requests, adaptive retry with jitter, provider-aware rate limiting (RPM, TPM, concurrent). **Middleware-composable** on any `ChatModel`.
 
-**Auth & Multi-Tenancy** — RBAC, ABAC, and capability-based security. Tenant isolation via `context.Context`. OPA integration.
+### Observability
+**OpenTelemetry GenAI** semantic conventions baked into every boundary. Traces, metrics, and structured logging. Adapter support for Langfuse and Arize Phoenix.
 
-**Configuration** — Generics-based `config.Load[T]()` with struct tags, environment variable overrides, validation, and hot-reload via file, Consul, etcd, or Kubernetes.
+### Human-in-the-Loop
+Confidence-based approval policies per tool. Configurable risk levels, auto-approve thresholds, and notification dispatch (Slack, email, webhook).
 
-**Evaluation** — CI/CD-integrated quality gates. Built-in metrics: faithfulness, relevance, hallucination, toxicity, latency, and cost. Parallel evaluation runner.
+### Auth & Multi-Tenancy
+RBAC, ABAC, and capability-based security. **Tenant isolation** via `context.Context`. OPA integration.
+
+</td></tr>
+</table>
+
+**Plus:** generics-based configuration with hot-reload (file, Consul, etcd, K8s) · CI/CD-integrated evaluation with built-in quality metrics (faithfulness, relevance, hallucination, toxicity, latency, cost) · prompt management and versioning.
+
+<br>
 
 ## Quick Start
 
@@ -136,13 +166,15 @@ func main() {
 }
 ```
 
+<br>
+
 ## Installation
 
 ```bash
 go get github.com/lookatitude/beluga-ai@latest
 ```
 
-Import the providers you need:
+Import only the providers you need — they self-register via `init()`:
 
 ```go
 import (
@@ -154,7 +186,7 @@ import (
 )
 ```
 
-Providers self-register via `init()`. Import a provider package and it becomes available through the registry:
+Then use the registry to instantiate them:
 
 ```go
 model, err := llm.New("openai", cfg)
@@ -162,21 +194,24 @@ embedder, err := embedding.New("openai", cfg)
 store, err := vectorstore.New("pgvector", cfg)
 ```
 
+<br>
+
 ## Architecture
 
-Beluga is organized in seven layers. Data flows downward through typed event streams; each layer depends only on the layers below it.
+Beluga is organized in **seven layers**. Data flows downward through typed event streams; each layer depends only on the layers below it.
 
 ```
-Application Layer        → User code, CLI tools, API servers
-Agent Runtime            → Persona, pluggable planners, executor, handoffs
-Protocol Gateway         → MCP, A2A, REST/gRPC/WebSocket/SSE
-Pipeline / Orchestration → Chain, Graph, Workflow, Supervisor, Router, Scatter-Gather
-Capability Layer         → LLM, Tools, Memory, RAG, Voice, Guard
-Cross-Cutting            → Resilience, Cache, Auth, HITL, Eval
-Foundation               → Schema, Stream, Config, Observability, Transport
+  Application Layer        →  User code, CLI tools, API servers
+  Agent Runtime            →  Persona, pluggable planners, executor, handoffs
+  Protocol Gateway         →  MCP, A2A, REST/gRPC/WebSocket/SSE
+  Pipeline / Orchestration →  Chain, Graph, Workflow, Supervisor, Router
+  Capability Layer         →  LLM, Tools, Memory, RAG, Voice, Guard
+  Cross-Cutting            →  Resilience, Cache, Auth, HITL, Eval
+  Foundation               →  Schema, Stream, Config, Observability, Transport
 ```
 
-### Package Overview
+<details>
+<summary><strong>Full Package Map</strong></summary>
 
 ```
 beluga-ai/
@@ -218,9 +253,11 @@ beluga-ai/
 └── internal/         syncutil, jsonutil, testutil (mocks for all interfaces)
 ```
 
+</details>
+
 ### Extension Pattern
 
-Every package follows the same extension contract. Learn it once, apply it everywhere:
+Every package follows the same extension contract — learn it once, apply it everywhere:
 
 ```go
 // 1. Interface — small, focused (1-4 methods)
@@ -238,29 +275,46 @@ model = llm.ApplyMiddleware(model, withRetry, withCache, withLogging)
 agent.ComposeHooks(auditHook, costHook, guardrailHook)
 ```
 
+<br>
+
 ## Documentation
 
-Full documentation, tutorials, and API reference are available at the [documentation site](https://lookatitude.github.io/beluga-ai/).
+Full documentation, tutorials, and API reference are available at **[beluga-ai.org](https://beluga-ai.org/docs)**.
 
-Key resources:
-- **Getting Started** — Installation, quick start, first agent
-- **Guides** — LLM providers, agents, tools, RAG, voice, memory, orchestration
-- **Cookbooks** — Multi-agent customer service, RAG pipeline, voice assistant
-- **Architecture** — Design decisions, extensibility patterns, data flows
+| Resource | Description |
+|----------|-------------|
+| **Getting Started** | Installation, quick start, first agent |
+| **Guides** | LLM providers, agents, tools, RAG, voice, memory, orchestration |
+| **Cookbooks** | Multi-agent customer service, RAG pipeline, voice assistant |
+| **Architecture** | Design decisions, extensibility patterns, data flows |
+
+<br>
 
 ## Contributing
 
-Contributions are welcome. Please:
+Contributions are welcome! Here's how to get started:
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/my-feature`)
-3. Write tests for new functionality
-4. Ensure `go test ./...` passes with `-race`
-5. Run `go vet ./...` and `staticcheck ./...`
-6. Submit a pull request
+1. **Fork** the repository
+2. **Create** a feature branch — `git checkout -b feature/my-feature`
+3. **Write tests** for new functionality
+4. **Verify** — `go test ./...` passes with `-race`
+5. **Lint** — `go vet ./...` and `staticcheck ./...`
+6. **Submit** a pull request
 
 All code must follow the conventions in [CLAUDE.md](CLAUDE.md).
 
+<br>
+
 ## License
 
-[MIT](LICENSE)
+Released under the [MIT License](LICENSE).
+
+<br>
+
+---
+
+<p align="center">
+  <a href="https://sonarcloud.io/summary/new_code?id=lookatitude_beluga-ai">
+    <img src="https://sonarcloud.io/images/project_badges/sonarcloud-highlight.svg" alt="SonarQube Cloud">
+  </a>
+</p>
