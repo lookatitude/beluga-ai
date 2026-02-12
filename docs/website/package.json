@@ -20,7 +20,7 @@
     "astro-embed": "^0.9.2",
     "astro-font": "^1.1.0",
     "devalue": "5.6.2",
-    "diff": "5.2.2",
+    "diff": "8.0.3",
     "h3": "1.15.5",
     "js-yaml": "4.1.1",
     "lodash-es": "4.17.23",
@@ -38,7 +38,7 @@
   },
   "overrides": {
     "devalue": "5.6.2",
-    "diff": "5.2.2",
+    "diff": "8.0.3",
     "h3": "1.15.5",
     "mdast-util-to-hast": "13.2.1",
     "js-yaml": "4.1.1",
@@ -46,7 +46,7 @@
   },
   "resolutions": {
     "devalue": "5.6.2",
-    "diff": "5.2.2",
+    "diff": "8.0.3",
     "h3": "1.15.5",
     "mdast-util-to-hast": "13.2.1",
     "js-yaml": "4.1.1",
