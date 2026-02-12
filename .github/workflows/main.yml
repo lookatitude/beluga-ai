@@ -404,11 +404,15 @@ jobs:
             CODE-QUALITY.md
             SECURITY.md
 
-  bump-and-release:
-    name: Bump Version and Trigger Release
-    needs: [ci, security, deploy]
+  # After main passes CI and security, compute next version from conventional
+  # commits since the last tag: minor for feat, patch otherwise.
+  # Breaking changes (feat!:, fix!:, BREAKING CHANGE) skip auto-release;
+  # major versions must be published manually via the Release workflow.
+  # The pushed tag triggers .github/workflows/release.yml.
+  release-tag:
+    name: Bump Version and Create Release Tag
+    needs: [ci, security]
     runs-on: ubuntu-latest
-    if: success() && needs.ci.result == 'success' && needs.security.result == 'success' && needs.deploy.result == 'success'
     permissions:
       contents: write
     steps:
@@ -416,69 +420,87 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get latest tag
-        id: tag
+      - name: Compute next version from conventional commits
+        id: bump
         run: |
-          LATEST=$(git describe --tags --match 'v*.*.*' --abbrev=0 2>/dev/null || true)
-          if [ -z "$LATEST" ]; then
-            echo "version=v0.0.0" >> "$GITHUB_OUTPUT"
-            echo "No existing tag found, using v0.0.0 as base"
-          else
-            echo "version=$LATEST" >> "$GITHUB_OUTPUT"
-            echo "Latest tag: $LATEST"
-          fi
+          set -e
 
-      - name: Determine semver bump from conventional commits
-        id: semver
-        run: |
-          TAG="${{ steps.tag.outputs.version }}"
-          COMMITS=$(git log "${TAG}..HEAD" --pretty=format:"%s%n%b" 2>/dev/null || true)
-          if [ -z "$COMMITS" ]; then
-            echo "bump=skip" >> "$GITHUB_OUTPUT"
-            echo "No commits since ${TAG}; skipping release"
+          # ── 1. Resolve latest tag ──────────────────────────────────────
+          LATEST=$(git tag -l 'v*.*.*' --sort=-v:refname | head -1 || true)
+
+          if [ -z "$LATEST" ]; then
+            echo "No existing tag found; starting at v0.0.1"
+            echo "tag=v0.0.1" >> "$GITHUB_OUTPUT"
+            echo "skip=false"  >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if echo "$COMMITS" | grep -qiE 'BREAKING CHANGE'; then
-            echo "bump=major" >> "$GITHUB_OUTPUT"
-          elif echo "$COMMITS" | grep -qiE '(feat|fix)![\s:]'; then
-            echo "bump=major" >> "$GITHUB_OUTPUT"
-          elif echo "$COMMITS" | grep -qiE '(feat|feature)[\s:]'; then
-            echo "bump=minor" >> "$GITHUB_OUTPUT"
-          else
-            echo "bump=patch" >> "$GITHUB_OUTPUT"
+
+          echo "Latest tag: ${LATEST}"
+
+          # ── 2. Skip if HEAD is already tagged ──────────────────────────
+          if git describe --exact-match --tags HEAD 2>/dev/null; then
+            echo "HEAD is already tagged — skipping auto-release."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
-      - name: Skip release if no new commits
-        if: steps.semver.outputs.bump == 'skip'
-        run: echo "No release needed" && exit 0
-
-      - name: Compute new version
-        id: version
-        if: steps.semver.outputs.bump != 'skip'
-        run: |
-          TAG="${{ steps.tag.outputs.version }}"
-          BUMP="${{ steps.semver.outputs.bump }}"
-          # Strip leading v and split
-          V="${TAG#v}"
+          # ── 3. Parse latest tag into MAJOR.MINOR.PATCH ────────────────
+          V="${LATEST#v}"
           MAJOR="${V%%.*}"
           REST="${V#*.}"
           MINOR="${REST%%.*}"
           PATCH="${REST#*.}"
-          case "$BUMP" in
-            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
-            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
-            patch) PATCH=$((PATCH + 1)) ;;
-            *) echo "Unexpected bump: $BUMP"; exit 1 ;;
-          esac
-          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
-          echo "new_tag=${NEW_TAG}" >> "$GITHUB_OUTPUT"
-          echo "Bump ${BUMP}: ${TAG} -> ${NEW_TAG}"
 
-      - name: Create and push tag to trigger Release workflow
-        if: steps.semver.outputs.bump != 'skip'
+          # ── 4. Collect commit subjects + bodies since last tag ─────────
+          HAS_BREAKING=false
+          HAS_FEAT=false
+
+          # Use NUL-delimited records so multi-line bodies are safe.
+          # Format: subject<NUL>body<NUL>  (repeated per commit)
+          while IFS= read -r -d '' SUBJECT && IFS= read -r -d '' BODY; do
+            # 4a. Check for breaking change indicator in the subject
+            #     Matches: feat!:  fix(scope)!:  refactor!:  etc.
+            if echo "$SUBJECT" | grep -qE '^[a-z]+(\([^)]*\))?!:'; then
+              echo "  BREAKING (subject): ${SUBJECT}"
+              HAS_BREAKING=true
+            fi
+
+            # 4b. Check for BREAKING CHANGE token in the body
+            if echo "$BODY" | grep -qi 'BREAKING CHANGE'; then
+              echo "  BREAKING (body): ${SUBJECT}"
+              HAS_BREAKING=true
+            fi
+
+            # 4c. Check for feat (without breaking bang)
+            if echo "$SUBJECT" | grep -qE '^feat(\([^)]*\))?:'; then
+              echo "  feat: ${SUBJECT}"
+              HAS_FEAT=true
+            fi
+          done < <(git log "${LATEST}..HEAD" --pretty=format:"%s%x00%b%x00")
+
+          # ── 5. Decide bump ─────────────────────────────────────────────
+          if [ "$HAS_BREAKING" = true ]; then
+            echo "Breaking changes detected — skipping auto-release."
+            echo "Major releases must be published manually via the Release workflow."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$HAS_FEAT" = true ]; then
+            NEW_TAG="v${MAJOR}.$((MINOR + 1)).0"
+            echo "feat detected → minor bump: ${LATEST} -> ${NEW_TAG}"
+          else
+            NEW_TAG="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+            echo "No feat → patch bump: ${LATEST} -> ${NEW_TAG}"
+          fi
+
+          echo "tag=${NEW_TAG}" >> "$GITHUB_OUTPUT"
+          echo "skip=false"     >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag
+        if: steps.bump.outputs.skip != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          TAG="${{ steps.version.outputs.new_tag }}"
-          git tag -a "$TAG" -m "Release $TAG"
-          git push origin "$TAG"
+          git tag "${{ steps.bump.outputs.tag }}"
+          git push origin "${{ steps.bump.outputs.tag }}"

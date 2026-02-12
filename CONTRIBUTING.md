@@ -103,6 +103,35 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 
 **Scopes** (optional): `llm`, `agent`, `tool`, `rag`, `voice`, `memory`, `core`, `schema`, `guard`, `protocol`, `cache`, `auth`, `eval`, `config`, `o11y`
 
+**Breaking changes:** Append `!` after the type/scope (e.g. `feat(llm)!: remove deprecated API`) or include a `BREAKING CHANGE` line in the commit body. This signals a major version bump and prevents automatic release — the team must publish a major version manually.
+
+## Releases
+
+### Automatic releases (patch and minor)
+
+When the [Main](.github/workflows/main.yml) pipeline succeeds (CI and security checks pass), a job inspects **all commits since the last tag** using conventional commit prefixes:
+
+| Commits since last tag contain | Bump | Example |
+|--------------------------------|------|---------|
+| Any `feat:` (no breaking) | **Minor** | `v1.2.3` → `v1.3.0` |
+| Only `fix:`, `docs:`, `chore:`, etc. | **Patch** | `v1.2.3` → `v1.2.4` |
+| Any breaking change (`feat!:`, `BREAKING CHANGE`) | **Skipped** | No tag created |
+
+When a tag is created it is pushed to the repository, which triggers the [Release](.github/workflows/release.yml) workflow (GoReleaser, changelog, docs rebuild).
+
+### Major releases (manual only)
+
+Major versions are **never created automatically**. When breaking changes land on `main`, the auto-release is skipped. To publish a major release:
+
+1. Go to **Actions → Release → Run workflow**.
+2. Enter the desired tag (e.g. `v2.0.0`) and the ref to release from (default `main`).
+
+### Tag push
+
+You can also create and push a version tag directly (e.g. `git tag v1.2.3 && git push origin v1.2.3`). The Release workflow runs on any push to tags matching `v*.*.*`.
+
+See the [releases guide](https://lookatitude.github.io/beluga-ai/contributing/releases/) on the docs site for full details.
+
 ## Security Vulnerabilities
 
 If you discover a security vulnerability, **do not** open a public issue. Please report it responsibly by emailing **security@lookatitude.com**.
