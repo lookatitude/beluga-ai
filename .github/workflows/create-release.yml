@@ -1,0 +1,56 @@
+# Manual release trigger. Creates the given tag and pushes it, which triggers the
+# Release workflow (release.yml). Use when the main pipeline did not auto-release
+# (e.g. pipeline failed or was skipped due to path filters).
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (semver tag, e.g. v2.1.1)"
+        required: true
+        type: string
+      ref:
+        description: "Ref to tag (branch or commit SHA)"
+        required: false
+        default: "main"
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  create-tag:
+    name: Create and push tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Validate version format
+        run: |
+          V="${{ inputs.version }}"
+          if ! echo "$V" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Error: version must match vMAJOR.MINOR.PATCH (e.g. v2.1.1)"
+            exit 1
+          fi
+          echo "Version format OK: $V"
+
+      - name: Check tag does not already exist
+        run: |
+          if git rev-parse "${{ inputs.version }}" >/dev/null 2>&1; then
+            echo "Error: tag ${{ inputs.version }} already exists"
+            exit 1
+          fi
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          TAG="${{ inputs.version }}"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
