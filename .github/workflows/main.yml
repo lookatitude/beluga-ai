@@ -403,3 +403,104 @@ jobs:
           add-paths: |
             CODE-QUALITY.md
             SECURITY.md
+
+  # After main passes CI and security, compute next version from conventional
+  # commits since the last tag: minor for feat, patch otherwise.
+  # Breaking changes (feat!:, fix!:, BREAKING CHANGE) skip auto-release;
+  # major versions must be published manually via the Release workflow.
+  # The pushed tag triggers .github/workflows/release.yml.
+  release-tag:
+    name: Bump Version and Create Release Tag
+    needs: [ci, security]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Compute next version from conventional commits
+        id: bump
+        run: |
+          set -e
+
+          # ── 1. Resolve latest tag ──────────────────────────────────────
+          LATEST=$(git tag -l 'v*.*.*' --sort=-v:refname | head -1 || true)
+
+          if [ -z "$LATEST" ]; then
+            echo "No existing tag found; starting at v0.0.1"
+            echo "tag=v0.0.1" >> "$GITHUB_OUTPUT"
+            echo "skip=false"  >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Latest tag: ${LATEST}"
+
+          # ── 2. Skip if HEAD is already tagged ──────────────────────────
+          if git describe --exact-match --tags HEAD 2>/dev/null; then
+            echo "HEAD is already tagged — skipping auto-release."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # ── 3. Parse latest tag into MAJOR.MINOR.PATCH ────────────────
+          V="${LATEST#v}"
+          MAJOR="${V%%.*}"
+          REST="${V#*.}"
+          MINOR="${REST%%.*}"
+          PATCH="${REST#*.}"
+
+          # ── 4. Collect commit subjects + bodies since last tag ─────────
+          HAS_BREAKING=false
+          HAS_FEAT=false
+
+          # Use NUL-delimited records so multi-line bodies are safe.
+          # Format: subject<NUL>body<NUL>  (repeated per commit)
+          while IFS= read -r -d '' SUBJECT && IFS= read -r -d '' BODY; do
+            # 4a. Check for breaking change indicator in the subject
+            #     Matches: feat!:  fix(scope)!:  refactor!:  etc.
+            if echo "$SUBJECT" | grep -qE '^[a-z]+(\([^)]*\))?!:'; then
+              echo "  BREAKING (subject): ${SUBJECT}"
+              HAS_BREAKING=true
+            fi
+
+            # 4b. Check for BREAKING CHANGE token in the body
+            if echo "$BODY" | grep -qi 'BREAKING CHANGE'; then
+              echo "  BREAKING (body): ${SUBJECT}"
+              HAS_BREAKING=true
+            fi
+
+            # 4c. Check for feat (without breaking bang)
+            if echo "$SUBJECT" | grep -qE '^feat(\([^)]*\))?:'; then
+              echo "  feat: ${SUBJECT}"
+              HAS_FEAT=true
+            fi
+          done < <(git log "${LATEST}..HEAD" --pretty=format:"%s%x00%b%x00")
+
+          # ── 5. Decide bump ─────────────────────────────────────────────
+          if [ "$HAS_BREAKING" = true ]; then
+            echo "Breaking changes detected — skipping auto-release."
+            echo "Major releases must be published manually via the Release workflow."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$HAS_FEAT" = true ]; then
+            NEW_TAG="v${MAJOR}.$((MINOR + 1)).0"
+            echo "feat detected → minor bump: ${LATEST} -> ${NEW_TAG}"
+          else
+            NEW_TAG="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+            echo "No feat → patch bump: ${LATEST} -> ${NEW_TAG}"
+          fi
+
+          echo "tag=${NEW_TAG}" >> "$GITHUB_OUTPUT"
+          echo "skip=false"     >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag
+        if: steps.bump.outputs.skip != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.bump.outputs.tag }}"
+          git push origin "${{ steps.bump.outputs.tag }}"
