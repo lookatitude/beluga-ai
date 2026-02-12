@@ -1,6 +1,11 @@
 ---
 title: Vault and Secrets Manager Integration
-description: Integrate HashiCorp Vault or other secrets managers with Beluga AI for production-grade secret management.
+description: "Integrate HashiCorp Vault with Beluga AI in Go for dynamic secret loading, automated rotation, and audit logging of LLM API keys and credentials."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, HashiCorp Vault, secrets manager, API keys, dynamic secrets, rotation"
 ---
 
 Environment variables are better than hardcoded secrets, but they have limitations: they are visible in process lists, difficult to rotate dynamically, and lack fine-grained access control. In AI applications, these limitations are amplified because a single service may consume API keys from multiple LLM providers, embedding services, and vector databases — each with different rotation schedules and access policies. Secrets managers like HashiCorp Vault solve these issues with dynamic secrets, audit logging, and automated rotation.

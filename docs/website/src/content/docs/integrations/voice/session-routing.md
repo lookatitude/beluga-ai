@@ -1,6 +1,11 @@
 ---
-title: Multi-Provider Session Routing
-description: Route voice sessions to different STT, TTS, or S2S providers based on tenant, region, or feature flags.
+title: Multi-Provider Voice Routing
+description: "Route Beluga AI voice sessions to different STT, TTS, or S2S providers based on tenant, region, or feature flags dynamically."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "session routing, multi-provider voice, Beluga AI, A/B testing voice, tenant routing, voice provider selection, Go voice"
 ---
 
 Production voice deployments rarely use a single provider for all sessions. Enterprise customers may require specific STT providers for compliance, regional latency differences may favor different TTS engines, and A/B testing demands side-by-side provider comparison. Multi-provider session routing selects the optimal voice provider combination per session based on tenant identity, geographic region, or feature flags -- all without code changes. This guide covers implementing a routing layer on top of Beluga AI's `voice/session` package.

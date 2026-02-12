@@ -1,6 +1,11 @@
 ---
 title: "Processing Multiple Images per Prompt"
-description: "Process multiple images in a single prompt with proper context, validation, and relationship annotations for comparison and synthesis tasks."
+description: "Recipe for sending multiple images in one LLM prompt with context annotations, validation, and relationship hints for comparison tasks in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, multiple images, Go multimodal LLM, image comparison, batch image processing, vision AI recipe, ContentPart"
 ---
 
 # Processing Multiple Images per Prompt

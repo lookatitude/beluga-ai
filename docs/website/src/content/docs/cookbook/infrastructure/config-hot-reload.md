@@ -1,6 +1,11 @@
 ---
-title: "Config Hot-reloading in Production"
-description: "Update configuration values in a running production service without restarting the application or losing active requests."
+title: "Config Hot-Reload in Production"
+description: "Recipe for updating Go service configuration at runtime without restarts — rotate API keys, toggle features, and adjust limits with zero downtime."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, config hot-reload, Go zero downtime, runtime configuration, feature flags, API key rotation, production recipe"
 ---
 
 ## Problem

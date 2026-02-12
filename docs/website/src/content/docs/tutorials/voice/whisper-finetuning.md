@@ -1,6 +1,11 @@
 ---
-title: Fine-tuning Whisper for Industry Terms
-description: Improve STT accuracy for specialized vocabulary using Whisper prompts and Deepgram keyword boosting.
+title: Fine-Tuning Whisper for Industry Terms
+description: "Improve STT accuracy for specialized vocabulary in Go — use Whisper prompt guidance and Deepgram keyword boosting to correctly transcribe domain-specific terms."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, Whisper, STT, vocabulary, Deepgram, keyword boosting, transcription"
 ---
 
 Standard speech-to-text models frequently misrecognize domain-specific terminology because they are trained on general speech corpora that underrepresent technical vocabulary. This tutorial demonstrates two approaches to improving accuracy: using Whisper's prompt parameter to provide contextual vocabulary, and using Deepgram's keyword boosting to increase the probability of specific terms. Both approaches work without model retraining and can be applied at configuration time.

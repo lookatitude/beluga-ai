@@ -1,6 +1,11 @@
 ---
-title: Intelligent Document Processing
-description: Automate document classification, entity extraction, and semantic search with Beluga AI's RAG and LLM pipelines.
+title: Intelligent Document Processing Pipeline
+description: "Automate document classification, entity extraction, and semantic search with LLM-powered pipelines and vector indexing."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "intelligent document processing, IDP, document classification, entity extraction, semantic search, Beluga AI, Go, RAG pipeline"
 ---
 
 Organizations process thousands of documents daily — contracts, invoices, reports, emails, and regulatory filings. Manual processing creates bottlenecks: a single analyst can classify and extract data from 20-30 documents per hour, accuracy varies with fatigue, and documents sit in queues for days before reaching the right department. Searching historical documents means knowing which folder to look in, making institutional knowledge fragile and person-dependent.

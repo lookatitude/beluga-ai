@@ -1,6 +1,11 @@
 ---
-title: Memory System
-description: Implement persistent agent memory using the MemGPT-inspired 3-tier model with Core, Recall, and Archival tiers.
+title: Agent Memory System
+description: "Implement persistent agent memory in Go with Beluga AI's MemGPT-inspired 3-tier model — Core (always in context), Recall (searchable history), and Archival (vector storage)."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, memory system, MemGPT, agent memory, Core, Recall, Archival, persistent memory"
 ---
 
 LLMs are stateless by default — every request starts with a blank slate. Without memory, an agent forgets everything the moment a conversation ends. Users must repeat their preferences, context gets lost across sessions, and the agent cannot build a long-term understanding of the people and topics it works with.

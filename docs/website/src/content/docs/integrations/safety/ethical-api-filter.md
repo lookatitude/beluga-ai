@@ -1,6 +1,11 @@
 ---
-title: Third-Party Ethical API Filter
-description: Integrate external content safety APIs (Perspective API, Azure Content Safety, AWS Comprehend) with the Beluga AI guard pipeline.
+title: External Content Safety APIs
+description: "Integrate Perspective API, Azure Content Safety, and AWS Comprehend with Beluga AI's guard pipeline for defense-in-depth filtering."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "content safety API, Perspective API, Azure Content Safety, Beluga AI, guard pipeline, content filtering Go, PII detection"
 ---
 
 Built-in content filters cover common safety patterns, but enterprise deployments often require specialized safety services that are maintained by dedicated teams, updated with the latest threat models, and backed by SLAs. Google Perspective API excels at toxicity detection, Azure Content Safety provides category-level scoring, and AWS Comprehend detects PII and sentiment. By wrapping these services as Beluga AI guards, you compose them with built-in guards in the three-stage safety pipeline (input, output, tool) and get defense in depth without replacing your existing safety infrastructure.

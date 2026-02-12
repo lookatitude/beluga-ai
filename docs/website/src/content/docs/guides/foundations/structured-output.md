@@ -1,6 +1,11 @@
 ---
 title: Structured Output with LLMs
-description: Extract typed, structured data from LLM responses using JSON schemas and Go generics.
+description: "Extract typed Go structs from LLM responses with Beluga AI — auto-generate JSON schemas, validate and retry on parse failures, and build classification pipelines."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, structured output, JSON schema, LLM, generics, type-safe, validation"
 ---
 
 Language models generate unstructured text by default, but production systems require typed, validated responses. Beluga AI's `StructuredOutput[T]` generic type bridges this gap: it derives a JSON Schema from any Go struct, instructs the model to respond in conformant JSON, parses the response into a typed value, and retries with self-correction feedback when parsing fails. This eliminates the manual schema writing, parsing boilerplate, and error recovery that structured extraction normally requires.

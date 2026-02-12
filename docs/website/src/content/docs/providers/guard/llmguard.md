@@ -1,6 +1,11 @@
 ---
-title: LLM Guard
-description: Prompt and output scanning using LLM Guard.
+title: "LLM Guard Provider"
+description: "Prompt and output scanning with LLM Guard in Beluga AI. PII detection, toxicity filtering, and prompt injection prevention in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LLM Guard, prompt scanning, PII detection, toxicity filter, prompt injection, AI safety, Go, Beluga AI"
 ---
 
 The LLM Guard provider implements the `guard.Guard` interface using the [LLM Guard](https://llm-guard.com/) API. LLM Guard is an open-source toolkit that provides prompt injection detection, toxicity filtering, and sensitive data detection through a collection of configurable scanners.

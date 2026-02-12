@@ -1,6 +1,11 @@
 ---
 title: Heuristic Turn Detection Tuning
-description: Fine-tune heuristic turn detection parameters for silence duration, sentence markers, and turn length.
+description: "Fine-tune Beluga AI heuristic turn detection for silence duration, sentence markers, and turn length in voice conversations."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "turn detection, voice AI, heuristic tuning, Beluga AI, silence detection, conversation turn, Go voice pipeline"
 ---
 
 Accurate turn detection is critical to conversational voice UX. If the system cuts in too early, users feel interrupted; if it waits too long, conversations feel sluggish. The heuristic turn detection provider uses configurable silence duration, punctuation rules, and turn-length limits to determine when a speaker has finished their turn. This approach is ideal when you need a lightweight, zero-dependency solution that runs anywhere without deploying an ONNX model, and when your environment has reasonably clean audio.

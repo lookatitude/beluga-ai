@@ -1,6 +1,11 @@
 ---
-title: Google Drive API Scraper
-description: Build a custom document loader that fetches documents from Google Drive using the Drive API for Beluga AI RAG pipelines.
+title: Google Drive Document Loader
+description: "Build a Google Drive document loader for Beluga AI RAG pipelines to fetch Docs, Sheets, and PDFs using the Drive API in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Google Drive loader, Drive API Go, Beluga AI, document ingestion, RAG pipeline, Google Workspace, knowledge base"
 ---
 
 Many teams store knowledge in Google Drive -- meeting notes in Docs, data in Sheets, presentations in Slides, and reference PDFs. Making this content searchable by AI agents requires loading it into a RAG pipeline. This loader handles the complexities of the Drive API, including Google Workspace format exports (Docs, Sheets, and Slides cannot be downloaded directly -- they must be exported to text formats) and pagination for large folders.

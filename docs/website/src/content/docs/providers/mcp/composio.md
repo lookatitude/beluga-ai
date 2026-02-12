@@ -1,6 +1,11 @@
 ---
-title: "Composio"
-description: "Access SaaS integrations as tools via the Composio API."
+title: "Composio MCP Provider"
+description: "Access SaaS integrations as agent tools via Composio in Beluga AI. 250+ app connectors with OAuth management and tool discovery in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Composio, MCP, SaaS integrations, agent tools, OAuth, tool discovery, Go, Beluga AI"
 ---
 
 The Composio provider connects Beluga AI to the [Composio](https://composio.dev/) platform, which provides access to 250+ SaaS integrations (Gmail, Slack, GitHub, Jira, and more) as callable tools. It implements tool discovery and execution through the Composio REST API, returning tools as native `tool.Tool` instances.

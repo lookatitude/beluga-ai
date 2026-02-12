@@ -1,6 +1,11 @@
 ---
-title: Provider Integration Guide
-description: "Pluggable provider architecture: categories, discovery, and how to add new providers to Beluga AI v2."
+title: "Provider Integration — Beluga AI"
+description: "100+ pluggable providers across 16 categories for Beluga AI. LLMs, vector stores, voice, workflow engines, and more with universal registry pattern."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI providers, LLM providers Go, vector store providers, embedding providers, voice AI providers, provider registry"
 ---
 
 Beluga follows a pluggable provider architecture. Every extensible package (LLM, embedding, vector store, voice, etc.) uses the same registry pattern, making it straightforward to add new integrations. This document describes the provider categories, how to discover available providers, and how to add new ones.

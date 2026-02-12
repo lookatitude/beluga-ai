@@ -1,6 +1,11 @@
 ---
-title: Vespa
-description: Vector store using the Vespa search engine's nearest neighbor capabilities.
+title: "Vespa Vector Store Provider"
+description: "Vector search with Vespa engine in Beluga AI. Enterprise search platform with nearest-neighbor search, ranking, and hybrid retrieval in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Vespa, vector store, enterprise search, nearest-neighbor, hybrid retrieval, ranking, Go, Beluga AI"
 ---
 
 The Vespa provider implements the `vectorstore.VectorStore` interface using Vespa's document and search APIs. Vespa is a production-grade search engine that supports real-time vector similarity search with YQL queries, combining keyword and vector search capabilities.

@@ -1,6 +1,11 @@
 ---
-title: Real-Time Data Analysis
-description: Build an autonomous data analysis agent with tool access to databases, APIs, and streaming data using Beluga AI.
+title: Real-Time AI Data Analysis Agent
+description: "Build an autonomous data analysis agent with tool access to databases, APIs, and streaming data. Self-service business insights."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "real-time data analysis, AI data agent, autonomous analytics, business intelligence AI, self-service insights, Beluga AI, Go"
 ---
 
 Business teams need answers to data questions — "What were our top products last quarter?" or "Which regions show declining retention?" — but getting these answers requires SQL knowledge, API access, statistical computation, and report formatting. Each question becomes a multi-hour request to the analytics team, creating a bottleneck where business decisions wait on data availability.

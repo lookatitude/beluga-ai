@@ -1,6 +1,11 @@
 ---
-title: "Streaming Tool Logic Handler"
-description: "Handle tool calls that arrive during streaming LLM responses by executing tools concurrently as they are detected."
+title: "Streaming Tool Call Handler"
+description: "Recipe for handling tool calls during streaming LLM responses in Go — detect, execute concurrently, and stream results back with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, streaming tool calls, Go LLM tools, concurrent tool execution, streaming agent, tool call handling, real-time AI"
 ---
 
 ## Problem

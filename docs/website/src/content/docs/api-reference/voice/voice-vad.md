@@ -1,6 +1,11 @@
 ---
-title: "Voice VAD"
-description: "Voice activity detection providers: Silero, WebRTC"
+title: "VAD API — Silero, WebRTC Detection"
+description: "Voice VAD API reference for Beluga AI. Voice activity detection with Silero ONNX model and WebRTC energy-based speech detection providers."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "VAD API, voice activity detection, Silero, WebRTC, speech detection, energy threshold, Beluga AI, Go, reference"
 ---
 
 ## silero

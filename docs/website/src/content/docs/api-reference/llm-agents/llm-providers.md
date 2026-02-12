@@ -1,6 +1,11 @@
 ---
-title: "LLM Providers"
-description: "All LLM provider implementations: OpenAI, Anthropic, Google, Ollama, Bedrock, and more"
+title: "LLM Providers API — OpenAI to Ollama"
+description: "LLM providers API reference for Beluga AI. 20+ ChatModel providers: OpenAI, Anthropic, Google, Ollama, Bedrock, Groq, Mistral, Cohere, and more."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LLM providers API, OpenAI, Anthropic, Google, Ollama, Bedrock, Groq, ChatModel, Beluga AI, Go, reference"
 ---
 
 ## anthropic

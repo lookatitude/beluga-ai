@@ -1,6 +1,11 @@
 ---
-title: "Core Package"
-description: "Foundation primitives: streams, Runnable, events, errors, lifecycle, multi-tenancy"
+title: "Core API — Streams, Runnable, Errors"
+description: "Core package API reference for Beluga AI. Runnable interface, event streaming with iter.Seq2, batch processing, lifecycle management, and structured errors."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "core API, Runnable, Stream, iter.Seq2, lifecycle, errors, batch processing, Beluga AI, Go, reference"
 ---
 
 ```go

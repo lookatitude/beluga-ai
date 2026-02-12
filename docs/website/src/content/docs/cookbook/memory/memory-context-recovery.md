@@ -1,6 +1,11 @@
 ---
 title: "Window-Based Context Recovery"
-description: "Recover conversation context from sliding windows of recent messages when memory systems fail or sessions resume after interruption."
+description: "Recipe for recovering agent conversation context from sliding windows in Go when memory stores fail or sessions resume after interruption."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, context recovery, Go sliding window, memory resilience, session resume, conversation continuity, failover recipe"
 ---
 
 ## Problem

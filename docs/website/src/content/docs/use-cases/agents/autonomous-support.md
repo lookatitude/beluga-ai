@@ -1,6 +1,11 @@
 ---
-title: Autonomous Customer Support
-description: Build self-service support systems with ReAct agents, tool integration, and intelligent escalation.
+title: Autonomous Customer Support Agent
+description: "Build self-service AI support with ReAct agents, tool integration, and confidence-based escalation. Reduce costs by 60%."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "autonomous customer support, AI support agent, ReAct agent, self-service AI, intelligent escalation, Beluga AI, Go, chatbot use case"
 ---
 
 Customer support teams handle thousands of repetitive inquiries that could be automated. The economics are stark: human agents spend 80% of their time on simple, repeatable issues (password resets, billing questions, status checks), while complex issues that genuinely need human judgment wait in queue. This creates a lose-lose: high costs for simple work and slow response times for complex work.

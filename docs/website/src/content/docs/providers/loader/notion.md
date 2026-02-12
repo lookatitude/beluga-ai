@@ -1,6 +1,11 @@
 ---
-title: Notion
-description: Load pages from Notion workspaces via the Notion API.
+title: "Notion Document Loader"
+description: "Load pages from Notion workspaces in Beluga AI. Notion API integration with recursive page loading and metadata extraction for RAG in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Notion, document loader, Notion API, workspace loader, RAG pipeline, Go, Beluga AI"
 ---
 
 The Notion loader implements the `loader.DocumentLoader` interface for loading pages from Notion. It fetches page metadata and block children via the Notion API and converts block content into plain text.

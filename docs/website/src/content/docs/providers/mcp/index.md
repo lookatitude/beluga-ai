@@ -1,6 +1,11 @@
 ---
-title: "MCP Providers"
-description: "Overview of MCP protocol support, tool discovery, and provider integrations in Beluga AI v2."
+title: "MCP Providers — Tool Discovery"
+description: "Model Context Protocol support with tool discovery, MCP client/server, and provider integrations. Connect agents to MCP tools in Go with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "MCP, Model Context Protocol, tool discovery, MCP server, MCP client, agent tools, Go MCP, Beluga AI"
 ---
 
 Beluga AI v2 provides full support for the Model Context Protocol (MCP), enabling agents to discover and use tools from remote MCP servers. The implementation includes an MCP client and server, a server discovery registry, an official Go SDK bridge, and provider integrations for tool platforms.

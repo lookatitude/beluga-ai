@@ -1,6 +1,11 @@
 ---
-title: "Together AI"
-description: "Integration guide for Together AI's open-source model hosting with Beluga AI."
+title: "Together AI LLM Provider"
+description: "Integrate Together AI with Beluga AI. Open-source model hosting with fast inference, streaming, function calling, and competitive pricing in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Together AI, LLM provider, open-source models, fast inference, function calling, streaming, Go, Beluga AI"
 ---
 
 The Together AI provider connects Beluga AI to Together's inference platform, which hosts a wide selection of open-source models. Together exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output.

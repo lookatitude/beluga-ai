@@ -1,6 +1,11 @@
 ---
-title: "API Reference"
-description: "Complete API documentation for all Beluga AI v2 packages, generated from source."
+title: "API Reference — Beluga AI v2"
+description: "Complete API documentation for all Beluga AI v2 Go packages. Reference for core, LLM, agent, RAG, voice, and infrastructure APIs."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "API reference, documentation, Beluga AI, Go, godoc, packages, framework, agentic AI"
 ---
 
 Complete API reference for all Beluga AI v2 packages. This documentation is generated from the Go source code doc comments.

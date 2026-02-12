@@ -1,6 +1,11 @@
 ---
 title: Native S2S with Amazon Nova
-description: Build an ultra-low-latency voice conversation using Amazon Nova's Speech-to-Speech capabilities for end-to-end audio processing.
+description: "Build ultra-low-latency voice conversations in Go using Amazon Nova's Speech-to-Speech capabilities — end-to-end audio processing with sub-second response times."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, Amazon Nova, S2S, Speech-to-Speech, voice conversation, low-latency"
 ---
 
 Speech-to-Speech (S2S) models process audio input and produce audio output directly, bypassing the traditional STT-LLM-TTS pipeline. This architectural shift eliminates the latency overhead of intermediate text conversion and preserves tonal and emotional cues that are lost when speech is transcribed to text and back. This tutorial demonstrates how to configure Amazon Nova's S2S provider, manage bidirectional audio streams, and handle the session lifecycle for real-time voice conversations.

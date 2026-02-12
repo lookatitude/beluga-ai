@@ -1,6 +1,11 @@
 ---
 title: Orchestration & Workflows
-description: Coordinate agents with deterministic workflow patterns, LLM-driven handoffs, supervisor delegation, and durable execution with checkpointing and resumability.
+description: "Coordinate agents with sequential pipelines, parallel fan-out, LLM-driven handoffs, supervisor delegation, and durable workflow execution with checkpointing."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, orchestration, workflows, sequential agent, parallel, handoffs, durable execution"
 ---
 
 Beluga provides multiple orchestration patterns for coordinating agents, each designed for a specific type of coordination problem. Deterministic patterns (sequential, parallel, loop) provide predictable execution when you know the steps in advance. LLM-driven patterns (handoffs, supervisor) enable dynamic routing when the execution path depends on the input. Durable workflows add persistence and resumability for long-running processes that must survive restarts.

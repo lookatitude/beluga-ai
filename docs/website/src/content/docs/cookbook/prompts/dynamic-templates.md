@@ -1,6 +1,11 @@
 ---
 title: "Dynamic Message Chain Templates"
-description: "Build message chains dynamically based on runtime conditions, conversation history, and user context."
+description: "Recipe for building LLM message chains dynamically in Go based on runtime conditions, conversation history, and user context with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, dynamic templates, Go message chain, runtime prompts, conditional messages, prompt builder, context-aware prompts"
 ---
 
 # Dynamic Message Chain Templates

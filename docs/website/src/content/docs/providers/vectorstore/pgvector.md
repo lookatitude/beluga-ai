@@ -1,6 +1,11 @@
 ---
-title: pgvector
-description: PostgreSQL-based vector store using the pgvector extension.
+title: "pgvector Vector Store Provider"
+description: "PostgreSQL vector search with pgvector extension in Beluga AI. HNSW indexing, cosine/dot-product distance, and co-located relational data in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "pgvector, PostgreSQL, vector store, HNSW, similarity search, Go, RAG, Beluga AI"
 ---
 
 The pgvector provider implements the `vectorstore.VectorStore` interface using PostgreSQL with the [pgvector](https://github.com/pgvector/pgvector) extension. It uses `pgx` for connection management and supports cosine, dot-product, and Euclidean distance strategies.

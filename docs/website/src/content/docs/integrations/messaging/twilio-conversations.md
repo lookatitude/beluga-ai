@@ -1,6 +1,11 @@
 ---
-title: Twilio Conversations
-description: Integrate Twilio Conversations API with Beluga AI for multi-channel messaging across SMS, WhatsApp, and other channels.
+title: Twilio Conversations Integration
+description: "Integrate Twilio Conversations API with Beluga AI for unified multi-channel messaging across SMS, WhatsApp, and web chat in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Twilio Conversations, multi-channel messaging, Beluga AI, SMS bot, WhatsApp AI, Twilio Go, omnichannel AI"
 ---
 
 ## Overview

@@ -1,6 +1,11 @@
 ---
 title: "Parallel File Loading"
-description: "Efficiently load documents from large directory structures using parallel file walking with worker pools and bounded concurrency."
+description: "Recipe for loading documents from large directories in Go using parallel worker pools with bounded concurrency and file descriptor management."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, parallel file loading, Go worker pool, concurrent document loading, bounded concurrency, RAG performance, file walking"
 ---
 
 ## Problem

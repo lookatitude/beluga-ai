@@ -1,6 +1,11 @@
 ---
-title: Model Benchmarking Dashboard
-description: Compare LLM performance, cost, and quality across providers to make data-driven model selection decisions.
+title: LLM Benchmarking Dashboard
+description: "Compare LLM performance, cost, and quality across providers with automated benchmarking. Data-driven model selection in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LLM benchmarking, model comparison dashboard, provider evaluation, cost quality metrics, AI benchmarks, Beluga AI, Go, MLOps"
 ---
 
 LLM providers release new models and update existing ones frequently — performance characteristics shift, pricing changes, and new capabilities appear. Teams that benchmark models once during initial selection make decisions based on stale data. A model that was the best choice six months ago may now be outperformed by a cheaper alternative, or a provider's latency profile may have degraded.

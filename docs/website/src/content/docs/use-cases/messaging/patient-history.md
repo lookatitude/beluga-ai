@@ -1,6 +1,11 @@
 ---
-title: Long-term Patient History Tracker
-description: Maintain comprehensive patient history across visits and providers with persistent memory and semantic retrieval.
+title: Long-Term Patient History Tracker
+description: "Maintain comprehensive patient history across visits and providers with persistent memory and semantic retrieval. HIPAA compliant."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "patient history AI, medical record retrieval, healthcare memory, semantic clinical search, HIPAA AI, Beluga AI, Go, health tech"
 ---
 
 A physician treating a patient for chest pain needs to know about the patient's cardiac history, current medications, allergies, and recent lab results — information that may be scattered across an EHR system, specialist referral notes, pharmacy records, and previous hospital visits. Searching through these systems manually takes 10-15 minutes per patient, and critical context is still missed because keyword search cannot find semantically related information (searching "heart problems" won't surface a note about "mitral valve prolapse"). Studies show that 60-70% of relevant patient history is not surfaced during clinical encounters, contributing to an estimated 12 million diagnostic errors annually in the US.

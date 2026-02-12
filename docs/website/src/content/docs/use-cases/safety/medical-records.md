@@ -1,6 +1,11 @@
 ---
 title: Medical Record Standardization
-description: Transform medical records from multiple hospital systems into standardized HL7 FHIR format using Beluga AI's schema validation.
+description: "Transform medical records from multiple hospital systems into standardized HL7 FHIR format. Reduce data loss from 25% to under 2%."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "medical record FHIR, HL7 standardization, healthcare interoperability, EHR migration, clinical data AI, Beluga AI, Go"
 ---
 
 A healthcare network acquiring a new hospital inherits decades of patient records in proprietary formats — HL7 v2 messages with custom segments, CDA documents with non-standard extensions, even flat files with institution-specific codes. When a patient transfers between facilities, their allergy list might use ICD-9 codes at one hospital and SNOMED CT at another, making automated cross-referencing impossible. Studies show that 18-25% of critical patient data is lost during inter-system transfers, leading to duplicate tests (costing $210B annually in the US), missed drug interactions, and delayed diagnoses.

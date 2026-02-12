@@ -1,8 +1,13 @@
 ---
-title: Voice & Audio
-description: Use cases for voice-enabled applications, speech processing, and audio AI systems.
+title: Voice & Audio AI Use Cases
+description: "Build voice-enabled AI applications with STT, TTS, VAD, and frame-based pipelines. Production-ready Go examples for IVR, tutoring, and more."
 sidebar:
   order: 0
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "voice AI use cases, speech-to-text, text-to-speech, voice assistant, IVR AI, Beluga AI, Go, voice pipeline examples"
 ---
 
 Build voice-enabled applications with STT, TTS, S2S, VAD, and frame-based pipelines using Beluga AI's voice system. These use cases demonstrate the frame-based `FrameProcessor` architecture where each voice component (VAD, STT, TTS, turn detection) is a composable processor connected via `voice.Chain()`. S2S is used when latency is critical and text is not needed as an intermediate representation; separate STT+TTS is used when the application needs to inspect or validate transcribed text.

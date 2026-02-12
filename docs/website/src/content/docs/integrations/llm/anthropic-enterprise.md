@@ -1,6 +1,11 @@
 ---
 title: Anthropic Claude Enterprise
-description: Configure Anthropic Claude Enterprise with Beluga AI for enhanced security, priority access, and enterprise-grade support in production AI applications.
+description: "Configure Claude Enterprise in Beluga AI with extended context, priority access, and enterprise-grade security for production Go applications."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Anthropic Claude, Claude Enterprise, Beluga AI, enterprise LLM, Claude API Go, extended context, production AI"
 ---
 
 Production AI deployments typically require guarantees beyond what standard API tiers provide: higher rate limits for sustained throughput, priority routing during peak demand, extended context windows for processing large documents, and enterprise-grade data handling commitments. Anthropic Claude Enterprise provides these capabilities.

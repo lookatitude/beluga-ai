@@ -1,6 +1,11 @@
 ---
-title: "Prompt Package"
-description: "Prompt management, templating, and versioning"
+title: "Prompt API — Templates, Versioning, Cache"
+description: "Prompt package API reference for Beluga AI. Template management with versioning, Go text/template rendering, and cache-optimized Builder."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "prompt API, Template, PromptManager, Builder, versioning, cache optimization, templating, Beluga AI, Go, reference"
 ---
 
 ## prompt

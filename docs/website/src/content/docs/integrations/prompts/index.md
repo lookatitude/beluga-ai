@@ -1,8 +1,13 @@
 ---
-title: Prompts & Schema
-description: Integration guides for prompt template loading, schema validation, and cross-language data bridges.
+title: Prompts & Schema Integrations
+description: "Load prompt templates, validate schemas, and bridge data between Go and Python in Beluga AI with LangChain Hub and JSON Schema."
 sidebar:
   order: 0
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "prompt templates, JSON Schema, Beluga AI, LangChain Hub, schema validation, Go Python bridge, prompt management"
 ---
 
 Prompts are the primary interface between your application and language models. Managing them as hardcoded strings works for prototypes, but production systems need versioning, validation, and reuse. These guides cover loading templates from files and community hubs, validating structured data at application boundaries, and bridging data between Go and Python services.

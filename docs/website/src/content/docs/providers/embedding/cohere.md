@@ -1,6 +1,11 @@
 ---
-title: Cohere Embeddings
-description: Generate text embeddings using Cohere's Embed API with input type control.
+title: "Cohere Embedding Provider"
+description: "Generate text embeddings with Cohere Embed API in Beluga AI. Input type control, multilingual support, and search-optimized embeddings in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Cohere embeddings, Embed API, embedding provider, multilingual embeddings, search embeddings, Go, Beluga AI"
 ---
 
 The Cohere embedding provider implements the `embedding.Embedder` interface using Cohere's v2 Embed API. It supports input type differentiation between documents and queries, which is critical for asymmetric search scenarios.

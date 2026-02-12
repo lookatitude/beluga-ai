@@ -1,6 +1,11 @@
 ---
-title: Pinecone
-description: Managed vector database using Pinecone's REST API.
+title: "Pinecone Vector Store Provider"
+description: "Managed vector search with Pinecone in Beluga AI. Serverless vector database with namespace isolation, metadata filtering, and fast queries in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Pinecone, vector database, managed vector store, serverless, metadata filtering, Go, RAG, Beluga AI"
 ---
 
 The Pinecone provider implements the `vectorstore.VectorStore` interface using Pinecone's REST API. Pinecone is a fully managed vector database with automatic scaling, requiring no infrastructure management.

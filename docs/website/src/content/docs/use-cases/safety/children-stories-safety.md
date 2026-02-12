@@ -1,6 +1,11 @@
 ---
 title: Safe Children's Story Generator
-description: Multi-layer safety checks achieve 99.5% safety compliance for AI-generated children's content.
+description: "Multi-layer safety checks achieve 99.5% compliance for AI-generated children's content with age-appropriate validation guardrails."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "children content safety, AI content filter, age-appropriate AI, guard pipeline, content moderation, Beluga AI, Go, EdTech safety"
 ---
 
 Educational technology platforms generating stories for children face a safety problem that traditional content filters cannot solve. Keyword blocklists catch obvious violations but miss contextual issues: a story about a "friendly dragon" is fine for 8-year-olds but may frighten a 3-year-old; a tale about "getting lost in the woods" teaches independence to older children but creates anxiety for preschoolers. LLMs amplify this challenge because their output is non-deterministic — the same prompt can produce appropriate content 95% of the time and inappropriate content the remaining 5%. When the audience is children, that 5% failure rate is unacceptable.

@@ -1,6 +1,11 @@
 ---
-title: Turbopuffer
-description: Serverless vector store using Turbopuffer's REST API.
+title: "Turbopuffer Vector Store Provider"
+description: "Serverless vector search with Turbopuffer in Beluga AI. Pay-per-query vector database with automatic scaling and metadata filtering in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Turbopuffer, serverless vector store, pay-per-query, auto-scaling, vector database, Go, Beluga AI"
 ---
 
 The Turbopuffer provider implements the `vectorstore.VectorStore` interface using the Turbopuffer serverless vector database. Turbopuffer offers a simple API with automatic scaling and supports cosine, dot-product, and Euclidean distance metrics.

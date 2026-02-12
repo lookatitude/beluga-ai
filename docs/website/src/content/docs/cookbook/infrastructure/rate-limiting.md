@@ -1,6 +1,11 @@
 ---
 title: "Rate Limiting per Project"
-description: "Implement per-project rate limiting with multi-window tracking and tier-based limits."
+description: "Recipe for implementing per-project rate limiting in Go with multi-window tracking, tier-based limits, and fair multi-tenant resource allocation."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, rate limiting, Go multi-tenant, per-project limits, tier-based pricing, token bucket, resource allocation recipe"
 ---
 
 ## Problem

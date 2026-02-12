@@ -1,6 +1,11 @@
 ---
-title: VAD and Turn Detection Sensitivity Tuning
-description: Optimize Voice Activity Detection and turn detection thresholds to balance responsiveness against false triggers in voice applications.
+title: VAD and Turn Detection Sensitivity
+description: "Optimize VAD and turn detection thresholds in Go to balance responsiveness against false triggers — tune silence duration, speech detection, and turn boundaries."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, VAD tuning, turn detection, sensitivity, voice AI, threshold optimization"
 ---
 
 Voice Activity Detection (VAD) determines whether an audio frame contains speech, and turn detection determines when the user has finished speaking. These two systems work together to create the turn-taking rhythm of a conversation. Tuning their thresholds is critical: too sensitive and the agent reacts to background noise or interrupts the user mid-sentence; too conservative and users experience uncomfortable pauses while they wait for the agent to respond. This tutorial demonstrates how to configure both systems for natural conversational flow.

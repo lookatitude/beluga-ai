@@ -1,6 +1,11 @@
 ---
-title: Dynamic Tool Instruction Injection
-description: Runtime tool injection enables context-aware agent tool selection with 87% task success rate.
+title: Dynamic Tool Injection for AI Agents
+description: "Adapt agent tool sets at runtime based on user permissions and task context. Achieve 87% task success with dynamic injection."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "dynamic tool injection, agent tool selection, runtime permissions, context-aware agent, Beluga AI, Go, AI agent tools"
 ---
 
 AI agent platforms often face a challenge: static tool instructions in prompts cannot adapt to available tools, user permissions, or task context. When an agent sees tools it is not authorized to use, it wastes reasoning steps attempting calls that will fail. When it does not see tools that are available, it cannot leverage capabilities that would resolve the task. This mismatch between visible tools and actual capabilities results in 30-40% task failure rates.

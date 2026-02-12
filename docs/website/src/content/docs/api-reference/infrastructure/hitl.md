@@ -1,6 +1,11 @@
 ---
-title: "HITL Package"
-description: "Human-in-the-loop: confidence-based approval, escalation policies"
+title: "HITL API — Human-in-the-Loop Approval"
+description: "HITL package API reference for Beluga AI. Human-in-the-loop approval workflows, confidence-based policies, interaction types, and notifiers."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "HITL API, human-in-the-loop, approval workflow, confidence, escalation, ApprovalPolicy, Beluga AI, Go, reference"
 ---
 
 ```go

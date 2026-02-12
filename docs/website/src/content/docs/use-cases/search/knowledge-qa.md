@@ -1,6 +1,11 @@
 ---
 title: Enterprise Knowledge Q&A System
-description: Build scalable knowledge search with semantic retrieval across millions of documents using Beluga AI's vector store package.
+description: "Build scalable knowledge Q&A with semantic retrieval across millions of documents. Sub-second responses with source attribution."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "enterprise knowledge QA, semantic search, knowledge base AI, document retrieval, RAG Q&A, Beluga AI, Go, enterprise search"
 ---
 
 Enterprises accumulate millions of documents across wikis, knowledge bases, and documentation systems. The scale itself creates a discovery problem: employees know the answer exists somewhere but cannot find it. Traditional keyword search delivers low accuracy because it matches terms, not meaning — a question like "what is our policy on remote work expenses?" will miss documents titled "Work From Home Reimbursement Guidelines" if the exact terms do not match.

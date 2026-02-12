@@ -1,6 +1,11 @@
 ---
-title: Jina Embeddings
-description: Generate text embeddings using Jina AI's embedding models.
+title: "Jina AI Embedding Provider"
+description: "Generate text embeddings with Jina AI models in Beluga AI. Long-context embeddings with late chunking and multimodal support in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Jina AI, embeddings, embedding provider, long-context, late chunking, multimodal, Go, Beluga AI"
 ---
 
 The Jina AI embedding provider implements the `embedding.Embedder` interface using the Jina Embeddings API. It supports Jina's multilingual embedding models with native batch processing and token usage reporting.

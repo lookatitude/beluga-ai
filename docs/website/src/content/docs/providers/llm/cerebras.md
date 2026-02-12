@@ -1,6 +1,11 @@
 ---
-title: "Cerebras"
-description: "Integration guide for Cerebras wafer-scale inference with Beluga AI."
+title: "Cerebras LLM Provider"
+description: "Integrate Cerebras wafer-scale inference with Beluga AI. Ultra-fast LLM inference with hardware-accelerated performance and streaming in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Cerebras, wafer-scale, LLM provider, fast inference, hardware acceleration, streaming, Go, Beluga AI"
 ---
 
 The Cerebras provider connects Beluga AI to Cerebras' inference platform, which uses wafer-scale engine (WSE) hardware for extremely fast inference. Cerebras exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output.

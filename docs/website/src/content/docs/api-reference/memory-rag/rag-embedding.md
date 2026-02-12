@@ -1,6 +1,11 @@
 ---
-title: "RAG Embedding"
-description: "Embedder interface for converting text to vector embeddings"
+title: "Embedding API — Embedder Interface"
+description: "RAG embedding API reference for Beluga AI. Embedder interface for text-to-vector conversion, provider registry, middleware, and hooks."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "embedding API, Embedder, vector embeddings, RAG, provider registry, middleware, Beluga AI, Go, reference"
 ---
 
 ```go

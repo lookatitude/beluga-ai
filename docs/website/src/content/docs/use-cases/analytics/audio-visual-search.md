@@ -1,6 +1,11 @@
 ---
 title: Audio-Visual Product Search
-description: Enable customers to search for products using images and voice descriptions with multimodal AI.
+description: "Enable customers to search for products using images and voice descriptions with multimodal AI. Bridge the search intent gap."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "multimodal product search, visual search AI, voice product search, image search e-commerce, Beluga AI, Go, retail AI"
 ---
 
 Customers often know what they want but cannot describe it in search keywords. A shopper holding a competitor's product wants "something like this" — a query that text search cannot answer. Voice descriptions ("I'm looking for a blue ceramic vase, about 12 inches tall") contain rich detail that keyword matching ignores. E-commerce platforms lose sales at these moments because the gap between how customers think about products and how search systems index them is too wide.

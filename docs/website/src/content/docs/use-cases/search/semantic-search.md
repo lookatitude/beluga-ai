@@ -1,6 +1,11 @@
 ---
 title: Semantic Search and Recommendations
-description: Build intelligent search and recommendation engines with vector embeddings, similarity search, and personalized recommendations.
+description: "Build intelligent search and recommendation engines with vector embeddings and similarity search. Meaning-based retrieval at scale."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "semantic search, vector embeddings, recommendation engine, similarity search, personalized search, Beluga AI, Go, e-commerce"
 ---
 
 Traditional keyword-based search fails to understand user intent and semantic relationships. A user searching for "affordable running shoes" will miss products described as "budget-friendly jogging footwear" because the terms do not overlap, even though the intent is identical. Similarly, recommendation systems based solely on purchase history and metadata (category, price range) miss deeper content relationships — they cannot understand that a customer who bought a hiking backpack might want trail-running shoes.

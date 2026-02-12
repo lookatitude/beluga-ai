@@ -1,6 +1,11 @@
 ---
-title: "Protocol Package"
-description: "Protocol abstractions for MCP, A2A, REST, and OpenAI Agents compatibility"
+title: "Protocol API — MCP, A2A, REST Overview"
+description: "Protocol package API reference for Beluga AI. MCP, A2A, and REST/SSE protocol abstractions for agent and tool interoperability."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "protocol API, MCP, A2A, REST, SSE, interoperability, OpenAI Agents, JSON-RPC, Beluga AI, Go, reference"
 ---
 
 ```go

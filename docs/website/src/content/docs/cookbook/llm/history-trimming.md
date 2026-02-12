@@ -1,6 +1,11 @@
 ---
 title: "Multi-step History Trimming"
-description: "Manage conversation history that grows beyond token limits with intelligent trimming and summarization."
+description: "Recipe for managing conversation history beyond token limits in Go with intelligent trimming, summarization, and sliding windows using Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, history trimming, Go context window, conversation management, token limits, sliding window, ContextManager recipe"
 ---
 
 ## Problem

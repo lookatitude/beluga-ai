@@ -1,6 +1,11 @@
 ---
-title: Filesystem Template Store
-description: Manage prompt templates as files on the local filesystem with caching, version control, and dynamic loading for Beluga AI applications.
+title: Filesystem Prompt Templates
+description: "Manage Beluga AI prompt templates as versioned files with caching, hot-reload, and Git version control for production deployments."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "prompt templates, filesystem store, Beluga AI, template caching, hot-reload prompts, Git versioned prompts, Go prompt management"
 ---
 
 Prompt engineering is iterative. Embedding prompts as string literals in Go code means every change requires a code review, recompilation, and redeployment. Filesystem-based templates externalize prompts as plain text files that can be version-controlled in Git, reviewed by non-developers (product managers, domain experts), and hot-reloaded during development. Beluga AI's `prompt` package can load templates from the local filesystem with automatic variable extraction and in-memory caching for production performance.

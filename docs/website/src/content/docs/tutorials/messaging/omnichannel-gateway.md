@@ -1,6 +1,11 @@
 ---
 title: Omni-Channel Messaging Gateway
-description: Build a unified messaging gateway that handles messages from WhatsApp, SMS, and Slack through a single agent interface with shared conversation history.
+description: "Build a unified messaging gateway in Go that routes WhatsApp, SMS, and Slack messages through a single Beluga AI agent with shared conversation history."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, messaging gateway, WhatsApp, SMS, Slack, omnichannel, chatbot"
 ---
 
 Users communicate across multiple channels -- WhatsApp, SMS, Slack, and more. Building a separate bot for each channel creates maintenance overhead and inconsistent experiences. A unified messaging gateway solves this by normalizing incoming messages from different providers into a common format, routing them through a single AI agent, and dispatching responses back through the correct channel. This architecture follows the same interface-first design used throughout Beluga AI: define a `ChannelProvider` interface, and each messaging platform becomes a pluggable implementation.

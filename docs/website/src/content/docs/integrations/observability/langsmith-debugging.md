@@ -1,6 +1,11 @@
 ---
-title: LangSmith Debugging
-description: Integrate LangSmith with Beluga AI to trace, debug, and analyze LLM calls with full prompt and response visibility.
+title: LangSmith LLM Debugging
+description: "Integrate LangSmith with Beluga AI to trace and debug LLM calls with full prompt visibility, response analysis, and token tracking."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LangSmith, LLM debugging, Beluga AI, prompt tracing, AI observability, LLM analytics Go, response analysis"
 ---
 
 ## Overview

@@ -1,6 +1,11 @@
 ---
-title: Weaviate
-description: Vector store using Weaviate's GraphQL and REST APIs.
+title: "Weaviate Vector Store Provider"
+description: "Vector search with Weaviate in Beluga AI. AI-native vector database with GraphQL API, hybrid search, and multi-tenancy support in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Weaviate, vector store, vector database, GraphQL, hybrid search, multi-tenancy, Go, Beluga AI"
 ---
 
 The Weaviate provider implements the `vectorstore.VectorStore` interface using Weaviate's REST and GraphQL APIs. Weaviate supports both vector and hybrid (keyword + vector) search with a schema-based data model.

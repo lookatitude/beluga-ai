@@ -1,6 +1,11 @@
 ---
 title: Kubernetes Helm Deployment
-description: Deploy Beluga AI services to Kubernetes using Helm charts for repeatable, configurable deployments with scaling, secrets management, and production-ready defaults.
+description: "Deploy Beluga AI to Kubernetes with Helm charts for repeatable deployments with auto-scaling, secrets management, and health checks."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Kubernetes deployment, Helm chart, Beluga AI, container orchestration, auto-scaling AI, secrets management, Go microservice"
 ---
 
 ## Overview

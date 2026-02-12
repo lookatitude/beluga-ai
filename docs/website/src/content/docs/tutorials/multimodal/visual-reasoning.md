@@ -1,6 +1,11 @@
 ---
 title: Visual Reasoning with Multimodal Models
-description: Analyze images and extract information using multimodal LLMs with Beluga AI's ContentPart system for URL-based and base64-encoded image input.
+description: "Analyze images and extract structured data using multimodal LLMs in Go — URL-based and base64 image input with Beluga AI's ContentPart system."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, visual reasoning, multimodal, image analysis, ContentPart, receipt scanner"
 ---
 
 Modern AI models can "see" and reason about images alongside text. Beluga AI's `schema.ContentPart` system provides a unified interface for sending multimodal content to any provider that supports vision capabilities. The `ContentPart` interface is the foundation of Beluga AI's multimodal design -- `TextPart`, `ImagePart`, and `AudioPart` all implement it, which means a single `HumanMessage` can carry any combination of media types. Provider implementations handle the encoding details (base64 for raw bytes, URL references for remote images) transparently, so your application code stays provider-agnostic.

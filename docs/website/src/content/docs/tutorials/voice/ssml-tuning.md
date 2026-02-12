@@ -1,6 +1,11 @@
 ---
 title: SSML Tuning for Expressive Speech
-description: Use Speech Synthesis Markup Language to control pauses, emphasis, pitch, and pronunciation in TTS output.
+description: "Control TTS pauses, emphasis, pitch, and pronunciation with SSML in Go — build expressive speech output with programmatic SSML builders in Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, SSML, TTS, expressive speech, pronunciation, text-to-speech"
 ---
 
 Speech Synthesis Markup Language (SSML) provides granular control over text-to-speech output, enabling pauses, emphasis, pitch adjustment, and pronunciation overrides. Without SSML, TTS engines apply default prosody that may not match the conversational context -- a notification should sound different from a thoughtful explanation, and a brand name needs consistent pronunciation. This tutorial demonstrates how to use SSML with Beluga's TTS providers and build helpers for constructing SSML documents programmatically.

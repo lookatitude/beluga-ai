@@ -1,6 +1,11 @@
 ---
-title: Qdrant Cloud
-description: Integrate Qdrant Cloud managed clusters with Beluga AI for high-performance vector storage and similarity search.
+title: Qdrant Cloud Vector Store
+description: "Integrate Qdrant Cloud managed clusters with Beluga AI for high-performance vector storage, filtering, and similarity search in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Qdrant Cloud, vector database, Beluga AI, managed vector store, similarity search, HNSW index, Go vector search"
 ---
 
 Self-hosted vector databases require capacity planning, index tuning, and operational maintenance. Qdrant Cloud eliminates this by providing fully managed clusters with automatic scaling, backups, and monitoring. Qdrant is built specifically for vector search (unlike general-purpose databases with vector extensions), which means it provides advanced features like payload-based filtering, multi-vector support, and quantization out of the box.

@@ -1,6 +1,11 @@
 ---
 title: "Observability Providers"
-description: "Overview of observability providers and tracing in Beluga AI v2."
+description: "4 observability providers for LLM tracing: Langfuse, LangSmith, Opik, Phoenix. OpenTelemetry-based tracing and metrics in Go with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LLM observability, AI tracing, Langfuse, LangSmith, OpenTelemetry, Go observability, Beluga AI"
 ---
 
 Beluga AI v2 provides a unified observability layer built on OpenTelemetry with support for exporting LLM trace data to external platforms. The `o11y` package handles tracing, metrics, structured logging, and health checks. Observability providers implement the `TraceExporter` interface to send LLM call data to platforms such as Langfuse, LangSmith, Opik, and Phoenix.

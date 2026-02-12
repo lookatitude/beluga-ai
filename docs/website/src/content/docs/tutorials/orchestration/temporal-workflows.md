@@ -1,6 +1,11 @@
 ---
-title: Long-Running Workflows with Durable Execution
-description: Build durable, long-running agent workflows that survive process restarts using the workflow package and optional Temporal integration.
+title: Durable Workflow Execution Tutorial
+description: "Build long-running agent workflows in Go that survive restarts — event-sourced state, human approval signals, and optional Temporal integration with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, durable execution, workflow, Temporal, event sourcing, long-running"
 ---
 
 Standard agents run in memory. If the process restarts, the agent's state is lost -- including any work it has already completed. For workflows that span hours or days, require human approval signals, or need reliable retries across failures, the `workflow` package provides a durable execution engine with event-sourced state persistence. Beluga AI owns its durable execution engine rather than depending on Temporal by default, but provides Temporal as a provider option for production deployments that need distributed execution and advanced features.

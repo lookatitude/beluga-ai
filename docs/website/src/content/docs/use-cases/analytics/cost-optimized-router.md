@@ -1,6 +1,11 @@
 ---
-title: Cost-Optimized Chat Router
-description: Reduce LLM costs by 35%+ with intelligent request classification and cost-quality routing.
+title: Cost-Optimized LLM Chat Router
+description: "Reduce LLM costs by 35%+ with intelligent request classification and cost-quality routing. Match model capability to request complexity."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LLM cost optimization, chat router, model routing, cost-quality tradeoff, request classification, Beluga AI, Go, AI cost reduction"
 ---
 
 LLM pricing varies by 10-15x between model tiers — GPT-3.5 Turbo costs $0.002 per 1K tokens while GPT-4 costs $0.03. When every request routes to the most expensive model, simple factual lookups consume the same budget as complex multi-step reasoning. For high-volume applications processing thousands of requests daily, this uniform routing inflates costs by 40-50% with no quality benefit for the majority of requests.

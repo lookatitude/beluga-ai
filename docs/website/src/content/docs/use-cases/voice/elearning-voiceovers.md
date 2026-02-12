@@ -1,6 +1,11 @@
 ---
 title: Localized E-Learning Voiceovers
-description: Generate multi-language voiceovers for educational content at scale using Beluga AI's TTS pipeline.
+description: "Generate multi-language voiceovers for educational content at scale. Support 22+ languages at 91% lower cost with consistent quality."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "e-learning voiceover, TTS education, multilingual voiceover, AI narration, course localization, Beluga AI, Go, EdTech use case"
 ---
 
 E-learning platforms serving global audiences face three compounding constraints: high voiceover production costs ($500-800 per course per language), long turnaround times (2-3 weeks per recording cycle), and limited language support (typically 3-4 languages). These constraints interact — adding a new language multiplies both cost and time, creating a scaling bottleneck that limits student reach to a fraction of the potential audience.

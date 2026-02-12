@@ -1,6 +1,11 @@
 ---
-title: "Embedding Providers"
-description: "Embedding provider implementations: OpenAI, Cohere, Google, Jina, Mistral, Ollama, Voyage, and more"
+title: "Embedding Providers API — OpenAI to Voyage"
+description: "Embedding providers API for Beluga AI. 9 providers: OpenAI, Cohere, Google, Jina, Mistral, Ollama, Sentence Transformers, Voyage, and inmemory."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "embedding providers API, OpenAI, Cohere, Jina, Voyage, Ollama, Mistral, vector embeddings, Beluga AI, Go, reference"
 ---
 
 ## cohere

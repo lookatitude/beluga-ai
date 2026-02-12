@@ -1,6 +1,11 @@
 ---
 title: "Multi-Speaker Dialogue Synthesis"
-description: "Generate natural conversations with multiple distinct speaker voices, turn transitions, and pauses."
+description: "Recipe for generating multi-speaker conversations in Go with distinct voices, natural turn transitions, and pacing using Beluga AI TTS pipeline."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, multi-speaker TTS, Go dialogue synthesis, voice conversation, speaker voices, turn transitions, audiobook recipe"
 ---
 
 ## Problem

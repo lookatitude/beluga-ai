@@ -1,6 +1,11 @@
 ---
-title: "Gemini Live"
-description: "Google Gemini Live S2S provider for bidirectional multimodal audio streaming."
+title: "Gemini Live S2S Voice Provider"
+description: "Google Gemini Live S2S for bidirectional audio streaming in Beluga AI. Multimodal speech-to-speech with tool calling and real-time AI in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Gemini Live, speech-to-speech, S2S, Google AI, multimodal, bidirectional audio, Go, Beluga AI"
 ---
 
 Gemini Live provides native speech-to-speech via the Google Gemini Live API over WebSocket, enabling bidirectional audio streaming with Gemini's multimodal models. The provider supports audio and text output, function calling, and server-side voice activity detection.

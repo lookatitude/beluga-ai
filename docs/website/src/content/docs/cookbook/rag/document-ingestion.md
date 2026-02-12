@@ -1,6 +1,11 @@
 ---
 title: "Document Ingestion Recipes"
-description: "Common patterns for loading, splitting, and processing documents in Beluga AI RAG pipelines, from basic directory loading to complete ingestion pipelines."
+description: "Go recipes for RAG document ingestion: load from directories, split into chunks, process metadata, and build complete ingestion pipelines with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, document ingestion, Go RAG loader, text splitting, document processing, ingestion pipeline, DocumentLoader recipe"
 ---
 
 Document ingestion is the first stage of any RAG pipeline: getting documents from their source format into chunks that can be embedded and stored. The quality of ingestion directly affects retrieval quality downstream. Poorly split documents produce poor embeddings; missing metadata means no filtering capability; sequential loading wastes time on large collections.

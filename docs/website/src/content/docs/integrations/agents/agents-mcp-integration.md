@@ -1,6 +1,11 @@
 ---
-title: Agents and MCP Server Integration
-description: Expose Beluga AI agent tools over the Model Context Protocol (MCP) so that IDE clients, bots, and other MCP-compatible tools can discover and invoke them.
+title: MCP Server & Client Integration
+description: "Expose Beluga AI tools over Model Context Protocol for IDE clients and bots, or consume remote MCP servers as native tools."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "MCP integration, Model Context Protocol, MCP server Go, MCP client, Beluga AI tools, tool interoperability, IDE integration"
 ---
 
 The Model Context Protocol (MCP) is an open standard for tool interoperability across AI systems. By exposing your tools over MCP, any compatible client -- IDE extensions like Cursor and Claude Code, chatbots, or other agent frameworks -- can discover and invoke them without custom integration code. Conversely, by consuming remote MCP servers, your Beluga agents gain access to tools hosted by other teams or services.

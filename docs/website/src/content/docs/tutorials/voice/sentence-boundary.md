@@ -1,6 +1,11 @@
 ---
 title: Sentence-Boundary Turn Detection
-description: Detect when a user has finished speaking using heuristic sentence-end markers, silence duration, and utterance length constraints.
+description: "Detect user turn completion in Go using heuristic sentence-end markers, configurable silence thresholds, and utterance length constraints with Beluga AI's voice system."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, turn detection, sentence boundary, heuristic, silence threshold, voice"
 ---
 
 Heuristic turn detection uses simple, predictable rules to determine when a user has completed their utterance. Unlike ML-based approaches that require model files and inference overhead, heuristic detection combines sentence-end markers (`.`, `!`, `?`), minimum silence duration, and utterance length constraints into a fast, deterministic detector. The tradeoff is that heuristics cannot detect conversational nuances like trailing speech or intentional pauses, but for structured interactions (commands, short queries, form-filling) they provide reliable detection with zero dependencies.

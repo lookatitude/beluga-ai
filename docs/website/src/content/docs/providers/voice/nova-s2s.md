@@ -1,6 +1,11 @@
 ---
-title: "Amazon Nova S2S"
-description: "Amazon Nova Sonic S2S provider for bidirectional audio streaming via AWS Bedrock."
+title: "Amazon Nova S2S Voice Provider"
+description: "Amazon Nova Sonic S2S for bidirectional audio streaming in Beluga AI. AWS Bedrock speech-to-speech with tool use and low latency in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Amazon Nova, speech-to-speech, S2S, AWS Bedrock, bidirectional audio, tool use, Go, Beluga AI"
 ---
 
 Amazon Nova provides native speech-to-speech via the AWS Bedrock Runtime API with Nova Sonic. The provider connects via WebSocket for bidirectional audio streaming, supporting tool calling, input transcription, and user interruption handling.

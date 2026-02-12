@@ -1,6 +1,11 @@
 ---
-title: Testing Guide
-description: How to write and run tests for Beluga AI
+title: "Testing Guide — Beluga AI"
+description: "Write and run tests for Beluga AI. Table-driven tests, mocks, integration tests, fuzz testing, benchmarks, and streaming code testing patterns."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI testing, Go test patterns, table-driven tests, mock interfaces, integration tests Go, fuzz testing, benchmarks"
 ---
 
 Testing is a critical part of the Beluga AI development process. With 2,885 tests across 157 packages, the test suite serves as both a safety net and a specification — tests document how each interface behaves, what edge cases are handled, and how components interact. This guide covers how to run tests, write new ones, and follow the testing conventions used throughout the project.

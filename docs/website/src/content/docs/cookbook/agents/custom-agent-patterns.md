@@ -1,6 +1,11 @@
 ---
 title: "Custom Agent Patterns"
-description: "Extend agents with custom pre-processing, post-processing, and observability callbacks using composition."
+description: "Recipe for extending Go AI agents with custom pre-processing, post-processing, and observability hooks using composition patterns in Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, custom agent patterns, Go agent hooks, agent composition, BaseAgent extension, agent observability, pre-processing"
 ---
 
 ## Problem

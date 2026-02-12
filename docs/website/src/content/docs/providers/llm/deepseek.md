@@ -1,6 +1,11 @@
 ---
-title: "DeepSeek"
-description: "Integration guide for DeepSeek models with Beluga AI."
+title: "DeepSeek LLM Provider"
+description: "Integrate DeepSeek models with Beluga AI. Cost-effective reasoning and code generation with streaming and tool calling support in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "DeepSeek, LLM provider, reasoning model, code generation, cost-effective AI, streaming, Go, Beluga AI"
 ---
 
 The DeepSeek provider connects Beluga AI to DeepSeek's inference platform. DeepSeek exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output. DeepSeek is known for its DeepSeek-V3 and DeepSeek-R1 reasoning models.

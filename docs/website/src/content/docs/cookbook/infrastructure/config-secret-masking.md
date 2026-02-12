@@ -1,6 +1,11 @@
 ---
 title: "Masking Secrets in Logs"
-description: "Automatically mask sensitive configuration data like API keys and passwords before they appear in logs."
+description: "Recipe for automatically masking API keys, passwords, and tokens in Go logs before they reach aggregation systems — fail-safe secret protection."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, secret masking, Go log security, API key protection, credential masking, config safety, production logging recipe"
 ---
 
 ## Problem

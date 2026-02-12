@@ -1,6 +1,11 @@
 ---
-title: Conversational AI Assistant
-description: Build a personalized conversational AI with persistent 3-tier memory using Beluga AI's MemGPT-inspired architecture.
+title: Conversational AI with Persistent Memory
+description: "Build a personalized conversational AI using MemGPT 3-tier memory — core, recall, and archival — for cross-session context."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "conversational AI, persistent memory, MemGPT, 3-tier memory, chatbot memory, Beluga AI, Go, AI assistant use case"
 ---
 
 Traditional chatbots lose context between sessions, forcing users to repeat themselves. Every interaction starts from scratch — the assistant does not remember the user's name, preferences, past questions, or the decisions made in previous conversations. This creates a frustrating experience that feels more like filling out a form than talking to an intelligent assistant.

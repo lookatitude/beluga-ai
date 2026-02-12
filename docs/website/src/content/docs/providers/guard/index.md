@@ -1,6 +1,11 @@
 ---
-title: Guard Providers
-description: Overview of all guard providers available in Beluga AI v2.
+title: "Guard Providers — AI Safety"
+description: "5 guard providers for AI safety: Azure Safety, Guardrails AI, Lakera, LLM Guard, NeMo. Three-stage content validation pipeline in Go with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "AI safety, guard providers, content moderation, prompt injection, Lakera, NeMo Guardrails, Go, Beluga AI"
 ---
 
 Beluga AI v2 provides a three-stage safety pipeline for validating content at every point in the agent lifecycle. The `guard.Guard` interface defines a unified contract for content validation, and providers integrate with external safety APIs for enterprise-grade moderation.

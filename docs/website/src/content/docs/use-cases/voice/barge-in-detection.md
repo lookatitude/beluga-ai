@@ -1,6 +1,11 @@
 ---
 title: Barge-In Detection for Voice Agents
-description: Enable users to interrupt voice agents mid-speech with low-latency barge-in detection using VAD and turn detection.
+description: "Enable users to interrupt voice agents mid-speech with low-latency barge-in detection. Improve call satisfaction with natural turn-taking."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "barge-in detection, voice interruption, turn taking AI, contact center voice, echo cancellation, Beluga AI, Go, voice UX"
 ---
 
 Contact center voice agents that play out entire pre-generated responses without allowing interruption frustrate callers and fragment conversations. Users expect the same turn-taking dynamics they experience in human dialogue: the ability to interrupt when they already know the answer, correct a misunderstanding mid-sentence, or signal urgency. Without barge-in support, agents force callers to wait through irrelevant speech, increasing handle times and driving down satisfaction scores.

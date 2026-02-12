@@ -1,6 +1,11 @@
 ---
-title: ElevenLabs Streaming API
-description: Integrate ElevenLabs for high-quality text-to-speech with streaming and voice cloning in Beluga AI.
+title: ElevenLabs Streaming TTS
+description: "Integrate ElevenLabs for natural text-to-speech with streaming, voice cloning, and 29-language support in Beluga AI pipelines."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "ElevenLabs, text-to-speech, TTS streaming, voice cloning, Beluga AI, multilingual TTS, Go TTS provider"
 ---
 
 ElevenLabs produces some of the most natural-sounding synthetic voices available, making it the go-to choice when voice quality directly affects user experience -- customer-facing phone agents, audiobook narration, or branded voice assistants. Its voice cloning capability lets you create a custom voice from a small audio sample, and multilingual support covers 29 languages with a single model. This guide covers integrating ElevenLabs as a TTS provider within Beluga AI.

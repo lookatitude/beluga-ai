@@ -1,6 +1,11 @@
 ---
-title: "RAGAS"
-description: "Evaluate RAG pipeline quality using a RAGAS server."
+title: "RAGAS Evaluation Provider"
+description: "Evaluate RAG pipeline quality with RAGAS in Beluga AI. Faithfulness, answer relevancy, and context precision metrics for retrieval evaluation in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "RAGAS, RAG evaluation, faithfulness, answer relevancy, context precision, eval metrics, Go, Beluga AI"
 ---
 
 The RAGAS provider connects Beluga AI's evaluation framework to a [RAGAS](https://docs.ragas.io/) server instance. It implements the `eval.Metric` interface with RAG-specific evaluation metrics such as faithfulness, answer relevancy, context precision, and context recall.

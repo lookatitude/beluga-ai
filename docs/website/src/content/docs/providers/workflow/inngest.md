@@ -1,6 +1,11 @@
 ---
-title: Inngest
-description: Workflow state store backed by Inngest's event-driven durable execution platform.
+title: "Inngest Workflow Provider"
+description: "Workflow state with Inngest event-driven platform in Beluga AI. Serverless durable execution with automatic retries and step functions in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Inngest, workflow, event-driven, serverless, durable execution, step functions, Go, Beluga AI"
 ---
 
 The Inngest provider implements the `workflow.WorkflowStore` interface using Inngest's HTTP API for persisting workflow state. Inngest is an event-driven durable execution platform that provides reliable state management, retries, and step functions. This provider stores and retrieves workflow state through the Inngest REST API.

@@ -1,6 +1,11 @@
 ---
-title: Overview
-description: Beluga AI v2 is a production-ready Go framework for building agentic AI systems with streaming-first design, 22+ LLM providers, and enterprise-grade infrastructure.
+title: Getting Started with Beluga AI
+description: "Learn what Beluga AI offers — a Go-native agentic AI framework with 22+ LLM providers, streaming-first design, and production-grade infrastructure."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, getting started, Go AI framework, agentic AI, LLM framework Go, production AI, AI agents Go"
 ---
 
 Beluga AI v2 is a Go-native framework for building production agentic AI systems. It provides a unified architecture for LLM orchestration, agent reasoning, RAG pipelines, voice AI, and multi-agent collaboration — all built on Go's strengths in concurrency, type safety, and operational reliability.

@@ -1,6 +1,11 @@
 ---
-title: "LangSmith"
-description: "Export LLM traces to LangSmith for observability and debugging."
+title: "LangSmith Observability Provider"
+description: "Export LLM traces to LangSmith in Beluga AI. LangChain-native tracing with debugging, evaluation, and production monitoring in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LangSmith, LLM tracing, LangChain, observability, debugging, production monitoring, Go, Beluga AI"
 ---
 
 The LangSmith provider exports LLM call data to [LangSmith](https://smith.langchain.com/), LangChain's platform for debugging, testing, and monitoring LLM applications. It implements the `o11y.TraceExporter` interface and sends run data through the LangSmith batch API.

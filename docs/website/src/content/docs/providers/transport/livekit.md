@@ -1,6 +1,11 @@
 ---
-title: "LiveKit"
-description: "Integration guide for the LiveKit transport provider in Beluga AI."
+title: "LiveKit Transport Provider"
+description: "LiveKit WebRTC transport for voice pipelines in Beluga AI. Scalable audio/video rooms with track subscription and SFU architecture in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LiveKit, WebRTC, audio transport, voice pipeline, SFU, scalable, real-time, Go, Beluga AI"
 ---
 
 The LiveKit provider implements bidirectional audio transport through LiveKit rooms. LiveKit is treated as a transport layer — it provides WebRTC connectivity while Beluga handles all STT, LLM, and TTS processing through the frame-based pipeline.

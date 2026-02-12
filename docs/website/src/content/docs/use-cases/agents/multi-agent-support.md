@@ -1,6 +1,11 @@
 ---
-title: Multi-Agent Customer Support
-description: Build an intelligent customer support system with specialized agents, handoffs, and human escalation using Beluga AI.
+title: Multi-Agent Customer Support System
+description: "Build intelligent support with specialized agents, seamless handoffs-as-tools, and human-in-the-loop escalation in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "multi-agent support, agent handoffs, customer support AI, HITL escalation, specialized agents, Beluga AI, Go, enterprise support"
 ---
 
 Customer support teams face diverse inquiries requiring different expertise — billing disputes, technical troubleshooting, account management, and general questions. A single monolithic chatbot struggles with this breadth because it must carry tools, instructions, and context for every possible domain in a single prompt. This leads to tool confusion (the agent picks the wrong tool), context dilution (important domain instructions get lost in a sea of generic instructions), and poor specialization (jack of all trades, master of none).

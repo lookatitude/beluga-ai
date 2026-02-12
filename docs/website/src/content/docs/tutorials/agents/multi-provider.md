@@ -1,6 +1,11 @@
 ---
-title: Multi-provider Chat Integration
-description: Build applications that use multiple LLM providers interchangeably through Beluga AI's unified ChatModel interface.
+title: Multi-Provider Chat Integration
+description: "Build Go applications that use multiple LLM providers interchangeably through Beluga AI's unified ChatModel interface with normalized tool calling."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, multi-provider, LLM, ChatModel, OpenAI, Anthropic, provider switching"
 ---
 
 In a fast-moving AI landscape, locking into a single vendor creates risk -- risk of outages, pricing changes, capability gaps, and vendor lock-in. Beluga AI addresses this by defining a single `ChatModel` interface that every provider implements identically. Tool calls, streaming, and configuration all work the same way regardless of whether you are talking to OpenAI, Anthropic, Google, or any other registered provider. This design follows the principle that application logic should never contain provider-specific code.

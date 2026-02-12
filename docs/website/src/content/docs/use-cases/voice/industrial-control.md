@@ -1,6 +1,11 @@
 ---
 title: Voice-Activated Industrial Control
-description: Implement hands-free voice commands for industrial equipment with noise-resistant STT and safety validation.
+description: "Implement hands-free voice commands for industrial equipment with noise-resistant STT and multi-layer safety validation. 96% accuracy."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "industrial voice control, hands-free commands, safety voice AI, manufacturing voice, noise resistant STT, Beluga AI, Go"
 ---
 
 Manufacturing environments require hands-free equipment control for worker safety — operators handling materials, wearing gloves, or positioned near moving equipment cannot safely interact with touchscreens or physical controls. Standard voice recognition achieves only 60-70% accuracy at industrial noise levels (85-100+ dB), making it unreliable for safety-critical operations where a misrecognized "start" versus "stop" command could cause equipment damage or injury.

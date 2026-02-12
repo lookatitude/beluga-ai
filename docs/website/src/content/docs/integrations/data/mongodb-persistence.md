@@ -1,6 +1,11 @@
 ---
 title: MongoDB Context Persistence
-description: Use MongoDB as a persistent store for Beluga AI's memory system, enabling long-term conversation history and multi-session context management.
+description: "Use MongoDB as a persistent store for Beluga AI memory, enabling long-term conversation history and multi-session context in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "MongoDB, Beluga AI, context persistence, conversation history, memory store, MongoDB Atlas, Go AI framework"
 ---
 
 In-memory conversation history is lost when a process restarts, which means agents lose context between deployments, scaling events, or crashes. MongoDB persistence solves this by storing conversation messages durably, enabling agents to maintain long-term context across sessions and process lifecycles.

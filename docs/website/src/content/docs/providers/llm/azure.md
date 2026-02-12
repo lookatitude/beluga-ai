@@ -1,6 +1,11 @@
 ---
-title: "Azure OpenAI"
-description: "Integration guide for Azure OpenAI Service with Beluga AI."
+title: "Azure OpenAI LLM Provider"
+description: "Integrate Azure OpenAI Service with Beluga AI. Enterprise-grade GPT models with Azure AD auth, private endpoints, and content filtering in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Azure OpenAI, LLM provider, Azure AD, enterprise AI, Go Azure SDK, content filtering, Beluga AI"
 ---
 
 The Azure OpenAI provider connects Beluga AI to OpenAI models hosted on Microsoft Azure. It uses the same OpenAI-compatible API format with Azure-specific authentication (api-key header) and URL structure (per-deployment endpoints with api-version query parameter).

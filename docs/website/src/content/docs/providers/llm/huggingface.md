@@ -1,6 +1,11 @@
 ---
-title: "HuggingFace"
-description: "Integration guide for HuggingFace Inference API with Beluga AI."
+title: "HuggingFace LLM Provider"
+description: "Integrate HuggingFace Inference API with Beluga AI. Access thousands of open-source models with streaming and tool calling support in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "HuggingFace, Inference API, LLM provider, open-source models, streaming, Go, Beluga AI"
 ---
 
 The HuggingFace provider connects Beluga AI to HuggingFace's Inference API, which provides hosted access to thousands of open-source models. HuggingFace exposes an OpenAI-compatible chat completions endpoint, so this provider supports all standard features including streaming and tool calling.

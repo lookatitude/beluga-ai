@@ -1,6 +1,11 @@
 ---
 title: "Recursive Schema Handling"
-description: "Validate and process recursive schema structures with cycle detection and depth limiting."
+description: "Recipe for validating recursive schema structures in Go with cycle detection, depth limiting, and safe traversal for multi-agent communication graphs."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, recursive schema, Go cycle detection, depth limiting, schema validation, graph traversal, agent communication"
 ---
 
 ## Problem

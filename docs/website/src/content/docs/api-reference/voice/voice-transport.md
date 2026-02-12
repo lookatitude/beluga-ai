@@ -1,6 +1,11 @@
 ---
-title: "Voice Transport"
-description: "Transport layer for voice sessions: WebSocket, LiveKit, Daily, Pipecat"
+title: "Voice Transport API — WebSocket, LiveKit"
+description: "Voice transport API reference for Beluga AI. AudioTransport interface with WebSocket, LiveKit, Daily, and Pipecat transport providers."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "voice transport API, AudioTransport, WebSocket, LiveKit, Daily, Pipecat, WebRTC, Beluga AI, Go, reference"
 ---
 
 ## transport

@@ -1,6 +1,11 @@
 ---
-title: "Orchestration Package"
-description: "Chain, Graph, Router, Parallel, and Supervisor orchestration patterns"
+title: "Orchestration API — Chain, Graph, Router"
+description: "Orchestration package API for Beluga AI. Chain, Graph, Router, ScatterGather, Supervisor, and Blackboard workflow composition patterns."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "orchestration API, Chain, Graph, Router, Supervisor, ScatterGather, Blackboard, workflow, Beluga AI, Go, reference"
 ---
 
 ```go

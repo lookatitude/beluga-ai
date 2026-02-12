@@ -1,6 +1,11 @@
 ---
-title: Installation
-description: System requirements, installation steps, and provider setup for Beluga AI v2.
+title: Install Beluga AI
+description: "Install Beluga AI and configure LLM providers. Step-by-step setup for OpenAI, Anthropic, Google, Ollama, and 18 more Go AI providers."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI installation, Go AI framework setup, LLM providers, OpenAI Go, Anthropic Go, install AI framework"
 ---
 
 ## System Requirements

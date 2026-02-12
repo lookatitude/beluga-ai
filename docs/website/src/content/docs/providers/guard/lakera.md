@@ -1,6 +1,11 @@
 ---
-title: Lakera Guard
-description: Prompt injection and content safety detection using Lakera Guard.
+title: "Lakera Guard Provider"
+description: "Prompt injection and content safety detection with Lakera Guard in Beluga AI. Real-time threat detection and moderation scoring in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Lakera Guard, prompt injection, content safety, threat detection, AI moderation, guard provider, Go, Beluga AI"
 ---
 
 The Lakera Guard provider implements the `guard.Guard` interface using the [Lakera Guard](https://www.lakera.ai/) API. Lakera Guard provides real-time detection of prompt injections, jailbreak attempts, PII exposure, and harmful content, making it a strong choice for input-stage validation.

@@ -1,6 +1,11 @@
 ---
-title: Security Camera Event Analysis
-description: Analyze video feeds from security cameras in real-time to detect events, identify threats, and generate alerts.
+title: AI Security Camera Event Analysis
+description: "Analyze video feeds from security cameras in real-time with vision LLMs. Context-aware threat detection with cost-efficient frame sampling."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "security camera AI, video analysis, threat detection, vision LLM, surveillance AI, real-time alerts, Beluga AI, Go"
 ---
 
 Security camera networks generate massive volumes of video — a facility with 100 cameras at 30fps produces 260,000 frames per minute. Human operators monitoring these feeds suffer from attention fatigue after 20-30 minutes, missing critical events during exactly the periods when threats are most likely. Scaling manual monitoring linearly with camera count is economically unsustainable.

@@ -1,8 +1,13 @@
 ---
-title: Production
-description: Patterns and best practices for deploying, scaling, and operating Beluga AI v2 applications in production environments.
+title: Production Guides
+description: "Production patterns for deploying Beluga AI applications — orchestration, multi-agent coordination, safety pipelines, OpenTelemetry observability, and resilience in Go."
 sidebar:
   order: 0
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, production, deployment, orchestration, safety, observability, resilience"
 ---
 
 Moving an AI application from prototype to production introduces challenges that do not exist in local development: unreliable upstream providers, unpredictable model outputs, multi-tenant isolation, observability across distributed traces, and the need for safety guardrails that prevent harmful content from reaching end users. These guides address each of these concerns with concrete patterns and working code.

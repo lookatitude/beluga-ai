@@ -1,6 +1,11 @@
 ---
-title: Vector Store Providers
-description: Overview of all vector store providers available in Beluga AI v2.
+title: "Vector Store Providers — 13 Backends"
+description: "13 vector store providers with unified VectorStore interface: pgvector, Pinecone, Qdrant, Weaviate, Milvus, and more. Similarity search in Go with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "vector store providers, Go vector database, pgvector, Pinecone, Qdrant, similarity search, RAG, Beluga AI"
 ---
 
 Beluga AI v2 provides a unified `vectorstore.VectorStore` interface for storing and searching document embeddings. All providers register via `init()` and are instantiated through the global registry.

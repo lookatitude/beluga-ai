@@ -1,6 +1,11 @@
 ---
 title: Audio Analysis with Multimodal Models
-description: Analyze audio files beyond simple transcription using Beluga AI's AudioPart type for meeting summarization, sentiment detection, and question answering.
+description: "Analyze audio files beyond transcription in Go — use Beluga AI's AudioPart for meeting summarization, sentiment detection, and interactive question answering."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, audio analysis, multimodal, meeting summarization, sentiment, AudioPart"
 ---
 
 Audio is a rich data source often trapped in large files. Multimodal models that accept audio input allow you to "chat" with recordings -- summarizing meetings, detecting speaker sentiment, and answering questions about specific moments. Beluga AI's `schema.AudioPart` provides a uniform interface for sending audio to capable providers. Like all content part types (`TextPart`, `ImagePart`, `AudioPart`), it implements the `schema.ContentPart` interface, which means it can be combined with other part types in a single message. This polymorphic design lets you mix audio with text instructions in one request without provider-specific API calls.

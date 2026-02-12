@@ -1,6 +1,11 @@
 ---
 title: Summary and Window Memory Patterns
-description: Manage conversation context windows with sliding window, summarization, and hybrid memory strategies.
+description: "Manage LLM context windows in Go with three memory strategies — sliding window, running summarization, and hybrid summary+buffer using Beluga AI's memory system."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, memory management, sliding window, summarization, context window, MemGPT"
 ---
 
 LLMs have limited context windows. Sending the entire history of a year-long conversation will exceed token limits, increase cost, and dilute the model's attention on recent context. Effective memory management is about keeping the most relevant information in the context window while discarding or compressing the rest. This tutorial covers three strategies with different trade-offs: sliding window for simplicity, summarization for infinite history, and a hybrid approach that combines the strengths of both. Beluga AI's memory system draws from the **MemGPT 3-tier model** (Core, Recall, Archival), and these patterns map to the Core and Recall tiers.

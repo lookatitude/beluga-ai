@@ -1,6 +1,11 @@
 ---
 title: Building a Custom Runnable
-description: Implement the core Runnable interface to create reusable, composable components for the Beluga AI pipeline.
+description: "Implement the core Runnable interface in Go to create reusable, composable pipeline components that integrate with Beluga AI's Pipe, Parallel, and streaming."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, Runnable interface, composable, pipeline, streaming, custom component"
 ---
 
 The `core.Runnable` interface is the universal execution abstraction in Beluga AI. Every component that processes input — LLMs, tools, agents, pipelines — implements `Runnable`. This uniformity exists because composition depends on a shared contract: `Pipe` can chain any two runnables, `Parallel` can fan out to any set of runnables, and middleware can wrap any runnable. Without a common interface, each composition pattern would need special-case handling for every component type.

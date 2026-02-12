@@ -1,6 +1,11 @@
 ---
-title: "Braintrust"
-description: "Evaluate LLM outputs using the Braintrust scoring API."
+title: "Braintrust Evaluation Provider"
+description: "Evaluate LLM outputs with Braintrust scoring API in Beluga AI. Automated scoring, experiment tracking, and dataset management in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Braintrust, LLM evaluation, scoring API, experiment tracking, eval metrics, AI testing, Go, Beluga AI"
 ---
 
 The Braintrust provider connects Beluga AI's evaluation framework to the [Braintrust](https://www.braintrust.dev/) cloud platform. It implements the `eval.Metric` interface by sending samples to the Braintrust scoring API and returning normalized scores.

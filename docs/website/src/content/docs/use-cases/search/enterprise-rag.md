@@ -1,6 +1,11 @@
 ---
 title: Enterprise RAG Knowledge Base
-description: Build a production RAG pipeline with hybrid search, multi-source ingestion, and semantic retrieval using Beluga AI.
+description: "Build a production RAG pipeline with hybrid search, multi-source ingestion, and semantic retrieval. Grounded answers with source citations."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "enterprise RAG, knowledge base AI, hybrid search pipeline, semantic retrieval, document ingestion, Beluga AI, Go, RAG use case"
 ---
 
 Organizations accumulate vast amounts of knowledge across documents, wikis, codebases, and databases. When employees search for information, keyword-based systems return documents that contain the search terms but may not actually answer the question. A search for "how to handle customer refunds" returns every document mentioning "refund" — policy documents, meeting notes, email threads — without understanding which ones actually explain the refund process. This semantic gap between intent and keyword matching leads to lost productivity and inconsistent decision-making.

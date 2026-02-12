@@ -1,6 +1,11 @@
 ---
-title: Scientific Paper Processing
-description: Process scientific papers with academic-aware text splitting that preserves equations, citations, and section structure using Beluga AI's splitter package.
+title: Scientific Paper Processing for RAG
+description: "Process scientific papers with academic-aware splitting that preserves equations, citations, and section structure for accurate retrieval."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "scientific paper RAG, academic text splitting, equation preservation, citation indexing, research search, Beluga AI, Go"
 ---
 
 Research institutions need to index thousands of scientific papers for literature search systems. Scientific papers have unique structural properties that standard text splitters destroy: mathematical equations contain special characters that get split mid-expression (turning `E = mc^2` into two meaningless fragments), citations like "[Smith et al., 2023]" get separated from the claims they support, and section hierarchy (Abstract, Methods, Results) provides critical retrieval context that flat chunking discards.

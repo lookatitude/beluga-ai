@@ -1,6 +1,11 @@
 ---
-title: State Providers
-description: Overview of shared agent state providers available in Beluga AI v2.
+title: "State Providers — Agent State"
+description: "Shared agent state providers with Watch notifications for reactive patterns. Key-value state management for multi-agent coordination in Go with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "agent state, state management, shared state, reactive state, multi-agent, Go state store, Beluga AI"
 ---
 
 Beluga AI v2 provides a shared state system for agent coordination through the `state.Store` interface. Stores support key-value operations with change notifications via `Watch`, enabling reactive patterns where agents can observe and respond to state changes in real time. Keys can be scoped by agent, session, or global visibility.

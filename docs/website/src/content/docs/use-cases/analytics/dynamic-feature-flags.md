@@ -1,6 +1,11 @@
 ---
-title: Dynamic Feature Flagging System
-description: Implement hot-reloadable feature flags for gradual rollouts, A/B testing, and instant toggles without deployments.
+title: Dynamic Feature Flags for AI
+description: "Implement hot-reloadable feature flags for gradual AI model rollouts, A/B testing, and instant toggles without deployments."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "feature flags AI, hot-reload config, gradual rollout, AI model toggle, canary deployment, Beluga AI, Go, DevOps AI"
 ---
 
 Deploying new AI features (a new model, a different prompt strategy, an updated guard rule) carries risk. If a new model produces poor responses for a specific customer segment, the fix requires a code change, CI/CD pipeline, and deployment — a 2-4 hour window where affected users see degraded quality. For AI features specifically, this delay is worse than for traditional features because LLM behavior is harder to predict in production than in testing.

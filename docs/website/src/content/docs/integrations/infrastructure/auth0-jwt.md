@@ -1,6 +1,11 @@
 ---
 title: Auth0 JWT Authentication
-description: Integrate Auth0 and JWT token-based authentication with the Beluga AI server package for secure API access, token validation, and role-based access control.
+description: "Integrate Auth0 JWT authentication with Beluga AI server endpoints for secure API access, token validation, and RBAC in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Auth0, JWT authentication, Beluga AI, token validation, RBAC, secure API, Go authentication middleware"
 ---
 
 ## Overview

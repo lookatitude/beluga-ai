@@ -1,6 +1,11 @@
 ---
-title: "Voice S2S"
-description: "Speech-to-speech interface and providers: OpenAI Realtime, Gemini Live, Nova S2S"
+title: "S2S API — Speech-to-Speech Providers"
+description: "Voice S2S API reference for Beluga AI. Speech-to-speech interface with OpenAI Realtime, Gemini Live, and Amazon Nova Sonic providers."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "S2S API, speech-to-speech, OpenAI Realtime, Gemini Live, Nova Sonic, voice, bidirectional, Beluga AI, Go, reference"
 ---
 
 ## s2s

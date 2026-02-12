@@ -1,6 +1,11 @@
 ---
 title: Legal Entity Extraction System
-description: Schema-validated entity extraction achieves 98.5% accuracy with 91% reduction in processing time.
+description: "Schema-validated entity extraction achieves 98.5% accuracy with 91% reduction in processing time for legal due diligence."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "legal entity extraction, NER legal, schema validation, due diligence AI, contract analysis, Beluga AI, Go, legal tech"
 ---
 
 Legal due diligence for a single M&A transaction requires extracting entities — companies, individuals, dates, monetary amounts, jurisdictions — from thousands of contracts, filings, and correspondence. A paralegal team manually processing 500 documents per day achieves 80-85% extraction accuracy, but the 15-20% error rate means critical entities (a subsidiary name, a contract expiration date, a liability cap) are missed or misclassified. These errors create compliance risk: a missed entity in a regulatory filing can result in sanctions, and an incorrectly extracted date in a contract review can invalidate legal arguments.

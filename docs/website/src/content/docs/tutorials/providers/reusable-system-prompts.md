@@ -1,6 +1,11 @@
 ---
 title: Reusable System Prompts
-description: Build a library of versioned, reusable system prompts to define consistent agent personas.
+description: "Build a versioned prompt registry in Go with Beluga AI — define reusable agent personas with template variables, versioning, and A/B testing support."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, system prompts, persona, prompt registry, versioning, prompt templates"
 ---
 
 A persona is a set of instructions that defines an agent's tone, expertise, and constraints. Hardcoding these strings in every agent is unmaintainable — when a persona needs updating, you must find and change every occurrence. A prompt registry with versioning allows consistent behavior across agents while enabling non-technical team members to update prompts without changing Go code. This separation of prompt content from application logic also supports A/B testing of different persona versions in production.

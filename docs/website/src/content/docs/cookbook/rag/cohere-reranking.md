@@ -1,6 +1,11 @@
 ---
 title: "Reranking with Cohere Rerank"
-description: "Improve retrieval quality by reranking initial search results using Cohere's cross-encoder rerank API for better relevance scoring."
+description: "Recipe for improving RAG retrieval quality in Go by reranking search results with Cohere's cross-encoder API for better relevance scoring."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Cohere reranking, Go RAG rerank, cross-encoder, relevance scoring, retrieval quality, search reranking recipe"
 ---
 
 # Reranking with Cohere Rerank

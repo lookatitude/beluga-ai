@@ -1,6 +1,11 @@
 ---
-title: Context Deep Dive
-description: Advanced patterns for Go context.Context in Beluga AI applications, covering cancellation, timeouts, value propagation, and graceful shutdown.
+title: Go Context Patterns
+description: "Advanced context.Context patterns in Beluga AI for cancellation, timeouts, value propagation, and graceful shutdown of AI pipelines."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Go context, context.Context, Beluga AI, cancellation patterns, timeout management, graceful shutdown, Go AI framework"
 ---
 
 LLM calls are slow and expensive. A single agent invocation may chain multiple model calls, tool executions, and retrieval operations that take seconds. Without proper context management, a cancelled HTTP request continues burning tokens, a timed-out operation holds connections indefinitely, and debugging across services becomes impossible without trace propagation. Every public function in Beluga AI accepts `context.Context` as its first parameter. Understanding how context flows through the framework is essential for building applications that handle cancellation, enforce timeouts, and propagate request-scoped metadata. This guide covers the context patterns you will use most often.

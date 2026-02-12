@@ -1,6 +1,11 @@
 ---
-title: OpenAI Realtime API
-description: Integrate OpenAI Realtime API for low-latency speech-to-speech conversations with Beluga AI.
+title: OpenAI Realtime Voice API
+description: "Integrate OpenAI Realtime API for sub-second speech-to-speech conversations with tool calling in Beluga AI voice pipelines."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "OpenAI Realtime, speech-to-speech, low-latency voice, Beluga AI, GPT-4o voice, WebSocket audio, Go S2S provider"
 ---
 
 OpenAI Realtime is the lowest-latency option for speech-to-speech conversations that also need tool calling and reasoning capabilities. Because the model processes audio natively rather than transcribing first, it preserves tone and nuance while delivering sub-second response times. Choose this provider when conversational quality and built-in function calling matter more than infrastructure lock-in. This guide covers integrating the OpenAI Realtime S2S provider with Beluga AI for end-to-end voice interactions.

@@ -1,6 +1,11 @@
 ---
-title: Integrations
-description: "60 integration guides for connecting Beluga AI v2 with external services, platforms, and infrastructure."
+title: Integrations Overview
+description: "Connect Beluga AI with 60+ services including LLM providers, vector databases, voice engines, and cloud infrastructure in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI integrations, Go AI framework integrations, LLM provider integration, vector database connector, voice AI integration, cloud infrastructure AI"
 ---
 
 Beluga AI is designed to work with the systems you already use. These integration guides cover connecting the framework to LLM providers, vector databases, cloud infrastructure, observability platforms, and communication channels. Each guide includes configuration, authentication, working code examples, and troubleshooting for the specific service.

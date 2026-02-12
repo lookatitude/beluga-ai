@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import sitemap from "@astrojs/sitemap";
 import { viewTransitions } from "astro-vtbot/starlight-view-transitions";
 import rehypeMermaid from "./src/lib/rehype-mermaid.mjs";
 
@@ -20,6 +21,7 @@ export const locales = locals
 
 // https://astro.build/config
 export default defineConfig({
+  site: "https://beluga-ai.dev",
   image: {
     service: { entrypoint: "astro/assets/services/noop" },
   },
@@ -49,6 +51,7 @@ export default defineConfig({
       },
 
     }),
+    sitemap(),
   ],
   vite: {
     plugins: [tailwindcss(),viewTransitions()],

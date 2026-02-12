@@ -1,6 +1,11 @@
 ---
-title: "RAG Vector Store"
-description: "VectorStore interface for similarity search over document embeddings"
+title: "VectorStore API — Similarity Search"
+description: "VectorStore API reference for Beluga AI. VectorStore interface for document embedding storage and similarity search with pluggable backends."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "VectorStore API, similarity search, embeddings, RAG, provider registry, search options, Beluga AI, Go, reference"
 ---
 
 ```go

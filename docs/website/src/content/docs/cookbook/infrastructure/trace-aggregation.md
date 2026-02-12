@@ -1,6 +1,11 @@
 ---
 title: "Trace Aggregation for Multi-Agents"
-description: "Aggregate and correlate traces from multiple agents to see complete end-to-end flows across agent boundaries."
+description: "Recipe for aggregating and correlating OpenTelemetry traces across multiple Go agents to see complete end-to-end flows with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, trace aggregation, Go multi-agent tracing, OpenTelemetry, distributed tracing, agent observability, span correlation"
 ---
 
 ## Problem

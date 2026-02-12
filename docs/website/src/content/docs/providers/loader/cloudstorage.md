@@ -1,6 +1,11 @@
 ---
-title: Cloud Storage
-description: Load documents from AWS S3, Google Cloud Storage, and Azure Blob Storage.
+title: "Cloud Storage Document Loader"
+description: "Load documents from AWS S3, GCS, and Azure Blob Storage in Beluga AI. Multi-cloud document ingestion with prefix filtering for RAG in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "cloud storage, document loader, AWS S3, Google Cloud Storage, Azure Blob, RAG pipeline, Go, Beluga AI"
 ---
 
 The Cloud Storage loader implements the `loader.DocumentLoader` interface for loading files from cloud object storage services. It detects the cloud provider automatically by URL prefix (`s3://`, `gs://`, `az://`) and fetches content via direct HTTP calls.

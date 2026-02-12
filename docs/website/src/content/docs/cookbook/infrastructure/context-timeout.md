@@ -1,6 +1,11 @@
 ---
-title: "Advanced Context Timeout Management"
-description: "Implement fine-grained per-operation timeouts with graceful handling and deadline propagation through Runnable chains."
+title: "Context Timeout Management"
+description: "Recipe for implementing per-operation timeouts in Go agent workflows with graceful handling and deadline propagation through Runnable chains."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, context timeout, Go deadline propagation, per-operation timeout, graceful cancellation, Runnable chains, timeout recipe"
 ---
 
 ## Problem

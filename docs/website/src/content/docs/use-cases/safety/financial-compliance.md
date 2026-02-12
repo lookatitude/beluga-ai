@@ -1,6 +1,11 @@
 ---
 title: Financial Advice Compliance Firewall
-description: Automated regulatory compliance checking achieves 98.5% compliance rate with zero violations.
+description: "Automated SEC and FINRA compliance checking for AI-generated financial advice. 98.5% compliance rate with zero regulatory violations."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "financial compliance AI, SEC FINRA compliance, investment advice guard, regulatory firewall, fintech safety, Beluga AI, Go"
 ---
 
 Financial services AI faces a unique regulatory challenge: SEC Rule 2111 (suitability) and FINRA Rule 2210 (communications) impose strict requirements on investment advice that LLMs have no inherent awareness of. An LLM might generate "guaranteed 10% returns" — language that is factually plausible but legally prohibited because it implies certainty about future performance. A single compliance violation can trigger regulatory investigation, fines exceeding $1M, and reputational damage that takes years to recover from.

@@ -1,6 +1,11 @@
 ---
 title: Deploying Agents as a REST API
-description: Expose Beluga AI agents as a production-ready REST API with streaming Server-Sent Events, concurrent request handling, and Docker deployment.
+description: "Expose Beluga AI agents as a REST API in Go with synchronous and streaming SSE endpoints, concurrent request handling, middleware, and Docker containerization."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, REST API, SSE, streaming, deployment, Docker, HTTP server"
 ---
 
 Having a capable agent is step one; making it accessible to users is step two. The `server` package provides HTTP framework adapters, while the `protocol` package handles REST/SSE transport. This tutorial shows how to wrap agents in HTTP handlers with both synchronous and streaming responses. The synchronous endpoint suits simple request-response clients, while the SSE endpoint provides real-time token streaming for chat UIs where users expect to see the response appear progressively.

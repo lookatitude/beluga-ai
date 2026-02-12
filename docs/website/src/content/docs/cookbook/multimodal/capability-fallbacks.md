@@ -1,6 +1,11 @@
 ---
 title: "Capability-based Fallbacks"
-description: "Route multimodal requests to appropriate models based on capability detection with automatic fallback when primary models lack required features."
+description: "Recipe for routing multimodal requests to the right Go LLM model based on capability detection with automatic fallback when features are missing."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, capability fallback, multimodal routing, Go model selection, provider fallback, feature detection, LLM capabilities"
 ---
 
 # Capability-based Fallbacks

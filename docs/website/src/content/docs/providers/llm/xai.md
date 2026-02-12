@@ -1,6 +1,11 @@
 ---
-title: "xAI (Grok)"
-description: "Integration guide for xAI's Grok models with Beluga AI."
+title: "xAI Grok LLM Provider"
+description: "Integrate xAI Grok models with Beluga AI. Real-time knowledge, streaming, tool calling, and conversational AI capabilities in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "xAI, Grok, LLM provider, real-time knowledge, streaming, tool calling, Go, Beluga AI"
 ---
 
 The xAI provider connects Beluga AI to xAI's Grok family of models. xAI exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output.

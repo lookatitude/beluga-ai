@@ -1,6 +1,11 @@
 ---
-title: "Voice STT"
-description: "Speech-to-text interface and providers: Deepgram, AssemblyAI, Whisper, Groq, ElevenLabs, Gladia"
+title: "STT API — Speech-to-Text Providers"
+description: "Voice STT API reference for Beluga AI. Speech-to-text interface with Deepgram, AssemblyAI, Whisper, Groq, ElevenLabs, and Gladia providers."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "STT API, speech-to-text, Deepgram, AssemblyAI, Whisper, Groq, transcription, voice, Beluga AI, Go, reference"
 ---
 
 ## stt

@@ -1,6 +1,11 @@
 ---
-title: "Fireworks AI"
-description: "Integration guide for Fireworks AI's fast inference with Beluga AI."
+title: "Fireworks AI LLM Provider"
+description: "Integrate Fireworks AI with Beluga AI. Fast open-source model inference with streaming, function calling, and competitive pricing in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Fireworks AI, LLM provider, fast inference, open-source models, function calling, streaming, Go, Beluga AI"
 ---
 
 The Fireworks AI provider connects Beluga AI to Fireworks' inference platform, which specializes in fast, cost-effective serving of open-source models. Fireworks exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output.

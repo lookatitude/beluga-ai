@@ -1,6 +1,11 @@
 ---
-title: "Voice Providers"
-description: "Overview of all supported voice providers in Beluga AI — STT, TTS, and S2S."
+title: "Voice Providers — STT, TTS & S2S"
+description: "14 voice providers for speech-to-text, text-to-speech, and speech-to-speech: Deepgram, ElevenLabs, Cartesia, and more. Voice AI in Go with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "voice providers, STT, TTS, speech-to-text, text-to-speech, Deepgram, ElevenLabs, voice AI, Go, Beluga AI"
 ---
 
 Beluga AI provides a unified voice pipeline with three provider categories: Speech-to-Text (STT), Text-to-Speech (TTS), and Speech-to-Speech (S2S). Every provider registers itself via `init()`, so a blank import is sufficient to make it available through the registry.

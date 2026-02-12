@@ -1,6 +1,11 @@
 ---
-title: Voice Sessions
-description: Build production-ready voice agents with real-time audio transport, session management, and comprehensive observability.
+title: Production Voice Sessions
+description: "Build production-ready voice agents with real-time audio transport, session management, reconnection, and observability in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "voice session management, real-time audio, WebSocket voice, voice agent production, session resilience, Beluga AI, Go"
 ---
 
 Voice agents have unique challenges compared to text-based AI: users notice delays above 200ms, connections drop on mobile networks, and each session consumes significant resources (audio buffers, STT/TTS engine instances, WebSocket connections). Unlike text chat where a dropped connection just means a missed message, a dropped voice connection means the conversation stops entirely — there is no way to asynchronously resume a real-time audio stream.

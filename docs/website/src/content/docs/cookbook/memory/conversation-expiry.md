@@ -1,6 +1,11 @@
 ---
 title: "Conversation Expiry Logic"
-description: "Automatically expire and clean up inactive conversations to free resources and ensure fresh session starts."
+description: "Recipe for automatically expiring inactive conversations in Go — free resources, enforce session limits, and ensure fresh starts with Beluga AI memory."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, conversation expiry, Go session cleanup, inactive timeout, memory management, resource optimization, session lifecycle"
 ---
 
 ## Problem

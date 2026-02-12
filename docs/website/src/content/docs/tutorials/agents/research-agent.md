@@ -1,6 +1,11 @@
 ---
 title: Building a Research Agent
-description: Build an autonomous research agent that decomposes questions, searches for information, and synthesizes reports.
+description: "Build an autonomous research agent in Go with Beluga AI — decompose questions, search multiple sources with the ReAct pattern, and synthesize cited reports."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, research agent, ReAct, autonomous agent, tool use, report synthesis"
 ---
 
 A research agent goes beyond simple chat -- it breaks down complex questions into search queries, retrieves information from multiple sources, and synthesizes a comprehensive report. This is an example of the **ReAct (Reason + Act) pattern**, where the model alternates between reasoning about what to do next and executing actions via tools. The agent loop continues until the model decides it has gathered enough information to produce a final answer, at which point it responds without any tool calls. This self-terminating behavior is what makes the agent autonomous rather than requiring explicit orchestration.

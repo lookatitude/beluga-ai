@@ -1,6 +1,11 @@
 ---
-title: "Fish Audio"
-description: "Fish Audio TTS provider for open-source voice synthesis."
+title: "Fish Audio Voice Provider"
+description: "Fish Audio TTS for open-source voice synthesis in Beluga AI. Community voices, multilingual support, and cost-effective text-to-speech in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Fish Audio, text-to-speech, TTS, open-source, voice synthesis, multilingual, Go, Beluga AI"
 ---
 
 Fish Audio provides text-to-speech synthesis with support for voice cloning via reference IDs. The Beluga AI provider uses the Fish Audio v1 API for synthesis, producing audio output in configurable formats.

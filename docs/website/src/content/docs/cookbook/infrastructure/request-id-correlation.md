@@ -1,6 +1,11 @@
 ---
-title: "Correlating Request IDs across Services"
-description: "Propagate and correlate request IDs across distributed services for debugging and monitoring."
+title: "Request ID Correlation"
+description: "Recipe for propagating and correlating request IDs across distributed Go services — trace agent workflows through LLMs, tools, and MCP servers."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, request ID correlation, Go distributed tracing, request propagation, microservice debugging, trace context, observability recipe"
 ---
 
 ## Problem

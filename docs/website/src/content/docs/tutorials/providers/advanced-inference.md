@@ -1,6 +1,11 @@
 ---
 title: Advanced Inference Options
-description: Fine-tune LLM generation with temperature, sampling, penalties, and response format controls.
+description: "Fine-tune LLM generation in Go with Beluga AI's GenerateOption system — temperature, top-p sampling, penalties, max tokens, and response format controls."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, inference options, temperature, sampling, GenerateOption, LLM tuning"
 ---
 
 Default LLM settings work for general queries, but specific tasks require tuning. Code generation needs low temperature for determinism. Creative writing benefits from higher temperature for variety. Beluga AI v2 provides per-call `GenerateOption` functions that control these parameters across all providers through a unified API. This functional options pattern (`WithX()`) means you specify only the parameters you want to change — unset options use provider defaults, and the same option functions work regardless of which LLM provider is active.

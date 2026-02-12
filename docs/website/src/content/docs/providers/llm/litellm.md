@@ -1,6 +1,11 @@
 ---
-title: "LiteLLM"
-description: "Integration guide for LiteLLM universal proxy with Beluga AI."
+title: "LiteLLM LLM Provider"
+description: "Integrate LiteLLM universal proxy with Beluga AI. Route requests to 100+ LLM providers through a single OpenAI-compatible endpoint in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LiteLLM, LLM proxy, universal provider, OpenAI compatible, multi-provider, streaming, Go, Beluga AI"
 ---
 
 The LiteLLM provider connects Beluga AI to a [LiteLLM](https://litellm.ai) proxy gateway. LiteLLM provides a unified OpenAI-compatible API in front of 100+ LLM providers, handling format translation, load balancing, spend tracking, and rate limiting. This provider is a thin wrapper that points to your LiteLLM deployment.

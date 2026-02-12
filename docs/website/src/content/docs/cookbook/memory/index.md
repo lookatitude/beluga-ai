@@ -1,6 +1,11 @@
 ---
 title: Memory Recipes
-description: Practical recipes for managing agent memory with the MemGPT-inspired 3-tier system, including TTL cleanup, context recovery, provider switching, and priority-based retrieval.
+description: "Go recipes for AI agent memory: TTL cleanup, context recovery, conversation expiry, and the MemGPT-inspired 3-tier system with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, memory recipes, Go agent memory, MemGPT, TTL cleanup, context recovery, conversation expiry, memory management"
 sidebar:
   order: 0
 ---

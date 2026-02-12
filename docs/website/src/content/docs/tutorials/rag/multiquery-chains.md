@@ -1,6 +1,11 @@
 ---
-title: Multi-query Retrieval Chains
-description: Improve RAG recall by generating multiple search queries from a single user question using LLM query expansion.
+title: Multi-Query Retrieval Chains
+description: "Improve RAG recall in Go by generating multiple search queries from a single question using LLM query expansion — retrieve, deduplicate, and rank with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, multi-query, RAG, query expansion, retrieval, deduplication"
 ---
 
 Users rarely use the same terminology as your documentation. When a user asks "How do I add a helper?" but your docs describe "middleware implementation," vector search may miss the connection because the embeddings for these phrases may not be close enough in the vector space. Multi-query retrieval addresses this vocabulary mismatch by using an LLM to generate multiple query variations from a single user question, each capturing a different angle or using different terminology. This is a form of query expansion -- a well-established information retrieval technique adapted for the LLM era.

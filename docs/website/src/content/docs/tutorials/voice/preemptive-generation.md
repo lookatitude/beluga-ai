@@ -1,6 +1,11 @@
 ---
 title: Preemptive Generation Strategies
-description: Reduce perceived latency by generating agent replies from interim STT transcripts before the user finishes speaking.
+description: "Reduce perceived voice latency in Go by generating agent replies from interim STT transcripts before the user finishes speaking — with Beluga AI's voice pipeline."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, preemptive generation, voice latency, interim transcripts, STT, voice AI"
 ---
 
 Preemptive generation uses interim (partial) STT transcripts to begin generating a response before the user finishes speaking. The core idea is that most of a sentence's meaning is established in the first few words -- "What is the weather in" almost certainly ends with a location -- so starting generation early produces a usable response by the time the final transcript arrives. When the final transcript confirms the interim, the preemptive response can be used immediately, reducing perceived latency by hundreds of milliseconds.

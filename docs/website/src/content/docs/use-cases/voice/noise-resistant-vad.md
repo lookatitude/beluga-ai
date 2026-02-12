@@ -1,6 +1,11 @@
 ---
 title: Noise-Resistant Voice Activity Detection
-description: Implement reliable voice activity detection in high-noise environments using Silero and RNNoise models.
+description: "Implement reliable VAD in high-noise environments using Silero and RNNoise models. Drop false triggers from 22% to 6%."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "voice activity detection, noise resistant VAD, Silero VAD, RNNoise, industrial voice, Beluga AI, Go, speech detection"
 ---
 
 Field-service applications, factory floors, and vehicle environments require voice activity detection (VAD) that stays accurate despite high background noise (85-100+ dB). Standard energy-based VAD — which simply checks if the audio signal exceeds an amplitude threshold — cannot distinguish speech from mechanical noise, fan hum, or engine vibration at these levels, producing 22% false positive rates. Every false trigger wastes downstream STT compute and can cause incorrect command activations in safety-critical environments.

@@ -1,6 +1,11 @@
 ---
-title: Voice AI Pipeline
-description: Build real-time voice applications with frame-based processing, STT, TTS, S2S, and transport layers.
+title: Voice AI Pipeline Guide
+description: "Build real-time voice applications in Go with Beluga AI's frame-based pipeline — STT, TTS, Speech-to-Speech, VAD, WebSocket and WebRTC transport layers."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, voice AI, STT, TTS, Speech-to-Speech, real-time, frame-based pipeline, VAD"
 ---
 
 Voice AI transforms how users interact with agents — from typing and reading to speaking and listening. Building real-time voice applications requires careful architecture: audio data must flow through speech recognition, language model processing, and speech synthesis with minimal latency, while handling interruptions, silence detection, and transport-layer concerns like WebSocket connections and WebRTC media.

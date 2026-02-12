@@ -1,6 +1,11 @@
 ---
 title: "Handling Speech Interruption"
-description: "Detect and handle user interruptions during AI speech with immediate cancellation and clean state reset."
+description: "Recipe for detecting and handling user interruptions during AI speech in Go — cancel TTS, stop LLM generation, and reset state under 200ms."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, speech interruption, Go barge-in handling, TTS cancellation, voice state reset, real-time voice, interruption recipe"
 ---
 
 ## Problem

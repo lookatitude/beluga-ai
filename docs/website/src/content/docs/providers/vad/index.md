@@ -1,6 +1,11 @@
 ---
-title: "VAD Providers"
-description: "Overview of all supported Voice Activity Detection providers in Beluga AI."
+title: "VAD Providers — Voice Detection"
+description: "2 voice activity detection providers: Silero and WebRTC VAD. Detect speech in audio streams with confidence scoring in Go with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "voice activity detection, VAD, Silero VAD, WebRTC VAD, speech detection, Go voice, Beluga AI"
 ---
 
 Beluga AI provides a unified `voice.VAD` interface for detecting speech in audio streams. VAD providers analyze audio frames and report whether speech is present, along with confidence scores and state transitions (speech start, speech end, silence).

@@ -1,6 +1,11 @@
 ---
-title: "Voice TTS"
-description: "Text-to-speech interface and providers: ElevenLabs, Cartesia, PlayHT, Fish, Groq, LMNT, Smallest"
+title: "TTS API — Text-to-Speech Providers"
+description: "Voice TTS API reference for Beluga AI. Text-to-speech interface with ElevenLabs, Cartesia, PlayHT, Fish, Groq, LMNT, and Smallest providers."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "TTS API, text-to-speech, ElevenLabs, Cartesia, PlayHT, voice synthesis, Groq, LMNT, Beluga AI, Go, reference"
 ---
 
 ## tts

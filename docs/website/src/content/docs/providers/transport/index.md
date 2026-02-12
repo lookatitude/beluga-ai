@@ -1,6 +1,11 @@
 ---
-title: "Transport Providers"
-description: "Overview of all supported voice transport providers in Beluga AI."
+title: "Transport Providers — Voice I/O"
+description: "3 voice transport providers for bidirectional audio: Daily, LiveKit, Pipecat. WebRTC and WebSocket audio transport in Go with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "voice transport, audio transport, LiveKit, Daily, WebRTC, WebSocket, Go voice pipeline, Beluga AI"
 ---
 
 Beluga AI provides a unified `transport.AudioTransport` interface for bidirectional audio I/O between clients and the voice pipeline. Transport providers abstract the underlying protocol (WebSocket, WebRTC, server-to-server) so that voice processing logic remains transport-agnostic.

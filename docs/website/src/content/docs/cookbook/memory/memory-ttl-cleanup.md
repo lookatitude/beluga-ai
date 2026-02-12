@@ -1,6 +1,11 @@
 ---
-title: "Memory TTL and Cleanup Strategies"
-description: "Automatically expire and clean up old conversation memory using TTL policies for bounded growth, privacy compliance, and resource efficiency."
+title: "Memory TTL and Cleanup"
+description: "Recipe for expiring old conversation memory in Go using TTL policies — bound storage growth, ensure GDPR compliance, and optimize search performance."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, memory TTL, Go memory cleanup, data retention, GDPR compliance, storage optimization, TTL policy recipe"
 ---
 
 ## Problem

@@ -1,6 +1,11 @@
 ---
 title: Internal Search Everything Bot
-description: Build a unified search bot that queries across all internal systems using REST and MCP APIs with Beluga AI's server package.
+description: "Build a unified search bot that queries across Confluence, GitHub, Slack, and databases. Single interface for all enterprise knowledge."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "unified enterprise search, search bot, cross-system search, MCP search, knowledge discovery, Beluga AI, Go, internal tools"
 ---
 
 Large enterprises maintain knowledge across fragmented systems — documentation in Confluence, code in GitHub, discussions in Slack, data in databases, policies in SharePoint. Each system has its own search interface with different query syntax and different result formats. Employees waste significant time switching between search interfaces, and cross-system questions ("who implemented this feature and what was the design rationale?") require manual correlation across multiple tools.

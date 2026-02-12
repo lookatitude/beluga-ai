@@ -1,6 +1,11 @@
 ---
-title: Content Moderation with the Guard Pipeline
-description: Implement safety guardrails for LLM applications using the three-stage guard pipeline for input validation, output filtering, and PII redaction.
+title: Content Moderation with Guard Pipeline
+description: "Implement safety guardrails for LLM applications in Go — detect prompt injection, filter harmful content, and redact PII using Beluga AI's three-stage guard pipeline."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, content moderation, guard pipeline, PII redaction, prompt injection, safety"
 ---
 
 LLMs can be tricked into generating harmful content, leaking personally identifiable information (PII), or executing prompt injection attacks. Defending against these threats requires validation at multiple points in the request lifecycle, not just at the input or output boundary. The `guard` package provides a three-stage safety pipeline that validates content at three points: input (user messages), output (model responses), and tool (tool call arguments). This three-stage design is a core architectural decision in Beluga AI -- a single stage cannot catch all attack vectors because some attacks only become visible in the model's response (PII leakage) or in tool call arguments (command injection), not in the original user message.

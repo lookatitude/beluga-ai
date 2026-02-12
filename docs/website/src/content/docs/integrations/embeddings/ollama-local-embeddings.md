@@ -1,6 +1,11 @@
 ---
 title: Ollama Local Embeddings
-description: Generate text embeddings locally using Ollama with Beluga AI, enabling private, offline embedding generation for air-gapped and cost-sensitive environments.
+description: "Generate private, offline text embeddings with Ollama in Beluga AI for air-gapped environments and cost-free local development."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Ollama embeddings, local embeddings, offline AI, Beluga AI, private embeddings, nomic-embed-text, Go embedding provider"
 ---
 
 Cloud embedding APIs send your text to external servers, which may be unacceptable for sensitive data (medical records, financial documents, proprietary code). Ollama runs embedding models entirely on your own hardware, keeping data local with zero external network calls and no per-token costs.

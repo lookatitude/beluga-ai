@@ -1,6 +1,11 @@
 ---
 title: Contributing to Beluga AI
-description: Learn how to contribute to the Beluga AI framework
+description: "Contribute to Beluga AI — the Go-native agentic AI framework. Bug reports, feature requests, code contributions, and documentation improvements."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "contribute Beluga AI, open source Go AI, agentic AI framework, Go framework contribution, Beluga AI development"
 ---
 
 Thank you for your interest in contributing to Beluga AI! Beluga is a large framework — 157 packages and 100+ providers — built by a community that values code quality, consistent patterns, and thorough testing. Every contribution helps make the framework better for Go developers building production AI systems. Whether you're fixing a typo, reporting a bug, or implementing a new feature, your help is valued and appreciated.

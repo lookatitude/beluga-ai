@@ -1,6 +1,11 @@
 ---
-title: NATS
-description: Workflow state store using NATS JetStream Key-Value for distributed state persistence.
+title: "NATS Workflow Provider"
+description: "Workflow state store with NATS JetStream KV in Beluga AI. Distributed state persistence with low latency for durable execution in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "NATS, JetStream, workflow state, distributed, key-value, durable execution, Go, Beluga AI"
 ---
 
 The NATS provider implements the `workflow.WorkflowStore` interface using NATS JetStream's Key-Value (KV) store. Each workflow state is stored as a JSON-encoded value in a JetStream KV bucket, with the workflow ID as the key. NATS JetStream provides durable, replicated storage with built-in key enumeration, making it a lightweight alternative to heavier persistence backends.

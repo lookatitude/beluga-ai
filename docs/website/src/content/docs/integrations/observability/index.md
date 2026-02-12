@@ -1,8 +1,13 @@
 ---
-title: Monitoring & Observability
-description: Instrument Beluga AI with OpenTelemetry, Langfuse, LangSmith, Arize Phoenix, and structured logging.
+title: Observability & Monitoring
+description: "Instrument Beluga AI with OpenTelemetry, Langfuse, LangSmith, Datadog, and structured logging for full AI pipeline visibility."
 sidebar:
   order: 0
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "observability, OpenTelemetry, Beluga AI, LLM tracing, Langfuse, Datadog, AI monitoring Go, GenAI metrics"
 ---
 
 AI applications are uniquely difficult to debug. An agent might produce the wrong answer because of a prompt issue, a retrieval miss, a tool error, or a model hallucination -- and without visibility into the full execution chain, you are guessing. Observability gives you the data to understand what happened, why it happened, and how much it cost.
