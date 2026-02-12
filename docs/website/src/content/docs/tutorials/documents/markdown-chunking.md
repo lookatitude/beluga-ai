@@ -1,6 +1,11 @@
 ---
 title: Markdown-Aware Chunking
-description: Split Markdown documents into semantically coherent chunks that respect heading hierarchy, preserve code blocks, and maintain context for RAG retrieval.
+description: "Split Markdown documents into coherent chunks that respect heading hierarchy, preserve code blocks, and prepend parent context for better RAG retrieval in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, Markdown chunking, text splitting, RAG, heading hierarchy, code blocks"
 ---
 
 Splitting text by character count is a recipe for broken context. If a heading is separated from its paragraph or a code block is cut in half, retrieval quality degrades because the embedding for that chunk no longer represents a coherent unit of meaning. The `rag/splitter` package provides a `MarkdownSplitter` that understands document structure and keeps chunks coherent by splitting on heading boundaries rather than arbitrary character positions.

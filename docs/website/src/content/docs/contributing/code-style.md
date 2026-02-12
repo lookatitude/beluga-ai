@@ -1,6 +1,11 @@
 ---
-title: Code Style Guide
-description: Coding conventions and style guidelines for Beluga AI
+title: "Code Style — Beluga AI"
+description: "Coding conventions and style guidelines for the Beluga AI Go framework. Interfaces, functional options, error handling, and naming patterns."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI code style, Go conventions, functional options, error handling Go, registry pattern, middleware pattern, hooks pattern"
 ---
 
 Beluga AI follows idiomatic Go conventions with a set of project-specific patterns that ensure consistency across the codebase. With 157 packages and 100+ providers, consistency is not optional — it's what makes the framework learnable. When every package uses the same registry pattern, the same middleware signature, and the same hooks structure, developers can navigate unfamiliar code with confidence. This guide covers everything you need to know to write code that fits in.

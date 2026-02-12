@@ -1,6 +1,11 @@
 ---
-title: Fine-tuning Embedding Strategies
-description: Optimize embedding generation for retrieval performance with model selection, batching, and chunking strategies.
+title: Fine-Tuning Embedding Strategies
+description: "Optimize embedding pipelines for retrieval in Go with Beluga AI — model selection, efficient batch processing, and chunking strategies for maximum RAG accuracy."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, embeddings, fine-tuning, RAG, batch processing, chunking, retrieval"
 ---
 
 Standard embeddings work well for general use, but production RAG systems require optimization across three dimensions: model selection (accuracy vs. cost), batch processing (throughput), and text chunking (embedding quality). Each dimension directly impacts retrieval quality — the wrong model produces poor vectors, inefficient batching causes ingestion bottlenecks, and poor chunking creates embeddings that dilute or fragment the meaning of the source text. This tutorial covers strategies for each dimension.

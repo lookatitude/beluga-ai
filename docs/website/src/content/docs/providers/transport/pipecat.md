@@ -1,6 +1,11 @@
 ---
-title: "Pipecat"
-description: "Integration guide for the Pipecat transport provider in Beluga AI."
+title: "Pipecat Transport Provider"
+description: "Pipecat-compatible transport for voice pipelines in Beluga AI. Frame-based audio streaming with pipeline integration and protocol bridging in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Pipecat, audio transport, voice pipeline, frame-based, pipeline integration, protocol bridge, Go, Beluga AI"
 ---
 
 The Pipecat provider implements bidirectional audio transport through a Pipecat server over WebSocket. It enables Beluga's voice pipeline to interoperate with Pipecat-based audio processing systems.

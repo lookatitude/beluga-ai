@@ -1,6 +1,11 @@
 ---
-title: "LLM Package"
-description: "ChatModel interface, provider registry, middleware, hooks, structured output, routing"
+title: "LLM API — ChatModel, Router, Middleware"
+description: "LLM package API reference for Beluga AI. ChatModel interface, provider registry, composable middleware, hooks, structured output, and routing."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LLM API, ChatModel, provider registry, middleware, structured output, Router, hooks, Beluga AI, Go, reference"
 ---
 
 ```go

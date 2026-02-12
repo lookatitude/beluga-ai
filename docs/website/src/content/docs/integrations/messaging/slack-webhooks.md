@@ -1,6 +1,11 @@
 ---
-title: Slack Webhooks
-description: Integrate Slack webhooks with Beluga AI agents to receive and respond to messages in Slack channels and direct messages.
+title: Slack Webhook Integration
+description: "Integrate Slack webhooks with Beluga AI to build intelligent bots that receive and respond to messages in channels and DMs in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Slack integration, Slack bot, Beluga AI, webhook handler, Slack Events API, AI chatbot Go, team messaging"
 ---
 
 ## Overview

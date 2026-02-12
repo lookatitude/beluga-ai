@@ -1,6 +1,11 @@
 ---
-title: Qdrant
-description: High-performance vector store using Qdrant's HTTP REST API.
+title: "Qdrant Vector Store Provider"
+description: "High-performance vector search with Qdrant in Beluga AI. Rust-powered vector database with payload filtering, quantization, and gRPC support in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Qdrant, vector store, vector database, payload filtering, quantization, high-performance, Go, Beluga AI"
 ---
 
 The Qdrant provider implements the `vectorstore.VectorStore` interface using Qdrant's HTTP REST API. It avoids gRPC dependencies for broad compatibility while supporting cosine, dot-product, and Euclidean distance strategies.

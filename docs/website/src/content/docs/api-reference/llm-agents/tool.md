@@ -1,6 +1,11 @@
 ---
-title: "Tool Package"
-description: "Tool interface, FuncTool, registry, MCP client integration, and middleware"
+title: "Tool API — FuncTool, Registry, MCP Client"
+description: "Tool package API reference for Beluga AI. Tool interface, generic FuncTool, thread-safe Registry, MCP client integration, middleware, and hooks."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "tool API, Tool interface, FuncTool, Registry, MCP client, middleware, hooks, Beluga AI, Go, reference"
 ---
 
 ```go

@@ -1,6 +1,11 @@
 ---
 title: "Parallel Node Execution in Graphs"
-description: "Execute independent graph nodes in parallel with dependency resolution and concurrency control."
+description: "Recipe for executing independent orchestration graph nodes in parallel with Go dependency resolution and concurrency control using Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, parallel graph nodes, Go orchestration, dependency resolution, concurrency control, DAG execution, graph parallelism"
 ---
 
 # Parallel Node Execution in Graphs

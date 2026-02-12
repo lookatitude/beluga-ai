@@ -1,6 +1,11 @@
 ---
-title: "File Provider"
-description: "Load versioned prompt templates from JSON files."
+title: "File-Based Prompt Provider"
+description: "Load versioned prompt templates from JSON files in Beluga AI. File-based prompt management with versioning, hot-reload, and template rendering in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "prompt management, file-based prompts, prompt templates, versioning, hot-reload, Go, Beluga AI"
 ---
 
 The file provider implements the `prompt.PromptManager` interface by loading templates from JSON files in a directory. It supports versioned templates with automatic latest-version resolution and thread-safe concurrent access.

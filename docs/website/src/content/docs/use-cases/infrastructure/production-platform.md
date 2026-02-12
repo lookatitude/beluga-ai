@@ -1,6 +1,11 @@
 ---
-title: Production Agent Platform
-description: Deploy AI agents at enterprise scale with observability, auth, resilience, and multi-tenancy using Beluga AI.
+title: Production AI Agent Platform
+description: "Deploy AI agents at enterprise scale with observability, auth, resilience, and multi-tenancy. Complete production platform in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "production AI platform, enterprise agent deployment, multi-tenancy AI, agent observability, Beluga AI, Go, AI infrastructure"
 ---
 
 Moving an AI agent from prototype to production exposes a set of cross-cutting concerns that prototypes ignore. Without retry logic, a single LLM timeout fails the entire user request. Without authorization, any user can invoke any agent with any tool. Without observability, debugging a slow response means reading logs and guessing. Without tenant isolation, one customer's data leaks into another's context window.

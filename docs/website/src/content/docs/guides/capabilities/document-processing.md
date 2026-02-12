@@ -1,6 +1,11 @@
 ---
 title: Document Loading & Processing
-description: Load, parse, and chunk documents from multiple sources and formats for RAG pipelines and knowledge bases.
+description: "Load, parse, and chunk documents from files, PDFs, HTML, and cloud storage for RAG pipelines — with lazy loading, semantic splitting, and metadata preservation in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, document loading, text splitting, PDF, chunking, RAG pipeline, semantic splitting"
 ---
 
 Before documents can be embedded and searched in a RAG pipeline, they need to be loaded from their source format, cleaned, and split into chunks that embedding models can process. This ingestion stage is the foundation of any knowledge-powered AI system — the quality of your chunking strategy directly affects retrieval precision and, consequently, the quality of generated answers.

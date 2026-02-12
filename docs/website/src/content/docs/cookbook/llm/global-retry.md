@@ -1,6 +1,11 @@
 ---
 title: "Global Retry Wrappers"
-description: "Add configurable retry logic with exponential backoff to any Runnable component without modifying each component individually."
+description: "Recipe for adding configurable retry logic with exponential backoff to any Go Runnable — LLMs, agents, or retrievers — without modifying components."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go retry wrapper, exponential backoff, Runnable middleware, transient error handling, resilience recipe, production patterns"
 ---
 
 ## Problem

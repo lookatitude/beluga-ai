@@ -1,8 +1,13 @@
 ---
-title: Document Processing
-description: Use cases for intelligent document processing, extraction, and transformation pipelines.
+title: AI Document Processing Use Cases
+description: "Automate document classification, extraction, summarization, and ETL with AI-powered pipelines. Production-ready Go examples."
 sidebar:
   order: 0
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "AI document processing, document extraction, document classification, OCR AI, ETL pipeline, Beluga AI, Go, enterprise documents"
 ---
 
 Automate document classification, extraction, summarization, and transformation with Beluga AI's RAG and LLM pipelines.

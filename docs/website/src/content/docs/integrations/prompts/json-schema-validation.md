@@ -1,6 +1,11 @@
 ---
 title: JSON Schema Validation
-description: Validate Beluga AI message and document structures using JSON Schema with the gojsonschema library.
+description: "Validate Beluga AI message and document structures using JSON Schema to catch malformed input before it reaches the LLM in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "JSON Schema, input validation, Beluga AI, gojsonschema, message validation, document schema Go, API contract"
 ---
 
 Malformed input is the most common cause of unexpected LLM behavior. A missing field, wrong type, or truncated message can produce misleading model responses that are expensive to debug. JSON Schema validation catches these issues at the application boundary -- before data reaches the LLM -- providing clear error messages instead of silent failures. This guide demonstrates how to validate Beluga AI message and document structures against JSON Schema definitions using the `gojsonschema` library.

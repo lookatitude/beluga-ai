@@ -1,6 +1,11 @@
 ---
 title: Elasticsearch Keyword Search
-description: Integrate Elasticsearch for keyword-based document retrieval in hybrid RAG pipelines with Beluga AI.
+description: "Integrate Elasticsearch BM25 keyword search with Beluga AI for hybrid RAG pipelines combining vector and full-text retrieval in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Elasticsearch, keyword search, BM25, hybrid RAG, Beluga AI, full-text search, Go search integration"
 ---
 
 Vector search alone can miss results when users search for specific terms, product codes, or proper nouns that carry exact-match significance. Elasticsearch provides BM25-based full-text search that excels at these keyword-centric queries. Combining Elasticsearch keyword search with vector similarity search in a hybrid retrieval strategy captures both semantic relevance and keyword precision -- improving recall for RAG applications that handle diverse query types.

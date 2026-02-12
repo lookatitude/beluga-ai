@@ -1,6 +1,11 @@
 ---
-title: Tutorials
-description: "55 step-by-step tutorials across 12 categories, from foundation concepts to advanced voice AI pipelines."
+title: Beluga AI Tutorials
+description: "55 step-by-step Go tutorials across 12 categories — from foundation concepts and LLM providers to agent orchestration, RAG pipelines, and voice AI with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorials, step-by-step, AI agents, LLM, RAG, voice AI, examples"
 ---
 
 Hands-on tutorials with complete, runnable code examples. Each tutorial builds on foundation concepts and walks through a specific feature or integration from start to finish. Tutorials are organized in a progressive learning path: start with Foundation to understand the core abstractions, move through Providers and Agents to build intelligence, and progress to production topics like Voice, Orchestration, and Deployment.

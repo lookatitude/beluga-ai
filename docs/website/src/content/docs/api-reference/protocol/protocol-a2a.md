@@ -1,6 +1,11 @@
 ---
-title: "A2A Protocol"
-description: "Agent-to-Agent protocol types and SDK implementation"
+title: "A2A API — Agent-to-Agent Protocol"
+description: "A2A protocol API reference for Beluga AI. Agent-to-Agent collaboration with Agent Cards, task lifecycle management, and official SDK integration."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "A2A API, Agent-to-Agent, AgentCard, task lifecycle, multi-agent, collaboration, SDK, Beluga AI, Go, reference"
 ---
 
 ## a2a

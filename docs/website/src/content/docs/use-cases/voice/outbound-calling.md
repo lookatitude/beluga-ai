@@ -1,6 +1,11 @@
 ---
 title: Automated Outbound Calling
-description: Automate outbound calls for appointment reminders, consent verification, and surveys using Beluga AI's voice pipeline.
+description: "Automate outbound calls for appointment reminders, consent verification, and surveys. Scale from 200 to 2,000+ calls per day."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "automated outbound calling, voice automation, appointment reminders, survey calls, Beluga AI, Go, telephony AI use case"
 ---
 
 Sales and operations teams often need to make thousands of outbound calls daily for appointment reminders, consent verification, and simple surveys. Manual calling is expensive ($15-25 per agent-hour), inconsistent (agents deviate from scripts and forget follow-ups), and lacks a reliable audit trail for compliance-sensitive outcomes like consent confirmations. The economics break down at scale: a team of 10 agents can handle roughly 200 calls per day, but demand often exceeds 2,000.

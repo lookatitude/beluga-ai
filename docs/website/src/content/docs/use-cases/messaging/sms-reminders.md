@@ -1,6 +1,11 @@
 ---
 title: SMS Appointment Reminder System
-description: Automate appointment reminders with two-way SMS communication and intelligent response handling to reduce no-shows.
+description: "Automate appointment reminders with two-way SMS and intelligent response handling. Reduce no-shows from 30% to under 8%."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "SMS reminders, appointment automation, two-way SMS, no-show reduction, healthcare scheduling, Beluga AI, Go, Twilio integration"
 ---
 
 Appointment no-shows cost the US healthcare system $150B annually, with individual practices losing $200-500 per missed slot. Manual reminder calls — still the primary method at many practices — consume 2-3 staff hours daily, reach only 60-70% of patients (due to unanswered calls and voicemail), and provide no mechanism for patients to confirm, reschedule, or cancel without calling back during business hours. The result is a 25-30% no-show rate that disrupts scheduling, wastes provider time, and delays care for other patients.

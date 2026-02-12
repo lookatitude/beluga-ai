@@ -1,6 +1,11 @@
 ---
-title: "REST & OpenAI Agents"
-description: "REST/SSE API server and OpenAI Agents protocol compatibility"
+title: "REST API — SSE Server, OpenAI Agents"
+description: "REST protocol API reference for Beluga AI. REST/SSE HTTP server for agents, OpenAI Agents SDK compatibility layer, and streaming support."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "REST API, SSE, Server-Sent Events, OpenAI Agents, HTTP server, streaming, invoke, Beluga AI, Go, reference"
 ---
 
 ## openai_agents

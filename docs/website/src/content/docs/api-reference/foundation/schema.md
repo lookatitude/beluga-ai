@@ -1,6 +1,11 @@
 ---
-title: "Schema Package"
-description: "Shared types: messages, content parts, tool definitions, documents, events, sessions"
+title: "Schema API — Messages, Content, Tools"
+description: "Schema package API reference for Beluga AI. Message types, multimodal ContentPart, ToolCall, Document, StreamChunk, and Session types."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "schema API, Message, ContentPart, ToolCall, Document, Session, StreamChunk, Beluga AI, Go, reference"
 ---
 
 ```go

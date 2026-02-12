@@ -1,6 +1,11 @@
 ---
-title: Multimodal Embeddings
-description: Generate embeddings for text and images in a shared vector space using Beluga AI's embedding providers.
+title: Multimodal Embeddings Tutorial
+description: "Generate embeddings for text and images in a shared vector space using Beluga AI's embedding providers — enable cross-modal search and retrieval in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, multimodal embeddings, vector space, cross-modal search, embedding providers"
 ---
 
 Traditional search is limited to text matching. Multimodal embeddings project text, images, and other modalities into the same high-dimensional vector space, enabling cross-modal retrieval — search a product catalog of images using text queries, or find documents that relate to an uploaded photo. This shared representation works because embedding models learn to map semantically similar content to nearby points in vector space, regardless of the original modality.

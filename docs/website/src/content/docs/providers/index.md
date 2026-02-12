@@ -1,6 +1,11 @@
 ---
-title: Providers
-description: "108 provider integrations across 15 categories: LLMs, embeddings, vector stores, voice, document loaders, and more."
+title: "Providers — 108 Integrations"
+description: "108 provider integrations across 15 categories: LLMs, embeddings, vector stores, voice, loaders, and more. Build AI apps in Go with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI providers, Go AI integrations, LLM providers, embedding providers, vector store providers, voice providers, AI framework Go"
 ---
 
 Beluga AI v2 ships with 108 provider implementations across 15 categories. Every provider follows the same registry pattern: import the package, and it auto-registers via `init()`. Switch between providers by changing an import path and configuration — no code changes required.

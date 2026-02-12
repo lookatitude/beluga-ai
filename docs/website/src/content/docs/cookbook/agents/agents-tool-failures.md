@@ -1,6 +1,11 @@
 ---
 title: "Handling Tool Failures & Hallucinations"
-description: "Implement robust tool execution that validates tool calls, handles errors gracefully, and enables agent self-correction."
+description: "Recipe for robust tool execution in Go agents — validate tool calls, handle errors gracefully, and enable LLM self-correction with Beluga AI middleware."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go agent recipe, tool failure handling, LLM hallucination, agent self-correction, tool validation, error recovery"
 ---
 
 ## Problem

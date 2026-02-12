@@ -1,6 +1,11 @@
 ---
-title: "Langfuse"
-description: "Export LLM traces to Langfuse for observability and analytics."
+title: "Langfuse Observability Provider"
+description: "Export LLM traces to Langfuse in Beluga AI. Open-source tracing with cost tracking, prompt management, and evaluation analytics in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Langfuse, LLM tracing, observability, cost tracking, open-source, AI analytics, Go, Beluga AI"
 ---
 
 The Langfuse provider exports LLM call data to [Langfuse](https://langfuse.com/), an open-source LLM observability platform. It implements the `o11y.TraceExporter` interface and sends trace and generation events through the Langfuse batch ingestion API.

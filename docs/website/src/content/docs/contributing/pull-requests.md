@@ -1,6 +1,11 @@
 ---
-title: Pull Request Process
-description: Guidelines for submitting pull requests to Beluga AI
+title: "Pull Requests — Beluga AI"
+description: "Submit pull requests to Beluga AI. Branch naming, PR checklist, CI checks, review process, and tips for effective open source contributions."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI pull requests, contributing Go framework, PR process, code review, CI checks, open source contribution"
 ---
 
 This guide describes the process for submitting changes to Beluga AI, from opening an issue to getting your code merged. The process is designed to minimize wasted effort: early issue discussion prevents duplicate work, CI checks catch problems before review, and focused PRs are easier to review and merge.

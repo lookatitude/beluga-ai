@@ -1,6 +1,11 @@
 ---
-title: Cookbook
-description: "63 focused recipes for common tasks: agent patterns, LLM tricks, RAG optimization, voice tuning, and more."
+title: "Cookbook: AI Recipes & Patterns"
+description: "63 focused Go recipes for agent patterns, LLM streaming, RAG optimization, voice tuning, memory management, and production infrastructure with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI cookbook, Go AI recipes, agent patterns, LLM examples, RAG optimization, voice AI recipes, production patterns, code examples"
 ---
 
 Short, focused recipes that solve specific problems. Unlike tutorials, which build understanding progressively, cookbook recipes are self-contained solutions you can apply directly. Each recipe includes the problem statement, solution code, and an explanation of why the approach works. Browse by category or search for a specific topic.

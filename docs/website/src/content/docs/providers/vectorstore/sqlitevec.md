@@ -1,6 +1,11 @@
 ---
-title: SQLite-vec
-description: Embedded vector store using SQLite with the sqlite-vec extension.
+title: "SQLite-vec Vector Store Provider"
+description: "Embedded vector search with SQLite-vec in Beluga AI. Serverless, zero-config vector store for edge deployments and local development in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "SQLite-vec, embedded vector store, serverless, edge deployment, local development, Go, Beluga AI"
 ---
 
 The SQLite-vec provider implements the `vectorstore.VectorStore` interface using SQLite with the [sqlite-vec](https://github.com/asg017/sqlite-vec) extension. It provides an embedded, zero-dependency vector store suitable for edge deployments and local applications.

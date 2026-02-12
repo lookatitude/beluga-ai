@@ -1,6 +1,11 @@
 ---
-title: Temporal
-description: Production-grade durable execution using Temporal for distributed workflow orchestration.
+title: "Temporal Workflow Provider"
+description: "Production-grade durable execution with Temporal in Beluga AI. Distributed workflow orchestration with retries, signals, and versioning in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Temporal, durable execution, workflow orchestration, distributed workflows, fault-tolerant, Go, Beluga AI"
 ---
 
 The Temporal provider implements both the `workflow.DurableExecutor` and `workflow.WorkflowStore` interfaces using [Temporal](https://temporal.io). Temporal is a distributed, durable execution platform that provides workflow orchestration with fault tolerance, signal handling, activity execution, and replay-based recovery. This provider maps Beluga workflow concepts directly to Temporal primitives.

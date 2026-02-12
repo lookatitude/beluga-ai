@@ -1,6 +1,11 @@
 ---
-title: Mistral Embeddings
-description: Generate text embeddings using Mistral AI's embedding model.
+title: "Mistral AI Embedding Provider"
+description: "Generate text embeddings with Mistral AI models in Beluga AI. High-quality European AI embeddings with batch support and efficient inference in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Mistral embeddings, embedding provider, European AI, batch embeddings, text embeddings, Go, Beluga AI"
 ---
 
 The Mistral embedding provider implements the `embedding.Embedder` interface using the Mistral AI embeddings API. It provides high-quality embeddings through the `mistral-embed` model.

@@ -1,6 +1,11 @@
 ---
 title: Event-Driven Agents with Message Bus
-description: Build event-driven AI architectures where agents react to system events asynchronously using publish-subscribe patterns.
+description: "Build event-driven AI architectures in Go where agents react asynchronously to system events using publish-subscribe patterns with Beluga AI's EventBus."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, event-driven, message bus, pub-sub, async agents, EventBus"
 ---
 
 Standard chains are synchronous and tightly coupled -- the caller waits for each step to complete before proceeding. Event-driven architectures decouple producers from consumers, enabling asynchronous processing, parallel reactions to the same event, and clean separation of concerns. Instead of wiring agents together with direct function calls, agents subscribe to named topics and react independently when events are published. This pattern is particularly valuable when multiple systems need to respond to the same trigger (audit logging, notifications, downstream processing) without creating a dependency web.

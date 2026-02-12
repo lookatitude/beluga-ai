@@ -1,6 +1,11 @@
 ---
-title: "Cohere"
-description: "Integration guide for Cohere models with Beluga AI."
+title: "Cohere LLM Provider"
+description: "Integrate Cohere Command models with Beluga AI. Enterprise search, RAG-optimized generation, streaming, and tool calling support in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Cohere, Command, LLM provider, enterprise search, RAG generation, streaming, Go, Beluga AI"
 ---
 
 The Cohere provider connects Beluga AI to Cohere's Command R family of models using the official `cohere-go` SDK (v2). Cohere uses a distinct message format where system messages are sent as a preamble, the last user message is the primary input, and prior messages become chat history. The provider handles this mapping transparently.

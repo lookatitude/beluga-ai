@@ -1,6 +1,11 @@
 ---
-title: Legacy Archive Ingestion
-description: Digitize and ingest millions of historical documents from legacy archives into modern RAG systems.
+title: Legacy Archive Ingestion into RAG
+description: "Digitize and ingest millions of historical documents from legacy archives into a modern RAG system with quality validation."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "legacy archive ingestion, document digitization, RAG ingestion, OCR pipeline, document migration, Beluga AI, Go, enterprise archives"
 ---
 
 Financial institutions accumulate decades of documents — loan agreements, regulatory filings, correspondence, audit reports — stored across paper files, microfilm, legacy databases, and obsolete digital formats. These archives contain critical institutional knowledge but are effectively inaccessible: finding a specific document means knowing exactly where to look, and cross-referencing across archives is impractical at scale.

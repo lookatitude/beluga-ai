@@ -1,6 +1,11 @@
 ---
-title: Interactive Audiobooks
-description: Create dynamic audiobook experiences with character voices and branching storylines using Beluga AI's TTS pipeline.
+title: Interactive Audiobooks with AI Voices
+description: "Create dynamic audiobooks with distinct character voices and branching storylines using TTS. Boost engagement by 87%."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "interactive audiobook, AI character voices, branching narrative, TTS audiobook, dynamic narration, Beluga AI, Go, media use case"
 ---
 
 Traditional audiobooks are static, single-voice narrations with no interactivity. Listeners cannot influence the story, characters all sound alike, and there is no mechanism for engagement beyond passive consumption. This leads to 40-50% lower engagement than interactive content and high abandonment rates, particularly for younger audiences accustomed to interactive media.

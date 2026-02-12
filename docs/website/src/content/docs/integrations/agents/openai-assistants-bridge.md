@@ -1,6 +1,11 @@
 ---
 title: OpenAI Assistants API Bridge
-description: Bridge OpenAI's Assistants API with Beluga AI's ChatModel interface to use persistent, stateful assistants with tools, file search, and code execution.
+description: "Bridge OpenAI Assistants API with Beluga AI's ChatModel interface to reuse stateful assistants with tools and file search in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "OpenAI Assistants, Beluga AI bridge, ChatModel adapter, OpenAI API Go, assistants integration, stateful AI, Go AI framework"
 ---
 
 If your organization has already invested in OpenAI Assistants -- with configured tools, uploaded files, and tuned instructions -- you do not need to recreate that work in Beluga AI. This bridge wraps the Assistants API behind Beluga's `llm.ChatModel` interface so you can use existing assistants within Beluga's agent orchestration, middleware, and routing systems.

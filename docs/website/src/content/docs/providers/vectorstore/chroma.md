@@ -1,6 +1,11 @@
 ---
-title: ChromaDB
-description: Vector store using ChromaDB's HTTP REST API.
+title: "ChromaDB Vector Store Provider"
+description: "Vector similarity search with ChromaDB in Beluga AI. Open-source embedding database with metadata filtering and REST API integration in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "ChromaDB, vector store, embedding database, open-source, metadata filtering, Go, RAG, Beluga AI"
 ---
 
 The ChromaDB provider implements the `vectorstore.VectorStore` interface using ChromaDB's REST API. ChromaDB is an open-source embedding database with a simple API, supporting multi-tenant deployments.

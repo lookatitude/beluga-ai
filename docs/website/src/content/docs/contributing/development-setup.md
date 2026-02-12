@@ -1,6 +1,11 @@
 ---
-title: Development Setup
-description: Set up your local development environment for Beluga AI
+title: "Development Setup — Beluga AI"
+description: "Set up your local development environment for contributing to Beluga AI. Prerequisites, fork and clone, building, testing, and IDE configuration."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI development setup, Go AI framework setup, contributing setup, Go development environment, Beluga AI build"
 ---
 
 This guide walks you through setting up a local development environment for contributing to Beluga AI. The setup is straightforward — Beluga is a standard Go module with no custom build tools beyond the standard Go toolchain and an optional Makefile for common tasks.

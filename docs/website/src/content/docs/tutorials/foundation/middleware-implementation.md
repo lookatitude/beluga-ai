@@ -1,6 +1,11 @@
 ---
-title: Middleware Implementation
-description: Build composable middleware for LLM calls using the ChatModel wrapping pattern in Beluga AI.
+title: Middleware Implementation Tutorial
+description: "Build composable middleware for LLM calls in Go — logging, validation, and error recovery using Beluga AI's ChatModel wrapping pattern with ApplyMiddleware."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, middleware, ChatModel, composable, logging, error recovery, wrapping"
 ---
 
 Middleware in Beluga AI wraps a `ChatModel` to add cross-cutting behavior — logging, validation, error handling, rate limiting — without modifying the underlying model. The pattern uses the `func(ChatModel) ChatModel` signature, which makes middleware composable: each layer receives the next handler and returns a new handler that includes the additional behavior. This is the same decorator pattern used in HTTP middleware (`func(http.Handler) http.Handler`), adapted for LLM interactions.

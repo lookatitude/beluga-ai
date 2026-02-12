@@ -1,6 +1,11 @@
 ---
 title: Distributed Workflow Orchestration
-description: Build distributed workflows with Temporal integration, AI-powered decisions, and comprehensive observability.
+description: "Build distributed workflows with Temporal integration and AI-powered decision-making. Three orchestration patterns for any complexity level."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "workflow orchestration, Temporal AI, distributed workflows, AI-powered decisions, long-running workflows, Beluga AI, Go"
 ---
 
 Enterprise applications require complex, long-running workflows that span multiple services, handle failures gracefully, and integrate intelligent decision-making. A typical order processing system, for example, must validate inventory, check credit, process payment, and fulfill the order — some steps in sequence, others in parallel, all with retry logic and state persistence across potential failures.

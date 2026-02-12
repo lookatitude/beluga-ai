@@ -1,6 +1,11 @@
 ---
-title: Guides
-description: "In-depth guides covering every major Beluga AI v2 capability, from building agents to deploying to production."
+title: Beluga AI Guides
+description: "In-depth guides for building agentic AI systems in Go with Beluga AI — from LLM integration and streaming to multi-agent orchestration and production deployment."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, AI framework, guides, agents, LLM, production deployment, streaming"
 ---
 
 Beluga AI v2 is a Go-native framework for building agentic AI systems with streaming-first design, protocol interoperability, and pluggable providers. These guides cover everything from your first LLM interaction to production deployment with observability, safety, and resilience. Each guide is self-contained with complete code examples, but they are organized into a progressive learning path so that concepts build naturally from one to the next.

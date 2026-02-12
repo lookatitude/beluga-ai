@@ -1,6 +1,11 @@
 ---
 title: Building a WhatsApp Support Bot
-description: Build an automated WhatsApp support bot using Beluga AI agents with Twilio integration, conversation state management, and webhook handling.
+description: "Build a WhatsApp support bot in Go using Beluga AI agents with Twilio webhooks, per-user conversation state, and multi-turn LLM-powered responses."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, WhatsApp bot, Twilio, support bot, webhooks, chatbot"
 ---
 
 WhatsApp is one of the most widely used channels for customer support. This tutorial demonstrates how to build a WhatsApp bot that receives messages via Twilio webhooks, processes them with a Beluga AI agent, and sends formatted replies. The pattern shown here applies to any webhook-based messaging platform -- the core architecture (webhook handler, async processing, per-user state, outbound API call) is the same regardless of the messaging provider.

@@ -1,6 +1,11 @@
 ---
-title: "PlayHT"
-description: "PlayHT TTS provider for AI voice generation with voice cloning support."
+title: "PlayHT Voice Provider"
+description: "PlayHT TTS for AI voice generation in Beluga AI. Premium voice cloning, conversational voices, and streaming text-to-speech in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "PlayHT, text-to-speech, TTS, voice cloning, AI voice generation, streaming, Go, Beluga AI"
 ---
 
 PlayHT provides AI-powered text-to-speech with voice cloning and multiple output formats. The Beluga AI provider uses the PlayHT v2 API for synthesis, supporting configurable voice selection, output format, and speech speed.

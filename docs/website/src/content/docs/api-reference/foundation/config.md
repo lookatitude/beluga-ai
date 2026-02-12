@@ -1,6 +1,11 @@
 ---
-title: "Config Package"
-description: "Configuration loading, validation, environment variables, and hot-reload"
+title: "Config API — Loading, Validation, Env Vars"
+description: "Config package API reference for Beluga AI. JSON config loading, environment variable merging, struct validation, and hot-reload file watching."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "config API, configuration, validation, environment variables, hot-reload, ProviderConfig, Beluga AI, Go, reference"
 ---
 
 ```go

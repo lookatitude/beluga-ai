@@ -1,6 +1,11 @@
 ---
-title: "Perplexity"
-description: "Integration guide for Perplexity's search-augmented models with Beluga AI."
+title: "Perplexity LLM Provider"
+description: "Integrate Perplexity search-augmented models with Beluga AI. Real-time web search grounding with citations, streaming, and factual answers in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Perplexity, search-augmented, LLM provider, web search, citations, streaming, Go, Beluga AI"
 ---
 
 The Perplexity provider connects Beluga AI to Perplexity's search-augmented language models. Perplexity models combine LLM reasoning with real-time web search, making them well-suited for tasks requiring up-to-date information. Perplexity exposes an OpenAI-compatible API, so this provider supports all standard features including streaming.

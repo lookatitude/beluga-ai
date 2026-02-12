@@ -1,6 +1,11 @@
 ---
-title: Kafka
-description: Workflow state store using Kafka compacted topics for event-driven state persistence.
+title: "Kafka Workflow Provider"
+description: "Workflow state store with Kafka compacted topics in Beluga AI. Event-driven state persistence with high throughput for durable execution in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Kafka, workflow state, event-driven, compacted topics, durable execution, state persistence, Go, Beluga AI"
 ---
 
 The Kafka provider implements the `workflow.WorkflowStore` interface using Kafka compacted topics. Workflow state is serialized to JSON and written as messages to a Kafka topic, with the workflow ID as the message key. Kafka's log compaction ensures the latest state for each workflow is retained indefinitely. This provider is well-suited for event-driven architectures where Kafka is already part of the infrastructure.

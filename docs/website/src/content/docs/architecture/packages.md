@@ -1,6 +1,11 @@
 ---
-title: Package Layout
-description: "Every package in the framework, its interfaces, dependencies, and how they work together."
+title: "Package Layout — Beluga AI"
+description: "Every package in the Beluga AI framework, its interfaces, dependencies, and collaboration patterns. 23 top-level packages with 50+ interfaces."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI packages, Go AI framework structure, package layout, ChatModel interface, agent runtime, RAG pipeline Go"
 ---
 
 Beluga AI v2 is organized into layered packages with strict dependency rules. This document describes every package, its interfaces, how packages depend on each other, and how they work together to build agentic AI systems. The package layout follows a flat structure with no `pkg/` prefix — packages live at the repository root, which keeps import paths short and aligns with Go conventions for library modules.

@@ -1,6 +1,11 @@
 ---
-title: "Sentence-Boundary Aware Splitting"
-description: "Split text into chunks while preserving sentence boundaries for higher-quality embeddings and more coherent RAG retrieval results."
+title: "Sentence-Boundary Splitting"
+description: "Recipe for splitting text at sentence boundaries in Go to produce higher-quality embeddings and more coherent RAG retrieval results with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, sentence splitting, Go text splitter, RAG chunking, sentence boundary, embedding quality, TextSplitter recipe"
 ---
 
 ## Problem

@@ -1,6 +1,11 @@
 ---
-title: "LLM Providers"
-description: "Overview of all supported LLM providers in Beluga AI."
+title: "LLM Providers — 22 Models"
+description: "22 LLM providers with unified ChatModel interface: OpenAI, Anthropic, Google, Ollama, and more. Streaming, tool calling, and structured output in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LLM providers, Go LLM, ChatModel, OpenAI, Anthropic, Google, streaming, tool calling, Beluga AI"
 ---
 
 Beluga AI provides a unified `llm.ChatModel` interface across 22 LLM providers. Every provider registers itself via `init()`, so a blank import is sufficient to make it available through the registry.

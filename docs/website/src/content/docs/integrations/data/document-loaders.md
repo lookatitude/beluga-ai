@@ -1,6 +1,11 @@
 ---
-title: Document Loader Integrations
-description: Load documents from filesystems, cloud storage, databases, and APIs.
+title: Document Loaders
+description: "Load documents from filesystems, cloud storage, databases, and APIs into Beluga AI RAG pipelines for embedding and retrieval."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "document loaders, Beluga AI, file ingestion, cloud storage loader, RAG pipeline, data loading Go, document processing"
 ---
 
 Before documents can be embedded and searched, they need to be loaded from wherever they live -- local filesystems, cloud storage buckets, databases, APIs, or SaaS platforms. Document loaders handle this ingestion step, converting source data into Beluga AI's `schema.Document` type with content and metadata preserved.

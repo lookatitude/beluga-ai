@@ -1,6 +1,11 @@
 ---
-title: "Memory Package"
-description: "MemGPT-inspired 3-tier memory: Core, Recall, Archival, graph memory, composite"
+title: "Memory API — Core, Recall, Archival Tiers"
+description: "Memory package API reference for Beluga AI. MemGPT-inspired 3-tier memory: Core, Recall, Archival, GraphStore, and CompositeMemory."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "memory API, MemGPT, Core memory, Recall, Archival, GraphStore, CompositeMemory, Beluga AI, Go, reference"
 ---
 
 ```go

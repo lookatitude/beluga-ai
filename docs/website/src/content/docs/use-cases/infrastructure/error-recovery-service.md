@@ -1,6 +1,11 @@
 ---
-title: Error Recovery Service for LLMs
-description: Implement robust error recovery with retry strategies, circuit breakers, and exponential backoff for 99.9% success rates.
+title: LLM Error Recovery Service
+description: "Implement robust error recovery with retry strategies, circuit breakers, and exponential backoff. Achieve 99.9% LLM success rates."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LLM error recovery, circuit breaker, retry strategy, exponential backoff, resilience patterns, Beluga AI, Go, production AI"
 ---
 
 LLM providers are external services subject to rate limits, transient network failures, and periodic outages. For an enterprise AI platform handling thousands of requests per hour, even a 3-5% failure rate translates to hundreds of user-facing errors daily, each requiring manual investigation and retry. The cost compounds: support tickets pile up, SLA commitments are missed, and engineering time is diverted from feature work to firefighting.

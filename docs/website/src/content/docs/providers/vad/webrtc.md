@@ -1,6 +1,11 @@
 ---
-title: "WebRTC"
-description: "Integration guide for the WebRTC-style VAD provider in Beluga AI."
+title: "WebRTC VAD Provider"
+description: "WebRTC-style voice activity detection in Beluga AI. Lightweight energy-based VAD with low CPU usage and real-time speech detection in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "WebRTC VAD, voice activity detection, energy-based, lightweight, real-time, speech detection, Go, Beluga AI"
 ---
 
 The WebRTC provider implements voice activity detection using a dual-metric approach: RMS energy analysis combined with zero-crossing rate (ZCR). This pure Go implementation requires no external dependencies or CGO and effectively distinguishes voiced speech from background noise.

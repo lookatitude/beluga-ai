@@ -1,6 +1,11 @@
 ---
-title: Unstructured
-description: Extract structured content from documents using the Unstructured.io API.
+title: "Unstructured Document Loader"
+description: "Extract structured content from documents with Unstructured.io in Beluga AI. PDF, DOCX, and image parsing with OCR support for RAG in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Unstructured, document loader, PDF parser, OCR, document extraction, RAG pipeline, Go, Beluga AI"
 ---
 
 The Unstructured loader implements the `loader.DocumentLoader` interface using the [Unstructured.io](https://unstructured.io) API to extract structured content from a wide range of file types (PDFs, DOCX, images, HTML, and more). It uploads files to the Unstructured partition API and returns the extracted elements as a single consolidated document.

@@ -1,6 +1,11 @@
 ---
-title: "Qwen (Alibaba)"
-description: "Integration guide for Alibaba's Qwen models with Beluga AI."
+title: "Qwen LLM Provider (Alibaba)"
+description: "Integrate Alibaba Qwen models with Beluga AI. Multilingual LLM with streaming, tool calling, and DashScope API support in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Qwen, Alibaba, LLM provider, multilingual, DashScope, streaming, tool calling, Go, Beluga AI"
 ---
 
 The Qwen provider connects Beluga AI to Alibaba's Qwen family of models via the DashScope API. Qwen exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output.

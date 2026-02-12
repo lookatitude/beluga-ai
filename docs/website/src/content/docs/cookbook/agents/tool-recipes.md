@@ -1,6 +1,11 @@
 ---
 title: Tool Recipes
-description: Practical recipes for building, composing, and integrating tools.
+description: "Go recipes for building AI agent tools: wrap Go functions, compose with middleware, connect MCP servers, and integrate external APIs with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go tool recipes, FuncTool, MCP tools, tool middleware, agent tool integration, tool composition, AI tools"
 ---
 
 Beluga AI's tool system is designed around a small `Tool` interface with three composability mechanisms: the `FuncTool` constructor for wrapping Go functions, middleware (`func(Tool) Tool`) for cross-cutting concerns, and hooks for lightweight lifecycle callbacks. These recipes cover the most common tool patterns you will encounter in production, from wrapping business logic to connecting to remote MCP servers.

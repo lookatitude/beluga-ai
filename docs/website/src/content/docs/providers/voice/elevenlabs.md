@@ -1,6 +1,11 @@
 ---
-title: "ElevenLabs"
-description: "ElevenLabs STT and TTS provider for premium voice cloning, synthesis, and Scribe transcription."
+title: "ElevenLabs Voice Provider"
+description: "ElevenLabs STT and TTS for voice cloning and synthesis in Beluga AI. Premium voices, Scribe transcription, and WebSocket streaming in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "ElevenLabs, text-to-speech, voice cloning, TTS, STT, Scribe, premium voice, Go, Beluga AI"
 ---
 
 ElevenLabs provides both speech-to-text (via the Scribe engine) and text-to-speech (with voice cloning and premium synthesis). Beluga AI registers two separate providers: `"elevenlabs"` in the STT registry and `"elevenlabs"` in the TTS registry.

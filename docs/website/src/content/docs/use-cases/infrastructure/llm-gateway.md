@@ -1,6 +1,11 @@
 ---
 title: Multi-Model LLM Gateway
-description: Build a unified LLM gateway with load balancing, failover, rate limiting, and comprehensive observability across multiple providers.
+description: "Build a unified LLM gateway with load balancing, failover, rate limiting, and observability across multiple providers in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LLM gateway, multi-provider routing, load balancing AI, API gateway LLM, failover proxy, Beluga AI, Go, AI infrastructure"
 ---
 
 When an application depends on a single LLM provider, every rate limit hit, timeout, or outage becomes a user-facing failure. Multi-provider setups solve availability but introduce new problems: each provider has different APIs, error formats, rate limit semantics, and pricing models. Teams end up writing provider-specific client code scattered across the codebase, with no unified view of cost, latency, or error rates across providers.

@@ -1,6 +1,11 @@
 ---
-title: Docling
-description: Convert documents to structured content using IBM Docling.
+title: "Docling Document Loader"
+description: "Convert documents to structured content with IBM Docling in Beluga AI. Table extraction, layout analysis, and multi-format parsing for RAG in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Docling, IBM, document loader, table extraction, layout analysis, document parsing, RAG, Go, Beluga AI"
 ---
 
 The Docling loader implements the `loader.DocumentLoader` interface using the IBM Docling API to convert documents (PDFs, DOCX, images, and more) into structured text. Docling extracts text, tables, and layout information and returns the content as Markdown or plain text.

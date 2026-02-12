@@ -1,6 +1,11 @@
 ---
 title: Kubernetes Job Scheduler
-description: Schedule and orchestrate Beluga AI workflows as Kubernetes Jobs for scalable, distributed execution with automatic resource management and fault tolerance.
+description: "Schedule Beluga AI workflows as Kubernetes Jobs for scalable, fault-tolerant distributed execution with resource limits and TTL cleanup."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Kubernetes Jobs, workflow scheduler, Beluga AI, batch processing, distributed execution, fault tolerance Go, container orchestration"
 ---
 
 Some agent workflows -- document processing batches, large-scale evaluations, or multi-hour data analysis -- are too long-lived or resource-intensive to run inside a web server process. Kubernetes Jobs let you offload these workflows to dedicated containers with their own resource limits, automatic retry on failure, and TTL-based cleanup. This separation keeps your serving infrastructure responsive while compute-heavy work scales independently. This guide covers scheduling Beluga AI workflows as Kubernetes Jobs for distributed, fault-tolerant execution.

@@ -1,6 +1,11 @@
 ---
-title: Redis
-description: Vector store using Redis with the RediSearch module for vector similarity search.
+title: "Redis Vector Store Provider"
+description: "Vector similarity search with Redis and RediSearch in Beluga AI. In-memory vector database with sub-millisecond queries and hybrid search in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Redis, RediSearch, vector store, in-memory database, hybrid search, low latency, Go, Beluga AI"
 ---
 
 The Redis provider implements the `vectorstore.VectorStore` interface using Redis hashes with the RediSearch module for vector similarity search. It stores documents as Redis hashes and leverages RediSearch's KNN vector search capabilities.

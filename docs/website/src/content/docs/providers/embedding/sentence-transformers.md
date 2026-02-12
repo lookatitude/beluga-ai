@@ -1,6 +1,11 @@
 ---
-title: Sentence Transformers Embeddings
-description: Generate text embeddings using HuggingFace Inference API with Sentence Transformers models.
+title: "Sentence Transformers Embedding Provider"
+description: "Generate embeddings with HuggingFace Sentence Transformers in Beluga AI. Access open-source SBERT models via Inference API in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Sentence Transformers, HuggingFace, SBERT, embedding provider, open-source embeddings, Go, Beluga AI"
 ---
 
 The Sentence Transformers embedding provider implements the `embedding.Embedder` interface using the HuggingFace Inference API's feature-extraction pipeline. It supports any Sentence Transformers model hosted on HuggingFace, including the popular all-MiniLM, all-mpnet, and BGE model families.

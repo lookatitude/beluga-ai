@@ -1,6 +1,11 @@
 ---
 title: Weaviate RAG Connector
-description: Integrate Weaviate for hybrid vector and keyword search in Beluga AI RAG pipelines with semantic similarity, metadata filtering, and graph capabilities.
+description: "Integrate Weaviate hybrid vector and keyword search with Beluga AI RAG pipelines for semantic similarity and metadata filtering in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Weaviate, hybrid search, vector database, Beluga AI, RAG connector, semantic search Go, BM25 vector fusion"
 ---
 
 Hybrid search -- combining vector similarity with keyword matching -- consistently outperforms either approach alone in retrieval benchmarks. Weaviate provides this natively: a single query can blend vector scores with BM25 keyword scores using a configurable `alpha` parameter, without requiring separate Elasticsearch and vector database deployments.

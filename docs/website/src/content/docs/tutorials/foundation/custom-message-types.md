@@ -1,6 +1,11 @@
 ---
 title: Custom Message Types
-description: Extend Beluga AI's schema with custom message types for structured enterprise data in conversation flows.
+description: "Extend Beluga AI's schema with custom message types in Go — pass structured enterprise data like transactions and customer profiles through AI conversation flows."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, custom messages, schema, Message interface, enterprise data, type-safe"
 ---
 
 Standard message types (`HumanMessage`, `AIMessage`, `SystemMessage`) handle text well, but enterprise applications often need to pass structured data — customer profiles, transaction records, compliance events — through AI pipelines. Custom message types maintain type safety while passing this data alongside standard conversation messages. The `schema.Message` interface is deliberately minimal (three methods) so that any Go struct can implement it, enabling domain-specific data to participate in the conversation without serialization hacks or loss of type information.

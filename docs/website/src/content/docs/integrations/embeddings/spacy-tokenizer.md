@@ -1,6 +1,11 @@
 ---
 title: SpaCy Sentence Tokenizer
-description: Integrate SpaCy's NLP sentence tokenizer with Beluga AI text splitters for language-aware chunking that respects sentence boundaries and preserves semantic coherence.
+description: "Integrate SpaCy sentence tokenization with Beluga AI text splitters for language-aware chunking that preserves semantic coherence in RAG."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "SpaCy tokenizer, sentence splitting, Beluga AI, text chunking, NLP Go, RAG pipeline, language-aware splitter"
 ---
 
 ## Overview

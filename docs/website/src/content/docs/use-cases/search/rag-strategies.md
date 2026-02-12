@@ -1,6 +1,11 @@
 ---
-title: RAG Strategies
-description: A practical comparison of RAG retrieval strategies to help you select the best approach for your application.
+title: RAG Retrieval Strategy Comparison
+description: "Compare RAG retrieval strategies — hybrid, CRAG, HyDE — with implementation examples. Choose the best approach for your use case."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "RAG strategies, hybrid search, CRAG retrieval, HyDE, retrieval comparison, vector BM25 fusion, Beluga AI, Go"
 ---
 
 Choosing the right retrieval strategy is one of the most impactful decisions in a RAG (Retrieval-Augmented Generation) system. The retrieval step determines what context the LLM sees — if retrieval returns irrelevant documents, the LLM generates answers grounded in wrong information, which is worse than no answer at all. The wrong strategy leads to irrelevant documents, wrong answers, and frustrated users.

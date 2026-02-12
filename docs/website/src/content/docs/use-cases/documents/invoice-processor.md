@@ -1,6 +1,11 @@
 ---
-title: High-Availability Invoice Processor
-description: Process thousands of invoices daily with automated extraction, validation, approval workflows, and accounting integration.
+title: AI Invoice Processing Pipeline
+description: "Process thousands of invoices daily with LLM-powered extraction, validation, approval routing, and accounting integration."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "AI invoice processing, invoice extraction, automated accounts payable, document workflow, fintech AI, Beluga AI, Go, OCR invoices"
 ---
 
 Financial services companies process thousands of invoices daily, each requiring data extraction, validation, approval routing, and accounting system integration. Manual processing is not just slow — it introduces systematic errors: misread amounts delay payments, missed due dates incur penalties, and inconsistent approval routing creates compliance gaps. When invoice volume spikes at month-end or quarter-close, the manual process becomes a bottleneck that directly impacts cash flow and vendor relationships.

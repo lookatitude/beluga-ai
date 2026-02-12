@@ -1,6 +1,11 @@
 ---
-title: Design Concepts
-description: "Architectural vision, design principles, and key decisions behind Beluga AI v2."
+title: "Design Concepts — Beluga AI"
+description: "Architectural vision, 10 design principles, and key decisions behind Beluga AI. Streaming-first, pluggable providers, and typed errors in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI design, Go AI framework principles, streaming architecture, registry pattern, iter.Seq2, agentic AI design"
 ---
 
 Beluga AI v2 is a Go-native framework for building production agentic AI systems. It targets teams building enterprise applications that require extensibility, observability, type safety, and performance — without sacrificing developer ergonomics.

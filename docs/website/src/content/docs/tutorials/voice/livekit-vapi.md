@@ -1,6 +1,11 @@
 ---
 title: Integrating with LiveKit and Vapi
-description: Connect Beluga AI to production voice platforms like LiveKit and Vapi for WebRTC networking, room management, and scalable audio delivery.
+description: "Connect Beluga AI to LiveKit and Vapi in Go for WebRTC networking, room management, and scalable audio delivery — plug your voice agent into production platforms."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, LiveKit, Vapi, WebRTC, voice platform, room management, scalable"
 ---
 
 Production voice applications require infrastructure for WebRTC networking, STUN/TURN servers, jitter buffering, and room management. Building this infrastructure from scratch is a multi-month effort that is tangential to the core value of your voice agent. Platforms like LiveKit and Vapi handle this infrastructure, allowing Beluga AI to focus on the intelligence layer -- STT, LLM reasoning, TTS, and conversation management. This tutorial demonstrates how to connect Beluga's voice backend to these platforms.

@@ -1,6 +1,11 @@
 ---
-title: "Eval Package"
-description: "Evaluation framework: metrics, runners, and provider integrations"
+title: "Eval API — Metrics, Runner, Providers"
+description: "Eval package API reference for Beluga AI. Evaluation framework with LLM-as-judge metrics, EvalRunner, and Braintrust/DeepEval/RAGAS providers."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "eval API, evaluation, metrics, faithfulness, hallucination, EvalRunner, Braintrust, RAGAS, Beluga AI, Go, reference"
 ---
 
 ## eval

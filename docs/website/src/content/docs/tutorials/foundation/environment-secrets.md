@@ -1,6 +1,11 @@
 ---
 title: Environment and Secret Management
-description: Load configuration from files and environment variables using Beluga AI's config package.
+description: "Load type-safe configuration from JSON files and environment variables in Go using Beluga AI's config package with struct tag validation and 12-factor patterns."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, configuration, environment variables, secrets, config package, 12-factor"
 ---
 
 The `config` package provides type-safe configuration loading from JSON files, environment variable overrides, and struct tag-based validation. This approach follows the [12-Factor App methodology](https://12factor.net/config) — defaults in files, secrets in environment variables. The 12-Factor pattern matters for AI applications because LLM providers, vector databases, and embedding services each require API keys and connection strings that vary across environments. Hardcoding these values creates security risks and makes deployment inflexible.

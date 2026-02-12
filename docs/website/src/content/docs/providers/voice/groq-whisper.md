@@ -1,6 +1,11 @@
 ---
-title: "Groq"
-description: "Groq STT and TTS provider for ultra-fast voice processing on LPU hardware."
+title: "Groq Whisper Voice Provider"
+description: "Groq STT and TTS for ultra-fast voice processing in Beluga AI. LPU-accelerated Whisper transcription with low-latency audio in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Groq, Whisper, speech-to-text, STT, TTS, LPU, ultra-fast, voice processing, Go, Beluga AI"
 ---
 
 Groq provides both speech-to-text (via Whisper models) and text-to-speech through its OpenAI-compatible API, running on specialized LPU hardware for ultra-fast inference. Beluga AI registers `"groq"` in both the STT and TTS registries.

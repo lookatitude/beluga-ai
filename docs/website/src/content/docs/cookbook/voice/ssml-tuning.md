@@ -1,6 +1,11 @@
 ---
 title: "SSML Emphasis and Pause Tuning"
-description: "Control emphasis, pauses, and prosody in TTS output with SSML markup for natural-sounding speech."
+description: "Recipe for controlling emphasis, pauses, and prosody in Go TTS output with SSML markup for natural-sounding AI speech using Beluga AI voice pipeline."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, SSML tuning, Go TTS prosody, speech emphasis, pause control, natural speech, TTS customization recipe"
 ---
 
 ## Problem

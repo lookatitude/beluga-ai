@@ -1,6 +1,11 @@
 ---
-title: Datadog Dashboards
-description: Export Beluga AI OpenTelemetry metrics and traces to Datadog and create dashboards for monitoring LLM operations, agent performance, and system health.
+title: Datadog AI Dashboards
+description: "Export Beluga AI OpenTelemetry metrics and traces to Datadog for LLM latency, token usage, and agent performance dashboards."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Datadog, AI dashboards, Beluga AI, OpenTelemetry Datadog, LLM monitoring, APM integration, Go observability"
 ---
 
 ## Overview

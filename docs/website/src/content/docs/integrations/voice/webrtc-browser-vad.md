@@ -1,6 +1,11 @@
 ---
-title: WebRTC VAD in Browser
-description: Use WebRTC-based voice activity detection with browser audio streaming in Beluga AI.
+title: WebRTC Browser VAD
+description: "Use lightweight WebRTC-based voice activity detection with browser audio streaming in Beluga AI for consistent speech detection."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "WebRTC VAD, browser voice detection, Beluga AI, speech detection, DSP algorithm, voice pipeline Go, client-side audio"
 ---
 
 Browser-based applications need a fast, deterministic way to distinguish speech from silence before sending audio upstream. The WebRTC VAD provider uses traditional DSP algorithms that consume minimal CPU and produce consistent results across all clients, making it the right choice when you need predictable behavior without the overhead of a neural network model. Audio is streamed from the browser to a Go backend where VAD decisions are computed and returned.

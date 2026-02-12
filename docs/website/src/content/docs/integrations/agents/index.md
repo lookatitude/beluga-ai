@@ -1,8 +1,13 @@
 ---
-title: Agents & Tools
-description: Integration guides for agent tools, MCP integration, API bridges, and testing patterns.
+title: Agent & Tool Integrations
+description: "Build custom tools, connect MCP servers, bridge OpenAI Assistants, and test agents deterministically with Beluga AI in Go."
 sidebar:
   order: 0
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI agents, tool registry, MCP integration, OpenAI Assistants bridge, agent testing, Go AI tools, Model Context Protocol"
 ---
 
 Agents are only as capable as the tools they can use. This section covers creating custom tools, exposing them over the Model Context Protocol (MCP) for IDE and bot consumption, bridging external APIs like OpenAI Assistants into Beluga's unified interface, and testing agent behavior deterministically without live API calls.

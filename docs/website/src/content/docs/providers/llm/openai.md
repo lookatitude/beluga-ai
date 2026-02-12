@@ -1,6 +1,11 @@
 ---
-title: "OpenAI"
-description: "Integration guide for OpenAI models with Beluga AI."
+title: "OpenAI LLM Provider"
+description: "Integrate OpenAI GPT and o-series models with Beluga AI. Streaming, tool calling, structured output, and vision support via the official Go SDK."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "OpenAI, GPT-4, LLM provider, Go OpenAI SDK, streaming, tool calling, structured output, Beluga AI"
 ---
 
 The OpenAI provider connects Beluga AI to OpenAI's GPT and o-series models through the official `openai-go` SDK. It supports chat completions, streaming, tool calling, structured output, and vision.

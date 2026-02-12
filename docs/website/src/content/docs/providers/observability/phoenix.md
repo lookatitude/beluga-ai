@@ -1,6 +1,11 @@
 ---
-title: "Phoenix"
-description: "Export LLM traces to Phoenix for OpenTelemetry-native observability."
+title: "Phoenix Observability Provider"
+description: "Export LLM traces to Phoenix in Beluga AI. OpenTelemetry-native observability with trace analysis, embeddings viewer, and local dashboards in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Phoenix, LLM tracing, OpenTelemetry, observability, trace analysis, embeddings viewer, Go, Beluga AI"
 ---
 
 The Phoenix provider exports LLM call data to [Phoenix](https://phoenix.arize.com/), Arize AI's open-source LLM observability platform. It implements the `o11y.TraceExporter` interface and sends OTel-compatible span data through the Phoenix traces API.

@@ -1,6 +1,11 @@
 ---
-title: LiveKit Webhooks
-description: Handle LiveKit room and participant events via webhooks for session lifecycle management, analytics, and cleanup.
+title: LiveKit Webhooks Integration
+description: "Handle LiveKit room and participant webhooks for session lifecycle management, analytics, and cleanup in Beluga AI voice apps."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LiveKit webhooks, WebRTC events, Beluga AI, session lifecycle, voice transport, room management Go, real-time audio"
 ---
 
 When using LiveKit as your voice transport, the audio pipeline runs inside LiveKit rooms -- but your backend needs visibility into what is happening. LiveKit webhooks deliver real-time server-side notifications about room and participant lifecycle events, enabling session cleanup, usage tracking, billing triggers, and transcript archival without polling. This guide covers setting up an HTTP endpoint that receives LiveKit webhooks, verifies signatures, and correlates events with Beluga AI voice backend sessions.

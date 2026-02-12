@@ -1,6 +1,11 @@
 ---
 title: Multi-Speaker VAD Segmentation
-description: Segment meeting audio by speaker using VAD for boundaries and diarization for speaker attribution.
+description: "Segment meeting audio by speaker using VAD for boundaries and diarization for attribution. Achieve 87% speaker accuracy in real time."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "speaker diarization, multi-speaker VAD, audio segmentation, meeting transcription, speaker attribution, Beluga AI, Go"
 ---
 
 Meeting assistant products need to identify who spoke when for accurate attribution and summaries. Without speaker attribution, a transcript is a flat stream of text with no indication of who said what — useless for generating actionable minutes ("John agreed to handle the API migration by Friday"). Single-speaker VAD detects speech vs. silence but cannot distinguish between speakers; it only answers "is someone talking?" not "who is talking?"

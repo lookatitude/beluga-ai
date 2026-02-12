@@ -1,6 +1,11 @@
 ---
 title: "Custom Validation Middleware"
-description: "Add custom validation rules to schema operations with composable, stateless validation functions."
+description: "Recipe for adding custom validation rules to Go schema operations with composable, stateless middleware — enforce business logic, content filters, and limits."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, validation middleware, Go schema validation, custom rules, content filtering, business logic, composable validation"
 ---
 
 # Custom Validation Middleware

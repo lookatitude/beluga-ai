@@ -1,6 +1,11 @@
 ---
-title: Guardrails AI
-description: Content validation using Guardrails AI validators.
+title: "Guardrails AI Guard Provider"
+description: "Content validation with Guardrails AI in Beluga AI. Validator hub integration with custom rules and structured output validation in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Guardrails AI, content validation, AI safety, validators, structured output, guard provider, Go, Beluga AI"
 ---
 
 The Guardrails AI provider implements the `guard.Guard` interface using the [Guardrails AI](https://www.guardrailsai.com/) platform. Guardrails AI provides a library of validators for PII detection, toxicity filtering, hallucination detection, prompt injection prevention, and custom rules defined via RAIL specifications.

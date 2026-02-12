@@ -1,6 +1,11 @@
 ---
-title: "SambaNova"
-description: "Integration guide for SambaNova's high-throughput inference with Beluga AI."
+title: "SambaNova LLM Provider"
+description: "Integrate SambaNova with Beluga AI. High-throughput AI inference with custom silicon, streaming, and enterprise-grade performance in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "SambaNova, LLM provider, high-throughput, custom silicon, enterprise AI, streaming, Go, Beluga AI"
 ---
 
 The SambaNova provider connects Beluga AI to SambaNova's inference platform, which provides high-throughput inference on custom RDU (Reconfigurable Dataflow Unit) hardware. SambaNova exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output.

@@ -1,6 +1,11 @@
 ---
-title: "Voice Package"
-description: "Frame-based voice pipeline, VAD, hybrid cascade/S2S switching"
+title: "Voice API — Frame Pipeline, VAD, S2S"
+description: "Voice package API reference for Beluga AI. Frame-based pipeline with FrameProcessor, VAD, cascading STT/LLM/TTS, and hybrid S2S modes."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "voice API, FrameProcessor, pipeline, VAD, STT, TTS, S2S, hybrid, Beluga AI, Go, reference"
 ---
 
 ```go

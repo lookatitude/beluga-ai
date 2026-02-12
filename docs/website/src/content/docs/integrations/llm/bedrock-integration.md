@@ -1,6 +1,11 @@
 ---
 title: AWS Bedrock Integration
-description: Integrate AWS Bedrock with Beluga AI to access Claude, Llama, Titan, and other foundation models through a unified interface with IAM authentication.
+description: "Access Claude, Llama, and Titan via AWS Bedrock in Beluga AI with IAM authentication, VPC PrivateLink, and unified ChatModel interface."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "AWS Bedrock, Beluga AI, Claude on AWS, Llama Bedrock, IAM authentication, foundation models Go, cloud LLM provider"
 ---
 
 Many organizations standardize on AWS for infrastructure and require all AI API traffic to flow through their AWS account. AWS Bedrock makes this possible by providing managed access to foundation models from Anthropic, Meta, Amazon, and others through AWS APIs, using IAM for authentication instead of vendor-specific API keys.

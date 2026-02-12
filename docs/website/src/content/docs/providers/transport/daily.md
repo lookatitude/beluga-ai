@@ -1,6 +1,11 @@
 ---
-title: "Daily"
-description: "Integration guide for the Daily.co transport provider in Beluga AI."
+title: "Daily Transport Provider"
+description: "Daily.co WebRTC transport for voice pipelines in Beluga AI. Bidirectional audio streaming with room management and low-latency delivery in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Daily, WebRTC, audio transport, voice pipeline, bidirectional audio, low latency, Go, Beluga AI"
 ---
 
 The Daily provider implements bidirectional audio transport through Daily.co rooms. It enables voice pipelines to send and receive audio via Daily's WebRTC infrastructure.

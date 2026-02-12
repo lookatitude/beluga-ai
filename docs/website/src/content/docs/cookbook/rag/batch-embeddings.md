@@ -1,6 +1,11 @@
 ---
 title: "Batch Embedding Optimization"
-description: "Optimize embedding operations with intelligent batching, concurrency control, and rate limiting to maximize throughput while staying within provider limits."
+description: "Recipe for optimizing embedding throughput in Go with intelligent batching, concurrency control, and rate limiting to stay within provider limits."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, batch embeddings, Go embedding optimization, concurrency control, rate limiting, embedding throughput, RAG recipe"
 ---
 
 ## Problem

@@ -1,6 +1,11 @@
 ---
-title: Safety & Guards
-description: Implement defense-in-depth safety with a three-stage guard pipeline for input validation, output filtering, PII redaction, and human-in-the-loop approval workflows.
+title: Safety and Guard Pipeline
+description: "Implement defense-in-depth safety with a three-stage guard pipeline — input validation, output filtering, PII redaction, and human-in-the-loop approval in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, safety, guards, PII redaction, content filtering, human-in-the-loop, prompt injection"
 ---
 
 AI applications face safety challenges at every stage of the request lifecycle. Malicious users may attempt prompt injection to override system instructions. Models may produce responses containing personally identifiable information (PII) or harmful content. Tool calls may target sensitive operations that require human oversight. The `guard` and `hitl` packages provide a comprehensive safety layer that addresses each of these concerns at the appropriate pipeline stage.

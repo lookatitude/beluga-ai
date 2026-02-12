@@ -1,6 +1,11 @@
 ---
 title: Building an MCP Tool Server
-description: Expose Beluga AI tools to external agents and IDEs via the Model Context Protocol using Streamable HTTP transport.
+description: "Expose Beluga AI tools to Claude Desktop, Cursor, and MCP clients via Model Context Protocol — register tools, resources, and prompts with Streamable HTTP in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, MCP server, Model Context Protocol, tool server, Claude Desktop, IDE"
 ---
 
 The Model Context Protocol (MCP) is an open standard for how AI models interact with external tools and context. Instead of building custom integrations for every platform, build one MCP server that makes your Go tools available to Claude Desktop, Cursor, and any MCP-compatible client. This approach follows the same principle as Beluga AI's registry pattern -- define capabilities once, expose them through a standard interface, and let clients discover them dynamically.

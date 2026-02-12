@@ -1,6 +1,11 @@
 ---
 title: "Jitter Buffer Management"
-description: "Handle network jitter and packet reordering in real-time STT streams with buffered ordered delivery."
+description: "Recipe for handling network jitter and packet reordering in Go real-time STT streams with buffered, ordered delivery for smooth audio processing."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, jitter buffer, Go real-time audio, packet reordering, STT streaming, network resilience, audio buffer recipe"
 ---
 
 ## Problem

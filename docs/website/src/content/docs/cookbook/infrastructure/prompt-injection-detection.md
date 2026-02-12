@@ -1,6 +1,11 @@
 ---
 title: "Prompt Injection Detection"
-description: "Detect and mitigate prompt injection attacks using regex-based pattern matching with sanitization options."
+description: "Recipe for detecting and mitigating prompt injection attacks in Go AI apps with pattern matching, sanitization, and guard pipelines using Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, prompt injection detection, Go AI safety, input sanitization, guard pipeline, LLM security, attack mitigation"
 ---
 
 # Prompt Injection Detection

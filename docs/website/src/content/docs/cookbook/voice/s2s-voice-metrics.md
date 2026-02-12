@@ -1,6 +1,11 @@
 ---
-title: "Custom Metrics for S2S Voice"
-description: "Track custom metrics specific to Speech-to-Speech voice operations using OpenTelemetry instrumentation."
+title: "Custom S2S Voice Metrics"
+description: "Recipe for tracking Speech-to-Speech voice metrics in Go with OpenTelemetry — buffer sizes, VAD events, turn transitions, and glass-to-glass latency."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, S2S metrics, Go voice observability, OpenTelemetry, voice latency, turn transitions, custom metrics recipe"
 ---
 
 ## Problem

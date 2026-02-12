@@ -1,6 +1,11 @@
 ---
-title: Pinecone Serverless
-description: Integrate Pinecone Serverless with Beluga AI for fully managed, auto-scaling vector storage with pay-per-use pricing.
+title: Pinecone Serverless Vector Store
+description: "Integrate Pinecone Serverless with Beluga AI for fully managed, auto-scaling vector storage with pay-per-use pricing in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Pinecone Serverless, vector store, Beluga AI, managed vector database, auto-scaling, similarity search Go, serverless AI"
 ---
 
 Traditional vector databases require provisioning pods, managing replicas, and predicting capacity. Pinecone Serverless removes this operational complexity entirely -- indexes scale automatically based on usage, and you pay only for the operations you perform. This makes it well suited for applications with unpredictable traffic patterns or teams that want to focus on application logic rather than infrastructure management.

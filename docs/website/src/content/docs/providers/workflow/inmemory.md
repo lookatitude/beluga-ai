@@ -1,6 +1,11 @@
 ---
-title: In-Memory
-description: In-process workflow state store for development and testing.
+title: "In-Memory Workflow Provider"
+description: "In-process workflow state store for development in Beluga AI. Zero-dependency workflow execution for testing and prototyping in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "in-memory workflow, workflow testing, development, zero-dependency, durable execution, Go, Beluga AI"
 ---
 
 The In-Memory provider implements the `workflow.WorkflowStore` interface using a Go map protected by a read-write mutex. It stores workflow state entirely in process memory, making it ideal for development, testing, and prototyping. State does not persist across process restarts.

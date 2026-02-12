@@ -1,6 +1,11 @@
 ---
-title: Multi-tenant API Key Management
-description: Securely manage API keys for thousands of tenants with encryption, isolation, and automated rotation.
+title: Multi-Tenant API Key Management
+description: "Securely manage API keys for thousands of tenants with AES-GCM encryption, per-tenant isolation, and automated rotation in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "API key management, multi-tenant security, key rotation, AES encryption, tenant isolation, Beluga AI, Go, SaaS security"
 ---
 
 B2B SaaS platforms that expose LLM capabilities to customers face a compound security challenge. Each tenant needs their own API key with isolated access, custom rate limits, and specific feature permissions. The naive approach — storing keys in plaintext config files or environment variables — breaks down quickly: plaintext keys in logs expose credentials, shared rate limits let one tenant starve others, and manual rotation means keys persist months after employees leave.

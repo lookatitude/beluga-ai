@@ -1,6 +1,11 @@
 ---
-title: "RAG Document Loaders"
-description: "Document loaders for files, cloud storage, APIs, and web content"
+title: "Document Loader API — Files, Cloud, APIs"
+description: "RAG document loader API for Beluga AI. DocumentLoader interface with providers for files, S3, Confluence, Notion, GitHub, and web scraping."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "document loader API, DocumentLoader, RAG, S3, Confluence, Notion, GitHub, Firecrawl, Beluga AI, Go, reference"
 ---
 
 ## loader

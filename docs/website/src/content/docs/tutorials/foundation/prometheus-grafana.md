@@ -1,6 +1,11 @@
 ---
 title: Prometheus and Grafana Setup
-description: Export Beluga AI metrics to Prometheus and visualize them in Grafana dashboards.
+description: "Export Beluga AI metrics to Prometheus and visualize them in Grafana dashboards — token usage, LLM latency distributions, and error rates with OpenTelemetry in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, Prometheus, Grafana, metrics, OpenTelemetry, dashboards, monitoring"
 ---
 
 Observability is essential for production AI applications. While traces show individual request flows, metrics provide aggregate visibility — request rates, error rates, token consumption, and latency distributions. These aggregate views reveal patterns that traces alone cannot: gradual latency degradation, increasing error rates from a specific provider, or token consumption trends that affect cost forecasting. Beluga AI's observability layer is built on OpenTelemetry, making it straightforward to export metrics to Prometheus and visualize them in Grafana.

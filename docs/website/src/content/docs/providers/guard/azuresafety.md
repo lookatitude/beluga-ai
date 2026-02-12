@@ -1,6 +1,11 @@
 ---
-title: Azure Content Safety
-description: Content moderation using Microsoft Azure AI Content Safety.
+title: "Azure Content Safety Guard Provider"
+description: "Content moderation with Azure AI Content Safety in Beluga AI. Enterprise-grade text and image analysis with severity scoring in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Azure Content Safety, content moderation, Microsoft Azure, AI safety, text analysis, guard provider, Go, Beluga AI"
 ---
 
 The Azure Content Safety provider implements the `guard.Guard` interface using the [Azure AI Content Safety](https://azure.microsoft.com/en-us/products/ai-services/ai-content-safety) API. It evaluates text across four harm categories (Hate, SelfHarm, Sexual, Violence) with configurable severity thresholds.

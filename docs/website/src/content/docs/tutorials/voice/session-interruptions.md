@@ -1,6 +1,11 @@
 ---
 title: Voice Session Interruptions
-description: Implement barge-in detection and playback cancellation so users can interrupt a speaking agent naturally.
+description: "Implement barge-in detection and playback cancellation in Go so users can naturally interrupt a speaking voice agent — using Beluga AI's session state machine and VAD."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, voice interruption, barge-in, playback cancellation, VAD, voice session"
 ---
 
 In natural conversation, speakers interrupt each other. A voice agent that cannot be interrupted feels unresponsive and frustrating -- users expect to be able to cut in with a correction or follow-up without waiting for the agent to finish its entire response. This tutorial demonstrates how to configure a voice session that detects user speech during agent playback and cancels the current response to switch back to listening mode. The approach uses Beluga's session state machine and VAD integration to create a responsive barge-in experience.

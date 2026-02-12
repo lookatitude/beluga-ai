@@ -1,6 +1,11 @@
 ---
 title: Model Switching and Fallbacks
-description: Implement reliability fallbacks and cost-optimizing routing across multiple LLM providers.
+description: "Implement LLM reliability fallbacks and cost-optimizing routing across multiple providers using Beluga AI's middleware and FailoverRouter in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, model switching, fallback, LLM routing, FailoverRouter, reliability"
 ---
 
 Relying on a single LLM provider creates a single point of failure. Rate limits, outages, and cost spikes can all disrupt your application. Beluga AI addresses this through two mechanisms: **middleware** for wrapping models with fallback behavior, and **routers** for intelligent multi-model dispatching. Both follow the framework's composability principle -- middleware uses the `func(ChatModel) ChatModel` pattern, and routers implement the `ChatModel` interface themselves, meaning they can be used anywhere a single model is expected.

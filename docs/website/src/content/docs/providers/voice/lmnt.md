@@ -1,6 +1,11 @@
 ---
-title: "LMNT"
-description: "LMNT TTS provider for ultra-low-latency voice synthesis."
+title: "LMNT Voice Provider"
+description: "LMNT TTS for ultra-low-latency voice synthesis in Beluga AI. Real-time text-to-speech with natural voices and WebSocket streaming in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LMNT, text-to-speech, TTS, ultra-low-latency, voice synthesis, WebSocket, real-time, Go, Beluga AI"
 ---
 
 LMNT provides ultra-low-latency text-to-speech synthesis optimized for real-time voice applications. The Beluga AI provider uses the LMNT Speech API for synthesis, supporting configurable voice selection, output format, and speech speed.

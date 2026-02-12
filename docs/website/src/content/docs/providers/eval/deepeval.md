@@ -1,6 +1,11 @@
 ---
-title: "DeepEval"
-description: "Evaluate LLM outputs using a DeepEval server."
+title: "DeepEval Evaluation Provider"
+description: "Evaluate LLM outputs with DeepEval in Beluga AI. Hallucination detection, toxicity scoring, and custom metric evaluation in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "DeepEval, LLM evaluation, hallucination detection, toxicity scoring, eval metrics, AI testing, Go, Beluga AI"
 ---
 
 The DeepEval provider connects Beluga AI's evaluation framework to a [DeepEval](https://github.com/confident-ai/deepeval) server instance. It implements the `eval.Metric` interface by sending samples to the DeepEval evaluation API and returning normalized scores along with optional reasoning.

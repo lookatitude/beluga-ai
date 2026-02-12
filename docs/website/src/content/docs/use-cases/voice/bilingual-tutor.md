@@ -1,6 +1,11 @@
 ---
-title: Bilingual Conversation Tutor
-description: Build an AI language tutor with real-time voice conversations and pronunciation feedback using Beluga AI's S2S pipeline.
+title: Bilingual AI Conversation Tutor
+description: "Build an AI language tutor with real-time voice conversations and pronunciation feedback. Affordable practice at a fraction of tutor cost."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "AI language tutor, bilingual voice AI, pronunciation feedback, speech-to-speech learning, language practice, Beluga AI, Go, EdTech"
 ---
 
 Language learning platforms need affordable, always-available practice partners. The core constraint is that language fluency requires extensive conversational practice — researchers estimate 600-2,200 hours depending on the target language — but human tutors cost $30-50/hour, have limited availability, and cannot provide instant pronunciation feedback. Most learners cannot afford or schedule enough practice hours to achieve fluency.

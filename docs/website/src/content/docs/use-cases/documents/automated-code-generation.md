@@ -1,6 +1,11 @@
 ---
-title: Automated Code Generation Pipeline
-description: Generate production-ready code from natural language descriptions using LLMs with pattern enforcement and automated testing.
+title: AI Code Generation Pipeline
+description: "Generate production-ready code from natural language with LLM-powered pattern enforcement, validation, and test generation."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "AI code generation, automated code generation, LLM code, code from natural language, pattern enforcement, Beluga AI, Go"
 ---
 
 Development teams spend 15-20% of their time writing boilerplate — repository implementations, factory methods, API handlers, data transfer objects. This code follows known patterns but still requires manual effort, and inconsistencies creep in as different developers interpret patterns differently. The result is a codebase where the same pattern is implemented three different ways across three teams, making maintenance harder and onboarding slower.

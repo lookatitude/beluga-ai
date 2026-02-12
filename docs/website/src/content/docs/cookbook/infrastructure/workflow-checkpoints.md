@@ -1,6 +1,11 @@
 ---
 title: "Workflow Checkpointing"
-description: "Save and resume long-running workflows at strategic checkpoints for resilience against failures."
+description: "Recipe for saving and resuming long-running Go agent workflows at strategic checkpoints to survive crashes, deploys, and transient failures."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, workflow checkpointing, Go durable execution, failure recovery, long-running workflows, state persistence, resilience recipe"
 ---
 
 # Workflow Checkpointing

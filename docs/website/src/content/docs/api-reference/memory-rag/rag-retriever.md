@@ -1,6 +1,11 @@
 ---
-title: "RAG Retriever"
-description: "Retriever strategies: Vector, Hybrid, HyDE, CRAG, Multi-Query, Ensemble, Rerank, Adaptive"
+title: "Retriever API — Hybrid, HyDE, CRAG"
+description: "RAG retriever API reference for Beluga AI. Retriever strategies: Vector, Hybrid, HyDE, CRAG, Multi-Query, Ensemble, Rerank, and Adaptive."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "retriever API, RAG, Hybrid search, HyDE, CRAG, Rerank, Ensemble, Multi-Query, Beluga AI, Go, reference"
 ---
 
 ```go

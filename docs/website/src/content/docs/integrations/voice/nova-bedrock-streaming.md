@@ -1,6 +1,11 @@
 ---
-title: Amazon Nova Bedrock Streaming
-description: Integrate Amazon Nova 2 Sonic for speech-to-speech conversations via AWS Bedrock with Beluga AI.
+title: Amazon Nova S2S on Bedrock
+description: "Integrate Amazon Nova 2 Sonic for real-time speech-to-speech voice conversations via AWS Bedrock with Beluga AI in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Amazon Nova, AWS Bedrock S2S, speech-to-speech, Beluga AI, voice AI AWS, real-time audio, Go voice provider"
 ---
 
 For teams already running infrastructure on AWS, Amazon Nova provides end-to-end voice conversations through AWS Bedrock without introducing a separate vendor. This avoids additional billing relationships, keeps audio data within your AWS account boundary, and leverages existing IAM policies for access control. This guide covers integrating the Amazon Nova S2S provider with Beluga AI for real-time streaming voice interactions.

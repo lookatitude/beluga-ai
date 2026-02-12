@@ -1,6 +1,11 @@
 ---
-title: "Vector Store Providers"
-description: "Vector store implementations: pgvector, Pinecone, Qdrant, Weaviate, Milvus, Elasticsearch, and more"
+title: "VectorStore Providers API — 13 Backends"
+description: "VectorStore providers API for Beluga AI. 13 backends: pgvector, Pinecone, Qdrant, Weaviate, Milvus, Elasticsearch, Chroma, Redis, and more."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "VectorStore providers API, pgvector, Pinecone, Qdrant, Weaviate, Milvus, Elasticsearch, Chroma, Beluga AI, Go, reference"
 ---
 
 ## chroma

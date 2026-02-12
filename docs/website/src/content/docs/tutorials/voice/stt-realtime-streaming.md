@@ -1,6 +1,11 @@
 ---
-title: Real-time STT Streaming
-description: Implement real-time speech-to-text streaming using Deepgram with WebSocket-based audio sessions for ultra-low-latency transcription.
+title: Real-Time STT Streaming Tutorial
+description: "Implement real-time speech-to-text streaming in Go using Deepgram with WebSocket sessions — process audio incrementally with interim and final transcripts."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, STT streaming, Deepgram, WebSocket, real-time, transcription"
 ---
 
 Real-time STT streaming enables voice applications to process audio incrementally, delivering interim and final transcripts with minimal delay. Unlike batch transcription, which waits for the complete audio before producing output, streaming STT processes audio as it arrives and returns partial results in real time. This is essential for voice agents because the agent can begin understanding user intent before the user finishes speaking, enabling features like preemptive generation and turn-taking. This tutorial demonstrates how to configure a streaming STT provider, open a session, and handle transcripts as they arrive.

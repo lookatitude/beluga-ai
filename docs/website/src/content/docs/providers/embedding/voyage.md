@@ -1,6 +1,11 @@
 ---
-title: Voyage Embeddings
-description: Generate text embeddings using Voyage AI's specialized embedding models.
+title: "Voyage AI Embedding Provider"
+description: "Generate text embeddings with Voyage AI specialized models in Beluga AI. Code and domain-specific embeddings with high retrieval accuracy in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Voyage AI, embeddings, embedding provider, code embeddings, domain-specific, retrieval, Go, Beluga AI"
 ---
 
 The Voyage AI embedding provider implements the `embedding.Embedder` interface using the Voyage Embed API. Voyage models are optimized for retrieval tasks and support input type differentiation for asymmetric search.

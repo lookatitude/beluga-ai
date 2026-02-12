@@ -1,8 +1,13 @@
 ---
-title: Safety & Compliance
-description: Use cases for content safety, regulatory compliance, PII protection, and security auditing.
+title: AI Safety & Compliance Use Cases
+description: "Implement content safety guardrails, regulatory compliance, PII detection, and security auditing. Production-ready Go examples."
 sidebar:
   order: 0
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "AI safety use cases, compliance AI, PII detection, content guardrails, regulatory compliance, Beluga AI, Go, guard pipeline"
 ---
 
 Implement safety guardrails, compliance checks, PII detection, and security auditing with Beluga AI's guard pipeline.

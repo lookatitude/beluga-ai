@@ -1,6 +1,11 @@
 ---
-title: Release Process
-description: How releases are managed for Beluga AI
+title: "Release Process — Beluga AI"
+description: "How Beluga AI releases are managed. Semantic versioning, automated changelog generation with git-cliff, and the CI/CD release pipeline."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI releases, semantic versioning, Go module versioning, changelog generation, git-cliff, CI/CD pipeline"
 ---
 
 This page describes how Beluga AI versions are managed, how releases are created, and what happens during the release pipeline. The release process is fully automated from tag to published release — this ensures consistency and reduces the chance of human error in release artifacts.

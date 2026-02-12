@@ -1,6 +1,11 @@
 ---
-title: Google Embeddings
-description: Generate text embeddings using Google's Gemini embedding models.
+title: "Google Embedding Provider"
+description: "Generate text embeddings with Google Gemini models in Beluga AI. High-quality embeddings with task type support and batch processing in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Google embeddings, Gemini embeddings, embedding provider, Google AI, batch processing, Go, Beluga AI"
 ---
 
 The Google embedding provider implements the `embedding.Embedder` interface using the Google AI Gemini embedding API. It uses the batch `batchEmbedContents` endpoint for efficient multi-text embedding.

@@ -1,6 +1,11 @@
 ---
-title: Mock ChatModel for UI Testing
-description: Create mock ChatModel implementations for fast, deterministic UI testing without external API calls or costs.
+title: Mock ChatModel for Testing
+description: "Create deterministic mock ChatModel implementations in Beluga AI for fast UI testing without API calls, costs, or flaky results."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "mock ChatModel, Beluga AI testing, deterministic testing, Go AI mocks, UI testing, streaming mock, test fixtures"
 ---
 
 Live LLM APIs are slow (hundreds of milliseconds per call), expensive (per-token costs add up across CI runs), and non-deterministic (the same prompt can produce different outputs). These properties make them unsuitable for unit tests, UI component tests, and integration test suites that need to run reliably on every commit.

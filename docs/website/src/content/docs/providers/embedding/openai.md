@@ -1,6 +1,11 @@
 ---
-title: OpenAI Embeddings
-description: Generate text embeddings using OpenAI's embedding models.
+title: "OpenAI Embedding Provider"
+description: "Generate text embeddings with OpenAI text-embedding-3 models in Beluga AI. Configurable dimensions, batch processing, and high retrieval quality in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "OpenAI embeddings, text-embedding-3, embedding provider, vector embeddings, RAG, Go, Beluga AI"
 ---
 
 The OpenAI embedding provider implements the `embedding.Embedder` interface using the official `openai-go` SDK. It supports all OpenAI embedding models including the latest `text-embedding-3` family with configurable dimensions.

@@ -1,6 +1,11 @@
 ---
 title: Infrastructure Recipes
-description: Practical recipes for configuration, resilience, safety, observability, and orchestration.
+description: "Go recipes for production AI infrastructure: config hot-reload, rate limiting, PII redaction, tracing, circuit breakers, and safety guards with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, infrastructure recipes, Go production patterns, config hot-reload, rate limiting, PII redaction, observability, resilience"
 sidebar:
   order: 0
 ---

@@ -1,6 +1,11 @@
 ---
-title: "Token Counting without Performance Hit"
-description: "Count tokens in LLM requests using caching and async estimation to avoid adding latency to your requests."
+title: "Token Counting without Latency"
+description: "Recipe for counting LLM tokens in Go using caching and async estimation to track costs and enforce limits without adding request latency."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, token counting, Go LLM cost tracking, rate limiting, async token estimation, token cache, performance recipe"
 ---
 
 ## Problem

@@ -1,6 +1,11 @@
 ---
 title: Prompt Recipes
-description: Battle-tested prompt patterns for dynamic templates, few-shot learning, and context management.
+description: "Go recipes for prompt engineering: dynamic templates, partial substitution, few-shot learning, and context-aware prompt management with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, prompt recipes, Go prompt engineering, dynamic templates, few-shot learning, prompt management, template substitution"
 sidebar:
   order: 0
 ---

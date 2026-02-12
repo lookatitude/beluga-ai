@@ -1,6 +1,11 @@
 ---
 title: Deploying to Production
-description: Deploy AI agents as production-grade HTTP services with framework-agnostic server adapters, resilience patterns, configuration hot-reload, and container orchestration.
+description: "Deploy AI agents as production HTTP services with framework-agnostic server adapters, circuit breakers, retry policies, hot-reload, and Kubernetes manifests."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, deployment, HTTP server, resilience, circuit breaker, Kubernetes, Docker"
 ---
 
 Deploy Beluga agents as production-grade HTTP services with built-in resilience, configuration hot-reload, multi-tenant support, and container-ready architecture. The deployment patterns described here separate your agent logic from the HTTP framework, resilience policies, and infrastructure concerns, so each layer can be changed independently.

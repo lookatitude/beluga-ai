@@ -1,6 +1,11 @@
 ---
-title: GitHub
-description: Load files from GitHub repositories via the Contents API.
+title: "GitHub Document Loader"
+description: "Load files from GitHub repositories in Beluga AI. Contents API integration with branch selection and file filtering for code RAG in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "GitHub, document loader, repository loader, Contents API, code RAG, Go, Beluga AI"
 ---
 
 The GitHub loader implements the `loader.DocumentLoader` interface for loading files from GitHub repositories. It uses the GitHub Contents API to fetch file content, with support for branch/tag/SHA references.

@@ -1,6 +1,11 @@
 ---
 title: Health Checks for AI Services
-description: Implement health checks to monitor LLM providers, vector databases, and agent availability in production.
+description: "Implement health checks in Go to monitor LLM providers, vector databases, and agent availability — aggregate component status and expose HTTP endpoints with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, health checks, monitoring, LLM providers, production, Kubernetes readiness"
 ---
 
 Standard HTTP health checks only indicate whether a process is running. AI applications require deeper checks — is the LLM provider reachable? Is the vector database connected? Is the local model server responding? These dependencies are external services with their own availability characteristics: LLM providers enforce rate limits and experience outages, vector databases can lose their indexes, and embedding services may silently return degraded results. Custom health checks answer these questions and surface problems before users encounter them.

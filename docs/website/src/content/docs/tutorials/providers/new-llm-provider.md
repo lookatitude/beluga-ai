@@ -1,6 +1,11 @@
 ---
 title: Adding a New LLM Provider
-description: Implement the ChatModel interface and register a custom LLM provider with Beluga AI's registry.
+description: "Implement the ChatModel interface and register a custom LLM provider with Beluga AI's registry pattern — full integration with middleware, routing, and streaming."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, custom LLM provider, ChatModel, registry pattern, provider implementation"
 ---
 
 Beluga AI supports major LLM providers out of the box, but the AI landscape evolves rapidly. By implementing the `ChatModel` interface and registering your provider, you create a first-class citizen that works seamlessly with agents, middleware, routing, and structured output — all without modifying framework code. This extensibility is possible because Beluga AI uses the registry pattern (`Register()` + `New()` + `List()`) for all provider types. Your custom provider plugs into the same infrastructure that powers the built-in OpenAI, Anthropic, and Google providers.

@@ -1,6 +1,11 @@
 ---
 title: Customer Support API Gateway
-description: Build a production REST API gateway with authentication, rate limiting, and request routing using Beluga AI's server package.
+description: "Build a production REST API gateway with authentication, rate limiting, and AI-specific controls. Protect against cost and data abuse."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "API gateway AI, support API, rate limiting, authentication middleware, REST gateway, Beluga AI, Go, enterprise API"
 ---
 
 Exposing AI-powered customer support as an API creates a surface area that is both expensive and vulnerable. Each request triggers LLM inference costing $0.01-0.10, meaning an unauthenticated endpoint can generate thousands of dollars in charges from a single attacker running automated requests. Beyond cost, support APIs handle sensitive customer data (account details, conversation history, PII) that requires role-based access — an agent should see their assigned tickets but not all customer records, while an admin needs broader access. Without proper gateway controls, these APIs face credential stuffing, rate limit abuse, and unauthorized data access.

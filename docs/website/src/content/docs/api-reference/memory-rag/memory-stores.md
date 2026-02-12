@@ -1,6 +1,11 @@
 ---
-title: "Memory Store Providers"
-description: "Memory store implementations: in-memory, Redis, PostgreSQL, SQLite, MongoDB, Neo4j, Memgraph, Dragonfly"
+title: "Memory Stores API — Redis, Postgres, Neo4j"
+description: "Memory store providers API for Beluga AI. MessageStore and GraphStore backends: Redis, PostgreSQL, SQLite, MongoDB, Neo4j, Memgraph, Dragonfly."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "memory stores API, MessageStore, GraphStore, Redis, PostgreSQL, Neo4j, MongoDB, SQLite, Beluga AI, Go, reference"
 ---
 
 ## dragonfly

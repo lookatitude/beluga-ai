@@ -1,6 +1,11 @@
 ---
 title: "Evaluation Providers"
-description: "Overview of the evaluation framework and supported eval providers in Beluga AI v2."
+description: "3 evaluation providers for LLM quality measurement: Braintrust, DeepEval, RAGAS. Metrics, datasets, and parallel eval runner in Go with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LLM evaluation, AI metrics, RAGAS, DeepEval, Braintrust, Go evaluation framework, RAG evaluation, Beluga AI"
 ---
 
 Beluga AI v2 includes a built-in evaluation framework for measuring the quality of LLM outputs, RAG pipelines, and agent behavior. The framework defines a `Metric` interface that external evaluation platforms implement, and an `EvalRunner` that orchestrates parallel evaluation across datasets.

@@ -1,6 +1,11 @@
 ---
 title: "Advanced Metadata Filtering"
-description: "Build complex metadata filters for vector searches with date ranges, categories, and AND/OR logic using a fluent builder API."
+description: "Recipe for building complex vector search filters in Go with date ranges, categories, and AND/OR logic using Beluga AI's fluent filter builder API."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, metadata filtering, Go vector search, filter builder, date range filter, category filter, RAG query recipe"
 ---
 
 ## Problem

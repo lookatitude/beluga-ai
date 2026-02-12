@@ -1,6 +1,11 @@
 ---
 title: Real-Time AI Hotel Concierge
-description: Build a 24/7 AI concierge service with natural voice conversations using Beluga AI's S2S pipeline.
+description: "Build a 24/7 AI concierge with natural voice conversations using speech-to-speech. Sub-2-second response times at scale."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "AI hotel concierge, voice concierge, speech-to-speech, hospitality AI, 24/7 voice assistant, Beluga AI, Go, hotel use case"
 ---
 
 Luxury hotel chains spend $50K+ per month per hotel on human concierge services with limited availability (business hours only) and long wait times during peak demand. Guest satisfaction drops sharply when concierge wait times exceed 3 minutes, but staffing for peak demand means significant idle time during off-peak hours. The core business problem is that concierge labor costs scale linearly with availability, while guest demand is highly variable.

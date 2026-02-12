@@ -1,6 +1,11 @@
 ---
-title: Workflow Providers
-description: Overview of durable execution and workflow state providers available in Beluga AI v2.
+title: "Workflow Providers — Durable Execution"
+description: "6 workflow providers for durable execution: Temporal, NATS, Kafka, Dapr, Inngest, in-memory. Fault-tolerant agent workflows in Go with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "workflow engine, durable execution, Temporal, NATS, Kafka, Go workflow, fault-tolerant, Beluga AI"
 ---
 
 Beluga AI v2 includes a durable execution engine that manages long-running, fault-tolerant workflows with activity execution, signal handling, retry policies, and event-sourced state persistence. Workflow state providers implement the `WorkflowStore` interface for persisting execution history, while durable executor providers implement the `DurableExecutor` interface for executing workflows with production-grade guarantees.

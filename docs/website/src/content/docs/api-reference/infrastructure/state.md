@@ -1,6 +1,11 @@
 ---
-title: "State Package"
-description: "Shared agent state with watch and notify"
+title: "State API — Shared State, Watch, Scopes"
+description: "State package API reference for Beluga AI. Key-value Store interface with Watch notifications, scoped keys, middleware, and inmemory provider."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "state API, Store, Watch, StateChange, scoped keys, shared state, middleware, Beluga AI, Go, reference"
 ---
 
 ## state

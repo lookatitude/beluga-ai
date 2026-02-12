@@ -1,6 +1,11 @@
 ---
 title: Hybrid Search Implementation
-description: Combine vector search and keyword search with Reciprocal Rank Fusion (RRF) for production-grade retrieval.
+description: "Combine vector search and BM25 keyword search with Reciprocal Rank Fusion in Go — build production-grade hybrid retrieval with Beluga AI's retriever interface."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, hybrid search, vector search, BM25, RRF, retrieval, RAG"
 ---
 
 Vector search excels at semantic similarity ("canine" matches "dog") but fails at exact matches like error codes or product IDs. Keyword search (BM25) excels at exact matches but fails at synonyms. Neither method alone provides reliable retrieval across all query types. Hybrid search combines both methods using **Reciprocal Rank Fusion (RRF)** to produce a single, highly relevant result list that captures both semantic understanding and exact matching.

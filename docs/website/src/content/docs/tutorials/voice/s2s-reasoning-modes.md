@@ -1,6 +1,11 @@
 ---
 title: Configuring S2S Reasoning Modes
-description: Tune Speech-to-Speech models for different interaction styles by configuring reasoning depth, latency targets, and dynamic mode switching.
+description: "Tune Speech-to-Speech models for different interaction styles in Go — configure reasoning depth, latency targets, and dynamic mode switching with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, S2S, reasoning modes, latency, Speech-to-Speech, voice AI"
 ---
 
 Speech-to-Speech models can be configured to optimize for different interaction patterns. A fast concierge needs immediate responses, while a patient tutor benefits from deeper reasoning. The key insight is that reasoning depth and latency are directly correlated -- more internal reasoning produces more nuanced responses but delays the start of audio output. This tutorial demonstrates how to configure reasoning modes, optimize latency, and switch modes dynamically based on user intent.

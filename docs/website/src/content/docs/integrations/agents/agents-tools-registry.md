@@ -1,6 +1,11 @@
 ---
-title: Custom Tools and Tool Registry
-description: Build custom tools and manage them with the tool registry for use in Beluga AI agents, including FuncTool, manual Tool implementations, and registry patterns.
+title: Custom Tools & Tool Registry
+description: "Build custom Go tools with FuncTool, register them in a thread-safe registry, and use them in Beluga AI agents for API calls and actions."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI tools, tool registry, FuncTool, custom tools Go, agent tools, tool middleware, Go AI framework"
 ---
 
 Tools give agents the ability to take actions beyond text generation -- querying databases, calling APIs, running calculations, or interacting with external systems. Without tools, an agent can only reason about information already in its context; with tools, it can retrieve live data and modify external state.

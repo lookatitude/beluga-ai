@@ -1,6 +1,11 @@
 ---
-title: "AssemblyAI"
-description: "AssemblyAI STT provider for real-time and async speech-to-text transcription."
+title: "AssemblyAI Voice Provider"
+description: "AssemblyAI STT for real-time and async transcription in Beluga AI. Speaker diarization, sentiment analysis, and entity detection in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "AssemblyAI, speech-to-text, STT, transcription, speaker diarization, real-time, Go, Beluga AI"
 ---
 
 AssemblyAI provides speech-to-text transcription with both asynchronous batch processing and real-time WebSocket streaming. The Beluga AI provider uses AssemblyAI's upload-and-poll workflow for batch transcription and the real-time WebSocket API for streaming, delivering word-level timing, speaker labels, and automatic punctuation.

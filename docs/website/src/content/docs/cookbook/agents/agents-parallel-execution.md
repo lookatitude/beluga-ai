@@ -1,6 +1,11 @@
 ---
 title: "Parallel Step Execution"
-description: "Execute multiple independent agent steps concurrently with dependency resolution to reduce total execution time."
+description: "Recipe for running independent agent steps concurrently in Go with dependency resolution and goroutine management to cut execution time using Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go parallel agents, concurrent execution, agent workflow, dependency resolution, goroutine patterns, agent performance"
 ---
 
 ## Problem

@@ -1,6 +1,11 @@
 ---
 title: "Cache Providers"
-description: "Overview of all supported cache providers in Beluga AI."
+description: "Cache providers for LLM response caching with TTL support: exact-match and semantic lookups. Reduce latency and costs in Go with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LLM cache, response caching, semantic cache, prompt cache, Go caching, TTL cache, Beluga AI"
 ---
 
 Beluga AI provides a unified `cache.Cache` interface for key-value storage with TTL support. The cache system supports both exact-match and semantic (embedding-based) lookups, making it suitable for LLM response caching, prompt caching, and general application caching.

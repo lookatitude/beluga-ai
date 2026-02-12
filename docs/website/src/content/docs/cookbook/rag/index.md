@@ -1,6 +1,11 @@
 ---
 title: RAG Recipes
-description: Practical recipes for building retrieval-augmented generation pipelines with Beluga AI, covering splitting, embedding, retrieval, and indexing strategies.
+description: "Go recipes for RAG pipelines: document splitting, batch embeddings, hybrid search, reranking, metadata filtering, and parent document retrieval with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, RAG recipes, Go RAG pipeline, document splitting, batch embeddings, hybrid search, reranking, vector retrieval"
 sidebar:
   order: 0
 ---

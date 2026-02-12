@@ -1,6 +1,11 @@
 ---
-title: Firecrawl
-description: Scrape websites and extract clean Markdown content using Firecrawl.
+title: "Firecrawl Document Loader"
+description: "Scrape websites and extract clean Markdown with Firecrawl in Beluga AI. Web crawling with JavaScript rendering and clean content for RAG in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Firecrawl, web scraper, document loader, web crawling, Markdown extraction, RAG pipeline, Go, Beluga AI"
 ---
 
 The Firecrawl loader implements the `loader.DocumentLoader` interface using the [Firecrawl](https://firecrawl.dev) web scraping service. Firecrawl handles JavaScript rendering, anti-bot detection, and page extraction, returning clean Markdown content suitable for RAG pipelines.

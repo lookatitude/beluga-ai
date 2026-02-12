@@ -1,8 +1,13 @@
 ---
-title: Infrastructure
-description: Deploy Beluga AI with Kubernetes, HashiCorp Vault, Redis, NATS, HTTP framework adapters, and authentication providers.
+title: Infrastructure Integrations
+description: "Deploy Beluga AI with Kubernetes, Vault, Redis, NATS, Auth0, and HTTP framework adapters like Gin, Fiber, Echo, and Chi."
 sidebar:
   order: 0
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI infrastructure, Kubernetes deployment, HashiCorp Vault, Redis, NATS, Gin adapter, Go HTTP framework"
 ---
 
 AI applications have the same infrastructure requirements as any production service -- secrets management, container orchestration, authentication, caching, and HTTP routing -- plus additional concerns around API key rotation, token budget management, and model failover. Beluga AI integrates with common infrastructure services so you can deploy with confidence using the tools your operations team already knows. This page covers the key infrastructure integrations.

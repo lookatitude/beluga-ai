@@ -1,6 +1,11 @@
 ---
 title: Agent Recipes
-description: Practical recipes for building, customizing, and orchestrating agents.
+description: "Production-ready Go recipes for building AI agents: tool failure recovery, parallel execution, custom agent patterns, and handoff orchestration with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI agents, Go agent recipes, tool failure handling, parallel agents, custom agent patterns, agent orchestration, AI agent examples"
 sidebar:
   order: 0
 ---

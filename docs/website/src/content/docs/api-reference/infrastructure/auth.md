@@ -1,6 +1,11 @@
 ---
-title: "Auth Package"
-description: "RBAC, ABAC, and capability-based security"
+title: "Auth API — RBAC, ABAC, Capabilities"
+description: "Auth package API reference for Beluga AI. RBAC, ABAC, and capability-based authorization with composite policies and audit middleware."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "auth API, RBAC, ABAC, authorization, capabilities, security, CompositePolicy, Beluga AI, Go, reference"
 ---
 
 ```go

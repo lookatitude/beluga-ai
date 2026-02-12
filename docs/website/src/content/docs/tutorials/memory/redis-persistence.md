@@ -1,6 +1,11 @@
 ---
-title: Redis Memory Persistence
-description: Implement persistent conversation memory with Redis so agents remember users across service restarts.
+title: Redis Memory Persistence Tutorial
+description: "Implement persistent conversation memory with Redis in Go — serialize typed messages, support session TTLs, and scale across replicas with Beluga AI's memory system."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, Redis, persistent memory, conversation history, session TTL, scaling"
 ---
 
 In-memory conversation history is suitable for development, but production agents need to remember users across process restarts and scale across multiple service instances. Redis provides fast, persistent key-value storage that is well suited for conversation history -- it supports list operations for ordered message storage, configurable TTLs for automatic session expiration, and atomic operations for concurrent access from multiple service replicas. This tutorial builds a Redis-backed history store that serializes Beluga AI's typed messages into JSON and reconstructs them on load.
