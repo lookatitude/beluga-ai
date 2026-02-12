@@ -1,6 +1,11 @@
 ---
-title: "In-Memory Cache"
-description: "Integration guide for the in-memory LRU cache provider in Beluga AI."
+title: "In-Memory Cache Provider"
+description: "In-memory LRU cache for LLM response caching in Beluga AI. Thread-safe cache with TTL, size limits, and zero external dependencies in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "in-memory cache, LRU cache, LLM caching, response cache, TTL, thread-safe, Go, Beluga AI"
 ---
 
 The in-memory provider implements an LRU (Least Recently Used) cache with TTL-based expiration. It uses a doubly-linked list combined with a hash map for O(1) get, set, and eviction operations. Entries expire lazily on access.

@@ -1,6 +1,11 @@
 ---
 title: "Streaming Chunks with Metadata"
-description: "Stream LLM responses while preserving and forwarding metadata such as token counts, model info, and finish reasons."
+description: "Recipe for streaming LLM responses in Go while preserving token counts, model info, and finish reasons using iter.Seq2 and Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go LLM streaming, streaming metadata, token counts, iter.Seq2, finish reasons, streaming recipe"
 ---
 
 ## Problem

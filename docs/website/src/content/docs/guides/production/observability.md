@@ -1,6 +1,11 @@
 ---
 title: Monitoring & Observability
-description: Instrument AI applications with OpenTelemetry GenAI semantic conventions for distributed tracing, token usage metrics, structured logging with trace correlation, and health checks.
+description: "Instrument AI applications with OpenTelemetry GenAI conventions — distributed tracing, token usage metrics, structured logging, and health check endpoints in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, observability, OpenTelemetry, tracing, metrics, logging, GenAI semantic conventions"
 ---
 
 AI applications are harder to observe than traditional services because their behavior depends on probabilistic model outputs, context windows that change with each request, and external provider latency that varies significantly. The `o11y` package provides production-grade observability built on OpenTelemetry, using the GenAI semantic conventions that define a standard vocabulary for AI-specific telemetry.

@@ -1,6 +1,11 @@
 ---
-title: Elasticsearch
-description: Vector store using Elasticsearch's kNN search with dense_vector fields.
+title: "Elasticsearch Vector Store Provider"
+description: "Vector similarity search with Elasticsearch kNN in Beluga AI. Dense vector fields, hybrid search, and enterprise-scale retrieval in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Elasticsearch, vector store, kNN search, dense vector, hybrid search, enterprise, Go, Beluga AI"
 ---
 
 The Elasticsearch provider implements the `vectorstore.VectorStore` interface using Elasticsearch's approximate kNN search with `dense_vector` fields. It uses the bulk API for efficient batch operations.

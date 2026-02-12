@@ -1,6 +1,11 @@
 ---
 title: Building Multi-Agent Systems
-description: Coordinate multiple specialized agents using handoffs, supervisor patterns, event-driven communication, and shared memory for collaborative problem-solving.
+description: "Coordinate specialized agents using handoffs, supervisor patterns, event-driven communication, and shared memory for collaborative problem-solving in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, multi-agent, handoffs, supervisor, event-driven, agent coordination, collaboration"
 ---
 
 Single agents work well for focused, self-contained problems. But real-world tasks often require different types of expertise working together: a researcher gathers information, a writer drafts content, a reviewer checks quality. Multi-agent systems model this natural division of labor, letting each agent specialize while the system coordinates their collaboration.

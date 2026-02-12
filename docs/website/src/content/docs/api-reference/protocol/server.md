@@ -1,6 +1,11 @@
 ---
-title: "Server Adapters"
-description: "HTTP framework adapters: Gin, Fiber, Echo, Chi, gRPC, Connect, Huma"
+title: "Server API — Gin, Fiber, Echo, gRPC"
+description: "Server adapters API reference for Beluga AI. HTTP framework adapters for Gin, Fiber, Echo, Chi, gRPC, Connect-Go, and Huma integration."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "server API, ServerAdapter, Gin, Fiber, Echo, Chi, gRPC, Connect, Huma, Beluga AI, Go, reference"
 ---
 
 ## server

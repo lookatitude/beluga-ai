@@ -1,6 +1,11 @@
 ---
 title: "Metadata-Aware Embedding Clusters"
-description: "Cluster embeddings while preserving metadata constraints to create semantically and domain-coherent groups for improved retrieval organization."
+description: "Recipe for clustering embeddings in Go with metadata constraints to create domain-coherent groups that improve RAG retrieval organization and precision."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, embedding clustering, metadata-aware clusters, Go RAG organization, domain clustering, retrieval optimization, vector grouping"
 ---
 
 ## Problem

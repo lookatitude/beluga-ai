@@ -1,6 +1,11 @@
 ---
-title: MongoDB Atlas
-description: Vector store using MongoDB Atlas Vector Search via the Data API.
+title: "MongoDB Atlas Vector Store Provider"
+description: "Vector search with MongoDB Atlas in Beluga AI. Unified document and vector database with Atlas Vector Search and metadata filtering in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "MongoDB Atlas, vector search, Atlas Vector Search, document database, metadata filtering, Go, Beluga AI"
 ---
 
 The MongoDB Atlas provider implements the `vectorstore.VectorStore` interface using MongoDB Atlas Vector Search via the HTTP Data API. It supports cosine similarity search with metadata filtering through the `$vectorSearch` aggregation stage.

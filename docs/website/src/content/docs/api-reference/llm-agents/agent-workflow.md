@@ -1,6 +1,11 @@
 ---
-title: "Agent Workflows"
-description: "Sequential, Parallel, and Loop workflow agents for multi-agent orchestration"
+title: "Agent Workflow API — Sequential, Parallel"
+description: "Agent workflow API reference for Beluga AI. SequentialAgent, ParallelAgent, and LoopAgent for deterministic multi-agent orchestration."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "agent workflow API, SequentialAgent, ParallelAgent, LoopAgent, orchestration, multi-agent, Beluga AI, Go, reference"
 ---
 
 ```go

@@ -1,6 +1,11 @@
 ---
-title: Real-time PII Leakage Detection
-description: Detect and prevent Personally Identifiable Information leakage in LLM requests and responses for HIPAA and GDPR compliance.
+title: Real-Time PII Leakage Detection
+description: "Detect and prevent PII leakage in LLM requests and responses. HIPAA and GDPR compliance with bidirectional scanning guardrails."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "PII detection, data leakage prevention, HIPAA compliance AI, GDPR guard, SSN detection, Beluga AI, Go, privacy guardrails"
 ---
 
 When a healthcare chatbot sends a patient's Social Security number to an LLM provider's API, the organization faces a HIPAA violation with penalties up to $1.8M per incident, mandatory breach notification to affected individuals, and potential loss of healthcare contracts. GDPR violations carry fines up to 4% of global annual revenue. The risk is not hypothetical — users routinely include PII in natural language queries ("My SSN is 123-45-6789, can you check my claim status?"), and without interception, this data reaches third-party servers where it may be logged, cached, or used for model training.

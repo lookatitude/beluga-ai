@@ -1,6 +1,11 @@
 ---
-title: Document Loader Providers
-description: Overview of all document loader providers available in Beluga AI v2.
+title: "Document Loader Providers"
+description: "8 document loader providers for RAG pipelines: cloud storage, Confluence, Firecrawl, Google Drive, GitHub, Notion. Load documents in Go with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "document loader, Go document ingestion, RAG pipeline, Confluence loader, Notion loader, web scraper, Beluga AI"
 ---
 
 Beluga AI v2 provides a unified `loader.DocumentLoader` interface for loading content from diverse sources — files, APIs, cloud storage, and web pages — and converting them into `schema.Document` slices for use in RAG pipelines. All providers register via `init()` and are instantiated through the global registry.

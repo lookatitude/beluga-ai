@@ -1,6 +1,11 @@
 ---
 title: DAG-Based Workflow Orchestration
-description: Build directed acyclic graph workflows with conditional branching, parallel execution, and state management using the orchestration package.
+description: "Build directed acyclic graph workflows in Go with conditional branching, parallel fan-out, and state management using Beluga AI's orchestration package."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, DAG, workflow, orchestration, parallel execution, conditional branching"
 ---
 
 Complex AI workflows rarely follow a straight line. They branch on conditions, fan out to parallel workers, and converge results. The `orchestration` package provides a `Graph` type for building directed acyclic graphs (DAGs) of `core.Runnable` nodes connected by conditional edges. Unlike event-driven architectures where the execution path emerges at runtime, DAGs define the full topology upfront -- every possible path through the graph is visible in the code. This makes them easier to test, debug, and reason about for deterministic workflows where the branching logic is known at build time.

@@ -1,6 +1,11 @@
 ---
-title: "Anthropic"
-description: "Integration guide for Anthropic Claude models with Beluga AI."
+title: "Anthropic Claude LLM Provider"
+description: "Integrate Anthropic Claude models with Beluga AI. Streaming, tool use, extended thinking, and prompt caching via the official Go SDK."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Anthropic, Claude, LLM provider, Go Anthropic SDK, streaming, tool use, prompt caching, Beluga AI"
 ---
 
 The Anthropic provider connects Beluga AI to Anthropic's Claude family of models using the official `anthropic-sdk-go` SDK. It supports chat completions, streaming, tool calling, vision (images via URL or base64), and system messages as a first-class concept.

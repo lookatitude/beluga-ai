@@ -1,6 +1,11 @@
 ---
-title: Tools & MCP
-description: Create typed Go tools for agents, organize them in registries, and connect to MCP servers for runtime tool discovery and interoperability.
+title: Tools and Model Context Protocol
+description: "Create typed Go tools for agents, organize them in registries, and connect to MCP servers for runtime tool discovery and interoperability."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tools, MCP, Model Context Protocol, FuncTool, tool registry, tool calling"
 ---
 
 LLMs generate text, but to be useful in production systems they need to take actions — query databases, call APIs, read files, send notifications. Tools bridge this gap by giving agents typed, validated functions they can invoke. The LLM sees a tool's name, description, and JSON Schema, decides when to call it, and the framework handles argument parsing, execution, and result delivery.

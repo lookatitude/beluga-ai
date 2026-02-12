@@ -1,6 +1,11 @@
 ---
-title: Tiktoken Byte-Pair Encoding
-description: Integrate OpenAI's Tiktoken tokenizer with Beluga AI text splitters for token-count-aware chunking that respects LLM context window limits.
+title: Tiktoken BPE Token Splitter
+description: "Integrate OpenAI's Tiktoken tokenizer with Beluga AI for token-count-aware text chunking that respects LLM context window limits."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Tiktoken, BPE tokenizer, token splitting, Beluga AI, context window, text chunking Go, OpenAI tokenizer, RAG splitter"
 ---
 
 ## Overview

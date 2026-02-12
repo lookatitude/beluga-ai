@@ -1,6 +1,11 @@
 ---
-title: "MCP Protocol"
-description: "Model Context Protocol server/client, SDK, registry, and Composio integration"
+title: "MCP API — Server, Client, SDK, Registry"
+description: "MCP protocol API reference for Beluga AI. Model Context Protocol server/client, tool sharing, Composio integration, and official SDK bridge."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "MCP API, Model Context Protocol, JSON-RPC, tool sharing, MCP server, MCP client, Composio, Beluga AI, Go, reference"
 ---
 
 ## mcp

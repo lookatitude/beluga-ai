@@ -1,6 +1,11 @@
 ---
-title: Custom Turn Detectors for Noisy Environments
-description: Tune Beluga AI turn detection for noisy environments such as contact centers and factory floors.
+title: Noisy Environment Turn Detection
+description: "Tune Beluga AI turn detection for noisy environments like contact centers and factory floors to prevent false speech triggers."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "noisy turn detection, contact center voice, Beluga AI, noise-resistant VAD, voice AI tuning, Go voice pipeline"
 ---
 
 Default turn detection parameters assume clean audio. In real-world deployments -- contact centers with hold music, retail floors with announcements, or factory environments with machinery -- background noise causes frequent false turn-end triggers that interrupt users. This guide covers configuring both heuristic and ONNX turn detection providers for noise-resistant operation, ensuring your voice agent waits for genuine speech completion before responding.

@@ -1,6 +1,11 @@
 ---
-title: Automated Code Review
-description: Build an AI-powered code review agent with git integration, static analysis, and structured feedback using Beluga AI.
+title: AI-Powered Code Review Agent
+description: "Automate code reviews with an AI agent that runs linters, detects bugs, and posts structured feedback on pull requests."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "AI code review, automated code review, code review agent, static analysis AI, pull request review, Beluga AI, Go, DevOps"
 ---
 
 Code review is essential for maintaining quality but time-consuming and inconsistent. Human reviewers spend significant time on mechanical checks (style violations, lint errors, missing error handling) that leave less capacity for the high-value work: evaluating architecture decisions, spotting logic errors, and assessing security implications. Review quality also varies by reviewer fatigue, domain expertise, and time pressure.

@@ -1,6 +1,11 @@
 ---
-title: "Cache Package"
-description: "Exact, semantic, and prompt caching with pluggable backends"
+title: "Cache API — Exact, Semantic, LRU"
+description: "Cache package API reference for Beluga AI. Exact and semantic caching with TTL, LRU eviction, cosine similarity lookups, and pluggable backends."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "cache API, semantic cache, LRU, TTL, cosine similarity, caching, SemanticCache, Beluga AI, Go, reference"
 ---
 
 ## cache

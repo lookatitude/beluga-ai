@@ -1,6 +1,11 @@
 ---
 title: "Reindexing Status Tracking"
-description: "Track progress, errors, and completion of vector store reindexing operations for operational visibility and failure recovery."
+description: "Recipe for tracking vector store reindexing progress, errors, and completion in Go with resume support and operational dashboards using Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, reindexing tracking, vector store reindex, Go progress tracking, failure recovery, operational visibility, RAG recipe"
 ---
 
 ## Problem

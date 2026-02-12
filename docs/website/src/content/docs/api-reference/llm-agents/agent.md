@@ -1,6 +1,11 @@
 ---
-title: "Agent Package"
-description: "Agent runtime, BaseAgent, Executor, Planner strategies, handoffs, and event bus"
+title: "Agent API — Runtime, Planners, Handoffs"
+description: "Agent package API reference for Beluga AI. Agent interface, BaseAgent, Executor loop, planner strategies (ReAct, ToT, LATS), and handoffs."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "agent API, Agent interface, Planner, Executor, handoffs, ReAct, BaseAgent, EventBus, Beluga AI, Go, reference"
 ---
 
 ```go

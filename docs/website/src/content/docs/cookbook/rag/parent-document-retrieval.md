@@ -1,6 +1,11 @@
 ---
 title: "Parent Document Retrieval (PDR)"
-description: "Retrieve fine-grained chunks for precise matching but return larger parent documents for richer generation context."
+description: "Recipe for parent document retrieval in Go — match on fine-grained chunks but return full parent documents for richer LLM context using Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, parent document retrieval, Go RAG pattern, chunk matching, context enrichment, PDR recipe, retrieval strategy"
 ---
 
 # Parent Document Retrieval (PDR)

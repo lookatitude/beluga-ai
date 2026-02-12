@@ -1,6 +1,11 @@
 ---
 title: "Prompt Providers"
-description: "Overview of the prompt management system and providers in Beluga AI v2."
+description: "Prompt management providers with versioned templates and cache-optimal ordering. Manage and version prompts for LLM apps in Go with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "prompt management, prompt templates, prompt versioning, prompt cache, Go prompts, LLM prompts, Beluga AI"
 ---
 
 Beluga AI v2 includes a prompt management system for versioned templates, cache-optimal message ordering, and pluggable storage backends. The `prompt` package defines a `PromptManager` interface for template storage, a `Template` type with Go text/template rendering, and a `Builder` for constructing prompt sequences optimized for LLM prompt caching.

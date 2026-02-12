@@ -1,6 +1,11 @@
 ---
-title: LangChain Hub Prompt Loading
-description: Load community prompt templates from LangChain Hub and convert them to Beluga AI format for use in your applications.
+title: LangChain Hub Prompt Loader
+description: "Load community prompt templates from LangChain Hub into Beluga AI for RAG, summarization, and classification tasks in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LangChain Hub, prompt loading, Beluga AI, community prompts, prompt templates Go, RAG prompts, reusable templates"
 ---
 
 Writing effective prompts from scratch is time-consuming. LangChain Hub hosts a community-curated library of prompt templates for common tasks -- RAG, summarization, classification, extraction -- that have been tested and refined by thousands of developers. By loading these templates into Beluga AI's prompt system, you can bootstrap new features with battle-tested prompts and customize them for your domain. This guide shows how to fetch prompts from the Hub API, convert them to Beluga AI templates, and use them in your applications.

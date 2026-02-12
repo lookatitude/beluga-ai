@@ -1,6 +1,11 @@
 ---
-title: "Mistral AI"
-description: "Integration guide for Mistral AI models with Beluga AI."
+title: "Mistral AI LLM Provider"
+description: "Integrate Mistral AI models with Beluga AI. European AI with streaming, function calling, and efficient open-weight models in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Mistral AI, LLM provider, European AI, function calling, streaming, open-weight models, Go, Beluga AI"
 ---
 
 The Mistral provider connects Beluga AI to Mistral AI's models using the `mistral-go` SDK. It supports chat completions, streaming, tool calling, and JSON mode.

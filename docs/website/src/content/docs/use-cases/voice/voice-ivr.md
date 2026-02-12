@@ -1,6 +1,11 @@
 ---
 title: Voice-Enabled IVR System
-description: Replace touch-tone IVR with voice-enabled interactive voice response using Beluga AI's voice pipeline.
+description: "Replace touch-tone IVR with AI-powered voice response. Reduce abandonment rates with natural language intent detection in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "voice IVR, interactive voice response AI, contact center AI, speech intent detection, Beluga AI, Go, telephony use case"
 ---
 
 Contact centers with touch-tone IVR systems face high abandonment rates from deep menu trees and frequent mis-presses. Callers navigate through "press 1 for billing, press 2 for support" hierarchies that assume the caller knows which department handles their issue — they often do not, leading to misroutes, transfers, and repeat navigation. Each additional menu level compounds the abandonment problem.

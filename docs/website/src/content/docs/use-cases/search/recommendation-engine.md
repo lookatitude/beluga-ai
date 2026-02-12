@@ -1,6 +1,11 @@
 ---
-title: Intelligent Recommendation Engine
-description: Build semantic product recommendations with vector similarity search to solve cold-start problems using Beluga AI's vector store package.
+title: AI Recommendation Engine
+description: "Build semantic product recommendations with vector similarity to solve cold-start problems. Content-based recommendations from day one."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "recommendation engine AI, semantic recommendations, cold-start solution, vector similarity, e-commerce AI, Beluga AI, Go"
 ---
 
 E-commerce platforms relying on traditional collaborative filtering face cold-start problems: new products have no purchase history to build recommendations from, and new users have no behavior data to match against. Collaborative filtering answers "users who bought X also bought Y" but cannot explain why or recommend based on product attributes. A new running shoe has zero purchase history, so collaborative filtering cannot recommend it until enough users have bought it — a circular problem.

@@ -1,6 +1,11 @@
 ---
-title: Full Architecture
-description: "Extensibility architecture: patterns, providers, tools, and step-by-step guides for extending Beluga AI v2."
+title: "Full Architecture — Beluga AI"
+description: "Extensibility patterns, provider system, tool integration, and step-by-step guides for extending Beluga AI across all 19 registries."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI extensibility, Go AI framework patterns, middleware, hooks, registry pattern, provider system, tool integration"
 ---
 
 This document describes the extensibility architecture: how every package follows the same patterns, how providers work, how tools work, and step-by-step guides for adding new providers and tools. The goal is that after reading this document, you can add a new provider to any of the 19 registries by following the same steps — the patterns are intentionally uniform so that expertise in one area transfers directly to every other area.

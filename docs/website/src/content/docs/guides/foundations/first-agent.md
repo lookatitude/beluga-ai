@@ -1,6 +1,11 @@
 ---
 title: Building Your First Agent
-description: Create a complete AI agent from scratch with tools, streaming, and reasoning.
+description: "Build a complete AI agent in Go with Beluga AI — wire up tools, stream responses with iter.Seq2, implement ReAct reasoning, and hand off between specialized agents."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, build AI agent, tools, streaming, ReAct, agent handoffs, tutorial"
 ---
 
 Build a fully functional AI agent that can reason about tasks, use tools, and stream responses. This guide covers the `agent` package from first principles, walking through the design decisions that make Beluga's agent system composable and production-ready.

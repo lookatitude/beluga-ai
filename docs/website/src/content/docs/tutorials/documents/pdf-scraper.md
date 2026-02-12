@@ -1,6 +1,11 @@
 ---
 title: Directory and PDF Recursive Scraper
-description: Ingest entire directories of files including nested folders and PDFs using document loader pipelines with custom format handlers and metadata enrichment.
+description: "Ingest entire directories recursively in Go — process Markdown, text, and PDFs with format-dispatched loaders, metadata enrichment, and Beluga AI's RAG pipeline."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, directory scraper, PDF loading, document ingestion, RAG, metadata"
 ---
 
 Manually uploading files one by one does not scale. To build a production knowledge base, you need to point your ingestion pipeline at a directory and have it recursively process everything from Markdown to PDFs. The `rag/loader` package provides loaders for common file formats and a pipeline for chaining them with transformers. The format-dispatch pattern shown here -- mapping file extensions to registered loaders -- enables the scraper to handle new formats by adding a single entry to the loader map, without modifying the traversal or enrichment logic.

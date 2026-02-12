@@ -1,6 +1,11 @@
 ---
-title: Cross-lingual Document Retrieval
-description: Enable users to search documents in any language and retrieve relevant results across all languages.
+title: Cross-Lingual Document Retrieval
+description: "Search documents in any language and retrieve relevant results across all languages with multilingual embeddings. 90%+ relevance."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "cross-lingual search, multilingual RAG, multilingual embeddings, global knowledge search, language-agnostic retrieval, Beluga AI, Go"
 ---
 
 A global knowledge management platform needed to enable users to search documents in any language and retrieve relevant results regardless of the document's original language. The conventional approach — translating all documents into a common language or translating every query into every document language — is expensive, lossy (translations miss nuance), and operationally complex (every new language multiplies the translation workload).

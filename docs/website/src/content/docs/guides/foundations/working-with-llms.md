@@ -1,6 +1,11 @@
 ---
-title: Working with LLMs
-description: Configure language models, stream responses, use structured output, and build multi-provider setups.
+title: Working with LLMs in Go
+description: "Configure any language model through Beluga AI's unified ChatModel interface — set up providers, compose middleware, attach lifecycle hooks, and route across models."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, LLM, ChatModel, providers, streaming, middleware, multi-provider"
 ---
 
 The `llm` package provides a unified interface for interacting with language models. Every provider — from OpenAI to Ollama — implements the same `ChatModel` interface, making it straightforward to switch providers, add middleware, and build multi-model architectures. This abstraction is the foundation of Beluga's provider-agnostic design: your application code depends on `ChatModel`, not on any specific provider SDK.

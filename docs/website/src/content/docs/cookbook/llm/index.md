@@ -1,6 +1,11 @@
 ---
 title: LLM Recipes
-description: Practical recipes for working with language models, streaming, and error handling.
+description: "Production Go recipes for LLM integration: streaming responses, token counting, history trimming, error handling, and retry strategies with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go LLM recipes, LLM streaming, token counting, history trimming, error handling, retry logic, ChatModel"
 sidebar:
   order: 0
 ---

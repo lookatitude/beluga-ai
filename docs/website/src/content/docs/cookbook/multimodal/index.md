@@ -1,6 +1,11 @@
 ---
 title: Multimodal Recipes
-description: Practical patterns for working with images, audio, and video in AI applications, including preprocessing, provider fallbacks, and batch classification.
+description: "Go recipes for multimodal AI: process images, audio, and video with provider fallbacks, batch classification, and format detection in Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, multimodal AI recipes, Go image processing, audio AI, video processing, provider fallbacks, batch classification, multimodal LLM"
 sidebar:
   order: 0
 ---

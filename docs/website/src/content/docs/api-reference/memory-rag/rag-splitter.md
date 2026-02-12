@@ -1,6 +1,11 @@
 ---
-title: "RAG Text Splitters"
-description: "Text splitting strategies for chunking documents"
+title: "Text Splitter API — Chunking Strategies"
+description: "RAG text splitter API for Beluga AI. TextSplitter interface with recursive, markdown, and token-based chunking for document processing."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "text splitter API, TextSplitter, chunking, RAG, recursive, markdown, token-based, Beluga AI, Go, reference"
 ---
 
 ```go

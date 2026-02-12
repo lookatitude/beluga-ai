@@ -1,6 +1,11 @@
 ---
-title: Safety Result JSON Reporting
-description: Export Beluga AI guard pipeline results as structured JSON for logging, auditing, and compliance reporting.
+title: Safety JSON Audit Reporting
+description: "Export Beluga AI guard pipeline results as structured JSON for compliance auditing, SOC 2 evidence, and safety analytics dashboards."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "safety reporting, JSON audit, Beluga AI, compliance logging, guard pipeline, SOC 2, content safety Go"
 ---
 
 Safety controls are only useful if you can prove they are working. Compliance auditors, SOC 2 reviews, and enterprise customer security questionnaires all require evidence of content filtering and safety decisions. By serializing guard pipeline results as structured JSON, you create a searchable, immutable audit trail that integrates with your existing logging infrastructure (ELK, Datadog, Loki) and satisfies regulatory reporting requirements. This guide demonstrates how to export `GuardResult` values from the three-stage guard pipeline as JSON for logging, auditing, and compliance dashboards.

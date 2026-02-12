@@ -1,6 +1,11 @@
 ---
 title: "VAD Sensitivity Profiles"
-description: "Define named VAD sensitivity profiles for different environments from quiet offices to noisy factories."
+description: "Recipe for defining named VAD sensitivity profiles in Go — tune voice activity detection for quiet offices, noisy factories, and varied environments."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, VAD sensitivity, Go voice activity detection, sensitivity profiles, noise adaptation, environment tuning, VAD recipe"
 ---
 
 ## Problem

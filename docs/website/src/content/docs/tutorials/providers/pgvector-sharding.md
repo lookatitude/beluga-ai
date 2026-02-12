@@ -1,6 +1,11 @@
 ---
 title: Production pgvector Sharding
-description: Configure PostgreSQL with pgvector for high-scale vector storage, including HNSW indexing and table partitioning.
+description: "Configure PostgreSQL with pgvector for high-scale vector storage in Go — HNSW indexing, table partitioning by tenant, and query optimization with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, pgvector, PostgreSQL, sharding, HNSW, vector storage, partitioning"
 ---
 
 As vector datasets grow beyond 1 million records, single-table scans become too slow and HNSW indexes may not fit in RAM. Table partitioning (sharding) combined with proper indexing provides the foundation for production-scale vector search. This approach leverages PostgreSQL's built-in partitioning, which means you retain full SQL capabilities (joins, transactions, aggregations) alongside vector search — a significant advantage over purpose-built vector databases that sacrifice query flexibility.

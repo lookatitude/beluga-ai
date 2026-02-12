@@ -1,6 +1,11 @@
 ---
 title: Low-Latency Turn Prediction
-description: Reduce voice agent response delay with tuned turn-end detection using heuristic and ONNX providers.
+description: "Achieve sub-100ms turn-end detection for voice agents with tuned heuristic and ONNX providers. Less than 5% false trigger rate."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "turn prediction, voice endpointing, low latency voice, ONNX turn detection, voice agent, Beluga AI, Go, real-time speech"
 ---
 
 Voice AI vendors face a critical challenge: the delay between when a user stops speaking and when the system decides to respond. This "endpointing" decision directly impacts perceived responsiveness — every 100ms of unnecessary waiting adds to the user's sense of lag. Fixed silence windows (800ms) feel sluggish, while shorter windows cause premature interruptions that cut off users mid-thought. The fundamental tension is between responsiveness (respond quickly) and accuracy (wait long enough to be sure the user is done).

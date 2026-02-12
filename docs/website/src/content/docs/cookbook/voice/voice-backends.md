@@ -1,6 +1,11 @@
 ---
 title: "Voice Backends Configuration"
-description: "Configure and switch between STT, TTS, and S2S voice backends with fallback support."
+description: "Recipe for configuring and switching between STT, TTS, and S2S voice backends in Go with provider fallback chains using Beluga AI registry."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, voice backends, Go STT TTS config, provider switching, fallback chain, voice registry, backend configuration recipe"
 ---
 
 ## Problem

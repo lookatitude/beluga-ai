@@ -1,6 +1,11 @@
 ---
 title: Message Template Design
-description: Design effective prompt templates using Beluga AI's prompt package for type-safe, reusable LLM interactions.
+description: "Design type-safe prompt templates in Go using Beluga AI's prompt package — variable substitution, multi-role chat sequences, validation, and template composition."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, message templates, prompt design, type-safe, template composition, LLM"
 ---
 
 A prompt is the programming interface for an LLM. Just as you avoid hardcoding values in Go code, you should avoid hardcoding values in prompts. String concatenation for building prompts is fragile, difficult to test, and vulnerable to prompt injection. Beluga AI's `prompt` package separates instruction logic (templates) from data (variables), making prompts reusable, testable, and versionable. This separation follows the same principle as SQL parameterized queries — the template defines the structure, and variables fill in the data.

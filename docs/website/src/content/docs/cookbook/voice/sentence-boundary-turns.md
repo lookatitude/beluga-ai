@@ -1,6 +1,11 @@
 ---
 title: "Sentence-Boundary Turn Detection"
-description: "Detect turn completion using sentence boundaries, turn length, and silence for natural voice interaction."
+description: "Recipe for detecting turn completion in Go voice apps using sentence boundaries, utterance length, and silence analysis for natural conversation flow."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, turn detection, Go sentence boundary, voice interaction, turn completion, silence detection, conversation flow recipe"
 ---
 
 ## Problem

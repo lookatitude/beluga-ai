@@ -1,6 +1,11 @@
 ---
-title: "Guard Package"
-description: "Three-stage safety pipeline: input, output, tool guards with built-in and external providers"
+title: "Guard API — Safety Pipeline, PII, Injection"
+description: "Guard package API reference for Beluga AI. Three-stage safety pipeline with prompt injection, PII redaction, content filtering, and providers."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "guard API, safety pipeline, prompt injection, PII redaction, content filter, Lakera, NeMo, Beluga AI, Go, reference"
 ---
 
 ## guard

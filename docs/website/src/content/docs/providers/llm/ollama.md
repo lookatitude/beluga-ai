@@ -1,6 +1,11 @@
 ---
-title: "Ollama"
-description: "Integration guide for running local models with Ollama and Beluga AI."
+title: "Ollama LLM Provider"
+description: "Run local LLMs with Ollama and Beluga AI. Self-hosted inference with streaming, tool calling, and zero cloud dependency in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Ollama, local LLM, self-hosted, LLM provider, streaming, tool calling, privacy, Go, Beluga AI"
 ---
 
 The Ollama provider connects Beluga AI to locally-hosted models via [Ollama](https://ollama.ai). Ollama serves an OpenAI-compatible API on `localhost`, making it straightforward to run open-source models without any cloud dependency or API key.

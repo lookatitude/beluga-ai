@@ -1,6 +1,11 @@
 ---
 title: Multimodal AI (Vision & Audio)
-description: Process images, audio, and video with multimodal language models for document intelligence, visual Q&A, and content analysis.
+description: "Process images, audio, and video with multimodal LLMs in Go — document intelligence, visual Q&A, content analysis, and multimodal RAG with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, multimodal, vision, audio, image analysis, document intelligence, visual Q&A"
 ---
 
 Text-only AI systems miss the vast majority of real-world information. Business documents arrive as PDFs and scanned images. Customer interactions include voice recordings. Operational data lives in charts, diagrams, and dashboards. Multimodal models bridge this gap by processing images, audio, and video alongside text, enabling AI systems that work with information in its native format rather than requiring manual transcription.

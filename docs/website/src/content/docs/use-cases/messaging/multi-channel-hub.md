@@ -1,6 +1,11 @@
 ---
-title: Multi-channel Marketing Hub
-description: Send unified marketing campaigns across SMS, WhatsApp, and email with automated scheduling and analytics.
+title: Multi-Channel Marketing Hub
+description: "Send unified marketing campaigns across SMS, WhatsApp, and email with automated scheduling, deduplication, and cross-channel analytics."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "multi-channel marketing, SMS WhatsApp email, campaign automation, cross-channel analytics, messaging hub, Beluga AI, Go"
 ---
 
 A marketing agency running a product launch across SMS, WhatsApp, and email typically manages each channel through its own dashboard — Twilio for SMS, WhatsApp Business API, and SendGrid for email. This fragmentation means the same campaign requires three separate configurations, three different template formats, and three separate analytics views. When the SMS version of a message has a typo, it gets fixed in Twilio but the WhatsApp version remains unchanged. Delivery failures on one channel are invisible from another channel's dashboard, so a campaign that failed to reach 30% of WhatsApp recipients might appear successful from the SMS dashboard alone.

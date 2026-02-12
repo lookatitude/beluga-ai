@@ -1,6 +1,11 @@
 ---
 title: DevSecOps Policy Auditor
-description: Automate security and compliance policy auditing with agent-based scanning, real-time violation detection, and continuous compliance monitoring.
+description: "Automate security and compliance auditing with AI agents. Real-time violation detection for SOC 2, HIPAA, and PCI DSS compliance."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "DevSecOps auditor, security compliance AI, policy scanning, SOC2 HIPAA PCI, continuous compliance, Beluga AI, Go, infrastructure security"
 ---
 
 Infrastructure changes in a modern cloud environment happen faster than manual audits can keep up. A team deploying 50+ times per day through CI/CD pipelines can introduce misconfigurations — an S3 bucket without encryption, a security group with port 22 open to 0.0.0.0/0, a Kubernetes pod running as root — that traditional quarterly audits only discover weeks later. By then, the misconfiguration has been live in production, potentially exposing sensitive data or creating attack vectors. Manual audits also suffer from inconsistency: different auditors interpret policies differently, leading to 20-30% of violations being missed depending on who performs the review.

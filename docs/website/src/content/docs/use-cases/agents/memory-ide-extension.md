@@ -1,6 +1,11 @@
 ---
-title: Context-aware IDE Extension
-description: Build an IDE extension with project-specific memory that learns from code patterns and maintains context across sessions.
+title: AI IDE Extension with Project Memory
+description: "Build a context-aware IDE extension that learns code patterns and retains project context across sessions using vector memory."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "AI IDE extension, code assistant memory, context-aware coding, vector search IDE, Beluga AI, Go, developer tools use case"
 ---
 
 Developers waste significant time repeatedly explaining project context to AI assistants that have no memory across sessions. Every new conversation starts from zero: "We use React with TypeScript, our API is in Go, the database is PostgreSQL, and we follow this naming convention..." This repeated context-setting costs 5-10 minutes per session and produces generic suggestions that miss project-specific patterns, naming conventions, and architectural decisions.

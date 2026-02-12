@@ -1,6 +1,11 @@
 ---
-title: "Advanced Code Splitting with Tree-sitter"
-description: "Split code files intelligently while preserving functions, classes, and logical structure for higher-quality RAG retrieval over codebases."
+title: "Code Splitting with Tree-sitter"
+description: "Recipe for splitting source code into RAG chunks while preserving functions, classes, and logical structure using Tree-sitter for Go retrieval pipelines."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, code splitting, Tree-sitter, Go RAG, code chunking, codebase retrieval, AST splitting, code indexing"
 ---
 
 ## Problem

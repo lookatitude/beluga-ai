@@ -1,8 +1,13 @@
 ---
-title: Capabilities
-description: Deep dives into Beluga AI v2's major features and subsystems — RAG, memory, tools, voice, and multimodal processing.
+title: Capability Guides
+description: "Explore Beluga AI's major subsystems — RAG pipelines, persistent memory, tool registries, MCP integration, voice AI, and multimodal processing in Go."
 sidebar:
   order: 0
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, capabilities, RAG, memory, tools, voice AI, multimodal"
 ---
 
 These guides cover the major subsystems that give Beluga AI agents their capabilities. Each guide explains the architecture of a subsystem, the design patterns it uses, and how to integrate it into your applications. They assume familiarity with the [Foundation guides](/guides/foundations/) and build on the core patterns established there — registries, middleware, hooks, and streaming.

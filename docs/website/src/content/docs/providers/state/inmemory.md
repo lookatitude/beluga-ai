@@ -1,6 +1,11 @@
 ---
-title: In-Memory
-description: In-process state store for development, testing, and single-process agent deployments.
+title: "In-Memory State Provider"
+description: "In-process state store for agent coordination in Beluga AI. Thread-safe key-value state with Watch notifications for development and testing in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "in-memory state, agent state, key-value store, Watch notifications, development, testing, Go, Beluga AI"
 ---
 
 The In-Memory provider implements the `state.Store` interface using a Go map with read-write mutex protection. It supports the full `Store` contract including `Watch` for real-time change notifications. State does not persist across process restarts.

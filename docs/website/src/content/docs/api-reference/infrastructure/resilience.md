@@ -1,6 +1,11 @@
 ---
-title: "Resilience Package"
-description: "Circuit breaker, hedge, retry, and rate limiting patterns"
+title: "Resilience API — Retry, Circuit Breaker"
+description: "Resilience package API reference for Beluga AI. Retry with exponential backoff, circuit breaker, hedged requests, and rate limiting."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "resilience API, retry, circuit breaker, rate limiting, hedged requests, fault tolerance, backoff, Beluga AI, Go, reference"
 ---
 
 ```go

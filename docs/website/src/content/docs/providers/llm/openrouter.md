@@ -1,6 +1,11 @@
 ---
-title: "OpenRouter"
-description: "Integration guide for OpenRouter's multi-provider routing with Beluga AI."
+title: "OpenRouter LLM Provider"
+description: "Integrate OpenRouter with Beluga AI. Access multiple LLM providers through a single API with automatic fallback and cost optimization in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "OpenRouter, LLM provider, multi-provider, API routing, cost optimization, streaming, Go, Beluga AI"
 ---
 
 The OpenRouter provider connects Beluga AI to [OpenRouter](https://openrouter.ai), a unified gateway that routes requests to many different model providers (OpenAI, Anthropic, Google, Meta, Mistral, and more). OpenRouter exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output.

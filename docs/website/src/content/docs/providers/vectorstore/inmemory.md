@@ -1,6 +1,11 @@
 ---
-title: In-Memory Vector Store
-description: Thread-safe in-memory vector store for testing and development.
+title: "In-Memory Vector Store Provider"
+description: "Thread-safe in-memory vector store for testing in Beluga AI. Zero external dependencies with metadata filtering for development and CI in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "in-memory vector store, test vector store, development, thread-safe, Go, RAG testing, Beluga AI"
 ---
 
 The in-memory vector store provider implements the `vectorstore.VectorStore` interface using a thread-safe map with linear-scan search. It supports all three distance strategies (cosine, dot-product, Euclidean) and requires no external dependencies.

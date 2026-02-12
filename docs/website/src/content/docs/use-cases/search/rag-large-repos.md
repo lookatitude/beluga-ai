@@ -1,6 +1,11 @@
 ---
-title: Optimizing RAG for Large Code Repositories
-description: Build efficient code search with code-aware text splitting that respects function boundaries and language syntax using Beluga AI's splitter package.
+title: RAG for Large Code Repositories
+description: "Build efficient code search with AST-aware splitting that respects function boundaries. Reduce chunks by 50-60% and improve retrieval."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "code search RAG, code-aware splitting, AST text splitter, large repo search, code retrieval, Beluga AI, Go, developer tools"
 ---
 
 Software companies building code search systems face challenges when repositories exceed 100,000 files. Standard text splitting (fixed-size chunks or line-based splitting) does not understand code structure — it splits mid-function, separates a function signature from its body, or puts half a class in one chunk and half in another. These broken chunks produce poor embeddings because the semantic unit (a complete function or method) has been fragmented, degrading retrieval accuracy.

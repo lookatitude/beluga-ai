@@ -1,6 +1,11 @@
 ---
-title: "Smallest AI"
-description: "Smallest AI TTS provider for lightning-fast voice synthesis."
+title: "Smallest AI Voice Provider"
+description: "Smallest AI TTS for lightning-fast voice synthesis in Beluga AI. Ultra-compact models with low latency and efficient text-to-speech in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Smallest AI, text-to-speech, TTS, fast synthesis, low latency, compact models, Go, Beluga AI"
 ---
 
 Smallest AI provides lightning-fast text-to-speech synthesis with low-latency models optimized for real-time applications. The Beluga AI provider uses the Smallest AI v1 API for synthesis, supporting configurable voice, model, and speed settings.

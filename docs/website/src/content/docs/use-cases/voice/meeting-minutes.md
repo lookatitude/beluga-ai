@@ -1,6 +1,11 @@
 ---
 title: Live Meeting Minutes Generator
-description: Automatically generate structured meeting minutes from live audio with real-time transcription and LLM summarization.
+description: "Auto-generate structured meeting minutes from live audio with real-time transcription and LLM summarization. 96% completeness."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "meeting minutes AI, live transcription, speaker diarization, meeting summarizer, voice pipeline, Beluga AI, Go, enterprise meetings"
 ---
 
 Manual meeting minutes take 1-2 hours to create, miss 20-30% of key points, and have 4-6 hour delays before sharing. The person taking notes must simultaneously listen, decide what matters, and write — a cognitive multitasking problem that inevitably drops information. Critical decisions, action item assignments, and dissenting opinions are the most likely casualties because they require contextual judgment to capture accurately.

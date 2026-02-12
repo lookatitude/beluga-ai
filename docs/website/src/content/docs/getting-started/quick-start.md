@@ -1,6 +1,11 @@
 ---
-title: Quick Start
-description: Build your first AI agent with Beluga AI v2 in 5 minutes — from installation to a working agent with tools and memory.
+title: "Quick Start — Beluga AI"
+description: "Build your first AI agent with Beluga AI in 5 minutes. From installation to a working agent with tools, streaming, and multi-tool composition in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI quick start, Go AI agent tutorial, build AI agent Go, LLM streaming Go, AI tools Go, agentic AI"
 ---
 
 This guide walks you through building a working AI agent with tools and streaming in under 5 minutes. Each step introduces a core concept — LLM calls, streaming, agents, tools, and multi-tool composition — so by the end, you'll understand the fundamental building blocks of Beluga AI and have a working agent that reasons about which tools to call and how to use their results.

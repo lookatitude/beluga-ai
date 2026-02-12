@@ -1,6 +1,11 @@
 ---
-title: In-memory Vector Store
-description: Use the in-memory vector store for rapid RAG prototyping with zero external dependencies.
+title: In-Memory Vector Store Tutorial
+description: "Use Beluga AI's in-memory vector store for rapid RAG prototyping in Go — zero dependencies, semantic search, metadata filtering, and production-ready interface."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, in-memory vector store, RAG, semantic search, prototyping, VectorStore"
 ---
 
 Spinning up PostgreSQL with pgvector or a hosted vector database is necessary for production, but it slows down development when you need to test retrieval logic quickly. The in-memory vector store provides zero-dependency semantic search that runs entirely in RAM — ideal for prototyping, testing, and CI/CD pipelines. Because it implements the same `VectorStore` interface as pgvector, Pinecone, and other production stores, code written against it migrates to production with a one-line configuration change.

@@ -1,6 +1,11 @@
 ---
-title: "Workflow Package"
-description: "Durable execution engine with provider integrations"
+title: "Workflow API — Durable Execution Engine"
+description: "Workflow package API reference for Beluga AI. Durable execution with activities, signals, retry policies, and Temporal/Dapr/Kafka/NATS providers."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "workflow API, durable execution, DurableExecutor, activities, signals, Temporal, Dapr, Kafka, Beluga AI, Go, reference"
 ---
 
 ## workflow

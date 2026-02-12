@@ -1,6 +1,11 @@
 ---
-title: "OpenAI Whisper"
-description: "OpenAI Whisper STT provider for batch speech-to-text via the Audio Transcriptions API."
+title: "OpenAI Whisper Voice Provider"
+description: "OpenAI Whisper STT for batch speech-to-text in Beluga AI. High-accuracy multilingual transcription via the Audio Transcriptions API in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "OpenAI Whisper, speech-to-text, STT, batch transcription, multilingual, audio API, Go, Beluga AI"
 ---
 
 OpenAI Whisper provides highly accurate batch speech-to-text transcription through the OpenAI Audio Transcriptions API. The Beluga AI provider uploads audio as multipart form data and returns the transcribed text. Whisper does not support native streaming; the streaming interface transcribes each audio chunk independently as a batch request.

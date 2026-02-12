@@ -1,6 +1,11 @@
 ---
-title: NeMo Guardrails
-description: Programmable safety guardrails using NVIDIA NeMo Guardrails.
+title: "NeMo Guardrails Provider"
+description: "Programmable safety guardrails with NVIDIA NeMo in Beluga AI. Colang-based rules, topic control, and multi-turn conversation safety in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "NeMo Guardrails, NVIDIA, programmable safety, Colang, topic control, AI safety, Go, Beluga AI"
 ---
 
 The NeMo Guardrails provider implements the `guard.Guard` interface using [NVIDIA NeMo Guardrails](https://github.com/NVIDIA/NeMo-Guardrails). NeMo Guardrails provides programmable safety controls via Colang configurations, supporting topic safety enforcement, jailbreak detection, fact-checking, and custom conversational rules.

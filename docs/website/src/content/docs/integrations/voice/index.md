@@ -1,8 +1,13 @@
 ---
-title: Voice Services
-description: Integrate speech-to-text, text-to-speech, speech-to-speech, VAD, and transport providers for voice AI pipelines.
+title: Voice AI Integrations
+description: "Integrate STT, TTS, S2S, VAD, and transport providers with Beluga AI's frame-based voice pipeline for real-time conversations in Go."
 sidebar:
   order: 0
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "voice AI, speech-to-text, text-to-speech, Beluga AI, voice pipeline Go, STT TTS integration, real-time voice"
 ---
 
 Voice AI enables natural, hands-free interactions through spoken language. Whether you are building a customer support phone agent, a voice-controlled assistant, or a real-time conversation system, the voice pipeline handles the full audio lifecycle: capturing speech, converting it to text for your agent, and synthesizing spoken responses.

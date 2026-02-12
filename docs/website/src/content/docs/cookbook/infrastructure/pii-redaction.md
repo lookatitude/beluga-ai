@@ -1,6 +1,11 @@
 ---
 title: "PII Redaction in Logs"
-description: "Redact personally identifiable information from logs to comply with privacy regulations while maintaining debugging utility."
+description: "Recipe for automatically redacting PII (emails, phones, SSNs) from Go application logs to comply with GDPR and CCPA while preserving debugging utility."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, PII redaction, Go log privacy, GDPR compliance, CCPA, data masking, privacy recipe, log sanitization"
 ---
 
 # PII Redaction in Logs

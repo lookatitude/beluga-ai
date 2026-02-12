@@ -1,6 +1,11 @@
 ---
-title: RAG Pipeline
-description: Build retrieval-augmented generation pipelines with document loading, embeddings, vector stores, and advanced retrieval strategies.
+title: RAG Pipeline Guide
+description: "Build retrieval-augmented generation pipelines in Go with Beluga AI — document loading, embeddings, vector stores, hybrid search, CRAG, and HyDE strategies."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, RAG, retrieval-augmented generation, embeddings, vector store, hybrid search, retriever"
 ---
 
 Language models generate answers from their training data, but they cannot access your private documents, recent data, or domain-specific knowledge. Retrieval-Augmented Generation (RAG) solves this by fetching relevant documents at query time and injecting them into the LLM's context window. The model then generates answers grounded in your actual data rather than relying on potentially outdated or hallucinated information.

@@ -1,6 +1,11 @@
 ---
 title: Token Cost Attribution per User
-description: Track and attribute LLM token costs to individual users and tenants for accurate billing and cost optimization.
+description: "Track and attribute LLM token costs to individual users and tenants with OpenTelemetry. Accurate billing and cost optimization."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "token cost attribution, LLM billing, per-user cost tracking, OpenTelemetry metrics, tenant billing, Beluga AI, Go, SaaS billing"
 ---
 
 When LLM costs appear as a single line item on the infrastructure bill, teams cannot answer basic questions: which feature consumes the most tokens, which customers generate disproportionate cost, and where optimization efforts would have the most impact. Enterprise customers expect usage-based billing with transparent cost breakdowns, but system-level token counters provide no attribution.

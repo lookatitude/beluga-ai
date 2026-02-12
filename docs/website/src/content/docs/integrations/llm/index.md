@@ -1,8 +1,13 @@
 ---
 title: LLM Providers
-description: Configure and use language model providers with Beluga AI, including OpenAI, Anthropic, Google, Ollama, and 18 more.
+description: "Configure 22 LLM providers in Beluga AI including OpenAI, Anthropic, Google, Ollama, and Bedrock with a unified ChatModel interface."
 sidebar:
   order: 0
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LLM providers, Beluga AI, OpenAI Go, Anthropic Go, ChatModel interface, multi-provider LLM, Go AI framework, Ollama integration"
 ---
 
 Choosing an LLM provider involves tradeoffs between cost, latency, capability, data residency, and vendor lock-in. Beluga AI supports 22 LLM providers through a unified `ChatModel` interface so you can evaluate these tradeoffs without rewriting application code. All providers register via `init()` and are created through the same registry pattern -- switching between providers requires changing only an import path and a configuration struct.

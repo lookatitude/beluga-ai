@@ -1,6 +1,11 @@
 ---
-title: Multi-Stage ETL with AI
-description: Build complex ETL pipelines with AI-powered data enrichment, quality checks, and intelligent routing.
+title: AI-Powered Multi-Stage ETL Pipeline
+description: "Build ETL pipelines with LLM-powered data enrichment, quality scoring, and intelligent routing for unstructured data."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "AI ETL pipeline, data enrichment, AI data quality, intelligent ETL, data processing, Beluga AI, Go, data engineering"
 ---
 
 Traditional ETL pipelines handle structured data well — mapping columns, applying transformations, loading to warehouses. But modern data includes unstructured text fields (customer feedback, support tickets, product descriptions) that need semantic understanding for enrichment. A customer's free-text feedback contains sentiment, topics, and intent that rule-based transforms cannot reliably extract.

@@ -1,6 +1,11 @@
 ---
-title: "OpenAI Realtime"
-description: "OpenAI Realtime S2S provider for bidirectional audio streaming with GPT-4o."
+title: "OpenAI Realtime S2S Voice Provider"
+description: "OpenAI Realtime S2S for bidirectional audio streaming in Beluga AI. GPT-4o speech-to-speech with WebSocket, tool calling, and low latency in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "OpenAI Realtime, speech-to-speech, S2S, GPT-4o, WebSocket, bidirectional audio, Go, Beluga AI"
 ---
 
 OpenAI Realtime provides native speech-to-speech via the OpenAI Realtime API over WebSocket, bypassing the traditional STT/LLM/TTS cascade for lower end-to-end latency. The provider supports bidirectional audio streaming, server-side voice activity detection (VAD), tool calling, and text transcripts of both user and agent speech.

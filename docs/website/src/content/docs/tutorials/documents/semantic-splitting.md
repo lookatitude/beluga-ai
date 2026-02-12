@@ -1,6 +1,11 @@
 ---
 title: Semantic Splitting for Better Embeddings
-description: Create chunks based on meaning by detecting topic transitions using embedding similarity, producing semantically coherent chunks optimized for retrieval.
+description: "Create semantically coherent chunks in Go by detecting topic transitions via embedding cosine similarity — produce optimized chunks for RAG retrieval with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, semantic splitting, embeddings, topic detection, cosine similarity, RAG"
 ---
 
 Even structural splitting can be arbitrary if a single section covers two distinct topics. A Markdown section titled "Background" might discuss both the problem statement and the historical context -- these are different topics that would produce better embeddings as separate chunks. Semantic splitting uses embedding similarity to detect where one topic ends and another begins, producing chunks that are optimized for retrieval quality because each chunk focuses on a single coherent idea.

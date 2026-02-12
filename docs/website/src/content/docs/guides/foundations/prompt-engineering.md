@@ -1,6 +1,11 @@
 ---
 title: Prompt Management & Engineering
-description: Master prompt design, templating, versioning, and optimization for production AI systems.
+description: "Design production prompts with Beluga AI's PromptManager — template resolution, cache-optimal token ordering, few-shot selection, versioning, and A/B testing in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, prompt engineering, templates, versioning, cache optimization, A/B testing, few-shot"
 ---
 
 Prompts are the programming interface to language models. The difference between a mediocre AI feature and a reliable one often comes down to prompt design — how you structure instructions, provide examples, and order content for cache efficiency. Beluga AI's `prompt` package provides three tools for production prompt management: `Template` for parameterized prompt rendering, `PromptManager` for versioned template storage and retrieval, and `Builder` for assembling message sequences in cache-optimal order.

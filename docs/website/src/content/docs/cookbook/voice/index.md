@@ -1,6 +1,11 @@
 ---
 title: Voice Recipes
-description: Practical recipes for building voice-enabled AI applications with frame-based pipelines.
+description: "Go recipes for voice AI: stream scaling, noise reduction, barge-in detection, latency optimization, and frame-based pipelines with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, voice AI recipes, Go voice pipeline, FrameProcessor, speech processing, real-time audio, voice engineering"
 sidebar:
   order: 0
 ---

@@ -1,6 +1,11 @@
 ---
-title: Few-Shot SQL Generation
-description: Few-shot learning enables 92% accuracy for natural language to SQL query generation.
+title: Natural Language to SQL with Few-Shot
+description: "Generate SQL queries from natural language using few-shot learning. Achieve 92% accuracy across multiple database dialects."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "natural language to SQL, few-shot SQL, text-to-SQL, AI SQL generation, business intelligence, Beluga AI, Go, NL2SQL"
 ---
 
 Business intelligence platforms need to enable non-technical users to query databases using natural language. The alternative — training users on SQL — does not scale, and building custom query builders for every possible question is impractical. Traditional zero-shot SQL generation (sending the question directly to an LLM with schema information) achieves only 60-70% accuracy because the model must infer query patterns, join strategies, and dialect-specific syntax from the schema alone.

@@ -1,6 +1,11 @@
 ---
-title: "Deepgram"
-description: "Deepgram STT provider for real-time and batch speech-to-text with Nova-2 models."
+title: "Deepgram Voice Provider"
+description: "Deepgram STT for real-time and batch speech-to-text in Beluga AI. Nova-2 models with WebSocket streaming, diarization, and word timing in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Deepgram, speech-to-text, STT, Nova-2, WebSocket streaming, diarization, Go, Beluga AI"
 ---
 
 Deepgram provides high-accuracy speech-to-text transcription with native WebSocket streaming support. The Beluga AI provider uses Deepgram's REST API for batch transcription and WebSocket API for real-time streaming, delivering word-level timing, speaker diarization, and automatic punctuation.

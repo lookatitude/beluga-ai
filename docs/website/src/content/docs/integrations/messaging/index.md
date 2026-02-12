@@ -1,8 +1,13 @@
 ---
-title: Messaging Platforms
-description: Connect Beluga AI agents to Twilio, Slack, and custom messaging channels via the protocol and server packages.
+title: Messaging Integrations
+description: "Connect Beluga AI agents to Twilio, Slack, WhatsApp, and custom messaging channels via webhooks and server adapters in Go."
 sidebar:
   order: 0
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "messaging integration, Twilio, Slack bot, Beluga AI, WhatsApp AI, webhook handler Go, omnichannel messaging"
 ---
 
 Users expect to interact with AI assistants through the channels they already use -- Slack for internal teams, WhatsApp for customers, SMS for notifications. Messaging integrations let your Beluga AI agents meet users where they are instead of requiring a separate web interface. Because Beluga AI handles the agent logic and messaging platforms handle delivery, you get reliable message transport with rich AI capabilities.

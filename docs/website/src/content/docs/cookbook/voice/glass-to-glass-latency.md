@@ -1,6 +1,11 @@
 ---
-title: "Minimizing Glass-to-Glass Latency"
-description: "Optimize end-to-end voice latency with streaming STT, LLM, and TTS pipeline parallelism."
+title: "Glass-to-Glass Latency Optimization"
+description: "Recipe for minimizing end-to-end voice latency in Go with streaming STT, parallel LLM processing, and TTS pipeline overlap for sub-second responses."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, glass-to-glass latency, Go voice optimization, streaming STT, pipeline parallelism, low latency voice, performance recipe"
 ---
 
 ## Problem

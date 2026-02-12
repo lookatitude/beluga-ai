@@ -1,6 +1,11 @@
 ---
-title: "Gladia"
-description: "Gladia STT provider for real-time and batch speech-to-text with language detection."
+title: "Gladia Voice Provider"
+description: "Gladia STT for real-time and batch transcription in Beluga AI. Automatic language detection, speaker diarization, and summarization in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Gladia, speech-to-text, STT, language detection, transcription, diarization, Go, Beluga AI"
 ---
 
 Gladia provides speech-to-text transcription with automatic language detection, real-time WebSocket streaming, and asynchronous batch processing. The Beluga AI provider uses Gladia's v2 API for both batch (upload, create transcription, poll) and real-time (live WebSocket) workflows.

@@ -1,6 +1,11 @@
 ---
-title: Dapr
-description: Workflow state store backed by Dapr's state management API for cloud-native deployments.
+title: "Dapr Workflow Provider"
+description: "Workflow state store with Dapr state management in Beluga AI. Cloud-native state persistence with pluggable backends for durable execution in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Dapr, workflow state, cloud-native, state management, durable execution, microservices, Go, Beluga AI"
 ---
 
 The Dapr provider implements the `workflow.WorkflowStore` interface using Dapr's state management API. It persists workflow state as JSON through Dapr's pluggable state store abstraction, enabling deployment across any Dapr-supported backend (Redis, PostgreSQL, CosmosDB, DynamoDB, and others) without code changes.

@@ -1,8 +1,13 @@
 ---
 title: Embedding Providers
-description: Generate text embeddings with OpenAI, Cohere, Google, Ollama, Jina, Voyage, Mistral, and more for RAG pipelines.
+description: "Generate text embeddings with OpenAI, Cohere, Ollama, Jina, Voyage, and Mistral in Beluga AI for RAG pipelines and similarity search."
 sidebar:
   order: 0
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "embedding providers, text embeddings Go, OpenAI embeddings, Cohere embeddings, Beluga AI, RAG pipeline, vector embeddings"
 ---
 
 Embeddings convert text into numerical vectors that capture semantic meaning, enabling similarity search, clustering, and retrieval-augmented generation (RAG). The choice of embedding provider affects retrieval quality, latency, cost, and data privacy -- there is no single best option for all use cases.

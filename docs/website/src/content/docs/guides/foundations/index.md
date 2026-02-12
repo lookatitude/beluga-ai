@@ -1,8 +1,13 @@
 ---
-title: Foundations
-description: Core concepts and patterns for building AI applications with Beluga AI v2.
+title: Foundation Guides
+description: "Learn the core abstractions powering Beluga AI — the ChatModel interface, agent runtime, tool system, streaming with iter.Seq2, and the registry pattern in Go."
 sidebar:
   order: 0
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, foundations, AI agents, LLM, streaming, registry pattern, middleware"
 ---
 
 The Foundations guides introduce the core building blocks of Beluga AI v2. Each guide builds on the previous one, starting with the agent abstraction that ties everything together, then drilling into the LLM layer that powers reasoning, and finally covering the supporting systems for structured data extraction and prompt management. These guides assume familiarity with Go but no prior experience with AI frameworks. By the end, you will understand Beluga's key design patterns — the registry pattern for pluggable providers, `iter.Seq2` for streaming, functional options for configuration, and middleware for composable behavior — and how they work together to form a production-ready agentic system.

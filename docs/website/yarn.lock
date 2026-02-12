@@ -169,12 +169,12 @@
   dependencies:
     prismjs "^1.30.0"
 
-"@astrojs/sitemap@^3.3.0":
-  version "3.6.0"
-  resolved "https://registry.npmjs.org/@astrojs/sitemap/-/sitemap-3.6.0.tgz"
-  integrity sha512-4aHkvcOZBWJigRmMIAJwRQXBS+ayoP5z40OklTXYXhUDhwusz+DyDl+nSshY6y9DvkVEavwNcFO8FD81iGhXjg==
+"@astrojs/sitemap@^3.3.0", "@astrojs/sitemap@^3.7.0":
+  version "3.7.0"
+  resolved "https://registry.npmjs.org/@astrojs/sitemap/-/sitemap-3.7.0.tgz"
+  integrity sha512-+qxjUrz6Jcgh+D5VE1gKUJTA3pSthuPHe6Ao5JCxok794Lewx8hBFaWHtOnN0ntb2lfOf7gvOi9TefUswQ/ZVA==
   dependencies:
-    sitemap "^8.0.0"
+    sitemap "^8.0.2"
     stream-replace-string "^2.0.0"
     zod "^3.25.76"
 
@@ -3947,7 +3947,7 @@ sisteransi@^1.0.5:
   resolved "https://registry.npmjs.org/sisteransi/-/sisteransi-1.0.5.tgz"
   integrity sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==
 
-sitemap@^8.0.0:
+sitemap@^8.0.2:
   version "8.0.2"
   resolved "https://registry.npmjs.org/sitemap/-/sitemap-8.0.2.tgz"
   integrity sha512-LwktpJcyZDoa0IL6KT++lQ53pbSrx2c9ge41/SeLTyqy2XUNA6uR4+P9u5IVo5lPeL2arAcOKn1aZAxoYbCKlQ==

@@ -1,6 +1,11 @@
 ---
 title: Regulatory Policy Search Engine
-description: Hybrid semantic search achieves 92% relevance for regulatory policy discovery with zero compliance violations.
+description: "Hybrid semantic search achieves 92% relevance for regulatory policy discovery with zero compliance violations across jurisdictions."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "regulatory search, compliance search AI, policy discovery, hybrid semantic search, fintech compliance, Beluga AI, Go, legal search"
 ---
 
 Financial services compliance teams need to search across thousands of regulatory policies to ensure compliance with constantly changing regulations. The stakes are high: a missed policy can result in regulatory fines, audit failures, and reputational damage. Traditional keyword search achieves only 50-60% relevance because regulatory language is dense and varied — the same concept ("customer due diligence") appears under different terms across jurisdictions ("KYC requirements," "enhanced verification procedures," "client identification protocols"), and keyword search misses these semantic relationships.

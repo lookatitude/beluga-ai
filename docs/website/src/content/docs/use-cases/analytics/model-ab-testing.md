@@ -1,6 +1,11 @@
 ---
-title: Model A/B Testing Framework
-description: Make data-driven model selection decisions with automated A/B testing, statistical analysis, and comprehensive metrics.
+title: LLM A/B Testing Framework
+description: "Make data-driven model selection decisions with automated A/B testing, statistical analysis, and quality metrics for LLM providers."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "LLM A/B testing, model comparison, statistical testing, model selection, AI experimentation, Beluga AI, Go, MLOps"
 ---
 
 Model selection in production is often based on benchmarks that don't reflect real-world workloads, or worse, on team preference. A model that scores highest on a generic benchmark may underperform for your specific domain — legal text, medical records, code generation — while costing 5-10x more than an adequate alternative. Without controlled experiments on actual production traffic, teams overpay for capability they don't need or under-invest in quality that matters.

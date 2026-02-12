@@ -1,6 +1,11 @@
 ---
-title: "AWS Bedrock"
-description: "Integration guide for AWS Bedrock models with Beluga AI."
+title: "AWS Bedrock LLM Provider"
+description: "Integrate AWS Bedrock models with Beluga AI. Access Claude, Llama, and Mistral via AWS with IAM auth, VPC endpoints, and streaming support in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "AWS Bedrock, LLM provider, Go AWS SDK, IAM auth, Claude on AWS, streaming, Beluga AI"
 ---
 
 The AWS Bedrock provider connects Beluga AI to Amazon Bedrock's multi-provider model catalog using the AWS SDK v2 Converse API. It supports models from Anthropic, Meta, Mistral, Cohere, Amazon, and others through a unified interface with native AWS authentication.

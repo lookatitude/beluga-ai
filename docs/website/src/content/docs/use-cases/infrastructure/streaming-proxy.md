@@ -1,6 +1,11 @@
 ---
 title: High-Availability Streaming Proxy
-description: Build a resilient streaming proxy with connection pooling, automatic failover, and health monitoring for 99.99% uptime.
+description: "Build a resilient LLM streaming proxy with connection pooling, automatic failover, and health monitoring. Achieve 99.99% uptime."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "streaming proxy, LLM proxy, connection pooling, automatic failover, high availability, Beluga AI, Go, AI infrastructure"
 ---
 
 Streaming LLM responses directly from providers works for prototypes, but production systems face compounding reliability challenges at scale. Each client connection is a long-lived HTTP stream, vulnerable to network interruptions, provider-side timeouts, and rate limit rejections. At peak traffic, a cloud services provider observed 5-10% failure rates on direct connections — each failure breaks the user's real-time streaming experience and requires a full page reload or manual retry.

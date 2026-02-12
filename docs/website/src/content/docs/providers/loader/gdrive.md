@@ -1,6 +1,11 @@
 ---
-title: Google Drive
-description: Load files from Google Drive via the REST API.
+title: "Google Drive Document Loader"
+description: "Load files from Google Drive in Beluga AI. REST API integration with folder traversal, export formats, and metadata extraction for RAG in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Google Drive, document loader, Drive API, file loading, folder traversal, RAG pipeline, Go, Beluga AI"
 ---
 
 The Google Drive loader implements the `loader.DocumentLoader` interface for loading files from Google Drive. It uses the Google Drive REST API v3 to fetch file content, with automatic export support for Google Workspace documents (Docs, Sheets, Slides).

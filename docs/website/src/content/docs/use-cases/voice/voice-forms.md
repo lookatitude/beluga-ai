@@ -1,6 +1,11 @@
 ---
 title: Multi-Turn Voice Forms
-description: Collect structured data through natural voice conversations with turn-by-turn validation using Beluga AI's voice pipeline.
+description: "Collect structured data through natural voice conversations with real-time validation. Reduce form abandonment from 38% to under 10%."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "voice forms, voice data collection, phone intake, voice validation, healthcare voice, Beluga AI, Go, conversational forms"
 ---
 
 Healthcare providers, insurance companies, and government agencies need to collect structured intake data over the phone. The data itself is well-defined (name, date of birth, policy number, symptoms), but the collection process is difficult: callers give fragmented answers, change their mind, provide information out of order, and go off-topic. Traditional touch-tone forms force callers into rigid sequences that do not accommodate these natural behaviors, resulting in 38% abandonment rates on forms longer than 5 fields.

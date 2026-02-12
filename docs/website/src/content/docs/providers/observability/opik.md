@@ -1,6 +1,11 @@
 ---
-title: "Opik"
-description: "Export LLM traces to Opik for observability and workspace-level analytics."
+title: "Opik Observability Provider"
+description: "Export LLM traces to Opik in Beluga AI. Workspace-level analytics with trace visualization, cost tracking, and experiment management in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Opik, LLM tracing, observability, workspace analytics, trace visualization, AI monitoring, Go, Beluga AI"
 ---
 
 The Opik provider exports LLM call data to [Opik](https://www.comet.com/site/products/opik/), Comet's LLM observability platform. It implements the `o11y.TraceExporter` interface and sends trace data through the Opik REST API with workspace-level routing.

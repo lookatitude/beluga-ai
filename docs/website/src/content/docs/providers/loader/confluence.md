@@ -1,6 +1,11 @@
 ---
-title: Confluence
-description: Load wiki pages from Atlassian Confluence via the REST API.
+title: "Confluence Document Loader"
+description: "Load wiki pages from Atlassian Confluence in Beluga AI. REST API integration with space and label filtering for enterprise RAG in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Confluence, document loader, Atlassian, wiki loader, enterprise RAG, knowledge base, Go, Beluga AI"
 ---
 
 The Confluence loader implements the `loader.DocumentLoader` interface for loading pages from Atlassian Confluence. It fetches page content via the Confluence REST API and extracts plain text from the HTML storage representation.

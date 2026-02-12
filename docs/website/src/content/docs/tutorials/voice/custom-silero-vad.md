@@ -1,6 +1,11 @@
 ---
 title: Custom VAD with Silero Models
-description: Configure Silero VAD with custom ONNX models for precise voice activity detection in streaming and batch processing.
+description: "Configure Silero VAD with custom ONNX models in Go for precise voice activity detection — real-time streaming, threshold tuning, and spectral speech classification."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, Silero VAD, ONNX, voice activity detection, streaming, speech detection"
 ---
 
 Silero VAD is a neural network-based voice activity detector that runs locally using ONNX Runtime. Unlike energy-based VAD methods that rely on volume thresholds -- and therefore trigger on any loud noise like keyboard typing or door closing -- neural VAD analyzes spectral features of the audio to distinguish human speech from non-speech sounds. This makes it significantly more accurate in real-world environments. This tutorial demonstrates how to configure Silero VAD with custom model paths, tune thresholds, and integrate with streaming audio pipelines.

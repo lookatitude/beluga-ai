@@ -1,6 +1,11 @@
 ---
-title: Embedding Providers
-description: Overview of all embedding providers available in Beluga AI v2.
+title: "Embedding Providers — 9 Options"
+description: "9 embedding providers with unified Embedder interface: OpenAI, Cohere, Google, Jina, Voyage, and more. Text embeddings for RAG in Go with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "embedding providers, text embeddings, Go embeddings, OpenAI embeddings, vector embeddings, RAG pipeline, Beluga AI"
 ---
 
 Beluga AI v2 provides a unified `embedding.Embedder` interface for converting text into dense vector representations. All providers register via `init()` and are instantiated through the global registry.

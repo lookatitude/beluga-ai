@@ -1,6 +1,11 @@
 ---
-title: Milvus
-description: Scalable vector store using Milvus's REST API.
+title: "Milvus Vector Store Provider"
+description: "Scalable vector similarity search with Milvus in Beluga AI. Cloud-native vector database with GPU acceleration and hybrid search in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Milvus, vector store, cloud-native, GPU acceleration, scalable search, Go, RAG, Beluga AI"
 ---
 
 The Milvus provider implements the `vectorstore.VectorStore` interface using the Milvus v2 REST API. Milvus is an open-source vector database designed for scalable similarity search, supporting both self-hosted and managed (Zilliz Cloud) deployments.

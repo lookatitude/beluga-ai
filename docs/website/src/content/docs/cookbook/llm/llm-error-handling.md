@@ -1,6 +1,11 @@
 ---
 title: "LLM Error Handling"
-description: "Handle rate limits, timeouts, and API errors with retry logic and exponential backoff."
+description: "Recipe for handling LLM rate limits, timeouts, and API errors in Go with retry logic, exponential backoff, and circuit breakers using Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, LLM error handling, Go retry logic, rate limit handling, exponential backoff, API error recovery, resilience patterns"
 ---
 
 ## Problem

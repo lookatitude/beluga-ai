@@ -1,6 +1,11 @@
 ---
 title: "Partial Variable Substitution"
-description: "Substitute prompt template variables incrementally as data becomes available for streaming scenarios."
+description: "Recipe for substituting prompt template variables incrementally in Go as data becomes available — ideal for streaming and multi-step prompt building."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, partial substitution, Go prompt template, incremental variables, streaming prompts, template builder, prompt recipe"
 ---
 
 # Partial Variable Substitution

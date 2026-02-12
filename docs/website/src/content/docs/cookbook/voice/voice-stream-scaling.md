@@ -1,6 +1,11 @@
 ---
 title: "Scaling Concurrent Voice Streams"
-description: "Support many concurrent voice sessions with capacity management, health checks, and backpressure."
+description: "Recipe for supporting 100+ concurrent voice sessions in Go with capacity management, health checks, backpressure, and graceful degradation."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, voice scaling, Go concurrent sessions, capacity management, backpressure, health checks, voice infrastructure recipe"
 ---
 
 ## Problem

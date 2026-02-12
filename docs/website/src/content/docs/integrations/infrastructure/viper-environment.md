@@ -1,6 +1,11 @@
 ---
-title: Viper and Environment Overrides
-description: Use Viper for layered configuration in Beluga AI applications with file-based defaults, environment variable overrides, and per-environment config files.
+title: Viper Configuration Integration
+description: "Use Viper for layered configuration in Beluga AI with file-based defaults, environment variable overrides, and hot-reload in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Viper config, environment variables, Beluga AI, layered configuration, config override Go, hot-reload, application config"
 ---
 
 Production applications need configuration that adapts to the deployment environment without code changes. Viper provides a layered configuration model where file-based defaults can be overridden by environment variables at runtime. This guide shows how to integrate Viper with Beluga AI for flexible, environment-aware configuration.

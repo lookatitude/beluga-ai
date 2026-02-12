@@ -1,7 +1,78 @@
 ---
 import { AstroFont } from "astro-font";
 import theme from "@/config/theme.json";
-const { head } = Astro.locals.starlightRoute;
+
+const route = Astro.locals.starlightRoute;
+const { head } = route;
+
+// Page metadata from Starlight route
+const pageTitle = route.entry.data.title;
+const pageDescription = route.entry.data.description || `${pageTitle} — Beluga AI documentation`;
+const siteTitle = route.siteTitle;
+const pageLang = route.lang || "en";
+
+// Build canonical URL
+const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://beluga-ai.dev");
+
+// Default OG image
+const ogImageURL = new URL("/hero-icon.svg", Astro.site || "https://beluga-ai.dev").href;
+
+// Build breadcrumb items from URL path
+const pathSegments = Astro.url.pathname.split("/").filter(Boolean);
+const breadcrumbItems = [
+  { name: "Home", url: new URL("/", Astro.site || "https://beluga-ai.dev").href },
+  ...pathSegments.map((segment, i) => ({
+    name: segment
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" "),
+    url: new URL(
+      "/" + pathSegments.slice(0, i + 1).join("/") + "/",
+      Astro.site || "https://beluga-ai.dev"
+    ).href,
+  })),
+];
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: breadcrumbItems.map((item, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    name: item.name,
+    item: item.url,
+  })),
+};
+
+// Article/TechArticle JSON-LD
+const isSplash = route.entry.data.template === "splash";
+const articleJsonLd = {
+  "@context": "https://schema.org",
+  "@type": isSplash ? "WebPage" : "TechArticle",
+  headline: pageTitle,
+  description: pageDescription,
+  url: canonicalURL.href,
+  author: {
+    "@type": "Organization",
+    name: "Lookatitude",
+    url: "https://lookatitude.com",
+  },
+  publisher: {
+    "@type": "Organization",
+    name: "Lookatitude",
+    url: "https://lookatitude.com",
+    logo: {
+      "@type": "ImageObject",
+      url: ogImageURL,
+    },
+  },
+  image: ogImageURL,
+  inLanguage: pageLang,
+  ...(route.lastUpdated && { dateModified: route.lastUpdated.toISOString() }),
+};
+
+// Check for keywords in frontmatter (custom extended schema)
+const keywords = (route.entry.data as Record<string, unknown>).keywords as string | undefined;
 
 // font families
 const pf = theme.fonts.font_family.primary;
@@ -25,6 +96,30 @@ if (theme.fonts.font_family.secondary) {
 ---
 
 {head.map(({ tag: Tag, attrs, content }) => <Tag {...attrs} set:html={content} />)}
+
+<!-- Open Graph (og:title, og:type, og:url, og:description, og:locale, og:site_name provided by Starlight) -->
+<meta property="og:image" content={ogImageURL} />
+
+<!-- Twitter (twitter:card provided by Starlight) -->
+<meta name="twitter:title" content={`${pageTitle} | ${siteTitle}`} />
+<meta name="twitter:description" content={pageDescription} />
+<meta name="twitter:image" content={ogImageURL} />
+
+<!-- Author -->
+<meta name="author" content="Lookatitude" />
+
+<!-- Keywords (if provided in frontmatter) -->
+{keywords && <meta name="keywords" content={keywords} />}
+
+<!-- hreflang (Starlight adds these only when multilingual; we add for single-locale sites) -->
+<link rel="alternate" hreflang="en" href={canonicalURL.href} />
+<link rel="alternate" hreflang="x-default" href={canonicalURL.href} />
+
+<!-- JSON-LD Structured Data: BreadcrumbList -->
+<script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
+
+<!-- JSON-LD Structured Data: Article/WebPage -->
+<script type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
 
 <!-- google font css -->
     <AstroFont
@@ -54,4 +149,3 @@ if (theme.fonts.font_family.secondary) {
   import mermaid from "mermaid";
   mermaid.initialize({ startOnLoad: true });
 </script>
-

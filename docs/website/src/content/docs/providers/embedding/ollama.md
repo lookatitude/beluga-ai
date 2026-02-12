@@ -1,6 +1,11 @@
 ---
-title: Ollama Embeddings
-description: Generate text embeddings locally using Ollama's embedding models.
+title: "Ollama Embedding Provider"
+description: "Generate text embeddings locally with Ollama in Beluga AI. Self-hosted embeddings with zero cloud dependency and privacy-first design in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Ollama embeddings, local embeddings, self-hosted, embedding provider, privacy, Go, Beluga AI"
 ---
 
 The Ollama embedding provider implements the `embedding.Embedder` interface using the Ollama REST API. It enables fully local embedding generation with no external API dependencies, making it suitable for development, testing, and privacy-sensitive deployments.

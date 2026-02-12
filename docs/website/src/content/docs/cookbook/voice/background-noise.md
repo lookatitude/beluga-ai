@@ -1,6 +1,11 @@
 ---
 title: "Overcoming Background Noise"
-description: "Preprocess audio with noise reduction, normalization, and filtering to improve STT accuracy in noisy environments."
+description: "Recipe for preprocessing audio in Go with noise reduction, normalization, and filtering to improve STT accuracy in noisy production environments."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, noise reduction, Go audio preprocessing, STT accuracy, noise filtering, voice quality, audio normalization recipe"
 ---
 
 ## Problem

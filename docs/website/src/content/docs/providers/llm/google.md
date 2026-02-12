@@ -1,6 +1,11 @@
 ---
-title: "Google Gemini"
-description: "Integration guide for Google Gemini models with Beluga AI."
+title: "Google Gemini LLM Provider"
+description: "Integrate Google Gemini models with Beluga AI. Multimodal AI with streaming, function calling, grounding, and Vertex AI support in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Google Gemini, LLM provider, multimodal, Vertex AI, function calling, streaming, Go, Beluga AI"
 ---
 
 The Google provider connects Beluga AI to Google's Gemini family of models using the official `google.golang.org/genai` SDK. It supports chat completions, streaming, tool calling, vision, and system instructions.

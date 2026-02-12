@@ -1,6 +1,11 @@
 ---
-title: "Groq"
-description: "Integration guide for Groq's ultra-fast inference with Beluga AI."
+title: "Groq LLM Provider"
+description: "Integrate Groq LPU inference with Beluga AI. Ultra-fast LLM inference with streaming, tool calling, and low-latency responses in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Groq, LPU, LLM provider, ultra-fast inference, low latency, streaming, tool calling, Go, Beluga AI"
 ---
 
 The Groq provider connects Beluga AI to Groq's inference platform, which uses custom LPU (Language Processing Unit) hardware for extremely fast token generation. Groq exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output.

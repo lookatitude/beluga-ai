@@ -1,6 +1,11 @@
 ---
 title: "ML-Based Barge-In Detection"
-description: "Combine VAD and ONNX turn detection to distinguish user interruptions from end-of-turn in voice pipelines."
+description: "Recipe for combining VAD and ONNX turn detection in Go to accurately distinguish user interruptions from end-of-turn in voice AI pipelines."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, barge-in detection, Go ONNX VAD, turn detection, speech interruption, voice pipeline, ML audio classification"
 ---
 
 ## Problem

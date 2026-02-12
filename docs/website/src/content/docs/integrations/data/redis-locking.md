@@ -1,6 +1,11 @@
 ---
 title: Redis Distributed Locking
-description: Implement distributed locking with Redis for Beluga AI memory operations, ensuring thread-safe coordination across multiple instances.
+description: "Implement Redis distributed locking for Beluga AI memory operations to ensure thread-safe coordination across multiple agent instances."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Redis locking, distributed lock, Beluga AI, concurrency control, Redis Go, memory coordination, multi-instance AI"
 ---
 
 Scaling Beluga AI horizontally -- running multiple agent instances behind a load balancer -- introduces a concurrency problem: two instances processing messages for the same conversation can write to the shared memory backend simultaneously, corrupting sequence ordering or duplicating entries. Distributed locking coordinates these writes so only one instance modifies a given conversation at a time.

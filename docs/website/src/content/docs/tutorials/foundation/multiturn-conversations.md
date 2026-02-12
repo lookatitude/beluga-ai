@@ -1,6 +1,11 @@
 ---
-title: Modeling Multi-turn Conversations
-description: Build structured conversation flows using Beluga AI's schema message types and manage conversation history.
+title: Modeling Multi-Turn Conversations
+description: "Build structured multi-turn conversations in Go using Beluga AI's typed messages — manage history with role tagging, multimodal content, and context window constraints."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, multi-turn, conversations, message history, schema, chat context"
 ---
 
 LLMs are stateless — to maintain a conversation, you must send the full message history (or a relevant subset) with every request. This is a fundamental architectural constraint, not a limitation of any particular provider. Beluga AI's `schema` package provides structured message types that ensure correct role tagging, multimodal content support, and clean integration with any LLM provider. Understanding how to build and manage message history is essential for any application that goes beyond single-shot queries.

@@ -1,6 +1,11 @@
 ---
 title: Tools Registry and Custom Tools
-description: Build custom tools, register them in a tool registry, and bind them to agents using Beluga AI's tool system.
+description: "Build custom Go tools with JSON schema validation, register them in a tool registry, and bind them to AI agents using Beluga AI's composable tool system."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, custom tools, tool registry, JSON schema, FuncTool, agent tools"
 ---
 
 Tools extend agent capabilities beyond text generation. A tool is a function that the LLM can invoke -- search APIs, calculators, database queries, code execution. Beluga AI's tool system uses `schema.ToolDefinition` for model-facing descriptions and a registry for runtime discovery and management. The registry pattern (`Register()` + `New()` + `List()`) is the same one used throughout the framework for LLM providers, embedding models, vector stores, and every other extensible component. This consistency means that once you understand the pattern for tools, you understand the extension mechanism for the entire framework.

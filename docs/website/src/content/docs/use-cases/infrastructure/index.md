@@ -1,8 +1,13 @@
 ---
-title: Infrastructure & Platform
-description: Use cases for production deployment, workflow orchestration, resilience, and platform operations.
+title: AI Infrastructure & Platform Use Cases
+description: "Deploy AI agents at enterprise scale with observability, resilience, multi-tenancy, and workflow orchestration. Production Go examples."
 sidebar:
   order: 0
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "AI infrastructure, production AI platform, workflow orchestration, LLM gateway, enterprise deployment, Beluga AI, Go, AI operations"
 ---
 
 Deploy AI agents at enterprise scale with observability, resilience, multi-tenancy, and workflow orchestration using Beluga AI.

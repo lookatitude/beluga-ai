@@ -1,6 +1,11 @@
 ---
 title: Lazy-Loading Large Document Collections
-description: Process massive document collections with constant memory usage using the RAG loader pipeline and streaming patterns.
+description: "Process massive document collections with constant memory in Go — pipeline-based loading, incremental transforms, and parallel processing with Beluga AI's RAG loader."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, lazy loading, document pipeline, RAG, streaming, memory efficient"
 ---
 
 Loading 10,000 documents into a single Go slice is manageable. Loading a million documents at once will exhaust memory. The `rag/loader` package supports pipeline-based document loading with transformers that process documents incrementally, keeping memory usage flat regardless of collection size. This pipeline approach follows the same composition pattern used throughout Beluga AI -- small, focused components (loaders, transformers) are chained together, and each component processes one document at a time rather than buffering the entire collection.

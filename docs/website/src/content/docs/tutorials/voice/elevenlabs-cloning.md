@@ -1,6 +1,11 @@
 ---
 title: Cloning Voices with ElevenLabs
-description: Configure ElevenLabs for high-fidelity voice synthesis with cloned voices, stability tuning, and streaming TTS.
+description: "Configure ElevenLabs TTS in Go for high-fidelity voice synthesis — cloned voices, stability and similarity tuning, and streaming audio generation with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, ElevenLabs, voice cloning, TTS, speech synthesis, streaming audio"
 ---
 
 ElevenLabs provides high-fidelity voice synthesis with support for cloned voices, fine-grained voice settings, and streaming audio generation. Voice cloning creates a synthetic voice that closely matches a real person's voice characteristics, which is valuable for brand consistency, personalization, and accessibility applications. This tutorial demonstrates how to configure the ElevenLabs TTS provider, adjust voice characteristics for cloned voice fidelity, and implement streaming synthesis for low-latency audio output.

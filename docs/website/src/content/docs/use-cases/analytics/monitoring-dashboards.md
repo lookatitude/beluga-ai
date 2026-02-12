@@ -1,6 +1,11 @@
 ---
-title: Monitoring Dashboards for AI Applications
-description: Set up comprehensive monitoring dashboards for Beluga AI applications using Prometheus and Grafana.
+title: AI Monitoring Dashboards
+description: "Set up comprehensive monitoring dashboards for AI applications with OpenTelemetry, Prometheus, and Grafana. Track token costs and latency."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "AI monitoring dashboard, LLM observability, Prometheus Grafana, token metrics, AI operations, Beluga AI, Go, production monitoring"
 ---
 
 AI applications in production generate metrics that traditional APM tools don't track: token consumption per request, LLM response latency (which varies 10x between simple and complex prompts), cost per feature, and model-specific error rates. Without purpose-built dashboards, teams cannot answer critical operational questions: "Why did LLM costs spike 3x this morning?", "Which agent is consuming the most tokens?", or "Is the rate limit on our Anthropic account affecting P95 latency?"

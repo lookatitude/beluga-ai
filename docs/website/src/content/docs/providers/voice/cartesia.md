@@ -1,6 +1,11 @@
 ---
-title: "Cartesia"
-description: "Cartesia TTS provider for low-latency voice synthesis with Sonic models."
+title: "Cartesia Voice Provider"
+description: "Cartesia TTS for low-latency voice synthesis in Beluga AI. Sonic models with WebSocket streaming, voice cloning, and emotion control in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Cartesia, text-to-speech, TTS, Sonic, low latency, voice synthesis, WebSocket, Go, Beluga AI"
 ---
 
 Cartesia provides ultra-low-latency text-to-speech synthesis through the Sonic voice engine. The Beluga AI provider uses Cartesia's HTTP API with the `httpclient` infrastructure for built-in retry support, producing raw PCM audio output suitable for real-time voice pipelines.

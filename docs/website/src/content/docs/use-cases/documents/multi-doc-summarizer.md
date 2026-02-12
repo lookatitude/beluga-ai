@@ -1,6 +1,11 @@
 ---
-title: Multi-Document Summarizer
-description: RAG-based multi-document summarization with 92% information retention and 87% time savings.
+title: Multi-Document AI Summarization
+description: "Summarize across multiple documents with RAG-based retrieval, cross-document synthesis, and 92% information retention."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "multi-document summarization, RAG summarization, document synthesis, legal AI summarizer, Beluga AI, Go, information extraction"
 ---
 
 Legal research requires synthesizing information across dozens of related documents — case law, contracts, regulatory filings, correspondence — to build a complete picture of a legal matter. Manual summarization takes 4-6 hours per document set, and quality depends on the analyst's stamina and domain expertise. Critical details buried in the 15th document of a 30-document set are routinely missed, leading to 30-40% information loss and incomplete legal analysis.

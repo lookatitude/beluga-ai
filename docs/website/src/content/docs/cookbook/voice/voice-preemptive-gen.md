@@ -1,6 +1,11 @@
 ---
-title: "Preemptive Generation for Voice"
-description: "Reduce time-to-first-reply by generating responses from interim STT results before the user finishes speaking."
+title: "Preemptive Voice Generation"
+description: "Recipe for reducing voice response latency in Go by generating LLM responses from interim STT transcripts before the user finishes speaking."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, preemptive generation, Go voice latency, interim STT, speculative response, time-to-first-reply, voice optimization"
 ---
 
 ## Problem

@@ -1,6 +1,11 @@
 ---
 title: Pydantic / Go Struct Bridge
-description: Bridge data exchange between Python Pydantic models and Go structs for cross-language Beluga AI service integration.
+description: "Bridge data exchange between Python Pydantic models and Go structs using JSON Schema for cross-language Beluga AI integration."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Pydantic Go bridge, cross-language AI, JSON Schema, Beluga AI, Python Go interop, data serialization, struct validation"
 ---
 
 Many AI teams run Python for model training and evaluation while using Go for production serving. When these services need to exchange messages, tool results, or evaluation data, mismatched serialization causes silent data corruption and hard-to-debug failures. This bridge pattern establishes a shared contract between Pydantic models and Go structs using JSON Schema as the source of truth, enabling reliable interoperability between Python and Go services.

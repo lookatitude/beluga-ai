@@ -1,6 +1,11 @@
 ---
-title: Large-Scale Batch Processing
-description: Process thousands of documents or records with AI using parallel execution, rate limiting, and comprehensive error handling.
+title: Large-Scale AI Batch Processing
+description: "Process thousands of records with AI using parallel workers, rate limiting, retries, and real-time progress tracking in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "batch processing AI, parallel LLM processing, rate limiting, worker pool, Go concurrency, Beluga AI, enterprise batch jobs"
 ---
 
 Processing large volumes of data with AI requires more than calling an LLM in a loop. A sequential approach hits rate limits within minutes, has no recovery when individual items fail, and provides no visibility into progress. Production batch processing must coordinate concurrent workers, respect provider rate limits, handle transient failures with retries, and report progress in real time — all while maximizing throughput within API constraints.

@@ -1,6 +1,11 @@
 ---
 title: "Handling Long Utterances"
-description: "Chunk and buffer long user speech with turn-aware flushing to keep voice sessions responsive."
+description: "Recipe for chunking and buffering long user speech in Go with turn-aware flushing to keep voice sessions responsive and avoid timeouts."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, long utterances, Go speech chunking, audio buffering, turn-aware flushing, voice session, timeout prevention recipe"
 ---
 
 ## Problem

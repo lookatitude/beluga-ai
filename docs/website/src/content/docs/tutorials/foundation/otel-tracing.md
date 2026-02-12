@@ -1,6 +1,11 @@
 ---
-title: OpenTelemetry Tracing
-description: Implement distributed tracing in Beluga AI applications using OpenTelemetry and the GenAI semantic conventions.
+title: OpenTelemetry Tracing Tutorial
+description: "Implement distributed tracing in Go with OpenTelemetry GenAI conventions — custom spans, automatic LLM instrumentation, and Jaeger visualization with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, OpenTelemetry, tracing, GenAI conventions, Jaeger, distributed tracing"
 ---
 
 Metrics tell you what happened (error rate increased). Traces tell you why (Agent A called Tool B, which timed out calling API C). In complex AI workflows with multiple LLM calls, tool invocations, and retrieval steps, distributed tracing is essential for debugging and performance analysis. Without traces, diagnosing a slow agent requires guessing which of its many internal operations caused the delay.

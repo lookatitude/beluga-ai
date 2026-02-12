@@ -1,6 +1,11 @@
 ---
-title: "Silero"
-description: "Integration guide for the Silero VAD provider in Beluga AI."
+title: "Silero VAD Provider"
+description: "Silero voice activity detection in Beluga AI. High-accuracy neural network VAD with confidence scoring and configurable thresholds in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Silero VAD, voice activity detection, neural network, speech detection, confidence scoring, Go, Beluga AI"
 ---
 
 The Silero provider implements voice activity detection using the Silero VAD ONNX model. When the ONNX runtime is unavailable, it falls back to an energy-based detector calibrated to approximate Silero's sensitivity. This provider requires CGO.

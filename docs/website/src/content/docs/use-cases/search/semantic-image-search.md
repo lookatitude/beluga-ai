@@ -1,6 +1,11 @@
 ---
 title: Semantic Image Search System
-description: Build intelligent image search with natural language queries using multimodal embeddings and vector similarity.
+description: "Build intelligent image search with natural language queries using multimodal embeddings and vector similarity for e-commerce."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "semantic image search, multimodal embeddings, visual search AI, e-commerce search, image retrieval, Beluga AI, Go, vector search"
 ---
 
 E-commerce platforms struggle with keyword-based image search because product images contain information that text metadata cannot fully capture — color, style, material texture, spatial arrangement. A customer looking for "a blue velvet couch with mid-century legs" cannot express this through keyword filters alone, and manual tagging every visual attribute of every product is not scalable.

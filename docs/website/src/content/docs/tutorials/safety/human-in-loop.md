@@ -1,6 +1,11 @@
 ---
 title: Human-in-the-Loop Approval Flows
-description: Insert human review steps into AI workflows for critical decisions using confidence-based approval policies and the hitl package.
+description: "Insert human review steps into AI workflows in Go — configure confidence-based approval policies, webhook notifications, and async approval with Beluga AI's hitl package."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, human-in-the-loop, approval, hitl, confidence-based, safety"
 ---
 
 Autonomous agents are powerful, but some actions -- transferring money, deleting data, sending emails to customers -- require a human "sanity check." Full automation is appropriate for low-risk, read-only operations, but high-stakes or irreversible actions need human oversight. The `hitl` package provides a `Manager` interface that routes interaction requests through configurable `ApprovalPolicy` rules, auto-approving low-risk actions while escalating uncertain or dangerous operations. This approach gives you the efficiency of automation where it is safe, with the safety of human review where it is needed.

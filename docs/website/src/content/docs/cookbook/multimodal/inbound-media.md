@@ -1,6 +1,11 @@
 ---
 title: "Handling Inbound Media"
-description: "Handle inbound media attachments from messaging platforms by downloading, processing, and cleaning up media files with proper lifecycle management."
+description: "Recipe for processing inbound media attachments in Go — download, detect format, route to vision or STT, and clean up with lifecycle management."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, inbound media, Go media processing, messaging attachments, format detection, media lifecycle, Twilio media"
 ---
 
 ## Problem

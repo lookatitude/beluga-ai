@@ -1,6 +1,11 @@
 ---
-title: Multi-Agent Orchestration
-description: Coordinate multiple specialized agents using router (handoff) and supervisor (manager) patterns.
+title: Multi-Agent Orchestration Tutorial
+description: "Coordinate multiple specialized AI agents in Go using router handoff and supervisor manager patterns with Beluga AI's agent orchestration system."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, multi-agent, orchestration, handoffs, supervisor, router pattern"
 ---
 
 Complex tasks often require multiple specialized agents working together. A coding agent, a testing agent, and a review agent can collaborate on software development. A researcher, analyst, and writer can produce a report. Rather than building one monolithic agent that tries to do everything, multi-agent orchestration divides work among specialists -- each with a focused system prompt, dedicated tools, and potentially a different model optimized for their role. This tutorial covers two orchestration patterns: **routing** (handoffs) dispatches requests to the right specialist, and **supervision** (management) decomposes goals into steps and delegates to sub-agents.

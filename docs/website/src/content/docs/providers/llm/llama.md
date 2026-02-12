@@ -1,6 +1,11 @@
 ---
-title: "Llama (Meta)"
-description: "Integration guide for Meta's Llama models with Beluga AI."
+title: "Meta Llama LLM Provider"
+description: "Integrate Meta Llama models with Beluga AI. Open-source LLMs with streaming, tool calling, and on-premise deployment support in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Meta Llama, LLM provider, open-source LLM, on-premise AI, streaming, tool calling, Go, Beluga AI"
 ---
 
 The Llama provider is a meta-provider that enables running Meta's Llama models through any of several hosting backends. Since Meta does not offer a direct inference API, this provider delegates to Together AI, Fireworks AI, Groq, SambaNova, Cerebras, or Ollama depending on the selected backend.

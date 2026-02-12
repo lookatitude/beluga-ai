@@ -1,8 +1,13 @@
 ---
-title: Vector Stores
-description: Store and search document embeddings with pgvector, Qdrant, Pinecone, Weaviate, Milvus, and 8 more vector databases.
+title: Data & Vector Stores
+description: "Store and search embeddings with pgvector, Qdrant, Pinecone, Weaviate, Milvus, and 8 more vector databases in Beluga AI."
 sidebar:
   order: 0
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "vector store, Beluga AI, pgvector, Qdrant, Pinecone, Weaviate, similarity search, RAG storage, Go vector database"
 ---
 
 Vector stores are the persistence layer for RAG applications. They store document embeddings and provide fast similarity search to find relevant content for a given query. The choice of vector store depends on your existing infrastructure, scale requirements, and operational preferences -- from adding an extension to your existing PostgreSQL database to using a dedicated managed service.

@@ -1,6 +1,11 @@
 ---
 title: ML-Based Turn Prediction with ONNX
-description: Use an ONNX neural network model for accurate, context-aware turn-end detection in voice applications.
+description: "Use an ONNX neural network for accurate turn-end detection in Go voice applications — analyze audio features to predict natural conversation boundaries with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, ONNX, turn prediction, voice AI, turn detection, neural network"
 ---
 
 Machine learning-based turn prediction uses a trained neural network to determine when a user has finished speaking, offering more nuanced detection than rule-based heuristics. While heuristic detection relies on silence duration and punctuation -- signals that are easy to compute but miss conversational nuance -- ML models learn patterns from real conversations: trailing intonation, filler words, breathing patterns, and prosodic cues that indicate turn boundaries. This tutorial demonstrates how to configure the ONNX turn detection provider with a custom model for production voice applications.

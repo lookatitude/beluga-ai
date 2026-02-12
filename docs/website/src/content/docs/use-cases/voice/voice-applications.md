@@ -1,6 +1,11 @@
 ---
-title: Voice AI Applications
-description: Build voice-enabled applications with STT, TTS, S2S, and frame-based pipelines using Beluga AI's voice system.
+title: Voice AI Applications in Go
+description: "Build voice-enabled applications with STT, TTS, S2S, and composable frame-based pipelines. Production-ready Go voice system."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "voice AI application, STT TTS pipeline, speech-to-speech, frame processor, voice assistant Go, Beluga AI, voice use case"
 ---
 
 Voice interfaces enable natural, hands-free interaction with AI systems. Unlike text-based interfaces that require a screen and keyboard, voice reaches users in situations where their hands and eyes are occupied — driving, cooking, operating equipment, or navigating a physical environment. The technical challenge is that voice processing involves multiple interdependent stages (audio capture, speech detection, transcription, response generation, synthesis) that must coordinate with sub-second latency to feel conversational.

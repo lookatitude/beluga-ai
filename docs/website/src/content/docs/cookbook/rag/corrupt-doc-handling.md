@@ -1,6 +1,11 @@
 ---
 title: "Corrupt Document Handling"
-description: "Handle corrupt, malformed, or unreadable documents gracefully without failing the entire ingestion pipeline."
+description: "Recipe for handling corrupt, malformed, or unreadable documents in Go RAG pipelines — skip failures, log errors, and continue processing with Beluga AI."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, corrupt document handling, Go error recovery, RAG resilience, document validation, ingestion pipeline, fault tolerance"
 ---
 
 ## Problem

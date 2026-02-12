@@ -1,8 +1,13 @@
 ---
-title: Analytics & Monitoring
-description: Use cases for real-time analysis, model evaluation, cost optimization, and observability.
+title: AI Analytics & Monitoring Use Cases
+description: "Build analytics, monitoring, and cost optimization systems for AI applications. Real-time analysis and model evaluation in Go."
 sidebar:
   order: 0
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "AI analytics use cases, LLM monitoring, model evaluation, cost optimization, observability AI, Beluga AI, Go, AI operations"
 ---
 
 Build analytics, monitoring, and optimization systems for AI applications with Beluga AI's observability and evaluation tools.

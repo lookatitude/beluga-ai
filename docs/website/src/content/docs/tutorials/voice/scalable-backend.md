@@ -1,6 +1,11 @@
 ---
 title: Building a Scalable Voice Backend
-description: Deploy a production-ready voice backend with concurrent session management, health checks, and pipeline configuration.
+description: "Deploy a production-ready voice backend in Go with concurrent session management, health monitoring, configurable STT/TTS pipelines, and graceful draining."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI, Go, tutorial, voice backend, scalable, concurrent sessions, health checks, production"
 ---
 
 Production voice applications must handle many concurrent sessions with predictable latency, graceful degradation, and operational visibility. A single voice agent serving one user at a time works for prototyping, but production deployments need session isolation, concurrency limits, health monitoring, and the ability to drain sessions during deployments. This tutorial demonstrates how to build a scalable voice backend using Beluga's backend package with session management, health monitoring, and configurable STT/TTS or S2S pipelines.

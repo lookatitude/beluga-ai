@@ -1,6 +1,11 @@
 ---
-title: Architecture
-description: "Design philosophy, package organization, extensibility patterns, and provider ecosystem for Beluga AI v2."
+title: Beluga AI Architecture Overview
+description: "Layered architecture, extensibility patterns, and provider ecosystem for the Beluga AI Go framework. Four tiers with strict dependency rules."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Beluga AI architecture, Go AI framework design, agentic AI architecture, extensibility patterns, provider ecosystem, layered architecture"
 ---
 
 Beluga AI v2 is built on a layered architecture that separates concerns into four tiers: **Foundation**, **Capability**, **Infrastructure**, and **Protocol**. Each layer has clear boundaries and strict dependency rules — upper layers import downward, never sideways or upward.
