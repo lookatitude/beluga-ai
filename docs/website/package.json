@@ -24,7 +24,7 @@
     "h3": "1.15.5",
     "js-yaml": "4.1.1",
     "lodash-es": "4.17.23",
-    "marked": "^17.0.1",
+    "marked": "^17.0.2",
     "mdast-util-to-hast": "13.2.1",
     "mermaid": "^11.12.2",
     "sharp": "^0.34.5",
