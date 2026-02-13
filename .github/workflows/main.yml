@@ -387,7 +387,7 @@ jobs:
           name: reports
 
       - name: Create PR for report updates
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ci/update-reports
