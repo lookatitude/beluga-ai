@@ -37,7 +37,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.40.0
 	go.opentelemetry.io/otel/sdk/metric v1.40.0
 	go.opentelemetry.io/otel/trace v1.40.0
-	go.temporal.io/sdk v1.39.0
+	go.temporal.io/sdk v1.40.0
 	google.golang.org/genai v1.46.0
 	google.golang.org/grpc v1.78.0
 	modernc.org/sqlite v1.45.0
@@ -131,7 +131,7 @@ require (
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
-	go.temporal.io/api v1.62.0 // indirect
+	go.temporal.io/api v1.62.1 // indirect
 	golang.org/x/arch v0.20.0 // indirect
 	golang.org/x/crypto v0.47.0 // indirect
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546 // indirect
