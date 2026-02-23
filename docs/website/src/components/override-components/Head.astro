@@ -12,20 +12,20 @@ const siteTitle = route.siteTitle;
 const pageLang = route.lang || "en";
 
 // Build canonical URL
-const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://beluga-ai.dev");
+const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://beluga-ai.org");
 
 // Dynamic OG image: frontmatter override > auto-generated > fallback
 const customOgImage = (route.entry.data as Record<string, unknown>).ogImage as string | undefined;
 const ogSlug = Astro.url.pathname.replace(/^\/|\/$/g, "") || "index";
 const defaultOgPath = `/og/${ogSlug}.png`;
 const ogImageURL = customOgImage
-  ? new URL(customOgImage, Astro.site || "https://beluga-ai.dev").href
-  : new URL(defaultOgPath, Astro.site || "https://beluga-ai.dev").href;
+  ? new URL(customOgImage, Astro.site || "https://beluga-ai.org").href
+  : new URL(defaultOgPath, Astro.site || "https://beluga-ai.org").href;
 
 // Build breadcrumb items from URL path
 const pathSegments = Astro.url.pathname.split("/").filter(Boolean);
 const breadcrumbItems = [
-  { name: "Home", url: new URL("/", Astro.site || "https://beluga-ai.dev").href },
+  { name: "Home", url: new URL("/", Astro.site || "https://beluga-ai.org").href },
   ...pathSegments.map((segment, i) => ({
     name: segment
       .split("-")
@@ -33,7 +33,7 @@ const breadcrumbItems = [
       .join(" "),
     url: new URL(
       "/" + pathSegments.slice(0, i + 1).join("/") + "/",
-      Astro.site || "https://beluga-ai.dev"
+      Astro.site || "https://beluga-ai.org"
     ).href,
   })),
 ];
@@ -89,7 +89,7 @@ const articleJsonLd: Record<string, unknown> = {
 };
 
 // WebSite schema (homepage only)
-const siteUrl = (Astro.site || new URL("https://beluga-ai.dev")).href;
+const siteUrl = (Astro.site || new URL("https://beluga-ai.org")).href;
 const webSiteJsonLd = isSplash
   ? {
       "@context": "https://schema.org",
@@ -106,7 +106,7 @@ const organizationJsonLd = isSplash
       "@type": "Organization",
       name: "Lookatitude",
       url: "https://lookatitude.com",
-      logo: new URL("/hero-icon.svg", Astro.site || "https://beluga-ai.dev").href,
+      logo: new URL("/hero-icon.svg", Astro.site || "https://beluga-ai.org").href,
       sameAs: ["https://github.com/lookatitude"],
     }
   : null;

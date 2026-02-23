@@ -2,7 +2,7 @@
 
 **Date**: 2026-02-23
 **Branch**: `fix/website-seo`
-**Site**: `https://beluga-ai.dev` (Astro + Starlight, Netlify)
+**Site**: `https://beluga-ai.org` (Astro + Starlight, GitHub Pages)
 
 ## Problem
 
@@ -61,17 +61,16 @@ Contextually apply schema types based on URL pattern and optional frontmatter:
 | Content Area | Schema Type | Detection |
 |---|---|---|
 | Homepage | `SoftwareApplication` + `Organization` | `index.mdx` |
-| Tutorials | `HowTo` with steps | `/tutorials/**` |
 | API Reference | `TechArticle` | `/api-reference/**` |
 | Guides | `TechArticle` | `/guides/**` |
-| FAQ content | `FAQPage` | Frontmatter `schemaType: faq` or Q&A heading detection |
-| Code examples | `CodeSample` embedded in Article | Fenced code block detection |
-| All pages | `WebSite` with `SearchAction` | Global |
+| Tutorials | `TechArticle` | `/tutorials/**` |
+| FAQ content | `FAQPage` | Frontmatter `schemaType: faq` |
+| Homepage only | `WebSite` | Splash template |
 
 **Implementation**:
 - Schema selection function in `Head.astro` mapping URL patterns to types
-- Optional frontmatter fields: `schemaType`, `steps` (for HowTo)
-- Global `WebSite` schema with `SearchAction` for sitelinks search box
+- Optional frontmatter field: `schemaType`
+- `WebSite` schema on homepage only
 - `Organization` schema for Lookatitude on homepage
 
 ---
@@ -80,26 +79,18 @@ Contextually apply schema types based on URL pattern and optional frontmatter:
 
 ### Meta Tag Completeness
 - `og:image:width` (1200), `og:image:height` (630), `og:image:type` (image/png)
+- `og:image:alt` for accessibility
 - `twitter:card` as `summary_large_image`
-- `og:type`: `article` for docs, `website` for homepage
 
 ### Performance Hints
 - `<link rel="preconnect">` for Google Fonts
 - `<link rel="dns-prefetch">` for external resources
 - Verify font `display: swap`
 
-### Redirect Infrastructure
-- Create `public/_redirects` with Netlify format and comment template
-- No specific redirects needed yet, just the structure
-
 ### 404 Improvements
-- Verify HTTP 404 status code
 - Add `<meta name="robots" content="noindex">` to 404 page
 
-### Security Headers (via `netlify.toml`)
-- `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: DENY`
-- `Referrer-Policy: strict-origin-when-cross-origin`
+Note: Security headers and caching are managed by GitHub Pages and cannot be customized via config files.
 
 ---
 
@@ -115,25 +106,18 @@ Contextually apply schema types based on URL pattern and optional frontmatter:
 - Verify CSS inlining/preloading for critical path
 - `modulepreload` for critical JS if applicable
 
-### Caching (via Netlify headers)
-- Long `Cache-Control` + `immutable` for static assets (images, fonts, JS/CSS)
-- Shorter cache for HTML pages
-
 ---
 
 ## Files Affected
 
 **Modified**:
 - `docs/website/src/components/override-components/Head.astro` — OG image refs, meta tags, structured data
-- `docs/website/astro.config.mjs` — integration config if needed
-- `docs/website/netlify.toml` — security headers, cache rules
+- `docs/website/astro.config.mjs` — site URL
 - `docs/website/src/content/docs/404.md` — noindex meta
-- `docs/website/src/components/ImageMod.astro` — width/height attributes
 
 **New**:
 - `docs/website/src/pages/og/[...slug].png.ts` — OG image generation endpoint
 - `docs/website/src/lib/og-image.ts` — OG image rendering template
-- `docs/website/public/_redirects` — Netlify redirect rules (empty template)
 - `docs/website/src/assets/fonts/` — Bundled font for satori
 
 ---

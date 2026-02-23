@@ -21,7 +21,7 @@ export const locales = locals
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://beluga-ai.dev",
+  site: "https://beluga-ai.org",
   image: {
     service: { entrypoint: "astro/assets/services/noop" },
   },

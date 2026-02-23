@@ -184,7 +184,7 @@ export async function generateOgImage(
                       fontSize: "20px",
                       color: "#666666",
                     },
-                    children: "beluga-ai.dev",
+                    children: "beluga-ai.org",
                   },
                 },
               ],
@@ -299,7 +299,7 @@ Replace the static `ogImageURL` with dynamic per-page URLs. Add support for fron
 In `Head.astro`, replace lines 17-18:
 ```typescript
 // Default OG image
-const ogImageURL = new URL("/hero-icon.svg", Astro.site || "https://beluga-ai.dev").href;
+const ogImageURL = new URL("/hero-icon.svg", Astro.site || "https://beluga-ai.org").href;
 ```
 
 With:
@@ -309,8 +309,8 @@ const customOgImage = (route.entry.data as Record<string, unknown>).ogImage as s
 const ogSlug = Astro.url.pathname.replace(/^\/|\/$/g, "") || "index";
 const defaultOgPath = `/og/${ogSlug === "" ? "index" : ogSlug}.png`;
 const ogImageURL = customOgImage
-  ? new URL(customOgImage, Astro.site || "https://beluga-ai.dev").href
-  : new URL(defaultOgPath, Astro.site || "https://beluga-ai.dev").href;
+  ? new URL(customOgImage, Astro.site || "https://beluga-ai.org").href
+  : new URL(defaultOgPath, Astro.site || "https://beluga-ai.org").href;
 ```
 
 **Step 2: Add OG image dimension and type meta tags**
@@ -359,7 +359,7 @@ Add this after the existing `articleJsonLd` constant (after line 72 in the origi
 
 ```typescript
 // WebSite schema with SearchAction (global, for sitelinks search box)
-const siteUrl = (Astro.site || new URL("https://beluga-ai.dev")).href;
+const siteUrl = (Astro.site || new URL("https://beluga-ai.org")).href;
 const webSiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",

@@ -1,8 +1,0 @@
-# Netlify redirect rules for Beluga AI docs
-# Format: /old-path /new-path STATUS
-# See: https://docs.netlify.com/routing/redirects/
-#
-# Example:
-# /old-page /new-page 301
-#
-# No redirects needed yet — add entries above this line as URLs change.

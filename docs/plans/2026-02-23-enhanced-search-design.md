@@ -2,7 +2,7 @@
 
 **Date**: 2026-02-23
 **Branch**: `fix/website-seo`
-**Site**: `https://beluga-ai.dev` (Astro + Starlight, Netlify)
+**Site**: `https://beluga-ai.org` (Astro + Starlight, GitHub Pages)
 
 ## Problem
 

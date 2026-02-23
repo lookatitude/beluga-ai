@@ -122,7 +122,7 @@ export async function generateOgImage(
                       fontSize: "20px",
                       color: "#666666",
                     },
-                    children: "beluga-ai.dev",
+                    children: "beluga-ai.org",
                   },
                 },
               ],
