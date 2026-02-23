@@ -49,11 +49,25 @@ const breadcrumbJsonLd = {
   })),
 };
 
-// Article/TechArticle JSON-LD
+// Contextual article schema based on URL pattern
 const isSplash = route.entry.data.template === "splash";
-const articleJsonLd = {
+const pathname = Astro.url.pathname;
+const isTutorial = pathname.startsWith("/tutorials/");
+const isApiRef = pathname.startsWith("/api-reference/");
+const customSchemaType = (route.entry.data as Record<string, unknown>).schemaType as string | undefined;
+
+function getArticleType(): string {
+  if (isSplash) return "WebPage";
+  if (customSchemaType === "faq") return "FAQPage";
+  if (isTutorial) return "HowTo";
+  if (isApiRef) return "TechArticle";
+  return "TechArticle";
+}
+
+const articleType = getArticleType();
+const articleJsonLd: Record<string, unknown> = {
   "@context": "https://schema.org",
-  "@type": isSplash ? "WebPage" : "TechArticle",
+  "@type": articleType,
   headline: pageTitle,
   description: pageDescription,
   url: canonicalURL.href,
@@ -75,6 +89,68 @@ const articleJsonLd = {
   inLanguage: pageLang,
   ...(route.lastUpdated && { dateModified: route.lastUpdated.toISOString() }),
 };
+
+// Add HowTo-specific fields for tutorials
+if (articleType === "HowTo") {
+  articleJsonLd.step = [
+    {
+      "@type": "HowToStep",
+      name: pageTitle,
+      text: pageDescription,
+      url: canonicalURL.href,
+    },
+  ];
+}
+
+// WebSite schema with SearchAction (global, for sitelinks search box)
+const siteUrl = (Astro.site || new URL("https://beluga-ai.dev")).href;
+const webSiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Beluga AI",
+  url: siteUrl,
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: `${siteUrl}?q={search_term_string}`,
+    },
+    "query-input": "required name=search_term_string",
+  },
+};
+
+// Organization schema (homepage only)
+const organizationJsonLd = isSplash
+  ? {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "Lookatitude",
+      url: "https://lookatitude.com",
+      logo: ogImageURL,
+      sameAs: ["https://github.com/lookatitude"],
+    }
+  : null;
+
+// SoftwareApplication schema (homepage only)
+const softwareJsonLd = isSplash
+  ? {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "Beluga AI",
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "Cross-platform",
+      programmingLanguage: "Go",
+      description:
+        "Go-native agentic AI framework with streaming-first design, 22+ LLM providers, RAG, voice AI, and enterprise-grade infrastructure.",
+      url: siteUrl,
+      author: {
+        "@type": "Organization",
+        name: "Lookatitude",
+        url: "https://lookatitude.com",
+      },
+      license: "https://opensource.org/licenses/MIT",
+    }
+  : null;
 
 // Check for keywords in frontmatter (custom extended schema)
 const keywords = (route.entry.data as Record<string, unknown>).keywords as string | undefined;
@@ -129,6 +205,19 @@ if (theme.fonts.font_family.secondary) {
 
 <!-- JSON-LD Structured Data: Article/WebPage -->
 <script type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
+
+<!-- JSON-LD Structured Data: WebSite -->
+<script type="application/ld+json" set:html={JSON.stringify(webSiteJsonLd)} />
+
+<!-- JSON-LD Structured Data: Organization (homepage only) -->
+{organizationJsonLd && (
+  <script type="application/ld+json" set:html={JSON.stringify(organizationJsonLd)} />
+)}
+
+<!-- JSON-LD Structured Data: SoftwareApplication (homepage only) -->
+{softwareJsonLd && (
+  <script type="application/ld+json" set:html={JSON.stringify(softwareJsonLd)} />
+)}
 
 <!-- google font css -->
     <AstroFont
