@@ -17,7 +17,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://beluga-a
 // Dynamic OG image: frontmatter override > auto-generated > fallback
 const customOgImage = (route.entry.data as Record<string, unknown>).ogImage as string | undefined;
 const ogSlug = Astro.url.pathname.replace(/^\/|\/$/g, "") || "index";
-const defaultOgPath = `/og/${ogSlug === "" ? "index" : ogSlug}.png`;
+const defaultOgPath = `/og/${ogSlug}.png`;
 const ogImageURL = customOgImage
   ? new URL(customOgImage, Astro.site || "https://beluga-ai.dev").href
   : new URL(defaultOgPath, Astro.site || "https://beluga-ai.dev").href;
@@ -52,14 +52,12 @@ const breadcrumbJsonLd = {
 // Contextual article schema based on URL pattern
 const isSplash = route.entry.data.template === "splash";
 const pathname = Astro.url.pathname;
-const isTutorial = pathname.startsWith("/tutorials/");
 const isApiRef = pathname.startsWith("/api-reference/");
 const customSchemaType = (route.entry.data as Record<string, unknown>).schemaType as string | undefined;
 
 function getArticleType(): string {
   if (isSplash) return "WebPage";
   if (customSchemaType === "faq") return "FAQPage";
-  if (isTutorial) return "HowTo";
   if (isApiRef) return "TechArticle";
   return "TechArticle";
 }
@@ -90,34 +88,16 @@ const articleJsonLd: Record<string, unknown> = {
   ...(route.lastUpdated && { dateModified: route.lastUpdated.toISOString() }),
 };
 
-// Add HowTo-specific fields for tutorials
-if (articleType === "HowTo") {
-  articleJsonLd.step = [
-    {
-      "@type": "HowToStep",
-      name: pageTitle,
-      text: pageDescription,
-      url: canonicalURL.href,
-    },
-  ];
-}
-
-// WebSite schema with SearchAction (global, for sitelinks search box)
+// WebSite schema (homepage only)
 const siteUrl = (Astro.site || new URL("https://beluga-ai.dev")).href;
-const webSiteJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: "Beluga AI",
-  url: siteUrl,
-  potentialAction: {
-    "@type": "SearchAction",
-    target: {
-      "@type": "EntryPoint",
-      urlTemplate: `${siteUrl}?q={search_term_string}`,
-    },
-    "query-input": "required name=search_term_string",
-  },
-};
+const webSiteJsonLd = isSplash
+  ? {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Beluga AI",
+      url: siteUrl,
+    }
+  : null;
 
 // Organization schema (homepage only)
 const organizationJsonLd = isSplash
@@ -126,7 +106,7 @@ const organizationJsonLd = isSplash
       "@type": "Organization",
       name: "Lookatitude",
       url: "https://lookatitude.com",
-      logo: ogImageURL,
+      logo: new URL("/hero-icon.svg", Astro.site || "https://beluga-ai.dev").href,
       sameAs: ["https://github.com/lookatitude"],
     }
   : null;
@@ -183,9 +163,7 @@ if (theme.fonts.font_family.secondary) {
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta property="og:image:type" content="image/png" />
-
-<!-- OG type: website for homepage, article for doc pages -->
-<meta property="og:type" content={isSplash ? "website" : "article"} />
+<meta property="og:image:alt" content={`${pageTitle} - Beluga AI`} />
 
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image" />
@@ -209,8 +187,10 @@ if (theme.fonts.font_family.secondary) {
 <!-- JSON-LD Structured Data: Article/WebPage -->
 <script type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
 
-<!-- JSON-LD Structured Data: WebSite -->
-<script type="application/ld+json" set:html={JSON.stringify(webSiteJsonLd)} />
+<!-- JSON-LD Structured Data: WebSite (homepage only) -->
+{webSiteJsonLd && (
+  <script type="application/ld+json" set:html={JSON.stringify(webSiteJsonLd)} />
+)}
 
 <!-- JSON-LD Structured Data: Organization (homepage only) -->
 {organizationJsonLd && (
