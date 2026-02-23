@@ -3,7 +3,7 @@ module github.com/lookatitude/beluga-ai
 go 1.25.7
 
 require (
-	github.com/a2aproject/a2a-go v0.3.6
+	github.com/a2aproject/a2a-go v0.3.7
 	github.com/alicebob/miniredis/v2 v2.36.1
 	github.com/anthropics/anthropic-sdk-go v1.22.0
 	github.com/asg017/sqlite-vec-go-bindings v0.1.6
