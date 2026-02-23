@@ -184,6 +184,9 @@ if (theme.fonts.font_family.secondary) {
 <meta property="og:image:height" content="630" />
 <meta property="og:image:type" content="image/png" />
 
+<!-- OG type: website for homepage, article for doc pages -->
+<meta property="og:type" content={isSplash ? "website" : "article"} />
+
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content={`${pageTitle} | ${siteTitle}`} />
@@ -218,6 +221,10 @@ if (theme.fonts.font_family.secondary) {
 {softwareJsonLd && (
   <script type="application/ld+json" set:html={JSON.stringify(softwareJsonLd)} />
 )}
+
+<!-- Preconnect to Google Fonts for faster font loading -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
 <!-- google font css -->
     <AstroFont
