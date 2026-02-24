@@ -286,5 +286,5 @@ for val, err := range g.Stream(ctx, "input data") {
 
 ## Next Steps
 
-- [Temporal Workflows](/tutorials/orchestration/temporal-workflows) -- Durable, long-running workflows that survive process restarts
-- [Event-Driven Message Bus](/tutorials/orchestration/message-bus) -- Asynchronous event-driven agent architectures
+- [Temporal Workflows](/docs/tutorials/orchestration/temporal-workflows) -- Durable, long-running workflows that survive process restarts
+- [Event-Driven Message Bus](/docs/tutorials/orchestration/message-bus) -- Asynchronous event-driven agent architectures

@@ -318,6 +318,6 @@ span.SetAttributes(
 
 ## Related Resources
 
-- [Enterprise RAG Knowledge Base](/use-cases/enterprise-rag/) for the query side of the pipeline
-- [RAG Pipeline Guide](/guides/rag-pipeline/) for detailed RAG configuration
-- [LLM Recipes](/cookbook/llm-recipes/) for extraction patterns
+- [Enterprise RAG Knowledge Base](/docs/use-cases/enterprise-rag/) for the query side of the pipeline
+- [RAG Pipeline Guide](/docs/guides/rag-pipeline/) for detailed RAG configuration
+- [LLM Recipes](/docs/cookbook/llm-recipes/) for extraction patterns

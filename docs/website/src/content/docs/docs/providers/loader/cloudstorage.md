@@ -10,7 +10,7 @@ head:
 
 The Cloud Storage loader implements the `loader.DocumentLoader` interface for loading files from cloud object storage services. It detects the cloud provider automatically by URL prefix (`s3://`, `gs://`, `az://`) and fetches content via direct HTTP calls.
 
-Choose Cloud Storage when your documents are stored in AWS S3, Google Cloud Storage, or Azure Blob Storage. The loader auto-detects the cloud provider from the URL prefix, so a single loader instance handles all three. For loading from SaaS knowledge bases, consider [Confluence](/providers/loader/confluence), [Notion](/providers/loader/notion), or [Google Drive](/providers/loader/gdrive).
+Choose Cloud Storage when your documents are stored in AWS S3, Google Cloud Storage, or Azure Blob Storage. The loader auto-detects the cloud provider from the URL prefix, so a single loader instance handles all three. For loading from SaaS knowledge bases, consider [Confluence](/docs/providers/loader/confluence), [Notion](/docs/providers/loader/notion), or [Google Drive](/docs/providers/loader/gdrive).
 
 ## Installation
 

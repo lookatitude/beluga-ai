@@ -10,7 +10,7 @@ head:
 
 The in-memory vector store provider implements the `vectorstore.VectorStore` interface using a thread-safe map with linear-scan search. It supports all three distance strategies (cosine, dot-product, Euclidean) and requires no external dependencies.
 
-Use the in-memory store for unit tests and development. It requires no setup, no external services, and provides deterministic behavior for test assertions. Pair it with the [in-memory embedder](/providers/embedding/inmemory) for a fully self-contained test setup with no network dependencies.
+Use the in-memory store for unit tests and development. It requires no setup, no external services, and provides deterministic behavior for test assertions. Pair it with the [in-memory embedder](/docs/providers/embedding/inmemory) for a fully self-contained test setup with no network dependencies.
 
 ## Installation
 

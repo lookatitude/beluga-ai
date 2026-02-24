@@ -318,6 +318,6 @@ a := agent.New("multi-source-agent",
 
 ## Related Resources
 
-- [Custom Tools and Tool Registry](/integrations/agents-tools-registry) — Building and registering tools
-- [LLM Providers](/integrations/llm-providers) — Supported LLM providers for agents
-- [Tool System API Reference](/api-reference/tool) — Complete tool package documentation
+- [Custom Tools and Tool Registry](/docs/integrations/agents-tools-registry) — Building and registering tools
+- [LLM Providers](/docs/integrations/llm-providers) — Supported LLM providers for agents
+- [Tool System API Reference](/docs/api-reference/tool) — Complete tool package documentation

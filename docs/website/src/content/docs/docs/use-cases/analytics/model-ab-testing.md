@@ -526,6 +526,6 @@ Organizations using A/B testing with Beluga AI achieve:
 
 ## Related Resources
 
-- [Cost-Optimized Router](/use-cases/cost-optimized-router/) for production routing strategies
-- [LLM Gateway](/use-cases/llm-gateway/) for multi-provider management
-- [Observability Guide](/guides/observability/) for metrics and tracing
+- [Cost-Optimized Router](/docs/use-cases/cost-optimized-router/) for production routing strategies
+- [LLM Gateway](/docs/use-cases/llm-gateway/) for multi-provider management
+- [Observability Guide](/docs/guides/observability/) for metrics and tracing

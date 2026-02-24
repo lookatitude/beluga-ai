@@ -17,7 +17,7 @@ A multimodal embedding pipeline that embeds both text and images into a shared v
 ## Prerequisites
 
 - A Google Cloud API key with the Generative Language API enabled (or equivalent multimodal embedding provider)
-- Understanding of the [RAG pipeline](/guides/rag)
+- Understanding of the [RAG pipeline](/docs/guides/rag)
 
 ## The Embedder Interface
 
@@ -171,5 +171,5 @@ Always use the same model for both document indexing and query embedding. Mixing
 
 ## Next Steps
 
-- [Fine-tuning Embedding Strategies](/tutorials/providers/finetuning-embeddings) — Optimize retrieval performance
-- [In-memory Vector Store](/tutorials/providers/inmemory-vectorstore) — Store and search embeddings locally
+- [Fine-tuning Embedding Strategies](/docs/tutorials/providers/finetuning-embeddings) — Optimize retrieval performance
+- [In-memory Vector Store](/docs/tutorials/providers/inmemory-vectorstore) — Store and search embeddings locally

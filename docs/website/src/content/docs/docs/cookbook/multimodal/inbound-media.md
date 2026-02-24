@@ -207,5 +207,5 @@ type CachedMediaHandler struct {
 
 ## Related Recipes
 
-- [Conversation Expiry Logic](/cookbook/conversation-expiry) -- Manage conversation lifecycle
-- [Memory TTL and Cleanup](/cookbook/memory-ttl-cleanup) -- Automatic resource cleanup strategies
+- [Conversation Expiry Logic](/docs/cookbook/conversation-expiry) -- Manage conversation lifecycle
+- [Memory TTL and Cleanup](/docs/cookbook/memory-ttl-cleanup) -- Automatic resource cleanup strategies

@@ -10,7 +10,7 @@ head:
 
 The Inngest provider implements the `workflow.WorkflowStore` interface using Inngest's HTTP API for persisting workflow state. Inngest is an event-driven durable execution platform that provides reliable state management, retries, and step functions. This provider stores and retrieves workflow state through the Inngest REST API.
 
-Choose Inngest when you want event-driven workflow state persistence with a developer-friendly local dev server. Inngest provides reliable state management through a REST API, making it easy to integrate into serverless or event-driven architectures. For full orchestration with replay, consider [Temporal](/providers/workflow/temporal). For simpler key-value persistence, consider [NATS](/providers/workflow/nats).
+Choose Inngest when you want event-driven workflow state persistence with a developer-friendly local dev server. Inngest provides reliable state management through a REST API, making it easy to integrate into serverless or event-driven architectures. For full orchestration with replay, consider [Temporal](/docs/providers/workflow/temporal). For simpler key-value persistence, consider [NATS](/docs/providers/workflow/nats).
 
 ## Installation
 

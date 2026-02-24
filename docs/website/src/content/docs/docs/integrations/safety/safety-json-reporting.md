@@ -376,6 +376,6 @@ Verify the target directory exists and the process has write permissions. Use `0
 
 ## Related Resources
 
-- [Guard Package](/guides/safety-guards/) -- Guard pipeline documentation
-- [Ethical API Filter](/integrations/ethical-api-filter/) -- Third-party safety API integration
-- [Monitoring and Observability](/integrations/monitoring/) -- OTel instrumentation
+- [Guard Package](/docs/guides/safety-guards/) -- Guard pipeline documentation
+- [Ethical API Filter](/docs/integrations/ethical-api-filter/) -- Third-party safety API integration
+- [Monitoring and Observability](/docs/integrations/monitoring/) -- OTel instrumentation

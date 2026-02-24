@@ -186,6 +186,6 @@ func (f *VoiceForm) SaveState(sessionID string) FormState {
 
 ## Related Resources
 
-- [Voice Sessions Overview](/use-cases/voice-sessions-overview/) for session and transport patterns
-- [Voice AI Applications](/use-cases/voice-applications/) for voice pipeline architecture
-- [Conversational AI Assistant](/use-cases/conversational-ai/) for broader conversational patterns
+- [Voice Sessions Overview](/docs/use-cases/voice-sessions-overview/) for session and transport patterns
+- [Voice AI Applications](/docs/use-cases/voice-applications/) for voice pipeline architecture
+- [Conversational AI Assistant](/docs/use-cases/conversational-ai/) for broader conversational patterns

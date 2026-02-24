@@ -95,7 +95,7 @@ func main() {
 
 | Provider | Registry Name | Type | Best For |
 |---|---|---|---|
-| [In-Memory](/providers/state/inmemory) | `inmemory` | In-process map | Development, testing, single-process agents |
+| [In-Memory](/docs/providers/state/inmemory) | `inmemory` | In-process map | Development, testing, single-process agents |
 
 ## Watching for Changes
 

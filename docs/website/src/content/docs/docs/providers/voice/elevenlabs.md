@@ -10,7 +10,7 @@ head:
 
 ElevenLabs provides both speech-to-text (via the Scribe engine) and text-to-speech (with voice cloning and premium synthesis). Beluga AI registers two separate providers: `"elevenlabs"` in the STT registry and `"elevenlabs"` in the TTS registry.
 
-Choose ElevenLabs when voice quality is the top priority — particularly for applications requiring natural-sounding speech with voice cloning, custom voices, or multilingual synthesis. The TTS output is widely regarded as among the most expressive available. For lower-latency TTS in real-time pipelines, also evaluate [Cartesia](/providers/voice/cartesia) or [LMNT](/providers/voice/lmnt).
+Choose ElevenLabs when voice quality is the top priority — particularly for applications requiring natural-sounding speech with voice cloning, custom voices, or multilingual synthesis. The TTS output is widely regarded as among the most expressive available. For lower-latency TTS in real-time pipelines, also evaluate [Cartesia](/docs/providers/voice/cartesia) or [LMNT](/docs/providers/voice/lmnt).
 
 ## Installation
 
@@ -92,7 +92,7 @@ for event, err := range engine.TranscribeStream(ctx, audioStream) {
 }
 ```
 
-For real-time streaming with interim results, consider [Deepgram](/providers/voice/deepgram) or [AssemblyAI](/providers/voice/assemblyai).
+For real-time streaming with interim results, consider [Deepgram](/docs/providers/voice/deepgram) or [AssemblyAI](/docs/providers/voice/assemblyai).
 
 ---
 

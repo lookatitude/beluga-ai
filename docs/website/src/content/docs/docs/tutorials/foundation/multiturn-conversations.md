@@ -233,5 +233,5 @@ toolResult := schema.NewToolMessage("call_1", `{"results": ["goroutines", "chann
 
 ## Next Steps
 
-- [Custom Message Types](/tutorials/foundation/custom-message-types) — Extend the message system with structured data
-- [Redis Memory Persistence](/tutorials/memory/redis-persistence) — Persist conversation history across restarts
+- [Custom Message Types](/docs/tutorials/foundation/custom-message-types) — Extend the message system with structured data
+- [Redis Memory Persistence](/docs/tutorials/memory/redis-persistence) — Persist conversation history across restarts

@@ -158,5 +158,5 @@ Check that the voice ID exists. List available voices through the ElevenLabs API
 
 ## Related Resources
 
-- [Azure Cognitive Services Speech](/integrations/azure-speech)
-- [Voice Services Overview](/integrations/voice-services)
+- [Azure Cognitive Services Speech](/docs/integrations/azure-speech)
+- [Voice Services Overview](/docs/integrations/voice-services)

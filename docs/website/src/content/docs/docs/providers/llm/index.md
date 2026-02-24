@@ -89,13 +89,13 @@ These providers use their vendor's native SDK and offer the deepest feature inte
 
 | Provider | Registry Name | Description |
 |----------|---------------|-------------|
-| [OpenAI](/providers/llm/openai) | `openai` | GPT-4o, GPT-4, o1, o3 models |
-| [Anthropic](/providers/llm/anthropic) | `anthropic` | Claude 4.5, Claude 4 models |
-| [Google](/providers/llm/google) | `google` | Gemini 2.5, Gemini 2.0 models |
-| [Azure OpenAI](/providers/llm/azure) | `azure` | OpenAI models hosted on Azure |
-| [AWS Bedrock](/providers/llm/bedrock) | `bedrock` | Multi-provider models via AWS |
-| [Mistral](/providers/llm/mistral) | `mistral` | Mistral Large, Codestral models |
-| [Cohere](/providers/llm/cohere) | `cohere` | Command R+ models |
+| [OpenAI](/docs/providers/llm/openai) | `openai` | GPT-4o, GPT-4, o1, o3 models |
+| [Anthropic](/docs/providers/llm/anthropic) | `anthropic` | Claude 4.5, Claude 4 models |
+| [Google](/docs/providers/llm/google) | `google` | Gemini 2.5, Gemini 2.0 models |
+| [Azure OpenAI](/docs/providers/llm/azure) | `azure` | OpenAI models hosted on Azure |
+| [AWS Bedrock](/docs/providers/llm/bedrock) | `bedrock` | Multi-provider models via AWS |
+| [Mistral](/docs/providers/llm/mistral) | `mistral` | Mistral Large, Codestral models |
+| [Cohere](/docs/providers/llm/cohere) | `cohere` | Command R+ models |
 
 ### OpenAI-Compatible Providers
 
@@ -103,18 +103,18 @@ These providers expose an OpenAI-compatible API and share a common implementatio
 
 | Provider | Registry Name | Description |
 |----------|---------------|-------------|
-| [Groq](/providers/llm/groq) | `groq` | Ultra-fast inference with LPU hardware |
-| [Together AI](/providers/llm/together) | `together` | Open-source model hosting |
-| [Fireworks AI](/providers/llm/fireworks) | `fireworks` | Fast inference for open models |
-| [DeepSeek](/providers/llm/deepseek) | `deepseek` | DeepSeek V3, R1 reasoning models |
-| [OpenRouter](/providers/llm/openrouter) | `openrouter` | Multi-provider routing gateway |
-| [Perplexity](/providers/llm/perplexity) | `perplexity` | Search-augmented generation |
-| [HuggingFace](/providers/llm/huggingface) | `huggingface` | Inference API for hosted models |
-| [xAI](/providers/llm/xai) | `xai` | Grok models |
-| [Qwen](/providers/llm/qwen) | `qwen` | Alibaba Qwen models via DashScope |
-| [SambaNova](/providers/llm/sambanova) | `sambanova` | High-throughput inference |
-| [Cerebras](/providers/llm/cerebras) | `cerebras` | Wafer-scale inference |
-| [Ollama](/providers/llm/ollama) | `ollama` | Local model serving |
+| [Groq](/docs/providers/llm/groq) | `groq` | Ultra-fast inference with LPU hardware |
+| [Together AI](/docs/providers/llm/together) | `together` | Open-source model hosting |
+| [Fireworks AI](/docs/providers/llm/fireworks) | `fireworks` | Fast inference for open models |
+| [DeepSeek](/docs/providers/llm/deepseek) | `deepseek` | DeepSeek V3, R1 reasoning models |
+| [OpenRouter](/docs/providers/llm/openrouter) | `openrouter` | Multi-provider routing gateway |
+| [Perplexity](/docs/providers/llm/perplexity) | `perplexity` | Search-augmented generation |
+| [HuggingFace](/docs/providers/llm/huggingface) | `huggingface` | Inference API for hosted models |
+| [xAI](/docs/providers/llm/xai) | `xai` | Grok models |
+| [Qwen](/docs/providers/llm/qwen) | `qwen` | Alibaba Qwen models via DashScope |
+| [SambaNova](/docs/providers/llm/sambanova) | `sambanova` | High-throughput inference |
+| [Cerebras](/docs/providers/llm/cerebras) | `cerebras` | Wafer-scale inference |
+| [Ollama](/docs/providers/llm/ollama) | `ollama` | Local model serving |
 
 ### Meta-Providers
 
@@ -122,24 +122,24 @@ These providers delegate to other providers or gateways, adding a routing or abs
 
 | Provider | Registry Name | Description |
 |----------|---------------|-------------|
-| [Llama](/providers/llm/llama) | `llama` | Meta Llama models via any backend |
-| [Bifrost](/providers/llm/bifrost) | `bifrost` | LLM gateway with load balancing |
-| [LiteLLM](/providers/llm/litellm) | `litellm` | Universal LLM proxy (100+ models) |
+| [Llama](/docs/providers/llm/llama) | `llama` | Meta Llama models via any backend |
+| [Bifrost](/docs/providers/llm/bifrost) | `bifrost` | LLM gateway with load balancing |
+| [LiteLLM](/docs/providers/llm/litellm) | `litellm` | Universal LLM proxy (100+ models) |
 
 ## Choosing a Provider
 
 | Use Case | Recommended Provider | Why |
 |---|---|---|
-| General-purpose default | [OpenAI](/providers/llm/openai) | Broadest ecosystem, mature tooling |
-| Strong reasoning and safety | [Anthropic](/providers/llm/anthropic) | Large context, prompt caching |
-| Multimodal (text + images + video) | [Google](/providers/llm/google) | Long context, Google Cloud integration |
-| Enterprise Azure compliance | [Azure OpenAI](/providers/llm/azure) | Private networking, AAD, SLAs |
-| AWS-native deployment | [AWS Bedrock](/providers/llm/bedrock) | IAM roles, multi-provider catalog |
-| Lowest inference latency | [Groq](/providers/llm/groq), [Cerebras](/providers/llm/cerebras) | Custom hardware, fastest tokens/sec |
-| Local/offline development | [Ollama](/providers/llm/ollama) | No API key, no network required |
-| Search-augmented answers | [Perplexity](/providers/llm/perplexity) | Built-in web search |
-| Model comparison and evaluation | [OpenRouter](/providers/llm/openrouter) | Single API key, hundreds of models |
-| Infrastructure-level LLM management | [LiteLLM](/providers/llm/litellm) | Spend tracking, rate limiting, proxy |
+| General-purpose default | [OpenAI](/docs/providers/llm/openai) | Broadest ecosystem, mature tooling |
+| Strong reasoning and safety | [Anthropic](/docs/providers/llm/anthropic) | Large context, prompt caching |
+| Multimodal (text + images + video) | [Google](/docs/providers/llm/google) | Long context, Google Cloud integration |
+| Enterprise Azure compliance | [Azure OpenAI](/docs/providers/llm/azure) | Private networking, AAD, SLAs |
+| AWS-native deployment | [AWS Bedrock](/docs/providers/llm/bedrock) | IAM roles, multi-provider catalog |
+| Lowest inference latency | [Groq](/docs/providers/llm/groq), [Cerebras](/docs/providers/llm/cerebras) | Custom hardware, fastest tokens/sec |
+| Local/offline development | [Ollama](/docs/providers/llm/ollama) | No API key, no network required |
+| Search-augmented answers | [Perplexity](/docs/providers/llm/perplexity) | Built-in web search |
+| Model comparison and evaluation | [OpenRouter](/docs/providers/llm/openrouter) | Single API key, hundreds of models |
+| Infrastructure-level LLM management | [LiteLLM](/docs/providers/llm/litellm) | Spend tracking, rate limiting, proxy |
 
 ## Middleware
 
@@ -152,4 +152,4 @@ model = llm.ApplyMiddleware(model,
 )
 ```
 
-See the [LLM middleware guide](/guides/middleware) for details.
+See the [LLM middleware guide](/docs/guides/middleware) for details.

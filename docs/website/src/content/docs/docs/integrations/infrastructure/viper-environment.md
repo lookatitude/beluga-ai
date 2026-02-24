@@ -314,5 +314,5 @@ BELUGA_APP_PORT=9090
 
 ## Related Resources
 
-- [HashiCorp Vault Connector](/integrations/vault-connector) -- Secure secret management with Vault
-- [Infrastructure Integrations](/integrations/infrastructure) -- Deployment and infrastructure overview
+- [HashiCorp Vault Connector](/docs/integrations/vault-connector) -- Secure secret management with Vault
+- [Infrastructure Integrations](/docs/integrations/infrastructure) -- Deployment and infrastructure overview

@@ -17,7 +17,7 @@ An application that uses OpenAI and Anthropic interchangeably, with normalized t
 ## Prerequisites
 
 - API keys for at least two providers (OpenAI, Anthropic, or others)
-- Understanding of the [registry pattern](/guides/architecture)
+- Understanding of the [registry pattern](/docs/guides/architecture)
 
 ## Step 1: Create Models from the Registry
 
@@ -184,5 +184,5 @@ func handleRequest(ctx context.Context, pool *ModelPool, providerName, prompt st
 
 ## Next Steps
 
-- [Model Switching and Fallbacks](/tutorials/agents/model-switching) -- Automate provider selection
-- [Adding a New LLM Provider](/tutorials/providers/new-llm-provider) -- Register custom providers
+- [Model Switching and Fallbacks](/docs/tutorials/agents/model-switching) -- Automate provider selection
+- [Adding a New LLM Provider](/docs/tutorials/providers/new-llm-provider) -- Register custom providers

@@ -240,5 +240,5 @@ func main() {
 
 ## Next Steps
 
-- [Omni-Channel Gateway](/tutorials/messaging/omnichannel-gateway) -- Handle messages from WhatsApp, SMS, and Slack through a unified interface
-- [Content Moderation](/tutorials/safety/content-moderation) -- Filter messages across all channels
+- [Omni-Channel Gateway](/docs/tutorials/messaging/omnichannel-gateway) -- Handle messages from WhatsApp, SMS, and Slack through a unified interface
+- [Content Moderation](/docs/tutorials/safety/content-moderation) -- Filter messages across all channels

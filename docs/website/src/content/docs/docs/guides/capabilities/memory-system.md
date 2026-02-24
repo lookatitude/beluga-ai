@@ -284,7 +284,7 @@ hooks := memory.Hooks{
 
 ## Next Steps
 
-- [Building Your First Agent](/guides/first-agent/) — Wire memory into an agent
-- [RAG Pipeline](/guides/rag-pipeline/) — Vector search for document retrieval
-- [Safety & Guards](/guides/safety-and-guards/) — Guard memory content
-- [Deploying to Production](/guides/deployment/) — Production memory backends
+- [Building Your First Agent](/docs/guides/first-agent/) — Wire memory into an agent
+- [RAG Pipeline](/docs/guides/rag-pipeline/) — Vector search for document retrieval
+- [Safety & Guards](/docs/guides/safety-and-guards/) — Guard memory content
+- [Deploying to Production](/docs/guides/deployment/) — Production memory backends

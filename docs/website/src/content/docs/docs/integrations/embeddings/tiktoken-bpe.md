@@ -395,6 +395,6 @@ func SplitSentenceThenToken(ctx context.Context, text string, sentSplitter *SpaC
 
 ## Related Resources
 
-- [SpaCy Sentence Tokenizer](/integrations/spacy-tokenizer) -- Sentence-boundary-aware splitting
-- [RAG Pipeline Guide](/guides/rag) -- End-to-end retrieval-augmented generation
-- [Text Splitter API Reference](/api-reference/rag/splitter) -- All built-in splitter implementations
+- [SpaCy Sentence Tokenizer](/docs/integrations/spacy-tokenizer) -- Sentence-boundary-aware splitting
+- [RAG Pipeline Guide](/docs/guides/rag) -- End-to-end retrieval-augmented generation
+- [Text Splitter API Reference](/docs/api-reference/rag/splitter) -- All built-in splitter implementations

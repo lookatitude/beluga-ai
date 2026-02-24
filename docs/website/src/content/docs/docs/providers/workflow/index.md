@@ -110,18 +110,18 @@ func main() {
 | Provider | Registry Name | Type | Best For |
 |---|---|---|---|
 | [Default (built-in)](#default-executor) | `default` | In-process goroutine | Development, testing, simple workflows |
-| [Temporal](/providers/workflow/temporal) | `temporal` | External orchestrator | Production distributed workflows |
+| [Temporal](/docs/providers/workflow/temporal) | `temporal` | External orchestrator | Production distributed workflows |
 
 ### Workflow Stores
 
 | Provider | Type | Durability | Best For |
 |---|---|---|---|
-| [In-Memory](/providers/workflow/inmemory) | In-process map | None (process-local) | Development, testing |
-| [Dapr](/providers/workflow/dapr) | Dapr state store | Depends on backend | Cloud-native, multi-cloud |
-| [Inngest](/providers/workflow/inngest) | HTTP API | Durable | Event-driven serverless |
-| [Kafka](/providers/workflow/kafka) | Compacted topic | Durable | Event streaming architectures |
-| [NATS](/providers/workflow/nats) | JetStream KV | Durable | Lightweight distributed |
-| [Temporal](/providers/workflow/temporal) | Temporal visibility | Managed by Temporal | Temporal-native workflows |
+| [In-Memory](/docs/providers/workflow/inmemory) | In-process map | None (process-local) | Development, testing |
+| [Dapr](/docs/providers/workflow/dapr) | Dapr state store | Depends on backend | Cloud-native, multi-cloud |
+| [Inngest](/docs/providers/workflow/inngest) | HTTP API | Durable | Event-driven serverless |
+| [Kafka](/docs/providers/workflow/kafka) | Compacted topic | Durable | Event streaming architectures |
+| [NATS](/docs/providers/workflow/nats) | JetStream KV | Durable | Lightweight distributed |
+| [Temporal](/docs/providers/workflow/temporal) | Temporal visibility | Managed by Temporal | Temporal-native workflows |
 
 ## Default Executor
 
@@ -300,9 +300,9 @@ names := workflow.List()
 
 | Use Case | Recommended |
 |---|---|
-| Development and testing | Default executor + [In-Memory](/providers/workflow/inmemory) store |
-| Production distributed workflows | [Temporal](/providers/workflow/temporal) executor |
-| Cloud-native microservices | Default executor + [Dapr](/providers/workflow/dapr) store |
-| Event-driven serverless | Default executor + [Inngest](/providers/workflow/inngest) store |
-| Event streaming architectures | Default executor + [Kafka](/providers/workflow/kafka) store |
-| Lightweight distributed systems | Default executor + [NATS](/providers/workflow/nats) store |
+| Development and testing | Default executor + [In-Memory](/docs/providers/workflow/inmemory) store |
+| Production distributed workflows | [Temporal](/docs/providers/workflow/temporal) executor |
+| Cloud-native microservices | Default executor + [Dapr](/docs/providers/workflow/dapr) store |
+| Event-driven serverless | Default executor + [Inngest](/docs/providers/workflow/inngest) store |
+| Event streaming architectures | Default executor + [Kafka](/docs/providers/workflow/kafka) store |
+| Lightweight distributed systems | Default executor + [NATS](/docs/providers/workflow/nats) store |

@@ -467,6 +467,6 @@ func LoadFixtures(path string) *SimpleMock {
 
 ## Related Resources
 
-- [OpenAI Assistants API Bridge](/integrations/openai-assistants-bridge) — Integrate OpenAI Assistants
-- [LLM Providers](/integrations/llm-providers) — Production LLM provider options
-- [Testing Patterns](/guides/testing) — Comprehensive testing guide
+- [OpenAI Assistants API Bridge](/docs/integrations/openai-assistants-bridge) — Integrate OpenAI Assistants
+- [LLM Providers](/docs/integrations/llm-providers) — Production LLM provider options
+- [Testing Patterns](/docs/guides/testing) — Comprehensive testing guide

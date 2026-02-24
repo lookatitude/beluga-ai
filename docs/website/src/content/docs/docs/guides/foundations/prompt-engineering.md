@@ -32,7 +32,7 @@ For simple, one-off interactions, inline string prompts work fine. Invest in the
 ## Prerequisites
 
 Before starting this guide:
-- Complete [Working with LLMs](/guides/foundations/working-with-llms/)
+- Complete [Working with LLMs](/docs/guides/foundations/working-with-llms/)
 - Understand Go templates (`text/template`)
 - Familiarity with JSON and YAML
 
@@ -612,6 +612,6 @@ When engineering prompts for production:
 ## Next Steps
 
 Now that you understand prompt engineering:
-- Learn about [Structured Output](/guides/foundations/structured-output/) for typed responses
-- Explore [Working with LLMs](/guides/foundations/working-with-llms/) for model configuration
-- Read [Building Your First Agent](/guides/foundations/first-agent/) for using prompts with agents
+- Learn about [Structured Output](/docs/guides/foundations/structured-output/) for typed responses
+- Explore [Working with LLMs](/docs/guides/foundations/working-with-llms/) for model configuration
+- Read [Building Your First Agent](/docs/guides/foundations/first-agent/) for using prompts with agents

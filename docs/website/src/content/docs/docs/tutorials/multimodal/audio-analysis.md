@@ -267,5 +267,5 @@ For long audio files, consider splitting into segments and processing them seque
 
 ## Next Steps
 
-- [Visual Reasoning](/tutorials/multimodal/visual-reasoning) -- Analyze images alongside text
-- [Lazy-Loading Documents](/tutorials/documents/lazy-loading) -- Process large collections of media files efficiently
+- [Visual Reasoning](/docs/tutorials/multimodal/visual-reasoning) -- Analyze images alongside text
+- [Lazy-Loading Documents](/docs/tutorials/documents/lazy-loading) -- Process large collections of media files efficiently

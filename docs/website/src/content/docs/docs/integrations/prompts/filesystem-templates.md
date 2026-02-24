@@ -369,5 +369,5 @@ Ensure there are no unmatched `{{` or `}}` delimiters.
 
 ## Related Resources
 
-- [LangChain Hub Loading](/integrations/langchain-hub) -- Load community prompts from LangChain Hub
-- [Prompt Package Reference](/api-reference/prompt) -- Prompt management API
+- [LangChain Hub Loading](/docs/integrations/langchain-hub) -- Load community prompts from LangChain Hub
+- [Prompt Package Reference](/docs/api-reference/prompt) -- Prompt management API

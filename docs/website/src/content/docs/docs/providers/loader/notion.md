@@ -10,7 +10,7 @@ head:
 
 The Notion loader implements the `loader.DocumentLoader` interface for loading pages from Notion. It fetches page metadata and block children via the Notion API and converts block content into plain text.
 
-Choose Notion when your team's knowledge base or documentation lives in Notion and you want to feed page content into a RAG pipeline. The loader extracts plain text from paragraphs, headings, lists, quotes, callouts, and code blocks. For Atlassian wikis, consider [Confluence](/providers/loader/confluence). For Google-based content, consider [Google Drive](/providers/loader/gdrive).
+Choose Notion when your team's knowledge base or documentation lives in Notion and you want to feed page content into a RAG pipeline. The loader extracts plain text from paragraphs, headings, lists, quotes, callouts, and code blocks. For Atlassian wikis, consider [Confluence](/docs/providers/loader/confluence). For Google-based content, consider [Google Drive](/docs/providers/loader/gdrive).
 
 ## Installation
 

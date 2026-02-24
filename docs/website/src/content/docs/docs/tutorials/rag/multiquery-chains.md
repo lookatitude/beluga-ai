@@ -16,7 +16,7 @@ A multi-query retriever that generates query variations using an LLM, retrieves 
 
 ## Prerequisites
 
-- Understanding of [Hybrid Search](/tutorials/rag/hybrid-search) and the [ChatModel interface](/guides/llm)
+- Understanding of [Hybrid Search](/docs/tutorials/rag/hybrid-search) and the [ChatModel interface](/docs/guides/llm)
 - A configured retriever and LLM provider
 
 ## The Problem
@@ -250,5 +250,5 @@ func main() {
 
 ## Next Steps
 
-- [Hybrid Search](/tutorials/rag/hybrid-search) -- Combine with keyword search for even better recall
-- [Fine-tuning Embeddings](/tutorials/providers/finetuning-embeddings) -- Optimize the embedding model
+- [Hybrid Search](/docs/tutorials/rag/hybrid-search) -- Combine with keyword search for even better recall
+- [Fine-tuning Embeddings](/docs/tutorials/providers/finetuning-embeddings) -- Optimize the embedding model

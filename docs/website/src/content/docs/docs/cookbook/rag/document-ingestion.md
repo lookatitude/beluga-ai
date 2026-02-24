@@ -381,7 +381,7 @@ if err != nil {
 
 ## Related Recipes
 
-- [Parallel File Loading](/cookbook/parallel-file-loading) -- Parallel directory traversal with worker pools
-- [Corrupt Document Handling](/cookbook/corrupt-doc-handling) -- Graceful error handling for corrupt documents
-- [Sentence-Aware Splitting](/cookbook/sentence-splitting) -- Sentence-boundary-aware text splitting
-- [Code Splitting](/cookbook/code-splitting) -- Tree-sitter-based code splitting
+- [Parallel File Loading](/docs/cookbook/parallel-file-loading) -- Parallel directory traversal with worker pools
+- [Corrupt Document Handling](/docs/cookbook/corrupt-doc-handling) -- Graceful error handling for corrupt documents
+- [Sentence-Aware Splitting](/docs/cookbook/sentence-splitting) -- Sentence-boundary-aware text splitting
+- [Code Splitting](/docs/cookbook/code-splitting) -- Tree-sitter-based code splitting

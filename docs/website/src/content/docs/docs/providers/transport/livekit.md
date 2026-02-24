@@ -10,7 +10,7 @@ head:
 
 The LiveKit provider implements bidirectional audio transport through LiveKit rooms. LiveKit is treated as a transport layer — it provides WebRTC connectivity while Beluga handles all STT, LLM, and TTS processing through the frame-based pipeline.
 
-Choose LiveKit when you need a self-hostable, open-source WebRTC infrastructure for production voice deployments. LiveKit provides room management, access token authentication, and scalable media routing. Beluga treats LiveKit as a pure transport layer, handling all voice processing in the frame-based pipeline. For a managed alternative, consider [Daily](/providers/transport/daily).
+Choose LiveKit when you need a self-hostable, open-source WebRTC infrastructure for production voice deployments. LiveKit provides room management, access token authentication, and scalable media routing. Beluga treats LiveKit as a pure transport layer, handling all voice processing in the frame-based pipeline. For a managed alternative, consider [Daily](/docs/providers/transport/daily).
 
 ## Installation
 

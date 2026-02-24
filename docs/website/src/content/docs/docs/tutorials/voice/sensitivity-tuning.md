@@ -18,7 +18,7 @@ A tuned VAD and turn detection configuration that correctly distinguishes speech
 
 - Go 1.23+
 - Basic understanding of audio frames and PCM encoding
-- Completion of [Real-time STT Streaming](/tutorials/voice/stt-realtime-streaming) is recommended
+- Completion of [Real-time STT Streaming](/docs/tutorials/voice/stt-realtime-streaming) is recommended
 
 ## The Challenge: Natural Conversation Flow
 
@@ -199,6 +199,6 @@ var profiles = map[string]EnvironmentProfile{
 
 ## Next Steps
 
-- [Custom Silero VAD](/tutorials/voice/custom-silero-vad) -- Use custom ONNX models for VAD
-- [Native S2S with Amazon Nova](/tutorials/voice/s2s-amazon-nova) -- Models with built-in VAD
-- [LiveKit and Vapi Integration](/tutorials/voice/livekit-vapi) -- Server-side VAD in production backends
+- [Custom Silero VAD](/docs/tutorials/voice/custom-silero-vad) -- Use custom ONNX models for VAD
+- [Native S2S with Amazon Nova](/docs/tutorials/voice/s2s-amazon-nova) -- Models with built-in VAD
+- [LiveKit and Vapi Integration](/docs/tutorials/voice/livekit-vapi) -- Server-side VAD in production backends

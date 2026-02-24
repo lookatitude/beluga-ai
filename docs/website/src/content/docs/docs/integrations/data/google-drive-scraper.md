@@ -351,6 +351,6 @@ func (l *DriveLoader) LoadAll(ctx context.Context, folderID string) ([]schema.Do
 
 ## Related Resources
 
-- [Document Loaders](/integrations/document-loaders) -- All document loader integrations
-- [S3 Event-Driven Loader](/integrations/s3-event-loader) -- AWS S3 document loading
-- [Embedding Providers](/integrations/embedding-providers) -- Generating embeddings for loaded documents
+- [Document Loaders](/docs/integrations/document-loaders) -- All document loader integrations
+- [S3 Event-Driven Loader](/docs/integrations/s3-event-loader) -- AWS S3 document loading
+- [Embedding Providers](/docs/integrations/embedding-providers) -- Generating embeddings for loaded documents

@@ -201,7 +201,7 @@ func main() {
 }
 ```
 
-The generated schema can be shared with the Python team and used with the [JSON Schema Validation](/integrations/json-schema-validation/) integration to validate payloads on both sides.
+The generated schema can be shared with the Python team and used with the [JSON Schema Validation](/docs/integrations/json-schema-validation/) integration to validate payloads on both sides.
 
 ### Complete Bridge Example
 
@@ -414,10 +414,10 @@ When `StrictMode` is enabled, unknown JSON fields cause unmarshaling to fail. Ei
 - **Schema as contract**: Generate JSON Schema from the Go struct and share it with the Python team. Both sides validate against the same schema.
 - **Versioning**: Version your message format and include a `version` field in the JSON payload to support backward-compatible evolution.
 - **Performance**: Cache `MessageData` instances when converting large batches. Avoid repeated allocations for high-throughput pipelines.
-- **Validation**: Validate incoming JSON on both sides. Use the [JSON Schema Validation](/integrations/json-schema-validation/) integration for schema-based validation.
+- **Validation**: Validate incoming JSON on both sides. Use the [JSON Schema Validation](/docs/integrations/json-schema-validation/) integration for schema-based validation.
 
 ## Related Resources
 
-- [JSON Schema Validation](/integrations/json-schema-validation/) -- Validate data structures with JSON Schema
-- [Schema Package](/api-reference/schema/) -- Core message and document types
-- [A2A Protocol](/guides/a2a/) -- Agent-to-agent communication across services
+- [JSON Schema Validation](/docs/integrations/json-schema-validation/) -- Validate data structures with JSON Schema
+- [Schema Package](/docs/api-reference/schema/) -- Core message and document types
+- [A2A Protocol](/docs/guides/a2a/) -- Agent-to-agent communication across services

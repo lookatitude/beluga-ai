@@ -355,6 +355,6 @@ python -m spacy download en_core_web_sm
 
 ## Related Resources
 
-- [Tiktoken BPE Tokenizer](/integrations/tiktoken-bpe) -- Token-count-aware splitting
-- [RAG Pipeline Guide](/guides/rag) -- End-to-end retrieval-augmented generation
-- [Text Splitter API Reference](/api-reference/rag/splitter) -- All built-in splitter implementations
+- [Tiktoken BPE Tokenizer](/docs/integrations/tiktoken-bpe) -- Token-count-aware splitting
+- [RAG Pipeline Guide](/docs/guides/rag) -- End-to-end retrieval-augmented generation
+- [Text Splitter API Reference](/docs/api-reference/rag/splitter) -- All built-in splitter implementations

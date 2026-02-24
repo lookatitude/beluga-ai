@@ -329,6 +329,6 @@ Provider-specific options can be passed via the `Options` map in `config.Provide
 
 ## Related Resources
 
-- [Embedding Providers](/integrations/embedding-providers) -- All embedding provider integrations
-- [Cohere Multilingual Embeddings](/integrations/cohere-multilingual) -- Cloud-based multilingual embeddings
-- [Vector Stores](/integrations/vector-stores) -- Storing and searching embeddings
+- [Embedding Providers](/docs/integrations/embedding-providers) -- All embedding provider integrations
+- [Cohere Multilingual Embeddings](/docs/integrations/cohere-multilingual) -- Cloud-based multilingual embeddings
+- [Vector Stores](/docs/integrations/vector-stores) -- Storing and searching embeddings

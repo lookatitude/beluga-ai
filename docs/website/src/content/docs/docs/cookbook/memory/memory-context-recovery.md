@@ -260,5 +260,5 @@ func (wcr *WindowContextRecovery) CompressOldWindows(ctx context.Context) error 
 
 ## Related Recipes
 
-- [Memory TTL and Cleanup](/cookbook/memory-ttl-cleanup) -- Implement memory expiration
-- [History Trimming](/cookbook/history-trimming) -- Trim conversation history intelligently
+- [Memory TTL and Cleanup](/docs/cookbook/memory-ttl-cleanup) -- Implement memory expiration
+- [History Trimming](/docs/cookbook/history-trimming) -- Trim conversation history intelligently

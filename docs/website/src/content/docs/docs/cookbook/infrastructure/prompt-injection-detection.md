@@ -263,5 +263,5 @@ func (pid *PromptInjectionDetector) DetectWithContext(ctx context.Context, input
 
 ## Related Recipes
 
-- [PII Redaction in Logs](/cookbook/pii-redaction) — Protect sensitive data
-- [Server Rate Limiting per Project](/cookbook/server-rate-limiting-per-project) — Additional security measures
+- [PII Redaction in Logs](/docs/cookbook/pii-redaction) — Protect sensitive data
+- [Server Rate Limiting per Project](/docs/cookbook/server-rate-limiting-per-project) — Additional security measures

@@ -330,6 +330,6 @@ No subscribers are registered on the subject used with `Request`. Ensure the sub
 
 ## Related Resources
 
-- [Kubernetes Job Scheduler](/integrations/kubernetes-scheduler) -- Kubernetes workflow scheduling
-- [Infrastructure](/integrations/infrastructure) -- Infrastructure integration patterns
-- [Messaging Platforms](/integrations/messaging) -- Twilio, Slack, and custom messaging channels
+- [Kubernetes Job Scheduler](/docs/integrations/kubernetes-scheduler) -- Kubernetes workflow scheduling
+- [Infrastructure](/docs/integrations/infrastructure) -- Infrastructure integration patterns
+- [Messaging Platforms](/docs/integrations/messaging) -- Twilio, Slack, and custom messaging channels

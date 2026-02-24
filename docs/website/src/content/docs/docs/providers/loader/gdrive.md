@@ -10,7 +10,7 @@ head:
 
 The Google Drive loader implements the `loader.DocumentLoader` interface for loading files from Google Drive. It uses the Google Drive REST API v3 to fetch file content, with automatic export support for Google Workspace documents (Docs, Sheets, Slides).
 
-Choose Google Drive when you need to load documents from Google Drive, especially Google Workspace files (Docs, Sheets, Slides). The loader automatically exports Workspace formats to text, avoiding manual conversion. For other cloud storage (S3, GCS, Azure), use [Cloud Storage](/providers/loader/cloudstorage). For Atlassian wikis, consider [Confluence](/providers/loader/confluence).
+Choose Google Drive when you need to load documents from Google Drive, especially Google Workspace files (Docs, Sheets, Slides). The loader automatically exports Workspace formats to text, avoiding manual conversion. For other cloud storage (S3, GCS, Azure), use [Cloud Storage](/docs/providers/loader/cloudstorage). For Atlassian wikis, consider [Confluence](/docs/providers/loader/confluence).
 
 ## Installation
 

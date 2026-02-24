@@ -745,6 +745,6 @@ When engineering prompts:
 
 ## Next Steps
 
-- Learn about [Prompt Engineering](/guides/foundations/prompt-engineering) for production patterns
-- Explore [LLM Recipes](/cookbook/llm) for advanced generation
-- Read [Agent Recipes](/cookbook/agents) for agentic prompts
+- Learn about [Prompt Engineering](/docs/guides/foundations/prompt-engineering) for production patterns
+- Explore [LLM Recipes](/docs/cookbook/llm) for advanced generation
+- Read [Agent Recipes](/docs/cookbook/agents) for agentic prompts

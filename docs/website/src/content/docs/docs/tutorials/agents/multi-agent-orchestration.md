@@ -16,7 +16,7 @@ Two orchestration patterns -- a router that dispatches queries to the right spec
 
 ## Prerequisites
 
-- Understanding of [Building a Research Agent](/tutorials/agents/research-agent)
+- Understanding of [Building a Research Agent](/docs/tutorials/agents/research-agent)
 - A configured LLM provider
 
 ## Pattern 1: Router (Handoff)
@@ -235,5 +235,5 @@ Input: "Build a URL shortener in Go." Verify the agents interact and produce a c
 
 ## Next Steps
 
-- [Tools Registry](/tutorials/agents/tools-registry) -- Build a reusable tool library for agents
-- [Model Switching](/tutorials/agents/model-switching) -- Implement fallback chains
+- [Tools Registry](/docs/tutorials/agents/tools-registry) -- Build a reusable tool library for agents
+- [Model Switching](/docs/tutorials/agents/model-switching) -- Implement fallback chains

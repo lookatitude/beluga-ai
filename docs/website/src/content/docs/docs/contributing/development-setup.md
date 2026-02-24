@@ -78,7 +78,7 @@ make test
 make integration-test
 ```
 
-See the [Testing Guide](/contributing/testing/) for more details on writing and running tests.
+See the [Testing Guide](/docs/contributing/testing/) for more details on writing and running tests.
 
 ## Running the Linter
 
@@ -141,7 +141,7 @@ beluga-ai/
 └── docs/           # Documentation and website
 ```
 
-For a detailed breakdown, see the [Architecture documentation](/architecture/packages/).
+For a detailed breakdown, see the [Architecture documentation](/docs/architecture/packages/).
 
 ## Makefile Reference
 

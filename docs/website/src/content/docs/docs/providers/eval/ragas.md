@@ -10,7 +10,7 @@ head:
 
 The RAGAS provider connects Beluga AI's evaluation framework to a [RAGAS](https://docs.ragas.io/) server instance. It implements the `eval.Metric` interface with RAG-specific evaluation metrics such as faithfulness, answer relevancy, context precision, and context recall.
 
-Choose RAGAS when you are evaluating RAG pipelines and need metrics that specifically measure retrieval quality and answer groundedness. RAGAS provides four complementary metrics (faithfulness, answer relevancy, context precision, context recall) designed for end-to-end RAG assessment. For general LLM evaluation beyond RAG, consider [DeepEval](/providers/eval/deepeval) or [Braintrust](/providers/eval/braintrust).
+Choose RAGAS when you are evaluating RAG pipelines and need metrics that specifically measure retrieval quality and answer groundedness. RAGAS provides four complementary metrics (faithfulness, answer relevancy, context precision, context recall) designed for end-to-end RAG assessment. For general LLM evaluation beyond RAG, consider [DeepEval](/docs/providers/eval/deepeval) or [Braintrust](/docs/providers/eval/braintrust).
 
 ## Installation
 

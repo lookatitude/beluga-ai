@@ -376,7 +376,7 @@ Real-time voice applications have strict latency requirements — users perceive
 
 ## Next Steps
 
-- [Building Your First Agent](/guides/first-agent/) — Combine voice with agent logic
-- [Tools & MCP](/guides/tools-and-mcp/) — Give voice agents tool access
-- [Monitoring & Observability](/guides/observability/) — Track voice pipeline latency
-- [Deploying to Production](/guides/deployment/) — Deploy voice agents at scale
+- [Building Your First Agent](/docs/guides/first-agent/) — Combine voice with agent logic
+- [Tools & MCP](/docs/guides/tools-and-mcp/) — Give voice agents tool access
+- [Monitoring & Observability](/docs/guides/observability/) — Track voice pipeline latency
+- [Deploying to Production](/docs/guides/deployment/) — Deploy voice agents at scale

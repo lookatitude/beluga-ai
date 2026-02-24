@@ -250,5 +250,5 @@ Ensure the Conversations service is created in the Twilio Console and that `TWIL
 
 ## Related Resources
 
-- [Slack Webhooks](/integrations/slack-webhooks) -- Slack messaging integration
-- [Observability and Tracing](/guides/observability-tracing) -- OpenTelemetry setup for Beluga AI
+- [Slack Webhooks](/docs/integrations/slack-webhooks) -- Slack messaging integration
+- [Observability and Tracing](/docs/guides/observability-tracing) -- OpenTelemetry setup for Beluga AI

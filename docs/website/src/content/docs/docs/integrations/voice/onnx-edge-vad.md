@@ -146,5 +146,5 @@ Ensure ONNX Runtime libraries are installed or bundled for your target OS/archit
 
 ## Related Resources
 
-- [WebRTC VAD in Browser](/integrations/webrtc-browser-vad)
-- [Voice Services Overview](/integrations/voice-services)
+- [WebRTC VAD in Browser](/docs/integrations/webrtc-browser-vad)
+- [Voice Services Overview](/docs/integrations/voice-services)

@@ -254,5 +254,5 @@ func (pse *ParallelStepExecutor) ExecuteWithRetry(ctx context.Context, maxRetrie
 
 ## Related Recipes
 
-- **[Handling Tool Failures](/cookbook/agents/agents-tool-failures)** -- Robust error handling
-- **[Parallel Node Execution](/cookbook/infrastructure/parallel-nodes)** -- Parallel graph execution
+- **[Handling Tool Failures](/docs/cookbook/agents/agents-tool-failures)** -- Robust error handling
+- **[Parallel Node Execution](/docs/cookbook/infrastructure/parallel-nodes)** -- Parallel graph execution

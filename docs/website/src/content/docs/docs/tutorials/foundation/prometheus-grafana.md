@@ -18,7 +18,7 @@ A metrics pipeline that exports Beluga AI metrics to Prometheus and displays the
 
 - Go 1.23+
 - Docker (for Prometheus and Grafana)
-- Understanding of [OpenTelemetry Tracing](/tutorials/foundation/otel-tracing)
+- Understanding of [OpenTelemetry Tracing](/docs/tutorials/foundation/otel-tracing)
 
 ## The Metrics Pipeline
 
@@ -191,5 +191,5 @@ Avoid: user IDs, session IDs, message text, timestamps.
 
 ## Next Steps
 
-- [OpenTelemetry Tracing](/tutorials/foundation/otel-tracing) — Distributed trace visualization
-- [Health Checks](/tutorials/foundation/health-checks) — Component health monitoring
+- [OpenTelemetry Tracing](/docs/tutorials/foundation/otel-tracing) — Distributed trace visualization
+- [Health Checks](/docs/tutorials/foundation/health-checks) — Component health monitoring

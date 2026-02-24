@@ -16,7 +16,7 @@ Three model switching strategies -- reliability fallbacks, cost-optimizing routi
 
 ## Prerequisites
 
-- Understanding of the [ChatModel interface](/guides/llm) and [middleware](/tutorials/foundation/middleware-implementation)
+- Understanding of the [ChatModel interface](/docs/guides/llm) and [middleware](/docs/tutorials/foundation/middleware-implementation)
 - API keys for at least two LLM providers
 
 ## Pattern 1: Fallback Middleware
@@ -190,5 +190,5 @@ router := llm.NewRouter(
 
 ## Next Steps
 
-- [Multi-provider Chat](/tutorials/agents/multi-provider) -- Unified interface across providers
-- [Advanced Inference](/tutorials/providers/advanced-inference) -- Per-call generation options
+- [Multi-provider Chat](/docs/tutorials/agents/multi-provider) -- Unified interface across providers
+- [Advanced Inference](/docs/tutorials/providers/advanced-inference) -- Per-call generation options

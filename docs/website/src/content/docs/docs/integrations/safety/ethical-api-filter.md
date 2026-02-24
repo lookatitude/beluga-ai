@@ -406,7 +406,7 @@ Increase the HTTP client timeout or use the `FallbackSafetyGuard` pattern to deg
 
 ## Related Resources
 
-- [Guard Package](/guides/safety-guards/) -- Guard pipeline documentation
-- [Safety Result JSON Reporting](/integrations/safety-json-reporting/) -- Export guard results as JSON
-- [Resilience Package](/guides/resilience/) -- Circuit breaker, retry, and rate limiting
-- [Monitoring and Observability](/integrations/monitoring/) -- OTel instrumentation
+- [Guard Package](/docs/guides/safety-guards/) -- Guard pipeline documentation
+- [Safety Result JSON Reporting](/docs/integrations/safety-json-reporting/) -- Export guard results as JSON
+- [Resilience Package](/docs/guides/resilience/) -- Circuit breaker, retry, and rate limiting
+- [Monitoring and Observability](/docs/integrations/monitoring/) -- OTel instrumentation

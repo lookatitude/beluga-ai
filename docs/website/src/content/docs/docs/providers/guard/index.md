@@ -102,11 +102,11 @@ pipeline := guard.NewPipeline(
 
 | Provider | Guard Name | Description |
 |---|---|---|
-| [Azure Content Safety](/providers/guard/azuresafety) | `azure_content_safety` | Microsoft Azure AI Content Safety |
-| [Guardrails AI](/providers/guard/guardrailsai) | `guardrails_ai` | Guardrails AI validators (PII, toxicity, hallucination) |
-| [Lakera Guard](/providers/guard/lakera) | `lakera_guard` | Lakera prompt injection and content detection |
-| [LLM Guard](/providers/guard/llmguard) | `llm_guard` | LLM Guard prompt and output scanning |
-| [NeMo Guardrails](/providers/guard/nemo) | `nemo_guardrails` | NVIDIA NeMo Guardrails with Colang configs |
+| [Azure Content Safety](/docs/providers/guard/azuresafety) | `azure_content_safety` | Microsoft Azure AI Content Safety |
+| [Guardrails AI](/docs/providers/guard/guardrailsai) | `guardrails_ai` | Guardrails AI validators (PII, toxicity, hallucination) |
+| [Lakera Guard](/docs/providers/guard/lakera) | `lakera_guard` | Lakera prompt injection and content detection |
+| [LLM Guard](/docs/providers/guard/llmguard) | `llm_guard` | LLM Guard prompt and output scanning |
+| [NeMo Guardrails](/docs/providers/guard/nemo) | `nemo_guardrails` | NVIDIA NeMo Guardrails with Colang configs |
 
 ## Registry Usage
 

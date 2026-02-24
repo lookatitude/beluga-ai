@@ -277,5 +277,5 @@ type ProgressTracker struct {
 
 ## Related Recipes
 
-- [Corrupt Document Handling](/cookbook/corrupt-doc-handling) -- Handle errors gracefully during document loading
-- [Document Ingestion Recipes](/cookbook/document-ingestion) -- Additional document loading patterns
+- [Corrupt Document Handling](/docs/cookbook/corrupt-doc-handling) -- Handle errors gracefully during document loading
+- [Document Ingestion Recipes](/docs/cookbook/document-ingestion) -- Additional document loading patterns

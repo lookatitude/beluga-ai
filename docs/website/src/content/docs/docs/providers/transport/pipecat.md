@@ -10,7 +10,7 @@ head:
 
 The Pipecat provider implements bidirectional audio transport through a Pipecat server over WebSocket. It enables Beluga's voice pipeline to interoperate with Pipecat-based audio processing systems.
 
-Choose Pipecat when you need to bridge Beluga's voice pipeline with an existing Pipecat-based processing system over WebSocket. This is useful for hybrid architectures where some audio processing happens in a Pipecat server while Beluga handles the agent logic. For WebRTC-based transport, consider [LiveKit](/providers/transport/livekit) or [Daily](/providers/transport/daily).
+Choose Pipecat when you need to bridge Beluga's voice pipeline with an existing Pipecat-based processing system over WebSocket. This is useful for hybrid architectures where some audio processing happens in a Pipecat server while Beluga handles the agent logic. For WebRTC-based transport, consider [LiveKit](/docs/providers/transport/livekit) or [Daily](/docs/providers/transport/daily).
 
 ## Installation
 

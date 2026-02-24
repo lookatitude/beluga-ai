@@ -369,6 +369,6 @@ flowchart TB
 
 ## Related Resources
 
-- [Enterprise RAG Knowledge Base](/use-cases/enterprise-rag/) for full RAG pipeline setup
-- [RAG Pipeline Guide](/guides/rag-pipeline/) for step-by-step configuration
-- [RAG Recipes](/cookbook/rag-recipes/) for advanced retrieval patterns
+- [Enterprise RAG Knowledge Base](/docs/use-cases/enterprise-rag/) for full RAG pipeline setup
+- [RAG Pipeline Guide](/docs/guides/rag-pipeline/) for step-by-step configuration
+- [RAG Recipes](/docs/cookbook/rag-recipes/) for advanced retrieval patterns

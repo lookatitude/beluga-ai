@@ -290,5 +290,5 @@ func scrapeDirectory(ctx context.Context, rootDir string) ([]schema.Document, er
 
 ## Next Steps
 
-- [Lazy-Loading](/tutorials/documents/lazy-loading) -- Process millions of files with constant memory usage
-- [Markdown Chunking](/tutorials/documents/markdown-chunking) -- Split loaded Markdown documents by heading structure
+- [Lazy-Loading](/docs/tutorials/documents/lazy-loading) -- Process millions of files with constant memory usage
+- [Markdown Chunking](/docs/tutorials/documents/markdown-chunking) -- Split loaded Markdown documents by heading structure

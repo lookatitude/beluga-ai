@@ -18,7 +18,7 @@ A voice session with interrupt support that allows users to barge in while the a
 
 - Go 1.23+
 - Working STT and TTS provider configuration
-- Completion of [Sensitivity Tuning](/tutorials/voice/sensitivity-tuning) is recommended
+- Completion of [Sensitivity Tuning](/docs/tutorials/voice/sensitivity-tuning) is recommended
 
 ## Step 1: Create a Session with STT and TTS
 
@@ -205,6 +205,6 @@ When `AllowInterruptions` is enabled and the user speaks during the `speaking` s
 
 ## Next Steps
 
-- [Preemptive Generation](/tutorials/voice/preemptive-generation) -- Start generating replies from interim transcripts
-- [Sensitivity Tuning](/tutorials/voice/sensitivity-tuning) -- Tune VAD thresholds for interruption detection
-- [Custom Silero VAD](/tutorials/voice/custom-silero-vad) -- Use custom models for precise speech detection
+- [Preemptive Generation](/docs/tutorials/voice/preemptive-generation) -- Start generating replies from interim transcripts
+- [Sensitivity Tuning](/docs/tutorials/voice/sensitivity-tuning) -- Tune VAD thresholds for interruption detection
+- [Custom Silero VAD](/docs/tutorials/voice/custom-silero-vad) -- Use custom models for precise speech detection

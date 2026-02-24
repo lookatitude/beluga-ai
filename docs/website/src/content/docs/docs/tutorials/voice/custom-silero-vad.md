@@ -18,7 +18,7 @@ A voice activity detection system using Silero's ONNX model that classifies audi
 
 - Go 1.23+
 - Silero VAD ONNX model file (downloadable from the Silero VAD repository)
-- Completion of [Sensitivity Tuning](/tutorials/voice/sensitivity-tuning) is recommended
+- Completion of [Sensitivity Tuning](/docs/tutorials/voice/sensitivity-tuning) is recommended
 
 ## Step 1: Create a Silero VAD Provider
 
@@ -194,6 +194,6 @@ func processWithNoiseCancellation(ctx context.Context, audio []byte) (bool, erro
 
 ## Next Steps
 
-- [Sensitivity Tuning](/tutorials/voice/sensitivity-tuning) -- Tune VAD alongside turn detection
-- [ML-Based Turn Prediction](/tutorials/voice/ml-turn-prediction) -- Neural turn-end detection
-- [Voice Session Interruptions](/tutorials/voice/session-interruptions) -- Use VAD for barge-in detection
+- [Sensitivity Tuning](/docs/tutorials/voice/sensitivity-tuning) -- Tune VAD alongside turn detection
+- [ML-Based Turn Prediction](/docs/tutorials/voice/ml-turn-prediction) -- Neural turn-end detection
+- [Voice Session Interruptions](/docs/tutorials/voice/session-interruptions) -- Use VAD for barge-in detection

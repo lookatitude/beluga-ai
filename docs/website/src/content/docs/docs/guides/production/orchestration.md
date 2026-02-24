@@ -301,7 +301,7 @@ Use this table to match your coordination requirements to the appropriate patter
 
 ## Next Steps
 
-- [Building Your First Agent](/guides/first-agent/) — Single agent fundamentals
-- [Tools & MCP](/guides/tools-and-mcp/) — Tool system for agents
-- [Safety & Guards](/guides/production/safety-and-guards/) — Guard multi-agent systems
-- [Deploying to Production](/guides/production/deployment/) — Production orchestration
+- [Building Your First Agent](/docs/guides/first-agent/) — Single agent fundamentals
+- [Tools & MCP](/docs/guides/tools-and-mcp/) — Tool system for agents
+- [Safety & Guards](/docs/guides/production/safety-and-guards/) — Guard multi-agent systems
+- [Deploying to Production](/docs/guides/production/deployment/) — Production orchestration

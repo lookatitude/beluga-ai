@@ -18,7 +18,7 @@ A voice session that processes interim STT results to speculatively generate res
 
 - Go 1.23+
 - A streaming STT provider (e.g., Deepgram, Google) that supports interim results
-- Completion of [Real-time STT Streaming](/tutorials/voice/stt-realtime-streaming)
+- Completion of [Real-time STT Streaming](/docs/tutorials/voice/stt-realtime-streaming)
 
 ## The Latency Problem
 
@@ -263,6 +263,6 @@ Integrate the preemptive handler with your STT streaming session. The handler re
 
 ## Next Steps
 
-- [Voice Session Interruptions](/tutorials/voice/session-interruptions) -- Cancel playback when the user interrupts
-- [Sentence-Boundary Turn Detection](/tutorials/voice/sentence-boundary) -- Detect when the user finishes speaking
-- [Real-time STT Streaming](/tutorials/voice/stt-realtime-streaming) -- Streaming STT fundamentals
+- [Voice Session Interruptions](/docs/tutorials/voice/session-interruptions) -- Cancel playback when the user interrupts
+- [Sentence-Boundary Turn Detection](/docs/tutorials/voice/sentence-boundary) -- Detect when the user finishes speaking
+- [Real-time STT Streaming](/docs/tutorials/voice/stt-realtime-streaming) -- Streaming STT fundamentals

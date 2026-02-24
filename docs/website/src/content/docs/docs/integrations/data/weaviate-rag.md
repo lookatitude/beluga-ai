@@ -393,6 +393,6 @@ The Weaviate class has not been created yet. Create it via the Weaviate REST API
 
 ## Related Resources
 
-- [Elasticsearch Keyword Search](/integrations/elasticsearch-search) -- Full-text keyword search with Elasticsearch
-- [Vector Stores](/integrations/vector-stores) -- Vector store provider overview
-- [Embedding Providers](/integrations/embedding-providers) -- Embedding provider configuration
+- [Elasticsearch Keyword Search](/docs/integrations/elasticsearch-search) -- Full-text keyword search with Elasticsearch
+- [Vector Stores](/docs/integrations/vector-stores) -- Vector store provider overview
+- [Embedding Providers](/docs/integrations/embedding-providers) -- Embedding provider configuration

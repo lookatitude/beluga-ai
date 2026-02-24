@@ -127,5 +127,5 @@ Set `TURN_MODEL_PATH` to a valid ONNX model file path.
 
 ## Related Resources
 
-- [Heuristic Turn Detection Tuning](/integrations/turn-heuristic-tuning)
-- [Voice Services Overview](/integrations/voice-services)
+- [Heuristic Turn Detection Tuning](/docs/integrations/turn-heuristic-tuning)
+- [Voice Services Overview](/docs/integrations/voice-services)

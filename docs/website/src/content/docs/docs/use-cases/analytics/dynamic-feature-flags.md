@@ -284,6 +284,6 @@ The flag manager is stateless and scales horizontally. Each application instance
 
 ## Related Resources
 
-- [Configuration Guide](/guides/configuration/) for config package patterns
-- [Observability Guide](/guides/observability/) for metrics and tracing
-- [Multi-tenant API Keys](/use-cases/multi-tenant-keys/) for related config patterns
+- [Configuration Guide](/docs/guides/configuration/) for config package patterns
+- [Observability Guide](/docs/guides/observability/) for metrics and tracing
+- [Multi-tenant API Keys](/docs/use-cases/multi-tenant-keys/) for related config patterns

@@ -333,6 +333,6 @@ span.SetAttributes(
 
 ## Related Resources
 
-- [Building Your First Agent](/guides/first-agent/) for planner strategy selection
-- [Tools & MCP](/guides/tools-and-mcp/) for building custom tools
-- [LLM Recipes](/cookbook/llm-recipes/) for typed responses
+- [Building Your First Agent](/docs/guides/first-agent/) for planner strategy selection
+- [Tools & MCP](/docs/guides/tools-and-mcp/) for building custom tools
+- [LLM Recipes](/docs/cookbook/llm-recipes/) for typed responses

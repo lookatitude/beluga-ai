@@ -261,5 +261,5 @@ Policy evaluation uses first-match semantics: the first policy whose `ToolPatter
 
 ## Next Steps
 
-- [Content Moderation](/tutorials/safety/content-moderation) -- Automated safety guards for input/output filtering
-- [Temporal Workflows](/tutorials/orchestration/temporal-workflows) -- Async HITL with durable execution for long-running approvals
+- [Content Moderation](/docs/tutorials/safety/content-moderation) -- Automated safety guards for input/output filtering
+- [Temporal Workflows](/docs/tutorials/orchestration/temporal-workflows) -- Async HITL with durable execution for long-running approvals

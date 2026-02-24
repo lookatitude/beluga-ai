@@ -155,6 +155,6 @@ type InfoInput struct {
 
 ## Related Resources
 
-- [Bilingual Conversation Tutor](/use-cases/bilingual-tutor/) for S2S language learning patterns
-- [Conversational AI Assistant](/use-cases/conversational-ai/) for adding memory to voice agents
-- [Voice AI Applications](/use-cases/voice-applications/) for voice pipeline architecture
+- [Bilingual Conversation Tutor](/docs/use-cases/bilingual-tutor/) for S2S language learning patterns
+- [Conversational AI Assistant](/docs/use-cases/conversational-ai/) for adding memory to voice agents
+- [Voice AI Applications](/docs/use-cases/voice-applications/) for voice pipeline architecture

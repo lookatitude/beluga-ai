@@ -480,6 +480,6 @@ observability:
 
 ## Related Resources
 
-- [LLM Package Guide](/guides/llm-integration/) for LLM integration patterns
-- [Cost-Optimized Router](/use-cases/cost-optimized-router/) for cost optimization strategies
-- [Observability Guide](/guides/observability/) for OpenTelemetry setup
+- [LLM Package Guide](/docs/guides/llm-integration/) for LLM integration patterns
+- [Cost-Optimized Router](/docs/use-cases/cost-optimized-router/) for cost optimization strategies
+- [Observability Guide](/docs/guides/observability/) for OpenTelemetry setup

@@ -244,6 +244,6 @@ func stripTags(input string) string {
 
 ## Next Steps
 
-- [Cloning Voices with ElevenLabs](/tutorials/voice/elevenlabs-cloning) -- High-fidelity voice synthesis
-- [Voice Session Interruptions](/tutorials/voice/session-interruptions) -- Integrate expressive TTS into voice agents
-- [Sensitivity Tuning](/tutorials/voice/sensitivity-tuning) -- Balance detection thresholds for natural conversation
+- [Cloning Voices with ElevenLabs](/docs/tutorials/voice/elevenlabs-cloning) -- High-fidelity voice synthesis
+- [Voice Session Interruptions](/docs/tutorials/voice/session-interruptions) -- Integrate expressive TTS into voice agents
+- [Sensitivity Tuning](/docs/tutorials/voice/sensitivity-tuning) -- Balance detection thresholds for natural conversation

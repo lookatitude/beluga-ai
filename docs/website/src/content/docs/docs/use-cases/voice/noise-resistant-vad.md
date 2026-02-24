@@ -138,6 +138,6 @@ Recommended starting point for industrial environments: Threshold=0.55, MinSpeec
 
 ## Related Resources
 
-- [Multi-Speaker Segmentation](/use-cases/multi-speaker-segmentation/) for multi-speaker scenarios
-- [Barge-In Detection](/use-cases/barge-in-detection/) for VAD in barge-in detection
-- [Industrial Control](/use-cases/industrial-control/) for voice commands in noisy environments
+- [Multi-Speaker Segmentation](/docs/use-cases/multi-speaker-segmentation/) for multi-speaker scenarios
+- [Barge-In Detection](/docs/use-cases/barge-in-detection/) for VAD in barge-in detection
+- [Industrial Control](/docs/use-cases/industrial-control/) for voice commands in noisy environments

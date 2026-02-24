@@ -238,4 +238,4 @@ func (vm *VoiceMetrics) RecordAudioChunkIfEnabled(ctx context.Context, enabled b
 
 ## Related Recipes
 
-- [Trace Aggregation for Multi-Agents](/cookbook/trace-aggregation) — Aggregate traces across agents
+- [Trace Aggregation for Multi-Agents](/docs/cookbook/trace-aggregation) — Aggregate traces across agents

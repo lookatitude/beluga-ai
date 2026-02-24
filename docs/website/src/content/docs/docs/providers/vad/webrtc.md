@@ -10,7 +10,7 @@ head:
 
 The WebRTC provider implements voice activity detection using a dual-metric approach: RMS energy analysis combined with zero-crossing rate (ZCR). This pure Go implementation requires no external dependencies or CGO and effectively distinguishes voiced speech from background noise.
 
-Choose WebRTC VAD when you need a lightweight, pure Go voice activity detector with zero external dependencies. It works well in controlled environments and requires no CGO or model files. The dual-metric approach (energy + zero-crossing rate) effectively rejects high-energy noise that would fool a pure energy detector. For higher accuracy in noisy environments, consider [Silero](/providers/vad/silero).
+Choose WebRTC VAD when you need a lightweight, pure Go voice activity detector with zero external dependencies. It works well in controlled environments and requires no CGO or model files. The dual-metric approach (energy + zero-crossing rate) effectively rejects high-energy noise that would fool a pure energy detector. For higher accuracy in noisy environments, consider [Silero](/docs/providers/vad/silero).
 
 ## Installation
 

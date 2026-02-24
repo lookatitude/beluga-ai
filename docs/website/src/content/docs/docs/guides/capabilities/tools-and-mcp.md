@@ -330,7 +330,7 @@ result, err := a.Invoke(ctx, "What's the weather in London and what's 15% of 250
 
 ## Next Steps
 
-- [Building Your First Agent](/guides/first-agent/) — Tools in the agent context
-- [Orchestration & Workflows](/guides/orchestration/) — Tools across multi-agent systems
-- [Safety & Guards](/guides/safety-and-guards/) — Guard tool execution
-- [Monitoring & Observability](/guides/observability/) — Trace tool calls
+- [Building Your First Agent](/docs/guides/first-agent/) — Tools in the agent context
+- [Orchestration & Workflows](/docs/guides/orchestration/) — Tools across multi-agent systems
+- [Safety & Guards](/docs/guides/safety-and-guards/) — Guard tool execution
+- [Monitoring & Observability](/docs/guides/observability/) — Trace tool calls

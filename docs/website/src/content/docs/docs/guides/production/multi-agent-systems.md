@@ -36,7 +36,7 @@ Multi-agent architectures excel at:
 ## Prerequisites
 
 Before starting this guide:
-- Complete [Building Your First Agent](/guides/first-agent)
+- Complete [Building Your First Agent](/docs/guides/first-agent)
 - Understand agent state and memory
 - Familiarity with Go concurrency patterns
 
@@ -726,7 +726,7 @@ When deploying multi-agent systems, the complexity of coordination means that pr
 ## Next Steps
 
 Now that you understand multi-agent systems:
-- Learn about [Orchestration & Workflows](/guides/production/orchestration/) for deterministic and durable workflow patterns
-- Explore [Memory System](/guides/memory-system/) for advanced shared state across agents
-- Read [Observability](/guides/production/observability/) for monitoring agent teams with distributed tracing
-- Check [Safety & Guards](/guides/production/safety-and-guards/) for protecting multi-agent pipelines
+- Learn about [Orchestration & Workflows](/docs/guides/production/orchestration/) for deterministic and durable workflow patterns
+- Explore [Memory System](/docs/guides/memory-system/) for advanced shared state across agents
+- Read [Observability](/docs/guides/production/observability/) for monitoring agent teams with distributed tracing
+- Check [Safety & Guards](/docs/guides/production/safety-and-guards/) for protecting multi-agent pipelines

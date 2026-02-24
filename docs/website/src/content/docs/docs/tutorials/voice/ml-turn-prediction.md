@@ -18,7 +18,7 @@ A turn detector powered by an ONNX model that analyzes audio features to predict
 
 - Go 1.23+
 - An ONNX turn-detection model file (or a placeholder for development)
-- Completion of [Sentence-Boundary Turn Detection](/tutorials/voice/sentence-boundary) is recommended
+- Completion of [Sentence-Boundary Turn Detection](/docs/tutorials/voice/sentence-boundary) is recommended
 
 ## When to Use ML-Based Detection
 
@@ -29,7 +29,7 @@ ML-based turn detection is appropriate when:
 - Heuristic rules produce too many false positives or false negatives
 - You need to distinguish intentional pauses from end-of-turn silence
 
-For simpler use cases with structured speech (commands, short queries), the heuristic provider in [Sentence-Boundary Turn Detection](/tutorials/voice/sentence-boundary) is sufficient and avoids the complexity of model management.
+For simpler use cases with structured speech (commands, short queries), the heuristic provider in [Sentence-Boundary Turn Detection](/docs/tutorials/voice/sentence-boundary) is sufficient and avoids the complexity of model management.
 
 ## Step 1: Configure the ONNX Provider
 
@@ -153,6 +153,6 @@ The ONNX provider works with any compatible turn-detection model. The ONNX Runti
 
 ## Next Steps
 
-- [Sentence-Boundary Turn Detection](/tutorials/voice/sentence-boundary) -- Heuristic alternative for simpler use cases
-- [Sensitivity Tuning](/tutorials/voice/sensitivity-tuning) -- Combine turn detection with VAD tuning
-- [Custom Silero VAD](/tutorials/voice/custom-silero-vad) -- Neural VAD for voice activity detection
+- [Sentence-Boundary Turn Detection](/docs/tutorials/voice/sentence-boundary) -- Heuristic alternative for simpler use cases
+- [Sensitivity Tuning](/docs/tutorials/voice/sensitivity-tuning) -- Combine turn detection with VAD tuning
+- [Custom Silero VAD](/docs/tutorials/voice/custom-silero-vad) -- Neural VAD for voice activity detection

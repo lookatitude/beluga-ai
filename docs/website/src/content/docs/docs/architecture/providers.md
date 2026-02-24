@@ -113,7 +113,7 @@ Each category maps to a package with a well-defined interface. Providers registe
 
 ## How to Add a Provider
 
-Every provider follows the same pattern regardless of category. Whether you're adding an LLM, embedding model, vector store, voice transport, or workflow engine, the steps are identical: implement the interface, register via `init()`, map errors, and write tests. This uniformity is deliberate — it means that experience adding one type of provider directly transfers to any other category. See the [Full Architecture](/architecture/architecture/) for detailed templates.
+Every provider follows the same pattern regardless of category. Whether you're adding an LLM, embedding model, vector store, voice transport, or workflow engine, the steps are identical: implement the interface, register via `init()`, map errors, and write tests. This uniformity is deliberate — it means that experience adding one type of provider directly transfers to any other category. See the [Full Architecture](/docs/architecture/architecture/) for detailed templates.
 
 ### Step 1: Create the provider package
 

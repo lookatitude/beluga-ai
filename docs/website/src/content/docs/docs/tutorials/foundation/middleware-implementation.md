@@ -16,7 +16,7 @@ Three middleware components — logging, validation, and error recovery — comp
 
 ## Prerequisites
 
-- Understanding of the [Runnable interface](/tutorials/foundation/custom-runnable)
+- Understanding of the [Runnable interface](/docs/tutorials/foundation/custom-runnable)
 - Familiarity with Go interfaces and function types
 
 ## The Middleware Pattern
@@ -241,5 +241,5 @@ model = llm.ApplyMiddleware(base,
 
 ## Next Steps
 
-- [Custom Runnable](/tutorials/foundation/custom-runnable) — Build composable components
-- [OpenTelemetry Tracing](/tutorials/foundation/otel-tracing) — Distributed tracing for LLM calls
+- [Custom Runnable](/docs/tutorials/foundation/custom-runnable) — Build composable components
+- [OpenTelemetry Tracing](/docs/tutorials/foundation/otel-tracing) — Distributed tracing for LLM calls

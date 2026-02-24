@@ -181,6 +181,6 @@ func buildTimeline(segments []Segment) []SpeakerTimeline {
 
 ## Related Resources
 
-- [Noise-Resistant VAD](/use-cases/noise-resistant-vad/) for robust VAD in high-noise environments
-- [Meeting Minutes](/use-cases/meeting-minutes/) for downstream meeting summarization
-- [Voice Sessions Overview](/use-cases/voice-sessions-overview/) for session and pipeline patterns
+- [Noise-Resistant VAD](/docs/use-cases/noise-resistant-vad/) for robust VAD in high-noise environments
+- [Meeting Minutes](/docs/use-cases/meeting-minutes/) for downstream meeting summarization
+- [Voice Sessions Overview](/docs/use-cases/voice-sessions-overview/) for session and pipeline patterns

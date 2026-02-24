@@ -297,6 +297,6 @@ If search operations are slow on large collections, ensure the appropriate index
 
 ## Related Resources
 
-- [Redis Distributed Locking](/integrations/redis-locking) -- Distributed coordination for memory operations
-- [Memory System Guide](/guides/memory) -- Full memory architecture documentation
-- [LLM Providers Overview](/integrations/llm-providers) -- Connecting LLM models
+- [Redis Distributed Locking](/docs/integrations/redis-locking) -- Distributed coordination for memory operations
+- [Memory System Guide](/docs/guides/memory) -- Full memory architecture documentation
+- [LLM Providers Overview](/docs/integrations/llm-providers) -- Connecting LLM models

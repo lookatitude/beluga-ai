@@ -18,7 +18,7 @@ A hybrid retriever that queries both vector and keyword backends in parallel, fu
 
 ## Prerequisites
 
-- Understanding of [In-memory Vector Store](/tutorials/providers/inmemory-vectorstore)
+- Understanding of [In-memory Vector Store](/docs/tutorials/providers/inmemory-vectorstore)
 - A vector store and a keyword search backend (or a mock)
 
 ## Why Hybrid Search
@@ -233,5 +233,5 @@ func main() {
 
 ## Next Steps
 
-- [Multi-query Retrieval](/tutorials/rag/multiquery-chains) -- Expand queries for better recall
-- [pgvector Sharding](/tutorials/providers/pgvector-sharding) -- Scale the vector backend
+- [Multi-query Retrieval](/docs/tutorials/rag/multiquery-chains) -- Expand queries for better recall
+- [pgvector Sharding](/docs/tutorials/providers/pgvector-sharding) -- Scale the vector backend

@@ -10,7 +10,7 @@ head:
 
 The Daily provider implements bidirectional audio transport through Daily.co rooms. It enables voice pipelines to send and receive audio via Daily's WebRTC infrastructure.
 
-Choose Daily when you want a managed WebRTC service with simple room-based audio transport. Daily handles the WebRTC infrastructure, letting you focus on voice pipeline logic. For self-hosted WebRTC infrastructure, consider [LiveKit](/providers/transport/livekit). For interoperability with Pipecat-based processing systems, consider [Pipecat](/providers/transport/pipecat).
+Choose Daily when you want a managed WebRTC service with simple room-based audio transport. Daily handles the WebRTC infrastructure, letting you focus on voice pipeline logic. For self-hosted WebRTC infrastructure, consider [LiveKit](/docs/providers/transport/livekit). For interoperability with Pipecat-based processing systems, consider [Pipecat](/docs/providers/transport/pipecat).
 
 ## Installation
 

@@ -369,7 +369,7 @@ func (t *ApprovedTool) Execute(ctx context.Context, input map[string]any) (*tool
 
 ## Next Steps
 
-- [Building Your First Agent](/guides/first-agent/) — Agent fundamentals
-- [Tools & MCP](/guides/tools-and-mcp/) — Tool system and execution
-- [Monitoring & Observability](/guides/production/observability/) — Audit guard decisions with distributed tracing
-- [Deploying to Production](/guides/production/deployment/) — Production safety configuration and resilience
+- [Building Your First Agent](/docs/guides/first-agent/) — Agent fundamentals
+- [Tools & MCP](/docs/guides/tools-and-mcp/) — Tool system and execution
+- [Monitoring & Observability](/docs/guides/production/observability/) — Audit guard decisions with distributed tracing
+- [Deploying to Production](/docs/guides/production/deployment/) — Production safety configuration and resilience

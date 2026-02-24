@@ -10,7 +10,7 @@ head:
 
 Cartesia provides ultra-low-latency text-to-speech synthesis through the Sonic voice engine. The Beluga AI provider uses Cartesia's HTTP API with the `httpclient` infrastructure for built-in retry support, producing raw PCM audio output suitable for real-time voice pipelines.
 
-Choose Cartesia when latency is critical — for example, in conversational voice agents where every millisecond of TTS delay affects the user experience. Cartesia's Sonic engine is optimized for speed-first synthesis with direct PCM output, avoiding the overhead of compressed audio decoding. For the highest voice quality with more voice variety, consider [ElevenLabs](/providers/voice/elevenlabs).
+Choose Cartesia when latency is critical — for example, in conversational voice agents where every millisecond of TTS delay affects the user experience. Cartesia's Sonic engine is optimized for speed-first synthesis with direct PCM output, avoiding the overhead of compressed audio decoding. For the highest voice quality with more voice variety, consider [ElevenLabs](/docs/providers/voice/elevenlabs).
 
 ## Installation
 

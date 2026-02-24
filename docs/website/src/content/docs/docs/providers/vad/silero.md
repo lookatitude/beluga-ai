@@ -10,7 +10,7 @@ head:
 
 The Silero provider implements voice activity detection using the Silero VAD ONNX model. When the ONNX runtime is unavailable, it falls back to an energy-based detector calibrated to approximate Silero's sensitivity. This provider requires CGO.
 
-Choose Silero when you need high-accuracy, neural network-based voice activity detection. The ONNX model provides more precise speech/silence classification than energy-based methods, especially in noisy environments. Note that it requires CGO. For a pure Go alternative with no CGO dependency, use [WebRTC](/providers/vad/webrtc).
+Choose Silero when you need high-accuracy, neural network-based voice activity detection. The ONNX model provides more precise speech/silence classification than energy-based methods, especially in noisy environments. Note that it requires CGO. For a pure Go alternative with no CGO dependency, use [WebRTC](/docs/providers/vad/webrtc).
 
 ## Installation
 

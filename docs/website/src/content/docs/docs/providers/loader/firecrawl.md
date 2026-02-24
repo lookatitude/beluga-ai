@@ -10,7 +10,7 @@ head:
 
 The Firecrawl loader implements the `loader.DocumentLoader` interface using the [Firecrawl](https://firecrawl.dev) web scraping service. Firecrawl handles JavaScript rendering, anti-bot detection, and page extraction, returning clean Markdown content suitable for RAG pipelines.
 
-Choose Firecrawl when you need to scrape web pages — including JavaScript-rendered content — and extract clean Markdown for RAG pipelines. Firecrawl handles anti-bot detection and page extraction, producing content ready for splitting and embedding. For loading local documents, consider [Docling](/providers/loader/docling) or [Unstructured](/providers/loader/unstructured).
+Choose Firecrawl when you need to scrape web pages — including JavaScript-rendered content — and extract clean Markdown for RAG pipelines. Firecrawl handles anti-bot detection and page extraction, producing content ready for splitting and embedding. For loading local documents, consider [Docling](/docs/providers/loader/docling) or [Unstructured](/docs/providers/loader/unstructured).
 
 ## Installation
 

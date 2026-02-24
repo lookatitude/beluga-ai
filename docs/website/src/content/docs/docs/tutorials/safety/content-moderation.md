@@ -278,5 +278,5 @@ Available providers include Lakera Guard, NVIDIA NeMo Guardrails, LLM Guard, Azu
 
 ## Next Steps
 
-- [Human-in-the-Loop](/tutorials/safety/human-in-loop) -- Manual review for edge cases that need human judgment
-- [REST Deployment](/tutorials/server/rest-deployment) -- Deploy your guarded agents as a REST API
+- [Human-in-the-Loop](/docs/tutorials/safety/human-in-loop) -- Manual review for edge cases that need human judgment
+- [REST Deployment](/docs/tutorials/server/rest-deployment) -- Deploy your guarded agents as a REST API

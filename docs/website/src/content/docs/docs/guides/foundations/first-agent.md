@@ -376,7 +376,7 @@ func main() {
 
 ## Next Steps
 
-- [Working with LLMs](/guides/foundations/working-with-llms/) — Deep dive into the ChatModel interface
-- [Tools & MCP](/guides/tools-and-mcp/) — Advanced tool patterns and MCP integration
-- [Orchestration & Workflows](/guides/orchestration/) — Multi-agent coordination
-- [Memory System](/guides/memory-system/) — Persistent agent memory
+- [Working with LLMs](/docs/guides/foundations/working-with-llms/) — Deep dive into the ChatModel interface
+- [Tools & MCP](/docs/guides/tools-and-mcp/) — Advanced tool patterns and MCP integration
+- [Orchestration & Workflows](/docs/guides/orchestration/) — Multi-agent coordination
+- [Memory System](/docs/guides/memory-system/) — Persistent agent memory

@@ -361,6 +361,6 @@ Organize dashboards hierarchically:
 
 ## Related Resources
 
-- [Observability Guide](/guides/observability/) for OpenTelemetry setup
-- [PII Leakage Detection](/use-cases/pii-leakage-detection/) for security monitoring
-- [Token Cost Attribution](/use-cases/token-cost-attribution/) for cost tracking
+- [Observability Guide](/docs/guides/observability/) for OpenTelemetry setup
+- [PII Leakage Detection](/docs/use-cases/pii-leakage-detection/) for security monitoring
+- [Token Cost Attribution](/docs/use-cases/token-cost-attribution/) for cost tracking

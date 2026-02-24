@@ -151,6 +151,6 @@ func routeIntent(ctx context.Context, intent string) string {
 
 ## Related Resources
 
-- [Voice AI Applications](/use-cases/voice-applications/) for full voice pipeline patterns
-- [Voice Sessions Overview](/use-cases/voice-sessions-overview/) for session management
-- [Outbound Calling](/use-cases/outbound-calling/) for outbound voice patterns
+- [Voice AI Applications](/docs/use-cases/voice-applications/) for full voice pipeline patterns
+- [Voice Sessions Overview](/docs/use-cases/voice-sessions-overview/) for session management
+- [Outbound Calling](/docs/use-cases/outbound-calling/) for outbound voice patterns

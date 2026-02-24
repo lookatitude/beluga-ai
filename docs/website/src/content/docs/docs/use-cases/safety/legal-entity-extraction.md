@@ -455,6 +455,6 @@ Legal entity extraction delivered significant improvements:
 
 ## Related Resources
 
-- [Few-Shot SQL Generation](/use-cases/few-shot-sql/) for structured output patterns
-- [Schema Validation Guide](/guides/schema-validation/) for validation setup
-- [LLM Configuration](/integrations/llm-providers/) for provider-specific tuning
+- [Few-Shot SQL Generation](/docs/use-cases/few-shot-sql/) for structured output patterns
+- [Schema Validation Guide](/docs/guides/schema-validation/) for validation setup
+- [LLM Configuration](/docs/integrations/llm-providers/) for provider-specific tuning

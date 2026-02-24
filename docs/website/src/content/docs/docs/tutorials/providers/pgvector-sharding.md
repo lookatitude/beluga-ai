@@ -17,7 +17,7 @@ A production-grade pgvector setup with HNSW indexing, table partitioning by tena
 ## Prerequisites
 
 - PostgreSQL with the `pgvector` extension installed
-- Understanding of [In-memory Vector Store](/tutorials/providers/inmemory-vectorstore)
+- Understanding of [In-memory Vector Store](/docs/tutorials/providers/inmemory-vectorstore)
 
 ## Step 1: Basic pgvector Setup
 
@@ -192,5 +192,5 @@ Use a connection pooler (PgBouncer, pgcat) in front of PostgreSQL. Vector simila
 
 ## Next Steps
 
-- [Hybrid Search](/tutorials/rag/hybrid-search) — Combine vector and keyword search
-- [In-memory Vector Store](/tutorials/providers/inmemory-vectorstore) — Zero-dependency development
+- [Hybrid Search](/docs/tutorials/rag/hybrid-search) — Combine vector and keyword search
+- [In-memory Vector Store](/docs/tutorials/providers/inmemory-vectorstore) — Zero-dependency development

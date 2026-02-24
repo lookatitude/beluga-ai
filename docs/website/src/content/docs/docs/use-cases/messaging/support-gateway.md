@@ -417,7 +417,7 @@ resp, err := breaker.Execute(ctx, func(ctx context.Context) (*http.Response, err
 
 ## Related Resources
 
-- [Server Package Guide](/guides/server-patterns/) for REST API patterns
-- [Middleware Guide](/guides/middleware/) for composable middleware
-- [Observability Guide](/guides/observability/) for API monitoring
-- [Search Everything Gateway](/use-cases/search-everything/) for API integration patterns
+- [Server Package Guide](/docs/guides/server-patterns/) for REST API patterns
+- [Middleware Guide](/docs/guides/middleware/) for composable middleware
+- [Observability Guide](/docs/guides/observability/) for API monitoring
+- [Search Everything Gateway](/docs/use-cases/search-everything/) for API integration patterns

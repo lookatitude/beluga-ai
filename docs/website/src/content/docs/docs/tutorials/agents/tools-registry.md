@@ -16,7 +16,7 @@ Custom tools with JSON schema input validation, a tool registry for centralized 
 
 ## Prerequisites
 
-- Understanding of [Building a Research Agent](/tutorials/agents/research-agent)
+- Understanding of [Building a Research Agent](/docs/tutorials/agents/research-agent)
 - Familiarity with JSON Schema basics
 
 ## Step 1: Define a Custom Tool
@@ -261,5 +261,5 @@ func main() {
 
 ## Next Steps
 
-- [Multi-Agent Orchestration](/tutorials/agents/multi-agent-orchestration) -- Coordinate multiple tool-equipped agents
-- [Research Agent](/tutorials/agents/research-agent) -- Build a complex agent with multiple tools
+- [Multi-Agent Orchestration](/docs/tutorials/agents/multi-agent-orchestration) -- Coordinate multiple tool-equipped agents
+- [Research Agent](/docs/tutorials/agents/research-agent) -- Build a complex agent with multiple tools

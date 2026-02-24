@@ -137,5 +137,5 @@ import "github.com/lookatitude/beluga-ai/voice/turndetection"
 
 ## Related Resources
 
-- [Custom Turn Detectors for Noisy Environments](/integrations/noisy-turn-detection)
-- [Voice Services Overview](/integrations/voice-services)
+- [Custom Turn Detectors for Noisy Environments](/docs/integrations/noisy-turn-detection)
+- [Voice Services Overview](/docs/integrations/voice-services)

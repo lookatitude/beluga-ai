@@ -16,8 +16,8 @@ A custom LLM provider that implements `ChatModel`, registers with the provider r
 
 ## Prerequisites
 
-- Understanding of the [ChatModel interface](/guides/llm)
-- Familiarity with Go interfaces and the [registry pattern](/guides/architecture)
+- Understanding of the [ChatModel interface](/docs/guides/llm)
+- Familiarity with Go interfaces and the [registry pattern](/docs/guides/architecture)
 
 ## The ChatModel Interface
 
@@ -264,5 +264,5 @@ func main() {
 
 ## Next Steps
 
-- [Advanced Inference Options](/tutorials/providers/advanced-inference) — Control generation parameters
-- [Model Switching](/tutorials/agents/model-switching) — Build fallback chains across providers
+- [Advanced Inference Options](/docs/tutorials/providers/advanced-inference) — Control generation parameters
+- [Model Switching](/docs/tutorials/agents/model-switching) — Build fallback chains across providers

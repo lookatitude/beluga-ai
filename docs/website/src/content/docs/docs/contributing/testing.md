@@ -255,4 +255,4 @@ All tests run automatically on every pull request via GitHub Actions. The CI pip
 4. **Build** — `make build`
 5. **Coverage** — Coverage report is generated and checked
 
-All checks must pass before a PR can be merged. See the [Pull Request Process](/contributing/pull-requests/) for details.
+All checks must pass before a PR can be merged. See the [Pull Request Process](/docs/contributing/pull-requests/) for details.

@@ -291,5 +291,5 @@ type GraphNode struct {
 
 ## Related Recipes
 
-- [Agents Parallel Step Execution](/cookbook/agents-parallel-execution) — Parallel agent steps
-- [Workflow Checkpointing](/cookbook/workflow-checkpoints) — Save and resume workflows
+- [Agents Parallel Step Execution](/docs/cookbook/agents-parallel-execution) — Parallel agent steps
+- [Workflow Checkpointing](/docs/cookbook/workflow-checkpoints) — Save and resume workflows

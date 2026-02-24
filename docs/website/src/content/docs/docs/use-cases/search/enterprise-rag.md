@@ -377,6 +377,6 @@ func (r *RAGSystem) IngestBatch(ctx context.Context, docs []schema.Document) err
 
 ## Related Resources
 
-- [RAG Pipeline Guide](/guides/rag-pipeline/) for step-by-step setup
-- [RAG Recipes](/cookbook/rag-recipes/) for advanced retrieval patterns
-- [Vector Store Integration](/integrations/vector-stores/) for provider-specific configuration
+- [RAG Pipeline Guide](/docs/guides/rag-pipeline/) for step-by-step setup
+- [RAG Recipes](/docs/cookbook/rag-recipes/) for advanced retrieval patterns
+- [Vector Store Integration](/docs/integrations/vector-stores/) for provider-specific configuration

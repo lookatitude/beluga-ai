@@ -99,7 +99,7 @@ The threshold parameter controls minimum cosine similarity required for a match:
 
 | Provider | Registry Name | Description |
 |----------|---------------|-------------|
-| [In-Memory](/providers/cache/inmemory) | `inmemory` | LRU cache with TTL-based expiration |
+| [In-Memory](/docs/providers/cache/inmemory) | `inmemory` | LRU cache with TTL-based expiration |
 
 ## Provider Discovery
 

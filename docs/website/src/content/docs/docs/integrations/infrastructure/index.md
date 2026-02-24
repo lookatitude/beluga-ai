@@ -160,7 +160,7 @@ model = llm.ApplyMiddleware(model, cache.WithLLMCache(c))
 
 ### Redis Vector Store
 
-See the [Vector Stores](/integrations/vector-stores) page for using Redis as a vector database.
+See the [Vector Stores](/docs/integrations/vector-stores) page for using Redis as a vector database.
 
 ## NATS Message Bus
 

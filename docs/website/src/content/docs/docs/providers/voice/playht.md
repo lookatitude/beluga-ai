@@ -10,7 +10,7 @@ head:
 
 PlayHT provides AI-powered text-to-speech with voice cloning and multiple output formats. The Beluga AI provider uses the PlayHT v2 API for synthesis, supporting configurable voice selection, output format, and speech speed.
 
-Choose PlayHT when you need voice cloning with flexible output formats (MP3, WAV, PCM, Opus) and fine-grained speed control. PlayHT's zero-shot voice cloning lets you create custom voices from short audio samples. For the lowest synthesis latency, consider [Cartesia](/providers/voice/cartesia) or [LMNT](/providers/voice/lmnt).
+Choose PlayHT when you need voice cloning with flexible output formats (MP3, WAV, PCM, Opus) and fine-grained speed control. PlayHT's zero-shot voice cloning lets you create custom voices from short audio samples. For the lowest synthesis latency, consider [Cartesia](/docs/providers/voice/cartesia) or [LMNT](/docs/providers/voice/lmnt).
 
 ## Installation
 

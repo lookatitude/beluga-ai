@@ -222,4 +222,4 @@ if err != nil {
 
 | Provider | Description |
 |---|---|
-| [Composio](/providers/mcp/composio) | Access 250+ SaaS integrations as MCP tools via the Composio API |
+| [Composio](/docs/providers/mcp/composio) | Access 250+ SaaS integrations as MCP tools via the Composio API |

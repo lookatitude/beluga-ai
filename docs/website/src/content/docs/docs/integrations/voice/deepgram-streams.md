@@ -169,5 +169,5 @@ Check network connectivity and firewall rules. Deepgram uses WebSocket connectio
 
 ## Related Resources
 
-- [Amazon Transcribe WebSockets](/integrations/transcribe-websockets)
-- [Voice Services Overview](/integrations/voice-services)
+- [Amazon Transcribe WebSockets](/docs/integrations/transcribe-websockets)
+- [Voice Services Overview](/docs/integrations/voice-services)

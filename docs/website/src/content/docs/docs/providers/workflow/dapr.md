@@ -10,7 +10,7 @@ head:
 
 The Dapr provider implements the `workflow.WorkflowStore` interface using Dapr's state management API. It persists workflow state as JSON through Dapr's pluggable state store abstraction, enabling deployment across any Dapr-supported backend (Redis, PostgreSQL, CosmosDB, DynamoDB, and others) without code changes.
 
-Choose Dapr when you are already running a Dapr sidecar and want to reuse your existing state store configuration for workflow persistence. Dapr's pluggable architecture means you can switch between Redis, PostgreSQL, CosmosDB, or DynamoDB without code changes. For full workflow orchestration with replay and signals, consider [Temporal](/providers/workflow/temporal). For lightweight key-value persistence, consider [NATS](/providers/workflow/nats).
+Choose Dapr when you are already running a Dapr sidecar and want to reuse your existing state store configuration for workflow persistence. Dapr's pluggable architecture means you can switch between Redis, PostgreSQL, CosmosDB, or DynamoDB without code changes. For full workflow orchestration with replay and signals, consider [Temporal](/docs/providers/workflow/temporal). For lightweight key-value persistence, consider [NATS](/docs/providers/workflow/nats).
 
 ## Installation
 

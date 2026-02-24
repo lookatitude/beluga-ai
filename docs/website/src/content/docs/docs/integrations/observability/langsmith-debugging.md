@@ -258,6 +258,6 @@ export LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
 
 ## Related Resources
 
-- [Datadog Dashboards](/integrations/datadog-dashboards) -- Metrics and dashboard monitoring
-- [Observability and Tracing](/guides/observability-tracing) -- Beluga AI observability setup
-- [LLM Providers](/providers/llm/openai) -- Configuring LLM providers
+- [Datadog Dashboards](/docs/integrations/datadog-dashboards) -- Metrics and dashboard monitoring
+- [Observability and Tracing](/docs/guides/observability-tracing) -- Beluga AI observability setup
+- [LLM Providers](/docs/providers/llm/openai) -- Configuring LLM providers

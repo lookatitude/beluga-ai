@@ -337,7 +337,7 @@ groups:
 
 ## Next Steps
 
-- [Working with LLMs](/guides/working-with-llms/) — LLM middleware and hooks for automatic instrumentation
-- [Safety & Guards](/guides/production/safety-and-guards/) — Monitor and audit guard decisions
-- [Deploying to Production](/guides/production/deployment/) — Production observability setup with container orchestration
-- [RAG Pipeline](/guides/rag-pipeline/) — Trace retrieval performance and embedding latency
+- [Working with LLMs](/docs/guides/working-with-llms/) — LLM middleware and hooks for automatic instrumentation
+- [Safety & Guards](/docs/guides/production/safety-and-guards/) — Monitor and audit guard decisions
+- [Deploying to Production](/docs/guides/production/deployment/) — Production observability setup with container orchestration
+- [RAG Pipeline](/docs/guides/rag-pipeline/) — Trace retrieval performance and embedding latency

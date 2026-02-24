@@ -56,14 +56,14 @@ func main() {
 
 | Provider | Registry Name | Source Format | Description |
 |---|---|---|---|
-| [Cloud Storage](/providers/loader/cloudstorage) | `cloudstorage` | `s3://`, `gs://`, `az://` URIs | AWS S3, Google Cloud Storage, Azure Blob |
-| [Confluence](/providers/loader/confluence) | `confluence` | Page ID or `SPACE/page-id` | Atlassian Confluence wiki pages |
-| [Docling](/providers/loader/docling) | `docling` | File path or URL | IBM Docling document conversion (PDF, DOCX, images) |
-| [Firecrawl](/providers/loader/firecrawl) | `firecrawl` | URL | Web scraping with JavaScript rendering |
-| [Google Drive](/providers/loader/gdrive) | `gdrive` | File ID | Google Drive files and Google Workspace exports |
-| [GitHub](/providers/loader/github) | `github` | `owner/repo/path` | GitHub repository files via the Contents API |
-| [Notion](/providers/loader/notion) | `notion` | Page ID | Notion pages via the Notion API |
-| [Unstructured](/providers/loader/unstructured) | `unstructured` | File path | Unstructured.io document extraction |
+| [Cloud Storage](/docs/providers/loader/cloudstorage) | `cloudstorage` | `s3://`, `gs://`, `az://` URIs | AWS S3, Google Cloud Storage, Azure Blob |
+| [Confluence](/docs/providers/loader/confluence) | `confluence` | Page ID or `SPACE/page-id` | Atlassian Confluence wiki pages |
+| [Docling](/docs/providers/loader/docling) | `docling` | File path or URL | IBM Docling document conversion (PDF, DOCX, images) |
+| [Firecrawl](/docs/providers/loader/firecrawl) | `firecrawl` | URL | Web scraping with JavaScript rendering |
+| [Google Drive](/docs/providers/loader/gdrive) | `gdrive` | File ID | Google Drive files and Google Workspace exports |
+| [GitHub](/docs/providers/loader/github) | `github` | `owner/repo/path` | GitHub repository files via the Contents API |
+| [Notion](/docs/providers/loader/notion) | `notion` | Page ID | Notion pages via the Notion API |
+| [Unstructured](/docs/providers/loader/unstructured) | `unstructured` | File path | Unstructured.io document extraction |
 
 ### Built-in Loaders
 

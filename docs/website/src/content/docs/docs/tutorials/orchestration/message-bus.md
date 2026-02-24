@@ -200,5 +200,5 @@ User Input
 
 ## Next Steps
 
-- [DAG Workflows](/tutorials/orchestration/dag-workflows) -- Graph-based flows as an alternative to event-driven patterns
-- [Temporal Workflows](/tutorials/orchestration/temporal-workflows) -- Durable event handling for workflows that must survive restarts
+- [DAG Workflows](/docs/tutorials/orchestration/dag-workflows) -- Graph-based flows as an alternative to event-driven patterns
+- [Temporal Workflows](/docs/tutorials/orchestration/temporal-workflows) -- Durable event handling for workflows that must survive restarts

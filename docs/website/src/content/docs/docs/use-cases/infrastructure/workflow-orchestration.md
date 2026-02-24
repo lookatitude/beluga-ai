@@ -396,6 +396,6 @@ llm:
 
 ## Related Resources
 
-- [Orchestration Package Guide](/guides/orchestration/) for orchestration patterns
-- [Agent Workflows](/guides/agent-workflows/) for agent-based orchestration
-- [Temporal Integration](/integrations/temporal/) for distributed workflow setup
+- [Orchestration Package Guide](/docs/guides/orchestration/) for orchestration patterns
+- [Agent Workflows](/docs/guides/agent-workflows/) for agent-based orchestration
+- [Temporal Integration](/docs/integrations/temporal/) for distributed workflow setup

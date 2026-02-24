@@ -62,4 +62,4 @@ func init() {
 }
 ```
 
-See the [API Reference](/api-reference/) for complete interface definitions, or browse individual provider pages for configuration details and usage examples.
+See the [API Reference](/docs/api-reference/) for complete interface definitions, or browse individual provider pages for configuration details and usage examples.

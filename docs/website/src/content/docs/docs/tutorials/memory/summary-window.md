@@ -16,7 +16,7 @@ Three memory management strategies -- sliding window (last K messages), summariz
 
 ## Prerequisites
 
-- Understanding of [Multi-turn Conversations](/tutorials/foundation/multiturn-conversations)
+- Understanding of [Multi-turn Conversations](/docs/tutorials/foundation/multiturn-conversations)
 - A configured LLM (for summarization)
 
 ## Pattern 1: Sliding Window
@@ -249,5 +249,5 @@ This approach provides:
 
 ## Next Steps
 
-- [Redis Persistence](/tutorials/memory/redis-persistence) -- Persist memory across restarts
-- [Research Agent](/tutorials/agents/research-agent) -- Use memory in autonomous agents
+- [Redis Persistence](/docs/tutorials/memory/redis-persistence) -- Persist memory across restarts
+- [Research Agent](/docs/tutorials/agents/research-agent) -- Use memory in autonomous agents

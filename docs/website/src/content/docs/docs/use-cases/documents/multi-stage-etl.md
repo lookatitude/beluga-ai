@@ -448,6 +448,6 @@ func (p *ETLPipeline) ProcessWithMetrics(ctx context.Context, sources []DataSour
 
 ## Related Resources
 
-- [Invoice Processor](/use-cases/invoice-processor/) for workflow patterns
-- [Enterprise RAG](/use-cases/enterprise-rag/) for data ingestion pipelines
-- [Orchestration Guide](/guides/orchestration/) for workflow design
+- [Invoice Processor](/docs/use-cases/invoice-processor/) for workflow patterns
+- [Enterprise RAG](/docs/use-cases/enterprise-rag/) for data ingestion pipelines
+- [Orchestration Guide](/docs/guides/orchestration/) for workflow design

@@ -10,7 +10,7 @@ head:
 
 Gemini Live provides native speech-to-speech via the Google Gemini Live API over WebSocket, enabling bidirectional audio streaming with Gemini's multimodal models. The provider supports audio and text output, function calling, and server-side voice activity detection.
 
-Choose Gemini Live when you want native speech-to-speech with Google's multimodal Gemini models. Gemini Live handles voice activity detection server-side, simplifying client implementation. It supports function calling and bidirectional audio over WebSocket. For OpenAI's equivalent, consider [OpenAI Realtime](/providers/voice/openai-realtime). For AWS-native S2S, consider [Amazon Nova S2S](/providers/voice/nova-s2s).
+Choose Gemini Live when you want native speech-to-speech with Google's multimodal Gemini models. Gemini Live handles voice activity detection server-side, simplifying client implementation. It supports function calling and bidirectional audio over WebSocket. For OpenAI's equivalent, consider [OpenAI Realtime](/docs/providers/voice/openai-realtime). For AWS-native S2S, consider [Amazon Nova S2S](/docs/providers/voice/nova-s2s).
 
 ## Installation
 

@@ -34,7 +34,7 @@ Document processing is the first step in building any knowledge-powered AI featu
 ## Prerequisites
 
 Before starting this guide:
-- Complete [RAG Pipeline](/guides/rag-pipeline) to understand where document processing fits in the pipeline
+- Complete [RAG Pipeline](/docs/guides/rag-pipeline) to understand where document processing fits in the pipeline
 - Understand vector embeddings and why documents need to be chunked
 - Familiarity with file I/O in Go
 
@@ -741,7 +741,7 @@ The following checklist summarizes the key considerations for deploying document
 ## Next Steps
 
 Now that you understand document processing:
-- Learn about [RAG Pipeline](/guides/rag-pipeline) for retrieval integration
-- Explore [Multimodal AI](/guides/multimodal) for image and audio processing
-- Read [RAG Recipes](/cookbook/rag-recipes) for advanced patterns
-- Check out [Document Loader Integrations](/integrations/document-loaders) for more sources
+- Learn about [RAG Pipeline](/docs/guides/rag-pipeline) for retrieval integration
+- Explore [Multimodal AI](/docs/guides/multimodal) for image and audio processing
+- Read [RAG Recipes](/docs/cookbook/rag-recipes) for advanced patterns
+- Check out [Document Loader Integrations](/docs/integrations/document-loaders) for more sources

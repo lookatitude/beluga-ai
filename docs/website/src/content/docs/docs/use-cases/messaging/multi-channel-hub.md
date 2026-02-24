@@ -405,6 +405,6 @@ After implementing the multi-channel marketing hub, the agency achieved:
 
 ## Related Resources
 
-- [Messaging Integration](/integrations/messaging/) for channel-specific configuration
-- [Server Providers](/providers/server/) for available messaging backends
-- [Observability Guide](/guides/observability/) for campaign analytics setup
+- [Messaging Integration](/docs/integrations/messaging/) for channel-specific configuration
+- [Server Providers](/docs/providers/server/) for available messaging backends
+- [Observability Guide](/docs/guides/observability/) for campaign analytics setup

@@ -16,7 +16,7 @@ Prompt templates ranging from simple string interpolation to multi-role chat seq
 
 ## Prerequisites
 
-- Understanding of [Multi-turn Conversations](/tutorials/foundation/multiturn-conversations)
+- Understanding of [Multi-turn Conversations](/docs/tutorials/foundation/multiturn-conversations)
 - Familiarity with Go's `text/template` syntax
 
 ## Step 1: Basic String Templates
@@ -216,5 +216,5 @@ Always use template substitution — never string concatenation — to insert us
 
 ## Next Steps
 
-- [Reusable System Prompts](/tutorials/providers/reusable-system-prompts) — Build a persona library
-- [Multi-turn Conversations](/tutorials/foundation/multiturn-conversations) — Use templates in conversation flows
+- [Reusable System Prompts](/docs/tutorials/providers/reusable-system-prompts) — Build a persona library
+- [Multi-turn Conversations](/docs/tutorials/foundation/multiturn-conversations) — Use templates in conversation flows

@@ -10,7 +10,7 @@ head:
 
 OpenAI Realtime provides native speech-to-speech via the OpenAI Realtime API over WebSocket, bypassing the traditional STT/LLM/TTS cascade for lower end-to-end latency. The provider supports bidirectional audio streaming, server-side voice activity detection (VAD), tool calling, and text transcripts of both user and agent speech.
 
-Choose OpenAI Realtime when you need native speech-to-speech with GPT-4o's reasoning capabilities. By skipping the STT/LLM/TTS cascade, this provider delivers lower end-to-end latency and more natural conversations, with built-in tool calling support. For Google's equivalent S2S approach, consider [Gemini Live](/providers/voice/gemini-live). For AWS-native deployments, consider [Amazon Nova S2S](/providers/voice/nova-s2s).
+Choose OpenAI Realtime when you need native speech-to-speech with GPT-4o's reasoning capabilities. By skipping the STT/LLM/TTS cascade, this provider delivers lower end-to-end latency and more natural conversations, with built-in tool calling support. For Google's equivalent S2S approach, consider [Gemini Live](/docs/providers/voice/gemini-live). For AWS-native deployments, consider [Amazon Nova S2S](/docs/providers/voice/nova-s2s).
 
 ## Installation
 

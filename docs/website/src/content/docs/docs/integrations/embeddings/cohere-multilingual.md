@@ -289,6 +289,6 @@ Provider-specific options can be passed via the `Options` map in `config.Provide
 
 ## Related Resources
 
-- [Embedding Providers](/integrations/embedding-providers) -- All embedding provider integrations
-- [Ollama Local Embeddings](/integrations/ollama-local-embeddings) -- Local embedding generation
-- [Vector Stores](/integrations/vector-stores) -- Storing and searching embeddings
+- [Embedding Providers](/docs/integrations/embedding-providers) -- All embedding provider integrations
+- [Ollama Local Embeddings](/docs/integrations/ollama-local-embeddings) -- Local embedding generation
+- [Vector Stores](/docs/integrations/vector-stores) -- Storing and searching embeddings

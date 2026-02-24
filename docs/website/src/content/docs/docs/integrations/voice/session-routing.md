@@ -153,5 +153,5 @@ The session API does not support swapping providers during an active session. Pr
 
 ## Related Resources
 
-- [Voice Session Persistence](/integrations/session-persistence)
-- [Voice Services Overview](/integrations/voice-services)
+- [Voice Session Persistence](/docs/integrations/session-persistence)
+- [Voice Services Overview](/docs/integrations/voice-services)

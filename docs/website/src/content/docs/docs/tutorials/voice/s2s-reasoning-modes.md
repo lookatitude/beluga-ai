@@ -16,7 +16,7 @@ An S2S voice system that supports multiple interaction modes (fast concierge, ba
 
 ## Prerequisites
 
-- Completion of [Native S2S with Amazon Nova](/tutorials/voice/s2s-amazon-nova) or an OpenAI Realtime API key
+- Completion of [Native S2S with Amazon Nova](/docs/tutorials/voice/s2s-amazon-nova) or an OpenAI Realtime API key
 - Understanding of the S2S session lifecycle
 
 ## The Tradeoff: Speed vs. Thought
@@ -193,6 +193,6 @@ func SwitchMode(ctx context.Context, provider s2s.S2SProvider, modeName string) 
 
 ## Next Steps
 
-- [Native S2S with Amazon Nova](/tutorials/voice/s2s-amazon-nova) -- Try a different S2S provider
-- [Real-time STT Streaming](/tutorials/voice/stt-realtime-streaming) -- Compare with the traditional pipeline
-- [Sensitivity Tuning](/tutorials/voice/sensitivity-tuning) -- Tune VAD and turn detection thresholds
+- [Native S2S with Amazon Nova](/docs/tutorials/voice/s2s-amazon-nova) -- Try a different S2S provider
+- [Real-time STT Streaming](/docs/tutorials/voice/stt-realtime-streaming) -- Compare with the traditional pipeline
+- [Sensitivity Tuning](/docs/tutorials/voice/sensitivity-tuning) -- Tune VAD and turn detection thresholds

@@ -160,6 +160,6 @@ Text Input ──▶ ElevenLabs API ──▶ Audio Chunks
 
 ## Next Steps
 
-- [SSML Tuning for Expressive Speech](/tutorials/voice/ssml-tuning) -- Add pauses, emphasis, and prosody control
-- [Native S2S with Amazon Nova](/tutorials/voice/s2s-amazon-nova) -- End-to-end voice-to-voice models
-- [Voice Session Interruptions](/tutorials/voice/session-interruptions) -- Integrate TTS into full voice sessions
+- [SSML Tuning for Expressive Speech](/docs/tutorials/voice/ssml-tuning) -- Add pauses, emphasis, and prosody control
+- [Native S2S with Amazon Nova](/docs/tutorials/voice/s2s-amazon-nova) -- End-to-end voice-to-voice models
+- [Voice Session Interruptions](/docs/tutorials/voice/session-interruptions) -- Integrate TTS into full voice sessions

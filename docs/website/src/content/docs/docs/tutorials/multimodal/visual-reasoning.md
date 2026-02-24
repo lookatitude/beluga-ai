@@ -276,5 +276,5 @@ Vision capabilities vary by provider:
 
 ## Next Steps
 
-- [Audio Analysis](/tutorials/multimodal/audio-analysis) -- Process audio files with multimodal models
-- [Content Moderation](/tutorials/safety/content-moderation) -- Validate image descriptions before returning to users
+- [Audio Analysis](/docs/tutorials/multimodal/audio-analysis) -- Process audio files with multimodal models
+- [Content Moderation](/docs/tutorials/safety/content-moderation) -- Validate image descriptions before returning to users

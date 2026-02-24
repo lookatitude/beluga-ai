@@ -286,5 +286,5 @@ func (tmw *TTLMemoryWrapper) GradualExpiration(ctx context.Context) {
 
 ## Related Recipes
 
-- [Window-Based Context Recovery](/cookbook/memory-context-recovery) -- Recover context from sliding windows
-- [Conversation Expiry Logic](/cookbook/conversation-expiry) -- Expire inactive conversations
+- [Window-Based Context Recovery](/docs/cookbook/memory-context-recovery) -- Recover context from sliding windows
+- [Conversation Expiry Logic](/docs/cookbook/conversation-expiry) -- Expire inactive conversations

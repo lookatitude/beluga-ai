@@ -436,6 +436,6 @@ func (a *ArchiveIngestionSystem) IngestArchiveParallel(ctx context.Context, arch
 
 ## Related Resources
 
-- [RAG Pipeline Guide](/guides/rag-pipeline/) for document processing patterns
-- [Cloud Document Sync](/use-cases/cloud-doc-sync/) for real-time ingestion
-- [Enterprise RAG](/use-cases/enterprise-rag/) for complete RAG system setup
+- [RAG Pipeline Guide](/docs/guides/rag-pipeline/) for document processing patterns
+- [Cloud Document Sync](/docs/use-cases/cloud-doc-sync/) for real-time ingestion
+- [Enterprise RAG](/docs/use-cases/enterprise-rag/) for complete RAG system setup

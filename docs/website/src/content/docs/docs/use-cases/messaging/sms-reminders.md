@@ -331,6 +331,6 @@ After implementing SMS appointment reminders, the provider achieved:
 
 ## Related Resources
 
-- [Messaging Integration](/integrations/messaging/) for SMS provider configuration
-- [Server Providers](/providers/server/) for Twilio and other messaging backends
-- [Agent Guide](/guides/agents/) for intelligent response handling patterns
+- [Messaging Integration](/docs/integrations/messaging/) for SMS provider configuration
+- [Server Providers](/docs/providers/server/) for Twilio and other messaging backends
+- [Agent Guide](/docs/guides/agents/) for intelligent response handling patterns

@@ -267,5 +267,5 @@ type HybridScorer struct {
 
 ## Related Recipes
 
-- [Parent Document Retrieval (PDR)](/cookbook/parent-document-retrieval) -- Retrieve parent documents
-- [Vectorstores Advanced Meta-filtering](/cookbook/meta-filtering) -- Advanced filtering
+- [Parent Document Retrieval (PDR)](/docs/cookbook/parent-document-retrieval) -- Retrieve parent documents
+- [Vectorstores Advanced Meta-filtering](/docs/cookbook/meta-filtering) -- Advanced filtering

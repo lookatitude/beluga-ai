@@ -370,6 +370,6 @@ Required fields declared in the schema are missing from the data. Ensure all req
 
 ## Related Resources
 
-- [Go Struct Bridge](/integrations/go-struct-bridge/) -- Cross-language data exchange with Pydantic
-- [Schema Package](/api-reference/schema/) -- Core message and document types
-- [Guard Pipeline](/guides/safety-guards/) -- Safety pipeline integration
+- [Go Struct Bridge](/docs/integrations/go-struct-bridge/) -- Cross-language data exchange with Pydantic
+- [Schema Package](/docs/api-reference/schema/) -- Core message and document types
+- [Guard Pipeline](/docs/guides/safety-guards/) -- Safety pipeline integration

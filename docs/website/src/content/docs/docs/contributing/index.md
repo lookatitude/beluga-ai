@@ -17,7 +17,7 @@ There are many ways to contribute to Beluga AI, and not all of them involve writ
 - **Bug Reports** — Found something that doesn't work? [Open an issue](https://github.com/lookatitude/beluga-ai/issues/new) with a clear description and reproduction steps.
 - **Feature Requests** — Have an idea for a new feature or improvement? Start a discussion or open an issue to share your thoughts.
 - **Documentation Improvements** — Spotted a typo, unclear explanation, or missing guide? Documentation PRs are always welcome.
-- **Code Contributions** — Fix bugs, implement features, add providers, or improve performance. See the [Development Setup](/contributing/development-setup/) to get started.
+- **Code Contributions** — Fix bugs, implement features, add providers, or improve performance. See the [Development Setup](/docs/contributing/development-setup/) to get started.
 - **Answering Questions** — Help other users in GitHub Discussions by sharing your experience and knowledge.
 
 ## Communication Channels
@@ -33,19 +33,19 @@ All contributors are expected to follow our [Code of Conduct](https://github.com
 
 | Topic | Description |
 |---|---|
-| [Development Setup](/contributing/development-setup/) | Set up your local environment |
-| [Code Style](/contributing/code-style/) | Coding conventions and style guidelines |
-| [Testing](/contributing/testing/) | How to write and run tests |
-| [Pull Requests](/contributing/pull-requests/) | Submitting changes for review |
-| [Releases](/contributing/releases/) | How releases are managed |
+| [Development Setup](/docs/contributing/development-setup/) | Set up your local environment |
+| [Code Style](/docs/contributing/code-style/) | Coding conventions and style guidelines |
+| [Testing](/docs/contributing/testing/) | How to write and run tests |
+| [Pull Requests](/docs/contributing/pull-requests/) | Submitting changes for review |
+| [Releases](/docs/contributing/releases/) | How releases are managed |
 
 ## First-Time Contributors
 
 New to Beluga AI or open-source in general? Welcome! The codebase follows consistent patterns across all packages, so once you understand how one package works, that knowledge transfers to all 19 registries. Here's how to get started:
 
 1. Look for issues labeled **[`good-first-issue`](https://github.com/lookatitude/beluga-ai/labels/good-first-issue)** — these are specifically curated for newcomers and include extra context to help you get oriented.
-2. Read the [Development Setup](/contributing/development-setup/) guide to configure your environment.
-3. Review the [Code Style](/contributing/code-style/) guide to understand our conventions.
+2. Read the [Development Setup](/docs/contributing/development-setup/) guide to configure your environment.
+3. Review the [Code Style](/docs/contributing/code-style/) guide to understand our conventions.
 4. Pick an issue, leave a comment saying you'd like to work on it, and start coding!
 
 Don't hesitate to ask questions on the issue or in Discussions if you get stuck. We're happy to help.

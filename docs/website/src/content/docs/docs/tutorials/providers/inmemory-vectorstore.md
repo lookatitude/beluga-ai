@@ -16,7 +16,7 @@ A local semantic search engine using the in-memory vector store, including docum
 
 ## Prerequisites
 
-- Understanding of [embeddings](/tutorials/providers/multimodal-embeddings)
+- Understanding of [embeddings](/docs/tutorials/providers/multimodal-embeddings)
 - A configured embedding provider (or a mock for zero-latency testing)
 
 ## Step 1: Initialize the Store
@@ -171,5 +171,5 @@ The `VectorStore` interface is identical — all application code remains unchan
 
 ## Next Steps
 
-- [pgvector Sharding](/tutorials/providers/pgvector-sharding) — Scale to millions of vectors
-- [Hybrid Search](/tutorials/rag/hybrid-search) — Combine vector and keyword search
+- [pgvector Sharding](/docs/tutorials/providers/pgvector-sharding) — Scale to millions of vectors
+- [Hybrid Search](/docs/tutorials/rag/hybrid-search) — Combine vector and keyword search

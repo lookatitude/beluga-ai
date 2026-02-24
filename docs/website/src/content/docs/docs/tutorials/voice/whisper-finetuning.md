@@ -200,6 +200,6 @@ This approach adds latency from the LLM call and should only be used when high a
 
 ## Next Steps
 
-- [Real-time STT Streaming](/tutorials/voice/stt-realtime-streaming) -- Low-latency streaming transcription
-- [Cloning Voices with ElevenLabs](/tutorials/voice/elevenlabs-cloning) -- High-fidelity text-to-speech
-- [Sensitivity Tuning](/tutorials/voice/sensitivity-tuning) -- Balance VAD sensitivity for your environment
+- [Real-time STT Streaming](/docs/tutorials/voice/stt-realtime-streaming) -- Low-latency streaming transcription
+- [Cloning Voices with ElevenLabs](/docs/tutorials/voice/elevenlabs-cloning) -- High-fidelity text-to-speech
+- [Sensitivity Tuning](/docs/tutorials/voice/sensitivity-tuning) -- Balance VAD sensitivity for your environment

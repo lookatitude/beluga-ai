@@ -10,7 +10,7 @@ head:
 
 The DeepEval provider connects Beluga AI's evaluation framework to a [DeepEval](https://github.com/confident-ai/deepeval) server instance. It implements the `eval.Metric` interface by sending samples to the DeepEval evaluation API and returning normalized scores along with optional reasoning.
 
-Choose DeepEval when you want a self-hosted evaluation server with a broad set of LLM metrics (faithfulness, hallucination, toxicity, and more). DeepEval is open-source and runs locally, avoiding external API dependencies for scoring. For a managed cloud platform, consider [Braintrust](/providers/eval/braintrust). For RAG-specific metrics, consider [RAGAS](/providers/eval/ragas).
+Choose DeepEval when you want a self-hosted evaluation server with a broad set of LLM metrics (faithfulness, hallucination, toxicity, and more). DeepEval is open-source and runs locally, avoiding external API dependencies for scoring. For a managed cloud platform, consider [Braintrust](/docs/providers/eval/braintrust). For RAG-specific metrics, consider [RAGAS](/docs/providers/eval/ragas).
 
 ## Installation
 

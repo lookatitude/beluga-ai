@@ -397,6 +397,6 @@ When both primary and backup providers are unhealthy, the proxy should fail grac
 
 ## Related Resources
 
-- [Error Recovery Service](/use-cases/error-recovery-service/) for retry and circuit breaker patterns
-- [LLM Package Guide](/guides/llm/) for model integration
-- [Observability Guide](/guides/observability/) for monitoring streaming systems
+- [Error Recovery Service](/docs/use-cases/error-recovery-service/) for retry and circuit breaker patterns
+- [LLM Package Guide](/docs/guides/llm/) for model integration
+- [Observability Guide](/docs/guides/observability/) for monitoring streaming systems

@@ -16,7 +16,7 @@ A secrets provider interface and Vault implementation that loads API keys and cr
 
 ## Prerequisites
 
-- Understanding of [Environment and Secret Management](/tutorials/foundation/environment-secrets)
+- Understanding of [Environment and Secret Management](/docs/tutorials/foundation/environment-secrets)
 - HashiCorp Vault installed or a development server available
 
 ## Step 1: Define a Secret Provider Interface
@@ -193,5 +193,5 @@ func main() {
 
 ## Next Steps
 
-- [Environment and Secret Management](/tutorials/foundation/environment-secrets) — Base configuration patterns
-- [Health Checks](/tutorials/foundation/health-checks) — Monitor service health
+- [Environment and Secret Management](/docs/tutorials/foundation/environment-secrets) — Base configuration patterns
+- [Health Checks](/docs/tutorials/foundation/health-checks) — Monitor service health

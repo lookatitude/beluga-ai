@@ -16,7 +16,7 @@ An optimized embedding pipeline with model selection guidelines, efficient batch
 
 ## Prerequisites
 
-- Understanding of [Multimodal Embeddings](/tutorials/providers/multimodal-embeddings)
+- Understanding of [Multimodal Embeddings](/docs/tutorials/providers/multimodal-embeddings)
 - A configured embedding provider
 
 ## Step 1: Model Selection
@@ -176,7 +176,7 @@ func chunkByParagraphs(text string, maxTokens int) []string {
 
 Combine embedding search with keyword search (BM25) to cover both semantic similarity and exact matches. Beluga AI defaults to hybrid search (vector + BM25 + RRF fusion) because embedding models alone struggle with domain-specific jargon, error codes, and proper nouns. A search for "SIGTERM signal handling" retrieves better results when exact keyword matching supplements the semantic search.
 
-See [Hybrid Search](/tutorials/rag/hybrid-search) for the full implementation.
+See [Hybrid Search](/docs/tutorials/rag/hybrid-search) for the full implementation.
 
 ## Verification
 
@@ -186,5 +186,5 @@ See [Hybrid Search](/tutorials/rag/hybrid-search) for the full implementation.
 
 ## Next Steps
 
-- [Multimodal Embeddings](/tutorials/providers/multimodal-embeddings) — Embed images and text
-- [pgvector Sharding](/tutorials/providers/pgvector-sharding) — Scale to millions of vectors
+- [Multimodal Embeddings](/docs/tutorials/providers/multimodal-embeddings) — Embed images and text
+- [pgvector Sharding](/docs/tutorials/providers/pgvector-sharding) — Scale to millions of vectors

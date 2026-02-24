@@ -164,7 +164,7 @@ The framework is a **host** — everything else is a **plugin**. Core defines co
 
 ## Next Steps
 
-- [Installation](/getting-started/installation/) — Set up Beluga AI in your project
-- [Quick Start](/getting-started/quick-start/) — Build your first agent in 5 minutes
-- [Building Your First Agent](/guides/first-agent/) — In-depth agent tutorial
-- [Architecture](/architecture/concepts/) — Design decisions and rationale
+- [Installation](/docs/getting-started/installation/) — Set up Beluga AI in your project
+- [Quick Start](/docs/getting-started/quick-start/) — Build your first agent in 5 minutes
+- [Building Your First Agent](/docs/guides/first-agent/) — In-depth agent tutorial
+- [Architecture](/docs/architecture/concepts/) — Design decisions and rationale

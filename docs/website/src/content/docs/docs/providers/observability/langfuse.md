@@ -10,7 +10,7 @@ head:
 
 The Langfuse provider exports LLM call data to [Langfuse](https://langfuse.com/), an open-source LLM observability platform. It implements the `o11y.TraceExporter` interface and sends trace and generation events through the Langfuse batch ingestion API.
 
-Choose Langfuse when you want an open-source observability platform that can be self-hosted or used as a managed cloud service. Langfuse provides trace and generation analytics with a dashboard for cost tracking and latency monitoring. For LangChain ecosystem integration, consider [LangSmith](/providers/observability/langsmith). For OTel-native local debugging, consider [Phoenix](/providers/observability/phoenix).
+Choose Langfuse when you want an open-source observability platform that can be self-hosted or used as a managed cloud service. Langfuse provides trace and generation analytics with a dashboard for cost tracking and latency monitoring. For LangChain ecosystem integration, consider [LangSmith](/docs/providers/observability/langsmith). For OTel-native local debugging, consider [Phoenix](/docs/providers/observability/phoenix).
 
 ## Installation
 

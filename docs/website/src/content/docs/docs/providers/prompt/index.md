@@ -127,4 +127,4 @@ for _, t := range templates {
 
 | Provider | Description |
 |---|---|
-| [File](/providers/prompt/file) | Load versioned templates from JSON files in a directory |
+| [File](/docs/providers/prompt/file) | Load versioned templates from JSON files in a directory |

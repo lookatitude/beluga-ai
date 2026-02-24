@@ -16,7 +16,7 @@ An autonomous research agent using the ReAct pattern that searches for informati
 
 ## Prerequisites
 
-- Understanding of the [ChatModel interface](/guides/llm) and [tool system](/guides/tools)
+- Understanding of the [ChatModel interface](/docs/guides/llm) and [tool system](/docs/guides/tools)
 - A configured LLM provider
 
 ## Step 1: Define the Tools
@@ -250,5 +250,5 @@ Run the agent with a complex question. Verify it:
 
 ## Next Steps
 
-- [Multi-Agent Orchestration](/tutorials/agents/multi-agent-orchestration) -- Coordinate teams of agents
-- [Tools Registry](/tutorials/agents/tools-registry) -- Build a reusable tool library
+- [Multi-Agent Orchestration](/docs/tutorials/agents/multi-agent-orchestration) -- Coordinate teams of agents
+- [Tools Registry](/docs/tutorials/agents/tools-registry) -- Build a reusable tool library

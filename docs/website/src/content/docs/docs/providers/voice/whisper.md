@@ -10,7 +10,7 @@ head:
 
 OpenAI Whisper provides highly accurate batch speech-to-text transcription through the OpenAI Audio Transcriptions API. The Beluga AI provider uploads audio as multipart form data and returns the transcribed text. Whisper does not support native streaming; the streaming interface transcribes each audio chunk independently as a batch request.
 
-Choose Whisper when you already use the OpenAI API and need reliable batch transcription without adding another vendor. Whisper excels at accuracy across many languages but does not provide real-time interim results. For real-time streaming with partial transcripts, use [Deepgram](/providers/voice/deepgram) or [AssemblyAI](/providers/voice/assemblyai).
+Choose Whisper when you already use the OpenAI API and need reliable batch transcription without adding another vendor. Whisper excels at accuracy across many languages but does not provide real-time interim results. For real-time streaming with partial transcripts, use [Deepgram](/docs/providers/voice/deepgram) or [AssemblyAI](/docs/providers/voice/assemblyai).
 
 ## Installation
 
@@ -102,7 +102,7 @@ for event, err := range engine.TranscribeStream(ctx, audioStream) {
 }
 ```
 
-For real-time transcription with interim results, consider [Deepgram](/providers/voice/deepgram) or [AssemblyAI](/providers/voice/assemblyai) which support native WebSocket streaming.
+For real-time transcription with interim results, consider [Deepgram](/docs/providers/voice/deepgram) or [AssemblyAI](/docs/providers/voice/assemblyai) which support native WebSocket streaming.
 
 ## FrameProcessor Integration
 

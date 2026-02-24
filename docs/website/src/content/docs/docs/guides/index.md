@@ -60,6 +60,6 @@ Patterns and practices for operating Beluga applications under real-world demand
 
 ## Where to Go Next
 
-- **[Tutorials](/tutorials/)** — Step-by-step walkthroughs that build complete, working applications from start to finish. Good for hands-on learning when you want to see all the pieces come together.
-- **[Cookbook](/cookbook/)** — Focused recipes that solve specific problems in isolation. Use these when you know what you need to accomplish and want a concise, copy-paste-ready solution.
-- **[API Reference](/api-reference/)** — Complete interface documentation for every exported type, function, and constant. The definitive reference when you need exact method signatures, option fields, or error codes.
+- **[Tutorials](/docs/tutorials/)** — Step-by-step walkthroughs that build complete, working applications from start to finish. Good for hands-on learning when you want to see all the pieces come together.
+- **[Cookbook](/docs/cookbook/)** — Focused recipes that solve specific problems in isolation. Use these when you know what you need to accomplish and want a concise, copy-paste-ready solution.
+- **[API Reference](/docs/api-reference/)** — Complete interface documentation for every exported type, function, and constant. The definitive reference when you need exact method signatures, option fields, or error codes.

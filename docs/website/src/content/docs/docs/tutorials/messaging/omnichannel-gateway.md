@@ -16,7 +16,7 @@ A multi-channel gateway that normalizes messages from different sources, routes 
 
 ## Prerequisites
 
-- Completion of the [WhatsApp Bot](/tutorials/messaging/whatsapp-bot) tutorial
+- Completion of the [WhatsApp Bot](/docs/tutorials/messaging/whatsapp-bot) tutorial
 - API keys for multiple messaging services (Twilio for SMS/WhatsApp)
 
 ## Architecture
@@ -258,5 +258,5 @@ import "github.com/lookatitude/beluga-ai/memory"
 
 ## Next Steps
 
-- [Content Moderation](/tutorials/safety/content-moderation) -- Filter messages across all channels before processing
-- [Human-in-the-Loop](/tutorials/safety/human-in-loop) -- Escalate sensitive requests to human agents
+- [Content Moderation](/docs/tutorials/safety/content-moderation) -- Filter messages across all channels before processing
+- [Human-in-the-Loop](/docs/tutorials/safety/human-in-loop) -- Escalate sensitive requests to human agents

@@ -52,9 +52,9 @@ chore/update-golangci-lint
    git checkout -b feat/my-feature
    ```
 
-2. **Make your changes** following the [Code Style Guide](/contributing/code-style/).
+2. **Make your changes** following the [Code Style Guide](/docs/contributing/code-style/).
 
-3. **Write tests** for any new or changed behavior. See the [Testing Guide](/contributing/testing/).
+3. **Write tests** for any new or changed behavior. See the [Testing Guide](/docs/contributing/testing/).
 
 4. **Run the full check suite** before pushing:
 
@@ -93,11 +93,11 @@ Before requesting a review, make sure:
 - [ ] Code is formatted (`make fmt`)
 - [ ] New or changed behavior has tests
 - [ ] Documentation is updated if public API changed
-- [ ] Commit messages follow [Conventional Commits](/contributing/code-style/#commit-message-format) format
+- [ ] Commit messages follow [Conventional Commits](/docs/contributing/code-style/#commit-message-format) format
 - [ ] PR description clearly explains the change
 
 :::note
-You do **not** need to update the CHANGELOG manually. It is auto-generated from commit messages using git-cliff during the [release process](/contributing/releases/).
+You do **not** need to update the CHANGELOG manually. It is auto-generated from commit messages using git-cliff during the [release process](/docs/contributing/releases/).
 :::
 
 ## Review Process
@@ -111,10 +111,10 @@ The review process is intentionally sequential: automated checks first, then hum
 
 ### What Reviewers Look For
 
-Reviewers evaluate changes against the framework's consistency guarantees and the patterns described in the [Architecture documentation](/architecture/). In a framework with 19 registries that all follow the same contract, consistency is as important as correctness:
+Reviewers evaluate changes against the framework's consistency guarantees and the patterns described in the [Architecture documentation](/docs/architecture/). In a framework with 19 registries that all follow the same contract, consistency is as important as correctness:
 
 - Correctness and test coverage
-- Adherence to [Code Style](/contributing/code-style/) and project patterns (registry, middleware, hooks)
+- Adherence to [Code Style](/docs/contributing/code-style/) and project patterns (registry, middleware, hooks)
 - Clear, focused scope — one concern per PR
 - Performance implications for hot paths (streaming, tool execution, retrieval)
 - Backward compatibility
@@ -136,7 +136,7 @@ If a CI check fails, click the details link to see the logs and fix the issue.
 ## After Merge
 
 - Your branch is **automatically deleted** after merge.
-- Changes will appear in the **next release** — see [Release Process](/contributing/releases/).
+- Changes will appear in the **next release** — see [Release Process](/docs/contributing/releases/).
 - If your change is user-facing, it will be included in the auto-generated changelog.
 
 ## Tips for Good PRs

@@ -169,6 +169,6 @@ Write disposition immediately on call end. Use a retry policy for no-answer and 
 
 ## Related Resources
 
-- [Voice-Enabled IVR](/use-cases/voice-ivr/) for inbound voice routing
-- [Voice Sessions Overview](/use-cases/voice-sessions-overview/) for session management patterns
-- [Voice AI Applications](/use-cases/voice-applications/) for full voice pipeline architecture
+- [Voice-Enabled IVR](/docs/use-cases/voice-ivr/) for inbound voice routing
+- [Voice Sessions Overview](/docs/use-cases/voice-sessions-overview/) for session management patterns
+- [Voice AI Applications](/docs/use-cases/voice-applications/) for full voice pipeline architecture

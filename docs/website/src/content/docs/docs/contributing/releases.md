@@ -48,7 +48,7 @@ When a version tag is pushed, the CI pipeline automatically:
 
 ## Changelog
 
-The changelog is **auto-generated** using [git-cliff](https://git-cliff.org/) from conventional commit messages. This is why following the [Conventional Commits](/contributing/code-style/#commit-message-format) format is important — your commit messages directly become changelog entries. A well-written commit message like `feat(llm): add streaming support for Anthropic provider` produces a clear, useful changelog entry without any manual editing.
+The changelog is **auto-generated** using [git-cliff](https://git-cliff.org/) from conventional commit messages. This is why following the [Conventional Commits](/docs/contributing/code-style/#commit-message-format) format is important — your commit messages directly become changelog entries. A well-written commit message like `feat(llm): add streaming support for Anthropic provider` produces a clear, useful changelog entry without any manual editing.
 
 Commits are grouped by type:
 

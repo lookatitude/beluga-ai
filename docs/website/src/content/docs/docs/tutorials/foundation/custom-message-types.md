@@ -17,7 +17,7 @@ A `TransactionMessage` type that carries structured financial data through the c
 ## Prerequisites
 
 - Familiarity with Go interfaces
-- Understanding of the [schema package](/guides/schema) message types
+- Understanding of the [schema package](/docs/guides/schema) message types
 
 ## The Message Interface
 
@@ -196,5 +196,5 @@ func (m *ReportMessage) GetMetadata() map[string]any {
 
 ## Next Steps
 
-- [Multi-turn Conversations](/tutorials/foundation/multiturn-conversations) — Manage conversation state and history
-- [Custom Runnable](/tutorials/foundation/custom-runnable) — Build custom processing steps
+- [Multi-turn Conversations](/docs/tutorials/foundation/multiturn-conversations) — Manage conversation state and history
+- [Custom Runnable](/docs/tutorials/foundation/custom-runnable) — Build custom processing steps

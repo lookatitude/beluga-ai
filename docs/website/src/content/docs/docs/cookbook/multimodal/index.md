@@ -665,6 +665,6 @@ When working with multimodal AI:
 
 ## Next Steps
 
-- Learn about [Document Processing](/guides/document-processing) for OCR workflows
-- Explore [Voice Recipes](/cookbook/voice-recipes) for real-time audio
-- Read [Multimodal AI](/guides/multimodal) for comprehensive patterns
+- Learn about [Document Processing](/docs/guides/document-processing) for OCR workflows
+- Explore [Voice Recipes](/docs/cookbook/voice-recipes) for real-time audio
+- Read [Multimodal AI](/docs/guides/multimodal) for comprehensive patterns

@@ -10,7 +10,7 @@ head:
 
 Deepgram provides high-accuracy speech-to-text transcription with native WebSocket streaming support. The Beluga AI provider uses Deepgram's REST API for batch transcription and WebSocket API for real-time streaming, delivering word-level timing, speaker diarization, and automatic punctuation.
 
-Choose Deepgram when you need real-time streaming STT with low latency and high accuracy. Its native WebSocket support makes it a strong default for production voice pipelines where interim results matter. For batch-only workloads where cost is the priority, consider [Groq Whisper](/providers/voice/groq-whisper) instead.
+Choose Deepgram when you need real-time streaming STT with low latency and high accuracy. Its native WebSocket support makes it a strong default for production voice pipelines where interim results matter. For batch-only workloads where cost is the priority, consider [Groq Whisper](/docs/providers/voice/groq-whisper) instead.
 
 ## Installation
 

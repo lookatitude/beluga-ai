@@ -347,6 +347,6 @@ func (e *CostExporter) ExportDailyCosts(ctx context.Context, date time.Time) err
 
 ## Related Resources
 
-- [Monitoring Dashboards](/use-cases/monitoring-dashboards/) for cost visualization
-- [PII Leakage Detection](/use-cases/pii-leakage-detection/) for privacy monitoring
-- [Observability Guide](/guides/observability/) for OpenTelemetry setup
+- [Monitoring Dashboards](/docs/use-cases/monitoring-dashboards/) for cost visualization
+- [PII Leakage Detection](/docs/use-cases/pii-leakage-detection/) for privacy monitoring
+- [Observability Guide](/docs/guides/observability/) for OpenTelemetry setup

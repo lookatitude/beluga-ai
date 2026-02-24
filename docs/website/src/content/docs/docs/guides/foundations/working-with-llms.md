@@ -418,8 +418,8 @@ resp, err := contextMgr.Generate(ctx, longConversation)
 
 ## Next Steps
 
-- [Building Your First Agent](/guides/foundations/first-agent/) — Use ChatModel inside an agent
-- [Structured Output](/guides/foundations/structured-output/) — Deep dive into typed LLM responses
-- [Tools & MCP](/guides/tools-and-mcp/) — Tool binding and MCP integration
-- [RAG Pipeline](/guides/rag-pipeline/) — Retrieval-augmented generation
-- [Monitoring & Observability](/guides/observability/) — Track LLM usage and performance
+- [Building Your First Agent](/docs/guides/foundations/first-agent/) — Use ChatModel inside an agent
+- [Structured Output](/docs/guides/foundations/structured-output/) — Deep dive into typed LLM responses
+- [Tools & MCP](/docs/guides/tools-and-mcp/) — Tool binding and MCP integration
+- [RAG Pipeline](/docs/guides/rag-pipeline/) — Retrieval-augmented generation
+- [Monitoring & Observability](/docs/guides/observability/) — Track LLM usage and performance

@@ -242,5 +242,5 @@ type ConversationState struct {
 
 ## Related Recipes
 
-- [Handling Inbound Media](/cookbook/inbound-media) -- Handle media attachments in conversations
-- [Memory TTL and Cleanup](/cookbook/memory-ttl-cleanup) -- Memory expiration strategies
+- [Handling Inbound Media](/docs/cookbook/inbound-media) -- Handle media attachments in conversations
+- [Memory TTL and Cleanup](/docs/cookbook/memory-ttl-cleanup) -- Memory expiration strategies

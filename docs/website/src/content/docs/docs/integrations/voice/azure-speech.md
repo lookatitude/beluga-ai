@@ -147,5 +147,5 @@ Use a valid Azure region such as `eastus`, `westus2`, or `westeurope`. The regio
 
 ## Related Resources
 
-- [ElevenLabs Streaming API](/integrations/elevenlabs-streaming)
-- [Voice Services Overview](/integrations/voice-services)
+- [ElevenLabs Streaming API](/docs/integrations/elevenlabs-streaming)
+- [Voice Services Overview](/docs/integrations/voice-services)

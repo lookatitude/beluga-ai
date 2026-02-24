@@ -482,6 +482,6 @@ Organizations using cost-optimized routing with Beluga AI achieve:
 
 ## Related Resources
 
-- [Model A/B Testing](/use-cases/model-ab-testing/) for comparing routing strategies
-- [LLM Gateway](/use-cases/llm-gateway/) for multi-provider routing
-- [LLM Integration Guide](/guides/llm-integration/) for model configuration
+- [Model A/B Testing](/docs/use-cases/model-ab-testing/) for comparing routing strategies
+- [LLM Gateway](/docs/use-cases/llm-gateway/) for multi-provider routing
+- [LLM Integration Guide](/docs/guides/llm-integration/) for model configuration

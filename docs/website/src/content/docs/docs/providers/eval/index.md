@@ -162,9 +162,9 @@ err = dataset.Save("testdata/results.json")
 
 | Provider | Prefix | Default Metric | Description |
 |---|---|---|---|
-| [Braintrust](/providers/eval/braintrust) | `braintrust_` | `factuality` | Cloud-hosted evaluation via Braintrust API |
-| [DeepEval](/providers/eval/deepeval) | `deepeval_` | `faithfulness` | Evaluation via DeepEval server |
-| [RAGAS](/providers/eval/ragas) | `ragas_` | `faithfulness` | RAG-focused evaluation via RAGAS server |
+| [Braintrust](/docs/providers/eval/braintrust) | `braintrust_` | `factuality` | Cloud-hosted evaluation via Braintrust API |
+| [DeepEval](/docs/providers/eval/deepeval) | `deepeval_` | `faithfulness` | Evaluation via DeepEval server |
+| [RAGAS](/docs/providers/eval/ragas) | `ragas_` | `faithfulness` | RAG-focused evaluation via RAGAS server |
 
 ## Multiple Metrics
 

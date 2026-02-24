@@ -10,7 +10,7 @@ head:
 
 The Docling loader implements the `loader.DocumentLoader` interface using the IBM Docling API to convert documents (PDFs, DOCX, images, and more) into structured text. Docling extracts text, tables, and layout information and returns the content as Markdown or plain text.
 
-Choose Docling when you need structured document conversion that preserves tables and layout information as Markdown. Docling handles PDFs, DOCX, images, and more, and can be self-hosted via Docker for data privacy. For a broader range of file types with element-level extraction, consider [Unstructured](/providers/loader/unstructured). For web scraping, consider [Firecrawl](/providers/loader/firecrawl).
+Choose Docling when you need structured document conversion that preserves tables and layout information as Markdown. Docling handles PDFs, DOCX, images, and more, and can be self-hosted via Docker for data privacy. For a broader range of file types with element-level extraction, consider [Unstructured](/docs/providers/loader/unstructured). For web scraping, consider [Firecrawl](/docs/providers/loader/firecrawl).
 
 ## Installation
 

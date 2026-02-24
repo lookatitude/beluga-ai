@@ -278,5 +278,5 @@ func splitPlainText(ctx context.Context, text string) {
 
 ## Next Steps
 
-- [Semantic Splitting](/tutorials/documents/semantic-splitting) -- Split by meaning rather than structure
-- [Directory and PDF Scraper](/tutorials/documents/pdf-scraper) -- Load files to split
+- [Semantic Splitting](/docs/tutorials/documents/semantic-splitting) -- Split by meaning rather than structure
+- [Directory and PDF Scraper](/docs/tutorials/documents/pdf-scraper) -- Load files to split

@@ -281,5 +281,5 @@ Evaluate by inspecting chunk boundaries and measuring retrieval Hit Rate.
 
 ## Next Steps
 
-- [Markdown Chunking](/tutorials/documents/markdown-chunking) -- Combine structural and semantic splitting strategies
-- [Lazy-Loading Documents](/tutorials/documents/lazy-loading) -- Process large document collections efficiently
+- [Markdown Chunking](/docs/tutorials/documents/markdown-chunking) -- Combine structural and semantic splitting strategies
+- [Lazy-Loading Documents](/docs/tutorials/documents/lazy-loading) -- Process large document collections efficiently

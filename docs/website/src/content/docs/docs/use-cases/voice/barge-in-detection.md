@@ -133,6 +133,6 @@ func (s *VoiceSession) handleBargeIn(ctx context.Context) {
 
 ## Related Resources
 
-- [Low-Latency Turn Prediction](/use-cases/low-latency-prediction/) for turn-detection tuning
-- [Voice Sessions Overview](/use-cases/voice-sessions-overview/) for session and pipeline design
-- [Voice AI Applications](/use-cases/voice-applications/) for voice pipeline architecture
+- [Low-Latency Turn Prediction](/docs/use-cases/low-latency-prediction/) for turn-detection tuning
+- [Voice Sessions Overview](/docs/use-cases/voice-sessions-overview/) for session and pipeline design
+- [Voice AI Applications](/docs/use-cases/voice-applications/) for voice pipeline architecture

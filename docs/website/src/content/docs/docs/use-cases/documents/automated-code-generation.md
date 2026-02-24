@@ -354,6 +354,6 @@ After implementing automated code generation, the team achieved:
 
 ## Related Resources
 
-- [LLM Integration Guide](/guides/llm-integration/) for model selection and configuration
-- [Prompt Engineering](/guides/prompt-engineering/) for effective prompt design
-- [Structured Output](/guides/structured-output/) for type-safe code generation
+- [LLM Integration Guide](/docs/guides/llm-integration/) for model selection and configuration
+- [Prompt Engineering](/docs/guides/prompt-engineering/) for effective prompt design
+- [Structured Output](/docs/guides/structured-output/) for type-safe code generation

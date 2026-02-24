@@ -217,5 +217,5 @@ func (mcb *MessageChainBuilder) Validate() error {
 
 ## Related Recipes
 
-- **[Partial Variable Substitution](/cookbook/prompts/partial-substitution)** -- Incremental variable substitution
-- **[Multi-step History Trimming](/cookbook/llm/history-trimming)** -- Manage conversation history
+- **[Partial Variable Substitution](/docs/cookbook/prompts/partial-substitution)** -- Incremental variable substitution
+- **[Multi-step History Trimming](/docs/cookbook/llm/history-trimming)** -- Manage conversation history

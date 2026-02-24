@@ -290,5 +290,5 @@ type CachedToolHandler struct {
 
 ## Related Recipes
 
-- **[Streaming Tool Calls](/cookbook/llm/streaming-tool-calls)** -- Handle tools in streaming
-- **[Parallel Step Execution](/cookbook/agents/agents-parallel-execution)** -- Execute steps in parallel
+- **[Streaming Tool Calls](/docs/cookbook/llm/streaming-tool-calls)** -- Handle tools in streaming
+- **[Parallel Step Execution](/docs/cookbook/agents/agents-parallel-execution)** -- Execute steps in parallel

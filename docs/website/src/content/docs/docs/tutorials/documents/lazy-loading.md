@@ -313,5 +313,5 @@ func loadWithCheckpoint(ctx context.Context, dirPath string, checkpoint *Checkpo
 
 ## Next Steps
 
-- [Directory and PDF Scraper](/tutorials/documents/pdf-scraper) -- Load PDFs and other binary formats
-- [Semantic Splitting](/tutorials/documents/semantic-splitting) -- Split loaded documents by semantic boundaries
+- [Directory and PDF Scraper](/docs/tutorials/documents/pdf-scraper) -- Load PDFs and other binary formats
+- [Semantic Splitting](/docs/tutorials/documents/semantic-splitting) -- Split loaded documents by semantic boundaries

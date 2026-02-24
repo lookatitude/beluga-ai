@@ -352,5 +352,5 @@ func (mac *MetadataAwareClusterer) FindOptimalK(ctx context.Context, docs []Docu
 
 ## Related Recipes
 
-- [Batch Embedding Optimization](/cookbook/batch-embeddings) -- Optimize batch embedding operations
-- [Advanced Metadata Filtering](/cookbook/meta-filtering) -- Filter vector store results with metadata
+- [Batch Embedding Optimization](/docs/cookbook/batch-embeddings) -- Optimize batch embedding operations
+- [Advanced Metadata Filtering](/docs/cookbook/meta-filtering) -- Filter vector store results with metadata

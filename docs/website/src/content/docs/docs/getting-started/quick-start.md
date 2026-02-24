@@ -13,7 +13,7 @@ This guide walks you through building a working AI agent with tools and streamin
 ## Prerequisites
 
 - Go 1.23+ installed ([download](https://go.dev/dl/))
-- An OpenAI API key (or any [supported provider](/getting-started/installation/#all-available-providers))
+- An OpenAI API key (or any [supported provider](/docs/getting-started/installation/#all-available-providers))
 
 ## Step 1: Create a New Project
 
@@ -288,11 +288,11 @@ You've built a working agent with tools and streaming. Here's where to go from h
 
 | Topic | Guide |
 |-------|-------|
-| In-depth agent tutorial | [Building Your First Agent](/guides/first-agent/) |
-| LLM configuration and routing | [Working with LLMs](/guides/working-with-llms/) |
-| RAG and document retrieval | [RAG Pipeline](/guides/rag-pipeline/) |
-| Conversation memory | [Memory System](/guides/memory-system/) |
-| Voice AI applications | [Voice AI Pipeline](/guides/voice-ai/) |
-| MCP and remote tools | [Tools & MCP](/guides/tools-and-mcp/) |
-| Multi-agent orchestration | [Orchestration & Workflows](/guides/orchestration/) |
-| Production deployment | [Deploying to Production](/guides/deployment/) |
+| In-depth agent tutorial | [Building Your First Agent](/docs/guides/first-agent/) |
+| LLM configuration and routing | [Working with LLMs](/docs/guides/working-with-llms/) |
+| RAG and document retrieval | [RAG Pipeline](/docs/guides/rag-pipeline/) |
+| Conversation memory | [Memory System](/docs/guides/memory-system/) |
+| Voice AI applications | [Voice AI Pipeline](/docs/guides/voice-ai/) |
+| MCP and remote tools | [Tools & MCP](/docs/guides/tools-and-mcp/) |
+| Multi-agent orchestration | [Orchestration & Workflows](/docs/guides/orchestration/) |
+| Production deployment | [Deploying to Production](/docs/guides/deployment/) |

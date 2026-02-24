@@ -207,5 +207,5 @@ The Temporal provider wraps your `WorkflowFunc` and `ActivityFunc` types into na
 
 ## Next Steps
 
-- [DAG Workflows](/tutorials/orchestration/dag-workflows) -- Complex graph-based flows that can be used as activities
-- [Human-in-the-Loop](/tutorials/safety/human-in-loop) -- Confidence-based approval policies for tool execution
+- [DAG Workflows](/docs/tutorials/orchestration/dag-workflows) -- Complex graph-based flows that can be used as activities
+- [Human-in-the-Loop](/docs/tutorials/safety/human-in-loop) -- Confidence-based approval policies for tool execution

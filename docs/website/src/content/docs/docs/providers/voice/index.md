@@ -179,32 +179,32 @@ pipeline := voice.Chain(sttProcessor, llmProcessor, ttsProcessor)
 
 | Provider | Registry Name | Streaming | Description |
 |----------|---------------|-----------|-------------|
-| [Deepgram](/providers/voice/deepgram) | `deepgram` | Native WebSocket | Real-time STT with Nova-2 models |
-| [AssemblyAI](/providers/voice/assemblyai) | `assemblyai` | Native WebSocket | Real-time and async transcription |
-| [OpenAI Whisper](/providers/voice/whisper) | `whisper` | Chunked batch | Whisper models via OpenAI API |
-| [Gladia](/providers/voice/gladia) | `gladia` | Native WebSocket | Real-time STT with language detection |
-| [ElevenLabs STT](/providers/voice/elevenlabs) | `elevenlabs` | Chunked batch | Scribe transcription engine |
-| [Groq Whisper](/providers/voice/groq-whisper) | `groq` | Buffered batch | Ultra-fast Whisper inference on LPU |
+| [Deepgram](/docs/providers/voice/deepgram) | `deepgram` | Native WebSocket | Real-time STT with Nova-2 models |
+| [AssemblyAI](/docs/providers/voice/assemblyai) | `assemblyai` | Native WebSocket | Real-time and async transcription |
+| [OpenAI Whisper](/docs/providers/voice/whisper) | `whisper` | Chunked batch | Whisper models via OpenAI API |
+| [Gladia](/docs/providers/voice/gladia) | `gladia` | Native WebSocket | Real-time STT with language detection |
+| [ElevenLabs STT](/docs/providers/voice/elevenlabs) | `elevenlabs` | Chunked batch | Scribe transcription engine |
+| [Groq Whisper](/docs/providers/voice/groq-whisper) | `groq` | Buffered batch | Ultra-fast Whisper inference on LPU |
 
 ## TTS Providers
 
 | Provider | Registry Name | Description |
 |----------|---------------|-------------|
-| [ElevenLabs](/providers/voice/elevenlabs) | `elevenlabs` | Premium voice cloning and synthesis |
-| [Cartesia](/providers/voice/cartesia) | `cartesia` | Low-latency Sonic voice engine |
-| [PlayHT](/providers/voice/playht) | `playht` | AI voice generation platform |
-| [LMNT](/providers/voice/lmnt) | `lmnt` | Ultra-low-latency voice synthesis |
-| [Fish Audio](/providers/voice/fish) | `fish` | Open-source voice synthesis |
-| [Smallest AI](/providers/voice/smallest) | `smallest` | Lightning-fast TTS engine |
-| [Groq TTS](/providers/voice/groq-whisper) | `groq` | Fast TTS via Groq API |
+| [ElevenLabs](/docs/providers/voice/elevenlabs) | `elevenlabs` | Premium voice cloning and synthesis |
+| [Cartesia](/docs/providers/voice/cartesia) | `cartesia` | Low-latency Sonic voice engine |
+| [PlayHT](/docs/providers/voice/playht) | `playht` | AI voice generation platform |
+| [LMNT](/docs/providers/voice/lmnt) | `lmnt` | Ultra-low-latency voice synthesis |
+| [Fish Audio](/docs/providers/voice/fish) | `fish` | Open-source voice synthesis |
+| [Smallest AI](/docs/providers/voice/smallest) | `smallest` | Lightning-fast TTS engine |
+| [Groq TTS](/docs/providers/voice/groq-whisper) | `groq` | Fast TTS via Groq API |
 
 ## S2S Providers
 
 | Provider | Registry Name | Description |
 |----------|---------------|-------------|
-| [OpenAI Realtime](/providers/voice/openai-realtime) | `openai_realtime` | Bidirectional audio via WebSocket |
-| [Gemini Live](/providers/voice/gemini-live) | `gemini_live` | Google's live multimodal API |
-| [Amazon Nova S2S](/providers/voice/nova-s2s) | `nova` | Nova Sonic via AWS Bedrock |
+| [OpenAI Realtime](/docs/providers/voice/openai-realtime) | `openai_realtime` | Bidirectional audio via WebSocket |
+| [Gemini Live](/docs/providers/voice/gemini-live) | `gemini_live` | Google's live multimodal API |
+| [Amazon Nova S2S](/docs/providers/voice/nova-s2s) | `nova` | Nova Sonic via AWS Bedrock |
 
 ## Hooks
 

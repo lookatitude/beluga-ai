@@ -201,5 +201,5 @@ func main() {
 
 ## Next Steps
 
-- [OpenTelemetry Tracing](/tutorials/foundation/otel-tracing) — Debug issues found by health checks
-- [Prometheus and Grafana](/tutorials/foundation/prometheus-grafana) — Metrics visualization
+- [OpenTelemetry Tracing](/docs/tutorials/foundation/otel-tracing) — Debug issues found by health checks
+- [Prometheus and Grafana](/docs/tutorials/foundation/prometheus-grafana) — Metrics visualization

@@ -53,15 +53,15 @@ func main() {
 
 | Provider | Registry Name | Default Model | Default Dimensions |
 |---|---|---|---|
-| [OpenAI](/providers/embedding/openai) | `openai` | `text-embedding-3-small` | 1536 |
-| [Cohere](/providers/embedding/cohere) | `cohere` | `embed-english-v3.0` | 1024 |
-| [Google](/providers/embedding/google) | `google` | `text-embedding-004` | 768 |
-| [Ollama](/providers/embedding/ollama) | `ollama` | `nomic-embed-text` | 768 |
-| [Jina](/providers/embedding/jina) | `jina` | `jina-embeddings-v2-base-en` | 768 |
-| [Voyage](/providers/embedding/voyage) | `voyage` | `voyage-2` | 1024 |
-| [Mistral](/providers/embedding/mistral) | `mistral` | `mistral-embed` | 1024 |
-| [Sentence Transformers](/providers/embedding/sentence-transformers) | `sentence_transformers` | `all-MiniLM-L6-v2` | 384 |
-| [In-Memory](/providers/embedding/inmemory) | `inmemory` | N/A (hash-based) | 128 |
+| [OpenAI](/docs/providers/embedding/openai) | `openai` | `text-embedding-3-small` | 1536 |
+| [Cohere](/docs/providers/embedding/cohere) | `cohere` | `embed-english-v3.0` | 1024 |
+| [Google](/docs/providers/embedding/google) | `google` | `text-embedding-004` | 768 |
+| [Ollama](/docs/providers/embedding/ollama) | `ollama` | `nomic-embed-text` | 768 |
+| [Jina](/docs/providers/embedding/jina) | `jina` | `jina-embeddings-v2-base-en` | 768 |
+| [Voyage](/docs/providers/embedding/voyage) | `voyage` | `voyage-2` | 1024 |
+| [Mistral](/docs/providers/embedding/mistral) | `mistral` | `mistral-embed` | 1024 |
+| [Sentence Transformers](/docs/providers/embedding/sentence-transformers) | `sentence_transformers` | `all-MiniLM-L6-v2` | 384 |
+| [In-Memory](/docs/providers/embedding/inmemory) | `inmemory` | N/A (hash-based) | 128 |
 
 ## Provider Discovery
 
@@ -76,14 +76,14 @@ names := embedding.List()
 
 | Use Case | Recommended Provider |
 |---|---|
-| General-purpose, best cost/quality ratio | [OpenAI](/providers/embedding/openai) |
-| Asymmetric search (separate doc/query embeddings) | [Cohere](/providers/embedding/cohere), [Voyage](/providers/embedding/voyage) |
-| Code retrieval | [Voyage](/providers/embedding/voyage) (`voyage-code-2`) |
-| Multilingual (100+ languages) | [Cohere](/providers/embedding/cohere) (`embed-multilingual-v3.0`) |
-| Local/offline development | [Ollama](/providers/embedding/ollama) |
-| Testing and unit tests | [In-Memory](/providers/embedding/inmemory) |
-| Self-hosted with open-source models | [Sentence Transformers](/providers/embedding/sentence-transformers) |
-| Google Cloud integration | [Google](/providers/embedding/google) |
+| General-purpose, best cost/quality ratio | [OpenAI](/docs/providers/embedding/openai) |
+| Asymmetric search (separate doc/query embeddings) | [Cohere](/docs/providers/embedding/cohere), [Voyage](/docs/providers/embedding/voyage) |
+| Code retrieval | [Voyage](/docs/providers/embedding/voyage) (`voyage-code-2`) |
+| Multilingual (100+ languages) | [Cohere](/docs/providers/embedding/cohere) (`embed-multilingual-v3.0`) |
+| Local/offline development | [Ollama](/docs/providers/embedding/ollama) |
+| Testing and unit tests | [In-Memory](/docs/providers/embedding/inmemory) |
+| Self-hosted with open-source models | [Sentence Transformers](/docs/providers/embedding/sentence-transformers) |
+| Google Cloud integration | [Google](/docs/providers/embedding/google) |
 
 ## Middleware
 

@@ -10,7 +10,7 @@ head:
 
 The NATS provider implements the `workflow.WorkflowStore` interface using NATS JetStream's Key-Value (KV) store. Each workflow state is stored as a JSON-encoded value in a JetStream KV bucket, with the workflow ID as the key. NATS JetStream provides durable, replicated storage with built-in key enumeration, making it a lightweight alternative to heavier persistence backends.
 
-Choose NATS when you want a lightweight, durable key-value store with native key enumeration for workflow state. Unlike Kafka or Dapr, NATS `List` discovers all workflows in the bucket (including those saved by other instances) without requiring an in-memory index. NATS JetStream is simple to operate and provides replicated storage with low operational overhead. For full orchestration with signals and replay, consider [Temporal](/providers/workflow/temporal).
+Choose NATS when you want a lightweight, durable key-value store with native key enumeration for workflow state. Unlike Kafka or Dapr, NATS `List` discovers all workflows in the bucket (including those saved by other instances) without requiring an in-memory index. NATS JetStream is simple to operate and provides replicated storage with low operational overhead. For full orchestration with signals and replay, consider [Temporal](/docs/providers/workflow/temporal).
 
 ## Installation
 

@@ -199,5 +199,5 @@ func (v *CustomValidator) ValidateMessageAsync(ctx context.Context, msg schema.M
 
 ## Related Recipes
 
-- [Schema Recursive Schema Handling](/cookbook/schema-recursive-schema-handling) — Handle nested/recursive schema structures
-- [LLM Error Handling](/cookbook/llm-error-handling) — Error handling patterns that work with validation
+- [Schema Recursive Schema Handling](/docs/cookbook/schema-recursive-schema-handling) — Handle nested/recursive schema structures
+- [LLM Error Handling](/docs/cookbook/llm-error-handling) — Error handling patterns that work with validation

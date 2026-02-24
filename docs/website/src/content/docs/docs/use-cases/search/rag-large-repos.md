@@ -610,7 +610,7 @@ func ValidateFunctionBoundaries(chunks []schema.Document) error {
 
 ## Related Resources
 
-- [Text Splitter Guide](/guides/text-splitting/) for splitting strategies
-- [Scientific Paper Processing](/use-cases/scientific-papers/) for academic splitting
-- [RAG Pipeline Guide](/guides/rag-pipeline/) for complete RAG setup
-- [Embedding Guide](/guides/embeddings/) for cost optimization
+- [Text Splitter Guide](/docs/guides/text-splitting/) for splitting strategies
+- [Scientific Paper Processing](/docs/use-cases/scientific-papers/) for academic splitting
+- [RAG Pipeline Guide](/docs/guides/rag-pipeline/) for complete RAG setup
+- [Embedding Guide](/docs/guides/embeddings/) for cost optimization

@@ -401,6 +401,6 @@ Choose fallback providers with different failure modes. If the primary provider 
 
 ## Related Resources
 
-- [LLM Package Guide](/guides/llm/) for model integration patterns
-- [Streaming Proxy](/use-cases/streaming-proxy/) for high-availability streaming
-- [Observability Guide](/guides/observability/) for monitoring error recovery
+- [LLM Package Guide](/docs/guides/llm/) for model integration patterns
+- [Streaming Proxy](/docs/use-cases/streaming-proxy/) for high-availability streaming
+- [Observability Guide](/docs/guides/observability/) for monitoring error recovery

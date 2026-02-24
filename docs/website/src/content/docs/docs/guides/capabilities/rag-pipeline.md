@@ -435,7 +435,7 @@ hooks := retriever.Hooks{
 
 ## Next Steps
 
-- [Working with LLMs](/guides/working-with-llms/) — The ChatModel that generates answers
-- [Memory System](/guides/memory-system/) — Persistent memory with vector search
-- [Tools & MCP](/guides/tools-and-mcp/) — Give agents retrieval as a tool
-- [Monitoring & Observability](/guides/observability/) — Trace RAG pipeline performance
+- [Working with LLMs](/docs/guides/working-with-llms/) — The ChatModel that generates answers
+- [Memory System](/docs/guides/memory-system/) — Persistent memory with vector search
+- [Tools & MCP](/docs/guides/tools-and-mcp/) — Give agents retrieval as a tool
+- [Monitoring & Observability](/docs/guides/observability/) — Trace RAG pipeline performance

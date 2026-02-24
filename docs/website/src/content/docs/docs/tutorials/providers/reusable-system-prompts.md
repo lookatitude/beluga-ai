@@ -16,8 +16,8 @@ A prompt registry with persona definitions, template variable support, versionin
 
 ## Prerequisites
 
-- Understanding of [Message Template Design](/tutorials/providers/message-templates)
-- Familiarity with the [schema package](/guides/schema)
+- Understanding of [Message Template Design](/docs/tutorials/providers/message-templates)
+- Familiarity with the [schema package](/docs/guides/schema)
 
 ## Step 1: Define Personas
 
@@ -239,5 +239,5 @@ func loadPersonaFromFile(path string) (Persona, error) {
 
 ## Next Steps
 
-- [Research Agent](/tutorials/agents/research-agent) — Apply personas to autonomous agents
-- [Message Template Design](/tutorials/providers/message-templates) — Advanced template patterns
+- [Research Agent](/docs/tutorials/agents/research-agent) — Apply personas to autonomous agents
+- [Message Template Design](/docs/tutorials/providers/message-templates) — Advanced template patterns

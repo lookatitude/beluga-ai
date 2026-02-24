@@ -195,5 +195,5 @@ filtered := core.FilterStream(stream, func(e core.Event[any]) bool {
 
 ## Next Steps
 
-- [Middleware Implementation](/tutorials/foundation/middleware-implementation) — Wrap runnables with cross-cutting behavior
-- [Multi-turn Conversations](/tutorials/foundation/multiturn-conversations) — Model structured conversations with the schema package
+- [Middleware Implementation](/docs/tutorials/foundation/middleware-implementation) — Wrap runnables with cross-cutting behavior
+- [Multi-turn Conversations](/docs/tutorials/foundation/multiturn-conversations) — Model structured conversations with the schema package

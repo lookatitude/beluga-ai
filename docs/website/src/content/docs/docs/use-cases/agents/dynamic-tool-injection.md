@@ -373,6 +373,6 @@ Dynamic tool injection delivered significant improvements:
 
 ## Related Resources
 
-- [Few-Shot SQL Generation](/use-cases/few-shot-sql/) for prompt template patterns
-- [Agent Orchestration Guide](/guides/agent-orchestration/) for agent patterns
-- [Tool Integration](/integrations/tools/) for tool provider configuration
+- [Few-Shot SQL Generation](/docs/use-cases/few-shot-sql/) for prompt template patterns
+- [Agent Orchestration Guide](/docs/guides/agent-orchestration/) for agent patterns
+- [Tool Integration](/docs/integrations/tools/) for tool provider configuration

@@ -444,6 +444,6 @@ When working with document loaders:
 
 ## Next Steps
 
-- Learn about [Text Splitter Integrations](/integrations/text-splitters) for chunking
-- Explore [Document Processing](/guides/document-processing) for complete pipelines
-- Read [RAG Pipeline](/guides/rag-pipeline) for integration patterns
+- Learn about [Text Splitter Integrations](/docs/integrations/text-splitters) for chunking
+- Explore [Document Processing](/docs/guides/document-processing) for complete pipelines
+- Read [RAG Pipeline](/docs/guides/rag-pipeline) for integration patterns

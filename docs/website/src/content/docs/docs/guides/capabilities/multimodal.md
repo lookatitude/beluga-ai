@@ -35,7 +35,7 @@ Multimodal capabilities are the right choice when your data is not purely textua
 ## Prerequisites
 
 Before starting this guide:
-- Complete [Working with LLMs](/guides/working-with-llms) to understand the ChatModel interface and message types
+- Complete [Working with LLMs](/docs/guides/working-with-llms) to understand the ChatModel interface and message types
 - Understand `schema.Message` and content parts (TextPart, ImagePart, AudioPart)
 - Have access to a multimodal-capable provider (OpenAI GPT-4o, Anthropic Claude 3, Google Gemini)
 
@@ -622,7 +622,7 @@ Multimodal AI in production involves higher costs and latency compared to text-o
 ## Next Steps
 
 Now that you understand multimodal AI:
-- Learn about [Document Processing](/guides/document-processing) for OCR pipelines
-- Explore [Voice AI Pipeline](/guides/voice-ai) for real-time audio
-- Read [RAG Recipes](/cookbook/rag-recipes) for multimodal search
-- Check out [Multimodal Recipes](/cookbook/multimodal-recipes) for advanced patterns
+- Learn about [Document Processing](/docs/guides/document-processing) for OCR pipelines
+- Explore [Voice AI Pipeline](/docs/guides/voice-ai) for real-time audio
+- Read [RAG Recipes](/docs/cookbook/rag-recipes) for multimodal search
+- Check out [Multimodal Recipes](/docs/cookbook/multimodal-recipes) for advanced patterns

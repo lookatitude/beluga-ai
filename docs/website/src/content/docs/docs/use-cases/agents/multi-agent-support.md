@@ -348,6 +348,6 @@ if !allowed {
 
 ## Related Resources
 
-- [Building Your First Agent](/guides/first-agent/) for planner strategies (ReAct, Reflexion, Self-Discover)
-- [Tools & MCP](/guides/tools-and-mcp/) for building custom tools
-- [Safety & Guards](/guides/safety-and-guards/) for human-in-the-loop patterns
+- [Building Your First Agent](/docs/guides/first-agent/) for planner strategies (ReAct, Reflexion, Self-Discover)
+- [Tools & MCP](/docs/guides/tools-and-mcp/) for building custom tools
+- [Safety & Guards](/docs/guides/safety-and-guards/) for human-in-the-loop patterns

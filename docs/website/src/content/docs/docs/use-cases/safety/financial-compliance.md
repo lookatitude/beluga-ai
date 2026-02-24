@@ -465,6 +465,6 @@ Financial compliance firewall delivered significant improvements:
 
 ## Related Resources
 
-- [Children's Story Safety](/use-cases/children-stories-safety/) for content safety patterns
-- [Guard Configuration](/guides/safety-guardrails/) for compliance pipeline setup
-- [Safety Integration](/integrations/safety/) for provider-specific configuration
+- [Children's Story Safety](/docs/use-cases/children-stories-safety/) for content safety patterns
+- [Guard Configuration](/docs/guides/safety-guardrails/) for compliance pipeline setup
+- [Safety Integration](/docs/integrations/safety/) for provider-specific configuration

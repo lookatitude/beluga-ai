@@ -353,6 +353,6 @@ After implementing the context-aware IDE extension, the team achieved:
 
 ## Related Resources
 
-- [Memory Guide](/guides/memory/) for memory patterns and configuration
-- [RAG Pipeline Guide](/guides/rag-pipeline/) for semantic search setup
-- [LLM Integration Guide](/guides/llm-integration/) for AI assistant implementation
+- [Memory Guide](/docs/guides/memory/) for memory patterns and configuration
+- [RAG Pipeline Guide](/docs/guides/rag-pipeline/) for semantic search setup
+- [LLM Integration Guide](/docs/guides/llm-integration/) for AI assistant implementation

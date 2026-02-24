@@ -124,6 +124,6 @@ func buildPipelineWithTurnDetection(ctx context.Context) (voice.FrameProcessor, 
 
 ## Related Resources
 
-- [Barge-In Detection](/use-cases/barge-in-detection/) for interruption handling
-- [Voice Sessions Overview](/use-cases/voice-sessions-overview/) for session and pipeline design
-- [Voice AI Applications](/use-cases/voice-applications/) for voice pipeline architecture
+- [Barge-In Detection](/docs/use-cases/barge-in-detection/) for interruption handling
+- [Voice Sessions Overview](/docs/use-cases/voice-sessions-overview/) for session and pipeline design
+- [Voice AI Applications](/docs/use-cases/voice-applications/) for voice pipeline architecture

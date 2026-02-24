@@ -388,4 +388,4 @@ func NewRateLimitedAgent(base agent.Agent, rps float64) *CustomAgent {
 
 ## Related Recipes
 
-- **[LLM Error Handling](/cookbook/llm/llm-error-handling)** -- Handle errors in your custom agent
+- **[LLM Error Handling](/docs/cookbook/llm/llm-error-handling)** -- Handle errors in your custom agent

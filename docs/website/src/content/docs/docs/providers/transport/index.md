@@ -77,9 +77,9 @@ transport.WithChannels(1)(&cfg)
 | Provider | Registry Name | Protocol | Description |
 |----------|---------------|----------|-------------|
 | WebSocket | `websocket` | WebSocket | Built-in WebSocket transport |
-| [Daily](/providers/transport/daily) | `daily` | WebRTC | Daily.co room-based audio transport |
-| [LiveKit](/providers/transport/livekit) | `livekit` | WebRTC | LiveKit room-based audio transport |
-| [Pipecat](/providers/transport/pipecat) | `pipecat` | WebSocket | Pipecat server audio transport |
+| [Daily](/docs/providers/transport/daily) | `daily` | WebRTC | Daily.co room-based audio transport |
+| [LiveKit](/docs/providers/transport/livekit) | `livekit` | WebRTC | LiveKit room-based audio transport |
+| [Pipecat](/docs/providers/transport/pipecat) | `pipecat` | WebSocket | Pipecat server audio transport |
 
 ## Built-in WebSocket Transport
 

@@ -34,7 +34,7 @@ Common use cases include:
 ## Prerequisites
 
 Before starting this guide:
-- Complete [Working with LLMs](/guides/foundations/working-with-llms/)
+- Complete [Working with LLMs](/docs/guides/foundations/working-with-llms/)
 - Understand Go struct tags and JSON marshaling
 - Have an LLM provider configured (OpenAI, Anthropic, etc.)
 
@@ -366,6 +366,6 @@ When using structured output in production:
 ## Next Steps
 
 Now that you understand structured output:
-- Learn about [Prompt Engineering](/guides/foundations/prompt-engineering/) for better extraction prompts
-- Explore [Working with LLMs](/guides/foundations/working-with-llms/) for provider-specific capabilities
-- Read [Tools & MCP](/guides/tools-and-mcp/) for tool-based structured extraction patterns
+- Learn about [Prompt Engineering](/docs/guides/foundations/prompt-engineering/) for better extraction prompts
+- Explore [Working with LLMs](/docs/guides/foundations/working-with-llms/) for provider-specific capabilities
+- Read [Tools & MCP](/docs/guides/tools-and-mcp/) for tool-based structured extraction patterns

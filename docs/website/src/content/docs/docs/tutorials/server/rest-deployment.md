@@ -265,5 +265,5 @@ curl -N -X POST http://localhost:8080/stream \
 
 ## Next Steps
 
-- [MCP Tool Server](/tutorials/server/mcp-tools) -- Expose tools via the Model Context Protocol
-- [Content Moderation](/tutorials/safety/content-moderation) -- Add safety guardrails to your API
+- [MCP Tool Server](/docs/tutorials/server/mcp-tools) -- Expose tools via the Model Context Protocol
+- [Content Moderation](/docs/tutorials/safety/content-moderation) -- Add safety guardrails to your API

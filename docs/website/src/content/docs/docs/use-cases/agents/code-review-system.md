@@ -383,6 +383,6 @@ span.SetAttributes(
 
 ## Related Resources
 
-- [Tools & MCP](/guides/tools-and-mcp/) for building custom tools
-- [LLM Recipes](/cookbook/llm-recipes/) for typed LLM responses
-- [Production Agent Platform](/use-cases/production-platform/) for deployment patterns
+- [Tools & MCP](/docs/guides/tools-and-mcp/) for building custom tools
+- [LLM Recipes](/docs/cookbook/llm-recipes/) for typed LLM responses
+- [Production Agent Platform](/docs/use-cases/production-platform/) for deployment patterns

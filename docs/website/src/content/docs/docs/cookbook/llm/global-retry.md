@@ -319,5 +319,5 @@ type CircuitBreakerRunnable struct {
 
 ## Related Recipes
 
-- **[Context Timeout Management](/cookbook/infrastructure/context-timeout)** -- Advanced timeout handling
-- **[LLM Error Handling](/cookbook/llm/llm-error-handling)** -- LLM-specific error handling with retries
+- **[Context Timeout Management](/docs/cookbook/infrastructure/context-timeout)** -- Advanced timeout handling
+- **[LLM Error Handling](/docs/cookbook/llm/llm-error-handling)** -- LLM-specific error handling with retries

@@ -181,6 +181,6 @@ func (v *CommandValidator) Validate(ctx context.Context, cmd Command) bool {
 
 ## Related Resources
 
-- [Meeting Minutes](/use-cases/meeting-minutes/) for real-time transcription patterns
-- [Noise-Resistant VAD](/use-cases/noise-resistant-vad/) for voice activity detection in noisy environments
-- [Voice AI Applications](/use-cases/voice-applications/) for voice pipeline architecture
+- [Meeting Minutes](/docs/use-cases/meeting-minutes/) for real-time transcription patterns
+- [Noise-Resistant VAD](/docs/use-cases/noise-resistant-vad/) for voice activity detection in noisy environments
+- [Voice AI Applications](/docs/use-cases/voice-applications/) for voice pipeline architecture

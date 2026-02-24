@@ -149,5 +149,5 @@ AWS Transcribe Streaming is not available in all regions. Use a supported region
 
 ## Related Resources
 
-- [Deepgram Live Streams](/integrations/deepgram-streams)
-- [Voice Services Overview](/integrations/voice-services)
+- [Deepgram Live Streams](/docs/integrations/deepgram-streams)
+- [Voice Services Overview](/docs/integrations/voice-services)

@@ -244,5 +244,5 @@ func (pdr *ParentDocumentRetriever) MergeOverlappingChunks(chunks []schema.Docum
 
 ## Related Recipes
 
-- [Reranking with Cohere Rerank](/cookbook/cohere-reranking) -- Improve retrieval quality with cross-encoder reranking
-- [Advanced Code Splitting](/cookbook/code-splitting) -- Split documents intelligently at structural boundaries
+- [Reranking with Cohere Rerank](/docs/cookbook/cohere-reranking) -- Improve retrieval quality with cross-encoder reranking
+- [Advanced Code Splitting](/docs/cookbook/code-splitting) -- Split documents intelligently at structural boundaries

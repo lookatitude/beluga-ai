@@ -200,7 +200,7 @@ err = multi.ExportLLMCall(ctx, o11y.LLMCallData{
 
 | Provider | Description |
 |---|---|
-| [Langfuse](/providers/observability/langfuse) | Open-source LLM observability with trace and generation tracking |
-| [LangSmith](/providers/observability/langsmith) | LangChain's observability platform for tracing LLM runs |
-| [Opik](/providers/observability/opik) | Comet's LLM observability platform with workspace management |
-| [Phoenix](/providers/observability/phoenix) | Arize's open-source LLM observability with OTel-native spans |
+| [Langfuse](/docs/providers/observability/langfuse) | Open-source LLM observability with trace and generation tracking |
+| [LangSmith](/docs/providers/observability/langsmith) | LangChain's observability platform for tracing LLM runs |
+| [Opik](/docs/providers/observability/opik) | Comet's LLM observability platform with workspace management |
+| [Phoenix](/docs/providers/observability/phoenix) | Arize's open-source LLM observability with OTel-native spans |

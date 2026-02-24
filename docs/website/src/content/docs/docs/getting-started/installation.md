@@ -300,6 +300,6 @@ Go support is built in. For integration tests, add `-tags=integration` to your r
 
 ## Next Steps
 
-- [Quick Start](/getting-started/quick-start/) — Build your first agent in 5 minutes
-- [Working with LLMs](/guides/working-with-llms/) — Deep dive into LLM configuration
-- [LLM Providers](/integrations/llm-providers/) — Detailed provider setup guides
+- [Quick Start](/docs/getting-started/quick-start/) — Build your first agent in 5 minutes
+- [Working with LLMs](/docs/guides/working-with-llms/) — Deep dive into LLM configuration
+- [LLM Providers](/docs/integrations/llm-providers/) — Detailed provider setup guides

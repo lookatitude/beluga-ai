@@ -17,7 +17,7 @@ Configurations for different use cases — deterministic code generation, creati
 ## Prerequisites
 
 - A configured LLM provider (OpenAI, Anthropic, or any registered provider)
-- Understanding of the [ChatModel interface](/guides/llm)
+- Understanding of the [ChatModel interface](/docs/guides/llm)
 
 ## Generate Options
 
@@ -195,5 +195,5 @@ resp, err := model.Generate(ctx, msgs,
 
 ## Next Steps
 
-- [Adding a New LLM Provider](/tutorials/providers/new-llm-provider) — Extend the framework with custom providers
-- [Multi-provider Chat](/tutorials/agents/multi-provider) — Use multiple providers together
+- [Adding a New LLM Provider](/docs/tutorials/providers/new-llm-provider) — Extend the framework with custom providers
+- [Multi-provider Chat](/docs/tutorials/agents/multi-provider) — Use multiple providers together

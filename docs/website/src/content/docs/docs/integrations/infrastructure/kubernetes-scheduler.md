@@ -393,6 +393,6 @@ kubectl create secret docker-registry beluga-registry \
 
 ## Related Resources
 
-- [NATS Message Bus](/integrations/nats-message-bus) -- Distributed messaging for agent coordination
-- [Infrastructure](/integrations/infrastructure) -- Infrastructure integration patterns
-- [Monitoring](/integrations/monitoring) -- Observability and tracing setup
+- [NATS Message Bus](/docs/integrations/nats-message-bus) -- Distributed messaging for agent coordination
+- [Infrastructure](/docs/integrations/infrastructure) -- Infrastructure integration patterns
+- [Monitoring](/docs/integrations/monitoring) -- Observability and tracing setup

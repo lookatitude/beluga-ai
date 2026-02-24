@@ -416,7 +416,7 @@ This checklist covers the essential configuration for a production Beluga deploy
 
 ## Next Steps
 
-- [Monitoring & Observability](/guides/production/observability/) — Production monitoring setup with distributed tracing
-- [Safety & Guards](/guides/production/safety-and-guards/) — Production safety configuration and guard pipelines
-- [Working with LLMs](/guides/working-with-llms/) — Multi-provider resilience and fallback strategies
-- [Memory System](/guides/memory-system/) — Production memory backends with Redis and PostgreSQL
+- [Monitoring & Observability](/docs/guides/production/observability/) — Production monitoring setup with distributed tracing
+- [Safety & Guards](/docs/guides/production/safety-and-guards/) — Production safety configuration and guard pipelines
+- [Working with LLMs](/docs/guides/working-with-llms/) — Multi-provider resilience and fallback strategies
+- [Memory System](/docs/guides/memory-system/) — Production memory backends with Redis and PostgreSQL

@@ -28,7 +28,7 @@ Heuristic turn detection is appropriate when:
 - You need minimal compute overhead and no external model files
 - You are building a prototype before investing in ML-based detection
 
-For more nuanced detection that handles trailing speech, overlapping turns, and non-verbal cues, see [ML-Based Turn Prediction](/tutorials/voice/ml-turn-prediction).
+For more nuanced detection that handles trailing speech, overlapping turns, and non-verbal cues, see [ML-Based Turn Prediction](/docs/tutorials/voice/ml-turn-prediction).
 
 ## Step 1: Create a Heuristic Turn Detector
 
@@ -162,6 +162,6 @@ func createSessionWithTurnDetection(ctx context.Context) {
 
 ## Next Steps
 
-- [ML-Based Turn Prediction](/tutorials/voice/ml-turn-prediction) -- Use ONNX models for neural turn detection
-- [Sensitivity Tuning](/tutorials/voice/sensitivity-tuning) -- Tune VAD and turn detection together
-- [Voice Session Interruptions](/tutorials/voice/session-interruptions) -- Handle barge-in during agent speech
+- [ML-Based Turn Prediction](/docs/tutorials/voice/ml-turn-prediction) -- Use ONNX models for neural turn detection
+- [Sensitivity Tuning](/docs/tutorials/voice/sensitivity-tuning) -- Tune VAD and turn detection together
+- [Voice Session Interruptions](/docs/tutorials/voice/session-interruptions) -- Handle barge-in during agent speech

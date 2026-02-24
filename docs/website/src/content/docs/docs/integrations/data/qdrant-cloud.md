@@ -291,6 +291,6 @@ Collections are created automatically on first add operation. If you need to cre
 
 ## Related Resources
 
-- [Vector Stores Overview](/integrations/vector-stores) -- All supported vector store providers
-- [Pinecone Serverless Integration](/integrations/pinecone-serverless) -- Serverless vector storage
-- [RAG Tutorial](/tutorials/rag-pipeline) -- Build end-to-end RAG applications
+- [Vector Stores Overview](/docs/integrations/vector-stores) -- All supported vector store providers
+- [Pinecone Serverless Integration](/docs/integrations/pinecone-serverless) -- Serverless vector storage
+- [RAG Tutorial](/docs/tutorials/rag-pipeline) -- Build end-to-end RAG applications

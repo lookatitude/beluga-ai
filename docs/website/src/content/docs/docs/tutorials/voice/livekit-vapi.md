@@ -17,7 +17,7 @@ A voice agent that connects to a LiveKit room or Vapi endpoint, processes partic
 ## Prerequisites
 
 - LiveKit API credentials (URL, API key, API secret) or Vapi API key
-- Completion of [Native S2S with Amazon Nova](/tutorials/voice/s2s-amazon-nova) or a working STT/TTS configuration
+- Completion of [Native S2S with Amazon Nova](/docs/tutorials/voice/s2s-amazon-nova) or a working STT/TTS configuration
 
 ## Why Third-Party Backends?
 
@@ -191,6 +191,6 @@ func main() {
 
 ## Next Steps
 
-- [Sensitivity Tuning](/tutorials/voice/sensitivity-tuning) -- Optimize VAD and turn detection for your environment
-- [Scalable Voice Backend](/tutorials/voice/scalable-backend) -- Scale to hundreds of concurrent sessions
-- [Real-time STT Streaming](/tutorials/voice/stt-realtime-streaming) -- Use custom STT with backend providers
+- [Sensitivity Tuning](/docs/tutorials/voice/sensitivity-tuning) -- Optimize VAD and turn detection for your environment
+- [Scalable Voice Backend](/docs/tutorials/voice/scalable-backend) -- Scale to hundreds of concurrent sessions
+- [Real-time STT Streaming](/docs/tutorials/voice/stt-realtime-streaming) -- Use custom STT with backend providers

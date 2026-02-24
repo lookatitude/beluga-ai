@@ -165,6 +165,6 @@ Beluga's STT interface uses Go channels for streaming rather than `iter.Seq2`, b
 
 ## Next Steps
 
-- [Fine-tuning Whisper for Industry Terms](/tutorials/voice/whisper-finetuning) -- Improve accuracy for specialized vocabulary
-- [Voice Session Interruptions](/tutorials/voice/session-interruptions) -- Combine STT with full session management
-- [Custom Silero VAD](/tutorials/voice/custom-silero-vad) -- Add voice activity detection to filter silence
+- [Fine-tuning Whisper for Industry Terms](/docs/tutorials/voice/whisper-finetuning) -- Improve accuracy for specialized vocabulary
+- [Voice Session Interruptions](/docs/tutorials/voice/session-interruptions) -- Combine STT with full session management
+- [Custom Silero VAD](/docs/tutorials/voice/custom-silero-vad) -- Add voice activity detection to filter silence

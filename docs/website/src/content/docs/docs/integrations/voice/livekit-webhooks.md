@@ -241,5 +241,5 @@ LiveKit cannot reach the webhook URL. Confirm that:
 
 ## Related Resources
 
-- [Voice Services Overview](/integrations/voice-services) -- All supported voice providers
-- [Vapi Custom Tools Integration](/integrations/vapi-custom-tools) -- Custom tools with Vapi
+- [Voice Services Overview](/docs/integrations/voice-services) -- All supported voice providers
+- [Vapi Custom Tools Integration](/docs/integrations/vapi-custom-tools) -- Custom tools with Vapi

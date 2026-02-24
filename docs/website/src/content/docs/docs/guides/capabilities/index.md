@@ -10,7 +10,7 @@ head:
       content: "Beluga AI, Go, capabilities, RAG, memory, tools, voice AI, multimodal"
 ---
 
-These guides cover the major subsystems that give Beluga AI agents their capabilities. Each guide explains the architecture of a subsystem, the design patterns it uses, and how to integrate it into your applications. They assume familiarity with the [Foundation guides](/guides/foundations/) and build on the core patterns established there — registries, middleware, hooks, and streaming.
+These guides cover the major subsystems that give Beluga AI agents their capabilities. Each guide explains the architecture of a subsystem, the design patterns it uses, and how to integrate it into your applications. They assume familiarity with the [Foundation guides](/docs/guides/foundations/) and build on the core patterns established there — registries, middleware, hooks, and streaming.
 
 Every capability follows the same extensibility model: a small Go interface defines the contract, providers register via `init()`, and middleware wraps behavior without modifying implementations. This consistency means that once you learn one subsystem, the patterns transfer directly to the others.
 

@@ -249,5 +249,5 @@ The protocol version is `2025-03-26` (Streamable HTTP transport).
 
 ## Next Steps
 
-- [REST Deployment](/tutorials/server/rest-deployment) -- Alternative REST API deployment for direct client access
-- [Content Moderation](/tutorials/safety/content-moderation) -- Add safety guards to tool execution
+- [REST Deployment](/docs/tutorials/server/rest-deployment) -- Alternative REST API deployment for direct client access
+- [Content Moderation](/docs/tutorials/safety/content-moderation) -- Add safety guards to tool execution

@@ -248,5 +248,5 @@ func (be *BatchEmbedder) embedBatchWithRetry(ctx context.Context, texts []string
 
 ## Related Recipes
 
-- [Metadata-Aware Clustering](/cookbook/metadata-clustering) -- Cluster embeddings with metadata constraints
-- [Advanced Metadata Filtering](/cookbook/meta-filtering) -- Filter vector store results with metadata
+- [Metadata-Aware Clustering](/docs/cookbook/metadata-clustering) -- Cluster embeddings with metadata constraints
+- [Advanced Metadata Filtering](/docs/cookbook/meta-filtering) -- Filter vector store results with metadata

@@ -276,5 +276,5 @@ type MLPIIRedactor struct {
 
 ## Related Recipes
 
-- [Prompt Injection Detection](/cookbook/prompt-injection-detection) — Additional safety patterns
-- [Config Masking Secrets in Logs](/cookbook/config-secret-masking) — Secret masking
+- [Prompt Injection Detection](/docs/cookbook/prompt-injection-detection) — Additional safety patterns
+- [Config Masking Secrets in Logs](/docs/cookbook/config-secret-masking) — Secret masking

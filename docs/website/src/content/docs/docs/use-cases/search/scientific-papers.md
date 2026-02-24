@@ -495,7 +495,7 @@ func ValidateChunkQuality(chunks []schema.Document, originalContent string) erro
 
 ## Related Resources
 
-- [Text Splitter Guide](/guides/text-splitting/) for splitting strategies
-- [Large Repository RAG](/use-cases/rag-large-repos/) for code-aware splitting
-- [RAG Pipeline Guide](/guides/rag-pipeline/) for complete RAG setup
-- [Document Loader Guide](/guides/document-loaders/) for format parsing
+- [Text Splitter Guide](/docs/guides/text-splitting/) for splitting strategies
+- [Large Repository RAG](/docs/use-cases/rag-large-repos/) for code-aware splitting
+- [RAG Pipeline Guide](/docs/guides/rag-pipeline/) for complete RAG setup
+- [Document Loader Guide](/docs/guides/document-loaders/) for format parsing

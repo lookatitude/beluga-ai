@@ -18,7 +18,7 @@ A production-ready voice backend that supports concurrent sessions, configurable
 
 - Go 1.23+
 - API keys for your chosen voice providers
-- Completion of [LiveKit and Vapi Integration](/tutorials/voice/livekit-vapi) is recommended
+- Completion of [LiveKit and Vapi Integration](/docs/tutorials/voice/livekit-vapi) is recommended
 
 ## Step 1: Configure the Backend
 
@@ -233,6 +233,6 @@ HTTP/WS Request ──▶│  │ Session Manager    │  │
 
 ## Next Steps
 
-- [LiveKit and Vapi Integration](/tutorials/voice/livekit-vapi) -- Provider-specific configuration details
-- [Native S2S with Amazon Nova](/tutorials/voice/s2s-amazon-nova) -- S2S pipeline configuration
-- [Sensitivity Tuning](/tutorials/voice/sensitivity-tuning) -- Tune the VAD and turn detection in your pipeline
+- [LiveKit and Vapi Integration](/docs/tutorials/voice/livekit-vapi) -- Provider-specific configuration details
+- [Native S2S with Amazon Nova](/docs/tutorials/voice/s2s-amazon-nova) -- S2S pipeline configuration
+- [Sensitivity Tuning](/docs/tutorials/voice/sensitivity-tuning) -- Tune the VAD and turn detection in your pipeline

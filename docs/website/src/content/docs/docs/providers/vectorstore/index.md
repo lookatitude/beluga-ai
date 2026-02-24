@@ -57,19 +57,19 @@ func main() {
 
 | Provider | Registry Name | Type | Distance Strategies |
 |---|---|---|---|
-| [pgvector](/providers/vectorstore/pgvector) | `pgvector` | PostgreSQL extension | Cosine, Dot Product, Euclidean |
-| [Pinecone](/providers/vectorstore/pinecone) | `pinecone` | Managed cloud | Cosine |
-| [Qdrant](/providers/vectorstore/qdrant) | `qdrant` | Self-hosted / cloud | Cosine, Dot Product, Euclidean |
-| [Milvus](/providers/vectorstore/milvus) | `milvus` | Self-hosted / cloud | Cosine |
-| [Weaviate](/providers/vectorstore/weaviate) | `weaviate` | Self-hosted / cloud | Cosine |
-| [ChromaDB](/providers/vectorstore/chroma) | `chroma` | Self-hosted | Cosine |
-| [Elasticsearch](/providers/vectorstore/elasticsearch) | `elasticsearch` | Self-hosted / cloud | Cosine |
-| [Redis](/providers/vectorstore/redis) | `redis` | Self-hosted / cloud | Cosine |
-| [MongoDB Atlas](/providers/vectorstore/mongodb) | `mongodb` | Managed cloud | Cosine |
-| [SQLite-vec](/providers/vectorstore/sqlitevec) | `sqlitevec` | Embedded (CGO) | Euclidean (L2) |
-| [Turbopuffer](/providers/vectorstore/turbopuffer) | `turbopuffer` | Managed cloud | Cosine, Dot Product, Euclidean |
-| [Vespa](/providers/vectorstore/vespa) | `vespa` | Self-hosted / cloud | Cosine, Dot Product, Euclidean |
-| [In-Memory](/providers/vectorstore/inmemory) | `inmemory` | In-process | Cosine, Dot Product, Euclidean |
+| [pgvector](/docs/providers/vectorstore/pgvector) | `pgvector` | PostgreSQL extension | Cosine, Dot Product, Euclidean |
+| [Pinecone](/docs/providers/vectorstore/pinecone) | `pinecone` | Managed cloud | Cosine |
+| [Qdrant](/docs/providers/vectorstore/qdrant) | `qdrant` | Self-hosted / cloud | Cosine, Dot Product, Euclidean |
+| [Milvus](/docs/providers/vectorstore/milvus) | `milvus` | Self-hosted / cloud | Cosine |
+| [Weaviate](/docs/providers/vectorstore/weaviate) | `weaviate` | Self-hosted / cloud | Cosine |
+| [ChromaDB](/docs/providers/vectorstore/chroma) | `chroma` | Self-hosted | Cosine |
+| [Elasticsearch](/docs/providers/vectorstore/elasticsearch) | `elasticsearch` | Self-hosted / cloud | Cosine |
+| [Redis](/docs/providers/vectorstore/redis) | `redis` | Self-hosted / cloud | Cosine |
+| [MongoDB Atlas](/docs/providers/vectorstore/mongodb) | `mongodb` | Managed cloud | Cosine |
+| [SQLite-vec](/docs/providers/vectorstore/sqlitevec) | `sqlitevec` | Embedded (CGO) | Euclidean (L2) |
+| [Turbopuffer](/docs/providers/vectorstore/turbopuffer) | `turbopuffer` | Managed cloud | Cosine, Dot Product, Euclidean |
+| [Vespa](/docs/providers/vectorstore/vespa) | `vespa` | Self-hosted / cloud | Cosine, Dot Product, Euclidean |
+| [In-Memory](/docs/providers/vectorstore/inmemory) | `inmemory` | In-process | Cosine, Dot Product, Euclidean |
 
 ## Search Options
 
@@ -123,12 +123,12 @@ hooks := vectorstore.Hooks{
 
 | Use Case | Recommended Provider | Why |
 |---|---|---|
-| Testing and development | [In-Memory](/providers/vectorstore/inmemory) | No setup required, deterministic |
-| Existing PostgreSQL deployment | [pgvector](/providers/vectorstore/pgvector) | Vectors co-located with relational data |
-| Embedded/edge applications | [SQLite-vec](/providers/vectorstore/sqlitevec) | File-based, no server needed |
-| Managed cloud with zero ops | [Pinecone](/providers/vectorstore/pinecone), [Turbopuffer](/providers/vectorstore/turbopuffer) | Automatic scaling, no infrastructure |
-| Full-text + vector search | [Elasticsearch](/providers/vectorstore/elasticsearch), [Weaviate](/providers/vectorstore/weaviate) | Combined keyword and semantic queries |
-| High-performance self-hosted | [Qdrant](/providers/vectorstore/qdrant), [Milvus](/providers/vectorstore/milvus) | Purpose-built for vector workloads at scale |
-| Existing Redis infrastructure | [Redis](/providers/vectorstore/redis) | Low-latency, reuses existing deployment |
-| Existing MongoDB Atlas | [MongoDB Atlas](/providers/vectorstore/mongodb) | Vector search integrated with document DB |
-| Production search engine | [Vespa](/providers/vectorstore/vespa) | Real-time indexing, custom ranking models |
+| Testing and development | [In-Memory](/docs/providers/vectorstore/inmemory) | No setup required, deterministic |
+| Existing PostgreSQL deployment | [pgvector](/docs/providers/vectorstore/pgvector) | Vectors co-located with relational data |
+| Embedded/edge applications | [SQLite-vec](/docs/providers/vectorstore/sqlitevec) | File-based, no server needed |
+| Managed cloud with zero ops | [Pinecone](/docs/providers/vectorstore/pinecone), [Turbopuffer](/docs/providers/vectorstore/turbopuffer) | Automatic scaling, no infrastructure |
+| Full-text + vector search | [Elasticsearch](/docs/providers/vectorstore/elasticsearch), [Weaviate](/docs/providers/vectorstore/weaviate) | Combined keyword and semantic queries |
+| High-performance self-hosted | [Qdrant](/docs/providers/vectorstore/qdrant), [Milvus](/docs/providers/vectorstore/milvus) | Purpose-built for vector workloads at scale |
+| Existing Redis infrastructure | [Redis](/docs/providers/vectorstore/redis) | Low-latency, reuses existing deployment |
+| Existing MongoDB Atlas | [MongoDB Atlas](/docs/providers/vectorstore/mongodb) | Vector search integrated with document DB |
+| Production search engine | [Vespa](/docs/providers/vectorstore/vespa) | Real-time indexing, custom ranking models |

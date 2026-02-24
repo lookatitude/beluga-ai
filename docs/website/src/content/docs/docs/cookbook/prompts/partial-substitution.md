@@ -243,5 +243,5 @@ func (ppt *PartialPromptTemplate) Merge(other *PartialPromptTemplate) *PartialPr
 
 ## Related Recipes
 
-- **[Dynamic Message Chain Templates](/cookbook/prompts/dynamic-templates)** -- Build message chains dynamically
-- **[Streaming Tool Calls](/cookbook/llm/streaming-tool-calls)** -- Streaming patterns
+- **[Dynamic Message Chain Templates](/docs/cookbook/prompts/dynamic-templates)** -- Build message chains dynamically
+- **[Streaming Tool Calls](/docs/cookbook/llm/streaming-tool-calls)** -- Streaming patterns

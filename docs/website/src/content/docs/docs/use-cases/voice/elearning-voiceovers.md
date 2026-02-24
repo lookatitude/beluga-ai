@@ -179,5 +179,5 @@ type Voiceover struct {
 
 ## Related Resources
 
-- [Interactive Audiobooks](/use-cases/interactive-audiobooks/) for dynamic TTS with character voices
-- [Voice AI Applications](/use-cases/voice-applications/) for voice pipeline architecture
+- [Interactive Audiobooks](/docs/use-cases/interactive-audiobooks/) for dynamic TTS with character voices
+- [Voice AI Applications](/docs/use-cases/voice-applications/) for voice pipeline architecture

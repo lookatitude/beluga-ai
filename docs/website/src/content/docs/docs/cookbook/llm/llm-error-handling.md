@@ -217,6 +217,6 @@ func (c *LLMClient) GenerateWithFallback(ctx context.Context, messages []schema.
 
 ## Related Recipes
 
-- **[Custom Agent Patterns](/cookbook/agents/custom-agent-patterns)** -- Use error handling in custom agents
-- **[Global Retry Wrappers](/cookbook/llm/global-retry)** -- Framework-level retry strategies
-- **[Context Timeout Management](/cookbook/infrastructure/context-timeout)** -- Timeout handling for operations
+- **[Custom Agent Patterns](/docs/cookbook/agents/custom-agent-patterns)** -- Use error handling in custom agents
+- **[Global Retry Wrappers](/docs/cookbook/llm/global-retry)** -- Framework-level retry strategies
+- **[Context Timeout Management](/docs/cookbook/infrastructure/context-timeout)** -- Timeout handling for operations

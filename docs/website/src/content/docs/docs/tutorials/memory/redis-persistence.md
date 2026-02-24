@@ -17,7 +17,7 @@ A Redis-backed conversation history that serializes and deserializes typed messa
 ## Prerequisites
 
 - A running Redis instance
-- Understanding of [Multi-turn Conversations](/tutorials/foundation/multiturn-conversations)
+- Understanding of [Multi-turn Conversations](/docs/tutorials/foundation/multiturn-conversations)
 
 ## Step 1: Define the Redis History Store
 
@@ -228,5 +228,5 @@ func main() {
 
 ## Next Steps
 
-- [Summary and Window Patterns](/tutorials/memory/summary-window) -- Optimize memory for long conversations
-- [Multi-turn Conversations](/tutorials/foundation/multiturn-conversations) -- Message management fundamentals
+- [Summary and Window Patterns](/docs/tutorials/memory/summary-window) -- Optimize memory for long conversations
+- [Multi-turn Conversations](/docs/tutorials/foundation/multiturn-conversations) -- Message management fundamentals

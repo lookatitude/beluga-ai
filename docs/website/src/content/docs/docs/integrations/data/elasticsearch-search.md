@@ -401,5 +401,5 @@ curl -X PUT "localhost:9200/documents"
 
 ## Related Resources
 
-- [Weaviate RAG Connector](/integrations/weaviate-rag) -- Hybrid vector and keyword search with Weaviate
-- [Vector Stores](/integrations/vector-stores) -- Vector store provider overview
+- [Weaviate RAG Connector](/docs/integrations/weaviate-rag) -- Hybrid vector and keyword search with Weaviate
+- [Vector Stores](/docs/integrations/vector-stores) -- Vector store provider overview

@@ -312,6 +312,6 @@ func (s *ProductSearch) SearchWithRateLimit(ctx context.Context, imageData []byt
 
 ## Related Resources
 
-- [Security Camera Analysis](/use-cases/security-camera/) for video analysis patterns
-- [Enterprise RAG](/use-cases/enterprise-rag/) for semantic search setup
-- [LLM Integration Guide](/guides/llm/) for multimodal model configuration
+- [Security Camera Analysis](/docs/use-cases/security-camera/) for video analysis patterns
+- [Enterprise RAG](/docs/use-cases/enterprise-rag/) for semantic search setup
+- [LLM Integration Guide](/docs/guides/llm/) for multimodal model configuration

@@ -296,6 +296,6 @@ func recordTurnMetrics(ctx context.Context, sttLatency, agentLatency, ttsLatency
 
 ## Related Resources
 
-- [Voice AI Applications](/use-cases/voice-applications/) for complete voice pipeline patterns
-- [Voice Forms](/use-cases/voice-forms/) for multi-turn voice form collection
-- [Production Agent Platform](/use-cases/production-platform/) for deployment patterns
+- [Voice AI Applications](/docs/use-cases/voice-applications/) for complete voice pipeline patterns
+- [Voice Forms](/docs/use-cases/voice-forms/) for multi-turn voice form collection
+- [Production Agent Platform](/docs/use-cases/production-platform/) for deployment patterns

@@ -83,8 +83,8 @@ vad, err := voice.NewVAD("energy", map[string]any{
 | Provider | Registry Name | Description |
 |----------|---------------|-------------|
 | Energy   | `energy`      | Built-in RMS energy threshold detector |
-| [Silero](/providers/vad/silero) | `silero` | ONNX model-based detection with energy fallback |
-| [WebRTC](/providers/vad/webrtc) | `webrtc` | Energy + zero-crossing rate analysis |
+| [Silero](/docs/providers/vad/silero) | `silero` | ONNX model-based detection with energy fallback |
+| [WebRTC](/docs/providers/vad/webrtc) | `webrtc` | Energy + zero-crossing rate analysis |
 
 ## Provider Discovery
 

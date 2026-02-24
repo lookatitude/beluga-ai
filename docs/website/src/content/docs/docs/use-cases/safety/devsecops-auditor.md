@@ -548,6 +548,6 @@ Organizations using automated policy auditing with Beluga AI achieve:
 
 ## Related Resources
 
-- [Agent Types Guide](/guides/agent-types/) for ReAct agent patterns
-- [Tool Integration](/guides/tool-integration/) for custom tool development
-- [Security Best Practices](/guides/security/) for production security
+- [Agent Types Guide](/docs/guides/agent-types/) for ReAct agent patterns
+- [Tool Integration](/docs/guides/tool-integration/) for custom tool development
+- [Security Best Practices](/docs/guides/security/) for production security

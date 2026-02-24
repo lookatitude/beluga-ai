@@ -185,6 +185,6 @@ User Microphone                              User Speaker
 
 ## Next Steps
 
-- [Configuring S2S Reasoning Modes](/tutorials/voice/s2s-reasoning-modes) -- Optimize for speed or quality
-- [Voice Session Interruptions](/tutorials/voice/session-interruptions) -- Session-level interruption management
-- [Scalable Voice Backend](/tutorials/voice/scalable-backend) -- Production-grade backend with LiveKit
+- [Configuring S2S Reasoning Modes](/docs/tutorials/voice/s2s-reasoning-modes) -- Optimize for speed or quality
+- [Voice Session Interruptions](/docs/tutorials/voice/session-interruptions) -- Session-level interruption management
+- [Scalable Voice Backend](/docs/tutorials/voice/scalable-backend) -- Production-grade backend with LiveKit
