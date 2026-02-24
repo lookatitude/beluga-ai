@@ -28,7 +28,7 @@
     "lodash-es": "4.17.23",
     "marked": "^17.0.3",
     "mdast-util-to-hast": "13.2.1",
-    "mermaid": "^11.12.2",
+    "mermaid": "^11.12.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "satori": "^0.19.2",
