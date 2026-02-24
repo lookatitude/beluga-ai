@@ -1,25 +1,10 @@
 ---
 import MarketingLayout from "@/layouts/MarketingLayout.astro";
 
-const contributors = [
-  { initials: "MP", gradient: "linear-gradient(135deg, #5CA3CA, #81D4E8)" },
-  { initials: "AR", gradient: "linear-gradient(135deg, #D76D77, #ffca7b)" },
-  { initials: "SK", gradient: "linear-gradient(135deg, #3a1c71, #D76D77)" },
-  { initials: "JL", gradient: "linear-gradient(135deg, #0F3353, #5CA3CA)" },
-  { initials: "TC", gradient: "linear-gradient(135deg, #ffca7b, #D76D77)" },
-  { initials: "RW", gradient: "linear-gradient(135deg, #5CA3CA, #3a1c71)" },
-  { initials: "EM", gradient: "linear-gradient(135deg, #81D4E8, #5CA3CA)" },
-  { initials: "DP", gradient: "linear-gradient(135deg, #D76D77, #3a1c71)" },
-  { initials: "NF", gradient: "linear-gradient(135deg, #3a1c71, #81D4E8)" },
-  { initials: "KH", gradient: "linear-gradient(135deg, #ffca7b, #5CA3CA)" },
-  { initials: "LB", gradient: "linear-gradient(135deg, #5CA3CA, #D76D77)" },
-  { initials: "OG", gradient: "linear-gradient(135deg, #0F3353, #81D4E8)" },
-];
-
 const roadmap = [
   { phase: "Phase 1", title: "Core packages and foundation", status: "complete" },
-  { phase: "Phase 2", title: "Provider implementations and integrations", status: "in-progress" },
-  { phase: "Phase 3", title: "Advanced features — voice, orchestration, durable workflows", status: "upcoming" },
+  { phase: "Phase 2", title: "Provider implementations and integrations", status: "complete" },
+  { phase: "Phase 3", title: "Advanced features — voice, orchestration, durable workflows", status: "complete" },
   { phase: "Phase 4", title: "Production hardening, benchmarks, documentation", status: "upcoming" },
 ];
 
@@ -168,26 +153,6 @@ const jsonLd = JSON.stringify({
           </svg>
         </a>
       </div>
-    </div>
-  </section>
-
-  <!-- Divider -->
-  <div class="community-divider" aria-hidden="true"></div>
-
-  <!-- Block 16.4 — Contributors -->
-  <section class="community-section">
-    <div class="community-container" style="text-align: center;">
-      <h2 class="community-section-title">These people made Beluga AI possible.</h2>
-      <div class="contributors-grid">
-        {contributors.map((c) => (
-          <div class="contributor-avatar" style={`background: ${c.gradient};`}>
-            <span>{c.initials}</span>
-          </div>
-        ))}
-      </div>
-      <p class="contributors-note">
-        In production, contributor avatars are populated from the GitHub API.
-      </p>
     </div>
   </section>
 
@@ -585,48 +550,6 @@ const jsonLd = JSON.stringify({
 
   .contrib-link:hover {
     gap: 0.75rem;
-  }
-
-  /* ── Contributors grid (Block 16.4) ── */
-  .contributors-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 1rem;
-    margin: 2rem auto 1.5rem;
-    max-width: 600px;
-  }
-
-  .contributor-avatar {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s ease;
-  }
-
-  .contributor-avatar:hover {
-    transform: scale(1.12);
-  }
-
-  .contributor-avatar span {
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0.02em;
-  }
-
-  .contributors-note {
-    font-size: 0.8125rem;
-    color: var(--color-text, #999);
-    opacity: 0.6;
-    margin: 0;
-  }
-
-  :root[data-theme="light"] .contributors-note {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 50%, transparent);
   }
 
   /* ── Roadmap (Block 16.5) ── */
