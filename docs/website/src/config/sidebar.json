@@ -5,15 +5,15 @@
       "items": [
         {
           "label": "[seti:vite] Overview",
-          "slug": "getting-started/overview"
+          "slug": "docs/getting-started/overview"
         },
         {
           "label": "[setting] Installation",
-          "slug": "getting-started/installation"
+          "slug": "docs/getting-started/installation"
         },
         {
           "label": "[rocket] Quick Start",
-          "slug": "getting-started/quick-start"
+          "slug": "docs/getting-started/quick-start"
         }
       ]
     },
@@ -22,22 +22,22 @@
       "items": [
         {
           "label": "Overview",
-          "slug": "guides"
+          "slug": "docs/guides"
         },
         {
           "label": "Foundations",
           "collapsed": true,
-          "autogenerate": { "directory": "guides/foundations" }
+          "autogenerate": { "directory": "docs/guides/foundations" }
         },
         {
           "label": "Capabilities",
           "collapsed": true,
-          "autogenerate": { "directory": "guides/capabilities" }
+          "autogenerate": { "directory": "docs/guides/capabilities" }
         },
         {
           "label": "Production",
           "collapsed": true,
-          "autogenerate": { "directory": "guides/production" }
+          "autogenerate": { "directory": "docs/guides/production" }
         }
       ]
     },
@@ -46,67 +46,67 @@
       "items": [
         {
           "label": "Overview",
-          "slug": "tutorials"
+          "slug": "docs/tutorials"
         },
         {
           "label": "Foundation",
           "collapsed": true,
-          "autogenerate": { "directory": "tutorials/foundation" }
+          "autogenerate": { "directory": "docs/tutorials/foundation" }
         },
         {
           "label": "Providers",
           "collapsed": true,
-          "autogenerate": { "directory": "tutorials/providers" }
+          "autogenerate": { "directory": "docs/tutorials/providers" }
         },
         {
           "label": "Agents",
           "collapsed": true,
-          "autogenerate": { "directory": "tutorials/agents" }
+          "autogenerate": { "directory": "docs/tutorials/agents" }
         },
         {
           "label": "Memory",
           "collapsed": true,
-          "autogenerate": { "directory": "tutorials/memory" }
+          "autogenerate": { "directory": "docs/tutorials/memory" }
         },
         {
           "label": "RAG & Retrieval",
           "collapsed": true,
-          "autogenerate": { "directory": "tutorials/rag" }
+          "autogenerate": { "directory": "docs/tutorials/rag" }
         },
         {
           "label": "Orchestration",
           "collapsed": true,
-          "autogenerate": { "directory": "tutorials/orchestration" }
+          "autogenerate": { "directory": "docs/tutorials/orchestration" }
         },
         {
           "label": "Safety",
           "collapsed": true,
-          "autogenerate": { "directory": "tutorials/safety" }
+          "autogenerate": { "directory": "docs/tutorials/safety" }
         },
         {
           "label": "Server & Deployment",
           "collapsed": true,
-          "autogenerate": { "directory": "tutorials/server" }
+          "autogenerate": { "directory": "docs/tutorials/server" }
         },
         {
           "label": "Messaging",
           "collapsed": true,
-          "autogenerate": { "directory": "tutorials/messaging" }
+          "autogenerate": { "directory": "docs/tutorials/messaging" }
         },
         {
           "label": "Multimodal",
           "collapsed": true,
-          "autogenerate": { "directory": "tutorials/multimodal" }
+          "autogenerate": { "directory": "docs/tutorials/multimodal" }
         },
         {
           "label": "Documents",
           "collapsed": true,
-          "autogenerate": { "directory": "tutorials/documents" }
+          "autogenerate": { "directory": "docs/tutorials/documents" }
         },
         {
           "label": "Voice",
           "collapsed": true,
-          "autogenerate": { "directory": "tutorials/voice" }
+          "autogenerate": { "directory": "docs/tutorials/voice" }
         }
       ]
     },
@@ -115,47 +115,47 @@
       "items": [
         {
           "label": "Overview",
-          "slug": "cookbook"
+          "slug": "docs/cookbook"
         },
         {
           "label": "[seti:robot] Agent Recipes",
           "collapsed": true,
-          "autogenerate": { "directory": "cookbook/agents" }
+          "autogenerate": { "directory": "docs/cookbook/agents" }
         },
         {
           "label": "[seti:chat] LLM Recipes",
           "collapsed": true,
-          "autogenerate": { "directory": "cookbook/llm" }
+          "autogenerate": { "directory": "docs/cookbook/llm" }
         },
         {
           "label": "[seti:search] RAG Recipes",
           "collapsed": true,
-          "autogenerate": { "directory": "cookbook/rag" }
+          "autogenerate": { "directory": "docs/cookbook/rag" }
         },
         {
           "label": "[seti:db] Memory Recipes",
           "collapsed": true,
-          "autogenerate": { "directory": "cookbook/memory" }
+          "autogenerate": { "directory": "docs/cookbook/memory" }
         },
         {
           "label": "[seti:audio] Voice Recipes",
           "collapsed": true,
-          "autogenerate": { "directory": "cookbook/voice" }
+          "autogenerate": { "directory": "docs/cookbook/voice" }
         },
         {
           "label": "[seti:image] Multimodal Recipes",
           "collapsed": true,
-          "autogenerate": { "directory": "cookbook/multimodal" }
+          "autogenerate": { "directory": "docs/cookbook/multimodal" }
         },
         {
           "label": "[seti:code] Prompt Recipes",
           "collapsed": true,
-          "autogenerate": { "directory": "cookbook/prompts" }
+          "autogenerate": { "directory": "docs/cookbook/prompts" }
         },
         {
           "label": "[setting] Infrastructure Recipes",
           "collapsed": true,
-          "autogenerate": { "directory": "cookbook/infrastructure" }
+          "autogenerate": { "directory": "docs/cookbook/infrastructure" }
         }
       ]
     },
@@ -164,57 +164,57 @@
       "items": [
         {
           "label": "Overview",
-          "slug": "integrations"
+          "slug": "docs/integrations"
         },
         {
           "label": "[seti:robot] Agents & Tools",
           "collapsed": true,
-          "autogenerate": { "directory": "integrations/agents" }
+          "autogenerate": { "directory": "docs/integrations/agents" }
         },
         {
           "label": "[seti:chat] LLM Providers",
           "collapsed": true,
-          "autogenerate": { "directory": "integrations/llm" }
+          "autogenerate": { "directory": "docs/integrations/llm" }
         },
         {
           "label": "[seti:vectors] Embeddings & NLP",
           "collapsed": true,
-          "autogenerate": { "directory": "integrations/embeddings" }
+          "autogenerate": { "directory": "docs/integrations/embeddings" }
         },
         {
           "label": "[seti:db] Data & Storage",
           "collapsed": true,
-          "autogenerate": { "directory": "integrations/data" }
+          "autogenerate": { "directory": "docs/integrations/data" }
         },
         {
           "label": "[seti:audio] Voice",
           "collapsed": true,
-          "autogenerate": { "directory": "integrations/voice" }
+          "autogenerate": { "directory": "docs/integrations/voice" }
         },
         {
           "label": "[seti:config] Infrastructure",
           "collapsed": true,
-          "autogenerate": { "directory": "integrations/infrastructure" }
+          "autogenerate": { "directory": "docs/integrations/infrastructure" }
         },
         {
           "label": "[graph] Observability",
           "collapsed": true,
-          "autogenerate": { "directory": "integrations/observability" }
+          "autogenerate": { "directory": "docs/integrations/observability" }
         },
         {
           "label": "[seti:message] Messaging",
           "collapsed": true,
-          "autogenerate": { "directory": "integrations/messaging" }
+          "autogenerate": { "directory": "docs/integrations/messaging" }
         },
         {
           "label": "[seti:code] Prompts & Schema",
           "collapsed": true,
-          "autogenerate": { "directory": "integrations/prompts" }
+          "autogenerate": { "directory": "docs/integrations/prompts" }
         },
         {
           "label": "[shield] Safety & Compliance",
           "collapsed": true,
-          "autogenerate": { "directory": "integrations/safety" }
+          "autogenerate": { "directory": "docs/integrations/safety" }
         }
       ]
     },
@@ -223,47 +223,47 @@
       "items": [
         {
           "label": "Overview",
-          "slug": "use-cases"
+          "slug": "docs/use-cases"
         },
         {
           "label": "[seti:search] Search & RAG",
           "collapsed": true,
-          "autogenerate": { "directory": "use-cases/search" }
+          "autogenerate": { "directory": "docs/use-cases/search" }
         },
         {
           "label": "[seti:robot] Agents & Automation",
           "collapsed": true,
-          "autogenerate": { "directory": "use-cases/agents" }
+          "autogenerate": { "directory": "docs/use-cases/agents" }
         },
         {
           "label": "[seti:audio] Voice",
           "collapsed": true,
-          "autogenerate": { "directory": "use-cases/voice" }
+          "autogenerate": { "directory": "docs/use-cases/voice" }
         },
         {
           "label": "[document] Documents",
           "collapsed": true,
-          "autogenerate": { "directory": "use-cases/documents" }
+          "autogenerate": { "directory": "docs/use-cases/documents" }
         },
         {
           "label": "[graph] Analytics & Monitoring",
           "collapsed": true,
-          "autogenerate": { "directory": "use-cases/analytics" }
+          "autogenerate": { "directory": "docs/use-cases/analytics" }
         },
         {
           "label": "[shield] Safety & Compliance",
           "collapsed": true,
-          "autogenerate": { "directory": "use-cases/safety" }
+          "autogenerate": { "directory": "docs/use-cases/safety" }
         },
         {
           "label": "[seti:docker] Infrastructure",
           "collapsed": true,
-          "autogenerate": { "directory": "use-cases/infrastructure" }
+          "autogenerate": { "directory": "docs/use-cases/infrastructure" }
         },
         {
           "label": "[seti:message] Messaging",
           "collapsed": true,
-          "autogenerate": { "directory": "use-cases/messaging" }
+          "autogenerate": { "directory": "docs/use-cases/messaging" }
         }
       ]
     },
@@ -272,23 +272,23 @@
       "items": [
         {
           "label": "Overview",
-          "slug": "architecture"
+          "slug": "docs/architecture"
         },
         {
           "label": "[document] Design Concepts",
-          "slug": "architecture/concepts"
+          "slug": "docs/architecture/concepts"
         },
         {
           "label": "[seti:plan] Package Layout",
-          "slug": "architecture/packages"
+          "slug": "docs/architecture/packages"
         },
         {
           "label": "[seti:config] Full Architecture",
-          "slug": "architecture/architecture"
+          "slug": "docs/architecture/architecture"
         },
         {
           "label": "[seti:plug] Provider Integration",
-          "slug": "architecture/providers"
+          "slug": "docs/architecture/providers"
         }
       ]
     },
@@ -297,118 +297,118 @@
       "items": [
         {
           "label": "Overview",
-          "slug": "providers"
+          "slug": "docs/providers"
         },
         {
           "label": "LLM Providers",
           "collapsed": true,
-          "autogenerate": { "directory": "providers/llm" }
+          "autogenerate": { "directory": "docs/providers/llm" }
         },
         {
           "label": "Embedding Providers",
           "collapsed": true,
-          "autogenerate": { "directory": "providers/embedding" }
+          "autogenerate": { "directory": "docs/providers/embedding" }
         },
         {
           "label": "Vector Store Providers",
           "collapsed": true,
-          "autogenerate": { "directory": "providers/vectorstore" }
+          "autogenerate": { "directory": "docs/providers/vectorstore" }
         },
         {
           "label": "Voice Providers",
           "collapsed": true,
-          "autogenerate": { "directory": "providers/voice" }
+          "autogenerate": { "directory": "docs/providers/voice" }
         },
         {
           "label": "Document Loader Providers",
           "collapsed": true,
-          "autogenerate": { "directory": "providers/loader" }
+          "autogenerate": { "directory": "docs/providers/loader" }
         },
         {
           "label": "Guard Providers",
           "collapsed": true,
-          "autogenerate": { "directory": "providers/guard" }
+          "autogenerate": { "directory": "docs/providers/guard" }
         },
         {
           "label": "Evaluation Providers",
           "collapsed": true,
-          "autogenerate": { "directory": "providers/eval" }
+          "autogenerate": { "directory": "docs/providers/eval" }
         },
         {
           "label": "Observability Providers",
           "collapsed": true,
-          "autogenerate": { "directory": "providers/observability" }
+          "autogenerate": { "directory": "docs/providers/observability" }
         },
         {
           "label": "Workflow Providers",
           "collapsed": true,
-          "autogenerate": { "directory": "providers/workflow" }
+          "autogenerate": { "directory": "docs/providers/workflow" }
         },
         {
           "label": "VAD Providers",
           "collapsed": true,
-          "autogenerate": { "directory": "providers/vad" }
+          "autogenerate": { "directory": "docs/providers/vad" }
         },
         {
           "label": "Transport Providers",
           "collapsed": true,
-          "autogenerate": { "directory": "providers/transport" }
+          "autogenerate": { "directory": "docs/providers/transport" }
         },
         {
           "label": "Cache Providers",
           "collapsed": true,
-          "autogenerate": { "directory": "providers/cache" }
+          "autogenerate": { "directory": "docs/providers/cache" }
         },
         {
           "label": "State Providers",
           "collapsed": true,
-          "autogenerate": { "directory": "providers/state" }
+          "autogenerate": { "directory": "docs/providers/state" }
         },
         {
           "label": "Prompt Providers",
           "collapsed": true,
-          "autogenerate": { "directory": "providers/prompt" }
+          "autogenerate": { "directory": "docs/providers/prompt" }
         },
         {
           "label": "MCP Providers",
           "collapsed": true,
-          "autogenerate": { "directory": "providers/mcp" }
+          "autogenerate": { "directory": "docs/providers/mcp" }
         }
       ]
     },
     {
       "label": "API Reference",
       "items": [
-        { "label": "Overview", "slug": "api-reference" },
+        { "label": "Overview", "slug": "docs/api-reference" },
         {
           "label": "Foundation",
           "collapsed": true,
-          "autogenerate": { "directory": "api-reference/foundation" }
+          "autogenerate": { "directory": "docs/api-reference/foundation" }
         },
         {
           "label": "LLM & Agents",
           "collapsed": true,
-          "autogenerate": { "directory": "api-reference/llm-agents" }
+          "autogenerate": { "directory": "docs/api-reference/llm-agents" }
         },
         {
           "label": "Memory & RAG",
           "collapsed": true,
-          "autogenerate": { "directory": "api-reference/memory-rag" }
+          "autogenerate": { "directory": "docs/api-reference/memory-rag" }
         },
         {
           "label": "Voice",
           "collapsed": true,
-          "autogenerate": { "directory": "api-reference/voice" }
+          "autogenerate": { "directory": "docs/api-reference/voice" }
         },
         {
           "label": "Infrastructure",
           "collapsed": true,
-          "autogenerate": { "directory": "api-reference/infrastructure" }
+          "autogenerate": { "directory": "docs/api-reference/infrastructure" }
         },
         {
           "label": "Protocol & Server",
           "collapsed": true,
-          "autogenerate": { "directory": "api-reference/protocol" }
+          "autogenerate": { "directory": "docs/api-reference/protocol" }
         }
       ]
     },
@@ -417,19 +417,19 @@
       "items": [
         {
           "label": "Overview",
-          "slug": "reports"
+          "slug": "docs/reports"
         },
         {
           "label": "[pencil] Changelog",
-          "slug": "reports/changelog"
+          "slug": "docs/reports/changelog"
         },
         {
           "label": "[shield] Security",
-          "slug": "reports/security"
+          "slug": "docs/reports/security"
         },
         {
           "label": "[graph] Code Quality",
-          "slug": "reports/code-quality"
+          "slug": "docs/reports/code-quality"
         }
       ]
     },
@@ -438,27 +438,27 @@
       "items": [
         {
           "label": "Overview",
-          "slug": "contributing"
+          "slug": "docs/contributing"
         },
         {
           "label": "[setting] Development Setup",
-          "slug": "contributing/development-setup"
+          "slug": "docs/contributing/development-setup"
         },
         {
           "label": "[seti:code] Code Style",
-          "slug": "contributing/code-style"
+          "slug": "docs/contributing/code-style"
         },
         {
           "label": "[seti:test] Testing",
-          "slug": "contributing/testing"
+          "slug": "docs/contributing/testing"
         },
         {
           "label": "[seti:git] Pull Requests",
-          "slug": "contributing/pull-requests"
+          "slug": "docs/contributing/pull-requests"
         },
         {
           "label": "[rocket] Releases",
-          "slug": "contributing/releases"
+          "slug": "docs/contributing/releases"
         }
       ]
     }
