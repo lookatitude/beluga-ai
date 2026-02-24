@@ -53,7 +53,7 @@
 }
 
 .light-text {
-  @apply text-lightmode-text/50 dark:text-text/50 block;
+  @apply text-lightmode-text/50 dark:text-text/50 inline;
 }
 .section-title {
   font-size: 4.8rem;
@@ -71,6 +71,9 @@
   font-size: 1.125rem;
   line-height: 1.75rem;
   letter-spacing: -0.2px;
+  max-width: 48rem;
+  margin-left: auto;
+  margin-right: auto;
 }
 @media (max-width: 1040px) {
   .section-title {
