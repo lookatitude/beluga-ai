@@ -6,7 +6,7 @@
     },
     {
       "name": "Documentation",
-      "url": "/getting-started/overview/"
+      "url": "/docs/getting-started/overview/"
     },
     {
       "name": "Guides",
@@ -15,11 +15,11 @@
       "children": [
         {
           "name": "Getting Started",
-          "url": "/getting-started/quick-start/"
+          "url": "/docs/getting-started/quick-start/"
         },
         {
           "name": "Build Your First Agent",
-          "url": "/guides/first-agent/"
+          "url": "/docs/guides/first-agent/"
         }
       ]
     }
@@ -38,7 +38,7 @@
         },
         {
           "name": "Contributing Guide",
-          "url": "/contributing/"
+          "url": "/docs/contributing/"
         }
       ]
     },
@@ -47,19 +47,19 @@
       "links": [
         {
           "name": "Getting Started",
-          "url": "/getting-started/overview/"
+          "url": "/docs/getting-started/overview/"
         },
         {
           "name": "Guides",
-          "url": "/guides/first-agent/"
+          "url": "/docs/guides/first-agent/"
         },
         {
           "name": "Cookbook",
-          "url": "/cookbook/agent-recipes/"
+          "url": "/docs/cookbook/agent-recipes/"
         },
         {
           "name": "Use Cases",
-          "url": "/use-cases/enterprise-rag/"
+          "url": "/docs/use-cases/enterprise-rag/"
         }
       ]
     },
@@ -68,19 +68,19 @@
       "links": [
         {
           "name": "Architecture",
-          "url": "/architecture/concepts/"
+          "url": "/docs/architecture/concepts/"
         },
         {
           "name": "Providers",
-          "url": "/providers/"
+          "url": "/docs/providers/"
         },
         {
           "name": "Integrations",
-          "url": "/integrations/llm-providers/"
+          "url": "/docs/integrations/llm-providers/"
         },
         {
           "name": "API Reference",
-          "url": "/api-reference/"
+          "url": "/docs/api-reference/"
         }
       ]
     }

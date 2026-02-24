@@ -23,6 +23,6 @@
   "navigation_button": {
     "enable": true,
     "label": "Get Started",
-    "link": "/getting-started/overview/"
+    "link": "/docs/getting-started/overview/"
   }
 }
