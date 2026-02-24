@@ -1,0 +1,217 @@
+---
+import FeaturePageLayout from "@/components/marketing/FeaturePageLayout.astro";
+
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "name": "Tools & MCP — Beluga AI",
+  "description": "Wrap Go functions as tools, consume MCP servers, expose tools as MCP services. Parallel DAG execution and dynamic tool selection.",
+  "url": "https://beluga-ai.org/features/tools/"
+});
+---
+
+<FeaturePageLayout
+  pageTitle="Tools & MCP | Beluga AI"
+  description="Wrap Go functions as tools, consume MCP servers, expose tools as MCP services. Parallel DAG execution and dynamic tool selection."
+  title="Tools & MCP"
+  jsonLd={jsonLd}
+  subtitle="Wrap any Go function as a tool with auto-generated JSON Schema. Discover and consume MCP servers. Expose your tools as MCP services. Parallel DAG execution for independent tools."
+  layer="Capability"
+  stats={["FuncTool", "MCP Client/Server", "Parallel DAG", "Registry", "Built-in Tools"]}
+  showProvidersTable={false}
+  relatedFeatures={[
+    { title: "Agent Runtime", href: "/features/agents/", description: "Autonomous agents with planning, tool use, and multi-agent handoffs." },
+    { title: "Protocols", href: "/features/protocols/", description: "MCP and A2A protocol support with REST, gRPC, and WebSocket transports." },
+    { title: "Guardrails", href: "/features/guardrails/", description: "Three-stage guard pipeline with prompt injection detection and PII filtering." },
+  ]}
+>
+  <Fragment slot="overview">
+    <p>
+      The Beluga AI tool system provides a unified abstraction for integrating external capabilities into agents.
+      At its core, the <code>FuncTool</code> wrapper lets you turn any Go function into an agent-callable tool
+      with automatically generated JSON Schema for parameter validation. The system supports both local tools
+      and remote tools accessed via the Model Context Protocol (MCP).
+    </p>
+    <p>
+      MCP integration is bidirectional: your agents can consume tools from any MCP-compatible server, and you
+      can expose your own Go tools as MCP services for other systems to use. The Streamable HTTP transport
+      provides efficient communication with session management and OAuth support.
+    </p>
+    <p>
+      For performance-critical workloads, the parallel DAG executor automatically identifies independent tool
+      calls and runs them concurrently. Combined with the registry pattern for runtime tool discovery and
+      middleware for cross-cutting concerns like auth and rate limiting, the tool system provides a complete
+      foundation for building capable AI agents.
+    </p>
+  </Fragment>
+
+  <Fragment slot="capabilities">
+    <h3>FuncTool</h3>
+    <p>
+      Wrap any Go function as an agent-callable tool with automatic JSON Schema generation from struct tags.
+      The framework introspects function signatures to produce the parameter schema that LLMs use to invoke tools correctly.
+    </p>
+    <pre><code>searchTool := tool.NewFuncTool("search", searchFunc)</code></pre>
+
+    <h3>MCP Client</h3>
+    <p>
+      Discover and consume tools, resources, and prompts from any MCP-compatible server. The client uses
+      Streamable HTTP transport with automatic session management, reconnection logic, and OAuth authentication
+      for secured endpoints.
+    </p>
+
+    <h3>MCP Server</h3>
+    <p>
+      Expose your Go tools, resources, and prompts as a standards-compliant MCP server. Any MCP client
+      -- including Claude Desktop, Cursor, and other AI editors -- can connect and use your tools directly.
+    </p>
+
+    <h3>MCP Registry</h3>
+    <p>
+      Search and discover MCP servers from public registries. Browse available tools by category,
+      filter by capability, and connect to servers on demand. Enables dynamic tool discovery at runtime.
+    </p>
+
+    <h3>Tool Registry</h3>
+    <p>
+      The standard Beluga registry pattern for tools: <code>Add</code>, <code>Get</code>, <code>List</code>,
+      and <code>Remove</code> at runtime. Agents can dynamically add or remove tools based on context,
+      user permissions, or task requirements.
+    </p>
+
+    <h3>Parallel DAG Execution</h3>
+    <p>
+      When an agent requests multiple tool calls, the executor builds a dependency graph and runs independent
+      tools in parallel using goroutines. Dependent tools wait for their prerequisites. This dramatically
+      reduces latency for multi-tool operations.
+    </p>
+
+    <h3>Built-in Tools</h3>
+    <p>
+      Common tools included out of the box: Calculator for math expressions, HTTP client for API calls,
+      Shell executor for system commands (sandboxed), and Code sandbox for safe code execution.
+      All follow the same <code>Tool</code> interface and can be extended or replaced.
+    </p>
+
+    <h3>Middleware and Hooks</h3>
+    <p>
+      Apply cross-cutting concerns to any tool via middleware: authentication, rate limiting, timeout enforcement,
+      and logging. Hooks provide fine-grained lifecycle control with <code>BeforeExecute</code>,
+      <code>AfterExecute</code>, and <code>OnError</code> callbacks.
+    </p>
+  </Fragment>
+
+  <Fragment slot="diagram">
+    <div style="display: flex; flex-direction: column; gap: 1.5rem; align-items: center; padding: 2rem 0;">
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+        <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent); background: color-mix(in srgb, var(--color-primary) 8%, transparent); font-size: 0.875rem; font-weight: 600; color: var(--color-primary);">
+          FuncTool
+        </div>
+        <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent); background: color-mix(in srgb, var(--color-primary) 8%, transparent); font-size: 0.875rem; font-weight: 600; color: var(--color-primary);">
+          MCP Client
+        </div>
+        <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent); background: color-mix(in srgb, var(--color-primary) 8%, transparent); font-size: 0.875rem; font-weight: 600; color: var(--color-primary);">
+          Built-in Tools
+        </div>
+      </div>
+      <div style="width: 2px; height: 2rem; background: color-mix(in srgb, var(--color-primary) 30%, transparent);"></div>
+      <div style="padding: 1rem 2rem; border-radius: 0.75rem; border: 2px solid var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, transparent); font-size: 1rem; font-weight: 700; color: var(--color-primary);">
+        Tool Registry
+      </div>
+      <div style="width: 2px; height: 2rem; background: color-mix(in srgb, var(--color-primary) 30%, transparent);"></div>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+        <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 15%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.875rem; font-weight: 500;">
+          Middleware
+        </div>
+        <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 15%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.875rem; font-weight: 500;">
+          Parallel DAG
+        </div>
+        <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 15%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.875rem; font-weight: 500;">
+          Hooks
+        </div>
+      </div>
+      <div style="width: 2px; height: 2rem; background: color-mix(in srgb, var(--color-primary) 30%, transparent);"></div>
+      <div style="padding: 1rem 2rem; border-radius: 0.75rem; border: 2px solid color-mix(in srgb, var(--color-light) 20%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 1rem; font-weight: 700;">
+        Agent Runtime
+      </div>
+    </div>
+  </Fragment>
+
+  <Fragment slot="codeExample">
+    <p>Create tools from Go functions, connect to an MCP server, and wire everything into an agent:</p>
+    <pre><code>package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/tool"
+    "github.com/lookatitude/beluga-ai/tool/mcp"
+)
+
+// Define a search function
+func searchWeb(ctx context.Context, params struct &#123;
+    Query string `json:"query" description:"Search query"`
+    Limit int    `json:"limit" description:"Max results" default:"5"`
+&#125;) ([]SearchResult, error) &#123;
+    // ... implementation
+    return results, nil
+&#125;
+
+func main() &#123;
+    ctx := context.Background()
+
+    // Wrap Go function as a tool with auto JSON Schema
+    searchTool := tool.NewFuncTool("search_web", searchWeb,
+        tool.WithDescription("Search the web for information"),
+    )
+
+    // Connect to an MCP server for additional tools
+    mcpClient, err := mcp.NewClient(ctx, "https://tools.example.com/mcp",
+        mcp.WithOAuth("client-id", "client-secret"),
+        mcp.WithSessionManagement(true),
+    )
+    if err != nil &#123;
+        log.Fatal(err)
+    &#125;
+    defer mcpClient.Close()
+
+    // Discover tools from MCP server
+    mcpTools, _ := mcpClient.ListTools(ctx)
+
+    // Create tool registry and add all tools
+    registry := tool.NewRegistry()
+    registry.Add(searchTool)
+    for _, t := range mcpTools &#123;
+        registry.Add(t)
+    &#125;
+
+    // Create LLM and agent with tools
+    model, _ := llm.New("openai", llm.WithModel("gpt-4o"))
+
+    myAgent, _ := agent.New("research-agent",
+        agent.WithModel(model),
+        agent.WithTools(registry.List()...),
+        agent.WithToolHooks(tool.Hooks&#123;
+            BeforeExecute: func(ctx context.Context, name string, input any) error &#123;
+                fmt.Printf("Calling tool: %s\n", name)
+                return nil
+            &#125;,
+            AfterExecute: func(ctx context.Context, name string, result any, err error) &#123;
+                fmt.Printf("Tool %s completed\n", name)
+            &#125;,
+        &#125;),
+    )
+
+    // Run the agent - parallel tool calls execute concurrently
+    result, err := myAgent.Run(ctx, "Research the latest AI frameworks and compare them")
+    if err != nil &#123;
+        log.Fatal(err)
+    &#125;
+    fmt.Println(result)
+&#125;</code></pre>
+  </Fragment>
+</FeaturePageLayout>

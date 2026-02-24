@@ -1,87 +1,61 @@
 {
   "main": [
+    { "name": "About", "url": "/about/" },
     {
-      "name": "Home",
-      "url": "/"
-    },
-    {
-      "name": "Documentation",
-      "url": "/getting-started/overview/"
-    },
-    {
-      "name": "Guides",
-      "url": "",
+      "name": "Features",
+      "url": "/features/",
       "hasChildren": true,
+      "megaMenu": true,
       "children": [
-        {
-          "name": "Getting Started",
-          "url": "/getting-started/quick-start/"
-        },
-        {
-          "name": "Build Your First Agent",
-          "url": "/guides/first-agent/"
-        }
+        { "name": "Agent Runtime", "url": "/features/agents/" },
+        { "name": "LLM Providers", "url": "/features/llm/" },
+        { "name": "RAG Pipeline", "url": "/features/rag/" },
+        { "name": "Voice Pipeline", "url": "/features/voice/" },
+        { "name": "Orchestration", "url": "/features/orchestration/" },
+        { "name": "Memory Systems", "url": "/features/memory/" },
+        { "name": "Tools & MCP", "url": "/features/tools/" },
+        { "name": "Guardrails", "url": "/features/guardrails/" },
+        { "name": "Observability", "url": "/features/observability/" },
+        { "name": "Protocols", "url": "/features/protocols/" }
       ]
-    }
+    },
+    { "name": "Integrations", "url": "/integrations/" },
+    { "name": "Enterprise", "url": "/enterprise/" },
+    { "name": "Compare", "url": "/compare/" },
+    { "name": "Community", "url": "/community/" }
   ],
   "footer": {
+    "framework": {
+      "title": "Framework",
+      "links": [
+        { "name": "Features", "url": "/features/" },
+        { "name": "Integrations", "url": "/integrations/" },
+        { "name": "Compare", "url": "/compare/" },
+        { "name": "Enterprise", "url": "/enterprise/" }
+      ]
+    },
+    "docs": {
+      "title": "Docs",
+      "links": [
+        { "name": "Getting Started", "url": "/docs/getting-started/overview/" },
+        { "name": "Guides", "url": "/docs/guides/" },
+        { "name": "API Reference", "url": "/docs/api-reference/" },
+        { "name": "Cookbook", "url": "/docs/cookbook/" }
+      ]
+    },
     "community": {
       "title": "Community",
       "links": [
-        {
-          "name": "GitHub Discussions",
-          "url": "https://github.com/lookatitude/beluga-ai/discussions"
-        },
-        {
-          "name": "GitHub Issues",
-          "url": "https://github.com/lookatitude/beluga-ai/issues"
-        },
-        {
-          "name": "Contributing Guide",
-          "url": "/contributing/"
-        }
+        { "name": "GitHub", "url": "https://github.com/lookatitude/beluga-ai" },
+        { "name": "Discussions", "url": "https://github.com/lookatitude/beluga-ai/discussions" },
+        { "name": "Issues", "url": "https://github.com/lookatitude/beluga-ai/issues" },
+        { "name": "Contributing", "url": "/docs/contributing/" }
       ]
     },
-    "help_links": {
-      "title": "Resources",
+    "info": {
+      "title": "Info",
       "links": [
-        {
-          "name": "Getting Started",
-          "url": "/getting-started/overview/"
-        },
-        {
-          "name": "Guides",
-          "url": "/guides/first-agent/"
-        },
-        {
-          "name": "Cookbook",
-          "url": "/cookbook/agent-recipes/"
-        },
-        {
-          "name": "Use Cases",
-          "url": "/use-cases/enterprise-rag/"
-        }
-      ]
-    },
-    "company": {
-      "title": "Documentation",
-      "links": [
-        {
-          "name": "Architecture",
-          "url": "/architecture/concepts/"
-        },
-        {
-          "name": "Providers",
-          "url": "/providers/"
-        },
-        {
-          "name": "Integrations",
-          "url": "/integrations/llm-providers/"
-        },
-        {
-          "name": "API Reference",
-          "url": "/api-reference/"
-        }
+        { "name": "About", "url": "/about/" }
       ]
     }
   }

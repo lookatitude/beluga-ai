@@ -1,148 +1,20 @@
 ---
-title: Beluga AI
-description: "Build production-ready AI agents in Go with Beluga AI. Streaming-first design, 22+ LLM providers, RAG, voice AI, and enterprise-grade infrastructure."
+title: Beluga AI Documentation
+description: "Build production-ready AI agents in Go with Beluga AI."
 template: splash
+hero:
+  title: Beluga AI
+  tagline: You are being redirected to the documentation.
+  actions:
+    - text: Go to Documentation
+      link: /docs/getting-started/overview/
+      icon: right-arrow
+      variant: primary
 head:
   - tag: meta
     attrs:
-      name: keywords
-      content: "Beluga AI, Go AI framework, agentic AI framework, LLM framework Go, AI agents Go, production AI framework, RAG pipeline, voice AI"
-hero:
-  title: |
-    Beluga <span class="light-text">AI</span>
-  tagline: Build production-ready AI agents in Go. Fast, efficient, and enterprise-grade.
-  actions:
-    - text: Get Started
-      link: /getting-started/overview/
-      icon: right-arrow
-      variant: primary
-    - text: GitHub
-      link: https://github.com/lookatitude/beluga-ai
-      icon: external
+      http-equiv: refresh
+      content: "0;url=/docs/getting-started/overview/"
 ---
 
-import Section from "~/components/Section.astro";
-import StatBadge from "~/components/user-components/StatBadge.astro";
-import FeatureCard from "~/components/user-components/FeatureCard.astro";
-import Card from "~/components/user-components/NewCard.astro";
-import Grid from "~/components/user-components/Grid.astro";
-import ListCard from "~/components/user-components/ListCard.astro";
-import LinkButton from "~/components/LinkButton.astro";
-
-<div class="flex flex-wrap justify-center gap-8 mb-16">
-  <StatBadge value="22+" label="LLM Providers" />
-  <StatBadge value="157" label="Packages" />
-  <StatBadge value="2,885" label="Tests" />
-  <StatBadge value="108" label="Integrations" />
-</div>
-
-<Section title="Built for <span class='light-text'>production AI</span>" description="Production-grade patterns from Google ADK, OpenAI Agents SDK, LangGraph, and LiveKit unified in Go.">
-
-<Grid columns={4}>
-  <FeatureCard title="Streaming First" icon="seti:vite" iconColor="#7BE1A4">
-    Built on Go 1.23+ iter.Seq2 for native streaming without channels or goroutine leaks. Compose transforms, apply backpressure, and cancel with context propagation out of the box.
-  </FeatureCard>
-  <FeatureCard title="Protocol Interop" icon="seti:config" iconColor="#979BFF">
-    Native MCP server/client and A2A support for seamless agent-to-agent communication. Connect to any tool ecosystem or expose your agents as standardized services.
-  </FeatureCard>
-  <FeatureCard title="Pluggable Everything" icon="substack" iconColor="#FF8585">
-    Registry pattern across all packages with middleware and hooks for extensibility. Swap providers, add observability, or inject custom logic at every layer without forking.
-  </FeatureCard>
-  <FeatureCard title="Voice Pipeline" icon="seti:audio" iconColor="#FFD97B">
-    Frame-based STT/TTS/S2S with transport layer for real-time voice AI applications. Build conversational voice agents with interruptible speech and low-latency streaming.
-  </FeatureCard>
-</Grid>
-</Section>
-
-<Section title="Layered <span class='light-text'>architecture</span>" description="Four distinct layers keep concerns separated and dependencies flowing downward.">
-
-<Grid columns={2}>
-  <Card title="Foundation" icon="seti:db" iconColor="#7BE1A4" size="sm" tag="Layer 1">
-    Core primitives, shared schema types, configuration loading with hot-reload, and OpenTelemetry observability using GenAI semantic conventions.
-  </Card>
-  <Card title="Capability" icon="seti:code" iconColor="#979BFF" size="sm" tag="Layer 2">
-    LLM abstraction with router and structured output, agent runtime with planners and handoffs, tool system, MemGPT 3-tier memory, RAG pipeline, and voice processing.
-  </Card>
-  <Card title="Infrastructure" icon="seti:lock" iconColor="#FF8585" size="sm" tag="Layer 3">
-    Guard pipeline for input/output/tool safety, circuit breaker and retry resilience, exact and semantic caching, RBAC/ABAC auth, human-in-the-loop approval, and durable workflows.
-  </Card>
-  <Card title="Protocol" icon="seti:json" iconColor="#FFD97B" size="sm" tag="Layer 4">
-    MCP server and client for tool interoperability, A2A for agent-to-agent communication, REST/SSE endpoints, and HTTP framework adapters for Gin, Fiber, Echo, and Chi.
-  </Card>
-</Grid>
-</Section>
-
-<Section title="Core <span class='light-text'>capabilities</span>" description="Everything you need to build, deploy, and operate agentic AI systems.">
-
-<Grid columns={3}>
-<ListCard title="LLM & Agents" imageIcon="/src/assets/element.svg" number="15+">
-- ChatModel with streaming
-- Agent runtime with planners
-- ReAct, ToT, GoT strategies
-- Handoffs as tools
-- Workflow agents
-- Router & structured output
-
-<LinkButton href="/architecture/packages/" variant="text" className="mt-6 mb-8 ml-4">View packages</LinkButton>
-</ListCard>
-
-<ListCard title="RAG Pipeline" imageIcon="/src/assets/content.svg" number="20+">
-- Embedding providers
-- Vector store providers
-- Hybrid retrieval (CRAG, HyDE)
-- Document loaders
-- Text splitters
-- BM25 + RRF fusion
-
-<LinkButton href="/providers/" variant="text" className="mt-6 mb-8 ml-4">View providers</LinkButton>
-</ListCard>
-
-<ListCard title="Infrastructure" imageIcon="/src/assets/layouts.svg" number="10+">
-- OpenTelemetry tracing
-- Circuit breaker & retry
-- RBAC/ABAC auth
-- Guard pipeline (3-stage)
-- Human-in-the-loop
-- Durable workflows
-
-<LinkButton href="/architecture/architecture/" variant="text" className="mt-6 mb-8 ml-4">View architecture</LinkButton>
-</ListCard>
-</Grid>
-</Section>
-
-<Section title="Get started in <span class='light-text'>minutes</span>" description="Create an AI agent with just a few lines of Go.">
-
-```go
-// Create an agent in 10 lines
-model, _ := llm.New("openai", llm.ProviderConfig{
-    APIKey: os.Getenv("OPENAI_API_KEY"),
-    Model:  "gpt-4o",
-})
-
-a := agent.New("assistant",
-    agent.WithLLM(model),
-    agent.WithTools(tools),
-)
-
-result, _ := a.Invoke(ctx, "Research GPU pricing trends")
-```
-
-</Section>
-
-<Section title="Provider <span class='light-text'>ecosystem</span>" description="Extensive integrations across LLMs, vector stores, document loaders, and more.">
-
-<Grid columns={4}>
-  <Card title="LLM Providers" icon="seti:code" iconColor="#7BE1A4" size="sm" tag="22+">
-    OpenAI, Anthropic, Google, Ollama, Bedrock, Groq, Mistral, Cohere, and more.
-  </Card>
-  <Card title="Vector Stores" icon="seti:db" iconColor="#979BFF" size="sm" tag="12+">
-    pgvector, Qdrant, Weaviate, Milvus, ChromaDB, Pinecone, Redis, and more.
-  </Card>
-  <Card title="Embeddings" icon="seti:config" iconColor="#FF8585" size="sm" tag="10+">
-    OpenAI, Cohere, Google, Voyage, HuggingFace, Ollama, Jina, and more.
-  </Card>
-  <Card title="Voice & Tools" icon="seti:audio" iconColor="#FFD97B" size="sm" tag="15+">
-    Deepgram, ElevenLabs, OpenAI Realtime, MCP tools, and transport layers.
-  </Card>
-</Grid>
-</Section>
+If you are not redirected automatically, [click here](/docs/getting-started/overview/).

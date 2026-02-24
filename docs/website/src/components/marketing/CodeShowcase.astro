@@ -1,0 +1,342 @@
+---
+---
+
+<section class="cs-section">
+  <div class="cs-inner">
+    <div class="cs-header">
+      <h2 class="cs-heading">
+        See it in <span class="cs-heading-muted">action</span>
+      </h2>
+      <p class="cs-subtitle">From simple agents to multi-agent systems and voice pipelines, all in a few lines of Go.</p>
+    </div>
+
+    <div class="cs-panel">
+      <!-- Tabs -->
+      <div class="cs-tabs" role="tablist" aria-label="Code examples">
+        <button class="cs-tab cs-tab-active" role="tab" aria-selected="true" aria-controls="cs-panel-0" id="cs-tab-0" data-cs-tab="0">Simple Agent</button>
+        <button class="cs-tab" role="tab" aria-selected="false" aria-controls="cs-panel-1" id="cs-tab-1" data-cs-tab="1">Streaming RAG</button>
+        <button class="cs-tab" role="tab" aria-selected="false" aria-controls="cs-panel-2" id="cs-tab-2" data-cs-tab="2">Multi-Agent</button>
+        <button class="cs-tab" role="tab" aria-selected="false" aria-controls="cs-panel-3" id="cs-tab-3" data-cs-tab="3">Voice Agent</button>
+      </div>
+
+      <!-- Tab panels -->
+      <div class="cs-panels">
+        <!-- Tab 0: Simple Agent -->
+        <div class="cs-code-panel cs-code-panel-active" role="tabpanel" id="cs-panel-0" aria-labelledby="cs-tab-0">
+          <pre class="cs-code"><code><span class="c-ident">model</span>, _ := <span class="c-pkg">llm</span>.<span class="c-func">New</span>(<span class="c-str">"openai"</span>, <span class="c-pkg">llm</span>.ProviderConfig&#123;
+    APIKey: <span class="c-pkg">os</span>.<span class="c-func">Getenv</span>(<span class="c-str">"OPENAI_API_KEY"</span>),
+    Model:  <span class="c-str">"gpt-4o"</span>,
+&#125;)
+<span class="c-ident">agent</span> := <span class="c-pkg">agent</span>.<span class="c-func">New</span>(<span class="c-str">"assistant"</span>,
+    <span class="c-pkg">agent</span>.<span class="c-func">WithLLM</span>(<span class="c-ident">model</span>),
+    <span class="c-pkg">agent</span>.<span class="c-func">WithTools</span>(<span class="c-ident">webSearch</span>, <span class="c-ident">calculator</span>),
+)
+<span class="c-kw">for</span> <span class="c-ident">event</span>, <span class="c-ident">err</span> := <span class="c-kw">range</span> <span class="c-ident">agent</span>.<span class="c-func">Stream</span>(<span class="c-ident">ctx</span>, <span class="c-str">"Research GPU trends"</span>) &#123;
+    <span class="c-pkg">fmt</span>.<span class="c-func">Print</span>(<span class="c-ident">event</span>.<span class="c-func">Text</span>())
+&#125;</code></pre>
+          <a href="#" class="cs-run-link">Run this example <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></a>
+        </div>
+
+        <!-- Tab 1: Streaming RAG -->
+        <div class="cs-code-panel" role="tabpanel" id="cs-panel-1" aria-labelledby="cs-tab-1" hidden>
+          <pre class="cs-code"><code><span class="c-ident">embedder</span>, _ := <span class="c-pkg">embedding</span>.<span class="c-func">New</span>(<span class="c-str">"openai"</span>, <span class="c-pkg">embedding</span>.Config&#123;Model: <span class="c-str">"text-embedding-3-small"</span>&#125;)
+<span class="c-ident">store</span>, _ := <span class="c-pkg">vectorstore</span>.<span class="c-func">New</span>(<span class="c-str">"pgvector"</span>, <span class="c-pkg">vectorstore</span>.Config&#123;DSN: <span class="c-ident">pgDSN</span>&#125;)
+<span class="c-ident">retriever</span> := <span class="c-pkg">retriever</span>.<span class="c-func">NewHybrid</span>(<span class="c-ident">store</span>, <span class="c-pkg">retriever</span>.<span class="c-func">WithBM25</span>(), <span class="c-pkg">retriever</span>.<span class="c-func">WithRRF</span>(<span class="c-num">60</span>))
+
+<span class="c-ident">docs</span> := <span class="c-pkg">loader</span>.<span class="c-func">LoadDir</span>(<span class="c-str">"./knowledge-base/"</span>)
+<span class="c-ident">splitter</span> := <span class="c-pkg">splitter</span>.<span class="c-func">NewRecursive</span>(<span class="c-pkg">splitter</span>.<span class="c-func">WithChunkSize</span>(<span class="c-num">512</span>))
+<span class="c-ident">chunks</span> := <span class="c-ident">splitter</span>.<span class="c-func">Split</span>(<span class="c-ident">docs</span>)
+<span class="c-ident">store</span>.<span class="c-func">Add</span>(<span class="c-ident">ctx</span>, <span class="c-ident">embedder</span>.<span class="c-func">EmbedDocuments</span>(<span class="c-ident">ctx</span>, <span class="c-ident">chunks</span>))
+
+<span class="c-ident">agent</span> := <span class="c-pkg">agent</span>.<span class="c-func">New</span>(<span class="c-str">"researcher"</span>, <span class="c-pkg">agent</span>.<span class="c-func">WithLLM</span>(<span class="c-ident">model</span>), <span class="c-pkg">agent</span>.<span class="c-func">WithRetriever</span>(<span class="c-ident">retriever</span>))
+<span class="c-kw">for</span> <span class="c-ident">event</span>, <span class="c-ident">err</span> := <span class="c-kw">range</span> <span class="c-ident">agent</span>.<span class="c-func">Stream</span>(<span class="c-ident">ctx</span>, <span class="c-str">"What are our Q4 results?"</span>) &#123;
+    <span class="c-pkg">fmt</span>.<span class="c-func">Print</span>(<span class="c-ident">event</span>.<span class="c-func">Text</span>())
+&#125;</code></pre>
+          <a href="#" class="cs-run-link">Run this example <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></a>
+        </div>
+
+        <!-- Tab 2: Multi-Agent -->
+        <div class="cs-code-panel" role="tabpanel" id="cs-panel-2" aria-labelledby="cs-tab-2" hidden>
+          <pre class="cs-code"><code><span class="c-ident">billing</span> := <span class="c-pkg">agent</span>.<span class="c-func">New</span>(<span class="c-str">"billing-specialist"</span>,
+    <span class="c-pkg">agent</span>.<span class="c-func">WithLLM</span>(<span class="c-ident">model</span>),
+    <span class="c-pkg">agent</span>.<span class="c-func">WithTools</span>(<span class="c-ident">lookupInvoice</span>, <span class="c-ident">processRefund</span>),
+)
+<span class="c-ident">shipping</span> := <span class="c-pkg">agent</span>.<span class="c-func">New</span>(<span class="c-str">"shipping-specialist"</span>,
+    <span class="c-pkg">agent</span>.<span class="c-func">WithLLM</span>(<span class="c-ident">model</span>),
+    <span class="c-pkg">agent</span>.<span class="c-func">WithTools</span>(<span class="c-ident">trackPackage</span>, <span class="c-ident">updateAddress</span>),
+)
+<span class="c-ident">triage</span> := <span class="c-pkg">agent</span>.<span class="c-func">New</span>(<span class="c-str">"triage"</span>,
+    <span class="c-pkg">agent</span>.<span class="c-func">WithLLM</span>(<span class="c-ident">model</span>),
+    <span class="c-pkg">agent</span>.<span class="c-func">WithHandoffs</span>(<span class="c-ident">billing</span>, <span class="c-ident">shipping</span>),
+    <span class="c-pkg">agent</span>.<span class="c-func">WithInstructions</span>(<span class="c-str">"Route customer requests to the right specialist."</span>),
+)
+<span class="c-kw">for</span> <span class="c-ident">event</span>, <span class="c-ident">err</span> := <span class="c-kw">range</span> <span class="c-ident">triage</span>.<span class="c-func">Stream</span>(<span class="c-ident">ctx</span>, <span class="c-str">"Where is my order #12345?"</span>) &#123;
+    <span class="c-pkg">fmt</span>.<span class="c-func">Print</span>(<span class="c-ident">event</span>.<span class="c-func">Text</span>())
+&#125;</code></pre>
+          <a href="#" class="cs-run-link">Run this example <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></a>
+        </div>
+
+        <!-- Tab 3: Voice Agent -->
+        <div class="cs-code-panel" role="tabpanel" id="cs-panel-3" aria-labelledby="cs-tab-3" hidden>
+          <pre class="cs-code"><code><span class="c-ident">stt</span>, _ := <span class="c-pkg">stt</span>.<span class="c-func">New</span>(<span class="c-str">"deepgram"</span>, <span class="c-pkg">stt</span>.Config&#123;Model: <span class="c-str">"nova-3"</span>&#125;)
+<span class="c-ident">tts</span>, _ := <span class="c-pkg">tts</span>.<span class="c-func">New</span>(<span class="c-str">"elevenlabs"</span>, <span class="c-pkg">tts</span>.Config&#123;Voice: <span class="c-str">"aria"</span>&#125;)
+<span class="c-ident">vad</span> := <span class="c-pkg">vad</span>.<span class="c-func">NewSilero</span>(<span class="c-pkg">vad</span>.<span class="c-func">WithThreshold</span>(<span class="c-num">0.5</span>))
+
+<span class="c-ident">pipeline</span> := <span class="c-pkg">voice</span>.<span class="c-func">NewPipeline</span>(
+    <span class="c-pkg">voice</span>.<span class="c-func">WithSTT</span>(<span class="c-ident">stt</span>),
+    <span class="c-pkg">voice</span>.<span class="c-func">WithLLM</span>(<span class="c-ident">model</span>),
+    <span class="c-pkg">voice</span>.<span class="c-func">WithTTS</span>(<span class="c-ident">tts</span>),
+    <span class="c-pkg">voice</span>.<span class="c-func">WithVAD</span>(<span class="c-ident">vad</span>),
+)
+<span class="c-ident">transport</span> := <span class="c-pkg">transport</span>.<span class="c-func">NewWebSocket</span>(<span class="c-str">":8080"</span>)
+<span class="c-ident">pipeline</span>.<span class="c-func">Start</span>(<span class="c-ident">ctx</span>, <span class="c-ident">transport</span>)</code></pre>
+          <a href="#" class="cs-run-link">Run this example <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cs-section {
+    padding: 5rem 1.5rem;
+  }
+
+  .cs-inner {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .cs-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .cs-heading {
+    font-size: clamp(2rem, 4.5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin: 0 0 1rem;
+    color: var(--color-light, #f6f6f6);
+  }
+
+  :root[data-theme="light"] .cs-heading {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  .cs-heading-muted {
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 40%, transparent);
+  }
+
+  :root[data-theme="light"] .cs-heading-muted {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 40%, transparent);
+  }
+
+  .cs-subtitle {
+    font-size: 1.125rem;
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 55%, transparent);
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  :root[data-theme="light"] .cs-subtitle {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 55%, transparent);
+  }
+
+  /* Panel */
+  .cs-panel {
+    border-radius: 1rem;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--color-dark, #151515) 95%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+  }
+
+  :root[data-theme="light"] .cs-panel {
+    background: #f8f8f8;
+    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 10%, transparent);
+  }
+
+  /* Tabs */
+  .cs-tabs {
+    display: flex;
+    overflow-x: auto;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+  }
+
+  .cs-tabs::before {
+    content: "";
+    display: block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent);
+    box-shadow:
+      16px 0 0 0 color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent),
+      32px 0 0 0 color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent);
+    margin-left: 1.25rem;
+    margin-right: calc(32px + 0.5rem);
+    align-self: center;
+  }
+  :root[data-theme="light"] .cs-tabs::before {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent);
+    box-shadow:
+      16px 0 0 0 color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent),
+      32px 0 0 0 color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent);
+  }
+
+  :root[data-theme="light"] .cs-tabs {
+    border-bottom-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+  }
+
+  .cs-tab {
+    flex-shrink: 0;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 50%, transparent);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-family: inherit;
+    transition: color 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .cs-tab:hover {
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 80%, transparent);
+  }
+
+  .cs-tab-active {
+    color: var(--color-primary, #5CA3CA);
+    border-bottom-color: var(--color-primary, #5CA3CA);
+  }
+
+  :root[data-theme="light"] .cs-tab {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 50%, transparent);
+  }
+
+  :root[data-theme="light"] .cs-tab:hover {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 80%, transparent);
+  }
+
+  :root[data-theme="light"] .cs-tab-active {
+    color: var(--color-primary, #5CA3CA);
+  }
+
+  /* Code panels */
+  .cs-code-panel {
+    display: none;
+    padding: 0;
+  }
+
+  .cs-code-panel-active {
+    display: block;
+  }
+
+  .cs-code {
+    padding: 1.25rem 1.5rem;
+    margin: 0;
+    overflow-x: auto;
+    font-size: 0.8125rem;
+    line-height: 1.75;
+    font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+    color: var(--color-light, #f6f6f6);
+  }
+
+  :root[data-theme="light"] .cs-code {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  /* Syntax highlighting */
+  .c-comment { color: #6a737d; }
+  .c-str { color: #a5d6ff; }
+  .c-pkg { color: #d2a8ff; }
+  .c-func { color: #79c0ff; }
+  .c-ident { color: #ffa657; }
+  .c-kw { color: #ff7b72; }
+  .c-num { color: #79c0ff; }
+
+  :root[data-theme="light"] .c-str { color: #0a3069; }
+  :root[data-theme="light"] .c-pkg { color: #8250df; }
+  :root[data-theme="light"] .c-func { color: #0550ae; }
+  :root[data-theme="light"] .c-ident { color: #953800; }
+  :root[data-theme="light"] .c-comment { color: #6e7781; }
+  :root[data-theme="light"] .c-kw { color: #cf222e; }
+  :root[data-theme="light"] .c-num { color: #0550ae; }
+
+  /* Run link */
+  .cs-run-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1.5rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-primary, #5CA3CA);
+    text-decoration: none;
+    transition: gap 0.15s ease;
+  }
+
+  .cs-run-link:hover {
+    gap: 0.625rem;
+  }
+
+  @media (max-width: 640px) {
+    .cs-code {
+      font-size: 0.6875rem;
+      padding: 1rem;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const tabs = document.querySelectorAll("[data-cs-tab]");
+    const panels = document.querySelectorAll(".cs-code-panel");
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const idx = tab.getAttribute("data-cs-tab");
+
+        tabs.forEach((t) => {
+          t.classList.remove("cs-tab-active");
+          t.setAttribute("aria-selected", "false");
+        });
+        tab.classList.add("cs-tab-active");
+        tab.setAttribute("aria-selected", "true");
+
+        panels.forEach((p) => {
+          p.classList.remove("cs-code-panel-active");
+          p.setAttribute("hidden", "");
+        });
+        const target = document.getElementById(`cs-panel-${idx}`);
+        if (target) {
+          target.classList.add("cs-code-panel-active");
+          target.removeAttribute("hidden");
+        }
+      });
+
+      // Keyboard navigation
+      tab.addEventListener("keydown", (e) => {
+        const event = e as KeyboardEvent;
+        const tabsArr = Array.from(tabs);
+        const currentIdx = tabsArr.indexOf(tab);
+        let nextIdx = -1;
+
+        if (event.key === "ArrowRight") {
+          nextIdx = (currentIdx + 1) % tabsArr.length;
+        } else if (event.key === "ArrowLeft") {
+          nextIdx = (currentIdx - 1 + tabsArr.length) % tabsArr.length;
+        }
+
+        if (nextIdx >= 0) {
+          (tabsArr[nextIdx] as HTMLElement).focus();
+          (tabsArr[nextIdx] as HTMLElement).click();
+        }
+      });
+    });
+  });
+</script>

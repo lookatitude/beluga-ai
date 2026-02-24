@@ -1,0 +1,281 @@
+---
+/**
+ * MegaMenu — Two-column dropdown for the Features nav item.
+ * Shows on hover (desktop) and tap (mobile).
+ */
+
+const categories = [
+  {
+    title: "AI Agents",
+    items: [
+      { name: "Agent Runtime", url: "/features/agents/", desc: "Build and run AI agents" },
+      { name: "LLM Providers", url: "/features/llm/", desc: "22+ model providers" },
+      { name: "Memory Systems", url: "/features/memory/", desc: "MemGPT 3-tier memory" },
+    ],
+  },
+  {
+    title: "Data & Retrieval",
+    items: [
+      { name: "RAG Pipeline", url: "/features/rag/", desc: "Hybrid search & retrieval" },
+      { name: "Tools & MCP", url: "/features/tools/", desc: "Tool system & interop" },
+      { name: "Voice Pipeline", url: "/features/voice/", desc: "Real-time voice AI" },
+    ],
+  },
+  {
+    title: "Infrastructure",
+    items: [
+      { name: "Guardrails & Safety", url: "/features/guardrails/", desc: "3-stage guard pipeline" },
+      { name: "Observability", url: "/features/observability/", desc: "OpenTelemetry GenAI" },
+    ],
+  },
+  {
+    title: "Orchestration",
+    items: [
+      { name: "Protocols & Interop", url: "/features/protocols/", desc: "MCP + A2A support" },
+      { name: "Orchestration", url: "/features/orchestration/", desc: "Chains, graphs, routers" },
+    ],
+  },
+];
+---
+
+<div class="mega-menu" data-mega-menu>
+  <div class="mega-menu-inner">
+    <div class="mega-menu-grid">
+      <!-- Left column -->
+      <div class="mega-menu-col">
+        {
+          [categories[0], categories[1]].map((cat) => (
+            <div class="mega-menu-category">
+              <h4 class="mega-menu-category-title">{cat.title}</h4>
+              <ul class="mega-menu-list">
+                {cat.items.map((item) => (
+                  <li>
+                    <a href={item.url} class="mega-menu-link">
+                      <span class="mega-menu-link-name">{item.name}</span>
+                      <span class="mega-menu-link-desc">{item.desc}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+
+      <!-- Right column -->
+      <div class="mega-menu-col">
+        {
+          [categories[2], categories[3]].map((cat) => (
+            <div class="mega-menu-category">
+              <h4 class="mega-menu-category-title">{cat.title}</h4>
+              <ul class="mega-menu-list">
+                {cat.items.map((item) => (
+                  <li>
+                    <a href={item.url} class="mega-menu-link">
+                      <span class="mega-menu-link-name">{item.name}</span>
+                      <span class="mega-menu-link-desc">{item.desc}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
+    <!-- Bottom row -->
+    <div class="mega-menu-bottom">
+      <a href="/features/" class="mega-menu-bottom-link">
+        View All Features
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </a>
+      <a href="/compare/" class="mega-menu-bottom-link">
+        Compare Frameworks
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </a>
+    </div>
+  </div>
+</div>
+
+<style>
+  .mega-menu {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding-top: 0.75rem;
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+  }
+
+  .mega-menu.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .mega-menu-inner {
+    width: 36rem;
+    max-width: 90vw;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: color-mix(in srgb, var(--color-dark, #151515) 90%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 10%, transparent);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    position: relative;
+  }
+
+  /* Gradient top border */
+  .mega-menu-inner::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 1rem;
+    right: 1rem;
+    height: 2px;
+    background: linear-gradient(90deg, #3a1c71, #D76D77, #ffca7b);
+    border-radius: 1px;
+  }
+
+  :root[data-theme="light"] .mega-menu-inner {
+    background: color-mix(in srgb, var(--color-lightmode-body, #fff) 95%, transparent);
+    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 10%, transparent);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  }
+
+  .mega-menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .mega-menu-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .mega-menu-category-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-primary, #5CA3CA);
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.375rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+  }
+
+  .mega-menu-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .mega-menu-link {
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem 0.625rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+  }
+
+  .mega-menu-link:hover {
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
+  }
+
+  :root[data-theme="light"] .mega-menu-link:hover {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 6%, transparent);
+  }
+
+  .mega-menu-link-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--sl-color-white, #f6f6f6);
+    line-height: 1.4;
+  }
+
+  .mega-menu-link-desc {
+    font-size: 0.75rem;
+    color: var(--color-text, #999);
+    line-height: 1.4;
+  }
+
+  :root[data-theme="light"] .mega-menu-link-name {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  :root[data-theme="light"] .mega-menu-link-desc {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
+  }
+
+  .mega-menu-bottom {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+  }
+
+  .mega-menu-bottom-link {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--color-primary, #5CA3CA);
+    text-decoration: none;
+    transition: opacity 0.15s ease;
+  }
+
+  .mega-menu-bottom-link:hover {
+    opacity: 0.8;
+  }
+
+  /* Mobile: full width, stacked */
+  @media (max-width: 1023px) {
+    .mega-menu {
+      position: static;
+      transform: none;
+      padding-top: 0;
+      width: 100%;
+      display: none;
+    }
+
+    .mega-menu.is-open {
+      display: block;
+    }
+
+    .mega-menu-inner {
+      width: 100%;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      box-shadow: none;
+      border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
+    }
+
+    .mega-menu-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .mega-menu-bottom {
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+  }
+</style>

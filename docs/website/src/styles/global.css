@@ -113,10 +113,15 @@
 @theme {
   --color-primary-gradient: linear-gradient(
     35.65deg,
-    #3a1c71 -10.94%,
+    #0F3353 -10.94%,
     var(--color-primary) 61.04%,
-    #ffca7b 133.01%
+    #81D4E8 133.01%
   );
+}
+
+/* Smooth theme transitions */
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Smooth scrolling */

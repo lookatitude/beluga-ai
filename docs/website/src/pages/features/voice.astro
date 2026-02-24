@@ -1,0 +1,348 @@
+---
+import FeaturePageLayout from "@/components/marketing/FeaturePageLayout.astro";
+
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "name": "Voice Pipeline — Beluga AI",
+  "description": "Frame-based voice pipeline with STT, TTS, and speech-to-speech processing. Sub-800ms end-to-end latency with WebRTC and LiveKit transports.",
+  "url": "https://beluga-ai.org/features/voice/"
+});
+---
+
+<FeaturePageLayout
+  pageTitle="Voice Pipeline | Beluga AI"
+  description="Frame-based voice pipeline with STT, TTS, and speech-to-speech processing. Sub-800ms end-to-end latency with WebRTC and LiveKit transports."
+  title="Voice Pipeline"
+  jsonLd={jsonLd}
+  subtitle="Frame-based STT→LLM→TTS processing with sub-800ms end-to-end latency. Speech-to-speech modes, Silero VAD, semantic turn detection, and WebRTC/LiveKit transports."
+  layer="Capability"
+  stats={["6+ STT", "7+ TTS", "S2S", "<800ms E2E Target", "Frame-Based"]}
+  showProvidersTable={true}
+  relatedFeatures={[
+    { title: "Agent Runtime", href: "/features/agents/", description: "Build autonomous agents with planning, tool use, and handoffs between specialized agents." },
+    { title: "LLM Providers", href: "/features/llm/", description: "Unified interface across 10+ LLM providers with streaming, structured output, and prompt caching." },
+    { title: "Protocols", href: "/features/protocols/", description: "MCP for tool interoperability and A2A for cross-platform agent communication." },
+  ]}
+>
+  <Fragment slot="overview">
+    <p>
+      The Beluga AI Voice Pipeline provides a frame-based architecture for real-time voice interactions.
+      Rather than treating voice as a monolithic stream, the pipeline decomposes audio into discrete
+      <strong>Frames</strong> — atomic units of audio, text, images, or control signals — that flow through
+      a chain of <code>FrameProcessor</code> nodes. This design enables fine-grained composition: swap any
+      STT, TTS, or LLM provider without rewriting your pipeline.
+    </p>
+    <p>
+      The voice system supports two primary modes. The <strong>cascading pipeline</strong> (STT → LLM → TTS)
+      transcribes speech, processes it through any LLM, and synthesizes a response. For lower latency,
+      <strong>speech-to-speech (S2S)</strong> mode bypasses text entirely, using models like OpenAI Realtime
+      or Gemini Live to process audio natively. Both modes integrate seamlessly with the agent runtime,
+      memory, and tool systems.
+    </p>
+    <p>
+      End-to-end latency is managed through a strict <strong>latency budget</strong>: transport under 50ms,
+      VAD under 1ms, STT under 200ms, LLM TTFT under 300ms, and TTS TTFB under 200ms — targeting sub-800ms
+      total round-trip. Transports include WebSocket, WebRTC, LiveKit rooms, and Daily.co for production
+      deployment.
+    </p>
+  </Fragment>
+
+  <Fragment slot="capabilities">
+    <h3>Frame-Based Architecture</h3>
+    <p>
+      Every stage in the pipeline implements the <code>FrameProcessor</code> interface, processing atomic
+      <strong>Frames</strong> that carry audio chunks, transcription text, images, or control signals. This
+      composable design allows processors to be added, removed, or reordered without affecting the rest of
+      the chain.
+    </p>
+
+    <h3>Cascading Pipeline (STT → LLM → TTS)</h3>
+    <p>
+      The three-stage cascading pipeline is the most common voice pattern. Speech is transcribed by any
+      supported STT provider, the text is processed through an LLM agent (with full access to tools and
+      memory), and the response is synthesized back to audio. Mix and match providers freely — use Deepgram
+      for STT, Claude for reasoning, and ElevenLabs for TTS in the same pipeline.
+    </p>
+
+    <h3>Speech-to-Speech (S2S)</h3>
+    <p>
+      For the lowest possible latency, S2S mode bypasses the text intermediary entirely. Supported
+      providers include OpenAI Realtime API and Gemini Live, which process audio input and produce audio
+      output natively. S2S mode can fall back to cascading mode when the S2S provider is unavailable.
+    </p>
+
+    <h3>STT Providers</h3>
+    <p>
+      Six STT providers are supported out of the box: <strong>Deepgram Nova-3</strong> (streaming-first with
+      low latency), <strong>ElevenLabs Scribe</strong> (high accuracy multilingual), <strong>OpenAI
+      Whisper</strong> (broad language support), <strong>AssemblyAI Slam-1</strong> (real-time streaming),
+      <strong>Groq</strong> (ultra-fast inference), and <strong>Gladia</strong> (enterprise multilingual).
+      All providers implement the same interface, making swaps seamless.
+    </p>
+
+    <h3>TTS Providers</h3>
+    <p>
+      Seven TTS providers cover a range of voice quality and latency profiles: <strong>ElevenLabs</strong>
+      (premium voice cloning), <strong>Cartesia Sonic</strong> (ultra-low latency streaming),
+      <strong>PlayHT</strong> (natural conversational voices), <strong>Groq</strong> (fast inference),
+      <strong>Fish Audio</strong> (multilingual), <strong>LMNT</strong> (real-time optimized), and
+      <strong>Smallest.ai</strong> (lightweight edge deployment).
+    </p>
+
+    <h3>Voice Activity Detection</h3>
+    <p>
+      <strong>Silero VAD</strong> runs in under 1ms per 30ms audio chunk, providing reliable speech/silence
+      detection. Beyond simple energy-based detection, Beluga also supports <strong>semantic turn
+      detection</strong> that uses LLM context to determine when a speaker has finished their thought,
+      reducing false interruptions in conversational scenarios.
+    </p>
+
+    <h3>Transports</h3>
+    <p>
+      Four transport options are available: <strong>WebSocket</strong> for simple bidirectional streaming,
+      <strong>WebRTC</strong> for peer-to-peer low-latency audio, <strong>LiveKit rooms</strong> for
+      scalable multi-participant sessions, and <strong>Daily.co</strong> for managed infrastructure. All
+      transports produce and consume the same Frame types.
+    </p>
+
+    <h3>Latency Budget</h3>
+    <p>
+      The voice pipeline enforces a latency budget to meet the sub-800ms target. Each stage has a budget
+      allocation: <strong>Transport &lt;50ms</strong>, <strong>VAD &lt;1ms</strong>, <strong>STT
+      &lt;200ms</strong>, <strong>LLM TTFT &lt;300ms</strong>, and <strong>TTS TTFB &lt;200ms</strong>.
+      Observability hooks report per-stage timing, enabling you to identify and resolve bottlenecks.
+    </p>
+  </Fragment>
+
+  <Fragment slot="diagram">
+    <div style="display:flex;flex-direction:column;gap:2rem;align-items:center;padding:1.5rem 0;">
+      <!-- Cascading Pipeline -->
+      <div style="text-align:center;margin-bottom:0.5rem;">
+        <strong style="font-size:0.875rem;opacity:0.7;">Cascading Pipeline (STT → LLM → TTS)</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;justify-content:center;">
+        <div style="padding:0.6rem 1rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.8125rem;font-weight:500;white-space:nowrap;">
+          Audio Input
+        </div>
+        <span style="color:var(--color-primary);font-weight:bold;">→</span>
+        <div style="padding:0.6rem 1rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.8125rem;font-weight:500;white-space:nowrap;">
+          Transport
+        </div>
+        <span style="color:var(--color-primary);font-weight:bold;">→</span>
+        <div style="padding:0.6rem 1rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.8125rem;font-weight:500;white-space:nowrap;">
+          VAD
+        </div>
+        <span style="color:var(--color-primary);font-weight:bold;">→</span>
+        <div style="padding:0.6rem 1rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.8125rem;font-weight:500;white-space:nowrap;">
+          STT
+        </div>
+        <span style="color:var(--color-primary);font-weight:bold;">→</span>
+        <div style="padding:0.6rem 1rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.8125rem;font-weight:500;white-space:nowrap;">
+          LLM Agent
+        </div>
+        <span style="color:var(--color-primary);font-weight:bold;">→</span>
+        <div style="padding:0.6rem 1rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.8125rem;font-weight:500;white-space:nowrap;">
+          TTS
+        </div>
+        <span style="color:var(--color-primary);font-weight:bold;">→</span>
+        <div style="padding:0.6rem 1rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.8125rem;font-weight:500;white-space:nowrap;">
+          Audio Output
+        </div>
+      </div>
+
+      <!-- S2S Pipeline -->
+      <div style="text-align:center;margin-top:1rem;margin-bottom:0.5rem;">
+        <strong style="font-size:0.875rem;opacity:0.7;">Speech-to-Speech (S2S)</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;justify-content:center;">
+        <div style="padding:0.6rem 1rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.8125rem;font-weight:500;white-space:nowrap;">
+          Audio Input
+        </div>
+        <span style="color:var(--color-primary);font-weight:bold;">→</span>
+        <div style="padding:0.6rem 1rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.8125rem;font-weight:500;white-space:nowrap;">
+          Transport
+        </div>
+        <span style="color:var(--color-primary);font-weight:bold;">→</span>
+        <div style="padding:0.6rem 1rem;border-radius:0.5rem;background:color-mix(in srgb, #D76D77 15%, transparent);border:1px solid color-mix(in srgb, #D76D77 40%, transparent);font-size:0.8125rem;font-weight:600;white-space:nowrap;">
+          S2S Model
+        </div>
+        <span style="color:var(--color-primary);font-weight:bold;">→</span>
+        <div style="padding:0.6rem 1rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.8125rem;font-weight:500;white-space:nowrap;">
+          Audio Output
+        </div>
+      </div>
+
+      <!-- Latency Budget -->
+      <div style="text-align:center;margin-top:1.5rem;margin-bottom:0.5rem;">
+        <strong style="font-size:0.875rem;opacity:0.7;">Latency Budget</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap;justify-content:center;font-size:0.75rem;">
+        <div style="padding:0.4rem 0.75rem;border-radius:0.375rem;background:color-mix(in srgb, #5CA3CA 12%, transparent);border:1px solid color-mix(in srgb, #5CA3CA 25%, transparent);white-space:nowrap;">
+          Transport &lt;50ms
+        </div>
+        <span style="opacity:0.4;">+</span>
+        <div style="padding:0.4rem 0.75rem;border-radius:0.375rem;background:color-mix(in srgb, #5CA3CA 12%, transparent);border:1px solid color-mix(in srgb, #5CA3CA 25%, transparent);white-space:nowrap;">
+          VAD &lt;1ms
+        </div>
+        <span style="opacity:0.4;">+</span>
+        <div style="padding:0.4rem 0.75rem;border-radius:0.375rem;background:color-mix(in srgb, #5CA3CA 12%, transparent);border:1px solid color-mix(in srgb, #5CA3CA 25%, transparent);white-space:nowrap;">
+          STT &lt;200ms
+        </div>
+        <span style="opacity:0.4;">+</span>
+        <div style="padding:0.4rem 0.75rem;border-radius:0.375rem;background:color-mix(in srgb, #5CA3CA 12%, transparent);border:1px solid color-mix(in srgb, #5CA3CA 25%, transparent);white-space:nowrap;">
+          LLM TTFT &lt;300ms
+        </div>
+        <span style="opacity:0.4;">+</span>
+        <div style="padding:0.4rem 0.75rem;border-radius:0.375rem;background:color-mix(in srgb, #5CA3CA 12%, transparent);border:1px solid color-mix(in srgb, #5CA3CA 25%, transparent);white-space:nowrap;">
+          TTS TTFB &lt;200ms
+        </div>
+        <span style="opacity:0.4;">=</span>
+        <div style="padding:0.4rem 0.75rem;border-radius:0.375rem;background:color-mix(in srgb, #D76D77 15%, transparent);border:1px solid color-mix(in srgb, #D76D77 35%, transparent);font-weight:600;white-space:nowrap;">
+          &lt;800ms E2E
+        </div>
+      </div>
+    </div>
+  </Fragment>
+
+  <Fragment slot="providers">
+    <h3>STT Providers</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Priority</th>
+          <th>Key Differentiator</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Deepgram Nova-3</td><td>P0</td><td>Streaming-first, lowest latency, excellent accuracy</td></tr>
+        <tr><td>ElevenLabs Scribe</td><td>P0</td><td>High accuracy multilingual transcription</td></tr>
+        <tr><td>OpenAI Whisper</td><td>P0</td><td>Broadest language support, well-known baseline</td></tr>
+        <tr><td>AssemblyAI Slam-1</td><td>P1</td><td>Real-time streaming with speaker diarization</td></tr>
+        <tr><td>Groq</td><td>P1</td><td>Ultra-fast inference on Whisper models</td></tr>
+        <tr><td>Gladia</td><td>P2</td><td>Enterprise multilingual with custom vocabulary</td></tr>
+      </tbody>
+    </table>
+
+    <h3>TTS Providers</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Priority</th>
+          <th>Key Differentiator</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>ElevenLabs</td><td>P0</td><td>Premium voice cloning, highest naturalness</td></tr>
+        <tr><td>Cartesia Sonic</td><td>P0</td><td>Ultra-low latency streaming, word-level timestamps</td></tr>
+        <tr><td>PlayHT</td><td>P1</td><td>Natural conversational voices, emotion control</td></tr>
+        <tr><td>Groq</td><td>P1</td><td>Fast inference, competitive voice quality</td></tr>
+        <tr><td>Fish Audio</td><td>P1</td><td>Multilingual support, open-source models</td></tr>
+        <tr><td>LMNT</td><td>P2</td><td>Real-time optimized, custom voice creation</td></tr>
+        <tr><td>Smallest.ai</td><td>P2</td><td>Lightweight models for edge deployment</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Speech-to-Speech (S2S) Providers</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Priority</th>
+          <th>Key Differentiator</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>OpenAI Realtime</td><td>P0</td><td>Native audio-in/audio-out, function calling support</td></tr>
+        <tr><td>Gemini Live</td><td>P0</td><td>Multimodal native audio, long context</td></tr>
+        <tr><td>Ultravox (Fixie)</td><td>P1</td><td>Open-weight, self-hostable S2S model</td></tr>
+      </tbody>
+    </table>
+
+    <h3>VAD Providers</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Priority</th>
+          <th>Key Differentiator</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Silero VAD</td><td>P0</td><td>Sub-1ms latency per 30ms chunk, high accuracy</td></tr>
+        <tr><td>Semantic Turn Detection</td><td>P1</td><td>LLM-aware turn boundary detection</td></tr>
+      </tbody>
+    </table>
+  </Fragment>
+
+  <Fragment slot="codeExample">
+    <p>A complete voice pipeline using Deepgram STT, an LLM agent, and ElevenLabs TTS over WebSocket transport:</p>
+    <pre><code>package main
+
+import (
+    "context"
+    "log"
+
+    "github.com/lookatitude/beluga-ai/voice"
+    "github.com/lookatitude/beluga-ai/voice/stt/providers/deepgram"
+    "github.com/lookatitude/beluga-ai/voice/tts/providers/elevenlabs"
+    "github.com/lookatitude/beluga-ai/voice/transport"
+    "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/llm"
+    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+)
+
+func main() &#123;
+    ctx := context.Background()
+
+    // Create an LLM-backed agent for the voice pipeline
+    model, err := llm.New("openai", llm.ProviderConfig&#123;
+        Model: "gpt-4o",
+    &#125;)
+    if err != nil &#123;
+        log.Fatal(err)
+    &#125;
+
+    voiceAgent := agent.New("voice-assistant",
+        agent.WithModel(model),
+        agent.WithSystemPrompt("You are a helpful voice assistant. Keep responses concise."),
+    )
+
+    // Configure STT (Deepgram Nova-3)
+    sttProcessor := deepgram.New(
+        deepgram.WithModel("nova-3"),
+        deepgram.WithLanguage("en"),
+        deepgram.WithInterimResults(true),
+    )
+
+    // Configure TTS (ElevenLabs)
+    ttsProcessor := elevenlabs.New(
+        elevenlabs.WithVoiceID("rachel"),
+        elevenlabs.WithModel("eleven_turbo_v2_5"),
+        elevenlabs.WithOutputFormat("pcm_24000"),
+    )
+
+    // Build the voice pipeline
+    pipeline := voice.NewPipeline(
+        voice.WithSTT(sttProcessor),
+        voice.WithAgent(voiceAgent),
+        voice.WithTTS(ttsProcessor),
+        voice.WithVAD(voice.SileroVAD()),
+        voice.WithLatencyBudget(voice.DefaultLatencyBudget()),
+    )
+
+    // Create WebSocket transport and start serving
+    ws := transport.NewWebSocket(
+        transport.WithAddr(":8080"),
+        transport.WithPath("/voice"),
+    )
+
+    log.Println("Voice pipeline listening on ws://localhost:8080/voice")
+    if err := pipeline.Serve(ctx, ws); err != nil &#123;
+        log.Fatal(err)
+    &#125;
+&#125;</code></pre>
+  </Fragment>
+</FeaturePageLayout>

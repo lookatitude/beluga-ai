@@ -1,0 +1,138 @@
+---
+title: "Fish Audio Voice Provider"
+description: "Fish Audio TTS for open-source voice synthesis in Beluga AI. Community voices, multilingual support, and cost-effective text-to-speech in Go."
+head:
+  - tag: meta
+    attrs:
+      name: keywords
+      content: "Fish Audio, text-to-speech, TTS, open-source, voice synthesis, multilingual, Go, Beluga AI"
+---
+
+Fish Audio provides text-to-speech synthesis with support for voice cloning via reference IDs. The Beluga AI provider uses the Fish Audio v1 API for synthesis, producing audio output in configurable formats.
+
+Choose Fish Audio when you want an open-source-friendly TTS option with voice cloning capabilities. Fish Audio's reference ID system allows you to use community-shared voices or create your own cloned voices. For the most polished commercial voice quality, consider [ElevenLabs](/docs/providers/voice/elevenlabs).
+
+## Installation
+
+```go
+import _ "github.com/lookatitude/beluga-ai/voice/tts/providers/fish"
+```
+
+The blank import registers the `"fish"` provider with the TTS registry.
+
+## Configuration
+
+| Field    | Type          | Default     | Description                              |
+|----------|---------------|-------------|------------------------------------------|
+| `Voice`  | `string`      | `"default"` | Reference ID for voice cloning           |
+| `Format` | `AudioFormat` | —           | Output audio format                      |
+| `Extra`  | —             | —           | See below                                |
+
+### Extra Fields
+
+| Key        | Type     | Required | Description                          |
+|------------|----------|----------|--------------------------------------|
+| `api_key`  | `string` | Yes      | Fish Audio API key                   |
+| `base_url` | `string` | No       | Override base URL                    |
+
+## Basic Usage
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+    "os"
+
+    "github.com/lookatitude/beluga-ai/voice/tts"
+    _ "github.com/lookatitude/beluga-ai/voice/tts/providers/fish"
+)
+
+func main() {
+    ctx := context.Background()
+
+    engine, err := tts.New("fish", tts.Config{
+        Voice: "default",
+        Extra: map[string]any{"api_key": os.Getenv("FISH_API_KEY")},
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    audio, err := engine.Synthesize(ctx, "Hello, welcome to Beluga AI.")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    if err := os.WriteFile("output.wav", audio, 0644); err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+## Direct Construction
+
+```go
+import "github.com/lookatitude/beluga-ai/voice/tts/providers/fish"
+
+engine, err := fish.New(tts.Config{
+    Voice: "custom-reference-id",
+    Extra: map[string]any{"api_key": os.Getenv("FISH_API_KEY")},
+})
+```
+
+## Streaming
+
+The streaming interface synthesizes each text chunk independently:
+
+```go
+for chunk, err := range engine.SynthesizeStream(ctx, textStream) {
+    if err != nil {
+        log.Printf("error: %v", err)
+        break
+    }
+    transport.Send(chunk)
+}
+```
+
+## FrameProcessor Integration
+
+```go
+processor := tts.AsFrameProcessor(engine, 24000)
+pipeline := voice.Chain(sttProcessor, llmProcessor, processor)
+```
+
+## Advanced Features
+
+### Voice Cloning
+
+Fish Audio uses a reference ID system for voice cloning. Provide a `reference_id` as the `Voice` field to use a cloned voice:
+
+```go
+engine, err := tts.New("fish", tts.Config{
+    Voice: "your-cloned-voice-reference-id",
+    Extra: map[string]any{"api_key": os.Getenv("FISH_API_KEY")},
+})
+```
+
+### Per-Request Options
+
+```go
+audio, err := engine.Synthesize(ctx, "Hello!",
+    tts.WithVoice("different-reference-id"),
+    tts.WithFormat(tts.FormatMP3),
+)
+```
+
+### Custom Endpoint
+
+```go
+engine, err := tts.New("fish", tts.Config{
+    Voice: "default",
+    Extra: map[string]any{
+        "api_key":  os.Getenv("FISH_API_KEY"),
+        "base_url": "https://fish.internal.corp/v1",
+    },
+})
+```

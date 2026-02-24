@@ -12,15 +12,20 @@ const siteTitle = route.siteTitle;
 const pageLang = route.lang || "en";
 
 // Build canonical URL
-const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://beluga-ai.dev");
+const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://beluga-ai.org");
 
-// Default OG image
-const ogImageURL = new URL("/hero-icon.svg", Astro.site || "https://beluga-ai.dev").href;
+// Dynamic OG image: frontmatter override > auto-generated > fallback
+const customOgImage = (route.entry.data as Record<string, unknown>).ogImage as string | undefined;
+const ogSlug = Astro.url.pathname.replace(/^\/|\/$/g, "") || "index";
+const defaultOgPath = `/og/${ogSlug}.png`;
+const ogImageURL = customOgImage
+  ? new URL(customOgImage, Astro.site || "https://beluga-ai.org").href
+  : new URL(defaultOgPath, Astro.site || "https://beluga-ai.org").href;
 
 // Build breadcrumb items from URL path
 const pathSegments = Astro.url.pathname.split("/").filter(Boolean);
 const breadcrumbItems = [
-  { name: "Home", url: new URL("/", Astro.site || "https://beluga-ai.dev").href },
+  { name: "Home", url: new URL("/", Astro.site || "https://beluga-ai.org").href },
   ...pathSegments.map((segment, i) => ({
     name: segment
       .split("-")
@@ -28,7 +33,7 @@ const breadcrumbItems = [
       .join(" "),
     url: new URL(
       "/" + pathSegments.slice(0, i + 1).join("/") + "/",
-      Astro.site || "https://beluga-ai.dev"
+      Astro.site || "https://beluga-ai.org"
     ).href,
   })),
 ];
@@ -44,11 +49,36 @@ const breadcrumbJsonLd = {
   })),
 };
 
-// Article/TechArticle JSON-LD
+// Contextual article schema based on URL pattern
 const isSplash = route.entry.data.template === "splash";
-const articleJsonLd = {
+const pathname = Astro.url.pathname;
+const isApiRef = pathname.startsWith("/docs/api-reference/");
+const customSchemaType = (route.entry.data as Record<string, unknown>).schemaType as string | undefined;
+
+// Section for Pagefind filtering (inferred from URL path)
+function getPageSection(): string {
+  if (isSplash) return "Home";
+  if (pathname.startsWith("/docs/getting-started/")) return "Getting Started";
+  if (pathname.startsWith("/docs/guides/")) return "Guides";
+  if (pathname.startsWith("/docs/tutorials/")) return "Tutorials";
+  if (pathname.startsWith("/docs/api-reference/")) return "API Reference";
+  if (pathname.startsWith("/docs/providers/")) return "Providers";
+  if (pathname.startsWith("/docs/architecture/")) return "Architecture";
+  return "Docs";
+}
+const pageSection = getPageSection();
+
+function getArticleType(): string {
+  if (isSplash) return "WebPage";
+  if (customSchemaType === "faq") return "FAQPage";
+  if (isApiRef) return "TechArticle";
+  return "TechArticle";
+}
+
+const articleType = getArticleType();
+const articleJsonLd: Record<string, unknown> = {
   "@context": "https://schema.org",
-  "@type": isSplash ? "WebPage" : "TechArticle",
+  "@type": articleType,
   headline: pageTitle,
   description: pageDescription,
   url: canonicalURL.href,
@@ -70,6 +100,50 @@ const articleJsonLd = {
   inLanguage: pageLang,
   ...(route.lastUpdated && { dateModified: route.lastUpdated.toISOString() }),
 };
+
+// WebSite schema (homepage only)
+const siteUrl = (Astro.site || new URL("https://beluga-ai.org")).href;
+const webSiteJsonLd = isSplash
+  ? {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Beluga AI",
+      url: siteUrl,
+    }
+  : null;
+
+// Organization schema (homepage only)
+const organizationJsonLd = isSplash
+  ? {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "Lookatitude",
+      url: "https://lookatitude.com",
+      logo: new URL("/hero-icon.svg", Astro.site || "https://beluga-ai.org").href,
+      sameAs: ["https://github.com/lookatitude"],
+    }
+  : null;
+
+// SoftwareApplication schema (homepage only)
+const softwareJsonLd = isSplash
+  ? {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "Beluga AI",
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "Cross-platform",
+      programmingLanguage: "Go",
+      description:
+        "Go-native agentic AI framework with streaming-first design, 22+ LLM providers, RAG, voice AI, and enterprise-grade infrastructure.",
+      url: siteUrl,
+      author: {
+        "@type": "Organization",
+        name: "Lookatitude",
+        url: "https://lookatitude.com",
+      },
+      license: "https://opensource.org/licenses/MIT",
+    }
+  : null;
 
 // Check for keywords in frontmatter (custom extended schema)
 const keywords = (route.entry.data as Record<string, unknown>).keywords as string | undefined;
@@ -99,14 +173,22 @@ if (theme.fonts.font_family.secondary) {
 
 <!-- Open Graph (og:title, og:type, og:url, og:description, og:locale, og:site_name provided by Starlight) -->
 <meta property="og:image" content={ogImageURL} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:alt" content={`${pageTitle} - Beluga AI`} />
 
-<!-- Twitter (twitter:card provided by Starlight) -->
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content={`${pageTitle} | ${siteTitle}`} />
 <meta name="twitter:description" content={pageDescription} />
 <meta name="twitter:image" content={ogImageURL} />
 
 <!-- Author -->
 <meta name="author" content="Lookatitude" />
+
+<!-- Pagefind section filter -->
+<meta data-pagefind-filter="section" content={pageSection} />
 
 <!-- Keywords (if provided in frontmatter) -->
 {keywords && <meta name="keywords" content={keywords} />}
@@ -120,6 +202,25 @@ if (theme.fonts.font_family.secondary) {
 
 <!-- JSON-LD Structured Data: Article/WebPage -->
 <script type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
+
+<!-- JSON-LD Structured Data: WebSite (homepage only) -->
+{webSiteJsonLd && (
+  <script type="application/ld+json" set:html={JSON.stringify(webSiteJsonLd)} />
+)}
+
+<!-- JSON-LD Structured Data: Organization (homepage only) -->
+{organizationJsonLd && (
+  <script type="application/ld+json" set:html={JSON.stringify(organizationJsonLd)} />
+)}
+
+<!-- JSON-LD Structured Data: SoftwareApplication (homepage only) -->
+{softwareJsonLd && (
+  <script type="application/ld+json" set:html={JSON.stringify(softwareJsonLd)} />
+)}
+
+<!-- Preconnect to Google Fonts for faster font loading -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
 <!-- google font css -->
     <AstroFont

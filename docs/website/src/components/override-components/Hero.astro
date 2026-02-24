@@ -19,18 +19,18 @@ const is404 = Astro.locals.starlightRoute?.id === "404";
 ---
 
 <div
-  class="hero flex flex-col items-center mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-35"
+  class="hero flex flex-col items-center text-center mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-35"
 >
   {!is404 && (
     <div class="hero-logo mb-6">
       <img src="/beluga-logo.svg" alt="Beluga AI" class="hero-logo-img" />
     </div>
   )}
-  {tagline && <p set:html={tagline} class="text-xl text-center" />}
+  {tagline && <p set:html={tagline} class="text-xl text-center max-w-2xl" />}
 
   {
     !is404 && (
-      <div class="mt-12 max-w-4xl">
+      <div class="mt-12 max-w-4xl w-full mx-auto">
         <div class="search-container rounded-2xl p-2 mb-6">
           <div class="search-bar">
             <Search />
@@ -118,8 +118,8 @@ const is404 = Astro.locals.starlightRoute?.id === "404";
       transform: translate(-50%, -50%);
       background: radial-gradient(
         circle,
-        rgba(215, 109, 119, 0.35) 0%,
-        rgba(58, 28, 113, 0.15) 50%,
+        rgba(92, 163, 202, 0.35) 0%,
+        rgba(15, 51, 83, 0.15) 50%,
         transparent 70%
       );
       border-radius: 50%;
@@ -132,7 +132,7 @@ const is404 = Astro.locals.starlightRoute?.id === "404";
     .hero-logo-img {
       width: 360px;
       height: 360px;
-      filter: drop-shadow(0 0 30px rgba(215, 109, 119, 0.3));
+      filter: drop-shadow(0 0 30px rgba(92, 163, 202, 0.3));
       position: relative;
       z-index: 1;
       animation: float 5s ease-in-out infinite;

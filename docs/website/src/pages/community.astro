@@ -1,0 +1,768 @@
+---
+import MarketingLayout from "@/layouts/MarketingLayout.astro";
+
+const roadmap = [
+  { phase: "Phase 1", title: "Core packages and foundation", status: "complete" },
+  { phase: "Phase 2", title: "Provider implementations and integrations", status: "complete" },
+  { phase: "Phase 3", title: "Advanced features — voice, orchestration, durable workflows", status: "complete" },
+  { phase: "Phase 4", title: "Production hardening, benchmarks, documentation", status: "upcoming" },
+];
+
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Beluga AI Community",
+  "description": "Join the Beluga AI open-source community",
+  "url": "https://beluga-ai.org/community/"
+});
+---
+
+<MarketingLayout
+  title="Join the Community"
+  description="Join the Beluga AI community. Contribute code, docs, or ideas. Built in the open, MIT licensed, everyone welcome."
+  jsonLd={jsonLd}
+>
+  <!-- Block 16.1 — Hero -->
+  <section class="community-hero">
+    <div class="community-hero-inner">
+      <h1 class="community-hero-title">Join the Beluga AI Community</h1>
+      <p class="community-hero-subtitle">
+        Built in the open. MIT licensed. Everyone welcome.
+      </p>
+    </div>
+  </section>
+
+  <!-- Block 16.2 — Channels -->
+  <section class="community-section">
+    <div class="community-container">
+      <div class="channels-grid">
+        <!-- GitHub Discussions -->
+        <a
+          href="https://github.com/lookatitude/beluga-ai/discussions"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="channel-card"
+        >
+          <div class="channel-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              <path d="M8 9h8" />
+              <path d="M8 13h5" />
+            </svg>
+          </div>
+          <h2 class="channel-title">GitHub Discussions</h2>
+          <p class="channel-desc">Ask questions, share ideas, show off what you've built.</p>
+          <div class="channel-use-for">
+            <span class="channel-label">Use for:</span> Technical Q&A, feature ideas, show &amp; tell.
+          </div>
+          <span class="channel-link-text">
+            Open Discussions
+            <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+              <path d="M3.5 1H11v7.5M11 1L1 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+        </a>
+
+        <!-- GitHub Issues -->
+        <a
+          href="https://github.com/lookatitude/beluga-ai/issues"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="channel-card"
+        >
+          <div class="channel-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <h2 class="channel-title">GitHub Issues</h2>
+          <p class="channel-desc">Report bugs, request features, track implementation progress.</p>
+          <div class="channel-use-for">
+            <span class="channel-label">Use for:</span> Bug reports, feature requests, implementation tracking.
+          </div>
+          <span class="channel-link-text">
+            Open Issues
+            <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+              <path d="M3.5 1H11v7.5M11 1L1 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Divider -->
+  <div class="community-divider" aria-hidden="true"></div>
+
+  <!-- Block 16.3 — Contributing -->
+  <section class="community-section">
+    <div class="community-container">
+      <h2 class="community-section-title">Contribute to Beluga AI</h2>
+      <div class="contrib-grid">
+        <!-- Report & Discuss -->
+        <div class="contrib-card">
+          <div class="contrib-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            </svg>
+          </div>
+          <h3 class="contrib-title">Report &amp; Discuss</h3>
+          <p class="contrib-desc">
+            File issues, join discussions, give feedback. The simplest way to help improve the framework.
+          </p>
+        </div>
+
+        <!-- Code -->
+        <div class="contrib-card">
+          <div class="contrib-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 18 22 12 16 6" />
+              <polyline points="8 6 2 12 8 18" />
+            </svg>
+          </div>
+          <h3 class="contrib-title">Code</h3>
+          <p class="contrib-desc">
+            Fix bugs, implement features, add providers. Look for <code>good first issue</code> labels to get started.
+          </p>
+        </div>
+
+        <!-- Documentation -->
+        <div class="contrib-card">
+          <div class="contrib-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              <line x1="8" y1="7" x2="16" y2="7" />
+              <line x1="8" y1="11" x2="14" y2="11" />
+            </svg>
+          </div>
+          <h3 class="contrib-title">Documentation</h3>
+          <p class="contrib-desc">
+            Improve docs, write tutorials, create cookbook recipes. Great for learning the framework deeply.
+          </p>
+        </div>
+      </div>
+
+      <div class="contrib-cta">
+        <a href="/docs/contributing/" class="contrib-link">
+          Read the Contributing Guide
+          <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+            <path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Divider -->
+  <div class="community-divider" aria-hidden="true"></div>
+
+  <!-- Block 16.5 — Roadmap -->
+  <section class="community-section">
+    <div class="community-container">
+      <h2 class="community-section-title">What's Coming Next</h2>
+      <div class="roadmap-list">
+        {roadmap.map((item) => (
+          <div class={`roadmap-item roadmap-${item.status}`}>
+            <div class="roadmap-indicator">
+              {item.status === "complete" && (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+              {item.status === "in-progress" && (
+                <div class="roadmap-pulse" />
+              )}
+              {item.status === "upcoming" && (
+                <div class="roadmap-dot" />
+              )}
+            </div>
+            <div class="roadmap-content">
+              <span class="roadmap-phase">{item.phase}</span>
+              <span class="roadmap-title">{item.title}</span>
+              {item.status === "complete" && <span class="roadmap-badge roadmap-badge-complete">Complete</span>}
+              {item.status === "in-progress" && <span class="roadmap-badge roadmap-badge-progress">In Progress</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div class="roadmap-cta">
+        <a
+          href="https://github.com/lookatitude/beluga-ai/milestones"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="contrib-link"
+        >
+          View the Roadmap
+          <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+            <path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="community-cta">
+    <div class="community-container" style="text-align: center;">
+      <h2 class="cta-title">Ready to get involved?</h2>
+      <p class="cta-desc">Pick an issue, open a discussion, or just say hello.</p>
+      <div class="cta-actions">
+        <a href="https://github.com/lookatitude/beluga-ai" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+          Star on GitHub
+          <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+            <path d="M3.5 1H11v7.5M11 1L1 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+        <a href="/docs/getting-started/overview/" class="btn btn-outline-primary">
+          Read the Docs
+          <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+            <path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+</MarketingLayout>
+
+<style>
+  /* ── Hero ── */
+  .community-hero {
+    padding: 8rem 1.5rem 4rem;
+    text-align: center;
+  }
+
+  .community-hero-inner {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .community-hero-title {
+    font-size: clamp(2.5rem, 7vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin: 0 0 1.25rem;
+    background: var(--color-primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .community-hero-subtitle {
+    font-size: clamp(1.125rem, 2.5vw, 1.375rem);
+    color: var(--color-text, #999);
+    max-width: 36rem;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  :root[data-theme="light"] .community-hero-subtitle {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
+  }
+
+  /* ── Sections ── */
+  .community-section {
+    padding: 4rem 1.5rem;
+  }
+
+  .community-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .community-section-title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin: 0 0 2rem;
+    color: var(--color-light, #f6f6f6);
+  }
+
+  :root[data-theme="light"] .community-section-title {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  /* ── Divider ── */
+  .community-divider {
+    max-width: 1200px;
+    margin: 0 auto;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--color-light, #f6f6f6) 12%, transparent) 50%,
+      transparent
+    );
+  }
+
+  :root[data-theme="light"] .community-divider {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent) 50%,
+      transparent
+    );
+  }
+
+  /* ── Channel cards (Block 16.2) ── */
+  .channels-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .channels-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .channel-card {
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--color-dark, #151515) 80%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+    position: relative;
+  }
+
+  .channel-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    background: var(--color-primary-gradient);
+    border-radius: inherit;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .channel-card:hover::before {
+    opacity: 0.5;
+  }
+
+  .channel-card:hover {
+    transform: translateY(-3px);
+  }
+
+  :root[data-theme="light"] .channel-card {
+    background: color-mix(in srgb, var(--color-lightmode-dark, #f7f7f7) 90%, transparent);
+    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+  }
+
+  .channel-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    color: var(--color-primary, #5CA3CA);
+    margin-bottom: 1.25rem;
+  }
+
+  .channel-title {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: var(--color-light, #f6f6f6);
+    margin: 0 0 0.75rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  :root[data-theme="light"] .channel-title {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  .channel-desc {
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--color-text, #999);
+    margin: 0 0 1rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  :root[data-theme="light"] .channel-desc {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 70%, transparent);
+  }
+
+  .channel-use-for {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--color-text, #999);
+    margin: 0 0 1.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+    position: relative;
+    z-index: 1;
+  }
+
+  :root[data-theme="light"] .channel-use-for {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
+  }
+
+  .channel-label {
+    font-weight: 600;
+    color: var(--color-primary, #5CA3CA);
+  }
+
+  .channel-link-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-primary, #5CA3CA);
+    margin-top: auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Contributing cards (Block 16.3) ── */
+  .contrib-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .contrib-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .contrib-card {
+    padding: 2rem;
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--color-dark, #151515) 80%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+    transition: transform 0.3s ease, border-color 0.3s ease;
+    position: relative;
+  }
+
+  .contrib-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    background: var(--color-primary-gradient);
+    border-radius: inherit;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .contrib-card:hover::before {
+    opacity: 0.5;
+  }
+
+  .contrib-card:hover {
+    transform: translateY(-2px);
+  }
+
+  :root[data-theme="light"] .contrib-card {
+    background: color-mix(in srgb, var(--color-lightmode-dark, #f7f7f7) 90%, transparent);
+    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+  }
+
+  .contrib-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.625rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    color: var(--color-primary, #5CA3CA);
+    margin-bottom: 1.25rem;
+  }
+
+  .contrib-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-light, #f6f6f6);
+    margin: 0 0 0.75rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  :root[data-theme="light"] .contrib-title {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  .contrib-desc {
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: var(--color-text, #999);
+    margin: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  :root[data-theme="light"] .contrib-desc {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 70%, transparent);
+  }
+
+  .contrib-desc code {
+    font-size: 0.85em;
+    padding: 0.1em 0.35em;
+    border-radius: 0.25rem;
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    color: var(--color-primary, #5CA3CA);
+    font-family: "SF Mono", "Fira Code", "Fira Mono", monospace;
+  }
+
+  .contrib-cta {
+    margin-top: 2.5rem;
+    text-align: center;
+  }
+
+  .contrib-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-primary, #5CA3CA);
+    text-decoration: none;
+    transition: gap 0.2s ease;
+  }
+
+  .contrib-link:hover {
+    gap: 0.75rem;
+  }
+
+  /* ── Roadmap (Block 16.5) ── */
+  .roadmap-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .roadmap-item {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 0.75rem;
+    transition: background 0.2s ease;
+  }
+
+  .roadmap-item:hover {
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 3%, transparent);
+  }
+
+  :root[data-theme="light"] .roadmap-item:hover {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 3%, transparent);
+  }
+
+  .roadmap-indicator {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .roadmap-complete .roadmap-indicator {
+    background: color-mix(in srgb, #4ade80 15%, transparent);
+    color: #4ade80;
+  }
+
+  .roadmap-in-progress .roadmap-indicator {
+    background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  }
+
+  .roadmap-upcoming .roadmap-indicator {
+    background: color-mix(in srgb, var(--color-text, #999) 10%, transparent);
+  }
+
+  .roadmap-pulse {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--color-primary, #5CA3CA);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .roadmap-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-text, #999);
+    opacity: 0.4;
+  }
+
+  .roadmap-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .roadmap-phase {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--color-primary, #5CA3CA);
+    white-space: nowrap;
+  }
+
+  .roadmap-title {
+    font-size: 1rem;
+    color: var(--color-text, #999);
+  }
+
+  :root[data-theme="light"] .roadmap-title {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 70%, transparent);
+  }
+
+  .roadmap-complete .roadmap-title {
+    color: var(--color-light, #f6f6f6);
+  }
+
+  :root[data-theme="light"] .roadmap-complete .roadmap-title {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  .roadmap-badge {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .roadmap-badge-complete {
+    background: color-mix(in srgb, #4ade80 15%, transparent);
+    color: #4ade80;
+  }
+
+  .roadmap-badge-progress {
+    background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+    color: var(--color-primary, #5CA3CA);
+  }
+
+  .roadmap-cta {
+    margin-top: 2rem;
+  }
+
+  /* ── CTA ── */
+  .community-cta {
+    padding: 5rem 1.5rem;
+  }
+
+  .cta-title {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.75rem;
+    background: var(--color-primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .cta-desc {
+    font-size: 1.125rem;
+    color: var(--color-text, #999);
+    margin: 0 0 2rem;
+  }
+
+  :root[data-theme="light"] .cta-desc {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
+  }
+
+  .cta-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 0.75rem;
+    transition: transform 0.15s ease, filter 0.15s ease;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+  }
+
+  .btn:hover {
+    transform: scale(1.03);
+  }
+
+  .btn-primary {
+    background: var(--color-primary-gradient);
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.1);
+  }
+
+  .btn-outline-primary {
+    position: relative;
+    background: transparent;
+    color: var(--color-light, #f6f6f6);
+  }
+
+  .btn-outline-primary::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    background: var(--color-primary-gradient);
+    border-radius: inherit;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+  }
+
+  .btn-outline-primary:hover {
+    background: var(--color-primary-gradient);
+    color: #fff;
+  }
+
+  :root[data-theme="light"] .btn-outline-primary {
+    color: var(--color-lightmode-light, #181818);
+  }
+</style>

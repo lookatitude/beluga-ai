@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://beluga-ai.dev/sitemap-index.xml
+Sitemap: https://beluga-ai.org/sitemap-index.xml

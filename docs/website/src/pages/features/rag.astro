@@ -1,0 +1,357 @@
+---
+import FeaturePageLayout from "@/components/marketing/FeaturePageLayout.astro";
+
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "name": "RAG Pipeline — Beluga AI",
+  "description": "Hybrid retrieval with dense vectors, BM25, and graph traversal. 12+ vector stores, advanced strategies: CRAG, Adaptive RAG, HyDE, GraphRAG.",
+  "url": "https://beluga-ai.org/features/rag/"
+});
+---
+
+<FeaturePageLayout
+  pageTitle="RAG Pipeline | Beluga AI"
+  description="Hybrid retrieval with dense vectors, BM25, and graph traversal. 12+ vector stores, advanced strategies: CRAG, Adaptive RAG, HyDE, GraphRAG."
+  title="RAG Pipeline"
+  jsonLd={jsonLd}
+  subtitle="Hybrid retrieval combining dense vectors, BM25 sparse search, and graph traversal with Reciprocal Rank Fusion. 12+ vector stores, 8+ embedding providers, and advanced strategies like CRAG, Adaptive RAG, HyDE, and GraphRAG."
+  layer="Capability"
+  stats={["12+ Vector Stores", "10+ Embeddings", "5 Advanced Strategies", "Hybrid Search Default"]}
+  showProvidersTable={true}
+  relatedFeatures={[
+    { title: "Memory Systems", href: "/features/memory/", description: "Three-tier MemGPT memory with 6 strategies including semantic and graph-based recall." },
+    { title: "LLM Providers", href: "/features/llm/", description: "Unified ChatModel interface across 22+ providers powering RAG generation." },
+    { title: "Guardrails", href: "/features/guardrails/", description: "Three-stage guard pipeline ensuring safe retrieval and generation outputs." },
+    { title: "Tools & MCP", href: "/features/tools/", description: "Wrap retrieval as tools for agent use. Expose RAG pipelines via MCP." },
+  ]}
+>
+
+  <Fragment slot="overview">
+    <p>
+      Retrieval-Augmented Generation (RAG) is how agents ground their responses in real data instead of relying solely on training knowledge. Beluga AI's RAG pipeline is built around a <strong>hybrid search default</strong> that combines dense vector similarity, BM25 sparse keyword matching, and optional graph traversal — fused with Reciprocal Rank Fusion (k=60). This three-signal approach consistently outperforms any single retrieval method alone.
+    </p>
+    <p>
+      The pipeline is modular at every stage. Choose from <strong>8+ embedding providers</strong> (OpenAI, Google, Cohere, Voyage, Jina, and more), <strong>12+ vector stores</strong> (pgvector, Qdrant, Pinecone, Milvus, and others), and <strong>8+ document loaders</strong> for ingesting content from web pages, PDFs, APIs, and cloud storage. Each component implements a clean interface and is swappable via the registry pattern.
+    </p>
+    <p>
+      Beyond basic retrieval, Beluga AI includes <strong>5 advanced strategies</strong> for production RAG systems: CRAG for relevance-aware fallback, Adaptive RAG for query-complexity routing, HyDE for zero-shot retrieval, SEAL-RAG for self-aligned generation, and GraphRAG for knowledge-graph-enhanced answers. These strategies compose with the base pipeline, letting you start simple and add sophistication as your requirements evolve.
+    </p>
+  </Fragment>
+
+  <Fragment slot="capabilities">
+    <h3>Hybrid Search Default</h3>
+    <p>
+      Every retrieval query runs through a three-stage pipeline by default. First, <strong>BM25 sparse search</strong> returns approximately 200 keyword-matched candidates. Second, <strong>dense vector search</strong> narrows to the top 100 by semantic similarity. Finally, <strong>cross-encoder reranking</strong> selects the top 10 most relevant chunks. Results from sparse and dense stages are combined with Reciprocal Rank Fusion (k=60).
+    </p>
+    <pre><code>retriever := rag.NewHybridRetriever(
+    rag.WithSparse(bm25Index),          // BM25 keyword matching
+    rag.WithDense(vectorStore, embedder), // Dense vector similarity
+    rag.WithReranker(crossEncoder),      // Cross-encoder precision
+    rag.WithRRF(60),                     // Reciprocal Rank Fusion
+    rag.WithTopK(10),                    // Final result count
+)</code></pre>
+
+    <h3>Embedding Providers</h3>
+    <p>
+      Eight embedding providers covering proprietary and open-source models. Each implements the <code>Embedder</code> interface with batch embedding support and automatic dimension handling.
+    </p>
+    <ul>
+      <li><strong>OpenAI</strong> — text-embedding-3-small/large, ada-002</li>
+      <li><strong>Google</strong> — text-embedding-004, Gecko</li>
+      <li><strong>Ollama</strong> — Local embedding models (nomic-embed, mxbai)</li>
+      <li><strong>Cohere</strong> — embed-v3, multilingual</li>
+      <li><strong>Voyage</strong> — voyage-3, code-optimized embeddings</li>
+      <li><strong>Jina</strong> — jina-embeddings-v3, multilingual and cross-lingual</li>
+      <li><strong>Mistral</strong> — mistral-embed</li>
+      <li><strong>Sentence Transformers</strong> — Local ONNX-based inference</li>
+    </ul>
+    <pre><code>embedder, _ := embedding.New("openai", embedding.Config&#123;
+    Model: "text-embedding-3-large",
+    Dimensions: 1536,
+&#125;)
+vectors, err := embedder.EmbedBatch(ctx, documents)</code></pre>
+
+    <h3>Vector Store Providers</h3>
+    <p>
+      Twelve vector store backends ranging from lightweight embedded options to distributed cloud-scale systems. All implement the same <code>VectorStore</code> interface with support for metadata filtering, namespace isolation, and batch operations.
+    </p>
+    <ul>
+      <li><strong>pgvector</strong> — PostgreSQL extension, HNSW/IVFFlat indexes</li>
+      <li><strong>Qdrant</strong> — Purpose-built, advanced filtering, hybrid search</li>
+      <li><strong>Pinecone</strong> — Managed cloud, serverless option</li>
+      <li><strong>ChromaDB</strong> — Developer-friendly, embedded or client-server</li>
+      <li><strong>Weaviate</strong> — Graph + vector, hybrid BM25</li>
+      <li><strong>Milvus</strong> — Distributed, billion-scale</li>
+      <li><strong>Turbopuffer</strong> — Serverless, cost-optimized</li>
+      <li><strong>Redis</strong> — In-memory speed, RediSearch integration</li>
+      <li><strong>Elasticsearch</strong> — Full-text + vector, existing infrastructure</li>
+      <li><strong>SQLite-vec</strong> — Embedded, zero-dependency local</li>
+      <li><strong>MongoDB</strong> — Atlas Vector Search, document store integration</li>
+      <li><strong>Vespa</strong> — Hybrid serving, real-time indexing</li>
+    </ul>
+    <pre><code>store, _ := vectorstore.New("pgvector", vectorstore.Config&#123;
+    ConnectionString: "postgres://localhost/beluga",
+    Collection:       "documents",
+    Dimensions:       1536,
+&#125;)</code></pre>
+
+    <h3>Advanced Retrieval Strategies</h3>
+    <p>
+      Five strategies for production RAG systems that go beyond basic retrieve-and-generate:
+    </p>
+    <ul>
+      <li><strong>CRAG (Corrective RAG)</strong> — Evaluates retrieved document relevance; falls back to web search when confidence is below threshold.</li>
+      <li><strong>Adaptive RAG</strong> — Routes by query complexity: no retrieval for simple factual questions, single-step for straightforward lookups, multi-step for complex reasoning chains.</li>
+      <li><strong>HyDE (Hypothetical Document Embeddings)</strong> — Generates a hypothetical answer first, then uses its embedding for retrieval. Enables zero-shot retrieval without training data.</li>
+      <li><strong>SEAL-RAG</strong> — Self-Aligned RAG that iteratively refines retrieval and generation.</li>
+      <li><strong>GraphRAG</strong> — Builds a knowledge graph with community summaries (Microsoft approach) for complex multi-hop questions.</li>
+    </ul>
+    <pre><code>retriever := rag.NewAdaptiveRetriever(
+    rag.WithSimpleHandler(directLLM),        // No retrieval needed
+    rag.WithSingleStep(hybridRetriever),     // Standard RAG
+    rag.WithMultiStep(iterativeRetriever),   // Multi-hop reasoning
+    rag.WithComplexityClassifier(classifier),
+)</code></pre>
+
+    <h3>Contextual Retrieval Ingestion</h3>
+    <p>
+      During document ingestion, each chunk is enriched with document-level context before embedding. An LLM prepends a brief summary describing how the chunk fits within the larger document, significantly improving retrieval accuracy for chunks that would otherwise lack sufficient context on their own.
+    </p>
+    <pre><code>pipeline := rag.NewIngestionPipeline(
+    rag.WithLoader(loader),
+    rag.WithSplitter(splitter),
+    rag.WithContextualRetrieval(model),  // Prepend doc-level context
+    rag.WithEmbedder(embedder),
+    rag.WithStore(vectorStore),
+)</code></pre>
+
+    <h3>Document Loaders</h3>
+    <p>
+      Eight document loaders for ingesting content from diverse sources. Each returns a stream of <code>Document</code> objects with metadata preserved for downstream filtering.
+    </p>
+    <ul>
+      <li><strong>Firecrawl</strong> — Web scraping with JavaScript rendering</li>
+      <li><strong>Unstructured.io</strong> — PDF, DOCX, PPTX, HTML parsing</li>
+      <li><strong>Docling</strong> — Advanced document understanding</li>
+      <li><strong>Confluence</strong> — Atlassian wiki pages and spaces</li>
+      <li><strong>Notion</strong> — Notion pages and databases</li>
+      <li><strong>GitHub</strong> — Repository files and README content</li>
+      <li><strong>Google Drive</strong> — Docs, Sheets, and file content</li>
+      <li><strong>S3/GCS</strong> — Cloud object storage files</li>
+    </ul>
+    <pre><code>loader, _ := loader.New("firecrawl", loader.Config&#123;
+    APIKey: os.Getenv("FIRECRAWL_API_KEY"),
+&#125;)
+docs, err := loader.Load(ctx, "https://example.com/docs")</code></pre>
+
+    <h3>Text Splitters</h3>
+    <p>
+      Three splitting strategies to divide documents into chunks optimized for embedding and retrieval. <strong>Recursive character</strong> splits by hierarchy (paragraph, sentence, word) with configurable overlap. <strong>Semantic</strong> splits at topic boundaries detected by embedding similarity. <strong>Token-based</strong> splits by exact token count for precise context budget control.
+    </p>
+    <pre><code>splitter := splitter.NewRecursive(
+    splitter.WithChunkSize(512),
+    splitter.WithChunkOverlap(50),
+    splitter.WithSeparators([]string&#123;"\n\n", "\n", ". ", " "&#125;),
+)
+chunks := splitter.Split(documents)</code></pre>
+
+    <h3>Cross-Encoder Reranking</h3>
+    <p>
+      The final stage of the retrieval pipeline uses cross-encoder models for maximum precision. Unlike bi-encoder embeddings that encode query and document independently, cross-encoders process the query-document pair together, capturing fine-grained relevance signals that dramatically improve top-k accuracy.
+    </p>
+    <pre><code>reranker, _ := reranker.New("cross-encoder", reranker.Config&#123;
+    Model: "cross-encoder/ms-marco-MiniLM-L-12-v2",
+    TopK:  10,
+&#125;)
+reranked, err := reranker.Rerank(ctx, query, candidates)</code></pre>
+  </Fragment>
+
+  <Fragment slot="diagram">
+    <div style="overflow-x: auto;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 2rem 1rem; min-width: 500px;">
+        <!-- Documents -->
+        <div style="background: color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent); border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent); border-radius: 0.75rem; padding: 1rem 2.5rem; font-weight: 600; text-align: center; color: var(--color-light, #f6f6f6);">
+          Documents
+          <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.7; margin-top: 0.25rem;">Firecrawl | Unstructured | Notion | S3 | ...</div>
+        </div>
+        <svg width="24" height="32" viewBox="0 0 24 32" fill="none"><path d="M12 0v28M6 22l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/></svg>
+        <!-- Split + Embed -->
+        <div style="display: flex; gap: 1.5rem; align-items: center;">
+          <div style="background: color-mix(in srgb, #D76D77 15%, transparent); border: 1px solid #D76D77; border-radius: 0.75rem; padding: 0.75rem 1.5rem; font-weight: 600; color: #D76D77; text-align: center; font-size: 0.9rem;">
+            Split
+            <div style="font-size: 0.7rem; font-weight: 400; opacity: 0.7;">Recursive | Semantic</div>
+          </div>
+          <svg width="32" height="24" viewBox="0 0 32 24" fill="none"><path d="M0 12h28M22 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/></svg>
+          <div style="background: color-mix(in srgb, #ffca7b 15%, transparent); border: 1px solid #ffca7b; border-radius: 0.75rem; padding: 0.75rem 1.5rem; font-weight: 600; color: #ffca7b; text-align: center; font-size: 0.9rem;">
+            Embed
+            <div style="font-size: 0.7rem; font-weight: 400; opacity: 0.7;">8+ Providers</div>
+          </div>
+          <svg width="32" height="24" viewBox="0 0 32 24" fill="none"><path d="M0 12h28M22 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/></svg>
+          <div style="background: color-mix(in srgb, var(--color-primary) 15%, transparent); border: 1px solid var(--color-primary, #5CA3CA); border-radius: 0.75rem; padding: 0.75rem 1.5rem; font-weight: 600; color: var(--color-primary, #5CA3CA); text-align: center; font-size: 0.9rem;">
+            Store
+            <div style="font-size: 0.7rem; font-weight: 400; opacity: 0.7;">12+ Vector Stores</div>
+          </div>
+        </div>
+        <svg width="24" height="32" viewBox="0 0 24 32" fill="none"><path d="M12 0v28M6 22l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/></svg>
+        <!-- Retrieval -->
+        <div style="background: color-mix(in srgb, #D76D77 15%, transparent); border: 1px solid #D76D77; border-radius: 0.75rem; padding: 1rem 2.5rem; font-weight: 600; color: #D76D77; text-align: center;">
+          Hybrid Retrieval
+          <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.7; margin-top: 0.25rem;">BM25 (~200) + Dense (~100) + RRF Fusion</div>
+        </div>
+        <svg width="24" height="32" viewBox="0 0 24 32" fill="none"><path d="M12 0v28M6 22l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/></svg>
+        <!-- Rerank -->
+        <div style="background: color-mix(in srgb, #ffca7b 15%, transparent); border: 1px solid #ffca7b; border-radius: 0.75rem; padding: 1rem 2.5rem; font-weight: 600; color: #ffca7b; text-align: center;">
+          Cross-Encoder Rerank
+          <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.7; margin-top: 0.25rem;">Top 10 precision-optimized results</div>
+        </div>
+        <svg width="24" height="32" viewBox="0 0 24 32" fill="none"><path d="M12 0v28M6 22l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/></svg>
+        <!-- LLM Generation -->
+        <div style="background: color-mix(in srgb, var(--color-primary) 15%, transparent); border: 1px solid var(--color-primary, #5CA3CA); border-radius: 0.75rem; padding: 1rem 2.5rem; font-weight: 600; color: var(--color-primary, #5CA3CA); text-align: center;">
+          LLM Generation
+          <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.7; margin-top: 0.25rem;">Context-grounded streaming response</div>
+        </div>
+      </div>
+    </div>
+  </Fragment>
+
+  <Fragment slot="providers">
+    <h3>Embedding Providers</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Provider</th>
+          <th>Priority</th>
+          <th>Key Differentiator</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>OpenAI</td><td>Core</td><td>text-embedding-3-small/large, industry standard</td></tr>
+        <tr><td>Google</td><td>Core</td><td>text-embedding-004, Gecko, multimodal</td></tr>
+        <tr><td>Ollama</td><td>Core</td><td>Local inference, nomic-embed, mxbai-embed</td></tr>
+        <tr><td>Cohere</td><td>Extended</td><td>embed-v3, multilingual, search-optimized</td></tr>
+        <tr><td>Voyage</td><td>Extended</td><td>voyage-3, code-optimized, high-quality retrieval</td></tr>
+        <tr><td>Jina</td><td>Extended</td><td>jina-embeddings-v3, multilingual, cross-lingual</td></tr>
+        <tr><td>Mistral</td><td>Extended</td><td>mistral-embed, EU-hosted</td></tr>
+        <tr><td>Sentence Transformers</td><td>Community</td><td>Local ONNX inference, no API dependency</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Vector Stores</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Provider</th>
+          <th>Priority</th>
+          <th>Key Differentiator</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>pgvector</td><td>Core</td><td>PostgreSQL extension, HNSW/IVFFlat, use existing Postgres</td></tr>
+        <tr><td>Qdrant</td><td>Core</td><td>Purpose-built, advanced filtering, hybrid search native</td></tr>
+        <tr><td>Pinecone</td><td>Core</td><td>Managed cloud, serverless option, zero ops</td></tr>
+        <tr><td>ChromaDB</td><td>Extended</td><td>Developer-friendly, embedded or client-server mode</td></tr>
+        <tr><td>Weaviate</td><td>Extended</td><td>Graph + vector hybrid, built-in BM25</td></tr>
+        <tr><td>Milvus</td><td>Extended</td><td>Distributed, billion-scale, GPU-accelerated</td></tr>
+        <tr><td>Turbopuffer</td><td>Extended</td><td>Serverless, cost-optimized storage</td></tr>
+        <tr><td>Redis</td><td>Extended</td><td>In-memory speed, RediSearch integration</td></tr>
+        <tr><td>Elasticsearch</td><td>Extended</td><td>Full-text + vector, leverage existing infrastructure</td></tr>
+        <tr><td>SQLite-vec</td><td>Community</td><td>Embedded, zero-dependency, local development</td></tr>
+        <tr><td>MongoDB</td><td>Community</td><td>Atlas Vector Search, document store integration</td></tr>
+        <tr><td>Vespa</td><td>Community</td><td>Hybrid serving engine, real-time indexing</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Document Loaders</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Loader</th>
+          <th>Priority</th>
+          <th>Key Differentiator</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Firecrawl</td><td>Core</td><td>Web scraping with JavaScript rendering and crawling</td></tr>
+        <tr><td>Unstructured.io</td><td>Core</td><td>PDF, DOCX, PPTX, HTML, images — multi-format parsing</td></tr>
+        <tr><td>Docling</td><td>Extended</td><td>Advanced document understanding and layout analysis</td></tr>
+        <tr><td>Confluence</td><td>Extended</td><td>Atlassian wiki pages, spaces, and attachments</td></tr>
+        <tr><td>Notion</td><td>Extended</td><td>Pages, databases, and rich content blocks</td></tr>
+        <tr><td>GitHub</td><td>Extended</td><td>Repository files, READMEs, issues, and PRs</td></tr>
+        <tr><td>Google Drive</td><td>Community</td><td>Docs, Sheets, Slides, and file storage</td></tr>
+        <tr><td>S3/GCS</td><td>Community</td><td>Cloud object storage with prefix filtering</td></tr>
+      </tbody>
+    </table>
+  </Fragment>
+
+  <Fragment slot="codeExample">
+    <p>A complete RAG pipeline: load documents, split, embed, store, retrieve, and stream an answer:</p>
+    <pre><code>package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+
+    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/rag/embedding"
+    "github.com/lookatitude/beluga-ai/rag/loader"
+    "github.com/lookatitude/beluga-ai/rag/retriever"
+    "github.com/lookatitude/beluga-ai/rag/splitter"
+    "github.com/lookatitude/beluga-ai/rag/vectorstore"
+    "github.com/lookatitude/beluga-ai/schema"
+)
+
+func main() &#123;
+    ctx := context.Background()
+
+    // 1. Load documents from a website
+    webLoader, _ := loader.New("firecrawl", loader.Config&#123;
+        APIKey: os.Getenv("FIRECRAWL_API_KEY"),
+    &#125;)
+    docs, _ := webLoader.Load(ctx, "https://docs.example.com")
+
+    // 2. Split into chunks with overlap
+    chunks := splitter.NewRecursive(
+        splitter.WithChunkSize(512),
+        splitter.WithChunkOverlap(50),
+    ).Split(docs)
+
+    // 3. Embed and store in pgvector
+    embedder, _ := embedding.New("openai", embedding.Config&#123;
+        Model: "text-embedding-3-large",
+    &#125;)
+    store, _ := vectorstore.New("pgvector", vectorstore.Config&#123;
+        ConnectionString: os.Getenv("DATABASE_URL"),
+        Collection:       "docs",
+    &#125;)
+    store.AddDocuments(ctx, chunks, embedder)
+
+    // 4. Build a hybrid retriever
+    ret := retriever.NewHybrid(
+        retriever.WithDense(store, embedder),
+        retriever.WithReranker(retriever.CrossEncoder("ms-marco-MiniLM")),
+        retriever.WithTopK(5),
+    )
+
+    // 5. Retrieve and generate a streaming answer
+    model, _ := llm.New("openai", llm.ProviderConfig&#123;Model: "gpt-4o"&#125;)
+    results, _ := ret.Retrieve(ctx, "How do I configure authentication?")
+
+    // Build context from retrieved chunks
+    contextText := ""
+    for _, doc := range results &#123;
+        contextText += doc.Content + "\n---\n"
+    &#125;
+
+    for event, err := range model.Stream(ctx, []schema.Message&#123;
+        &#123;Role: "system", Content: "Answer using the provided context:\n" + contextText&#125;,
+        &#123;Role: "user", Content: "How do I configure authentication?"&#125;,
+    &#125;) &#123;
+        if err != nil &#123; break &#125;
+        fmt.Print(event.Text())
+    &#125;
+&#125;</code></pre>
+  </Fragment>
+
+</FeaturePageLayout>

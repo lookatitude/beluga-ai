@@ -1,0 +1,642 @@
+---
+import MarketingLayout from "@/layouts/MarketingLayout.astro";
+import ComparisonTable from "@/components/marketing/ComparisonTable.astro";
+
+const comparisonHeaders = ["Capability", "Beluga AI", "LangChain", "LangChainGo", "CrewAI", "AG2"];
+
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Compare Beluga AI",
+  "description": "Technical comparison of Go AI agent frameworks",
+  "url": "https://beluga-ai.org/compare/"
+});
+
+const comparisonRows = [
+  { capability: "Language", values: ["Go", "Python", "Go", "Python", "Python"] },
+  { capability: "Streaming model", values: ["iter.Seq2 native", "Async generators", "Callback-based", "Callback-based", "Async"] },
+  { capability: "LLM Providers", values: ["22+", "50+", "15+", "10+", "20+"] },
+  { capability: "Agent reasoning", values: ["7 strategies", "ReAct + custom", "ReAct", "Role-based", "Conversational"] },
+  { capability: "RAG pipeline", values: ["Built-in hybrid", "LangChain Retriever", "Basic retriever", "Built-in", "Basic"] },
+  { capability: "Voice pipeline", values: ["Built-in", "\u2717", "\u2717", "\u2717", "\u2717"] },
+  { capability: "MCP support", values: ["Native client + server", "Client", "\u2717", "Client", "\u2717"] },
+  { capability: "A2A support", values: ["Native", "\u2717", "\u2717", "\u2717", "\u2717"] },
+  { capability: "Durable workflows", values: ["Built-in", "LangGraph checkpoints", "\u2717", "Flows", "\u2717"] },
+  { capability: "Guardrails", values: ["3-stage pipeline", "External", "\u2717", "Basic", "Basic"] },
+  { capability: "Observability", values: ["OTel GenAI native", "LangSmith", "Basic", "Basic", "Basic"] },
+  { capability: "Memory", values: ["3-tier MemGPT", "Buffer/Summary", "Buffer", "Short/Long", "Basic"] },
+  { capability: "Deployment", values: ["Single binary ~15MB", "Container ~500MB+", "Single binary", "Container", "Container"] },
+  { capability: "Concurrency", values: ["Goroutines", "Asyncio / GIL", "Goroutines", "Asyncio", "Asyncio"] },
+  { capability: "Type safety", values: ["Compile-time", "Runtime", "Compile-time", "Runtime", "Runtime"] },
+  { capability: "License", values: ["MIT", "MIT", "MIT", "MIT", "Apache 2.0"] },
+];
+---
+
+<MarketingLayout
+  title="Compare Beluga AI — Framework Comparison"
+  description="An honest technical comparison of Beluga AI with LangChain, LangChainGo, CrewAI, and AutoGen for building AI agents."
+  jsonLd={jsonLd}
+>
+  <!-- Block 14.1 — Header -->
+  <section class="compare-hero">
+    <div class="compare-hero-inner">
+      <h1 class="compare-hero-title">
+        How Beluga AI <span class="title-muted">Compares</span>
+      </h1>
+      <p class="compare-hero-subtitle">
+        An honest technical comparison with the major agentic AI frameworks.
+      </p>
+    </div>
+  </section>
+
+  <!-- Block 14.2 — Master Comparison Table -->
+  <section class="compare-section">
+    <div class="compare-section-inner">
+      <ComparisonTable headers={comparisonHeaders} rows={comparisonRows} />
+    </div>
+  </section>
+
+  <!-- Block 14.3 — Where Beluga AI Differentiates -->
+  <section class="compare-section">
+    <div class="compare-section-inner">
+      <div class="compare-section-header">
+        <h2 class="compare-section-title">
+          Where Beluga AI <span class="title-muted">differentiates</span>
+        </h2>
+      </div>
+
+      <div class="diff-sections">
+        <!-- Section 1 -->
+        <div class="diff-block">
+          <div class="diff-content">
+            <h3 class="diff-title">The only comprehensive Go-native framework</h3>
+            <p class="diff-text">
+              LangChainGo exists but covers a fraction of LangChain's surface area. It provides basic LLM and retrieval abstractions, but lacks voice pipelines, durable workflows, guardrails, protocol support, and many of the agent reasoning strategies available in the Python ecosystem.
+            </p>
+            <p class="diff-text">
+              Beluga AI provides the full stack -- agents, RAG, voice, orchestration, guardrails, protocols -- in one cohesive library with a consistent API. Every package follows the same registry, middleware, and hooks patterns, making the learning curve predictable across the entire framework.
+            </p>
+            <p class="diff-text">
+              If your team writes Go in production, you no longer need to maintain a Python sidecar for AI capabilities or settle for a partial port.
+            </p>
+          </div>
+        </div>
+
+        <!-- Section 2 -->
+        <div class="diff-block diff-block-alt">
+          <div class="diff-content">
+            <h3 class="diff-title">Voice pipeline nobody else has</h3>
+            <p class="diff-text">
+              No competing agentic framework includes a built-in voice pipeline. LangChain, CrewAI, and AG2 all require external integrations and custom glue code to handle speech-to-text, LLM processing, and text-to-speech in a conversational loop.
+            </p>
+            <p class="diff-text">
+              Beluga AI's frame-based STT-to-LLM-to-TTS architecture delivers sub-800ms latency with interruptible speech, VAD, and transport layers for WebRTC and WebSocket. Build voice agents with the same patterns and providers you use for text agents.
+            </p>
+          </div>
+        </div>
+
+        <!-- Section 3 -->
+        <div class="diff-block">
+          <div class="diff-content">
+            <h3 class="diff-title">Protocol-native from day one</h3>
+            <p class="diff-text">
+              MCP server and client and A2A support are first-class in Beluga AI, not bolted-on adapters. Beluga agents can both consume and expose tools via MCP, enabling seamless integration with any MCP-compatible tool ecosystem.
+            </p>
+            <p class="diff-text">
+              A2A (Agent-to-Agent) protocol support means your Beluga agents can collaborate with agents from any framework that implements the protocol. This is not just client support -- Beluga can serve as both an A2A client and server.
+            </p>
+            <p class="diff-text">
+              Other frameworks are adding MCP client support incrementally; none currently offer both client and server for MCP, and none support A2A.
+            </p>
+          </div>
+        </div>
+
+        <!-- Section 4 -->
+        <div class="diff-block diff-block-alt">
+          <div class="diff-content">
+            <h3 class="diff-title">Production deployment story</h3>
+            <p class="diff-text">
+              Go compiles to a single static binary with no runtime dependencies. A Beluga AI agent deploys as a ~15MB container image, compared to 500MB+ for Python-based frameworks that require a full Python runtime, pip packages, and their transitive dependencies.
+            </p>
+            <p class="diff-text">
+              This compilation model eliminates an entire class of deployment problems: no dependency conflicts, no version mismatches, no "works on my machine" issues. Your CI builds a binary, your container runs it. That is the entire deployment story.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Block 14.4 — Honest Tradeoffs -->
+  <section class="compare-section">
+    <div class="compare-section-inner">
+      <div class="compare-section-header">
+        <h2 class="compare-section-title">
+          Where others <span class="title-muted">excel</span>
+        </h2>
+      </div>
+
+      <div class="tradeoffs-grid">
+        <div class="tradeoff-card">
+          <h3 class="tradeoff-name">LangChain</h3>
+          <p class="tradeoff-text">
+            Largest ecosystem, most integrations, most tutorials. If you are prototyping in Python with no production constraint, its breadth is unmatched. LangSmith provides a polished observability and evaluation platform, and the community produces new integrations faster than any other framework.
+          </p>
+        </div>
+
+        <div class="tradeoff-card">
+          <h3 class="tradeoff-name">LangChainGo</h3>
+          <p class="tradeoff-text">
+            Smaller API surface means a faster learning curve for simple use cases. If you need basic LLM calls and retrieval in Go without the full framework, LangChainGo gets you there quickly. It also carries the LangChain brand recognition and community familiarity.
+          </p>
+        </div>
+
+        <div class="tradeoff-card">
+          <h3 class="tradeoff-name">CrewAI</h3>
+          <p class="tradeoff-text">
+            Intuitive role-based agent metaphor with YAML configuration and a lower barrier to entry. Over 100,000 certified users and a growing ecosystem. If your use case maps naturally to "a team of specialized agents," CrewAI's mental model is compelling and accessible.
+          </p>
+        </div>
+
+        <div class="tradeoff-card">
+          <h3 class="tradeoff-name">AG2</h3>
+          <p class="tradeoff-text">
+            Microsoft-backed with ICLR 2024 research pedigree and deep Azure integration. If your organization is invested in the Azure ecosystem and values academic rigor in multi-agent conversation patterns, AG2 provides a well-researched foundation.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Block 14.5 — Decision Framework -->
+  <section class="compare-section">
+    <div class="compare-section-inner">
+      <div class="compare-section-header">
+        <h2 class="compare-section-title">
+          When to choose <span class="title-muted">Beluga AI</span>
+        </h2>
+      </div>
+
+      <div class="decision-grid">
+        <div class="decision-card decision-card-choose">
+          <h3 class="decision-card-title">Choose Beluga AI when:</h3>
+          <ul class="decision-list">
+            <li class="decision-item decision-item-yes">
+              <span class="decision-icon decision-icon-yes">&#10003;</span>
+              <span>Your production stack is Go</span>
+            </li>
+            <li class="decision-item decision-item-yes">
+              <span class="decision-icon decision-icon-yes">&#10003;</span>
+              <span>You need voice AI alongside text agents</span>
+            </li>
+            <li class="decision-item decision-item-yes">
+              <span class="decision-icon decision-icon-yes">&#10003;</span>
+              <span>You want a single framework instead of assembling multiple libraries</span>
+            </li>
+            <li class="decision-item decision-item-yes">
+              <span class="decision-icon decision-icon-yes">&#10003;</span>
+              <span>Deployment simplicity matters (single binary)</span>
+            </li>
+            <li class="decision-item decision-item-yes">
+              <span class="decision-icon decision-icon-yes">&#10003;</span>
+              <span>You need MCP and A2A protocol support</span>
+            </li>
+            <li class="decision-item decision-item-yes">
+              <span class="decision-icon decision-icon-yes">&#10003;</span>
+              <span>You value compile-time safety and explicit error handling</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="decision-card decision-card-elsewhere">
+          <h3 class="decision-card-title">Look elsewhere when:</h3>
+          <ul class="decision-list">
+            <li class="decision-item decision-item-no">
+              <span class="decision-icon decision-icon-no">&rarr;</span>
+              <span>You need the largest possible community and tutorial ecosystem today (LangChain)</span>
+            </li>
+            <li class="decision-item decision-item-no">
+              <span class="decision-icon decision-icon-no">&rarr;</span>
+              <span>Your team is Python-only with no Go experience</span>
+            </li>
+            <li class="decision-item decision-item-no">
+              <span class="decision-icon decision-icon-no">&rarr;</span>
+              <span>You are training ML models, not building agents</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="compare-cta">
+    <div class="compare-section-inner">
+      <h2 class="cta-title">Ready to build?</h2>
+      <p class="cta-desc">Get started with Beluga AI in minutes.</p>
+      <div class="cta-actions">
+        <a href="/docs/getting-started/overview/" class="btn btn-primary">
+          Read the Docs
+          <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+            <path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+        <a href="https://github.com/lookatitude/beluga-ai" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary">
+          Star on GitHub
+          <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+            <path d="M3.5 1H11v7.5M11 1L1 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+</MarketingLayout>
+
+<style>
+  /* ── Hero ── */
+  .compare-hero {
+    padding: 8rem 1.5rem 3rem;
+    text-align: center;
+  }
+
+  .compare-hero-inner {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .compare-hero-title {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin: 0 0 1.25rem;
+    color: var(--color-light, #f6f6f6);
+  }
+
+  :root[data-theme="light"] .compare-hero-title {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  .compare-hero-subtitle {
+    font-size: clamp(1.125rem, 2.5vw, 1.375rem);
+    color: var(--color-text, #999);
+    max-width: 36rem;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  :root[data-theme="light"] .compare-hero-subtitle {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
+  }
+
+  .title-muted {
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 40%, transparent);
+  }
+
+  :root[data-theme="light"] .title-muted {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 40%, transparent);
+  }
+
+  /* ── Sections ── */
+  .compare-section {
+    padding: 4rem 1.5rem;
+  }
+
+  .compare-section-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .compare-section-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .compare-section-title {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin: 0;
+    color: var(--color-light, #f6f6f6);
+  }
+
+  :root[data-theme="light"] .compare-section-title {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  /* ── Differentiation blocks ── */
+  .diff-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .diff-block {
+    padding: 3rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
+  }
+
+  .diff-block:last-child {
+    border-bottom: none;
+  }
+
+  :root[data-theme="light"] .diff-block {
+    border-bottom-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+  }
+
+  .diff-block-alt {
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 2%, transparent);
+    border-radius: 1rem;
+    padding: 3rem 2rem;
+    margin: 0 -2rem;
+  }
+
+  :root[data-theme="light"] .diff-block-alt {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 3%, transparent);
+  }
+
+  @media (max-width: 639px) {
+    .diff-block-alt {
+      margin: 0 -0.5rem;
+      padding: 2rem 1rem;
+    }
+  }
+
+  .diff-content {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .diff-title {
+    font-size: clamp(1.25rem, 3vw, 1.5rem);
+    font-weight: 700;
+    color: var(--color-light, #f6f6f6);
+    margin: 0 0 1.25rem;
+    line-height: 1.3;
+  }
+
+  :root[data-theme="light"] .diff-title {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  .diff-text {
+    font-size: 1rem;
+    color: var(--color-text, #999);
+    margin: 0 0 1rem;
+    line-height: 1.7;
+  }
+
+  .diff-text:last-child {
+    margin-bottom: 0;
+  }
+
+  :root[data-theme="light"] .diff-text {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 65%, transparent);
+  }
+
+  /* ── Tradeoffs grid ── */
+  .tradeoffs-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .tradeoffs-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .tradeoff-card {
+    padding: 1.5rem;
+    border-radius: 1rem;
+    background: var(--color-dark, #151515);
+    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+    transition: transform 0.3s ease;
+  }
+
+  .tradeoff-card:hover {
+    transform: scale(1.01);
+  }
+
+  :root[data-theme="light"] .tradeoff-card {
+    background: var(--color-lightmode-dark, #f7f7f7);
+    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+  }
+
+  .tradeoff-name {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-light, #f6f6f6);
+    margin: 0 0 0.75rem;
+  }
+
+  :root[data-theme="light"] .tradeoff-name {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  .tradeoff-text {
+    font-size: 0.9375rem;
+    color: var(--color-text, #999);
+    margin: 0;
+    line-height: 1.7;
+  }
+
+  :root[data-theme="light"] .tradeoff-text {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
+  }
+
+  /* ── Decision framework ── */
+  .decision-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .decision-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .decision-card {
+    padding: 2rem;
+    border-radius: 1rem;
+    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+  }
+
+  :root[data-theme="light"] .decision-card {
+    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+  }
+
+  .decision-card-choose {
+    background: color-mix(in srgb, var(--color-primary, #5CA3CA) 5%, var(--color-dark, #151515));
+    border-color: color-mix(in srgb, var(--color-primary, #5CA3CA) 20%, transparent);
+  }
+
+  :root[data-theme="light"] .decision-card-choose {
+    background: color-mix(in srgb, var(--color-primary, #5CA3CA) 5%, var(--color-lightmode-dark, #f7f7f7));
+    border-color: color-mix(in srgb, var(--color-primary, #5CA3CA) 20%, transparent);
+  }
+
+  .decision-card-elsewhere {
+    background: var(--color-dark, #151515);
+  }
+
+  :root[data-theme="light"] .decision-card-elsewhere {
+    background: var(--color-lightmode-dark, #f7f7f7);
+  }
+
+  .decision-card-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 1.5rem;
+    color: var(--color-light, #f6f6f6);
+  }
+
+  :root[data-theme="light"] .decision-card-title {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  .decision-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .decision-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--color-text, #999);
+  }
+
+  :root[data-theme="light"] .decision-item {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 65%, transparent);
+  }
+
+  .decision-icon {
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .decision-icon-yes {
+    background: color-mix(in srgb, #4ade80 15%, transparent);
+    color: #4ade80;
+  }
+
+  .decision-icon-no {
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+    color: var(--color-text, #999);
+    font-size: 0.8rem;
+  }
+
+  :root[data-theme="light"] .decision-icon-no {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 50%, transparent);
+  }
+
+  /* ── CTA ── */
+  .compare-cta {
+    padding: 6rem 1.5rem;
+    text-align: center;
+  }
+
+  .cta-title {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.75rem;
+    background: var(--color-primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .cta-desc {
+    font-size: 1.125rem;
+    color: var(--color-text, #999);
+    margin: 0 0 2rem;
+  }
+
+  :root[data-theme="light"] .cta-desc {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
+  }
+
+  .cta-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 0.75rem;
+    transition: transform 0.15s ease, filter 0.15s ease;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+  }
+
+  .btn:hover {
+    transform: scale(1.03);
+  }
+
+  .btn-primary {
+    background: var(--color-primary-gradient);
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.1);
+  }
+
+  .btn-outline-primary {
+    position: relative;
+    background: transparent;
+    color: var(--color-light, #f6f6f6);
+  }
+
+  .btn-outline-primary::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    background: var(--color-primary-gradient);
+    border-radius: inherit;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+  }
+
+  .btn-outline-primary:hover {
+    background: var(--color-primary-gradient);
+    color: #fff;
+  }
+
+  :root[data-theme="light"] .btn-outline-primary {
+    color: var(--color-lightmode-light, #181818);
+  }
+</style>

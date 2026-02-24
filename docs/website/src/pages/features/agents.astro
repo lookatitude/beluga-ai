@@ -1,0 +1,218 @@
+---
+import FeaturePageLayout from "@/components/marketing/FeaturePageLayout.astro";
+
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "name": "Agent Runtime & Reasoning — Beluga AI",
+  "description": "Build AI agents with pluggable reasoning strategies — ReAct, Tree-of-Thought, LATS, and more. Handoffs-as-tools enable multi-agent collaboration.",
+  "url": "https://beluga-ai.org/features/agents/"
+});
+---
+
+<FeaturePageLayout
+  pageTitle="Agent Runtime & Reasoning | Beluga AI"
+  description="Build AI agents with pluggable reasoning strategies — ReAct, Tree-of-Thought, LATS, and more. Handoffs-as-tools enable multi-agent collaboration."
+  title="Agent Runtime & Reasoning"
+  jsonLd={jsonLd}
+  subtitle="Build agents with pluggable reasoning strategies, handoffs-as-tools for multi-agent collaboration, and a composable workflow system — all streaming-first via iter.Seq2."
+  layer="Capability"
+  stats={["7 Planners", "Handoffs-as-Tools", "Persona Engine", "Streaming-First"]}
+  showProvidersTable={false}
+  relatedFeatures={[
+    { title: "LLM Providers", href: "/features/llm/", description: "Unified ChatModel interface across 22+ providers with intelligent routing and structured output." },
+    { title: "Memory Systems", href: "/features/memory/", description: "Three-tier MemGPT memory with 6 strategies — buffer, window, summary, entity, semantic, and graph." },
+    { title: "Tools & MCP", href: "/features/tools/", description: "Wrap any Go function as a tool. Discover and consume MCP servers. Parallel DAG execution." },
+    { title: "Orchestration", href: "/features/orchestration/", description: "Five orchestration patterns plus durable workflows and graph-based DAG execution." },
+  ]}
+>
+
+  <Fragment slot="overview">
+    <p>
+      The Beluga AI agent runtime is the central building block for creating autonomous AI systems in Go. At its core, a <strong>BaseAgent</strong> wraps an LLM with tools, memory, a persona, and a planner to produce a typed event stream via <code>iter.Seq2[Event, error]</code>. Every interaction — tool calls, reasoning steps, partial responses — flows through this single streaming interface, giving you full visibility and control over agent behavior.
+    </p>
+    <p>
+      The design philosophy is <strong>composability over configuration</strong>. Instead of a monolithic agent class, you assemble capabilities through functional options: pick a reasoning strategy, attach tools, wire in memory, define a persona, and set up handoffs to other agents. Each piece is independently testable and replaceable. The agent runtime sits in the <strong>Capability Layer</strong> of the architecture, consuming LLM providers and tools from below while being orchestrated by workflow patterns from above.
+    </p>
+    <p>
+      Whether you need a simple ReAct loop for straightforward tasks or a Monte Carlo Tree Search planner that achieves 94.4% on HumanEval, the agent runtime gives you a consistent API. Multi-agent collaboration happens through <strong>handoffs-as-tools</strong> — agent transfers are modeled as ordinary tool calls, meaning the LLM decides when to hand off and the framework handles the rest, with zero additional boilerplate.
+    </p>
+  </Fragment>
+
+  <Fragment slot="capabilities">
+    <h3>BaseAgent</h3>
+    <p>
+      The core agent type wraps an LLM with tools, memory, a persona, and a planner. It produces typed event streams — every tool call, reasoning step, and partial response is an <code>Event</code> yielded through <code>iter.Seq2</code>. Construct agents with functional options for a clean, composable API.
+    </p>
+    <pre><code>agent := agent.New("researcher",
+    agent.WithLLM(model),
+    agent.WithTools(webSearch, calculator),
+    agent.WithMemory(mem),
+    agent.WithPlanner(planner.New("react")),
+)</code></pre>
+
+    <h3>Persona Engine</h3>
+    <p>
+      Define agent identity separately from agent behavior. A persona encapsulates system prompts, behavioral constraints, response style, and domain expertise. This separation means you can swap personas without touching tools or planners — the same agent runtime can behave as a formal analyst or a casual assistant.
+    </p>
+    <pre><code>persona := agent.Persona&#123;
+    Name:        "Financial Analyst",
+    Instructions: "You are a senior financial analyst...",
+    Style:       "formal, data-driven, cite sources",
+    Constraints:  []string&#123;"Never provide investment advice"&#125;,
+&#125;
+agent := agent.New("analyst", agent.WithPersona(persona))</code></pre>
+
+    <h3>Pluggable Planners</h3>
+    <p>
+      Seven reasoning strategies, selectable at construction time. Each planner implements the same interface, so switching strategies is a single line change. Choose based on your task requirements:
+    </p>
+    <ul>
+      <li><strong>ReAct</strong> — Observe-think-act loop. The baseline for most tasks.</li>
+      <li><strong>Reflexion</strong> — Verbal reinforcement learning with episodic memory for self-improvement.</li>
+      <li><strong>Self-Discover</strong> — Compute-efficient JSON reasoning, up to 32% improvement over Chain-of-Thought with 10-40x fewer LLM calls.</li>
+      <li><strong>Tree-of-Thought</strong> — Parallel branching exploration for complex problem-solving.</li>
+      <li><strong>Graph-of-Thought</strong> — Non-linear reasoning DAGs for interconnected problem spaces.</li>
+      <li><strong>LATS</strong> — Monte Carlo Tree Search achieving 94.4% on HumanEval.</li>
+      <li><strong>Mixture-of-Agents</strong> — Multi-model ensemble combining outputs from diverse LLMs.</li>
+    </ul>
+    <pre><code>// Switch planners with a single option
+agent := agent.New("solver",
+    agent.WithLLM(model),
+    agent.WithPlanner(planner.New("lats")),  // or "react", "reflexion", "tot", etc.
+    agent.WithTools(tools...),
+)</code></pre>
+
+    <h3>Handoffs-as-Tools</h3>
+    <p>
+      Multi-agent transfers are modeled as tool calls. When you register handoffs, the framework auto-generates <code>transfer_to_&#123;name&#125;</code> tools. The LLM decides when to hand off based on the tool descriptions. Context filtering via <code>HandoffInputData</code> controls what conversation history flows to the target agent, keeping context focused and token-efficient.
+    </p>
+    <pre><code>triage := agent.New("triage",
+    agent.WithLLM(model),
+    agent.WithHandoffs(
+        agent.Handoff&#123;Agent: billingAgent, Description: "Billing questions"&#125;,
+        agent.Handoff&#123;Agent: shippingAgent, Description: "Shipping inquiries"&#125;,
+    ),
+)
+// LLM sees: transfer_to_billing, transfer_to_shipping as available tools</code></pre>
+
+    <h3>Workflow Agents</h3>
+    <p>
+      For deterministic pipelines where you do not want LLM-driven routing, workflow agents compose agents into fixed execution patterns. <strong>SequentialAgent</strong> runs agents in order, passing output as input. <strong>ParallelAgent</strong> runs agents concurrently and merges results. <strong>LoopAgent</strong> repeats an agent until a condition is met.
+    </p>
+    <pre><code>pipeline := workflow.Sequential(
+    researchAgent,
+    analysisAgent,
+    summaryAgent,
+)
+for event, err := range pipeline.Stream(ctx, "Analyze market trends") &#123;
+    // Events from each agent in sequence
+&#125;</code></pre>
+
+    <h3>Dynamic Tool Selection</h3>
+    <p>
+      When agents have large tool inventories (50+ tools), sending all tool schemas to the LLM wastes context and degrades performance. Dynamic tool selection filters tools per turn using either LLM-based relevance scoring or embedding-based similarity matching, presenting only the most relevant tools for each interaction.
+    </p>
+    <pre><code>agent := agent.New("assistant",
+    agent.WithLLM(model),
+    agent.WithTools(allTools...),           // 100+ tools registered
+    agent.WithToolSelector(
+        tool.EmbeddingSelector(embedder, tool.WithTopK(10)),
+    ),
+)</code></pre>
+  </Fragment>
+
+  <Fragment slot="diagram">
+    <div style="overflow-x: auto;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 2rem 1rem; min-width: 500px;">
+        <!-- Agent box -->
+        <div style="background: color-mix(in srgb, var(--color-primary) 15%, transparent); border: 1px solid var(--color-primary, #5CA3CA); border-radius: 0.75rem; padding: 1rem 2.5rem; font-weight: 600; color: var(--color-primary, #5CA3CA); text-align: center; font-size: 1.1rem;">
+          BaseAgent
+          <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.7; margin-top: 0.25rem;">Persona + Memory + Tools + Planner</div>
+        </div>
+        <!-- Arrow down -->
+        <svg width="24" height="32" viewBox="0 0 24 32" fill="none"><path d="M12 0v28M6 22l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/></svg>
+        <!-- Planner box -->
+        <div style="background: color-mix(in srgb, #D76D77 15%, transparent); border: 1px solid #D76D77; border-radius: 0.75rem; padding: 1rem 2.5rem; font-weight: 600; color: #D76D77; text-align: center;">
+          Planner
+          <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.7; margin-top: 0.25rem;">ReAct | ToT | LATS | Reflexion | ...</div>
+        </div>
+        <!-- Arrow down -->
+        <svg width="24" height="32" viewBox="0 0 24 32" fill="none"><path d="M12 0v28M6 22l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/></svg>
+        <!-- LLM + Tools row -->
+        <div style="display: flex; gap: 2rem; align-items: center;">
+          <div style="background: color-mix(in srgb, #ffca7b 15%, transparent); border: 1px solid #ffca7b; border-radius: 0.75rem; padding: 1rem 2rem; font-weight: 600; color: #ffca7b; text-align: center;">
+            LLM
+            <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.7; margin-top: 0.25rem;">Generate / Stream</div>
+          </div>
+          <svg width="48" height="24" viewBox="0 0 48 24" fill="none"><path d="M0 12h44M38 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/><path d="M48 12H4M10 6l-6 6 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/></svg>
+          <div style="background: color-mix(in srgb, #5CA3CA 15%, transparent); border: 1px solid #5CA3CA; border-radius: 0.75rem; padding: 1rem 2rem; font-weight: 600; color: #5CA3CA; text-align: center;">
+            Tools
+            <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.7; margin-top: 0.25rem;">FuncTool | MCP | Handoffs</div>
+          </div>
+        </div>
+        <!-- Arrow down -->
+        <svg width="24" height="32" viewBox="0 0 24 32" fill="none"><path d="M12 0v28M6 22l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/></svg>
+        <!-- Event Stream -->
+        <div style="background: color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent); border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent); border-radius: 0.75rem; padding: 1rem 2.5rem; font-weight: 600; text-align: center; color: var(--color-light, #f6f6f6);">
+          iter.Seq2[Event, error]
+          <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.7; margin-top: 0.25rem;">Typed streaming output</div>
+        </div>
+      </div>
+    </div>
+  </Fragment>
+
+  <Fragment slot="codeExample">
+    <p>A complete example creating a research agent with the ReAct planner, tools, memory, and streaming output:</p>
+    <pre><code>package main
+
+import (
+    "context"
+    "fmt"
+
+    "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/memory"
+    "github.com/lookatitude/beluga-ai/agent/planner"
+    "github.com/lookatitude/beluga-ai/tool"
+)
+
+func main() &#123;
+    ctx := context.Background()
+
+    // Create an LLM provider
+    model, _ := llm.New("openai", llm.ProviderConfig&#123;Model: "gpt-4o"&#125;)
+
+    // Define tools
+    webSearch := tool.NewFuncTool("web_search", "Search the web", searchFunc)
+    calculator := tool.NewFuncTool("calculator", "Evaluate math", calcFunc)
+
+    // Create agent with ReAct planner, tools, and semantic memory
+    researcher := agent.New("researcher",
+        agent.WithLLM(model),
+        agent.WithPlanner(planner.New("react")),
+        agent.WithTools(webSearch, calculator),
+        agent.WithMemory(memory.NewSemantic(embedder, store)),
+        agent.WithPersona(agent.Persona&#123;
+            Name:         "Research Assistant",
+            Instructions: "You are a thorough research assistant.",
+        &#125;),
+    )
+
+    // Stream events — tool calls, reasoning, partial responses
+    for event, err := range researcher.Stream(ctx, "What were the key AI breakthroughs in 2025?") &#123;
+        if err != nil &#123;
+            fmt.Printf("Error: %v\n", err)
+            break
+        &#125;
+        switch e := event.(type) &#123;
+        case *agent.TextEvent:
+            fmt.Print(e.Text)
+        case *agent.ToolCallEvent:
+            fmt.Printf("\n[Tool: %s]\n", e.Name)
+        &#125;
+    &#125;
+&#125;</code></pre>
+  </Fragment>
+
+</FeaturePageLayout>

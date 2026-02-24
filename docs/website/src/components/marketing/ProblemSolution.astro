@@ -1,0 +1,130 @@
+---
+---
+
+<section class="ps-section">
+  <div class="ps-inner">
+    <div class="ps-grid">
+      <!-- The Problem -->
+      <div class="ps-card ps-problem">
+        <span class="ps-label">The Problem</span>
+        <h2 class="ps-title">AI agent frameworks were built for Python. Your production stack runs Go.</h2>
+        <p class="ps-body">
+          Go teams building AI products are forced to wrap Python services, use incomplete Go libraries, or build from scratch.
+          The Go AI ecosystem is fragmented — no single framework covers the full stack from LLM abstraction to production deployment.
+        </p>
+      </div>
+
+      <!-- Beluga AI -->
+      <div class="ps-card ps-solution">
+        <span class="ps-label ps-label-primary">Beluga AI</span>
+        <h2 class="ps-title">One framework. Every building block. Pure Go.</h2>
+        <p class="ps-body">
+          Beluga AI provides streaming LLM abstraction, agent runtimes with pluggable reasoning, RAG pipelines,
+          voice processing, guardrails, durable workflows, and protocol interoperability (MCP + A2A) — all idiomatic Go,
+          all composable, all streaming-first.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ps-section {
+    padding: 4rem 1.5rem;
+  }
+
+  .ps-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .ps-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .ps-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+  }
+
+  .ps-card {
+    padding: 2rem;
+    border-radius: 1.25rem;
+    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+    background: color-mix(in srgb, var(--color-dark, #151515) 80%, transparent);
+    position: relative;
+  }
+
+  :root[data-theme="light"] .ps-card {
+    background: color-mix(in srgb, var(--color-lightmode-dark, #f7f7f7) 80%, transparent);
+    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+  }
+
+  .ps-problem {
+    border-top: 2px solid color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent);
+  }
+
+  :root[data-theme="light"] .ps-problem {
+    border-top-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 15%, transparent);
+  }
+
+  .ps-solution {
+    border-top: 2px solid var(--color-primary, #5CA3CA);
+  }
+
+  .ps-label {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.2rem 0.7rem;
+    border-radius: 9999px;
+    margin-bottom: 1.25rem;
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 60%, transparent);
+  }
+
+  :root[data-theme="light"] .ps-label {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
+  }
+
+  .ps-label-primary {
+    background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+    color: var(--color-primary, #5CA3CA);
+  }
+
+  :root[data-theme="light"] .ps-label-primary {
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    color: var(--color-primary, #5CA3CA);
+  }
+
+  .ps-title {
+    font-size: clamp(1.25rem, 2.5vw, 1.625rem);
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    margin: 0 0 1rem;
+    color: var(--color-light, #f6f6f6);
+  }
+
+  :root[data-theme="light"] .ps-title {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  .ps-body {
+    font-size: 0.9375rem;
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 55%, transparent);
+    margin: 0;
+    line-height: 1.7;
+  }
+
+  :root[data-theme="light"] .ps-body {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
+  }
+</style>

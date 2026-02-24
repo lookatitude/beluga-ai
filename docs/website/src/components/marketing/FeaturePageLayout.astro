@@ -1,0 +1,422 @@
+---
+import MarketingLayout from "@/layouts/MarketingLayout.astro";
+import RelatedFeatures from "./RelatedFeatures.astro";
+
+interface Props {
+  title: string;
+  pageTitle: string;
+  description: string;
+  subtitle: string;
+  layer: string;
+  stats: string[];
+  relatedFeatures: Array<{ title: string; href: string; description: string }>;
+  showProvidersTable?: boolean;
+  jsonLd?: string;
+  ogImage?: string;
+}
+
+const {
+  title,
+  pageTitle,
+  description,
+  subtitle,
+  layer,
+  stats,
+  relatedFeatures,
+  showProvidersTable = true,
+  jsonLd,
+  ogImage,
+} = Astro.props;
+---
+
+<MarketingLayout title={pageTitle} description={description} jsonLd={jsonLd} ogImage={ogImage}>
+  <article class="feature-page">
+    <!-- Block F.1 — Feature Hero -->
+    <section class="fp-hero">
+      <div class="fp-hero-inner">
+        <nav class="fp-breadcrumb" aria-label="Breadcrumb">
+          <a href="/">Home</a>
+          <span class="fp-breadcrumb-sep">/</span>
+          <a href="/features/">Features</a>
+          <span class="fp-breadcrumb-sep">/</span>
+          <span class="fp-breadcrumb-current">{title}</span>
+        </nav>
+
+        <span class="fp-layer-badge">{layer} Layer</span>
+
+        <h1 class="fp-title">{title}</h1>
+        <p class="fp-subtitle">{subtitle}</p>
+
+        <div class="fp-stats">
+          {stats.map((stat) => (
+            <span class="fp-stat-pill">{stat}</span>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <div class="fp-content">
+      <!-- Block F.2 — Overview -->
+      <section class="fp-section">
+        <h2 class="fp-section-title">Overview</h2>
+        <div class="fp-prose">
+          <slot name="overview" />
+        </div>
+      </section>
+
+      <!-- Block F.3 — Capabilities -->
+      <section class="fp-section">
+        <h2 class="fp-section-title">Capabilities</h2>
+        <div class="fp-prose">
+          <slot name="capabilities" />
+        </div>
+      </section>
+
+      <!-- Block F.4 — Architecture -->
+      <section class="fp-section">
+        <h2 class="fp-section-title">Architecture</h2>
+        <div class="fp-prose">
+          <slot name="diagram" />
+        </div>
+      </section>
+
+      <!-- Block F.5 — Providers / Implementations -->
+      {showProvidersTable && (
+        <section class="fp-section">
+          <h2 class="fp-section-title">Providers &amp; Implementations</h2>
+          <div class="fp-prose">
+            <slot name="providers" />
+          </div>
+        </section>
+      )}
+
+      <!-- Block F.6 — Code Example -->
+      <section class="fp-section">
+        <h2 class="fp-section-title">Full Example</h2>
+        <div class="fp-prose">
+          <slot name="codeExample" />
+        </div>
+      </section>
+
+      <!-- Block F.7 — Related Features -->
+      {relatedFeatures.length > 0 && (
+        <section class="fp-section">
+          <h2 class="fp-section-title">Related Features</h2>
+          <RelatedFeatures features={relatedFeatures} />
+        </section>
+      )}
+    </div>
+  </article>
+</MarketingLayout>
+
+<style>
+  /* ── Feature Page Shell ── */
+  .feature-page {
+    padding-bottom: 4rem;
+  }
+
+  /* ── Hero ── */
+  .fp-hero {
+    padding: 6rem 1.5rem 3rem;
+    text-align: center;
+  }
+
+  .fp-hero-inner {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* Breadcrumb */
+  .fp-breadcrumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .fp-breadcrumb a {
+    color: var(--color-text, #999);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .fp-breadcrumb a:hover {
+    color: var(--color-primary, #5CA3CA);
+  }
+
+  :root[data-theme="light"] .fp-breadcrumb a {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 50%, transparent);
+  }
+
+  :root[data-theme="light"] .fp-breadcrumb a:hover {
+    color: var(--color-lightmode-primary, #5CA3CA);
+  }
+
+  .fp-breadcrumb-sep {
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 20%, transparent);
+  }
+
+  :root[data-theme="light"] .fp-breadcrumb-sep {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 20%, transparent);
+  }
+
+  .fp-breadcrumb-current {
+    color: var(--color-light, #f6f6f6);
+    font-weight: 500;
+  }
+
+  :root[data-theme="light"] .fp-breadcrumb-current {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  /* Layer badge */
+  .fp-layer-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.3rem 0.85rem;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+    color: var(--color-primary, #5CA3CA);
+    margin-bottom: 1.25rem;
+  }
+
+  /* Title */
+  .fp-title {
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin: 0 0 1rem;
+    color: var(--color-light, #f6f6f6);
+  }
+
+  :root[data-theme="light"] .fp-title {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  /* Subtitle */
+  .fp-subtitle {
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+    color: var(--color-text, #999);
+    max-width: 40rem;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
+  }
+
+  :root[data-theme="light"] .fp-subtitle {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
+  }
+
+  /* Stats row */
+  .fp-stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.625rem;
+  }
+
+  .fp-stat-pill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    padding: 0.4rem 0.9rem;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--color-dark, #151515) 80%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 10%, transparent);
+    color: var(--color-light, #f6f6f6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  :root[data-theme="light"] .fp-stat-pill {
+    background: color-mix(in srgb, var(--color-lightmode-dark, #f7f7f7) 80%, transparent);
+    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 10%, transparent);
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  /* ── Content area ── */
+  .fp-content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  /* ── Sections ── */
+  .fp-section {
+    margin-bottom: 3.5rem;
+  }
+
+  .fp-section-title {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 700;
+    color: var(--color-light, #f6f6f6);
+    margin: 0 0 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+  }
+
+  :root[data-theme="light"] .fp-section-title {
+    color: var(--color-lightmode-light, #181818);
+    border-bottom-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 10%, transparent);
+  }
+
+  /* ── Prose area ── */
+  .fp-prose {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--color-text, #999);
+  }
+
+  :root[data-theme="light"] .fp-prose {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 70%, transparent);
+  }
+
+  .fp-prose :global(p) {
+    margin: 0 0 1rem;
+  }
+
+  .fp-prose :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  .fp-prose :global(h3) {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-light, #f6f6f6);
+    margin: 1.5rem 0 0.75rem;
+  }
+
+  :root[data-theme="light"] .fp-prose :global(h3) {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  .fp-prose :global(ul) {
+    padding-left: 1.25rem;
+    margin: 0.75rem 0;
+  }
+
+  .fp-prose :global(li) {
+    margin-bottom: 0.375rem;
+  }
+
+  .fp-prose :global(code) {
+    font-size: 0.875em;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.25rem;
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+  }
+
+  :root[data-theme="light"] .fp-prose :global(code) {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+  }
+
+  .fp-prose :global(pre) {
+    position: relative;
+    padding: 1.25rem 1.5rem;
+    padding-top: 3.25rem;
+    border-radius: 1rem;
+    overflow-x: auto;
+    background: var(--color-dark, #151515);
+    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+    font-size: 0.8125rem;
+    line-height: 1.75;
+    font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+    margin: 1rem 0;
+  }
+  .fp-prose :global(pre)::before {
+    content: "";
+    position: absolute;
+    top: 0.85rem;
+    left: 1.25rem;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent);
+    box-shadow:
+      16px 0 0 0 color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent),
+      32px 0 0 0 color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent);
+  }
+  .fp-prose :global(pre)::after {
+    content: "";
+    position: absolute;
+    top: 2.35rem;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
+  }
+
+  :root[data-theme="light"] .fp-prose :global(pre) {
+    background: var(--color-lightmode-dark, #f7f7f7);
+    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 10%, transparent);
+  }
+  :root[data-theme="light"] .fp-prose :global(pre)::before {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent);
+    box-shadow:
+      16px 0 0 0 color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent),
+      32px 0 0 0 color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent);
+  }
+  :root[data-theme="light"] .fp-prose :global(pre)::after {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 6%, transparent);
+  }
+
+  .fp-prose :global(pre code) {
+    padding: 0;
+    background: none;
+    font-size: inherit;
+  }
+
+  .fp-prose :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    margin: 1rem 0;
+  }
+
+  .fp-prose :global(th),
+  .fp-prose :global(td) {
+    padding: 0.625rem 0.875rem;
+    text-align: left;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+  }
+
+  :root[data-theme="light"] .fp-prose :global(th),
+  :root[data-theme="light"] .fp-prose :global(td) {
+    border-bottom-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 10%, transparent);
+  }
+
+  .fp-prose :global(th) {
+    font-weight: 600;
+    color: var(--color-light, #f6f6f6);
+  }
+
+  :root[data-theme="light"] .fp-prose :global(th) {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  .fp-prose :global(strong) {
+    color: var(--color-light, #f6f6f6);
+    font-weight: 600;
+  }
+
+  :root[data-theme="light"] .fp-prose :global(strong) {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  .fp-prose :global(a) {
+    color: var(--color-primary, #5CA3CA);
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .fp-prose :global(a:hover) {
+    opacity: 0.8;
+    text-decoration: underline;
+  }
+</style>

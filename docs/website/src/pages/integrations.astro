@@ -1,0 +1,84 @@
+---
+import MarketingLayout from "@/layouts/MarketingLayout.astro";
+import IntegrationsCatalog from "@/components/marketing/IntegrationsCatalog";
+
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Beluga AI Integrations",
+  "description": "Searchable catalog of 108 provider integrations",
+  "url": "https://beluga-ai.org/integrations/"
+});
+---
+
+<MarketingLayout
+  title="108 Provider Integrations"
+  description="Searchable catalog of 108 integrations across LLM providers, vector stores, embeddings, voice, tools, and infrastructure."
+  jsonLd={jsonLd}
+>
+  <section class="integrations-hero">
+    <div class="integrations-inner">
+      <h1 class="integrations-title">
+        108 Integrations Across <span class="integrations-title-muted">12 Categories</span>
+      </h1>
+      <p class="integrations-subtitle">
+        Every integration is pluggable via the registry pattern. Import only what you need.
+      </p>
+    </div>
+  </section>
+
+  <section class="integrations-catalog">
+    <div class="integrations-inner">
+      <IntegrationsCatalog client:visible />
+    </div>
+  </section>
+</MarketingLayout>
+
+<style>
+  .integrations-hero {
+    padding: 7rem 1.5rem 2rem;
+    text-align: center;
+  }
+
+  .integrations-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .integrations-title {
+    font-size: clamp(2.25rem, 5vw, 4rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin: 0 0 1rem;
+    color: var(--color-light, #f6f6f6);
+  }
+
+  :root[data-theme="light"] .integrations-title {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  .integrations-title-muted {
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 40%, transparent);
+  }
+
+  :root[data-theme="light"] .integrations-title-muted {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 40%, transparent);
+  }
+
+  .integrations-subtitle {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    color: var(--color-text, #999);
+    max-width: 40rem;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  :root[data-theme="light"] .integrations-subtitle {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
+  }
+
+  .integrations-catalog {
+    padding: 2rem 1.5rem 6rem;
+  }
+</style>

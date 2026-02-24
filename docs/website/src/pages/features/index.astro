@@ -1,0 +1,468 @@
+---
+import MarketingLayout from "@/layouts/MarketingLayout.astro";
+
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Beluga AI Features",
+  "description": "Everything you need to build AI agents in Go",
+  "url": "https://beluga-ai.org/features/"
+});
+---
+
+<MarketingLayout
+  title="Framework Features"
+  description="Everything you need to build AI agents in Go — from LLM abstraction to production deployment."
+  jsonLd={jsonLd}
+>
+  <!-- Block 2.1 — Header -->
+  <section class="fh-hero">
+    <div class="fh-hero-inner">
+      <h1 class="fh-title">Everything You Need to Build AI Agents in Go</h1>
+      <p class="fh-subtitle">
+        Beluga AI covers the full stack — from LLM abstraction to production deployment.
+      </p>
+    </div>
+  </section>
+
+  <!-- Block 2.2 — Feature Cards Grid -->
+  <section class="fh-grid-section">
+    <div class="fh-grid-inner">
+      <div class="fh-grid">
+        <a href="/features/agents/" class="fh-card group">
+          <div class="fh-card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4Z" />
+              <path d="M16 14H8a4 4 0 0 0-4 4v2h16v-2a4 4 0 0 0-4-4Z" />
+              <circle cx="12" cy="6" r="1" fill="currentColor" stroke="none" />
+            </svg>
+          </div>
+          <h3 class="fh-card-title">Agent Runtime &amp; Reasoning</h3>
+          <p class="fh-card-desc">Build agents with pluggable reasoning — ReAct, Tree-of-Thought, LATS, Reflexion, and more. Handoffs-as-tools enable multi-agent collaboration with zero boilerplate.</p>
+          <span class="fh-card-link">Explore <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+        </a>
+
+        <a href="/features/llm/" class="fh-card group">
+          <div class="fh-card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="3" />
+              <path d="M9 9h6M9 13h4M9 17h5" />
+            </svg>
+          </div>
+          <h3 class="fh-card-title">LLM Abstraction &amp; Routing</h3>
+          <p class="fh-card-desc">Unified ChatModel interface across 22+ providers with intelligent routing, structured output, context window management, and provider-aware rate limiting.</p>
+          <span class="fh-card-link">Explore <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+        </a>
+
+        <a href="/features/rag/" class="fh-card group">
+          <div class="fh-card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z" />
+              <path d="M14 17h6M14 14h6M14 20h4" />
+            </svg>
+          </div>
+          <h3 class="fh-card-title">RAG Pipeline</h3>
+          <p class="fh-card-desc">Hybrid retrieval combining dense vectors, BM25, and graph traversal with RRF. Advanced strategies: CRAG, Adaptive RAG, HyDE, GraphRAG.</p>
+          <span class="fh-card-link">Explore <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+        </a>
+
+        <a href="/features/voice/" class="fh-card group">
+          <div class="fh-card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+              <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
+              <path d="M12 18v4M8 22h8" />
+            </svg>
+          </div>
+          <h3 class="fh-card-title">Voice Pipeline</h3>
+          <p class="fh-card-desc">Frame-based STT-to-LLM-to-TTS processing with sub-800ms latency. Speech-to-speech, Silero VAD, semantic turn detection.</p>
+          <span class="fh-card-link">Explore <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+        </a>
+
+        <a href="/features/orchestration/" class="fh-card group">
+          <div class="fh-card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="5" r="3" />
+              <circle cx="5" cy="19" r="3" />
+              <circle cx="19" cy="19" r="3" />
+              <path d="M12 8v3M9.5 13.5L6.5 16.5M14.5 13.5l3 3" />
+            </svg>
+          </div>
+          <h3 class="fh-card-title">Orchestration Patterns</h3>
+          <p class="fh-card-desc">Five orchestration patterns — Supervisor, Hierarchical, Scatter-Gather, Router, and Blackboard — plus durable workflows that survive crashes and human-in-the-loop delays.</p>
+          <span class="fh-card-link">Explore <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+        </a>
+
+        <a href="/features/memory/" class="fh-card group">
+          <div class="fh-card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              <rect x="2" y="3" width="20" height="18" rx="2" />
+            </svg>
+          </div>
+          <h3 class="fh-card-title">Memory Systems</h3>
+          <p class="fh-card-desc">Three-tier MemGPT memory (Core, Recall, Archival) with 6 strategies: buffer, window, summary, entity, semantic, and graph. Self-editable via agent tools.</p>
+          <span class="fh-card-link">Explore <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+        </a>
+
+        <a href="/features/observability/" class="fh-card group">
+          <div class="fh-card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12h4l3-9 4 18 3-9h4" />
+            </svg>
+          </div>
+          <h3 class="fh-card-title">Observability</h3>
+          <p class="fh-card-desc">OpenTelemetry GenAI semantic conventions at every boundary. Token counting, cost tracking, structured logging, health checks.</p>
+          <span class="fh-card-link">Explore <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+        </a>
+
+        <a href="/features/tools/" class="fh-card group">
+          <div class="fh-card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z" />
+            </svg>
+          </div>
+          <h3 class="fh-card-title">Tools &amp; MCP</h3>
+          <p class="fh-card-desc">Wrap any Go function as a tool. Discover and consume MCP servers. Expose your tools as MCP services. Parallel DAG execution.</p>
+          <span class="fh-card-link">Explore <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+        </a>
+
+        <a href="/features/guardrails/" class="fh-card group">
+          <div class="fh-card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+              <path d="M9 12l2 2 4-4" />
+            </svg>
+          </div>
+          <h3 class="fh-card-title">Guardrails &amp; Safety</h3>
+          <p class="fh-card-desc">Three-stage guard pipeline with prompt injection detection, PII filtering, and capability-based sandboxing with default-deny policies.</p>
+          <span class="fh-card-link">Explore <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+        </a>
+
+        <a href="/features/protocols/" class="fh-card group">
+          <div class="fh-card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12h16" />
+              <circle cx="4" cy="12" r="2" />
+              <circle cx="20" cy="12" r="2" />
+              <path d="M8 6h8M8 18h8" />
+              <circle cx="8" cy="6" r="2" />
+              <circle cx="16" cy="6" r="2" />
+              <circle cx="8" cy="18" r="2" />
+              <circle cx="16" cy="18" r="2" />
+            </svg>
+          </div>
+          <h3 class="fh-card-title">Protocols &amp; Interop</h3>
+          <p class="fh-card-desc">First-class MCP server/client and A2A for agent-to-agent communication. REST, SSE, gRPC, and WebSocket transports.</p>
+          <span class="fh-card-link">Explore <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Block 2.3 — Extensibility Callout -->
+  <section class="fh-callout-section">
+    <div class="fh-callout">
+      <div class="fh-callout-text">
+        <h2 class="fh-callout-title">Learn one pattern, extend everything</h2>
+        <p class="fh-callout-body">
+          Every package follows the same four-component structure: Extension Interface, Registry + Factory, Lifecycle Hooks, and Middleware Chains. Add new LLM providers, custom planners, vector stores, or voice processors from your own code — zero framework changes required.
+        </p>
+        <a href="/docs/architecture/architecture/" class="fh-callout-link">
+          Read the extensibility guide
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </a>
+      </div>
+      <div class="fh-callout-code">
+        <pre><code><span class="code-kw">func</span> <span class="code-func">init</span>() &#123;
+    llm.<span class="code-func">Register</span>(<span class="code-str">"my-provider"</span>, <span class="code-kw">func</span>(cfg llm.ProviderConfig) (llm.ChatModel, <span class="code-type">error</span>) &#123;
+        <span class="code-kw">return</span> <span class="code-func">NewMyProvider</span>(cfg), <span class="code-kw">nil</span>
+    &#125;)
+&#125;</code></pre>
+      </div>
+    </div>
+  </section>
+</MarketingLayout>
+
+<style>
+  /* ── Hero ── */
+  .fh-hero {
+    padding: 8rem 1.5rem 3rem;
+    text-align: center;
+  }
+
+  .fh-hero-inner {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .fh-title {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin: 0 0 1.25rem;
+    color: var(--color-light, #f6f6f6);
+  }
+
+  :root[data-theme="light"] .fh-title {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  .fh-subtitle {
+    font-size: clamp(1.05rem, 2vw, 1.3rem);
+    color: var(--color-text, #999);
+    max-width: 36rem;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  :root[data-theme="light"] .fh-subtitle {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
+  }
+
+  /* ── Grid Section ── */
+  .fh-grid-section {
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  .fh-grid-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .fh-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 640px) {
+    .fh-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* ── Feature Card ── */
+  .fh-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--color-dark, #151515) 80%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+  }
+
+  .fh-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    background: var(--color-primary-gradient);
+    border-radius: inherit;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .fh-card:hover::before {
+    opacity: 0.6;
+  }
+
+  .fh-card:hover {
+    transform: scale(1.02);
+  }
+
+  :root[data-theme="light"] .fh-card {
+    background: color-mix(in srgb, var(--color-lightmode-dark, #f7f7f7) 80%, transparent);
+    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+  }
+
+  .fh-card-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.625rem;
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    color: var(--color-primary, #5CA3CA);
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+  }
+
+  .fh-card-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-light, #f6f6f6);
+    margin: 0 0 0.5rem;
+    line-height: 1.3;
+  }
+
+  :root[data-theme="light"] .fh-card-title {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  .fh-card-desc {
+    font-size: 0.875rem;
+    color: var(--color-text, #999);
+    margin: 0;
+    line-height: 1.6;
+    flex: 1;
+  }
+
+  :root[data-theme="light"] .fh-card-desc {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
+  }
+
+  .fh-card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-primary, #5CA3CA);
+    transition: gap 0.2s ease;
+  }
+
+  .fh-card:hover .fh-card-link {
+    gap: 0.625rem;
+  }
+
+  /* ── Callout Section ── */
+  .fh-callout-section {
+    padding: 2rem 1.5rem 6rem;
+  }
+
+  .fh-callout {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2.5rem;
+    border-radius: 1.25rem;
+    background: var(--color-dark, #151515);
+    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: 1fr;
+    align-items: center;
+  }
+
+  @media (min-width: 768px) {
+    .fh-callout {
+      grid-template-columns: 1fr 1fr;
+      padding: 3rem;
+    }
+  }
+
+  :root[data-theme="light"] .fh-callout {
+    background: var(--color-lightmode-dark, #f7f7f7);
+    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+  }
+
+  .fh-callout-title {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 700;
+    color: var(--color-light, #f6f6f6);
+    margin: 0 0 0.75rem;
+    line-height: 1.2;
+  }
+
+  :root[data-theme="light"] .fh-callout-title {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  .fh-callout-body {
+    font-size: 0.9375rem;
+    color: var(--color-text, #999);
+    margin: 0 0 1.25rem;
+    line-height: 1.65;
+  }
+
+  :root[data-theme="light"] .fh-callout-body {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
+  }
+
+  .fh-callout-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--color-primary, #5CA3CA);
+    text-decoration: none;
+    transition: gap 0.2s ease;
+  }
+
+  .fh-callout-link:hover {
+    gap: 0.75rem;
+  }
+
+  .fh-callout-code pre {
+    position: relative;
+    padding: 1.25rem 1.5rem;
+    padding-top: 3.25rem;
+    margin: 0;
+    border-radius: 1rem;
+    overflow-x: auto;
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 4%, transparent);
+    font-size: 0.8125rem;
+    line-height: 1.75;
+    font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+    color: var(--color-light, #f6f6f6);
+  }
+  .fh-callout-code pre::before {
+    content: "";
+    position: absolute;
+    top: 0.85rem;
+    left: 1.25rem;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent);
+    box-shadow:
+      16px 0 0 0 color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent),
+      32px 0 0 0 color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent);
+  }
+  .fh-callout-code pre::after {
+    content: "";
+    position: absolute;
+    top: 2.35rem;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
+  }
+  :root[data-theme="light"] .fh-callout-code pre {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 4%, transparent);
+    color: var(--color-lightmode-light, #181818);
+  }
+  :root[data-theme="light"] .fh-callout-code pre::before {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent);
+    box-shadow:
+      16px 0 0 0 color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent),
+      32px 0 0 0 color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent);
+  }
+  :root[data-theme="light"] .fh-callout-code pre::after {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 6%, transparent);
+  }
+
+  /* Code syntax colors */
+  .code-kw { color: #ff7b72; }
+  .code-str { color: #a5d6ff; }
+  .code-func { color: #79c0ff; }
+  .code-type { color: #d2a8ff; }
+
+  :root[data-theme="light"] .code-kw { color: #cf222e; }
+  :root[data-theme="light"] .code-str { color: #0a3069; }
+  :root[data-theme="light"] .code-func { color: #0550ae; }
+  :root[data-theme="light"] .code-type { color: #8250df; }
+</style>
