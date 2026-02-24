@@ -52,18 +52,18 @@ const breadcrumbJsonLd = {
 // Contextual article schema based on URL pattern
 const isSplash = route.entry.data.template === "splash";
 const pathname = Astro.url.pathname;
-const isApiRef = pathname.startsWith("/api-reference/");
+const isApiRef = pathname.startsWith("/docs/api-reference/");
 const customSchemaType = (route.entry.data as Record<string, unknown>).schemaType as string | undefined;
 
 // Section for Pagefind filtering (inferred from URL path)
 function getPageSection(): string {
   if (isSplash) return "Home";
-  if (pathname.startsWith("/getting-started/")) return "Getting Started";
-  if (pathname.startsWith("/guides/")) return "Guides";
-  if (pathname.startsWith("/tutorials/")) return "Tutorials";
-  if (pathname.startsWith("/api-reference/")) return "API Reference";
-  if (pathname.startsWith("/providers/")) return "Providers";
-  if (pathname.startsWith("/architecture/")) return "Architecture";
+  if (pathname.startsWith("/docs/getting-started/")) return "Getting Started";
+  if (pathname.startsWith("/docs/guides/")) return "Guides";
+  if (pathname.startsWith("/docs/tutorials/")) return "Tutorials";
+  if (pathname.startsWith("/docs/api-reference/")) return "API Reference";
+  if (pathname.startsWith("/docs/providers/")) return "Providers";
+  if (pathname.startsWith("/docs/architecture/")) return "Architecture";
   return "Docs";
 }
 const pageSection = getPageSection();
