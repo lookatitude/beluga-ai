@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import { viewTransitions } from "astro-vtbot/starlight-view-transitions";
 import rehypeMermaid from "./src/lib/rehype-mermaid.mjs";
@@ -51,6 +52,7 @@ export default defineConfig({
       },
 
     }),
+    react(),
     sitemap(),
   ],
   vite: {
