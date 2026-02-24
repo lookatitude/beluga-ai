@@ -25,7 +25,7 @@ export async function generateOgImage(
           flexDirection: "column",
           justifyContent: "space-between",
           padding: "60px",
-          background: "linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 50%, #151515 100%)",
+          background: "linear-gradient(135deg, #0d0d0d 0%, #0F2535 50%, #151515 100%)",
           fontFamily: "Inter",
         },
         children: [
@@ -96,7 +96,7 @@ export async function generateOgImage(
                             width: "40px",
                             height: "40px",
                             borderRadius: "8px",
-                            background: "#D76D77",
+                            background: "#5CA3CA",
                           },
                           children: "",
                         },
