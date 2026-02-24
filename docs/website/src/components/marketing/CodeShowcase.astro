@@ -164,6 +164,28 @@
     border-bottom: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
   }
 
+  .cs-tabs::before {
+    content: "";
+    display: block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent);
+    box-shadow:
+      16px 0 0 0 color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent),
+      32px 0 0 0 color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent);
+    margin-left: 1.25rem;
+    margin-right: calc(32px + 0.5rem);
+    align-self: center;
+  }
+  :root[data-theme="light"] .cs-tabs::before {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent);
+    box-shadow:
+      16px 0 0 0 color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent),
+      32px 0 0 0 color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent);
+  }
+
   :root[data-theme="light"] .cs-tabs {
     border-bottom-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
   }

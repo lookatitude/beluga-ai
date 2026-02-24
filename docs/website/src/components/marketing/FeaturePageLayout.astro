@@ -317,19 +317,53 @@ const {
   }
 
   .fp-prose :global(pre) {
+    position: relative;
     padding: 1.25rem 1.5rem;
-    border-radius: 0.75rem;
+    padding-top: 3.25rem;
+    border-radius: 1rem;
     overflow-x: auto;
     background: var(--color-dark, #151515);
     border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
-    font-size: 0.875rem;
-    line-height: 1.7;
+    font-size: 0.8125rem;
+    line-height: 1.75;
+    font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
     margin: 1rem 0;
+  }
+  .fp-prose :global(pre)::before {
+    content: "";
+    position: absolute;
+    top: 0.85rem;
+    left: 1.25rem;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent);
+    box-shadow:
+      16px 0 0 0 color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent),
+      32px 0 0 0 color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent);
+  }
+  .fp-prose :global(pre)::after {
+    content: "";
+    position: absolute;
+    top: 2.35rem;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
   }
 
   :root[data-theme="light"] .fp-prose :global(pre) {
     background: var(--color-lightmode-dark, #f7f7f7);
     border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 10%, transparent);
+  }
+  :root[data-theme="light"] .fp-prose :global(pre)::before {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent);
+    box-shadow:
+      16px 0 0 0 color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent),
+      32px 0 0 0 color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent);
+  }
+  :root[data-theme="light"] .fp-prose :global(pre)::after {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 6%, transparent);
   }
 
   .fp-prose :global(pre code) {

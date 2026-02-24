@@ -37,6 +37,25 @@ export default defineConfig({
       locales,
       sidebar: sidebar.main || [],
       customCss: ["./src/styles/global.css"],
+      expressiveCode: {
+        themes: ['github-dark-default', 'github-light-default'],
+        styleOverrides: {
+          borderRadius: '1rem',
+          borderColor: 'color-mix(in srgb, var(--sl-color-white) 8%, transparent)',
+          codeFontFamily: '"SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace',
+          codeFontSize: '0.8125rem',
+          codeLineHeight: '1.75',
+          codePaddingBlock: '1.25rem',
+          codePaddingInline: '1.5rem',
+          codeBackground: ({ theme }) =>
+            theme.type === 'dark'
+              ? 'color-mix(in srgb, #151515 95%, transparent)'
+              : 'color-mix(in srgb, #f8f8f8 95%, white)',
+          frames: {
+            shadowColor: 'transparent',
+          },
+        },
+      },
       components: {
         Head: "./src/components/override-components/Head.astro",
         Search: "./src/components/override-components/Search.astro",

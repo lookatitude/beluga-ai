@@ -12,12 +12,24 @@ h3,
 h4,
 h5,
 h6 {
-  @apply  font-bold leading-tight;
+  @apply leading-tight;
+  font-weight: 800;
   color: var(--sl-color-white);
 }
 
 h1, h2, h3 {
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+}
+
+/* Impactful doc headings */
+.sl-markdown-content h1 {
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+}
+.sl-markdown-content h2 {
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+}
+.sl-markdown-content h3 {
+  font-size: clamp(1.15rem, 2.5vw, 1.4rem);
 }
 
 h1,
@@ -78,13 +90,35 @@ code {
   @apply after:border-none;
 }
 :not(pre) > code {
+  font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
   background: color-mix(in srgb, var(--sl-color-gray-6) 50%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sl-color-white) 6%, transparent);
   padding: 0.15em 0.4em;
-  border-radius: 0.3em;
+  border-radius: 0.375em;
   font-size: 0.9em;
 }
 :root[data-theme="light"] :not(pre) > code {
   background: color-mix(in srgb, var(--sl-color-gray-6) 70%, transparent);
+  border-color: color-mix(in srgb, var(--sl-color-black) 6%, transparent);
+}
+
+/* Links in doc content — animated underline */
+.sl-markdown-content a:not([class]) {
+  color: var(--color-primary, #5CA3CA);
+  text-decoration: none;
+  background-image: linear-gradient(var(--color-primary, #5CA3CA), var(--color-primary, #5CA3CA));
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.3s ease, color 0.2s ease;
+}
+.sl-markdown-content a:not([class]):hover {
+  background-size: 100% 1px;
+}
+.sl-markdown-content a:not([class]):focus-visible {
+  outline: 2px solid var(--color-primary, #5CA3CA);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 /* Enhanced blockquote */

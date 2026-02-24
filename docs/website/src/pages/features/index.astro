@@ -407,20 +407,52 @@ const jsonLd = JSON.stringify({
   }
 
   .fh-callout-code pre {
+    position: relative;
     padding: 1.25rem 1.5rem;
+    padding-top: 3.25rem;
     margin: 0;
-    border-radius: 0.75rem;
+    border-radius: 1rem;
     overflow-x: auto;
     background: color-mix(in srgb, var(--color-light, #f6f6f6) 4%, transparent);
     font-size: 0.8125rem;
-    line-height: 1.7;
+    line-height: 1.75;
     font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
     color: var(--color-light, #f6f6f6);
   }
-
+  .fh-callout-code pre::before {
+    content: "";
+    position: absolute;
+    top: 0.85rem;
+    left: 1.25rem;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent);
+    box-shadow:
+      16px 0 0 0 color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent),
+      32px 0 0 0 color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent);
+  }
+  .fh-callout-code pre::after {
+    content: "";
+    position: absolute;
+    top: 2.35rem;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
+  }
   :root[data-theme="light"] .fh-callout-code pre {
     background: color-mix(in srgb, var(--color-lightmode-light, #181818) 4%, transparent);
     color: var(--color-lightmode-light, #181818);
+  }
+  :root[data-theme="light"] .fh-callout-code pre::before {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent);
+    box-shadow:
+      16px 0 0 0 color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent),
+      32px 0 0 0 color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent);
+  }
+  :root[data-theme="light"] .fh-callout-code pre::after {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 6%, transparent);
   }
 
   /* Code syntax colors */

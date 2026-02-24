@@ -80,6 +80,9 @@ const currentPath = Astro.url.pathname;
 
     <!-- Right actions -->
     <div class="marketing-header-actions">
+      <!-- Search slot (used by docs pages) -->
+      <slot name="search" />
+
       <!-- GitHub -->
       {
         githubLink && (
@@ -220,8 +223,8 @@ const currentPath = Astro.url.pathname;
     margin: 0 auto;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     padding: 0.875rem 1.5rem;
+    gap: 0.5rem;
   }
 
   /* ── Logo ── */
@@ -258,6 +261,7 @@ const currentPath = Astro.url.pathname;
     .marketing-nav {
       display: flex;
       align-items: center;
+      margin-right: auto;
     }
   }
 

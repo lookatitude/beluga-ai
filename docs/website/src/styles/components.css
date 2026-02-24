@@ -146,6 +146,72 @@
   background-color: var(--sl-color-white);
 }
 
+/* ── Expressive Code polish ── */
+.expressive-code .frame {
+  box-shadow: none !important;
+  transition: border-color 0.2s ease;
+}
+.expressive-code:hover .frame {
+  border-color: color-mix(in srgb, var(--color-primary, #5CA3CA) 18%, transparent);
+}
+:root[data-theme="light"] .expressive-code:hover .frame {
+  border-color: color-mix(in srgb, var(--color-lightmode-primary, #5CA3CA) 18%, transparent);
+}
+
+/* Copy button */
+.expressive-code .copy button {
+  border-radius: 0.5rem;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.expressive-code .copy button:hover {
+  transform: scale(1.08);
+}
+
+/* ── Window chrome dots for ALL EC frames ── */
+
+/* Make ALL headers visible (even empty ones) and add flex layout */
+.expressive-code .frame .header {
+  display: flex !important;
+  align-items: center;
+  padding: 0.65rem 1.25rem !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--sl-color-white) 6%, transparent) !important;
+  min-height: auto;
+}
+:root[data-theme="light"] .expressive-code .frame .header {
+  border-bottom-color: color-mix(in srgb, var(--sl-color-black) 6%, transparent) !important;
+}
+
+/* Three dots via ::before pseudo-element */
+.expressive-code .frame .header::before {
+  content: "";
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--sl-color-white) 15%, transparent);
+  box-shadow:
+    16px 0 0 0 color-mix(in srgb, var(--sl-color-white) 15%, transparent),
+    32px 0 0 0 color-mix(in srgb, var(--sl-color-white) 15%, transparent);
+  margin-right: calc(32px + 0.75rem);
+}
+:root[data-theme="light"] .expressive-code .frame .header::before {
+  background: color-mix(in srgb, var(--sl-color-black) 12%, transparent);
+  box-shadow:
+    16px 0 0 0 color-mix(in srgb, var(--sl-color-black) 12%, transparent),
+    32px 0 0 0 color-mix(in srgb, var(--sl-color-black) 12%, transparent);
+}
+
+/* Title styling within the header */
+.expressive-code .frame .header .title {
+  font-size: 0.75rem;
+  font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+  color: color-mix(in srgb, var(--sl-color-white) 40%, transparent);
+}
+:root[data-theme="light"] .expressive-code .frame .header .title {
+  color: color-mix(in srgb, var(--sl-color-black) 40%, transparent);
+}
+
 /* ── Doc content styles ── */
 
 /* Better tables */
@@ -190,8 +256,33 @@
 /* Enhanced Starlight asides/notes */
 .starlight-aside {
   border-radius: 0.75rem;
-  background: color-mix(in srgb, var(--sl-color-gray-6) 20%, transparent);
+  background: color-mix(in srgb, var(--sl-color-gray-6) 30%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid color-mix(in srgb, var(--sl-color-white) 6%, transparent);
 }
 :root[data-theme="light"] .starlight-aside {
   background: color-mix(in srgb, var(--sl-color-gray-6) 30%, transparent);
+  border-color: color-mix(in srgb, var(--sl-color-black) 6%, transparent);
+}
+
+/* Starlight card-grid cards */
+.sl-markdown-content .card {
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--sl-color-gray-6) 30%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sl-color-white) 8%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.sl-markdown-content .card:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  transform: translateY(-2px);
+}
+:root[data-theme="light"] .sl-markdown-content .card {
+  background: color-mix(in srgb, var(--sl-color-gray-7, #f6f6f6) 60%, transparent);
+  border-color: color-mix(in srgb, var(--sl-color-black) 8%, transparent);
+}
+:root[data-theme="light"] .sl-markdown-content .card:hover {
+  border-color: color-mix(in srgb, var(--color-lightmode-primary, #5CA3CA) 30%, transparent);
 }
