@@ -19,18 +19,18 @@ const is404 = Astro.locals.starlightRoute?.id === "404";
 ---
 
 <div
-  class="hero flex flex-col items-center mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-35"
+  class="hero flex flex-col items-center text-center mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-35"
 >
   {!is404 && (
     <div class="hero-logo mb-6">
       <img src="/beluga-logo.svg" alt="Beluga AI" class="hero-logo-img" />
     </div>
   )}
-  {tagline && <p set:html={tagline} class="text-xl text-center" />}
+  {tagline && <p set:html={tagline} class="text-xl text-center max-w-2xl" />}
 
   {
     !is404 && (
-      <div class="mt-12 max-w-4xl">
+      <div class="mt-12 max-w-4xl w-full mx-auto">
         <div class="search-container rounded-2xl p-2 mb-6">
           <div class="search-bar">
             <Search />
