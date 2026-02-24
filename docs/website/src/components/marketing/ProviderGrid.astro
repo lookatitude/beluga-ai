@@ -1,0 +1,305 @@
+---
+const categories = [
+  {
+    id: "llm",
+    label: "LLM",
+    providers: [
+      "OpenAI", "Anthropic", "Google Gemini", "AWS Bedrock", "Ollama", "Groq",
+      "Mistral", "DeepSeek", "xAI Grok", "Cohere", "Together AI", "Fireworks AI",
+      "Azure OpenAI", "Perplexity", "SambaNova", "Cerebras", "OpenRouter", "Hugging Face",
+    ],
+  },
+  {
+    id: "embeddings",
+    label: "Embeddings",
+    providers: [
+      "OpenAI", "Google", "Ollama", "Cohere", "Voyage", "Jina", "Mistral", "Sentence Transformers",
+    ],
+  },
+  {
+    id: "vectorstores",
+    label: "Vector Stores",
+    providers: [
+      "pgvector", "Qdrant", "Pinecone", "ChromaDB", "Weaviate", "Milvus",
+      "Turbopuffer", "Redis", "Elasticsearch", "MongoDB", "SQLite-vec", "Vespa",
+    ],
+  },
+  {
+    id: "voice",
+    label: "Voice",
+    providers: [
+      "Deepgram", "ElevenLabs", "Cartesia", "OpenAI Realtime", "Gemini Live",
+      "AssemblyAI", "PlayHT", "Fish Audio", "Silero VAD", "LiveKit",
+    ],
+  },
+  {
+    id: "tools",
+    label: "Tools & Loaders",
+    providers: [
+      "MCP Client/Server", "FuncTool", "Firecrawl", "Unstructured.io", "Docling",
+      "Confluence", "Notion", "GitHub", "S3/GCS",
+    ],
+  },
+  {
+    id: "infra",
+    label: "Infrastructure",
+    providers: [
+      "Langfuse", "Arize Phoenix", "RAGAS", "NeMo Guardrails", "Temporal",
+      "NATS", "Gin", "Fiber", "Echo", "Chi",
+    ],
+  },
+];
+---
+
+<section class="pg-section">
+  <div class="pg-inner">
+    <div class="pg-header">
+      <h2 class="pg-heading">
+        Extensive provider <span class="pg-heading-muted">ecosystem</span>
+      </h2>
+      <p class="pg-subtitle">108 integrations across 12 categories. All pluggable via the registry pattern.</p>
+    </div>
+
+    <!-- CSS-only tabs using radio buttons -->
+    <div class="pg-tabs-wrapper">
+      {categories.map((cat, i) => (
+        <input
+          type="radio"
+          name="pg-tab"
+          id={`pg-tab-${cat.id}`}
+          class="pg-radio"
+          checked={i === 0 ? true : undefined}
+        />
+      ))}
+
+      <div class="pg-tab-labels">
+        {categories.map((cat) => (
+          <label for={`pg-tab-${cat.id}`} class="pg-tab-label">{cat.label}</label>
+        ))}
+      </div>
+
+      <div class="pg-tab-panels">
+        {categories.map((cat) => (
+          <div class={`pg-panel pg-panel-${cat.id}`}>
+            <div class="pg-provider-grid">
+              {cat.providers.map((provider) => (
+                <div class="pg-provider-card">
+                  <span class="pg-provider-name">{provider}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="pg-footer">
+      <a href="/integrations/" class="pg-view-all">
+        View all 108 integrations
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pg-section {
+    padding: 5rem 1.5rem;
+  }
+
+  .pg-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .pg-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .pg-heading {
+    font-size: clamp(2rem, 4.5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin: 0 0 1rem;
+    color: var(--color-light, #f6f6f6);
+  }
+
+  :root[data-theme="light"] .pg-heading {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  .pg-heading-muted {
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 40%, transparent);
+  }
+
+  :root[data-theme="light"] .pg-heading-muted {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 40%, transparent);
+  }
+
+  .pg-subtitle {
+    font-size: 1.125rem;
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 55%, transparent);
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  :root[data-theme="light"] .pg-subtitle {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 55%, transparent);
+  }
+
+  /* Radio buttons hidden */
+  .pg-radio {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Tab labels */
+  .pg-tab-labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+
+  .pg-tab-label {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 50%, transparent);
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 4%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    user-select: none;
+  }
+
+  .pg-tab-label:hover {
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 80%, transparent);
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+  }
+
+  :root[data-theme="light"] .pg-tab-label {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 55%, transparent);
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 4%, transparent);
+    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+  }
+
+  :root[data-theme="light"] .pg-tab-label:hover {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 80%, transparent);
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+  }
+
+  /* Active tab styling via :checked + sibling selectors */
+  /* We use a general sibling approach: radio:checked styles its corresponding label */
+  #pg-tab-llm:checked ~ .pg-tab-labels label[for="pg-tab-llm"],
+  #pg-tab-embeddings:checked ~ .pg-tab-labels label[for="pg-tab-embeddings"],
+  #pg-tab-vectorstores:checked ~ .pg-tab-labels label[for="pg-tab-vectorstores"],
+  #pg-tab-voice:checked ~ .pg-tab-labels label[for="pg-tab-voice"],
+  #pg-tab-tools:checked ~ .pg-tab-labels label[for="pg-tab-tools"],
+  #pg-tab-infra:checked ~ .pg-tab-labels label[for="pg-tab-infra"] {
+    color: var(--color-primary, #5CA3CA);
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  }
+
+  /* Panel visibility */
+  .pg-panel {
+    display: none;
+  }
+
+  #pg-tab-llm:checked ~ .pg-tab-panels .pg-panel-llm,
+  #pg-tab-embeddings:checked ~ .pg-tab-panels .pg-panel-embeddings,
+  #pg-tab-vectorstores:checked ~ .pg-tab-panels .pg-panel-vectorstores,
+  #pg-tab-voice:checked ~ .pg-tab-panels .pg-panel-voice,
+  #pg-tab-tools:checked ~ .pg-tab-panels .pg-panel-tools,
+  #pg-tab-infra:checked ~ .pg-tab-panels .pg-panel-infra {
+    display: block;
+  }
+
+  /* Provider grid */
+  .pg-provider-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  @media (min-width: 640px) {
+    .pg-provider-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .pg-provider-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .pg-provider-grid {
+      grid-template-columns: repeat(6, 1fr);
+    }
+  }
+
+  .pg-provider-card {
+    padding: 0.75rem 1rem;
+    border-radius: 0.625rem;
+    background: color-mix(in srgb, var(--color-dark, #151515) 80%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
+    text-align: center;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+
+  .pg-provider-card:hover {
+    border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+    transform: translateY(-1px);
+  }
+
+  :root[data-theme="light"] .pg-provider-card {
+    background: color-mix(in srgb, var(--color-lightmode-dark, #f7f7f7) 80%, transparent);
+    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 6%, transparent);
+  }
+
+  :root[data-theme="light"] .pg-provider-card:hover {
+    border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  }
+
+  .pg-provider-name {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 70%, transparent);
+    white-space: nowrap;
+  }
+
+  :root[data-theme="light"] .pg-provider-name {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 70%, transparent);
+  }
+
+  /* Footer */
+  .pg-footer {
+    text-align: center;
+    margin-top: 2rem;
+  }
+
+  .pg-view-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-primary, #5CA3CA);
+    text-decoration: none;
+    transition: gap 0.15s ease;
+  }
+
+  .pg-view-all:hover {
+    gap: 0.75rem;
+  }
+</style>

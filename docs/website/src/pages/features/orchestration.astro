@@ -1,0 +1,258 @@
+---
+import FeaturePageLayout from "@/components/marketing/FeaturePageLayout.astro";
+
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "name": "Orchestration Patterns — Beluga AI",
+  "description": "Five orchestration patterns for multi-agent systems plus durable workflows and graph-based DAGs with typed state.",
+  "url": "https://beluga-ai.org/features/orchestration/"
+});
+---
+
+<FeaturePageLayout
+  pageTitle="Orchestration Patterns | Beluga AI"
+  description="Five orchestration patterns for multi-agent systems plus durable workflows and graph-based DAGs with typed state."
+  title="Orchestration Patterns"
+  jsonLd={jsonLd}
+  subtitle="Five orchestration patterns — Supervisor, Hierarchical, Scatter-Gather, Router, and Blackboard — plus durable workflows that survive crashes and graph-based DAGs with typed state and conditional edges."
+  layer="Capability"
+  stats={["5 Patterns", "Durable Workflows", "Graph DAGs", "Human-in-the-Loop"]}
+  showProvidersTable={false}
+  relatedFeatures={[
+    { title: "Agent Runtime", href: "/features/agents/", description: "Build autonomous agents with planning, tool use, and handoffs between specialized agents." },
+    { title: "Tools & MCP", href: "/features/tools/", description: "Unified tool system with automatic schema generation and Model Context Protocol support." },
+    { title: "Memory", href: "/features/memory/", description: "Three-tier MemGPT memory with self-editable core memory and graph-based knowledge." },
+    { title: "Protocols", href: "/features/protocols/", description: "MCP for tool interoperability and A2A for cross-platform agent communication." },
+  ]}
+>
+  <Fragment slot="overview">
+    <p>
+      Building multi-agent systems requires more than individual agent capabilities — it requires
+      coordination patterns that manage how agents communicate, delegate, and combine results. Beluga AI
+      provides <strong>five orchestration patterns</strong> covering the most common multi-agent topologies,
+      from centralized supervisors to decentralized blackboard architectures.
+    </p>
+    <p>
+      Beyond runtime orchestration, Beluga includes a <strong>durable workflow engine</strong> backed by an
+      event log. Workflows survive process crashes, container restarts, and human-in-the-loop delays that
+      may span hours or days. Every state transition is persisted, enabling replay, debugging, and auditing
+      of long-running agent processes.
+    </p>
+    <p>
+      For complex branching logic, <strong>graph orchestration</strong> offers DAG-based execution with typed
+      state, reducers, and conditional edges. Inspired by LangGraph's approach but implemented natively in
+      Go, the graph engine supports cycles (with configurable limits), parallel fan-out, and state
+      checkpointing — making it suitable for everything from simple chains to intricate multi-step
+      reasoning flows.
+    </p>
+  </Fragment>
+
+  <Fragment slot="capabilities">
+    <h3>Supervisor</h3>
+    <p>
+      A central <strong>supervisor agent</strong> receives the task, decomposes it into sub-tasks, delegates
+      each to a specialist agent, and validates the combined results. The supervisor maintains a plan,
+      tracks progress, and can re-delegate on failure. This pattern is best for multi-domain workflows where
+      a single coordinator needs to reason about task decomposition and result synthesis.
+    </p>
+
+    <h3>Hierarchical</h3>
+    <p>
+      Extends the supervisor pattern into a <strong>tree of supervisors</strong>, each managing their own
+      sub-teams. A top-level supervisor delegates to mid-level supervisors, which in turn delegate to
+      specialist agents. This pattern scales to large organizations of agents where no single supervisor can
+      manage all specialists directly.
+    </p>
+
+    <h3>Scatter-Gather</h3>
+    <p>
+      Sends the same or related tasks to <strong>multiple agents in parallel</strong>, then consolidates
+      their results. A configurable aggregation function combines outputs — for example, selecting the best
+      response, merging partial results, or using majority voting. This pattern is ideal for tasks that
+      benefit from diverse perspectives or redundancy.
+    </p>
+
+    <h3>Router</h3>
+    <p>
+      <strong>Conditional routing</strong> directs inputs to different agents or sub-pipelines based on input
+      characteristics. Routing decisions can be rule-based (keyword matching, regex), classifier-based
+      (using a small LLM), or embedding-based (semantic similarity). The router pattern is the building
+      block for intent-based dispatch systems and tiered support workflows.
+    </p>
+
+    <h3>Blackboard</h3>
+    <p>
+      Agents communicate through a <strong>shared state store</strong> (the blackboard) rather than direct
+      message passing. Each agent reads from and writes to the blackboard independently, with a
+      conflict-resolver handling concurrent updates. This pattern excels when agents have loosely coupled
+      contributions and the workflow is data-driven rather than control-driven.
+    </p>
+
+    <h3>Durable Workflows</h3>
+    <p>
+      The durable workflow engine persists every state transition to an <strong>event log</strong>, ensuring
+      workflows survive crashes, restarts, and long pauses. Human-in-the-loop approval steps can block a
+      workflow for hours or days without losing progress. The engine supports compensating actions (sagas),
+      timeout-based escalation, and full replay for debugging. While Beluga ships its own engine by default,
+      Temporal is available as an alternative provider.
+    </p>
+
+    <h3>Graph Orchestration</h3>
+    <p>
+      Build execution flows as <strong>directed acyclic graphs</strong> (with optional cycles) where nodes
+      are processing steps and edges define the flow. Each graph carries typed state with reducers that
+      control how node outputs merge. Conditional edges enable branching based on state, and checkpointing
+      allows resuming from any node. The graph engine supports parallel fan-out, fan-in synchronization,
+      and configurable cycle limits for iterative refinement loops.
+    </p>
+  </Fragment>
+
+  <Fragment slot="diagram">
+    <div style="display:flex;flex-direction:column;gap:2.5rem;align-items:center;padding:1.5rem 0;">
+      <!-- Supervisor Pattern -->
+      <div style="text-align:center;">
+        <strong style="font-size:0.875rem;opacity:0.7;">Supervisor Pattern</strong>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;margin-top:0.75rem;">
+          <div style="padding:0.6rem 1.25rem;border-radius:0.5rem;background:color-mix(in srgb, #D76D77 15%, transparent);border:1px solid color-mix(in srgb, #D76D77 35%, transparent);font-size:0.8125rem;font-weight:600;">
+            Supervisor
+          </div>
+          <div style="display:flex;gap:0.25rem;">
+            <span style="color:var(--color-primary);font-weight:bold;">&#8601;</span>
+            <span style="color:var(--color-primary);font-weight:bold;">&#8595;</span>
+            <span style="color:var(--color-primary);font-weight:bold;">&#8600;</span>
+          </div>
+          <div style="display:flex;gap:0.75rem;">
+            <div style="padding:0.5rem 0.875rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.75rem;font-weight:500;">Agent A</div>
+            <div style="padding:0.5rem 0.875rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.75rem;font-weight:500;">Agent B</div>
+            <div style="padding:0.5rem 0.875rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.75rem;font-weight:500;">Agent C</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scatter-Gather Pattern -->
+      <div style="text-align:center;">
+        <strong style="font-size:0.875rem;opacity:0.7;">Scatter-Gather Pattern</strong>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;margin-top:0.75rem;">
+          <div style="padding:0.5rem 1rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.8125rem;font-weight:500;">
+            Input
+          </div>
+          <div style="display:flex;gap:0.25rem;">
+            <span style="color:var(--color-primary);font-weight:bold;">&#8601;</span>
+            <span style="color:var(--color-primary);font-weight:bold;">&#8595;</span>
+            <span style="color:var(--color-primary);font-weight:bold;">&#8600;</span>
+          </div>
+          <div style="display:flex;gap:0.75rem;">
+            <div style="padding:0.5rem 0.875rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.75rem;font-weight:500;">Agent 1</div>
+            <div style="padding:0.5rem 0.875rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.75rem;font-weight:500;">Agent 2</div>
+            <div style="padding:0.5rem 0.875rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.75rem;font-weight:500;">Agent 3</div>
+          </div>
+          <div style="display:flex;gap:0.25rem;">
+            <span style="color:var(--color-primary);font-weight:bold;">&#8600;</span>
+            <span style="color:var(--color-primary);font-weight:bold;">&#8595;</span>
+            <span style="color:var(--color-primary);font-weight:bold;">&#8601;</span>
+          </div>
+          <div style="padding:0.5rem 1rem;border-radius:0.5rem;background:color-mix(in srgb, #D76D77 15%, transparent);border:1px solid color-mix(in srgb, #D76D77 35%, transparent);font-size:0.8125rem;font-weight:600;">
+            Aggregator
+          </div>
+        </div>
+      </div>
+
+      <!-- Graph DAG -->
+      <div style="text-align:center;">
+        <strong style="font-size:0.875rem;opacity:0.7;">Graph Orchestration (DAG)</strong>
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.75rem;flex-wrap:wrap;justify-content:center;">
+          <div style="padding:0.5rem 0.875rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.75rem;font-weight:500;">Start</div>
+          <span style="color:var(--color-primary);font-weight:bold;">&#8594;</span>
+          <div style="padding:0.5rem 0.875rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.75rem;font-weight:500;">Node A</div>
+          <span style="color:var(--color-primary);font-weight:bold;">&#8594;</span>
+          <div style="padding:0.5rem 0.875rem;border-radius:0.375rem;background:color-mix(in srgb, #ffca7b 12%, transparent);border:1px solid color-mix(in srgb, #ffca7b 30%, transparent);font-size:0.75rem;font-weight:500;font-style:italic;">Condition?</div>
+          <span style="color:var(--color-primary);font-weight:bold;">&#8594;</span>
+          <div style="display:flex;flex-direction:column;gap:0.375rem;">
+            <div style="padding:0.4rem 0.75rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.75rem;font-weight:500;">Node B</div>
+            <div style="padding:0.4rem 0.75rem;border-radius:0.5rem;background:color-mix(in srgb, var(--color-primary) 15%, transparent);border:1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);font-size:0.75rem;font-weight:500;">Node C</div>
+          </div>
+          <span style="color:var(--color-primary);font-weight:bold;">&#8594;</span>
+          <div style="padding:0.5rem 0.875rem;border-radius:0.5rem;background:color-mix(in srgb, #D76D77 15%, transparent);border:1px solid color-mix(in srgb, #D76D77 35%, transparent);font-size:0.75rem;font-weight:600;">End</div>
+        </div>
+      </div>
+    </div>
+  </Fragment>
+
+  <Fragment slot="codeExample">
+    <p>A supervisor orchestration with three specialist agents that collaborate on a research task:</p>
+    <pre><code>package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/orchestration"
+    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+)
+
+func main() &#123;
+    ctx := context.Background()
+
+    // Create the LLM model
+    model, err := llm.New("openai", llm.ProviderConfig&#123;
+        Model: "gpt-4o",
+    &#125;)
+    if err != nil &#123;
+        log.Fatal(err)
+    &#125;
+
+    // Define specialist agents
+    researcher := agent.New("researcher",
+        agent.WithModel(model),
+        agent.WithSystemPrompt("You are a research specialist. Gather relevant information and return structured findings."),
+    )
+
+    analyst := agent.New("analyst",
+        agent.WithModel(model),
+        agent.WithSystemPrompt("You are a data analyst. Analyze findings and identify key insights and patterns."),
+    )
+
+    writer := agent.New("writer",
+        agent.WithModel(model),
+        agent.WithSystemPrompt("You are a technical writer. Synthesize analysis into a clear, well-structured report."),
+    )
+
+    // Create the supervisor orchestration
+    supervisor := orchestration.NewSupervisor("research-supervisor",
+        orchestration.WithModel(model),
+        orchestration.WithAgents(researcher, analyst, writer),
+        orchestration.WithSystemPrompt(`You are a research supervisor. Given a topic:
+1. Delegate research to the researcher agent
+2. Send findings to the analyst for pattern identification
+3. Have the writer produce the final report
+Validate each step before proceeding.`),
+        orchestration.WithMaxIterations(10),
+    )
+
+    // Run the orchestration
+    result, err := supervisor.Run(ctx, "Analyze the impact of frame-based voice pipelines on latency")
+    if err != nil &#123;
+        log.Fatal(err)
+    &#125;
+
+    fmt.Println(result)
+
+    // Streaming alternative — observe each delegation step
+    for event, err := range supervisor.Stream(ctx, "Compare orchestration patterns for multi-agent systems") &#123;
+        if err != nil &#123;
+            log.Fatal(err)
+        &#125;
+        switch e := event.(type) &#123;
+        case orchestration.DelegationEvent:
+            fmt.Printf("[%s] delegated to %s\n", e.Supervisor, e.Agent)
+        case orchestration.ResultEvent:
+            fmt.Printf("[%s] completed: %s\n", e.Agent, e.Summary)
+        &#125;
+    &#125;
+&#125;</code></pre>
+  </Fragment>
+</FeaturePageLayout>

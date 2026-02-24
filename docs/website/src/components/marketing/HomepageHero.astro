@@ -1,0 +1,336 @@
+---
+---
+
+<section class="hp-hero">
+  <div class="hp-hero-bg" aria-hidden="true">
+    <div class="hp-hero-mesh"></div>
+  </div>
+
+  <div class="hp-hero-inner">
+    <!-- Badge pill -->
+    <div class="hp-hero-badge">
+      <span>Open Source</span>
+      <span class="hp-hero-badge-sep" aria-hidden="true"></span>
+      <span>MIT Licensed</span>
+      <span class="hp-hero-badge-sep" aria-hidden="true"></span>
+      <span>Go 1.23+</span>
+    </div>
+
+    <!-- H1 -->
+    <h1 class="hp-hero-title">
+      The Go Framework for<br />Production AI Agents
+    </h1>
+
+    <!-- Subheadline -->
+    <p class="hp-hero-sub">
+      Build, orchestrate, and deploy agentic AI systems with streaming-first design,
+      22+ LLM providers, and enterprise-grade infrastructure.
+      One <code class="hp-hero-code-inline">go get</code> away.
+    </p>
+
+    <!-- CTAs -->
+    <div class="hp-hero-ctas">
+      <a href="/docs/getting-started/overview/" class="hp-btn hp-btn-primary">
+        Get Started
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </a>
+      <a href="https://github.com/lookatitude/beluga-ai" target="_blank" rel="noopener noreferrer" class="hp-btn hp-btn-outline">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+        </svg>
+        View on GitHub
+      </a>
+    </div>
+
+    <!-- Code preview -->
+    <div class="hp-hero-code">
+      <div class="hp-hero-code-header">
+        <div class="hp-hero-code-dots" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+        <span class="hp-hero-code-filename">main.go</span>
+      </div>
+      <pre class="hp-hero-code-block"><code><span class="c-ident">model</span>, _ := <span class="c-pkg">llm</span>.<span class="c-func">New</span>(<span class="c-str">"openai"</span>, <span class="c-pkg">llm</span>.ProviderConfig&#123;Model: <span class="c-str">"gpt-4o"</span>&#125;)
+<span class="c-ident">agent</span> := <span class="c-pkg">agent</span>.<span class="c-func">New</span>(<span class="c-str">"researcher"</span>,
+    <span class="c-pkg">agent</span>.<span class="c-func">WithLLM</span>(<span class="c-ident">model</span>),
+    <span class="c-pkg">agent</span>.<span class="c-func">WithTools</span>(<span class="c-ident">webSearch</span>, <span class="c-ident">calculator</span>),
+    <span class="c-pkg">agent</span>.<span class="c-func">WithMemory</span>(<span class="c-pkg">memory</span>.<span class="c-func">NewSemantic</span>(<span class="c-ident">embedder</span>, <span class="c-ident">store</span>)),
+)
+<span class="c-kw">for</span> <span class="c-ident">event</span>, <span class="c-ident">err</span> := <span class="c-kw">range</span> <span class="c-ident">agent</span>.<span class="c-func">Stream</span>(<span class="c-ident">ctx</span>, <span class="c-str">"Analyze Q4 earnings"</span>) &#123;
+    <span class="c-pkg">fmt</span>.<span class="c-func">Print</span>(<span class="c-ident">event</span>.<span class="c-func">Text</span>())
+&#125;</code></pre>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hp-hero {
+    position: relative;
+    padding: 9rem 1.5rem 5rem;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  /* Gradient mesh background */
+  .hp-hero-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .hp-hero-mesh {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 40%, color-mix(in srgb, #3a1c71 15%, transparent), transparent),
+      radial-gradient(ellipse 50% 60% at 80% 30%, color-mix(in srgb, #D76D77 10%, transparent), transparent),
+      radial-gradient(ellipse 40% 40% at 50% 80%, color-mix(in srgb, #5CA3CA 8%, transparent), transparent);
+    opacity: 0.7;
+  }
+
+  :root[data-theme="light"] .hp-hero-mesh {
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 40%, color-mix(in srgb, #3a1c71 8%, transparent), transparent),
+      radial-gradient(ellipse 50% 60% at 80% 30%, color-mix(in srgb, #D76D77 6%, transparent), transparent),
+      radial-gradient(ellipse 40% 40% at 50% 80%, color-mix(in srgb, #5CA3CA 5%, transparent), transparent);
+    opacity: 0.5;
+  }
+
+  .hp-hero-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* Badge pill */
+  .hp-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.375rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 70%, transparent);
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 10%, transparent);
+    border-radius: 9999px;
+    margin-bottom: 2rem;
+  }
+
+  :root[data-theme="light"] .hp-hero-badge {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 65%, transparent);
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 5%, transparent);
+    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 10%, transparent);
+  }
+
+  .hp-hero-badge-sep {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 30%, transparent);
+  }
+
+  :root[data-theme="light"] .hp-hero-badge-sep {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 30%, transparent);
+  }
+
+  /* H1 */
+  .hp-hero-title {
+    font-size: clamp(2.5rem, 7vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin: 0 0 1.5rem;
+    color: var(--color-light, #f6f6f6);
+  }
+
+  :root[data-theme="light"] .hp-hero-title {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  /* Subheadline */
+  .hp-hero-sub {
+    font-size: clamp(1.0625rem, 2vw, 1.25rem);
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 60%, transparent);
+    max-width: 40rem;
+    margin: 0 auto 2.5rem;
+    line-height: 1.65;
+  }
+
+  :root[data-theme="light"] .hp-hero-sub {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
+  }
+
+  .hp-hero-code-inline {
+    padding: 0.15em 0.45em;
+    font-size: 0.9em;
+    font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+    border-radius: 0.3rem;
+    color: var(--color-primary, #5CA3CA);
+  }
+
+  :root[data-theme="light"] .hp-hero-code-inline {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+  }
+
+  /* CTAs */
+  .hp-hero-ctas {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 3.5rem;
+  }
+
+  .hp-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 0.75rem;
+    transition: transform 0.15s ease, filter 0.15s ease;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+  }
+
+  .hp-btn:hover {
+    transform: scale(1.03);
+  }
+
+  .hp-btn-primary {
+    background: var(--color-primary-gradient);
+    color: #fff;
+  }
+
+  .hp-btn-primary:hover {
+    filter: brightness(1.1);
+  }
+
+  .hp-btn-outline {
+    position: relative;
+    background: transparent;
+    color: var(--color-light, #f6f6f6);
+  }
+
+  .hp-btn-outline::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    background: var(--color-primary-gradient);
+    border-radius: inherit;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+  }
+
+  .hp-btn-outline:hover {
+    background: var(--color-primary-gradient);
+    color: #fff;
+  }
+
+  :root[data-theme="light"] .hp-btn-outline {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  /* Code preview */
+  .hp-hero-code {
+    max-width: 700px;
+    margin: 0 auto;
+    border-radius: 1rem;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--color-dark, #151515) 95%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+    text-align: left;
+  }
+
+  :root[data-theme="light"] .hp-hero-code {
+    background: #f8f8f8;
+    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 10%, transparent);
+  }
+
+  .hp-hero-code-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
+  }
+
+  :root[data-theme="light"] .hp-hero-code-header {
+    border-bottom-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+  }
+
+  .hp-hero-code-dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .hp-hero-code-dots span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 12%, transparent);
+  }
+
+  :root[data-theme="light"] .hp-hero-code-dots span {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 12%, transparent);
+  }
+
+  .hp-hero-code-filename {
+    font-size: 0.75rem;
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 40%, transparent);
+    font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+  }
+
+  :root[data-theme="light"] .hp-hero-code-filename {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 40%, transparent);
+  }
+
+  .hp-hero-code-block {
+    padding: 1.25rem 1.5rem;
+    margin: 0;
+    overflow-x: auto;
+    font-size: 0.8125rem;
+    line-height: 1.75;
+    font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+    color: var(--color-light, #f6f6f6);
+  }
+
+  :root[data-theme="light"] .hp-hero-code-block {
+    color: var(--color-lightmode-light, #181818);
+  }
+
+  /* Syntax highlighting */
+  .c-comment { color: #6a737d; }
+  .c-str { color: #a5d6ff; }
+  .c-pkg { color: #d2a8ff; }
+  .c-func { color: #79c0ff; }
+  .c-ident { color: #ffa657; }
+  .c-kw { color: #ff7b72; }
+
+  :root[data-theme="light"] .c-str { color: #0a3069; }
+  :root[data-theme="light"] .c-pkg { color: #8250df; }
+  :root[data-theme="light"] .c-func { color: #0550ae; }
+  :root[data-theme="light"] .c-ident { color: #953800; }
+  :root[data-theme="light"] .c-comment { color: #6e7781; }
+  :root[data-theme="light"] .c-kw { color: #cf222e; }
+
+  @media (max-width: 640px) {
+    .hp-hero {
+      padding: 7rem 1rem 3rem;
+    }
+    .hp-hero-code-block {
+      font-size: 0.6875rem;
+    }
+  }
+</style>

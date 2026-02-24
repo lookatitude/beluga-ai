@@ -18,46 +18,18 @@ const currentLocal = Astro.currentLocale || "en";
   <div class="container">
     <div class="top-footer">
       {
-        footer.community && (
+        Object.values(footer).map((section: any) => (
           <div>
-            <h4>{footer.community.title}</h4>
+            <h4>{section.title}</h4>
             <ul>
-              {footer.community?.links.map((link: any) => (
+              {section.links?.map((link: any) => (
                 <li>
                   <a href={link.url}>{link.name}</a>
                 </li>
               ))}
             </ul>
           </div>
-        )
-      }
-      {
-        footer.help_links && (
-          <div>
-            <h4>{footer.help_links.title}</h4>
-            <ul>
-              {footer.help_links?.links.map((link: any) => (
-                <li>
-                  <a href={link.url}>{link.name}</a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )
-      }
-      {
-        footer.company && (
-          <div>
-            <h4>{footer.company.title}</h4>
-            <ul>
-              {footer.company?.links.map((link: any) => (
-                <li>
-                  <a href={link.url}>{link.name}</a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )
+        ))
       }
 
       {

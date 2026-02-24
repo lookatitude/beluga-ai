@@ -1,0 +1,272 @@
+---
+interface Props {
+  headers: string[];
+  rows: Array<{ capability: string; values: string[] }>;
+}
+
+const { headers, rows } = Astro.props;
+---
+
+<div class="comparison-table-wrapper">
+  <div class="comparison-table-scroll" id="comparison-scroll">
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          {headers.map((header, i) => (
+            <th class:list={[
+              "comparison-th",
+              i === 0 && "comparison-th-sticky",
+              i === 1 && "comparison-th-highlight",
+            ]}>
+              {header}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr class="comparison-tr">
+            <td class="comparison-td comparison-td-sticky">
+              {row.capability}
+            </td>
+            {row.values.map((value, i) => (
+              <td class:list={[
+                "comparison-td",
+                i === 0 && "comparison-td-highlight",
+              ]}>
+                {value === "\u2713" ? (
+                  <span class="comparison-check" aria-label="Yes">{"\u2713"}</span>
+                ) : value === "\u2717" ? (
+                  <span class="comparison-cross" aria-label="No">{"\u2717"}</span>
+                ) : (
+                  <span>{value}</span>
+                )}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <div class="scroll-shadow scroll-shadow-right" id="scroll-shadow-right" aria-hidden="true"></div>
+  <div class="scroll-shadow scroll-shadow-left" id="scroll-shadow-left" aria-hidden="true"></div>
+</div>
+
+<script>
+  function initScrollShadows() {
+    const scroll = document.getElementById("comparison-scroll");
+    const shadowRight = document.getElementById("scroll-shadow-right");
+    const shadowLeft = document.getElementById("scroll-shadow-left");
+    if (!scroll || !shadowRight || !shadowLeft) return;
+
+    function update() {
+      const { scrollLeft, scrollWidth, clientWidth } = scroll!;
+      const atEnd = scrollLeft + clientWidth >= scrollWidth - 2;
+      const atStart = scrollLeft <= 2;
+      shadowRight.style.opacity = atEnd ? "0" : "1";
+      shadowLeft.style.opacity = atStart ? "0" : "1";
+    }
+
+    scroll.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    update();
+  }
+
+  document.addEventListener("astro:page-load", initScrollShadows);
+  initScrollShadows();
+</script>
+
+<style>
+  .comparison-table-wrapper {
+    position: relative;
+    border-radius: 1rem;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+    background: var(--color-dark, #151515);
+  }
+
+  :root[data-theme="light"] .comparison-table-wrapper {
+    background: var(--color-lightmode-dark, #f7f7f7);
+    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 10%, transparent);
+  }
+
+  .comparison-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+    table-layout: auto;
+  }
+
+  /* Header cells */
+  .comparison-th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 1rem 1.25rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    white-space: nowrap;
+    color: color-mix(in srgb, var(--color-light, #f6f6f6) 60%, transparent);
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 4%, var(--color-dark, #151515));
+    border-bottom: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+  }
+
+  :root[data-theme="light"] .comparison-th {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 4%, var(--color-lightmode-dark, #f7f7f7));
+    border-bottom-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 10%, transparent);
+  }
+
+  /* Sticky first column header */
+  .comparison-th-sticky {
+    position: sticky;
+    left: 0;
+    z-index: 20;
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 4%, var(--color-dark, #151515));
+    min-width: 160px;
+  }
+
+  :root[data-theme="light"] .comparison-th-sticky {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 4%, var(--color-lightmode-dark, #f7f7f7));
+  }
+
+  /* Highlight column header (Beluga AI) */
+  .comparison-th-highlight {
+    color: var(--color-primary, #5CA3CA);
+    background: color-mix(in srgb, var(--color-primary, #5CA3CA) 8%, var(--color-dark, #151515));
+  }
+
+  :root[data-theme="light"] .comparison-th-highlight {
+    color: var(--color-primary, #5CA3CA);
+    background: color-mix(in srgb, var(--color-primary, #5CA3CA) 8%, var(--color-lightmode-dark, #f7f7f7));
+  }
+
+  /* Table rows */
+  .comparison-tr {
+    transition: background 0.15s ease;
+  }
+
+  .comparison-tr:hover {
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 3%, transparent);
+  }
+
+  :root[data-theme="light"] .comparison-tr:hover {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 3%, transparent);
+  }
+
+  /* Data cells */
+  .comparison-td {
+    padding: 0.875rem 1.25rem;
+    font-size: 0.875rem;
+    color: var(--color-text, #999);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 5%, transparent);
+    white-space: nowrap;
+  }
+
+  :root[data-theme="light"] .comparison-td {
+    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 65%, transparent);
+    border-bottom-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 6%, transparent);
+  }
+
+  .comparison-tr:last-child .comparison-td {
+    border-bottom: none;
+  }
+
+  /* Sticky first column data */
+  .comparison-td-sticky {
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    font-weight: 500;
+    color: var(--color-light, #f6f6f6);
+    background: var(--color-dark, #151515);
+    min-width: 160px;
+  }
+
+  :root[data-theme="light"] .comparison-td-sticky {
+    color: var(--color-lightmode-light, #181818);
+    background: var(--color-lightmode-dark, #f7f7f7);
+  }
+
+  .comparison-tr:hover .comparison-td-sticky {
+    background: color-mix(in srgb, var(--color-light, #f6f6f6) 3%, var(--color-dark, #151515));
+  }
+
+  :root[data-theme="light"] .comparison-tr:hover .comparison-td-sticky {
+    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 3%, var(--color-lightmode-dark, #f7f7f7));
+  }
+
+  /* Highlight column data (Beluga AI) */
+  .comparison-td-highlight {
+    color: var(--color-light, #f6f6f6);
+    font-weight: 500;
+    background: color-mix(in srgb, var(--color-primary, #5CA3CA) 5%, transparent);
+  }
+
+  :root[data-theme="light"] .comparison-td-highlight {
+    color: var(--color-lightmode-light, #181818);
+    background: color-mix(in srgb, var(--color-primary, #5CA3CA) 5%, transparent);
+  }
+
+  /* Checkmark / cross styling */
+  .comparison-check {
+    color: #4ade80;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .comparison-cross {
+    color: #f87171;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  /* Scroll shadows */
+  .scroll-shadow {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 15;
+  }
+
+  .scroll-shadow-right {
+    right: 0;
+    background: linear-gradient(to left, var(--color-dark, #151515), transparent);
+  }
+
+  .scroll-shadow-left {
+    left: 0;
+    background: linear-gradient(to right, var(--color-dark, #151515), transparent);
+    opacity: 0;
+  }
+
+  :root[data-theme="light"] .scroll-shadow-right {
+    background: linear-gradient(to left, var(--color-lightmode-dark, #f7f7f7), transparent);
+  }
+
+  :root[data-theme="light"] .scroll-shadow-left {
+    background: linear-gradient(to right, var(--color-lightmode-dark, #f7f7f7), transparent);
+  }
+
+  /* Desktop: no need for scroll shadows typically */
+  @media (min-width: 1024px) {
+    .comparison-table {
+      min-width: auto;
+    }
+
+    .scroll-shadow {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,105 @@
+---
+import MarketingHeader from "@/components/MarketingHeader.astro";
+import MarketingFooter from "@/components/MarketingFooter.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  ogImage?: string;
+  canonicalUrl?: string;
+  jsonLd?: string;
+  robots?: string;
+}
+
+const {
+  title,
+  description,
+  ogImage = "/og/default.png",
+  canonicalUrl,
+  jsonLd,
+  robots = "index, follow",
+} = Astro.props;
+
+const siteUrl = "https://beluga-ai.org";
+const fullOgImage = ogImage.startsWith("http") ? ogImage : `${siteUrl}${ogImage}`;
+const canonical = canonicalUrl || Astro.url.href;
+const fullTitle = title === "Beluga AI" ? title : `${title} | Beluga AI`;
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- SEO -->
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={fullOgImage} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="Beluga AI" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={fullOgImage} />
+
+    <!-- Additional SEO -->
+    <meta name="robots" content={robots} />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={fullTitle} />
+    <meta name="twitter:site" content="@belugaai" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <!-- JSON-LD -->
+    {jsonLd && <script type="application/ld+json" set:html={jsonLd} />}
+
+    <!-- Styles -->
+    <style>
+      @import "tailwindcss";
+      @import "../styles/global.css";
+    </style>
+
+    <!-- Prevent flash of wrong theme -->
+    <script is:inline>
+      (function () {
+        const saved = localStorage.getItem("starlight-theme");
+        const theme = saved || "dark";
+        document.documentElement.setAttribute("data-theme", theme);
+        if (theme === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      })();
+    </script>
+  </head>
+
+  <body
+    class="min-h-screen bg-lightmode-body text-lightmode-text dark:bg-body dark:text-text font-primary antialiased"
+  >
+    <MarketingHeader />
+    <main>
+      <slot />
+    </main>
+    <MarketingFooter />
+  </body>
+</html>

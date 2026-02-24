@@ -16,7 +16,8 @@ const { settings, navigation_button } = config;
 const { main }: { main: any[] } = menu;
 const pathname = Astro.request.url;
 
-const hasSidebar = Astro.locals.starlightRoute.hasSidebar;
+const hasSidebar = Astro.locals.starlightRoute?.hasSidebar ?? false;
+const hasStarlight = !!Astro.locals.starlightRoute;
 ---
 
 <nav class="navbar container">
@@ -127,7 +128,7 @@ const hasSidebar = Astro.locals.starlightRoute.hasSidebar;
       )
     }
 
-    {!hasSidebar && <div class="mr-4"><LanguageSelect /></div> }
+    {!hasSidebar && hasStarlight && <div class="mr-4"><LanguageSelect /></div> }
     {settings.theme_switcher && <ThemeSwitch className="lg:mx-6 mr-10" />}
 
     {

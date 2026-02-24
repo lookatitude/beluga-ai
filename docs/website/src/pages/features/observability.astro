@@ -1,0 +1,272 @@
+---
+import FeaturePageLayout from "@/components/marketing/FeaturePageLayout.astro";
+
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "name": "Observability — Beluga AI",
+  "description": "OpenTelemetry GenAI semantic conventions, cost tracking, structured logging, health checks, and adapters for Langfuse, Phoenix, and any OTel backend.",
+  "url": "https://beluga-ai.org/features/observability/"
+});
+---
+
+<FeaturePageLayout
+  pageTitle="Observability | Beluga AI"
+  description="OpenTelemetry GenAI semantic conventions, cost tracking, structured logging, health checks, and adapters for Langfuse, Phoenix, and any OTel backend."
+  title="Observability"
+  jsonLd={jsonLd}
+  subtitle="OpenTelemetry GenAI semantic conventions at every boundary. Token counting, cost tracking, structured logging, health checks, and adapter exports to Langfuse, Phoenix, and any OTel backend."
+  layer="Foundation"
+  stats={["OTel GenAI", "Cost Tracking", "Structured Logging", "Health Checks", "Dev Dashboard"]}
+  showProvidersTable={true}
+  relatedFeatures={[
+    { title: "LLM Providers", href: "/features/llm/", description: "Unified interface across 10+ LLM providers with streaming and structured output." },
+    { title: "Agent Runtime", href: "/features/agents/", description: "Autonomous agents with planning, tool use, and multi-agent handoffs." },
+    { title: "Guardrails", href: "/features/guardrails/", description: "Three-stage guard pipeline with prompt injection detection and PII filtering." },
+  ]}
+>
+  <Fragment slot="overview">
+    <p>
+      Observability in AI systems requires more than standard application monitoring. Beluga AI implements
+      the OpenTelemetry GenAI semantic conventions (v1.37+) at every boundary -- LLM calls, tool executions,
+      agent decisions, and memory operations all produce structured spans with the <code>gen_ai.*</code>
+      attribute namespace.
+    </p>
+    <p>
+      Every LLM call is automatically instrumented with token counts (prompt, completion, total), model
+      parameters, latency, and cost estimates. Costs are tracked per-model with configurable pricing tables,
+      so you can monitor spend across providers in real time. Structured logging via <code>slog</code> ensures
+      that every event is machine-parseable and correlatable with traces.
+    </p>
+    <p>
+      For production deployments, Beluga includes Kubernetes-ready health check endpoints (liveness and readiness
+      probes) and exports telemetry to any OTel-compatible backend. Dedicated adapters for Langfuse, Arize Phoenix,
+      LangSmith, and other AI-specific platforms provide deeper insights into prompt performance, evaluation
+      metrics, and agent behavior. A built-in dev dashboard gives you instant visibility during development.
+    </p>
+  </Fragment>
+
+  <Fragment slot="capabilities">
+    <h3>OpenTelemetry GenAI Conventions</h3>
+    <p>
+      All instrumentation follows the official OTel GenAI semantic conventions (v1.37+). Spans use the
+      <code>gen_ai.*</code> attribute namespace with standardized names for model, provider, token counts,
+      and finish reasons. Agent spans, tool spans, and model spans are automatically linked in a trace hierarchy.
+    </p>
+
+    <h3>Structured Logging</h3>
+    <p>
+      Every boundary in the framework emits structured log entries via Go's <code>slog</code> package.
+      Logs include trace IDs for correlation, model parameters, tool names, and timing information.
+      Log levels are configurable per-component so you can increase verbosity where needed.
+    </p>
+
+    <h3>Metrics</h3>
+    <p>
+      Automatic collection of token usage (prompt, completion, total), latency histograms per model and
+      provider, cost tracking with configurable pricing tables, and error rates. All metrics are exported
+      as OTel metrics compatible with Prometheus, Grafana, and Datadog.
+    </p>
+
+    <h3>Health Checks</h3>
+    <p>
+      Built-in HTTP endpoints for Kubernetes liveness and readiness probes. Health checks verify LLM provider
+      connectivity, memory store availability, tool service reachability, and custom application-level checks.
+      Configurable timeouts and degraded-state reporting.
+    </p>
+
+    <h3>Observability Adapters</h3>
+    <p>
+      Export telemetry to AI-specific observability platforms via dedicated adapters. Each adapter translates
+      Beluga's OTel spans into the platform's native format, preserving all GenAI attributes. Switch platforms
+      by changing a single configuration line.
+    </p>
+
+    <h3>Built-in Dev Dashboard</h3>
+    <p>
+      An embedded web UI available during development that shows real-time traces, cost breakdowns, tool call
+      timelines, and a prompt playground. No external services required -- just enable it and open your browser.
+      Useful for debugging agent behavior and optimizing prompt performance.
+    </p>
+  </Fragment>
+
+  <Fragment slot="diagram">
+    <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center; padding: 2rem 0;">
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+        <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent); background: color-mix(in srgb, var(--color-primary) 8%, transparent); font-size: 0.875rem; font-weight: 600; color: var(--color-primary);">
+          LLM Calls
+        </div>
+        <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent); background: color-mix(in srgb, var(--color-primary) 8%, transparent); font-size: 0.875rem; font-weight: 600; color: var(--color-primary);">
+          Tool Exec
+        </div>
+        <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent); background: color-mix(in srgb, var(--color-primary) 8%, transparent); font-size: 0.875rem; font-weight: 600; color: var(--color-primary);">
+          Agent Decisions
+        </div>
+        <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent); background: color-mix(in srgb, var(--color-primary) 8%, transparent); font-size: 0.875rem; font-weight: 600; color: var(--color-primary);">
+          Memory Ops
+        </div>
+      </div>
+      <div style="width: 2px; height: 2rem; background: color-mix(in srgb, var(--color-primary) 30%, transparent);"></div>
+      <div style="padding: 1rem 2rem; border-radius: 0.75rem; border: 2px solid var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, transparent); font-size: 1rem; font-weight: 700; color: var(--color-primary);">
+        OTel GenAI Instrumentation
+      </div>
+      <div style="width: 2px; height: 2rem; background: color-mix(in srgb, var(--color-primary) 30%, transparent);"></div>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+        <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 15%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.8125rem; font-weight: 500;">
+          Traces
+        </div>
+        <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 15%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.8125rem; font-weight: 500;">
+          Metrics
+        </div>
+        <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 15%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.8125rem; font-weight: 500;">
+          Logs
+        </div>
+      </div>
+      <div style="width: 2px; height: 2rem; background: color-mix(in srgb, var(--color-primary) 30%, transparent);"></div>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+        <div style="padding: 0.625rem 1rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 15%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.8125rem;">
+          Langfuse
+        </div>
+        <div style="padding: 0.625rem 1rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 15%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.8125rem;">
+          Phoenix
+        </div>
+        <div style="padding: 0.625rem 1rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 15%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.8125rem;">
+          Jaeger
+        </div>
+        <div style="padding: 0.625rem 1rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 15%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.8125rem;">
+          Grafana
+        </div>
+        <div style="padding: 0.625rem 1rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 15%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.8125rem;">
+          Dev Dashboard
+        </div>
+      </div>
+    </div>
+  </Fragment>
+
+  <Fragment slot="providers">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Priority</th>
+          <th>Key Differentiator</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>OTel Collector</strong></td>
+          <td>P0</td>
+          <td>Standard OTel export to any compatible backend (Jaeger, Zipkin, etc.)</td>
+        </tr>
+        <tr>
+          <td><strong>Langfuse</strong></td>
+          <td>P0</td>
+          <td>LLM-native observability with prompt management, evaluation, and cost tracking</td>
+        </tr>
+        <tr>
+          <td><strong>Arize Phoenix</strong></td>
+          <td>P1</td>
+          <td>Open-source LLM tracing with embedding analysis and retrieval evaluation</td>
+        </tr>
+        <tr>
+          <td><strong>LangSmith</strong></td>
+          <td>P1</td>
+          <td>LangChain ecosystem tracing with dataset management and evaluation</td>
+        </tr>
+        <tr>
+          <td><strong>Jaeger</strong></td>
+          <td>P1</td>
+          <td>Distributed tracing with service dependency visualization</td>
+        </tr>
+        <tr>
+          <td><strong>Grafana + Prometheus</strong></td>
+          <td>P1</td>
+          <td>Metrics dashboards with alerting, long-term storage, and PromQL queries</td>
+        </tr>
+        <tr>
+          <td><strong>Datadog</strong></td>
+          <td>P2</td>
+          <td>Full-stack APM with LLM monitoring, cost analytics, and anomaly detection</td>
+        </tr>
+      </tbody>
+    </table>
+  </Fragment>
+
+  <Fragment slot="codeExample">
+    <p>Set up OpenTelemetry tracing with cost tracking and export to Langfuse:</p>
+    <pre><code>package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/o11y"
+    "github.com/lookatitude/beluga-ai/o11y/adapters/langfuse"
+)
+
+func main() &#123;
+    ctx := context.Background()
+
+    // Initialize OTel with GenAI semantic conventions
+    shutdown, err := o11y.Init(ctx,
+        o11y.WithServiceName("my-ai-service"),
+        o11y.WithGenAIConventions(true), // gen_ai.* attributes
+
+        // Cost tracking with per-model pricing
+        o11y.WithCostTracking(o11y.PricingTable&#123;
+            "gpt-4o":         &#123;PromptPer1K: 0.0025, CompletionPer1K: 0.01&#125;,
+            "claude-sonnet":  &#123;PromptPer1K: 0.003, CompletionPer1K: 0.015&#125;,
+        &#125;),
+
+        // Export to Langfuse for LLM-specific analytics
+        o11y.WithExporter(langfuse.NewExporter(
+            langfuse.WithPublicKey("pk-..."),
+            langfuse.WithSecretKey("sk-..."),
+        )),
+
+        // Structured logging via slog
+        o11y.WithStructuredLogging(o11y.LogConfig&#123;
+            Level:        "info",
+            Format:       "json",
+            AddSource:    true,
+            IncludeTrace: true,
+        &#125;),
+
+        // Health checks for Kubernetes
+        o11y.WithHealthChecks(":8080",
+            o11y.LivenessPath("/healthz"),
+            o11y.ReadinessPath("/readyz"),
+        ),
+    )
+    if err != nil &#123;
+        log.Fatal(err)
+    &#125;
+    defer shutdown(ctx)
+
+    // Create model - automatically instrumented
+    model, _ := llm.New("openai",
+        llm.WithModel("gpt-4o"),
+    )
+
+    // Create agent - all operations produce OTel spans
+    myAgent, _ := agent.New("traced-agent",
+        agent.WithModel(model),
+    )
+
+    // Run agent - traces, metrics, and logs emitted automatically
+    result, err := myAgent.Run(ctx, "Summarize the quarterly report")
+    if err != nil &#123;
+        log.Fatal(err)
+    &#125;
+    fmt.Println(result)
+
+    // Access cost summary programmatically
+    summary := o11y.GetCostSummary(ctx)
+    fmt.Printf("Total cost: $%.4f (%d tokens)\n",
+        summary.TotalCost, summary.TotalTokens)
+&#125;</code></pre>
+  </Fragment>
+</FeaturePageLayout>

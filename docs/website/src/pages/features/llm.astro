@@ -1,0 +1,269 @@
+---
+import FeaturePageLayout from "@/components/marketing/FeaturePageLayout.astro";
+
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "name": "LLM Providers & Abstraction — Beluga AI",
+  "description": "Unified ChatModel interface across 22+ LLM providers with intelligent routing, structured output, context window management, and middleware.",
+  "url": "https://beluga-ai.org/features/llm/"
+});
+---
+
+<FeaturePageLayout
+  pageTitle="LLM Providers & Abstraction | Beluga AI"
+  description="Unified ChatModel interface across 22+ LLM providers with intelligent routing, structured output, context window management, and middleware."
+  title="LLM Providers & Abstraction"
+  jsonLd={jsonLd}
+  subtitle="A unified ChatModel interface across 22+ providers with intelligent routing, structured output parsing, context window management, and composable middleware — two methods that work with everything."
+  layer="Capability"
+  stats={["22+ Providers", "Router", "Structured Output", "6 Context Strategies"]}
+  showProvidersTable={true}
+  relatedFeatures={[
+    { title: "Agent Runtime", href: "/features/agents/", description: "Build agents with pluggable reasoning strategies, handoffs-as-tools, and composable workflows." },
+    { title: "RAG Pipeline", href: "/features/rag/", description: "Hybrid retrieval with dense vectors, BM25, and graph traversal across 12+ vector stores." },
+    { title: "Guardrails", href: "/features/guardrails/", description: "Three-stage guard pipeline with prompt injection detection, PII filtering, and sandboxing." },
+    { title: "Observability", href: "/features/observability/", description: "OpenTelemetry GenAI conventions, cost tracking, structured logging, and health checks." },
+  ]}
+>
+
+  <Fragment slot="overview">
+    <p>
+      The LLM package is the foundation that every other Beluga AI capability builds on. It provides a <strong>unified ChatModel interface</strong> with exactly two methods — <code>Generate</code> and <code>Stream</code> — that work identically across 22+ providers. Whether you are calling OpenAI, Anthropic, a local Ollama instance, or AWS Bedrock, your application code stays the same. Switch providers by changing a string, not rewriting your application.
+    </p>
+    <p>
+      Beyond basic abstraction, the LLM package includes production-critical features: an <strong>intelligent router</strong> that distributes requests across providers based on cost, latency, or custom strategies; <strong>structured output parsing</strong> that extracts typed Go structs from LLM responses with automatic retry; and <strong>context window management</strong> with six strategies to keep your prompts within model limits without losing critical information.
+    </p>
+    <p>
+      Everything is composable via middleware. Wrap any ChatModel with retry logic, rate limiting, caching, guardrails, or cost tracking — each decorator follows the <code>func(ChatModel) ChatModel</code> pattern and can be stacked in any order. Five hook points give you fine-grained control over the request lifecycle without modifying provider implementations.
+    </p>
+  </Fragment>
+
+  <Fragment slot="capabilities">
+    <h3>ChatModel Interface</h3>
+    <p>
+      The core abstraction: two methods that work with every provider. <code>Generate</code> returns a complete response; <code>Stream</code> returns an <code>iter.Seq2[Event, error]</code> for real-time token streaming. All provider-specific behavior (auth, API formats, error mapping) is handled internally.
+    </p>
+    <pre><code>// Create any provider with the same API
+model, _ := llm.New("openai", llm.ProviderConfig&#123;Model: "gpt-4o"&#125;)
+
+// Generate a complete response
+response, err := model.Generate(ctx, messages)
+
+// Or stream tokens in real time
+for event, err := range model.Stream(ctx, messages) &#123;
+    fmt.Print(event.Text())
+&#125;</code></pre>
+
+    <h3>LLM Router</h3>
+    <p>
+      Distribute requests across multiple LLM backends with pluggable routing strategies. Round-robin for load distribution, cost-optimized for budget control, latency-optimized for speed-critical paths, or learned routing that adapts based on historical performance. The router implements <code>ChatModel</code>, so it is a transparent drop-in replacement.
+    </p>
+    <pre><code>router := llm.NewRouter(
+    llm.RouteTarget&#123;Model: gpt4o, Weight: 0.6&#125;,
+    llm.RouteTarget&#123;Model: claude, Weight: 0.3&#125;,
+    llm.RouteTarget&#123;Model: gemini, Weight: 0.1&#125;,
+    llm.WithStrategy(llm.CostOptimized),
+    llm.WithFallback(ollamaLocal),
+)</code></pre>
+
+    <h3>Structured Output</h3>
+    <p>
+      Parse LLM responses directly into typed Go structs via JSON Schema. <code>StructuredOutput[T]</code> wraps any ChatModel, injects the schema into the prompt, validates the response, and automatically retries on parse failure. No more manual JSON extraction or regex parsing.
+    </p>
+    <pre><code>type Analysis struct &#123;
+    Sentiment  string   `json:"sentiment"`
+    Confidence float64  `json:"confidence"`
+    KeyTopics  []string `json:"key_topics"`
+&#125;
+structured := llm.Structured[Analysis](model)
+result, err := structured.Generate(ctx, messages)
+// result.Sentiment, result.Confidence, result.KeyTopics are typed</code></pre>
+
+    <h3>Context Window Management</h3>
+    <p>
+      Six strategies to keep prompts within model token limits without losing critical information. Choose based on your use case: <strong>Truncation</strong> for simple cutoff, <strong>Sliding Window</strong> for recent history, <strong>Summarization</strong> for long conversations, <strong>Semantic Selection</strong> for relevance-based filtering, <strong>Adaptive</strong> for dynamic adjustment, or <strong>Hybrid</strong> combining multiple approaches.
+    </p>
+    <pre><code>model, _ := llm.New("openai", llm.ProviderConfig&#123;Model: "gpt-4o"&#125;,
+    llm.WithContextManager(llm.SlidingWindow(20)),   // Keep last 20 messages
+    llm.WithContextManager(llm.Summarize(summarizer)), // Summarize overflow
+)</code></pre>
+
+    <h3>Tokenizer</h3>
+    <p>
+      Accurate token counting and encoding/decoding across providers. Supports tiktoken (OpenAI models) and SentencePiece (open-source models). Essential for context management, cost estimation, and rate limit awareness.
+    </p>
+    <pre><code>tok, _ := tokenizer.New("gpt-4o")
+count := tok.Count("How many tokens is this?")  // 6
+tokens := tok.Encode("Hello world")              // []int&#123;...&#125;
+text := tok.Decode(tokens)                       // "Hello world"</code></pre>
+
+    <h3>Provider-Aware Rate Limiting</h3>
+    <p>
+      Built-in rate limiting that understands provider-specific constraints: requests per minute (RPM), tokens per minute (TPM), and concurrent request limits. Automatic cooldown and backoff prevent 429 errors without manual retry logic.
+    </p>
+    <pre><code>model, _ := llm.New("openai", llm.ProviderConfig&#123;Model: "gpt-4o"&#125;,
+    llm.WithProviderLimits(llm.Limits&#123;
+        RPM:        500,
+        TPM:        150000,
+        Concurrent: 50,
+    &#125;),
+)</code></pre>
+
+    <h3>Prompt Cache Optimization</h3>
+    <p>
+      Automatically orders messages to maximize cache hits for providers that support prompt caching (Anthropic, Google). Static content — system prompts, tool definitions, few-shot examples — is placed first so it falls within the cacheable prefix. This reduces costs and latency for repeated interactions without changing your code.
+    </p>
+    <pre><code>// PromptBuilder automatically orders for cache optimization
+builder := prompt.NewBuilder(
+    prompt.WithSystemPrompt(systemPrompt),  // Static — cached
+    prompt.WithTools(tools...),             // Static — cached
+    prompt.WithExamples(examples...),       // Static — cached
+    prompt.WithMessages(history...),        // Dynamic — after cache prefix
+)</code></pre>
+
+    <h3>Middleware and Hooks</h3>
+    <p>
+      Composable decorators follow the <code>func(ChatModel) ChatModel</code> pattern. Stack retry, rate limiting, caching, logging, guardrails, and cost tracking in any order. Five hook points — <strong>BeforeGenerate</strong>, <strong>AfterGenerate</strong>, <strong>OnStream</strong>, <strong>OnToolCall</strong>, <strong>OnError</strong> — give fine-grained lifecycle control.
+    </p>
+    <pre><code>model = llm.ApplyMiddleware(model,
+    llm.WithRetry(3, time.Second),
+    llm.WithCache(cache),
+    llm.WithCostTracker(tracker),
+    llm.WithHooks(llm.Hooks&#123;
+        BeforeGenerate: func(ctx context.Context, msgs []schema.Message) error &#123;
+            slog.Info("generating", "messages", len(msgs))
+            return nil
+        &#125;,
+    &#125;),
+)</code></pre>
+  </Fragment>
+
+  <Fragment slot="diagram">
+    <div style="overflow-x: auto;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 2rem 1rem; min-width: 500px;">
+        <!-- Application -->
+        <div style="background: color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent); border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 15%, transparent); border-radius: 0.75rem; padding: 1rem 2.5rem; font-weight: 600; text-align: center; color: var(--color-light, #f6f6f6);">
+          Your Application
+          <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.7; margin-top: 0.25rem;">model.Generate(ctx, messages) / model.Stream(ctx, messages)</div>
+        </div>
+        <svg width="24" height="32" viewBox="0 0 24 32" fill="none"><path d="M12 0v28M6 22l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/></svg>
+        <!-- Middleware -->
+        <div style="background: color-mix(in srgb, #D76D77 15%, transparent); border: 1px solid #D76D77; border-radius: 0.75rem; padding: 1rem 2.5rem; font-weight: 600; color: #D76D77; text-align: center;">
+          Middleware Stack
+          <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.7; margin-top: 0.25rem;">Retry | Cache | Rate Limit | Cost Tracking | Hooks</div>
+        </div>
+        <svg width="24" height="32" viewBox="0 0 24 32" fill="none"><path d="M12 0v28M6 22l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/></svg>
+        <!-- Router -->
+        <div style="background: color-mix(in srgb, #ffca7b 15%, transparent); border: 1px solid #ffca7b; border-radius: 0.75rem; padding: 1rem 2.5rem; font-weight: 600; color: #ffca7b; text-align: center;">
+          LLM Router
+          <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.7; margin-top: 0.25rem;">Round-Robin | Cost-Optimized | Latency-Optimized | Learned</div>
+        </div>
+        <svg width="24" height="32" viewBox="0 0 24 32" fill="none"><path d="M12 0v28M6 22l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/></svg>
+        <!-- Providers row -->
+        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center;">
+          <div style="background: color-mix(in srgb, var(--color-primary) 15%, transparent); border: 1px solid var(--color-primary, #5CA3CA); border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500; color: var(--color-primary, #5CA3CA);">OpenAI</div>
+          <div style="background: color-mix(in srgb, var(--color-primary) 15%, transparent); border: 1px solid var(--color-primary, #5CA3CA); border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500; color: var(--color-primary, #5CA3CA);">Anthropic</div>
+          <div style="background: color-mix(in srgb, var(--color-primary) 15%, transparent); border: 1px solid var(--color-primary, #5CA3CA); border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500; color: var(--color-primary, #5CA3CA);">Gemini</div>
+          <div style="background: color-mix(in srgb, var(--color-primary) 15%, transparent); border: 1px solid var(--color-primary, #5CA3CA); border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500; color: var(--color-primary, #5CA3CA);">Bedrock</div>
+          <div style="background: color-mix(in srgb, var(--color-primary) 15%, transparent); border: 1px solid var(--color-primary, #5CA3CA); border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500; color: var(--color-primary, #5CA3CA);">Ollama</div>
+          <div style="background: color-mix(in srgb, var(--color-primary) 15%, transparent); border: 1px solid var(--color-primary, #5CA3CA); border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500; color: var(--color-primary, #5CA3CA);">Groq</div>
+          <div style="background: color-mix(in srgb, var(--color-primary) 15%, transparent); border: 1px solid var(--color-primary, #5CA3CA); border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500; color: var(--color-primary, #5CA3CA);">+16 more</div>
+        </div>
+      </div>
+    </div>
+  </Fragment>
+
+  <Fragment slot="providers">
+    <table>
+      <thead>
+        <tr>
+          <th>Provider</th>
+          <th>Priority</th>
+          <th>Key Differentiator</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>OpenAI</td><td>Core</td><td>GPT-4o, o1/o3 reasoning, function calling, streaming</td></tr>
+        <tr><td>Anthropic</td><td>Core</td><td>Claude 3.5/4, extended thinking, prompt caching</td></tr>
+        <tr><td>Google Gemini</td><td>Core</td><td>Gemini 2.x, 1M+ context, multimodal, grounding</td></tr>
+        <tr><td>AWS Bedrock</td><td>Core</td><td>Multi-model gateway, enterprise IAM, VPC endpoints</td></tr>
+        <tr><td>Ollama</td><td>Core</td><td>Local inference, privacy-first, no API key needed</td></tr>
+        <tr><td>Groq</td><td>Core</td><td>LPU inference, lowest latency, Llama/Mixtral</td></tr>
+        <tr><td>Mistral</td><td>Extended</td><td>Mistral Large/Medium, function calling, EU-hosted</td></tr>
+        <tr><td>DeepSeek</td><td>Extended</td><td>DeepSeek-V3/R1, strong reasoning, cost-efficient</td></tr>
+        <tr><td>xAI Grok</td><td>Extended</td><td>Grok-2, real-time information, humor-aware</td></tr>
+        <tr><td>Cohere</td><td>Extended</td><td>Command R+, RAG-optimized, enterprise search</td></tr>
+        <tr><td>Together AI</td><td>Extended</td><td>Open-source model hosting, fine-tuning, fast inference</td></tr>
+        <tr><td>Fireworks AI</td><td>Extended</td><td>Optimized open-source inference, function calling</td></tr>
+        <tr><td>Azure OpenAI</td><td>Extended</td><td>Enterprise compliance, data residency, AAD auth</td></tr>
+        <tr><td>Perplexity</td><td>Extended</td><td>Search-augmented generation, real-time web access</td></tr>
+        <tr><td>SambaNova</td><td>Extended</td><td>Custom silicon, high throughput for enterprise</td></tr>
+        <tr><td>Cerebras</td><td>Extended</td><td>Wafer-scale inference, extreme speed</td></tr>
+        <tr><td>OpenRouter</td><td>Extended</td><td>Multi-provider gateway, unified API, model discovery</td></tr>
+        <tr><td>Hugging Face</td><td>Community</td><td>Inference API, open-source model access</td></tr>
+        <tr><td>Voyage AI</td><td>Community</td><td>Embedding-focused, high-quality retrieval models</td></tr>
+        <tr><td>Jina AI</td><td>Community</td><td>Embeddings and reranking, multilingual</td></tr>
+      </tbody>
+    </table>
+  </Fragment>
+
+  <Fragment slot="codeExample">
+    <p>A complete example showing an LLM router with multiple providers, structured output, and streaming with middleware:</p>
+    <pre><code>package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+
+    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/schema"
+)
+
+type SentimentResult struct &#123;
+    Sentiment  string   `json:"sentiment"`
+    Confidence float64  `json:"confidence"`
+    Reasons    []string `json:"reasons"`
+&#125;
+
+func main() &#123;
+    ctx := context.Background()
+
+    // Create providers
+    gpt4o, _ := llm.New("openai", llm.ProviderConfig&#123;Model: "gpt-4o"&#125;)
+    claude, _ := llm.New("anthropic", llm.ProviderConfig&#123;Model: "claude-sonnet-4-20250514"&#125;)
+    gemini, _ := llm.New("google", llm.ProviderConfig&#123;Model: "gemini-2.0-flash"&#125;)
+
+    // Build a cost-optimized router with fallback
+    router := llm.NewRouter(
+        llm.RouteTarget&#123;Model: gpt4o, Weight: 0.5&#125;,
+        llm.RouteTarget&#123;Model: claude, Weight: 0.3&#125;,
+        llm.RouteTarget&#123;Model: gemini, Weight: 0.2&#125;,
+        llm.WithStrategy(llm.CostOptimized),
+    )
+
+    // Add middleware: retry, rate limiting, cost tracking
+    model := llm.ApplyMiddleware(router,
+        llm.WithRetry(3, time.Second),
+        llm.WithRateLimit(100, time.Minute),
+    )
+
+    // Structured output: parse LLM response into a typed struct
+    structured := llm.Structured[SentimentResult](model)
+    result, _ := structured.Generate(ctx, []schema.Message&#123;
+        &#123;Role: "user", Content: "Analyze the sentiment: 'Beluga AI makes Go fun again'"&#125;,
+    &#125;)
+    fmt.Printf("Sentiment: %s (%.0f%% confidence)\n", result.Sentiment, result.Confidence*100)
+
+    // Streaming: real-time token output
+    for event, err := range model.Stream(ctx, []schema.Message&#123;
+        &#123;Role: "user", Content: "Explain why Go is great for AI agents"&#125;,
+    &#125;) &#123;
+        if err != nil &#123; break &#125;
+        fmt.Print(event.Text())
+    &#125;
+&#125;</code></pre>
+  </Fragment>
+
+</FeaturePageLayout>

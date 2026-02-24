@@ -1,0 +1,265 @@
+---
+import FeaturePageLayout from "@/components/marketing/FeaturePageLayout.astro";
+
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "name": "Protocols & Interop — Beluga AI",
+  "description": "First-class MCP and A2A protocol support with REST/SSE, gRPC, WebSocket transports and 5 HTTP framework adapters.",
+  "url": "https://beluga-ai.org/features/protocols/"
+});
+---
+
+<FeaturePageLayout
+  pageTitle="Protocols & Interop | Beluga AI"
+  description="First-class MCP and A2A protocol support with REST/SSE, gRPC, WebSocket transports and 5 HTTP framework adapters."
+  title="Protocols & Interop"
+  jsonLd={jsonLd}
+  subtitle="First-class MCP server/client for tool ecosystems and A2A for agent-to-agent communication. REST, SSE, gRPC, and WebSocket transports with adapters for Gin, Fiber, Echo, Chi, and Connect-Go."
+  layer="Protocol"
+  stats={["MCP", "A2A", "REST/SSE", "gRPC", "WebSocket", "5 Framework Adapters"]}
+  showProvidersTable={true}
+  relatedFeatures={[
+    { title: "Agent Runtime", href: "/features/agents/", description: "Autonomous agents with planning, tool use, and multi-agent handoffs." },
+    { title: "Tools & MCP", href: "/features/tools/", description: "Wrap Go functions as tools, consume and expose MCP services." },
+    { title: "Voice Pipeline", href: "/features/voice/", description: "Real-time voice with frame-based STT, TTS, and speech-to-speech." },
+  ]}
+>
+  <Fragment slot="overview">
+    <p>
+      Modern AI systems do not operate in isolation. Beluga AI provides first-class support for two key protocols:
+      the <strong>Model Context Protocol (MCP)</strong> for tool and resource sharing, and the
+      <strong>Agent-to-Agent protocol (A2A)</strong> for inter-agent communication. Both are implemented as
+      full server and client pairs with production-ready transport layers.
+    </p>
+    <p>
+      The MCP implementation supports the complete specification: tools, resources, and prompts via Streamable
+      HTTP transport with session management and OAuth authentication. Your agents can consume tools from any
+      MCP server, and you can expose your own tools and resources as MCP services that other systems -- including
+      Claude Desktop, Cursor, and other AI editors -- can connect to directly.
+    </p>
+    <p>
+      Beyond protocols, Beluga includes adapters for five popular Go HTTP frameworks: Gin, Fiber, Echo, Chi,
+      and Connect-Go. This means you can embed Beluga agents into your existing web application without
+      changing your HTTP stack. Agents can be exposed via REST with Server-Sent Events for streaming,
+      gRPC for high-performance binary communication, or WebSocket for bidirectional real-time interaction.
+    </p>
+  </Fragment>
+
+  <Fragment slot="capabilities">
+    <h3>MCP (Model Context Protocol)</h3>
+    <p>
+      Full MCP server and client implementation. Expose tools, resources, and prompts via the standard
+      Streamable HTTP transport. Session management handles multi-turn interactions. OAuth integration
+      secures access. Compatible with all MCP clients including Claude Desktop and AI code editors.
+    </p>
+
+    <h3>A2A (Agent-to-Agent)</h3>
+    <p>
+      Protobuf-first agent communication protocol. Agents publish Agent Cards describing their capabilities.
+      Tasks follow a lifecycle (submitted, working, completed, failed) with streaming updates. Supports
+      both gRPC for performance and JSON-RPC for broad compatibility.
+    </p>
+
+    <h3>REST/SSE</h3>
+    <p>
+      Expose agents as standard REST APIs with Server-Sent Events for streaming responses. Clients send
+      requests via POST and receive streaming tokens via SSE. Compatible with any HTTP client. Includes
+      OpenAPI specification generation for documentation and client generation.
+    </p>
+
+    <h3>gRPC</h3>
+    <p>
+      High-performance binary protocol for agent-to-agent and client-to-agent communication. Protobuf
+      service definitions with bidirectional streaming. Ideal for internal microservice architectures
+      where latency matters. Includes reflection and health service support.
+    </p>
+
+    <h3>HTTP Framework Adapters</h3>
+    <p>
+      Drop Beluga agents into your existing Go web application with framework-specific adapters.
+      Each adapter maps framework primitives (routes, middleware, context) to Beluga's handler interface.
+      Supported frameworks: <strong>Gin</strong>, <strong>Fiber</strong>, <strong>Echo</strong>,
+      <strong>Chi</strong>, and <strong>Connect-Go</strong>.
+    </p>
+
+    <h3>Transport Layer</h3>
+    <p>
+      A shared transport abstraction used across all protocols. WebSocket provides full-duplex communication
+      for real-time applications. WebRTC enables peer-to-peer connections for voice and video. HTTP is the
+      universal fallback. All transports support TLS, compression, and keepalive configuration.
+    </p>
+  </Fragment>
+
+  <Fragment slot="diagram">
+    <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center; padding: 2rem 0;">
+      <div style="padding: 0.75rem 2rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 20%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.875rem; font-weight: 600;">
+        External Clients and Agents
+      </div>
+      <div style="width: 2px; height: 1.5rem; background: color-mix(in srgb, var(--color-primary) 30%, transparent);"></div>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+        <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent); background: color-mix(in srgb, var(--color-primary) 8%, transparent); font-size: 0.8125rem; font-weight: 600; color: var(--color-primary);">
+          REST/SSE
+        </div>
+        <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent); background: color-mix(in srgb, var(--color-primary) 8%, transparent); font-size: 0.8125rem; font-weight: 600; color: var(--color-primary);">
+          gRPC
+        </div>
+        <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent); background: color-mix(in srgb, var(--color-primary) 8%, transparent); font-size: 0.8125rem; font-weight: 600; color: var(--color-primary);">
+          WebSocket
+        </div>
+        <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent); background: color-mix(in srgb, var(--color-primary) 8%, transparent); font-size: 0.8125rem; font-weight: 600; color: var(--color-primary);">
+          WebRTC
+        </div>
+      </div>
+      <div style="width: 2px; height: 1.5rem; background: color-mix(in srgb, var(--color-primary) 30%, transparent);"></div>
+      <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center;">
+        <div style="padding: 1rem 1.5rem; border-radius: 0.75rem; border: 2px solid var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, transparent); font-size: 0.9rem; font-weight: 700; color: var(--color-primary); text-align: center;">
+          MCP Server
+        </div>
+        <div style="padding: 1rem 1.5rem; border-radius: 0.75rem; border: 2px solid var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, transparent); font-size: 0.9rem; font-weight: 700; color: var(--color-primary); text-align: center;">
+          A2A Server
+        </div>
+      </div>
+      <div style="width: 2px; height: 1.5rem; background: color-mix(in srgb, var(--color-primary) 30%, transparent);"></div>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+        <div style="padding: 0.625rem 1rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 15%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.8125rem;">
+          Gin
+        </div>
+        <div style="padding: 0.625rem 1rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 15%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.8125rem;">
+          Fiber
+        </div>
+        <div style="padding: 0.625rem 1rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 15%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.8125rem;">
+          Echo
+        </div>
+        <div style="padding: 0.625rem 1rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 15%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.8125rem;">
+          Chi
+        </div>
+        <div style="padding: 0.625rem 1rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 15%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.8125rem;">
+          Connect-Go
+        </div>
+      </div>
+      <div style="width: 2px; height: 1.5rem; background: color-mix(in srgb, var(--color-primary) 30%, transparent);"></div>
+      <div style="padding: 1rem 2rem; border-radius: 0.75rem; border: 2px solid color-mix(in srgb, var(--color-light) 20%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 1rem; font-weight: 700;">
+        Beluga Agent Runtime
+      </div>
+    </div>
+  </Fragment>
+
+  <Fragment slot="providers">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Priority</th>
+          <th>Key Differentiator</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>MCP (Streamable HTTP)</strong></td>
+          <td>P0</td>
+          <td>Full MCP spec: tools, resources, prompts with session management and OAuth</td>
+        </tr>
+        <tr>
+          <td><strong>A2A (gRPC + JSON-RPC)</strong></td>
+          <td>P0</td>
+          <td>Agent Cards, task lifecycle, bidirectional streaming between agents</td>
+        </tr>
+        <tr>
+          <td><strong>Gin Adapter</strong></td>
+          <td>P0</td>
+          <td>Most popular Go web framework with high performance and middleware ecosystem</td>
+        </tr>
+        <tr>
+          <td><strong>Chi Adapter</strong></td>
+          <td>P0</td>
+          <td>Lightweight, stdlib-compatible router with composable middleware</td>
+        </tr>
+        <tr>
+          <td><strong>Echo Adapter</strong></td>
+          <td>P1</td>
+          <td>High-performance framework with built-in validation and error handling</td>
+        </tr>
+        <tr>
+          <td><strong>Fiber Adapter</strong></td>
+          <td>P1</td>
+          <td>Express-inspired framework built on fasthttp for extreme throughput</td>
+        </tr>
+        <tr>
+          <td><strong>Connect-Go Adapter</strong></td>
+          <td>P1</td>
+          <td>Buf's gRPC-compatible framework with HTTP/1.1 and HTTP/2 support</td>
+        </tr>
+      </tbody>
+    </table>
+  </Fragment>
+
+  <Fragment slot="codeExample">
+    <p>Expose an agent via MCP server and REST/SSE simultaneously:</p>
+    <pre><code>package main
+
+import (
+    "context"
+    "log"
+    "net/http"
+
+    "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/protocol/a2a"
+    "github.com/lookatitude/beluga-ai/protocol/mcp"
+    "github.com/lookatitude/beluga-ai/protocol/rest"
+    "github.com/lookatitude/beluga-ai/server/chi"
+    "github.com/lookatitude/beluga-ai/tool"
+)
+
+func main() &#123;
+    ctx := context.Background()
+
+    // Create agent with tools
+    model, _ := llm.New("openai", llm.WithModel("gpt-4o"))
+    searchTool := tool.NewFuncTool("search", searchFunc)
+
+    myAgent, _ := agent.New("assistant",
+        agent.WithModel(model),
+        agent.WithTools(searchTool),
+        agent.WithDescription("A helpful research assistant"),
+    )
+
+    // Expose as MCP server (tools, resources, prompts)
+    mcpServer := mcp.NewServer(
+        mcp.WithAgent(myAgent),
+        mcp.WithOAuth("https://auth.example.com"),
+        mcp.WithSessionManagement(true),
+    )
+
+    // Expose as A2A server (agent-to-agent)
+    a2aServer := a2a.NewServer(
+        a2a.WithAgent(myAgent),
+        a2a.WithAgentCard(a2a.AgentCard&#123;
+            Name:         "research-assistant",
+            Description:  "A helpful research assistant",
+            Capabilities: []string&#123;"search", "summarize"&#125;,
+        &#125;),
+    )
+
+    // Expose as REST/SSE
+    restHandler := rest.NewHandler(
+        rest.WithAgent(myAgent),
+        rest.WithSSEStreaming(true),
+        rest.WithCORS("*"),
+    )
+
+    // Mount on Chi router (or Gin, Fiber, Echo, Connect-Go)
+    router := chi.NewRouter()
+    router.Mount("/mcp", mcpServer)
+    router.Mount("/a2a", a2aServer)
+    router.Mount("/api", restHandler)
+
+    log.Println("Serving on :8080")
+    log.Println("  MCP:      http://localhost:8080/mcp")
+    log.Println("  A2A:      http://localhost:8080/a2a")
+    log.Println("  REST/SSE: http://localhost:8080/api")
+    log.Fatal(http.ListenAndServe(":8080", router))
+&#125;</code></pre>
+  </Fragment>
+</FeaturePageLayout>

@@ -1,0 +1,256 @@
+---
+import FeaturePageLayout from "@/components/marketing/FeaturePageLayout.astro";
+
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "name": "Guardrails & Safety — Beluga AI",
+  "description": "Three-stage guard pipeline with prompt injection detection, PII filtering, content moderation, and capability-based sandboxing.",
+  "url": "https://beluga-ai.org/features/guardrails/"
+});
+---
+
+<FeaturePageLayout
+  pageTitle="Guardrails & Safety | Beluga AI"
+  description="Three-stage guard pipeline with prompt injection detection, PII filtering, content moderation, and capability-based sandboxing."
+  title="Guardrails & Safety"
+  jsonLd={jsonLd}
+  subtitle="Three-stage guard pipeline with prompt injection detection, PII filtering, content moderation, and capability-based sandboxing with default-deny policies."
+  layer="Infrastructure"
+  stats={["3-Stage Pipeline", "Prompt Injection", "PII", "Sandboxing", "Default-Deny"]}
+  showProvidersTable={true}
+  relatedFeatures={[
+    { title: "Agent Runtime", href: "/features/agents/", description: "Autonomous agents with planning, tool use, and multi-agent handoffs." },
+    { title: "LLM Providers", href: "/features/llm/", description: "Unified interface across 10+ LLM providers with streaming and structured output." },
+    { title: "Tools & MCP", href: "/features/tools/", description: "Wrap Go functions as tools, consume and expose MCP services." },
+  ]}
+>
+  <Fragment slot="overview">
+    <p>
+      Production AI systems require safety guarantees that go beyond prompt engineering. Beluga AI provides a
+      three-stage guard pipeline that inspects every interaction at the input, output, and tool execution boundaries.
+      Each stage operates independently, so you can mix and match guards from different providers or write your own.
+    </p>
+    <p>
+      The guard system includes built-in detectors for common threats: prompt injection attacks (heuristic,
+      classifier-based, and Spotlighting strategies), PII leakage (with configurable redaction), and content
+      moderation (toxicity, hate speech, inappropriate content). Guards can block, modify, or flag content
+      depending on your policy configuration.
+    </p>
+    <p>
+      For tool execution, Beluga enforces capability-based sandboxing with a default-deny policy. Every tool
+      must declare the capabilities it requires -- such as <code>CapToolExec</code>, <code>CapMemoryRead</code>,
+      or <code>CapNetworkAccess</code> -- and the runtime grants only the minimum privileges needed. This
+      prevents unauthorized data access and limits the blast radius of any single tool failure.
+    </p>
+  </Fragment>
+
+  <Fragment slot="capabilities">
+    <h3>Three-Stage Pipeline</h3>
+    <p>
+      Guards execute at three distinct boundaries: <strong>Input guards</strong> validate user messages before
+      they reach the LLM, <strong>Output guards</strong> check model responses before they reach the user,
+      and <strong>Tool guards</strong> verify tool calls and results. Each stage is independent and composable.
+    </p>
+
+    <h3>Prompt Injection Detection</h3>
+    <p>
+      Multiple detection strategies work together to catch injection attempts. <strong>Heuristic</strong> rules
+      detect known patterns. <strong>Classifier-based</strong> detection uses trained models for nuanced attacks.
+      <strong>Spotlighting</strong> transforms input to make injected instructions visible to the detector.
+      Strategies are composable and can run in parallel.
+    </p>
+
+    <h3>PII Filtering</h3>
+    <p>
+      Detect and redact personally identifiable information before it reaches LLMs or appears in logs.
+      Supports names, emails, phone numbers, addresses, SSNs, credit cards, and custom patterns.
+      Redaction is configurable: mask, hash, or replace with entity tags.
+    </p>
+
+    <h3>Content Moderation</h3>
+    <p>
+      Filter toxic, hateful, or inappropriate content from both inputs and outputs. Configurable severity
+      thresholds let you tune sensitivity per use case. Supports custom category definitions for
+      domain-specific moderation rules.
+    </p>
+
+    <h3>Capability-Based Sandboxing</h3>
+    <p>
+      Every tool operates under a default-deny security model. Tools must declare required capabilities:
+      <code>CapToolExec</code>, <code>CapMemoryRead</code>, <code>CapMemoryWrite</code>,
+      <code>CapNetworkAccess</code>, <code>CapFileRead</code>, <code>CapFileWrite</code>.
+      The runtime grants only what is explicitly permitted by policy.
+    </p>
+
+    <h3>Safety Provider Adapters</h3>
+    <p>
+      Integrate with dedicated safety platforms via provider adapters. Each adapter normalizes the provider's
+      API into the Beluga guard interface, so you can swap providers without changing application code.
+    </p>
+  </Fragment>
+
+  <Fragment slot="diagram">
+    <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center; padding: 2rem 0;">
+      <div style="padding: 0.75rem 2rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 20%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.875rem; font-weight: 600;">
+        User Input
+      </div>
+      <div style="width: 2px; height: 1.5rem; background: color-mix(in srgb, var(--color-primary) 30%, transparent);"></div>
+      <div style="padding: 1rem 2rem; border-radius: 0.75rem; border: 2px solid #e74c3c; background: color-mix(in srgb, #e74c3c 10%, transparent); font-size: 0.9rem; font-weight: 700; color: #e74c3c;">
+        Input Guards
+      </div>
+      <div style="font-size: 0.75rem; color: var(--color-text); margin: -0.25rem 0;">Injection / PII / Moderation</div>
+      <div style="width: 2px; height: 1.5rem; background: color-mix(in srgb, var(--color-primary) 30%, transparent);"></div>
+      <div style="padding: 1rem 2rem; border-radius: 0.75rem; border: 2px solid var(--color-primary); background: color-mix(in srgb, var(--color-primary) 10%, transparent); font-size: 0.9rem; font-weight: 700; color: var(--color-primary);">
+        LLM / Agent
+      </div>
+      <div style="width: 2px; height: 1.5rem; background: color-mix(in srgb, var(--color-primary) 30%, transparent);"></div>
+      <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+          <div style="padding: 1rem 1.5rem; border-radius: 0.75rem; border: 2px solid #e67e22; background: color-mix(in srgb, #e67e22 10%, transparent); font-size: 0.9rem; font-weight: 700; color: #e67e22;">
+            Output Guards
+          </div>
+          <div style="font-size: 0.75rem; color: var(--color-text);">PII / Moderation</div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+          <div style="padding: 1rem 1.5rem; border-radius: 0.75rem; border: 2px solid #f1c40f; background: color-mix(in srgb, #f1c40f 10%, transparent); font-size: 0.9rem; font-weight: 700; color: #f1c40f;">
+            Tool Guards
+          </div>
+          <div style="font-size: 0.75rem; color: var(--color-text);">Sandboxing / Caps</div>
+        </div>
+      </div>
+      <div style="width: 2px; height: 1.5rem; background: color-mix(in srgb, var(--color-primary) 30%, transparent);"></div>
+      <div style="padding: 0.75rem 2rem; border-radius: 0.5rem; border: 1px solid color-mix(in srgb, var(--color-light) 20%, transparent); background: color-mix(in srgb, var(--color-light) 5%, transparent); font-size: 0.875rem; font-weight: 600;">
+        Safe Response
+      </div>
+    </div>
+  </Fragment>
+
+  <Fragment slot="providers">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Priority</th>
+          <th>Key Differentiator</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Built-in Guards</strong></td>
+          <td>P0</td>
+          <td>Zero-dependency heuristic detectors for injection, PII, and moderation</td>
+        </tr>
+        <tr>
+          <td><strong>NVIDIA NeMo Guardrails</strong></td>
+          <td>P1</td>
+          <td>Programmable guardrails with Colang dialog rules and topical control</td>
+        </tr>
+        <tr>
+          <td><strong>Guardrails AI</strong></td>
+          <td>P1</td>
+          <td>Validator-based approach with a large hub of community validators</td>
+        </tr>
+        <tr>
+          <td><strong>LLM Guard</strong></td>
+          <td>P2</td>
+          <td>Open-source scanner suite for prompt injection, toxicity, and bias</td>
+        </tr>
+        <tr>
+          <td><strong>Lakera Guard</strong></td>
+          <td>P2</td>
+          <td>Real-time API for prompt injection with continuously updated threat models</td>
+        </tr>
+        <tr>
+          <td><strong>Azure AI Content Safety</strong></td>
+          <td>P2</td>
+          <td>Microsoft-hosted moderation with severity scoring and custom categories</td>
+        </tr>
+      </tbody>
+    </table>
+  </Fragment>
+
+  <Fragment slot="codeExample">
+    <p>Set up a three-stage guard pipeline with input, output, and tool guards:</p>
+    <pre><code>package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/guard"
+    "github.com/lookatitude/beluga-ai/llm"
+)
+
+func main() &#123;
+    ctx := context.Background()
+
+    // Create guard pipeline with three stages
+    pipeline := guard.NewPipeline(
+        // Stage 1: Input guards
+        guard.WithInputGuards(
+            guard.NewPromptInjectionDetector(
+                guard.WithStrategy(guard.StrategyHeuristic),
+                guard.WithStrategy(guard.StrategyClassifier),
+                guard.WithStrategy(guard.StrategySpotlighting),
+            ),
+            guard.NewPIIFilter(
+                guard.WithEntities("email", "phone", "ssn", "credit_card"),
+                guard.WithRedactionMode(guard.RedactMask),
+            ),
+            guard.NewContentModerator(
+                guard.WithCategories("toxicity", "hate_speech"),
+                guard.WithThreshold(0.8),
+            ),
+        ),
+
+        // Stage 2: Output guards
+        guard.WithOutputGuards(
+            guard.NewPIIFilter(
+                guard.WithEntities("email", "phone", "ssn"),
+                guard.WithRedactionMode(guard.RedactReplace),
+            ),
+            guard.NewContentModerator(
+                guard.WithThreshold(0.7),
+            ),
+        ),
+
+        // Stage 3: Tool guards with capability sandboxing
+        guard.WithToolGuards(
+            guard.NewCapabilitySandbox(
+                guard.WithDefaultDeny(),
+                guard.WithAllowedCapabilities(
+                    guard.CapToolExec,
+                    guard.CapMemoryRead,
+                    // CapNetworkAccess deliberately omitted
+                ),
+            ),
+        ),
+    )
+
+    // Create model and agent with guard pipeline
+    model, _ := llm.New("openai", llm.WithModel("gpt-4o"))
+
+    myAgent, _ := agent.New("safe-agent",
+        agent.WithModel(model),
+        agent.WithGuardPipeline(pipeline),
+        agent.WithGuardHooks(guard.Hooks&#123;
+            OnBlock: func(ctx context.Context, stage string, reason string) &#123;
+                fmt.Printf("[BLOCKED] Stage: %s, Reason: %s\n", stage, reason)
+            &#125;,
+            OnRedact: func(ctx context.Context, stage string, count int) &#123;
+                fmt.Printf("[REDACTED] Stage: %s, Items: %d\n", stage, count)
+            &#125;,
+        &#125;),
+    )
+
+    result, err := myAgent.Run(ctx, "Analyze this document for key insights")
+    if err != nil &#123;
+        log.Fatal(err)
+    &#125;
+    fmt.Println(result)
+&#125;</code></pre>
+  </Fragment>
+</FeaturePageLayout>
