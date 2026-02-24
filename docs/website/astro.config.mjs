@@ -39,6 +39,7 @@ export default defineConfig({
       customCss: ["./src/styles/global.css"],
       components: {
         Head: "./src/components/override-components/Head.astro",
+        Search: "./src/components/override-components/Search.astro",
         Header: "./src/components/override-components/Header.astro",
         Hero: "./src/components/override-components/Hero.astro",
         PageFrame: "./src/components/override-components/PageFrame.astro",
