@@ -55,6 +55,19 @@ const pathname = Astro.url.pathname;
 const isApiRef = pathname.startsWith("/api-reference/");
 const customSchemaType = (route.entry.data as Record<string, unknown>).schemaType as string | undefined;
 
+// Section for Pagefind filtering (inferred from URL path)
+function getPageSection(): string {
+  if (isSplash) return "Home";
+  if (pathname.startsWith("/getting-started/")) return "Getting Started";
+  if (pathname.startsWith("/guides/")) return "Guides";
+  if (pathname.startsWith("/tutorials/")) return "Tutorials";
+  if (pathname.startsWith("/api-reference/")) return "API Reference";
+  if (pathname.startsWith("/providers/")) return "Providers";
+  if (pathname.startsWith("/architecture/")) return "Architecture";
+  return "Docs";
+}
+const pageSection = getPageSection();
+
 function getArticleType(): string {
   if (isSplash) return "WebPage";
   if (customSchemaType === "faq") return "FAQPage";
@@ -173,6 +186,9 @@ if (theme.fonts.font_family.secondary) {
 
 <!-- Author -->
 <meta name="author" content="Lookatitude" />
+
+<!-- Pagefind section filter -->
+<meta data-pagefind-filter="section" content={pageSection} />
 
 <!-- Keywords (if provided in frontmatter) -->
 {keywords && <meta name="keywords" content={keywords} />}
