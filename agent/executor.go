@@ -72,7 +72,6 @@ func NewExecutor(opts ...ExecutorOption) *Executor {
 
 // runContext holds the mutable state for a single execution of the reasoning loop.
 type runContext struct {
-	ctx         context.Context
 	agentID     string
 	hooks       Hooks
 	reg         *tool.Registry
@@ -97,7 +96,7 @@ func (e *Executor) Run(ctx context.Context, input string, agentID string, tools 
 			defer cancel()
 		}
 
-		rc := e.newRunContext(ctx, agentID, tools, hooks, yield, input, messages)
+		rc := e.newRunContext(agentID, tools, hooks, yield, input, messages)
 
 		if hooks.OnStart != nil {
 			if err := hooks.OnStart(ctx, input); err != nil {
@@ -112,7 +111,7 @@ func (e *Executor) Run(ctx context.Context, input string, agentID string, tools 
 			}
 		}()
 
-		e.runLoop(rc, agentID)
+		e.runLoop(ctx, rc, agentID)
 	}
 }
 
@@ -126,13 +125,12 @@ func (e *Executor) applyTimeout(ctx context.Context) (context.Context, context.C
 }
 
 // newRunContext initialises a runContext for a single execution.
-func (e *Executor) newRunContext(ctx context.Context, agentID string, tools []tool.Tool, hooks Hooks, yield func(Event, error) bool, input string, messages []schema.Message) *runContext {
+func (e *Executor) newRunContext(agentID string, tools []tool.Tool, hooks Hooks, yield func(Event, error) bool, input string, messages []schema.Message) *runContext {
 	reg := tool.NewRegistry()
 	for _, t := range tools {
 		_ = reg.Add(t)
 	}
 	return &runContext{
-		ctx:     ctx,
 		agentID: agentID,
 		hooks:   hooks,
 		reg:     reg,
@@ -147,16 +145,16 @@ func (e *Executor) newRunContext(ctx context.Context, agentID string, tools []to
 }
 
 // runLoop drives the plan-act-observe iterations.
-func (e *Executor) runLoop(rc *runContext, agentID string) {
+func (e *Executor) runLoop(ctx context.Context, rc *runContext, agentID string) {
 	for i := 0; i < e.maxIterations; i++ {
-		if err := rc.ctx.Err(); err != nil {
+		if err := ctx.Err(); err != nil {
 			rc.yieldError(fmt.Errorf("agent execution cancelled: %w", err))
 			return
 		}
 
 		rc.state.Iteration = i
 
-		done, shouldReturn := e.runIteration(rc, i)
+		done, shouldReturn := e.runIteration(ctx, rc, i)
 		if shouldReturn {
 			return
 		}
@@ -174,15 +172,15 @@ func (e *Executor) runLoop(rc *runContext, agentID string) {
 // runIteration executes a single plan-act-observe cycle. It returns (done, shouldReturn).
 // done=true means the agent finished or handed off. shouldReturn=true means an error
 // was yielded and the caller should return immediately.
-func (e *Executor) runIteration(rc *runContext, i int) (bool, bool) {
-	if rc.callHookBeforePlan() {
+func (e *Executor) runIteration(ctx context.Context, rc *runContext, i int) (bool, bool) {
+	if rc.callHookBeforePlan(ctx) {
 		return false, true
 	}
 
-	actions, err := e.planActions(rc.ctx, rc.state, i)
+	actions, err := e.planActions(ctx, rc.state, i)
 	if err != nil {
 		if rc.hooks.OnError != nil {
-			err = rc.hooks.OnError(rc.ctx, err)
+			err = rc.hooks.OnError(ctx, err)
 		}
 		if err != nil {
 			rc.yieldError(err)
@@ -190,11 +188,11 @@ func (e *Executor) runIteration(rc *runContext, i int) (bool, bool) {
 		}
 	}
 
-	if rc.callHookAfterPlan(actions) {
+	if rc.callHookAfterPlan(ctx, actions) {
 		return false, true
 	}
 
-	done, shouldReturn := e.executeActions(rc, actions)
+	done, shouldReturn := e.executeActions(ctx, rc, actions)
 	if shouldReturn {
 		return false, true
 	}
@@ -202,7 +200,7 @@ func (e *Executor) runIteration(rc *runContext, i int) (bool, bool) {
 		return true, false
 	}
 
-	if rc.callHookOnIteration(i) {
+	if rc.callHookOnIteration(ctx, i) {
 		return false, true
 	}
 
@@ -210,11 +208,11 @@ func (e *Executor) runIteration(rc *runContext, i int) (bool, bool) {
 }
 
 // callHookBeforePlan invokes the BeforePlan hook if set. Returns true on error.
-func (rc *runContext) callHookBeforePlan() bool {
+func (rc *runContext) callHookBeforePlan(ctx context.Context) bool {
 	if rc.hooks.BeforePlan == nil {
 		return false
 	}
-	if err := rc.hooks.BeforePlan(rc.ctx, rc.state); err != nil {
+	if err := rc.hooks.BeforePlan(ctx, rc.state); err != nil {
 		rc.yieldError(err)
 		return true
 	}
@@ -222,11 +220,11 @@ func (rc *runContext) callHookBeforePlan() bool {
 }
 
 // callHookAfterPlan invokes the AfterPlan hook if set. Returns true on error.
-func (rc *runContext) callHookAfterPlan(actions []Action) bool {
+func (rc *runContext) callHookAfterPlan(ctx context.Context, actions []Action) bool {
 	if rc.hooks.AfterPlan == nil {
 		return false
 	}
-	if err := rc.hooks.AfterPlan(rc.ctx, actions); err != nil {
+	if err := rc.hooks.AfterPlan(ctx, actions); err != nil {
 		rc.yieldError(err)
 		return true
 	}
@@ -234,11 +232,11 @@ func (rc *runContext) callHookAfterPlan(actions []Action) bool {
 }
 
 // callHookOnIteration invokes the OnIteration hook if set. Returns true on error.
-func (rc *runContext) callHookOnIteration(i int) bool {
+func (rc *runContext) callHookOnIteration(ctx context.Context, i int) bool {
 	if rc.hooks.OnIteration == nil {
 		return false
 	}
-	if err := rc.hooks.OnIteration(rc.ctx, i); err != nil {
+	if err := rc.hooks.OnIteration(ctx, i); err != nil {
 		rc.yieldError(err)
 		return true
 	}
@@ -254,9 +252,9 @@ func (e *Executor) planActions(ctx context.Context, state PlannerState, iteratio
 }
 
 // executeActions runs each action in sequence, returning (done, shouldReturn).
-func (e *Executor) executeActions(rc *runContext, actions []Action) (bool, bool) {
+func (e *Executor) executeActions(ctx context.Context, rc *runContext, actions []Action) (bool, bool) {
 	for _, action := range actions {
-		done, shouldReturn := e.executeSingleAction(rc, action)
+		done, shouldReturn := e.executeSingleAction(ctx, rc, action)
 		if shouldReturn || done {
 			return done, shouldReturn
 		}
@@ -265,18 +263,18 @@ func (e *Executor) executeActions(rc *runContext, actions []Action) (bool, bool)
 }
 
 // executeSingleAction runs one action with before/after hooks. Returns (done, shouldReturn).
-func (e *Executor) executeSingleAction(rc *runContext, action Action) (bool, bool) {
+func (e *Executor) executeSingleAction(ctx context.Context, rc *runContext, action Action) (bool, bool) {
 	if rc.hooks.BeforeAct != nil {
-		if err := rc.hooks.BeforeAct(rc.ctx, action); err != nil {
+		if err := rc.hooks.BeforeAct(ctx, action); err != nil {
 			rc.yieldError(err)
 			return false, true
 		}
 	}
 
-	obs := e.executeAction(rc.ctx, rc.agentID, action, rc.reg, rc.hooks, rc.yield)
+	obs := e.executeAction(ctx, rc.agentID, action, rc.reg, rc.hooks, rc.yield)
 
 	if rc.hooks.AfterAct != nil {
-		if err := rc.hooks.AfterAct(rc.ctx, action, obs); err != nil {
+		if err := rc.hooks.AfterAct(ctx, action, obs); err != nil {
 			rc.yieldError(err)
 			return false, true
 		}

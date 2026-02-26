@@ -174,7 +174,7 @@ func (p *LATSPlanner) expandIfPossible(ctx context.Context, input string, leaf *
 	if leaf.Depth >= p.maxDepth {
 		return leaf
 	}
-	if err := p.expandNode(ctx, input, leaf); err != nil {
+	if p.expandNode(ctx, input, leaf) != nil {
 		return leaf
 	}
 	if len(leaf.Children) > 0 {

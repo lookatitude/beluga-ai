@@ -128,7 +128,15 @@ func (p *MoAPlanner) executeLayer(ctx context.Context, state PlannerState, messa
 
 	for i, model := range models {
 		wg.Add(1)
-		go p.executeModel(ctx, state, messages, previousOutputs, model, i, results, &wg)
+		go p.executeModel(ctx, modelExecParams{
+			state:           state,
+			messages:        messages,
+			previousOutputs: previousOutputs,
+			model:           model,
+			idx:             i,
+			results:         results,
+			wg:              &wg,
+		})
 	}
 
 	wg.Wait()
@@ -136,23 +144,34 @@ func (p *MoAPlanner) executeLayer(ctx context.Context, state PlannerState, messa
 	return collectModelOutputs(results)
 }
 
+// modelExecParams groups the parameters for executeModel.
+type modelExecParams struct {
+	state           PlannerState
+	messages        []schema.Message
+	previousOutputs []string
+	model           llm.ChatModel
+	idx             int
+	results         []moaModelResult
+	wg              *sync.WaitGroup
+}
+
 // executeModel runs a single model within a layer and stores the result.
-func (p *MoAPlanner) executeModel(ctx context.Context, state PlannerState, messages []schema.Message, previousOutputs []string, m llm.ChatModel, idx int, results []moaModelResult, wg *sync.WaitGroup) {
-	defer wg.Done()
+func (p *MoAPlanner) executeModel(ctx context.Context, mp modelExecParams) {
+	defer mp.wg.Done()
 
-	msgs := p.buildModelMessages(messages, previousOutputs)
+	msgs := p.buildModelMessages(mp.messages, mp.previousOutputs)
 
-	model := m
-	if len(state.Tools) > 0 {
-		model = model.BindTools(toolDefinitions(state.Tools))
+	model := mp.model
+	if len(mp.state.Tools) > 0 {
+		model = model.BindTools(toolDefinitions(mp.state.Tools))
 	}
 
 	resp, err := model.Generate(ctx, msgs)
 	if err != nil {
-		results[idx] = moaModelResult{idx: idx, err: err}
+		mp.results[mp.idx] = moaModelResult{idx: mp.idx, err: err}
 		return
 	}
-	results[idx] = moaModelResult{idx: idx, output: resp.Text()}
+	mp.results[mp.idx] = moaModelResult{idx: mp.idx, output: resp.Text()}
 }
 
 // buildModelMessages prepends previous layer outputs as context to the base messages.

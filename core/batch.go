@@ -77,7 +77,15 @@ func BatchInvoke[I, O any](
 			return results
 		}
 
-		go batchInvokeItem(ctx, fn, input, i, results, sem, opts.Timeout, &wg)
+		go batchInvokeItem(ctx, batchItemParams[I, O]{
+			fn:      fn,
+			input:   input,
+			idx:     i,
+			results: results,
+			sem:     sem,
+			timeout: opts.Timeout,
+			wg:      &wg,
+		})
 	}
 
 	wg.Wait()
@@ -106,28 +114,30 @@ func fillRemainingErrors[O any](results []BatchResult[O], from, to int, err erro
 	}
 }
 
+// batchItemParams groups the parameters for batchInvokeItem.
+type batchItemParams[I, O any] struct {
+	fn      func(context.Context, I) (O, error)
+	input   I
+	idx     int
+	results []BatchResult[O]
+	sem     chan struct{}
+	timeout time.Duration
+	wg      *sync.WaitGroup
+}
+
 // batchInvokeItem executes fn for a single input and stores the result.
-func batchInvokeItem[I, O any](
-	ctx context.Context,
-	fn func(context.Context, I) (O, error),
-	input I,
-	idx int,
-	results []BatchResult[O],
-	sem chan struct{},
-	timeout time.Duration,
-	wg *sync.WaitGroup,
-) {
-	defer wg.Done()
-	if sem != nil {
-		defer func() { <-sem }()
+func batchInvokeItem[I, O any](ctx context.Context, p batchItemParams[I, O]) {
+	defer p.wg.Done()
+	if p.sem != nil {
+		defer func() { <-p.sem }()
 	}
 
 	itemCtx := ctx
-	if timeout > 0 {
+	if p.timeout > 0 {
 		var cancel context.CancelFunc
-		itemCtx, cancel = context.WithTimeout(ctx, timeout)
+		itemCtx, cancel = context.WithTimeout(ctx, p.timeout)
 		defer cancel()
 	}
 
-	results[idx].Value, results[idx].Err = fn(itemCtx, input)
+	p.results[p.idx].Value, p.results[p.idx].Err = p.fn(itemCtx, p.input)
 }

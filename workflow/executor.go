@@ -110,43 +110,54 @@ func (e *DefaultExecutor) Execute(ctx context.Context, fn WorkflowFunc, opts Wor
 	}
 
 	// Run the workflow function asynchronously.
-	go e.runWorkflow(ctx, wfCtx, cancel, fn, rw, handle, opts, runID)
+	go e.runWorkflow(ctx, runWorkflowParams{
+		wfCtx:  wfCtx,
+		cancel: cancel,
+		fn:     fn,
+		rw:     rw,
+		handle: handle,
+		opts:   opts,
+		runID:  runID,
+	})
 
 	return handle, nil
 }
 
+// runWorkflowParams groups the parameters for runWorkflow.
+type runWorkflowParams struct {
+	wfCtx  context.Context
+	cancel context.CancelFunc
+	fn     WorkflowFunc
+	rw     *runningWorkflow
+	handle *defaultHandle
+	opts   WorkflowOptions
+	runID  string
+}
+
 // runWorkflow is the goroutine body for a workflow execution.
-func (e *DefaultExecutor) runWorkflow(
-	parentCtx, wfCtx context.Context,
-	cancel context.CancelFunc,
-	fn WorkflowFunc,
-	rw *runningWorkflow,
-	handle *defaultHandle,
-	opts WorkflowOptions,
-	runID string,
-) {
-	defer cancel()
+func (e *DefaultExecutor) runWorkflow(parentCtx context.Context, p runWorkflowParams) {
+	defer p.cancel()
 
 	wfContext := &defaultWorkflowContext{
-		Context:  wfCtx,
+		Context:  p.wfCtx,
 		executor: e,
-		workflow: rw,
-		wfID:     opts.ID,
+		workflow: p.rw,
+		wfID:     p.opts.ID,
 	}
 
-	result, err := fn(wfContext, opts.Input)
+	result, err := p.fn(wfContext, p.opts.Input)
 
 	e.mu.Lock()
-	delete(e.running, opts.ID)
+	delete(e.running, p.opts.ID)
 	e.mu.Unlock()
 
-	if wfCtx.Err() != nil && err == nil {
-		err = wfCtx.Err()
+	if p.wfCtx.Err() != nil && err == nil {
+		err = p.wfCtx.Err()
 	}
 
-	e.finalizeHandle(parentCtx, handle, opts.ID, result, err)
+	e.finalizeHandle(parentCtx, p.handle, p.opts.ID, result, err)
 
-	e.persistFinalState(parentCtx, opts.ID, runID, opts.Input, handle, result, err)
+	e.persistFinalState(parentCtx, p.opts.ID, p.runID, p.opts.Input, p.handle, result, err)
 }
 
 // finalizeHandle updates the handle status, result, and error, then signals completion.
