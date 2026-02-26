@@ -97,7 +97,7 @@ func TestNewUnknown(t *testing.T) {
 
 func TestRegisterPanicsEmptyName(t *testing.T) {
 	defer func() {
-		if r := recover(); r == nil {
+		if recover() == nil {
 			t.Fatal("expected panic for empty name")
 		}
 	}()
@@ -112,7 +112,7 @@ func TestRegisterPanicsNilFactory(t *testing.T) {
 	registry = make(map[string]Factory)
 
 	defer func() {
-		if r := recover(); r == nil {
+		if recover() == nil {
 			t.Fatal("expected panic for nil factory")
 		}
 	}()
@@ -130,7 +130,7 @@ func TestRegisterPanicsDuplicate(t *testing.T) {
 	Register("dup", f)
 
 	defer func() {
-		if r := recover(); r == nil {
+		if recover() == nil {
 			t.Fatal("expected panic for duplicate registration")
 		}
 	}()

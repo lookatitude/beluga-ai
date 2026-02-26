@@ -65,11 +65,11 @@ func TestRESTServer_RegisterAgent(t *testing.T) {
 		t.Fatalf("RegisterAgent: %v", err)
 	}
 
-	if err := srv.RegisterAgent("test", &mockAgent{id: "test2"}); err == nil {
+	if srv.RegisterAgent("test", &mockAgent{id: "test2"}) == nil {
 		t.Fatal("expected error for duplicate registration")
 	}
 
-	if err := srv.RegisterAgent("", &mockAgent{id: "test3"}); err == nil {
+	if srv.RegisterAgent("", &mockAgent{id: "test3"}) == nil {
 		t.Fatal("expected error for empty path")
 	}
 }

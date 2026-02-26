@@ -129,6 +129,14 @@ func (e *Engine) Transcribe(ctx context.Context, audio []byte, opts ...stt.Optio
 	return result.Text, nil
 }
 
+// transcribeChunk transcribes a single audio chunk, checking for context cancellation.
+func (e *Engine) transcribeChunk(ctx context.Context, chunk []byte, opts ...stt.Option) (string, error) {
+	if ctx.Err() != nil {
+		return "", ctx.Err()
+	}
+	return e.Transcribe(ctx, chunk, opts...)
+}
+
 // TranscribeStream implements streaming transcription by transcribing each
 // audio chunk independently. ElevenLabs Scribe does not support native
 // streaming, so each chunk is sent as a batch request.
@@ -139,12 +147,8 @@ func (e *Engine) TranscribeStream(ctx context.Context, audioStream iter.Seq2[[]b
 				yield(stt.TranscriptEvent{}, err)
 				return
 			}
-			if ctx.Err() != nil {
-				yield(stt.TranscriptEvent{}, ctx.Err())
-				return
-			}
 
-			text, transcribeErr := e.Transcribe(ctx, chunk, opts...)
+			text, transcribeErr := e.transcribeChunk(ctx, chunk, opts...)
 			if transcribeErr != nil {
 				yield(stt.TranscriptEvent{}, transcribeErr)
 				return

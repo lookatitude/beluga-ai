@@ -212,23 +212,7 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 
 	docs := make([]schema.Document, 0, len(result.Hits.Hits))
 	for _, hit := range result.Hits.Hits {
-		doc := schema.Document{
-			ID:       hit.ID,
-			Score:    hit.Score,
-			Metadata: make(map[string]any),
-		}
-
-		if content, ok := hit.Source["content"].(string); ok {
-			doc.Content = content
-		}
-
-		for k, v := range hit.Source {
-			if k != "content" && k != "embedding" {
-				doc.Metadata[k] = v
-			}
-		}
-
-		docs = append(docs, doc)
+		docs = append(docs, sourceToDocument(hit.ID, hit.Score, hit.Source))
 	}
 
 	return docs, nil
@@ -306,6 +290,24 @@ func (s *Store) doJSONRaw(ctx context.Context, method, path string, data []byte,
 	}
 
 	return respBody, nil
+}
+
+// sourceToDocument converts an Elasticsearch hit to a schema.Document.
+func sourceToDocument(id string, score float64, source map[string]any) schema.Document {
+	doc := schema.Document{
+		ID:       id,
+		Score:    score,
+		Metadata: make(map[string]any),
+	}
+	if content, ok := source["content"].(string); ok {
+		doc.Content = content
+	}
+	for k, v := range source {
+		if k != "content" && k != "embedding" {
+			doc.Metadata[k] = v
+		}
+	}
+	return doc
 }
 
 // float32SliceToFloat64 converts []float32 to []float64 for JSON serialization.

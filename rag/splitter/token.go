@@ -87,42 +87,50 @@ func (s *TokenSplitter) Split(_ context.Context, text string) ([]string, error) 
 	start := 0
 
 	for start < len(words) {
-		// Find the end of this chunk by token count.
-		end := start
-		tokenCount := 0
-		for end < len(words) {
-			wordTokens := s.tokenizer.Count(words[end])
-			if tokenCount+wordTokens > s.chunkSize && end > start {
-				break
-			}
-			tokenCount += wordTokens
-			end++
-		}
+		end := s.findChunkEnd(words, start)
 
 		chunk := strings.Join(words[start:end], " ")
 		if trimmed := strings.TrimSpace(chunk); trimmed != "" {
 			chunks = append(chunks, trimmed)
 		}
 
-		// Calculate overlap start position.
-		if s.chunkOverlap > 0 && end < len(words) {
-			overlapStart := end
-			overlapTokens := 0
-			for overlapStart > start {
-				wt := s.tokenizer.Count(words[overlapStart-1])
-				if overlapTokens+wt > s.chunkOverlap {
-					break
-				}
-				overlapTokens += wt
-				overlapStart--
-			}
-			start = overlapStart
-		} else {
-			start = end
-		}
+		start = s.nextStart(words, start, end)
 	}
 
 	return chunks, nil
+}
+
+// findChunkEnd finds the end index for a chunk starting at start, respecting the token limit.
+func (s *TokenSplitter) findChunkEnd(words []string, start int) int {
+	end := start
+	tokenCount := 0
+	for end < len(words) {
+		wordTokens := s.tokenizer.Count(words[end])
+		if tokenCount+wordTokens > s.chunkSize && end > start {
+			break
+		}
+		tokenCount += wordTokens
+		end++
+	}
+	return end
+}
+
+// nextStart calculates the next start position, applying overlap if applicable.
+func (s *TokenSplitter) nextStart(words []string, start, end int) int {
+	if s.chunkOverlap > 0 && end < len(words) {
+		overlapStart := end
+		overlapTokens := 0
+		for overlapStart > start {
+			wt := s.tokenizer.Count(words[overlapStart-1])
+			if overlapTokens+wt > s.chunkOverlap {
+				break
+			}
+			overlapTokens += wt
+			overlapStart--
+		}
+		return overlapStart
+	}
+	return end
 }
 
 // SplitDocuments splits each document's content and returns new documents per chunk.

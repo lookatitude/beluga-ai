@@ -32,7 +32,7 @@ func (m *inMemoryManager) addVersionOnly(t *Template) {
 	}
 }
 
-func (m *inMemoryManager) Get(name string, version string) (*Template, error) {
+func (m *inMemoryManager) Get(name, version string) (*Template, error) {
 	if version != "" {
 		key := name + ":" + version
 		if t, ok := m.templates[key]; ok {

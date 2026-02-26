@@ -75,7 +75,7 @@ func TestRegistry_New_UnknownGuard(t *testing.T) {
 
 func TestRegistry_Register_PanicOnEmptyName(t *testing.T) {
 	defer func() {
-		if r := recover(); r == nil {
+		if recover() == nil {
 			t.Error("Register with empty name should panic")
 		}
 	}()
@@ -86,7 +86,7 @@ func TestRegistry_Register_PanicOnEmptyName(t *testing.T) {
 
 func TestRegistry_Register_PanicOnNilFactory(t *testing.T) {
 	defer func() {
-		if r := recover(); r == nil {
+		if recover() == nil {
 			t.Error("Register with nil factory should panic")
 		}
 	}()
@@ -96,7 +96,7 @@ func TestRegistry_Register_PanicOnNilFactory(t *testing.T) {
 func TestRegistry_Register_PanicOnDuplicate(t *testing.T) {
 	// content_filter is already registered via init(), so re-registering should panic.
 	defer func() {
-		if r := recover(); r == nil {
+		if recover() == nil {
 			t.Error("Register duplicate name should panic")
 		}
 	}()

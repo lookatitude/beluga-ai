@@ -48,35 +48,44 @@ type rateLimiter struct {
 	rpm    *slidingWindow
 }
 
-func (rl *rateLimiter) acquire(ctx context.Context) error {
-	// Check RPM.
-	if rl.rpm != nil {
+// acquireRPM checks the RPM sliding window, optionally waiting for a cooldown
+// period before retrying. Returns an error if the limit is exceeded.
+func (rl *rateLimiter) acquireRPM(ctx context.Context) error {
+	if rl.rpm == nil || rl.rpm.allow() {
+		return nil
+	}
+	if rl.limits.CooldownOnRetry <= 0 {
+		return core.NewError("llm.ratelimit", core.ErrRateLimit, "RPM limit exceeded", nil)
+	}
+	select {
+	case <-time.After(rl.limits.CooldownOnRetry):
 		if !rl.rpm.allow() {
-			if rl.limits.CooldownOnRetry > 0 {
-				select {
-				case <-time.After(rl.limits.CooldownOnRetry):
-					if !rl.rpm.allow() {
-						return core.NewError("llm.ratelimit", core.ErrRateLimit, "RPM limit exceeded", nil)
-					}
-				case <-ctx.Done():
-					return ctx.Err()
-				}
-			} else {
-				return core.NewError("llm.ratelimit", core.ErrRateLimit, "RPM limit exceeded", nil)
-			}
+			return core.NewError("llm.ratelimit", core.ErrRateLimit, "RPM limit exceeded", nil)
 		}
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
 	}
+}
 
-	// Acquire concurrency slot.
-	if rl.sem != nil {
-		select {
-		case rl.sem <- struct{}{}:
-		case <-ctx.Done():
-			return ctx.Err()
-		}
+// acquireConcurrency blocks until a concurrency slot is available or ctx is done.
+func (rl *rateLimiter) acquireConcurrency(ctx context.Context) error {
+	if rl.sem == nil {
+		return nil
 	}
+	select {
+	case rl.sem <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
 
-	return nil
+func (rl *rateLimiter) acquire(ctx context.Context) error {
+	if err := rl.acquireRPM(ctx); err != nil {
+		return err
+	}
+	return rl.acquireConcurrency(ctx)
 }
 
 func (rl *rateLimiter) release() {

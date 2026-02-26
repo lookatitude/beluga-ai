@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"iter"
 
+	"github.com/lookatitude/beluga-ai/internal/hookutil"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -62,52 +63,30 @@ type Hooks struct {
 // ComposeHooks merges multiple Hooks into a single Hooks value.
 // Callbacks are called in the order the hooks were provided.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		OnSpeechStart: func(ctx context.Context) {
-			for _, h := range hooks {
-				if h.OnSpeechStart != nil {
-					h.OnSpeechStart(ctx)
-				}
-			}
-		},
-		OnSpeechEnd: func(ctx context.Context) {
-			for _, h := range hooks {
-				if h.OnSpeechEnd != nil {
-					h.OnSpeechEnd(ctx)
-				}
-			}
-		},
-		OnTranscript: func(ctx context.Context, text string) {
-			for _, h := range hooks {
-				if h.OnTranscript != nil {
-					h.OnTranscript(ctx, text)
-				}
-			}
-		},
-		OnResponse: func(ctx context.Context, text string) {
-			for _, h := range hooks {
-				if h.OnResponse != nil {
-					h.OnResponse(ctx, text)
-				}
-			}
-		},
-		OnError: func(ctx context.Context, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if e := h.OnError(ctx, err); e != nil {
-						return e
-					}
-				}
-			}
-			return err
-		},
+		OnSpeechStart: hookutil.ComposeVoid0(h, func(hk Hooks) func(context.Context) {
+			return hk.OnSpeechStart
+		}),
+		OnSpeechEnd: hookutil.ComposeVoid0(h, func(hk Hooks) func(context.Context) {
+			return hk.OnSpeechEnd
+		}),
+		OnTranscript: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, string) {
+			return hk.OnTranscript
+		}),
+		OnResponse: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, string) {
+			return hk.OnResponse
+		}),
+		OnError: hookutil.ComposeErrorPassthrough(h, func(hk Hooks) func(context.Context, error) error {
+			return hk.OnError
+		}),
 	}
 }
 
 // PipelineConfig holds the configuration for a VoicePipeline.
 type PipelineConfig struct {
 	Transport Transport
-	VAD       VAD
+	VAD       ActivityDetector
 	STT       Transcriber
 	LLM       LLMProcessor
 	TTS       Synthesizer
@@ -130,7 +109,7 @@ func WithTransport(t Transport) PipelineOption {
 }
 
 // WithVAD sets the voice activity detector for the pipeline.
-func WithVAD(v VAD) PipelineOption {
+func WithVAD(v ActivityDetector) PipelineOption {
 	return func(cfg *PipelineConfig) {
 		cfg.VAD = v
 	}
@@ -263,55 +242,54 @@ func (p *VoicePipeline) Run(ctx context.Context) error {
 	return nil
 }
 
+// processVADResult emits control frames for VAD state transitions and
+// forwards speech audio frames to out.
+func (p *VoicePipeline) processVADResult(ctx context.Context, result ActivityResult, frame Frame, out chan<- Frame) {
+	switch result.EventType {
+	case VADSpeechStart:
+		if p.config.Hooks.OnSpeechStart != nil {
+			p.config.Hooks.OnSpeechStart(ctx)
+		}
+		out <- NewControlFrame(SignalStart)
+	case VADSpeechEnd:
+		if p.config.Hooks.OnSpeechEnd != nil {
+			p.config.Hooks.OnSpeechEnd(ctx)
+		}
+		out <- NewControlFrame(SignalEndOfUtterance)
+	}
+
+	if result.IsSpeech {
+		out <- frame
+	}
+}
+
+// handleVADFrame processes a single audio frame through VAD and emits results.
+// Returns a non-nil error only if a hook error should stop the processor.
+func (p *VoicePipeline) handleVADFrame(ctx context.Context, frame Frame, out chan<- Frame) error {
+	if frame.Type != FrameAudio {
+		out <- frame
+		return nil
+	}
+
+	result, err := p.config.VAD.DetectActivity(ctx, frame.Data)
+	if err != nil {
+		if p.config.Hooks.OnError != nil {
+			if hookErr := p.config.Hooks.OnError(ctx, err); hookErr != nil {
+				return hookErr
+			}
+		}
+		return nil
+	}
+
+	p.processVADResult(ctx, result, frame, out)
+	return nil
+}
+
 // vadProcessor creates a FrameProcessor that runs VAD on audio frames and
 // injects control frames for speech start/end events.
 func (p *VoicePipeline) vadProcessor() FrameProcessor {
-	return FrameProcessorFunc(func(ctx context.Context, in <-chan Frame, out chan<- Frame) error {
-		defer close(out)
-		for {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case frame, ok := <-in:
-				if !ok {
-					return nil
-				}
-				// Only run VAD on audio frames; pass others through.
-				if frame.Type != FrameAudio {
-					out <- frame
-					continue
-				}
-
-				result, err := p.config.VAD.DetectActivity(ctx, frame.Data)
-				if err != nil {
-					if p.config.Hooks.OnError != nil {
-						if hookErr := p.config.Hooks.OnError(ctx, err); hookErr != nil {
-							return hookErr
-						}
-					}
-					continue
-				}
-
-				// Emit control frames on state transitions.
-				switch result.EventType {
-				case VADSpeechStart:
-					if p.config.Hooks.OnSpeechStart != nil {
-						p.config.Hooks.OnSpeechStart(ctx)
-					}
-					out <- NewControlFrame(SignalStart)
-				case VADSpeechEnd:
-					if p.config.Hooks.OnSpeechEnd != nil {
-						p.config.Hooks.OnSpeechEnd(ctx)
-					}
-					out <- NewControlFrame(SignalEndOfUtterance)
-				}
-
-				// Forward audio frames that contain speech.
-				if result.IsSpeech {
-					out <- frame
-				}
-			}
-		}
+	return FrameLoop(func(ctx context.Context, frame Frame, out chan<- Frame) error {
+		return p.handleVADFrame(ctx, frame, out)
 	})
 }
 

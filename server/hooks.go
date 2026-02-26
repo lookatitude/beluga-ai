@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"net/http"
+
+	"github.com/lookatitude/beluga-ai/internal/hookutil"
 )
 
 // Hooks provides optional callback functions that are invoked at various
@@ -27,33 +29,16 @@ type Hooks struct {
 // called in the order the hooks were provided. For BeforeRequest and OnError,
 // the first error returned short-circuits.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		BeforeRequest: func(ctx context.Context, r *http.Request) error {
-			for _, h := range hooks {
-				if h.BeforeRequest != nil {
-					if err := h.BeforeRequest(ctx, r); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		AfterRequest: func(ctx context.Context, r *http.Request, statusCode int) {
-			for _, h := range hooks {
-				if h.AfterRequest != nil {
-					h.AfterRequest(ctx, r, statusCode)
-				}
-			}
-		},
-		OnError: func(ctx context.Context, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if e := h.OnError(ctx, err); e != nil {
-						return e
-					}
-				}
-			}
-			return err
-		},
+		BeforeRequest: hookutil.ComposeError1(h, func(hk Hooks) func(context.Context, *http.Request) error {
+			return hk.BeforeRequest
+		}),
+		AfterRequest: hookutil.ComposeVoid2(h, func(hk Hooks) func(context.Context, *http.Request, int) {
+			return hk.AfterRequest
+		}),
+		OnError: hookutil.ComposeErrorPassthrough(h, func(hk Hooks) func(context.Context, error) error {
+			return hk.OnError
+		}),
 	}
 }

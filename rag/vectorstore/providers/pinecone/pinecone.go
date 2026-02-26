@@ -166,29 +166,7 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 		if cfg.Threshold > 0 && m.Score < cfg.Threshold {
 			continue
 		}
-
-		doc := schema.Document{
-			ID:    m.ID,
-			Score: m.Score,
-		}
-
-		// Extract content from metadata.
-		if content, ok := m.Metadata["content"].(string); ok {
-			doc.Content = content
-		}
-
-		// Build metadata from remaining fields.
-		meta := make(map[string]any)
-		for k, v := range m.Metadata {
-			if k != "content" {
-				meta[k] = v
-			}
-		}
-		if len(meta) > 0 {
-			doc.Metadata = meta
-		}
-
-		docs = append(docs, doc)
+		docs = append(docs, matchToDocument(m.ID, m.Score, m.Metadata))
 	}
 
 	return docs, nil
@@ -245,6 +223,25 @@ func (s *Store) doJSON(ctx context.Context, method, path string, body any) ([]by
 	}
 
 	return respBody, nil
+}
+
+// matchToDocument converts a Pinecone match to a schema.Document,
+// extracting content from metadata.
+func matchToDocument(id string, score float64, metadata map[string]any) schema.Document {
+	doc := schema.Document{ID: id, Score: score}
+	if content, ok := metadata["content"].(string); ok {
+		doc.Content = content
+	}
+	meta := make(map[string]any)
+	for k, v := range metadata {
+		if k != "content" {
+			meta[k] = v
+		}
+	}
+	if len(meta) > 0 {
+		doc.Metadata = meta
+	}
+	return doc
 }
 
 // float32SliceToFloat64 converts []float32 to []float64 for JSON serialization.

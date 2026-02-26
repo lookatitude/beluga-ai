@@ -191,29 +191,7 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 		if cfg.Threshold > 0 && hit.Relevance < cfg.Threshold {
 			continue
 		}
-
-		doc := schema.Document{
-			ID:    hit.ID,
-			Score: hit.Relevance,
-		}
-
-		// Extract content from fields.
-		if content, ok := hit.Fields["content"].(string); ok {
-			doc.Content = content
-		}
-
-		// Build metadata from remaining fields.
-		meta := make(map[string]any)
-		for k, v := range hit.Fields {
-			if k != "content" && k != "embedding" {
-				meta[k] = v
-			}
-		}
-		if len(meta) > 0 {
-			doc.Metadata = meta
-		}
-
-		docs = append(docs, doc)
+		docs = append(docs, hitToDocument(hit.ID, hit.Relevance, hit.Fields))
 	}
 
 	return docs, nil
@@ -270,6 +248,25 @@ func (s *Store) doPut(ctx context.Context, path string, body any) error {
 	}
 
 	return nil
+}
+
+// hitToDocument converts a search hit to a schema.Document, extracting
+// content and building metadata from the remaining fields.
+func hitToDocument(id string, score float64, fields map[string]any) schema.Document {
+	doc := schema.Document{ID: id, Score: score}
+	if content, ok := fields["content"].(string); ok {
+		doc.Content = content
+	}
+	meta := make(map[string]any)
+	for k, v := range fields {
+		if k != "content" && k != "embedding" {
+			meta[k] = v
+		}
+	}
+	if len(meta) > 0 {
+		doc.Metadata = meta
+	}
+	return doc
 }
 
 // float32SliceToFloat64 converts []float32 to []float64 for JSON serialization.

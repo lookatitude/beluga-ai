@@ -71,37 +71,73 @@ func BatchInvoke[I, O any](
 	wg.Add(len(inputs))
 
 	for i, input := range inputs {
-		if sem != nil {
-			select {
-			case sem <- struct{}{}:
-			case <-ctx.Done():
-				// Fill remaining results with context error.
-				for j := i; j < len(inputs); j++ {
-					results[j].Err = ctx.Err()
-					wg.Done()
-				}
-				wg.Wait()
-				return results
-			}
+		if !acquireSemaphore(ctx, sem) {
+			fillRemainingErrors(results, i, len(inputs), ctx.Err(), &wg)
+			wg.Wait()
+			return results
 		}
 
-		go func(i int, input I) {
-			defer wg.Done()
-			if sem != nil {
-				defer func() { <-sem }()
-			}
-
-			itemCtx := ctx
-			if opts.Timeout > 0 {
-				var cancel context.CancelFunc
-				itemCtx, cancel = context.WithTimeout(ctx, opts.Timeout)
-				defer cancel()
-			}
-
-			results[i].Value, results[i].Err = fn(itemCtx, input)
-		}(i, input)
+		go batchInvokeItem(ctx, batchItemParams[I, O]{
+			fn:      fn,
+			input:   input,
+			idx:     i,
+			results: results,
+			sem:     sem,
+			timeout: opts.Timeout,
+			wg:      &wg,
+		})
 	}
 
 	wg.Wait()
 	return results
+}
+
+// acquireSemaphore blocks until a slot is available on sem, or ctx is cancelled.
+// Returns true if acquired, false if ctx was cancelled. If sem is nil, always returns true.
+func acquireSemaphore(ctx context.Context, sem chan struct{}) bool {
+	if sem == nil {
+		return true
+	}
+	select {
+	case sem <- struct{}{}:
+		return true
+	case <-ctx.Done():
+		return false
+	}
+}
+
+// fillRemainingErrors fills results[from:to] with the given error and calls wg.Done for each.
+func fillRemainingErrors[O any](results []BatchResult[O], from, to int, err error, wg *sync.WaitGroup) {
+	for j := from; j < to; j++ {
+		results[j].Err = err
+		wg.Done()
+	}
+}
+
+// batchItemParams groups the parameters for batchInvokeItem.
+type batchItemParams[I, O any] struct {
+	fn      func(context.Context, I) (O, error)
+	input   I
+	idx     int
+	results []BatchResult[O]
+	sem     chan struct{}
+	timeout time.Duration
+	wg      *sync.WaitGroup
+}
+
+// batchInvokeItem executes fn for a single input and stores the result.
+func batchInvokeItem[I, O any](ctx context.Context, p batchItemParams[I, O]) {
+	defer p.wg.Done()
+	if p.sem != nil {
+		defer func() { <-p.sem }()
+	}
+
+	itemCtx := ctx
+	if p.timeout > 0 {
+		var cancel context.CancelFunc
+		itemCtx, cancel = context.WithTimeout(ctx, p.timeout)
+		defer cancel()
+	}
+
+	p.results[p.idx].Value, p.results[p.idx].Err = p.fn(itemCtx, p.input)
 }

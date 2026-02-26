@@ -39,46 +39,63 @@ func convertMessage(msg schema.Message) (openai.ChatCompletionMessageParamUnion,
 }
 
 func convertHumanMessage(m *schema.HumanMessage) (openai.ChatCompletionMessageParamUnion, error) {
-	// If the message only has text parts, use simple string form.
-	hasNonText := false
-	for _, p := range m.Parts {
-		if p.PartType() != schema.ContentText {
-			hasNonText = true
-			break
-		}
-	}
-	if !hasNonText {
+	if !hasMultimodalParts(m.Parts) {
 		return openai.UserMessage(m.Text()), nil
 	}
 
-	// Multimodal: build content parts.
 	parts := make([]openai.ChatCompletionContentPartUnionParam, 0, len(m.Parts))
 	for _, p := range m.Parts {
-		switch cp := p.(type) {
-		case schema.TextPart:
-			parts = append(parts, openai.TextContentPart(cp.Text))
-		case schema.ImagePart:
-			url := cp.URL
-			if url == "" && len(cp.Data) > 0 {
-				mime := cp.MimeType
-				if mime == "" {
-					mime = "image/png"
-				}
-				url = fmt.Sprintf("data:%s;base64,%s", mime, base64.StdEncoding.EncodeToString(cp.Data))
-			}
-			if url == "" {
-				continue
-			}
-			parts = append(parts, openai.ImageContentPart(openai.ChatCompletionContentPartImageImageURLParam{
-				URL: url,
-			}))
-		default:
-			// Skip unsupported content types (AudioPart, VideoPart, FilePart).
-			// OpenAI chat completions API only supports text and images.
-			// Audio, video, and file parts are intentionally ignored.
+		if part, ok := convertContentPart(p); ok {
+			parts = append(parts, part)
 		}
 	}
 	return openai.UserMessage(parts), nil
+}
+
+// hasMultimodalParts returns true if any content part is not text.
+func hasMultimodalParts(parts []schema.ContentPart) bool {
+	for _, p := range parts {
+		if p.PartType() != schema.ContentText {
+			return true
+		}
+	}
+	return false
+}
+
+// convertContentPart converts a single content part to the OpenAI format.
+// Returns the converted part and true, or zero value and false if unsupported.
+func convertContentPart(p schema.ContentPart) (openai.ChatCompletionContentPartUnionParam, bool) {
+	switch cp := p.(type) {
+	case schema.TextPart:
+		return openai.TextContentPart(cp.Text), true
+	case schema.ImagePart:
+		url := resolveImageURL(cp)
+		if url == "" {
+			return openai.ChatCompletionContentPartUnionParam{}, false
+		}
+		return openai.ImageContentPart(openai.ChatCompletionContentPartImageImageURLParam{
+			URL: url,
+		}), true
+	default:
+		// Skip unsupported content types (AudioPart, VideoPart, FilePart).
+		return openai.ChatCompletionContentPartUnionParam{}, false
+	}
+}
+
+// resolveImageURL returns the URL for an image part, encoding inline data
+// as a data URI if no URL is provided.
+func resolveImageURL(cp schema.ImagePart) string {
+	if cp.URL != "" {
+		return cp.URL
+	}
+	if len(cp.Data) == 0 {
+		return ""
+	}
+	mime := cp.MimeType
+	if mime == "" {
+		mime = "image/png"
+	}
+	return fmt.Sprintf("data:%s;base64,%s", mime, base64.StdEncoding.EncodeToString(cp.Data))
 }
 
 func convertAIMessage(m *schema.AIMessage) openai.ChatCompletionMessageParamUnion {

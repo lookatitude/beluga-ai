@@ -120,20 +120,27 @@ func (b *Blackboard) Stream(ctx context.Context, input any, opts ...core.Option)
 				return
 			}
 
-			for _, a := range b.agents {
-				inputStr := fmt.Sprintf("%v", snap)
-				result, err := a.Invoke(ctx, inputStr)
-				if err != nil {
-					yield(nil, fmt.Errorf("orchestration/blackboard: agent %q round %d: %w", a.ID(), round, err))
-					return
-				}
-				b.Set(a.ID(), result)
+			if err := b.runAgents(ctx, snap, round); err != nil {
+				yield(nil, err)
+				return
 			}
 
-			// Yield board state after each round.
 			if !yield(b.snapshot(), nil) {
 				return
 			}
 		}
 	}
+}
+
+// runAgents executes all agents against the given board snapshot for one round.
+func (b *Blackboard) runAgents(ctx context.Context, snap map[string]any, round int) error {
+	for _, a := range b.agents {
+		inputStr := fmt.Sprintf("%v", snap)
+		result, err := a.Invoke(ctx, inputStr)
+		if err != nil {
+			return fmt.Errorf("orchestration/blackboard: agent %q round %d: %w", a.ID(), round, err)
+		}
+		b.Set(a.ID(), result)
+	}
+	return nil
 }

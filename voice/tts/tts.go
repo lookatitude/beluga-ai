@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"iter"
 
+	"github.com/lookatitude/beluga-ai/internal/hookutil"
 	"github.com/lookatitude/beluga-ai/voice"
 )
 
@@ -129,62 +130,42 @@ type Hooks struct {
 
 // ComposeHooks merges multiple Hooks into a single Hooks value.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		BeforeSynthesize: func(ctx context.Context, text string) {
-			for _, h := range hooks {
-				if h.BeforeSynthesize != nil {
-					h.BeforeSynthesize(ctx, text)
-				}
-			}
-		},
-		OnAudioChunk: func(ctx context.Context, chunk []byte) {
-			for _, h := range hooks {
-				if h.OnAudioChunk != nil {
-					h.OnAudioChunk(ctx, chunk)
-				}
-			}
-		},
-		OnError: func(ctx context.Context, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if e := h.OnError(ctx, err); e != nil {
-						return e
-					}
-				}
-			}
-			return err
-		},
+		BeforeSynthesize: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, string) {
+			return hk.BeforeSynthesize
+		}),
+		OnAudioChunk: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, []byte) {
+			return hk.OnAudioChunk
+		}),
+		OnError: hookutil.ComposeErrorPassthrough(h, func(hk Hooks) func(context.Context, error) error {
+			return hk.OnError
+		}),
 	}
+}
+
+// synthesizeFrame synthesizes a single text frame and sends the result to out.
+// Non-text frames are passed through unchanged.
+func synthesizeFrame(ctx context.Context, engine TTS, frame voice.Frame, sampleRate int, out chan<- voice.Frame, opts ...Option) error {
+	if frame.Type != voice.FrameText {
+		out <- frame
+		return nil
+	}
+	audio, err := engine.Synthesize(ctx, frame.Text(), opts...)
+	if err != nil {
+		return fmt.Errorf("tts: synthesize: %w", err)
+	}
+	if len(audio) > 0 {
+		out <- voice.NewAudioFrame(audio, sampleRate)
+	}
+	return nil
 }
 
 // AsFrameProcessor wraps a TTS engine as a voice.FrameProcessor.
 // It reads text frames from in, runs synthesis, and emits audio frames
 // to out with the synthesized audio.
 func AsFrameProcessor(engine TTS, sampleRate int, opts ...Option) voice.FrameProcessor {
-	return voice.FrameProcessorFunc(func(ctx context.Context, in <-chan voice.Frame, out chan<- voice.Frame) error {
-		defer close(out)
-		for {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case frame, ok := <-in:
-				if !ok {
-					return nil
-				}
-				// Pass through non-text frames.
-				if frame.Type != voice.FrameText {
-					out <- frame
-					continue
-				}
-				// Synthesize the text.
-				audio, err := engine.Synthesize(ctx, frame.Text(), opts...)
-				if err != nil {
-					return fmt.Errorf("tts: synthesize: %w", err)
-				}
-				if len(audio) > 0 {
-					out <- voice.NewAudioFrame(audio, sampleRate)
-				}
-			}
-		}
+	return voice.FrameLoop(func(ctx context.Context, frame voice.Frame, out chan<- voice.Frame) error {
+		return synthesizeFrame(ctx, engine, frame, sampleRate, out, opts...)
 	})
 }

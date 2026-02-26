@@ -1,6 +1,10 @@
 package tool
 
-import "context"
+import (
+	"context"
+
+	"github.com/lookatitude/beluga-ai/internal/hookutil"
+)
 
 // Hooks provides lifecycle callbacks for tool execution. All fields are
 // optional — nil hooks are skipped. Hooks can be composed using ComposeHooks.
@@ -25,34 +29,17 @@ type Hooks struct {
 // are skipped. AfterExecute hooks run in order unconditionally. OnError hooks
 // run in order; the first non-nil return wins.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		BeforeExecute: func(ctx context.Context, toolName string, input map[string]any) error {
-			for _, h := range hooks {
-				if h.BeforeExecute != nil {
-					if err := h.BeforeExecute(ctx, toolName, input); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		AfterExecute: func(ctx context.Context, toolName string, result *Result, err error) {
-			for _, h := range hooks {
-				if h.AfterExecute != nil {
-					h.AfterExecute(ctx, toolName, result, err)
-				}
-			}
-		},
-		OnError: func(ctx context.Context, toolName string, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if newErr := h.OnError(ctx, toolName, err); newErr != nil {
-						return newErr
-					}
-				}
-			}
-			return err
-		},
+		BeforeExecute: hookutil.ComposeError2(h, func(hk Hooks) func(context.Context, string, map[string]any) error {
+			return hk.BeforeExecute
+		}),
+		AfterExecute: hookutil.ComposeVoid3(h, func(hk Hooks) func(context.Context, string, *Result, error) {
+			return hk.AfterExecute
+		}),
+		OnError: hookutil.ComposeErrorPassthrough1(h, func(hk Hooks) func(context.Context, string, error) error {
+			return hk.OnError
+		}),
 	}
 }
 
@@ -67,8 +54,8 @@ type hookedTool struct {
 	hooks Hooks
 }
 
-func (h *hookedTool) Name() string              { return h.tool.Name() }
-func (h *hookedTool) Description() string        { return h.tool.Description() }
+func (h *hookedTool) Name() string               { return h.tool.Name() }
+func (h *hookedTool) Description() string         { return h.tool.Description() }
 func (h *hookedTool) InputSchema() map[string]any { return h.tool.InputSchema() }
 
 func (h *hookedTool) Execute(ctx context.Context, input map[string]any) (*Result, error) {

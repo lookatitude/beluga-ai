@@ -110,6 +110,14 @@ func (e *Engine) Synthesize(ctx context.Context, text string, opts ...tts.Option
 	return audio, nil
 }
 
+// synthesizeChunk synthesizes a single text chunk and returns the audio or an error.
+func (e *Engine) synthesizeChunk(ctx context.Context, text string, opts ...tts.Option) ([]byte, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+	return e.Synthesize(ctx, text, opts...)
+}
+
 // SynthesizeStream converts streaming text to audio chunks.
 func (e *Engine) SynthesizeStream(ctx context.Context, textStream iter.Seq2[string, error], opts ...tts.Option) iter.Seq2[[]byte, error] {
 	return func(yield func([]byte, error) bool) {
@@ -118,15 +126,11 @@ func (e *Engine) SynthesizeStream(ctx context.Context, textStream iter.Seq2[stri
 				yield(nil, err)
 				return
 			}
-			if ctx.Err() != nil {
-				yield(nil, ctx.Err())
-				return
-			}
 			if text == "" {
 				continue
 			}
 
-			audio, synthErr := e.Synthesize(ctx, text, opts...)
+			audio, synthErr := e.synthesizeChunk(ctx, text, opts...)
 			if synthErr != nil {
 				yield(nil, synthErr)
 				return

@@ -6,6 +6,7 @@ import (
 	"iter"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/internal/hookutil"
 	"github.com/lookatitude/beluga-ai/voice"
 )
 
@@ -150,62 +151,42 @@ type Hooks struct {
 
 // ComposeHooks merges multiple Hooks into a single Hooks value.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		OnTranscript: func(ctx context.Context, event TranscriptEvent) {
-			for _, h := range hooks {
-				if h.OnTranscript != nil {
-					h.OnTranscript(ctx, event)
-				}
-			}
-		},
-		OnUtterance: func(ctx context.Context, text string) {
-			for _, h := range hooks {
-				if h.OnUtterance != nil {
-					h.OnUtterance(ctx, text)
-				}
-			}
-		},
-		OnError: func(ctx context.Context, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if e := h.OnError(ctx, err); e != nil {
-						return e
-					}
-				}
-			}
-			return err
-		},
+		OnTranscript: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, TranscriptEvent) {
+			return hk.OnTranscript
+		}),
+		OnUtterance: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, string) {
+			return hk.OnUtterance
+		}),
+		OnError: hookutil.ComposeErrorPassthrough(h, func(hk Hooks) func(context.Context, error) error {
+			return hk.OnError
+		}),
 	}
+}
+
+// transcribeFrame transcribes a single audio frame and sends the result to out.
+// Non-audio frames are passed through unchanged.
+func transcribeFrame(ctx context.Context, engine STT, frame voice.Frame, out chan<- voice.Frame, opts ...Option) error {
+	if frame.Type != voice.FrameAudio {
+		out <- frame
+		return nil
+	}
+	text, err := engine.Transcribe(ctx, frame.Data, opts...)
+	if err != nil {
+		return fmt.Errorf("stt: transcribe: %w", err)
+	}
+	if text != "" {
+		out <- voice.NewTextFrame(text)
+	}
+	return nil
 }
 
 // AsFrameProcessor wraps an STT engine as a voice.FrameProcessor.
 // It reads audio frames from in, runs transcription, and emits text frames
 // to out with transcription results.
 func AsFrameProcessor(engine STT, opts ...Option) voice.FrameProcessor {
-	return voice.FrameProcessorFunc(func(ctx context.Context, in <-chan voice.Frame, out chan<- voice.Frame) error {
-		defer close(out)
-		for {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case frame, ok := <-in:
-				if !ok {
-					return nil
-				}
-				// Pass through non-audio frames.
-				if frame.Type != voice.FrameAudio {
-					out <- frame
-					continue
-				}
-				// Transcribe the audio chunk.
-				text, err := engine.Transcribe(ctx, frame.Data, opts...)
-				if err != nil {
-					return fmt.Errorf("stt: transcribe: %w", err)
-				}
-				if text != "" {
-					out <- voice.NewTextFrame(text)
-				}
-			}
-		}
+	return voice.FrameLoop(func(ctx context.Context, frame voice.Frame, out chan<- voice.Frame) error {
+		return transcribeFrame(ctx, engine, frame, out, opts...)
 	})
 }

@@ -128,48 +128,58 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 	}
 
 	for i, doc := range docs {
-		// Serialize metadata.
-		var metaJSON string
-		if doc.Metadata != nil {
-			b, err := json.Marshal(doc.Metadata)
-			if err != nil {
-				return fmt.Errorf("sqlitevec: marshal metadata: %w", err)
-			}
-			metaJSON = string(b)
-		}
-
-		// Upsert into metadata table.
-		metaSQL := fmt.Sprintf(
-			`INSERT OR REPLACE INTO %s (id, content, metadata) VALUES (?, ?, ?)`,
-			s.table,
-		)
-		if _, err := s.db.ExecContext(ctx, metaSQL, doc.ID, doc.Content, metaJSON); err != nil {
-			return fmt.Errorf("sqlitevec: insert metadata: %w", err)
-		}
-
-		// Serialize embedding as binary blob for sqlite-vec.
-		embBlob, err := sqlite_vec.SerializeFloat32(embeddings[i])
-		if err != nil {
-			return fmt.Errorf("sqlitevec: serialize embedding: %w", err)
-		}
-
-		// Delete existing vector entry (vec0 doesn't support INSERT OR REPLACE).
-		delSQL := fmt.Sprintf(`DELETE FROM vec_%s WHERE id = ?`, s.table)
-		if _, err := s.db.ExecContext(ctx, delSQL, doc.ID); err != nil {
-			return fmt.Errorf("sqlitevec: delete old embedding: %w", err)
-		}
-
-		// Insert into vector table.
-		vecSQL := fmt.Sprintf(
-			`INSERT INTO vec_%s (id, embedding) VALUES (?, ?)`,
-			s.table,
-		)
-		if _, err := s.db.ExecContext(ctx, vecSQL, doc.ID, embBlob); err != nil {
-			return fmt.Errorf("sqlitevec: insert embedding: %w", err)
+		if err := s.addDocument(ctx, doc, embeddings[i]); err != nil {
+			return err
 		}
 	}
-
 	return nil
+}
+
+// addDocument inserts a single document and its embedding into both tables.
+func (s *Store) addDocument(ctx context.Context, doc schema.Document, embedding []float32) error {
+	metaJSON, err := serializeMetadata(doc.Metadata)
+	if err != nil {
+		return err
+	}
+
+	metaSQL := fmt.Sprintf(
+		`INSERT OR REPLACE INTO %s (id, content, metadata) VALUES (?, ?, ?)`,
+		s.table,
+	)
+	if _, err := s.db.ExecContext(ctx, metaSQL, doc.ID, doc.Content, metaJSON); err != nil {
+		return fmt.Errorf("sqlitevec: insert metadata: %w", err)
+	}
+
+	embBlob, err := sqlite_vec.SerializeFloat32(embedding)
+	if err != nil {
+		return fmt.Errorf("sqlitevec: serialize embedding: %w", err)
+	}
+
+	delSQL := fmt.Sprintf(`DELETE FROM vec_%s WHERE id = ?`, s.table)
+	if _, err := s.db.ExecContext(ctx, delSQL, doc.ID); err != nil {
+		return fmt.Errorf("sqlitevec: delete old embedding: %w", err)
+	}
+
+	vecSQL := fmt.Sprintf(
+		`INSERT INTO vec_%s (id, embedding) VALUES (?, ?)`,
+		s.table,
+	)
+	if _, err := s.db.ExecContext(ctx, vecSQL, doc.ID, embBlob); err != nil {
+		return fmt.Errorf("sqlitevec: insert embedding: %w", err)
+	}
+	return nil
+}
+
+// serializeMetadata converts metadata to a JSON string for storage.
+func serializeMetadata(metadata map[string]any) (string, error) {
+	if metadata == nil {
+		return "", nil
+	}
+	b, err := json.Marshal(metadata)
+	if err != nil {
+		return "", fmt.Errorf("sqlitevec: marshal metadata: %w", err)
+	}
+	return string(b), nil
 }
 
 // Search finds the k most similar documents to the query vector.
@@ -179,15 +189,11 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 		opt(cfg)
 	}
 
-	// Serialize query vector as binary blob for sqlite-vec.
 	queryBlob, err := sqlite_vec.SerializeFloat32(query)
 	if err != nil {
 		return nil, fmt.Errorf("sqlitevec: serialize query: %w", err)
 	}
 
-	// sqlite-vec uses L2 distance by default; lower = more similar.
-	// Score = 1 / (1 + distance) to convert to similarity.
-	// vec0 requires 'k = ?' constraint instead of LIMIT.
 	searchSQL := fmt.Sprintf(`
 		SELECT v.id, v.distance, d.content, d.metadata
 		FROM vec_%s v
@@ -203,49 +209,56 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 	}
 	defer rows.Close()
 
+	return scanSearchRows(rows, cfg)
+}
+
+// scanSearchRows reads search result rows and converts them to documents.
+func scanSearchRows(rows *sql.Rows, cfg *vectorstore.SearchConfig) ([]schema.Document, error) {
 	var docs []schema.Document
 	for rows.Next() {
-		var (
-			id       string
-			distance float64
-			content  string
-			metaJSON sql.NullString
-		)
-		if err := rows.Scan(&id, &distance, &content, &metaJSON); err != nil {
-			return nil, fmt.Errorf("sqlitevec: scan result: %w", err)
+		doc, ok, err := scanSearchRow(rows, cfg)
+		if err != nil {
+			return nil, err
 		}
-
-		score := 1.0 / (1.0 + distance)
-		if cfg.Threshold > 0 && score < cfg.Threshold {
-			continue
+		if ok {
+			docs = append(docs, doc)
 		}
-
-		doc := schema.Document{
-			ID:      id,
-			Content: content,
-			Score:   score,
-		}
-
-		if metaJSON.Valid && metaJSON.String != "" {
-			var meta map[string]any
-			if err := json.Unmarshal([]byte(metaJSON.String), &meta); err == nil {
-				doc.Metadata = meta
-			}
-		}
-
-		// Apply metadata filter.
-		if len(cfg.Filter) > 0 && !matchesFilter(doc.Metadata, cfg.Filter) {
-			continue
-		}
-
-		docs = append(docs, doc)
 	}
-
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("sqlitevec: rows iteration: %w", err)
 	}
-
 	return docs, nil
+}
+
+// scanSearchRow scans a single row and returns the document and whether it passes filters.
+func scanSearchRow(rows *sql.Rows, cfg *vectorstore.SearchConfig) (schema.Document, bool, error) {
+	var (
+		id       string
+		distance float64
+		content  string
+		metaJSON sql.NullString
+	)
+	if err := rows.Scan(&id, &distance, &content, &metaJSON); err != nil {
+		return schema.Document{}, false, fmt.Errorf("sqlitevec: scan result: %w", err)
+	}
+
+	score := 1.0 / (1.0 + distance)
+	if cfg.Threshold > 0 && score < cfg.Threshold {
+		return schema.Document{}, false, nil
+	}
+
+	doc := schema.Document{ID: id, Content: content, Score: score}
+	if metaJSON.Valid && metaJSON.String != "" {
+		var meta map[string]any
+		if err := json.Unmarshal([]byte(metaJSON.String), &meta); err == nil {
+			doc.Metadata = meta
+		}
+	}
+
+	if len(cfg.Filter) > 0 && !matchesFilter(doc.Metadata, cfg.Filter) {
+		return schema.Document{}, false, nil
+	}
+	return doc, true, nil
 }
 
 // Delete removes documents with the given IDs from the store.

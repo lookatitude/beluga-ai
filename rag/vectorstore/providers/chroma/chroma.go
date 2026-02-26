@@ -173,20 +173,7 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 		return nil, err
 	}
 
-	body := map[string]any{
-		"query_embeddings": [][]float64{float32SliceToFloat64(query)},
-		"n_results":        k,
-		"include":          []string{"documents", "metadatas", "distances"},
-	}
-
-	// Build where clause for metadata filters.
-	if len(cfg.Filter) > 0 {
-		where := make(map[string]any)
-		for key, val := range cfg.Filter {
-			where[key] = map[string]any{"$eq": val}
-		}
-		body["where"] = where
-	}
+	body := buildChromaQueryBody(query, k, cfg)
 
 	resp, err := s.doJSON(ctx, http.MethodPost,
 		fmt.Sprintf("/api/v1/collections/%s/query", colID), body)
@@ -194,12 +181,37 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 		return nil, err
 	}
 
-	var result struct {
-		IDs       [][]string           `json:"ids"`
-		Documents [][]string           `json:"documents"`
-		Metadatas [][]map[string]any   `json:"metadatas"`
-		Distances [][]float64          `json:"distances"`
+	return parseChromaQueryResponse(resp, cfg.Threshold)
+}
+
+// buildChromaQueryBody constructs the request body for a ChromaDB query.
+func buildChromaQueryBody(query []float32, k int, cfg *vectorstore.SearchConfig) map[string]any {
+	body := map[string]any{
+		"query_embeddings": [][]float64{float32SliceToFloat64(query)},
+		"n_results":        k,
+		"include":          []string{"documents", "metadatas", "distances"},
 	}
+	if len(cfg.Filter) > 0 {
+		where := make(map[string]any)
+		for key, val := range cfg.Filter {
+			where[key] = map[string]any{"$eq": val}
+		}
+		body["where"] = where
+	}
+	return body
+}
+
+// chromaQueryResult holds the parsed ChromaDB query response.
+type chromaQueryResult struct {
+	IDs       [][]string         `json:"ids"`
+	Documents [][]string         `json:"documents"`
+	Metadatas [][]map[string]any `json:"metadatas"`
+	Distances [][]float64        `json:"distances"`
+}
+
+// parseChromaQueryResponse parses a ChromaDB query response into sorted documents.
+func parseChromaQueryResponse(resp []byte, threshold float64) ([]schema.Document, error) {
+	var result chromaQueryResult
 	if err := json.Unmarshal(resp, &result); err != nil {
 		return nil, fmt.Errorf("chroma: unmarshal query response: %w", err)
 	}
@@ -208,26 +220,22 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 		return nil, nil
 	}
 
-	ids := result.IDs[0]
-	docTexts := result.Documents[0]
-	metas := result.Metadatas[0]
-	dists := result.Distances[0]
+	docs := buildScoredDocuments(result.IDs[0], result.Documents[0], result.Metadatas[0], result.Distances[0], threshold)
 
-	type scored struct {
-		doc   schema.Document
-		score float64
-	}
+	sort.Slice(docs, func(i, j int) bool {
+		return docs[i].Score > docs[j].Score
+	})
+	return docs, nil
+}
 
-	var candidates []scored
+// buildScoredDocuments builds documents from ChromaDB query result arrays, applying threshold filtering.
+func buildScoredDocuments(ids, docTexts []string, metas []map[string]any, dists []float64, threshold float64) []schema.Document {
+	var docs []schema.Document
 	for i := range ids {
-		// ChromaDB returns distances (lower = more similar).
-		// Convert to similarity score: 1 / (1 + distance).
 		score := 1.0 / (1.0 + dists[i])
-
-		if cfg.Threshold > 0 && score < cfg.Threshold {
+		if threshold > 0 && score < threshold {
 			continue
 		}
-
 		doc := schema.Document{
 			ID:      ids[i],
 			Content: docTexts[i],
@@ -236,19 +244,9 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 		if len(metas[i]) > 0 {
 			doc.Metadata = metas[i]
 		}
-		candidates = append(candidates, scored{doc: doc, score: score})
+		docs = append(docs, doc)
 	}
-
-	// Sort by score descending.
-	sort.Slice(candidates, func(i, j int) bool {
-		return candidates[i].score > candidates[j].score
-	})
-
-	docs := make([]schema.Document, len(candidates))
-	for i, c := range candidates {
-		docs[i] = c.doc
-	}
-	return docs, nil
+	return docs
 }
 
 // Delete removes documents with the given IDs from the store.

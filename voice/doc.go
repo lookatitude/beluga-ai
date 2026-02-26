@@ -64,7 +64,7 @@
 //
 // # Voice Activity Detection
 //
-// The [VAD] interface detects speech in audio data. A built-in [EnergyVAD]
+// The [ActivityDetector] interface detects speech in audio data. A built-in [EnergyVAD]
 // uses RMS energy thresholds, and providers in voice/vad/providers/ offer
 // Silero and WebRTC-based detection. The VAD registry follows the standard
 // [RegisterVAD]/[NewVAD]/[ListVAD] pattern.

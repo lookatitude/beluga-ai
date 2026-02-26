@@ -114,55 +114,84 @@ func (p *MoAPlanner) Replan(ctx context.Context, state PlannerState) ([]Action, 
 	return p.Plan(ctx, state)
 }
 
+// moaModelResult holds the output of a single model execution within a layer.
+type moaModelResult struct {
+	idx    int
+	output string
+	err    error
+}
+
 // executeLayer runs all models in a layer concurrently and collects their outputs.
 func (p *MoAPlanner) executeLayer(ctx context.Context, state PlannerState, messages []schema.Message, models []llm.ChatModel, previousOutputs []string) ([]string, error) {
-	type result struct {
-		idx    int
-		output string
-		err    error
-	}
-
-	results := make([]result, len(models))
+	results := make([]moaModelResult, len(models))
 	var wg sync.WaitGroup
 
 	for i, model := range models {
 		wg.Add(1)
-		go func(idx int, m llm.ChatModel) {
-			defer wg.Done()
-
-			// Build messages for this model
-			msgs := make([]schema.Message, 0, len(messages)+1)
-
-			// If there are previous layer outputs, include them as context
-			if len(previousOutputs) > 0 {
-				var outputContext strings.Builder
-				outputContext.WriteString("Previous analysis from other models:\n\n")
-				for j, output := range previousOutputs {
-					fmt.Fprintf(&outputContext, "Model %d response:\n%s\n\n", j+1, output)
-				}
-				msgs = append(msgs, schema.NewSystemMessage(outputContext.String()))
-			}
-
-			msgs = append(msgs, messages...)
-
-			// Bind tools
-			model := m
-			if len(state.Tools) > 0 {
-				model = model.BindTools(toolDefinitions(state.Tools))
-			}
-
-			resp, err := model.Generate(ctx, msgs)
-			if err != nil {
-				results[idx] = result{idx: idx, err: err}
-				return
-			}
-			results[idx] = result{idx: idx, output: resp.Text()}
-		}(i, model)
+		go p.executeModel(ctx, modelExecParams{
+			state:           state,
+			messages:        messages,
+			previousOutputs: previousOutputs,
+			model:           model,
+			idx:             i,
+			results:         results,
+			wg:              &wg,
+		})
 	}
 
 	wg.Wait()
 
-	// Collect outputs, skipping errors
+	return collectModelOutputs(results)
+}
+
+// modelExecParams groups the parameters for executeModel.
+type modelExecParams struct {
+	state           PlannerState
+	messages        []schema.Message
+	previousOutputs []string
+	model           llm.ChatModel
+	idx             int
+	results         []moaModelResult
+	wg              *sync.WaitGroup
+}
+
+// executeModel runs a single model within a layer and stores the result.
+func (p *MoAPlanner) executeModel(ctx context.Context, mp modelExecParams) {
+	defer mp.wg.Done()
+
+	msgs := p.buildModelMessages(mp.messages, mp.previousOutputs)
+
+	model := mp.model
+	if len(mp.state.Tools) > 0 {
+		model = model.BindTools(toolDefinitions(mp.state.Tools))
+	}
+
+	resp, err := model.Generate(ctx, msgs)
+	if err != nil {
+		mp.results[mp.idx] = moaModelResult{idx: mp.idx, err: err}
+		return
+	}
+	mp.results[mp.idx] = moaModelResult{idx: mp.idx, output: resp.Text()}
+}
+
+// buildModelMessages prepends previous layer outputs as context to the base messages.
+func (p *MoAPlanner) buildModelMessages(messages []schema.Message, previousOutputs []string) []schema.Message {
+	msgs := make([]schema.Message, 0, len(messages)+1)
+	if len(previousOutputs) > 0 {
+		var outputContext strings.Builder
+		outputContext.WriteString("Previous analysis from other models:\n\n")
+		for j, output := range previousOutputs {
+			fmt.Fprintf(&outputContext, "Model %d response:\n%s\n\n", j+1, output)
+		}
+		msgs = append(msgs, schema.NewSystemMessage(outputContext.String()))
+	}
+	msgs = append(msgs, messages...)
+	return msgs
+}
+
+// collectModelOutputs gathers successful outputs from results, returning an
+// error only if all models failed.
+func collectModelOutputs(results []moaModelResult) ([]string, error) {
 	var outputs []string
 	var firstErr error
 	for _, r := range results {
@@ -175,7 +204,6 @@ func (p *MoAPlanner) executeLayer(ctx context.Context, state PlannerState, messa
 		outputs = append(outputs, r.output)
 	}
 
-	// If all models failed, return the first error
 	if len(outputs) == 0 && firstErr != nil {
 		return nil, firstErr
 	}

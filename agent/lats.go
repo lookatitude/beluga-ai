@@ -129,53 +129,70 @@ func (p *LATSPlanner) Plan(ctx context.Context, state PlannerState) ([]Action, e
 		Depth: 0,
 	}
 
-	// Run MCTS iterations
 	iterations := p.expansionWidth * p.maxDepth
 	for i := 0; i < iterations; i++ {
-		// 1. Selection — use UCT to find the most promising leaf
-		leaf := p.selectNode(root)
-
-		// 2. Expansion — generate child nodes
-		if leaf.Depth < p.maxDepth {
-			if err := p.expandNode(ctx, state.Input, leaf); err != nil {
-				continue // skip failed expansions
-			}
-
-			// Select a newly created child
-			if len(leaf.Children) > 0 {
-				leaf = leaf.Children[0]
-			}
-		}
-
-		// 3. Evaluation — score the leaf node
-		score, err := p.evaluateNode(ctx, state.Input, leaf)
-		if err != nil {
-			continue
-		}
-
-		// 4. Backpropagation — update values up the tree
-		p.backpropagate(leaf, score)
-
-		// If we found a high-confidence path, use it
-		if score >= 0.9 {
-			path := p.extractPath(leaf)
-			return p.synthesize(ctx, state, path)
-		}
-
-		// If score is low, generate a reflection
-		if score < 0.3 && leaf.Reflection == "" {
-			reflection, err := p.reflect(ctx, state.Input, leaf.State, score)
-			if err == nil {
-				leaf.Reflection = reflection
-				p.reflections = append(p.reflections, reflection)
-			}
+		actions, done := p.mctsIteration(ctx, state, root)
+		if done {
+			return actions, nil
 		}
 	}
 
-	// Use the best path found
 	bestLeaf := p.bestLeaf(root)
 	path := p.extractPath(bestLeaf)
 	return p.synthesize(ctx, state, path)
+}
+
+// mctsIteration performs a single MCTS cycle: select, expand, evaluate, backpropagate.
+// Returns (actions, true) if a high-confidence path was found, otherwise (nil, false).
+func (p *LATSPlanner) mctsIteration(ctx context.Context, state PlannerState, root *MCTSNode) ([]Action, bool) {
+	leaf := p.selectNode(root)
+
+	leaf = p.expandIfPossible(ctx, state.Input, leaf)
+
+	score, err := p.evaluateNode(ctx, state.Input, leaf)
+	if err != nil {
+		return nil, false
+	}
+
+	p.backpropagate(leaf, score)
+
+	if score >= 0.9 {
+		path := p.extractPath(leaf)
+		actions, err := p.synthesize(ctx, state, path)
+		if err == nil {
+			return actions, true
+		}
+	}
+
+	p.maybeReflect(ctx, state.Input, leaf, score)
+	return nil, false
+}
+
+// expandIfPossible expands the leaf if it has not reached max depth, and
+// returns the first child if expansion succeeded, otherwise returns the leaf.
+func (p *LATSPlanner) expandIfPossible(ctx context.Context, input string, leaf *MCTSNode) *MCTSNode {
+	if leaf.Depth >= p.maxDepth {
+		return leaf
+	}
+	if p.expandNode(ctx, input, leaf) != nil {
+		return leaf
+	}
+	if len(leaf.Children) > 0 {
+		return leaf.Children[0]
+	}
+	return leaf
+}
+
+// maybeReflect generates a reflection for low-scoring nodes that lack one.
+func (p *LATSPlanner) maybeReflect(ctx context.Context, input string, leaf *MCTSNode, score float64) {
+	if score >= 0.3 || leaf.Reflection != "" {
+		return
+	}
+	reflection, err := p.reflect(ctx, input, leaf.State, score)
+	if err == nil {
+		leaf.Reflection = reflection
+		p.reflections = append(p.reflections, reflection)
+	}
 }
 
 // Replan re-runs the MCTS search with accumulated reflections.

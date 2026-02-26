@@ -3,6 +3,7 @@ package llm
 import (
 	"context"
 
+	"github.com/lookatitude/beluga-ai/internal/hookutil"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -33,47 +34,22 @@ type Hooks struct {
 // Callbacks are called in the order the hooks were provided.
 // For BeforeGenerate and OnError, the first error returned short-circuits.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		BeforeGenerate: func(ctx context.Context, msgs []schema.Message) error {
-			for _, h := range hooks {
-				if h.BeforeGenerate != nil {
-					if err := h.BeforeGenerate(ctx, msgs); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		AfterGenerate: func(ctx context.Context, resp *schema.AIMessage, err error) {
-			for _, h := range hooks {
-				if h.AfterGenerate != nil {
-					h.AfterGenerate(ctx, resp, err)
-				}
-			}
-		},
-		OnStream: func(ctx context.Context, chunk schema.StreamChunk) {
-			for _, h := range hooks {
-				if h.OnStream != nil {
-					h.OnStream(ctx, chunk)
-				}
-			}
-		},
-		OnToolCall: func(ctx context.Context, call schema.ToolCall) {
-			for _, h := range hooks {
-				if h.OnToolCall != nil {
-					h.OnToolCall(ctx, call)
-				}
-			}
-		},
-		OnError: func(ctx context.Context, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if e := h.OnError(ctx, err); e != nil {
-						return e
-					}
-				}
-			}
-			return err
-		},
+		BeforeGenerate: hookutil.ComposeError1(h, func(hk Hooks) func(context.Context, []schema.Message) error {
+			return hk.BeforeGenerate
+		}),
+		AfterGenerate: hookutil.ComposeVoid2(h, func(hk Hooks) func(context.Context, *schema.AIMessage, error) {
+			return hk.AfterGenerate
+		}),
+		OnStream: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, schema.StreamChunk) {
+			return hk.OnStream
+		}),
+		OnToolCall: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, schema.ToolCall) {
+			return hk.OnToolCall
+		}),
+		OnError: hookutil.ComposeErrorPassthrough(h, func(hk Hooks) func(context.Context, error) error {
+			return hk.OnError
+		}),
 	}
 }

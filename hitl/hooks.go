@@ -1,6 +1,10 @@
 package hitl
 
-import "context"
+import (
+	"context"
+
+	"github.com/lookatitude/beluga-ai/internal/hookutil"
+)
 
 // Hooks provides lifecycle callbacks for the HITL manager.
 // All fields are optional; nil hooks are skipped.
@@ -29,47 +33,22 @@ type Hooks struct {
 // error return short-circuits (stops further hooks). OnError returns the
 // original error if all hooks return nil.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		OnRequest: func(ctx context.Context, req InteractionRequest) error {
-			for _, h := range hooks {
-				if h.OnRequest != nil {
-					if err := h.OnRequest(ctx, req); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		OnApprove: func(ctx context.Context, req InteractionRequest, resp InteractionResponse) {
-			for _, h := range hooks {
-				if h.OnApprove != nil {
-					h.OnApprove(ctx, req, resp)
-				}
-			}
-		},
-		OnReject: func(ctx context.Context, req InteractionRequest, resp InteractionResponse) {
-			for _, h := range hooks {
-				if h.OnReject != nil {
-					h.OnReject(ctx, req, resp)
-				}
-			}
-		},
-		OnTimeout: func(ctx context.Context, req InteractionRequest) {
-			for _, h := range hooks {
-				if h.OnTimeout != nil {
-					h.OnTimeout(ctx, req)
-				}
-			}
-		},
-		OnError: func(ctx context.Context, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if e := h.OnError(ctx, err); e != nil {
-						return e
-					}
-				}
-			}
-			return err
-		},
+		OnRequest: hookutil.ComposeError1(h, func(hk Hooks) func(context.Context, InteractionRequest) error {
+			return hk.OnRequest
+		}),
+		OnApprove: hookutil.ComposeVoid2(h, func(hk Hooks) func(context.Context, InteractionRequest, InteractionResponse) {
+			return hk.OnApprove
+		}),
+		OnReject: hookutil.ComposeVoid2(h, func(hk Hooks) func(context.Context, InteractionRequest, InteractionResponse) {
+			return hk.OnReject
+		}),
+		OnTimeout: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, InteractionRequest) {
+			return hk.OnTimeout
+		}),
+		OnError: hookutil.ComposeErrorPassthrough(h, func(hk Hooks) func(context.Context, error) error {
+			return hk.OnError
+		}),
 	}
 }

@@ -164,6 +164,58 @@ func (s *realtimeSession) sendSessionUpdate(ctx context.Context) error {
 	return s.conn.Write(ctx, websocket.MessageText, data)
 }
 
+// handleServerEvent dispatches a parsed server event to the appropriate handler.
+func (s *realtimeSession) handleServerEvent(event serverEvent) {
+	switch event.Type {
+	case "response.audio.delta":
+		s.handleAudioDelta(event)
+	case "response.audio_transcript.delta":
+		if event.Delta != "" {
+			s.events <- s2s.SessionEvent{Type: s2s.EventTextOutput, Text: event.Delta}
+		}
+	case "conversation.item.input_audio_transcription.completed":
+		if event.Transcript != "" {
+			s.events <- s2s.SessionEvent{Type: s2s.EventTranscript, Text: event.Transcript}
+		}
+	case "response.function_call_arguments.done":
+		s.events <- s2s.SessionEvent{
+			Type: s2s.EventToolCall,
+			ToolCall: &schema.ToolCall{
+				ID:        event.CallID,
+				Name:      event.Name,
+				Arguments: event.Arguments,
+			},
+		}
+	case "response.done":
+		s.events <- s2s.SessionEvent{Type: s2s.EventTurnEnd}
+	case "error":
+		s.handleErrorEvent(event)
+	}
+}
+
+// handleAudioDelta decodes and emits an audio delta event.
+func (s *realtimeSession) handleAudioDelta(event serverEvent) {
+	audioData, decErr := base64.StdEncoding.DecodeString(event.Delta)
+	if decErr == nil && len(audioData) > 0 {
+		s.events <- s2s.SessionEvent{
+			Type:  s2s.EventAudioOutput,
+			Audio: audioData,
+		}
+	}
+}
+
+// handleErrorEvent processes error events from the server.
+func (s *realtimeSession) handleErrorEvent(event serverEvent) {
+	msg := "unknown error"
+	if event.Error != nil {
+		msg = event.Error.Message
+	}
+	s.events <- s2s.SessionEvent{
+		Type:  s2s.EventError,
+		Error: fmt.Errorf("openai realtime: %s", msg),
+	}
+}
+
 func (s *realtimeSession) readLoop(ctx context.Context) {
 	defer close(s.events)
 	for {
@@ -188,57 +240,7 @@ func (s *realtimeSession) readLoop(ctx context.Context) {
 			continue
 		}
 
-		switch event.Type {
-		case "response.audio.delta":
-			audioData, decErr := base64.StdEncoding.DecodeString(event.Delta)
-			if decErr == nil && len(audioData) > 0 {
-				s.events <- s2s.SessionEvent{
-					Type:  s2s.EventAudioOutput,
-					Audio: audioData,
-				}
-			}
-
-		case "response.audio_transcript.delta":
-			if event.Delta != "" {
-				s.events <- s2s.SessionEvent{
-					Type: s2s.EventTextOutput,
-					Text: event.Delta,
-				}
-			}
-
-		case "conversation.item.input_audio_transcription.completed":
-			if event.Transcript != "" {
-				s.events <- s2s.SessionEvent{
-					Type: s2s.EventTranscript,
-					Text: event.Transcript,
-				}
-			}
-
-		case "response.function_call_arguments.done":
-			s.events <- s2s.SessionEvent{
-				Type: s2s.EventToolCall,
-				ToolCall: &schema.ToolCall{
-					ID:        event.CallID,
-					Name:      event.Name,
-					Arguments: event.Arguments,
-				},
-			}
-
-		case "response.done":
-			s.events <- s2s.SessionEvent{
-				Type: s2s.EventTurnEnd,
-			}
-
-		case "error":
-			msg := "unknown error"
-			if event.Error != nil {
-				msg = event.Error.Message
-			}
-			s.events <- s2s.SessionEvent{
-				Type:  s2s.EventError,
-				Error: fmt.Errorf("openai realtime: %s", msg),
-			}
-		}
+		s.handleServerEvent(event)
 	}
 }
 

@@ -63,54 +63,19 @@ func generateStruct(t reflect.Type) map[string]any {
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
-
-		// Skip unexported fields.
 		if !field.IsExported() {
 			continue
 		}
 
-		// Determine the property name from the json tag or field name.
-		name := field.Name
-		if jsonTag := field.Tag.Get("json"); jsonTag != "" {
-			parts := strings.SplitN(jsonTag, ",", 2)
-			if parts[0] == "-" {
-				continue
-			}
-			if parts[0] != "" {
-				name = parts[0]
-			}
+		name, skip := fieldName(field)
+		if skip {
+			continue
 		}
 
-		// Recursively generate the schema for the field's type.
 		prop := generateType(field.Type)
+		applyFieldTags(field, prop)
 
-		// Apply struct tags.
-		if desc := field.Tag.Get("description"); desc != "" {
-			prop["description"] = desc
-		}
-
-		if enum := field.Tag.Get("enum"); enum != "" {
-			values := strings.Split(enum, ",")
-			trimmed := make([]any, len(values))
-			for j, v := range values {
-				trimmed[j] = strings.TrimSpace(v)
-			}
-			prop["enum"] = trimmed
-		}
-
-		if def := field.Tag.Get("default"); def != "" {
-			prop["default"] = def
-		}
-
-		if min := field.Tag.Get("minimum"); min != "" {
-			prop["minimum"] = min
-		}
-
-		if max := field.Tag.Get("maximum"); max != "" {
-			prop["maximum"] = max
-		}
-
-		if req := field.Tag.Get("required"); req == "true" {
+		if field.Tag.Get("required") == "true" {
 			required = append(required, name)
 		}
 
@@ -125,6 +90,46 @@ func generateStruct(t reflect.Type) map[string]any {
 		schema["required"] = required
 	}
 	return schema
+}
+
+// fieldName determines the JSON property name from a struct field.
+// Returns the name and true if the field should be skipped.
+func fieldName(field reflect.StructField) (string, bool) {
+	name := field.Name
+	if jsonTag := field.Tag.Get("json"); jsonTag != "" {
+		parts := strings.SplitN(jsonTag, ",", 2)
+		if parts[0] == "-" {
+			return "", true
+		}
+		if parts[0] != "" {
+			name = parts[0]
+		}
+	}
+	return name, false
+}
+
+// applyFieldTags reads struct tags and sets corresponding schema properties.
+func applyFieldTags(field reflect.StructField, prop map[string]any) {
+	if desc := field.Tag.Get("description"); desc != "" {
+		prop["description"] = desc
+	}
+	if enum := field.Tag.Get("enum"); enum != "" {
+		values := strings.Split(enum, ",")
+		trimmed := make([]any, len(values))
+		for j, v := range values {
+			trimmed[j] = strings.TrimSpace(v)
+		}
+		prop["enum"] = trimmed
+	}
+	if def := field.Tag.Get("default"); def != "" {
+		prop["default"] = def
+	}
+	if min := field.Tag.Get("minimum"); min != "" {
+		prop["minimum"] = min
+	}
+	if max := field.Tag.Get("maximum"); max != "" {
+		prop["maximum"] = max
+	}
 }
 
 func generateSlice(t reflect.Type) map[string]any {

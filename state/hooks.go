@@ -1,6 +1,10 @@
 package state
 
-import "context"
+import (
+	"context"
+
+	"github.com/lookatitude/beluga-ai/internal/hookutil"
+)
 
 // Hooks provides optional callback functions for Store operations.
 // All fields are optional — nil hooks are skipped. Hooks can be composed
@@ -39,70 +43,28 @@ type Hooks struct {
 // For Before* hooks, OnDelete, OnWatch, and OnError, the first error
 // returned short-circuits (remaining hooks are not called).
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		BeforeGet: func(ctx context.Context, key string) error {
-			for _, h := range hooks {
-				if h.BeforeGet != nil {
-					if err := h.BeforeGet(ctx, key); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		AfterGet: func(ctx context.Context, key string, value any, err error) {
-			for _, h := range hooks {
-				if h.AfterGet != nil {
-					h.AfterGet(ctx, key, value, err)
-				}
-			}
-		},
-		BeforeSet: func(ctx context.Context, key string, value any) error {
-			for _, h := range hooks {
-				if h.BeforeSet != nil {
-					if err := h.BeforeSet(ctx, key, value); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		AfterSet: func(ctx context.Context, key string, value any, err error) {
-			for _, h := range hooks {
-				if h.AfterSet != nil {
-					h.AfterSet(ctx, key, value, err)
-				}
-			}
-		},
-		OnDelete: func(ctx context.Context, key string) error {
-			for _, h := range hooks {
-				if h.OnDelete != nil {
-					if err := h.OnDelete(ctx, key); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		OnWatch: func(ctx context.Context, key string) error {
-			for _, h := range hooks {
-				if h.OnWatch != nil {
-					if err := h.OnWatch(ctx, key); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		OnError: func(ctx context.Context, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if e := h.OnError(ctx, err); e != nil {
-						return e
-					}
-				}
-			}
-			return err
-		},
+		BeforeGet: hookutil.ComposeError1(h, func(hk Hooks) func(context.Context, string) error {
+			return hk.BeforeGet
+		}),
+		AfterGet: hookutil.ComposeVoid3(h, func(hk Hooks) func(context.Context, string, any, error) {
+			return hk.AfterGet
+		}),
+		BeforeSet: hookutil.ComposeError2(h, func(hk Hooks) func(context.Context, string, any) error {
+			return hk.BeforeSet
+		}),
+		AfterSet: hookutil.ComposeVoid3(h, func(hk Hooks) func(context.Context, string, any, error) {
+			return hk.AfterSet
+		}),
+		OnDelete: hookutil.ComposeError1(h, func(hk Hooks) func(context.Context, string) error {
+			return hk.OnDelete
+		}),
+		OnWatch: hookutil.ComposeError1(h, func(hk Hooks) func(context.Context, string) error {
+			return hk.OnWatch
+		}),
+		OnError: hookutil.ComposeErrorPassthrough(h, func(hk Hooks) func(context.Context, error) error {
+			return hk.OnError
+		}),
 	}
 }

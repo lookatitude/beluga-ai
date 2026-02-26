@@ -1,6 +1,10 @@
 package orchestration
 
-import "context"
+import (
+	"context"
+
+	"github.com/lookatitude/beluga-ai/internal/hookutil"
+)
 
 // Hooks provides optional callback functions invoked at various points during
 // orchestration execution. All fields are optional; nil hooks are skipped.
@@ -27,43 +31,19 @@ type Hooks struct {
 // Callbacks are called in the order the hooks were provided.
 // For BeforeStep, OnBranch, and OnError, the first error returned short-circuits.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		BeforeStep: func(ctx context.Context, stepName string, input any) error {
-			for _, h := range hooks {
-				if h.BeforeStep != nil {
-					if err := h.BeforeStep(ctx, stepName, input); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		AfterStep: func(ctx context.Context, stepName string, output any, err error) {
-			for _, h := range hooks {
-				if h.AfterStep != nil {
-					h.AfterStep(ctx, stepName, output, err)
-				}
-			}
-		},
-		OnBranch: func(ctx context.Context, from, to string) error {
-			for _, h := range hooks {
-				if h.OnBranch != nil {
-					if err := h.OnBranch(ctx, from, to); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		OnError: func(ctx context.Context, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if e := h.OnError(ctx, err); e != nil {
-						return e
-					}
-				}
-			}
-			return err
-		},
+		BeforeStep: hookutil.ComposeError2(h, func(hk Hooks) func(context.Context, string, any) error {
+			return hk.BeforeStep
+		}),
+		AfterStep: hookutil.ComposeVoid3(h, func(hk Hooks) func(context.Context, string, any, error) {
+			return hk.AfterStep
+		}),
+		OnBranch: hookutil.ComposeError2(h, func(hk Hooks) func(context.Context, string, string) error {
+			return hk.OnBranch
+		}),
+		OnError: hookutil.ComposeErrorPassthrough(h, func(hk Hooks) func(context.Context, error) error {
+			return hk.OnError
+		}),
 	}
 }

@@ -325,38 +325,46 @@ func convertStreamResponse(resp *genai.GenerateContentResponse, modelID string) 
 	}
 
 	if len(resp.Candidates) > 0 {
-		candidate := resp.Candidates[0]
-
-		if candidate.FinishReason != "" {
-			chunk.FinishReason = mapFinishReason(candidate.FinishReason)
-		}
-
-		if candidate.Content != nil {
-			for _, part := range candidate.Content.Parts {
-				if part.Text != "" {
-					chunk.Delta += part.Text
-				}
-				if part.FunctionCall != nil {
-					args, _ := json.Marshal(part.FunctionCall.Args)
-					chunk.ToolCalls = append(chunk.ToolCalls, schema.ToolCall{
-						ID:        part.FunctionCall.ID,
-						Name:      part.FunctionCall.Name,
-						Arguments: string(args),
-					})
-				}
-			}
-		}
+		extractCandidateContent(resp.Candidates[0], &chunk)
 	}
 
 	if resp.UsageMetadata != nil {
-		chunk.Usage = &schema.Usage{
-			InputTokens:  int(resp.UsageMetadata.PromptTokenCount),
-			OutputTokens: int(resp.UsageMetadata.CandidatesTokenCount),
-			TotalTokens:  int(resp.UsageMetadata.PromptTokenCount + resp.UsageMetadata.CandidatesTokenCount),
-		}
+		chunk.Usage = convertStreamUsage(resp.UsageMetadata)
 	}
 
 	return chunk
+}
+
+// extractCandidateContent populates a StreamChunk with data from a response candidate.
+func extractCandidateContent(candidate *genai.Candidate, chunk *schema.StreamChunk) {
+	if candidate.FinishReason != "" {
+		chunk.FinishReason = mapFinishReason(candidate.FinishReason)
+	}
+	if candidate.Content == nil {
+		return
+	}
+	for _, part := range candidate.Content.Parts {
+		if part.Text != "" {
+			chunk.Delta += part.Text
+		}
+		if part.FunctionCall != nil {
+			args, _ := json.Marshal(part.FunctionCall.Args)
+			chunk.ToolCalls = append(chunk.ToolCalls, schema.ToolCall{
+				ID:        part.FunctionCall.ID,
+				Name:      part.FunctionCall.Name,
+				Arguments: string(args),
+			})
+		}
+	}
+}
+
+// convertStreamUsage converts genai usage metadata to a schema.Usage pointer.
+func convertStreamUsage(meta *genai.GenerateContentResponseUsageMetadata) *schema.Usage {
+	return &schema.Usage{
+		InputTokens:  int(meta.PromptTokenCount),
+		OutputTokens: int(meta.CandidatesTokenCount),
+		TotalTokens:  int(meta.PromptTokenCount + meta.CandidatesTokenCount),
+	}
 }
 
 func mapFinishReason(reason genai.FinishReason) string {

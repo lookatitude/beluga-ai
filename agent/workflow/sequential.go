@@ -60,23 +60,11 @@ func (a *SequentialAgent) Stream(ctx context.Context, input string, opts ...agen
 	return func(yield func(agent.Event, error) bool) {
 		current := input
 		for _, child := range a.children {
-			var result strings.Builder
-			for event, err := range child.Stream(ctx, current, opts...) {
-				if err != nil {
-					yield(agent.Event{
-						Type:    agent.EventError,
-						AgentID: a.id,
-					}, fmt.Errorf("sequential agent %q: child %q failed: %w", a.id, child.ID(), err))
-					return
-				}
-				if !yield(event, nil) {
-					return
-				}
-				if event.Type == agent.EventText {
-					result.WriteString(event.Text)
-				}
+			result, ok := a.streamChild(ctx, child, current, yield, opts)
+			if !ok {
+				return
 			}
-			current = result.String()
+			current = result
 		}
 		yield(agent.Event{
 			Type:    agent.EventDone,
@@ -84,4 +72,27 @@ func (a *SequentialAgent) Stream(ctx context.Context, input string, opts ...agen
 			Text:    current,
 		}, nil)
 	}
+}
+
+// streamChild streams a single child agent, forwarding events via yield.
+// It returns the accumulated text result and true if streaming completed
+// successfully, or ("", false) if an error was yielded or the consumer stopped.
+func (a *SequentialAgent) streamChild(ctx context.Context, child agent.Agent, input string, yield func(agent.Event, error) bool, opts []agent.Option) (string, bool) {
+	var result strings.Builder
+	for event, err := range child.Stream(ctx, input, opts...) {
+		if err != nil {
+			yield(agent.Event{
+				Type:    agent.EventError,
+				AgentID: a.id,
+			}, fmt.Errorf("sequential agent %q: child %q failed: %w", a.id, child.ID(), err))
+			return "", false
+		}
+		if !yield(event, nil) {
+			return "", false
+		}
+		if event.Type == agent.EventText {
+			result.WriteString(event.Text)
+		}
+	}
+	return result.String(), true
 }

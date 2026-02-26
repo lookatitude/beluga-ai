@@ -35,7 +35,7 @@
 //
 // # Exported Types
 //
-//   - [VAD] — implements voice.VAD using Silero
+//   - [VAD] — implements voice.ActivityDetector using Silero
 //   - [Config] — configuration struct
 //   - [New] — constructor accepting Config
 package silero

@@ -184,7 +184,7 @@ func TestRegisterVADPanicEmptyName(t *testing.T) {
 			t.Errorf("panic message = %q, want empty name message", msg)
 		}
 	}()
-	RegisterVAD("", func(_ map[string]any) (VAD, error) { return nil, nil })
+	RegisterVAD("", func(_ map[string]any) (ActivityDetector, error) { return nil, nil })
 }
 
 func TestRegisterVADPanicNilFactory(t *testing.T) {
@@ -204,7 +204,7 @@ func TestRegisterVADPanicNilFactory(t *testing.T) {
 func TestRegisterVADPanicDuplicate(t *testing.T) {
 	// First register a unique name.
 	uniqueName := "test-dup-vad"
-	RegisterVAD(uniqueName, func(_ map[string]any) (VAD, error) {
+	RegisterVAD(uniqueName, func(_ map[string]any) (ActivityDetector, error) {
 		return NewEnergyVAD(EnergyVADConfig{}), nil
 	})
 
@@ -219,7 +219,7 @@ func TestRegisterVADPanicDuplicate(t *testing.T) {
 		}
 	}()
 	// Register same name again → should panic.
-	RegisterVAD(uniqueName, func(_ map[string]any) (VAD, error) {
+	RegisterVAD(uniqueName, func(_ map[string]any) (ActivityDetector, error) {
 		return NewEnergyVAD(EnergyVADConfig{}), nil
 	})
 }

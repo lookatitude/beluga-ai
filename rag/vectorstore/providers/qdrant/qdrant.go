@@ -140,13 +140,23 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 		opt(cfg)
 	}
 
+	body := buildQdrantSearchBody(query, k, cfg)
+
+	resp, err := s.doJSON(ctx, http.MethodPost, fmt.Sprintf("/collections/%s/points/search", s.collection), body)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseQdrantSearchResponse(resp)
+}
+
+// buildQdrantSearchBody constructs the request body for a Qdrant search.
+func buildQdrantSearchBody(query []float32, k int, cfg *vectorstore.SearchConfig) map[string]any {
 	body := map[string]any{
 		"vector":       float32SliceToFloat64(query),
 		"limit":        k,
 		"with_payload": true,
 	}
-
-	// Build filter from metadata.
 	if len(cfg.Filter) > 0 {
 		must := make([]map[string]any, 0, len(cfg.Filter))
 		for key, val := range cfg.Filter {
@@ -155,21 +165,16 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 				"match": map[string]any{"value": val},
 			})
 		}
-		body["filter"] = map[string]any{
-			"must": must,
-		}
+		body["filter"] = map[string]any{"must": must}
 	}
-
-	// Set score threshold.
 	if cfg.Threshold > 0 {
 		body["score_threshold"] = cfg.Threshold
 	}
+	return body
+}
 
-	resp, err := s.doJSON(ctx, http.MethodPost, fmt.Sprintf("/collections/%s/points/search", s.collection), body)
-	if err != nil {
-		return nil, err
-	}
-
+// parseQdrantSearchResponse parses a Qdrant search response into documents.
+func parseQdrantSearchResponse(resp []byte) ([]schema.Document, error) {
 	var result struct {
 		Result []struct {
 			ID      any            `json:"id"`
@@ -183,31 +188,30 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 
 	docs := make([]schema.Document, 0, len(result.Result))
 	for _, r := range result.Result {
-		doc := schema.Document{
-			ID:    fmt.Sprintf("%v", r.ID),
-			Score: r.Score,
-		}
-
-		// Extract content from payload.
-		if content, ok := r.Payload["content"].(string); ok {
-			doc.Content = content
-		}
-
-		// Build metadata from remaining payload fields.
-		meta := make(map[string]any)
-		for k, v := range r.Payload {
-			if k != "content" {
-				meta[k] = v
-			}
-		}
-		if len(meta) > 0 {
-			doc.Metadata = meta
-		}
-
-		docs = append(docs, doc)
+		docs = append(docs, qdrantResultToDocument(r.ID, r.Score, r.Payload))
 	}
-
 	return docs, nil
+}
+
+// qdrantResultToDocument converts a single Qdrant search result to a schema.Document.
+func qdrantResultToDocument(id any, score float64, payload map[string]any) schema.Document {
+	doc := schema.Document{
+		ID:    fmt.Sprintf("%v", id),
+		Score: score,
+	}
+	if content, ok := payload["content"].(string); ok {
+		doc.Content = content
+	}
+	meta := make(map[string]any)
+	for k, v := range payload {
+		if k != "content" {
+			meta[k] = v
+		}
+	}
+	if len(meta) > 0 {
+		doc.Metadata = meta
+	}
+	return doc
 }
 
 // Delete removes documents with the given IDs from the store.

@@ -73,16 +73,8 @@ func TestTranscribe(t *testing.T) {
 				if pollCount >= 2 {
 					json.NewEncoder(w).Encode(transcriptionResult{
 						Status: "done",
-						Result: struct {
-							Transcription struct {
-								FullTranscript string `json:"full_transcript"`
-							} `json:"transcription"`
-						}{
-							Transcription: struct {
-								FullTranscript string `json:"full_transcript"`
-							}{
-								FullTranscript: "hello world",
-							},
+						Result: transcriptionResultData{
+							Transcription: transcriptionTranscription{FullTranscript: "hello world"},
 						},
 					})
 				} else {
@@ -138,18 +130,10 @@ func TestTranscribe(t *testing.T) {
 			case r.URL.Path == "/transcription/tx_fr":
 				json.NewEncoder(w).Encode(transcriptionResult{
 					Status: "done",
-					Result: struct {
-						Transcription struct {
-							FullTranscript string `json:"full_transcript"`
-						} `json:"transcription"`
-					}{
-						Transcription: struct {
-							FullTranscript string `json:"full_transcript"`
-						}{
-							FullTranscript: "bonjour",
+					Result: transcriptionResultData{
+							Transcription: transcriptionTranscription{FullTranscript: "bonjour"},
 						},
-					},
-				})
+						})
 			}
 		}))
 		defer srv.Close()
@@ -255,16 +239,10 @@ func TestTranscribe_WithResultURL(t *testing.T) {
 		case r.URL.Path == "/custom-result":
 			json.NewEncoder(w).Encode(transcriptionResult{
 				Status: "done",
-				Result: struct {
-					Transcription struct {
-						FullTranscript string `json:"full_transcript"`
-					} `json:"transcription"`
-				}{
-					Transcription: struct {
-						FullTranscript string `json:"full_transcript"`
-					}{FullTranscript: "result via url"},
-				},
-			})
+				Result: transcriptionResultData{
+						Transcription: transcriptionTranscription{FullTranscript: "result via url"},
+					},
+					})
 		}
 	}))
 	srvURL = srv.URL
@@ -325,16 +303,10 @@ func TestTranscribe_WithOption(t *testing.T) {
 		case r.URL.Path == "/transcription/tx_de":
 			json.NewEncoder(w).Encode(transcriptionResult{
 				Status: "done",
-				Result: struct {
-					Transcription struct {
-						FullTranscript string `json:"full_transcript"`
-					} `json:"transcription"`
-				}{
-					Transcription: struct {
-						FullTranscript string `json:"full_transcript"`
-					}{FullTranscript: "hallo"},
-				},
-			})
+				Result: transcriptionResultData{
+						Transcription: transcriptionTranscription{FullTranscript: "hallo"},
+					},
+					})
 		}
 	}))
 	defer srv.Close()

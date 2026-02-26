@@ -305,7 +305,7 @@ func TestAdapter_Shutdown_Error(t *testing.T) {
 	shutdownCancel() // Cancel immediately
 
 	// Call Shutdown with expired context - should return error.
-	if err := a.Shutdown(shutdownCtx); err == nil {
+	if a.Shutdown(shutdownCtx) == nil {
 		t.Log("shutdown with expired context did not error (server may have shut down cleanly)")
 	}
 

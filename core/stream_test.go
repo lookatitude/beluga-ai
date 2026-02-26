@@ -542,7 +542,7 @@ func TestFlowController(t *testing.T) {
 		}
 
 		// Second acquire should block (but we use TryAcquire to test).
-		if ok := fc.TryAcquire(); ok {
+		if fc.TryAcquire() {
 			t.Error("TryAcquire() = true, want false (maxConcurrency=1)")
 			fc.Release()
 		}

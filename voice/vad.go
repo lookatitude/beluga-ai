@@ -35,15 +35,15 @@ type ActivityResult struct {
 	Confidence float64
 }
 
-// VAD detects voice activity in audio data.
-type VAD interface {
+// ActivityDetector detects voice activity in audio data.
+type ActivityDetector interface {
 	// DetectActivity analyses an audio chunk and returns whether speech is
 	// present along with an event type indicating state transitions.
 	DetectActivity(ctx context.Context, audio []byte) (ActivityResult, error)
 }
 
-// VADFactory creates a VAD from configuration.
-type VADFactory func(cfg map[string]any) (VAD, error)
+// VADFactory creates an ActivityDetector from configuration.
+type VADFactory func(cfg map[string]any) (ActivityDetector, error)
 
 var (
 	vadRegistryMu sync.RWMutex
@@ -70,8 +70,8 @@ func RegisterVAD(name string, f VADFactory) {
 	vadRegistry[name] = f
 }
 
-// NewVAD creates a VAD by looking up the named factory in the registry.
-func NewVAD(name string, cfg map[string]any) (VAD, error) {
+// NewVAD creates an ActivityDetector by looking up the named factory in the registry.
+func NewVAD(name string, cfg map[string]any) (ActivityDetector, error) {
 	vadRegistryMu.RLock()
 	f, ok := vadRegistry[name]
 	vadRegistryMu.RUnlock()
@@ -182,7 +182,7 @@ func computeRMS(audio []byte) float64 {
 }
 
 func init() {
-	RegisterVAD("energy", func(cfg map[string]any) (VAD, error) {
+	RegisterVAD("energy", func(cfg map[string]any) (ActivityDetector, error) {
 		threshold := 1000.0
 		if v, ok := cfg["threshold"]; ok {
 			switch t := v.(type) {

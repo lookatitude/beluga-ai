@@ -7,11 +7,6 @@ on:
       - "docs/website/**"
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 concurrency:
   group: "pages"
   cancel-in-progress: true
@@ -24,6 +19,8 @@ jobs:
   godoc:
     name: Generate GoDoc
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
 
@@ -82,6 +79,8 @@ jobs:
     name: Build Website
     needs: godoc
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
 
@@ -143,6 +142,9 @@ jobs:
     name: Deploy to GitHub Pages
     needs: build-website
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

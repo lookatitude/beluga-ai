@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/lookatitude/beluga-ai/memory"
+	"github.com/lookatitude/beluga-ai/memory/stores/internal/storeutil"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
@@ -27,16 +28,16 @@ func newTestStore(t *testing.T) (*MessageStore, pgxmock.PgxConnIface) {
 }
 
 func makeContentJSON(text string) []byte {
-	sc := storedContent{
-		Parts: []storedPart{{Type: "text", Text: text}},
+	sc := storeutil.StoredContent{
+		Parts: []storeutil.StoredPart{{Type: "text", Text: text}},
 	}
 	b, _ := json.Marshal(sc)
 	return b
 }
 
 func makeAIContentJSON(text, modelID string, toolCalls []schema.ToolCall) []byte {
-	sc := storedContent{
-		Parts:     []storedPart{{Type: "text", Text: text}},
+	sc := storeutil.StoredContent{
+		Parts:     []storeutil.StoredPart{{Type: "text", Text: text}},
 		ToolCalls: toolCalls,
 		ModelID:   modelID,
 	}
@@ -45,8 +46,8 @@ func makeAIContentJSON(text, modelID string, toolCalls []schema.ToolCall) []byte
 }
 
 func makeToolContentJSON(text, toolCallID string) []byte {
-	sc := storedContent{
-		Parts:      []storedPart{{Type: "text", Text: text}},
+	sc := storeutil.StoredContent{
+		Parts:      []storeutil.StoredPart{{Type: "text", Text: text}},
 		ToolCallID: toolCallID,
 	}
 	b, _ := json.Marshal(sc)

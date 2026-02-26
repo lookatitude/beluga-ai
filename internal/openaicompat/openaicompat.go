@@ -134,6 +134,22 @@ func applyGenerateOptions(params *openai.ChatCompletionNewParams, opts llm.Gener
 			OfStringArray: opts.StopSequences,
 		}
 	}
+	applyToolChoice(params, opts)
+	if opts.Format != nil {
+		applyResponseFormat(params, opts.Format)
+	}
+}
+
+// applyToolChoice sets the tool choice parameter from generate options.
+func applyToolChoice(params *openai.ChatCompletionNewParams, opts llm.GenerateOptions) {
+	if opts.SpecificTool != "" {
+		params.ToolChoice = openai.ChatCompletionToolChoiceOptionParamOfChatCompletionNamedToolChoice(
+			openai.ChatCompletionNamedToolChoiceFunctionParam{
+				Name: opts.SpecificTool,
+			},
+		)
+		return
+	}
 	switch opts.ToolChoice {
 	case llm.ToolChoiceAuto:
 		params.ToolChoice = openai.ChatCompletionToolChoiceOptionUnionParam{
@@ -148,49 +164,46 @@ func applyGenerateOptions(params *openai.ChatCompletionNewParams, opts llm.Gener
 			OfAuto: openai.String("required"),
 		}
 	}
-	if opts.SpecificTool != "" {
-		params.ToolChoice = openai.ChatCompletionToolChoiceOptionParamOfChatCompletionNamedToolChoice(
-			openai.ChatCompletionNamedToolChoiceFunctionParam{
-				Name: opts.SpecificTool,
-			},
-		)
-	}
-	if opts.Format != nil {
-		switch opts.Format.Type {
-		case "json_object":
-			v := shared.NewResponseFormatJSONObjectParam()
-			params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
-				OfJSONObject: &v,
-			}
-		case "text":
-			v := shared.NewResponseFormatTextParam()
-			params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
-				OfText: &v,
-			}
-		case "json_schema":
-			// JSON Schema mode for Structured Outputs
-			// Requires: name and schema fields from opts.Format.Schema
-			name, _ := opts.Format.Schema["name"].(string)
-			if name == "" {
-				name = "response_schema"
-			}
-			jsonSchemaParam := shared.ResponseFormatJSONSchemaJSONSchemaParam{
-				Name:   name,
-				Schema: opts.Format.Schema,
-			}
-			// Set optional fields if present in schema
-			if desc, ok := opts.Format.Schema["description"].(string); ok {
-				jsonSchemaParam.Description = param.NewOpt(desc)
-			}
-			if strict, ok := opts.Format.Schema["strict"].(bool); ok {
-				jsonSchemaParam.Strict = param.NewOpt(strict)
-			}
-			v := shared.ResponseFormatJSONSchemaParam{
-				JSONSchema: jsonSchemaParam,
-			}
-			params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
-				OfJSONSchema: &v,
-			}
+}
+
+// applyResponseFormat sets the response format parameter.
+func applyResponseFormat(params *openai.ChatCompletionNewParams, format *llm.ResponseFormat) {
+	switch format.Type {
+	case "json_object":
+		v := shared.NewResponseFormatJSONObjectParam()
+		params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
+			OfJSONObject: &v,
 		}
+	case "text":
+		v := shared.NewResponseFormatTextParam()
+		params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
+			OfText: &v,
+		}
+	case "json_schema":
+		params.ResponseFormat = buildJSONSchemaFormat(format.Schema)
+	}
+}
+
+// buildJSONSchemaFormat constructs a JSON Schema response format.
+func buildJSONSchemaFormat(schema map[string]any) openai.ChatCompletionNewParamsResponseFormatUnion {
+	name, _ := schema["name"].(string)
+	if name == "" {
+		name = "response_schema"
+	}
+	jsonSchemaParam := shared.ResponseFormatJSONSchemaJSONSchemaParam{
+		Name:   name,
+		Schema: schema,
+	}
+	if desc, ok := schema["description"].(string); ok {
+		jsonSchemaParam.Description = param.NewOpt(desc)
+	}
+	if strict, ok := schema["strict"].(bool); ok {
+		jsonSchemaParam.Strict = param.NewOpt(strict)
+	}
+	v := shared.ResponseFormatJSONSchemaParam{
+		JSONSchema: jsonSchemaParam,
+	}
+	return openai.ChatCompletionNewParamsResponseFormatUnion{
+		OfJSONSchema: &v,
 	}
 }

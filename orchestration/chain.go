@@ -49,27 +49,40 @@ func (c *chainRunnable) Stream(ctx context.Context, input any, opts ...core.Opti
 			return
 		}
 
-		// Invoke all steps except the last synchronously.
-		current := input
-		for i, step := range c.steps[:len(c.steps)-1] {
-			result, err := step.Invoke(ctx, current, opts...)
-			if err != nil {
-				yield(nil, fmt.Errorf("orchestration/chain: step %d: %w", i, err))
-				return
-			}
-			current = result
+		current, err := c.invokeLeadingSteps(ctx, input, opts)
+		if err != nil {
+			yield(nil, err)
+			return
 		}
 
-		// Stream the last step.
-		last := c.steps[len(c.steps)-1]
-		for val, err := range last.Stream(ctx, current, opts...) {
-			if err != nil {
-				yield(nil, fmt.Errorf("orchestration/chain: step %d: %w", len(c.steps)-1, err))
-				return
-			}
-			if !yield(val, nil) {
-				return
-			}
+		c.streamLastStep(ctx, current, yield, opts)
+	}
+}
+
+// invokeLeadingSteps runs all steps except the last synchronously, returning
+// the intermediate result or the first error.
+func (c *chainRunnable) invokeLeadingSteps(ctx context.Context, input any, opts []core.Option) (any, error) {
+	current := input
+	for i, step := range c.steps[:len(c.steps)-1] {
+		result, err := step.Invoke(ctx, current, opts...)
+		if err != nil {
+			return nil, fmt.Errorf("orchestration/chain: step %d: %w", i, err)
+		}
+		current = result
+	}
+	return current, nil
+}
+
+// streamLastStep streams the output of the final step in the chain.
+func (c *chainRunnable) streamLastStep(ctx context.Context, input any, yield func(any, error) bool, opts []core.Option) {
+	last := c.steps[len(c.steps)-1]
+	for val, err := range last.Stream(ctx, input, opts...) {
+		if err != nil {
+			yield(nil, fmt.Errorf("orchestration/chain: step %d: %w", len(c.steps)-1, err))
+			return
+		}
+		if !yield(val, nil) {
+			return
 		}
 	}
 }

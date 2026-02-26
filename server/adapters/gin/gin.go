@@ -4,21 +4,19 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"sync"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/internal/httputil"
 	"github.com/lookatitude/beluga-ai/server"
 )
 
 // Adapter implements server.ServerAdapter using the Gin HTTP framework.
 type Adapter struct {
 	engine *gin.Engine
-	srv    *http.Server
+	lc     httputil.ServerLifecycle
 	cfg    server.Config
-	mu     sync.RWMutex
 }
 
 // Compile-time interface check.
@@ -41,8 +39,6 @@ func (a *Adapter) RegisterAgent(path string, ag agent.Agent) error {
 	}
 	handler := server.NewAgentHandler(ag)
 	stripped := http.StripPrefix(path, handler)
-	a.mu.Lock()
-	defer a.mu.Unlock()
 	a.engine.Any(path+"/*action", gin.WrapH(stripped))
 	return nil
 }
@@ -52,8 +48,6 @@ func (a *Adapter) RegisterHandler(path string, handler http.Handler) error {
 	if handler == nil {
 		return fmt.Errorf("server/gin: handler must not be nil")
 	}
-	a.mu.Lock()
-	defer a.mu.Unlock()
 	a.engine.Any(path, gin.WrapH(handler))
 	return nil
 }
@@ -61,49 +55,14 @@ func (a *Adapter) RegisterHandler(path string, handler http.Handler) error {
 // Serve starts the HTTP server on the given address. It blocks until the
 // server exits or the context is canceled.
 func (a *Adapter) Serve(ctx context.Context, addr string) error {
-	a.mu.Lock()
-	a.srv = &http.Server{
-		Addr:         addr,
-		Handler:      a.engine,
-		ReadTimeout:  a.cfg.ReadTimeout,
-		WriteTimeout: a.cfg.WriteTimeout,
-		IdleTimeout:  a.cfg.IdleTimeout,
-	}
-	a.mu.Unlock()
-
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- a.srv.ListenAndServe()
-	}()
-
-	select {
-	case <-ctx.Done():
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if err := a.srv.Shutdown(shutdownCtx); err != nil {
-			return fmt.Errorf("server/gin: shutdown error: %w", err)
-		}
-		return ctx.Err()
-	case err := <-errCh:
-		if err == http.ErrServerClosed {
-			return nil
-		}
-		return fmt.Errorf("server/gin: %w", err)
-	}
+	return a.lc.Serve(ctx, addr, a.engine,
+		a.cfg.ReadTimeout, a.cfg.WriteTimeout, a.cfg.IdleTimeout,
+		"server/gin")
 }
 
 // Shutdown gracefully shuts down the server.
 func (a *Adapter) Shutdown(ctx context.Context) error {
-	a.mu.RLock()
-	srv := a.srv
-	a.mu.RUnlock()
-	if srv == nil {
-		return nil
-	}
-	if err := srv.Shutdown(ctx); err != nil {
-		return fmt.Errorf("server/gin: shutdown error: %w", err)
-	}
-	return nil
+	return a.lc.Shutdown(ctx, "server/gin")
 }
 
 // Engine returns the underlying gin.Engine for advanced configuration.

@@ -178,6 +178,95 @@ type deepgramStreamResponse struct {
 	Duration float64 `json:"duration"`
 }
 
+// dialStream opens a WebSocket connection to Deepgram's streaming endpoint.
+func (e *Engine) dialStream(ctx context.Context, cfg stt.Config) (*websocket.Conn, error) {
+	params := e.buildQueryParams(cfg)
+	wsEndpoint := e.wsURL + "/listen?" + params.Encode()
+
+	headers := http.Header{}
+	headers.Set("Authorization", "Token "+e.apiKey)
+
+	conn, _, err := websocket.Dial(ctx, wsEndpoint, &websocket.DialOptions{
+		HTTPHeader: headers,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("deepgram: websocket dial: %w", err)
+	}
+	return conn, nil
+}
+
+// parseStreamMessage parses a Deepgram WebSocket message into a TranscriptEvent.
+// Returns the event and whether it should be emitted.
+func (e *Engine) parseStreamMessage(data []byte, language string) (stt.TranscriptEvent, bool) {
+	var msg deepgramStreamResponse
+	if jsonErr := json.Unmarshal(data, &msg); jsonErr != nil {
+		return stt.TranscriptEvent{}, false
+	}
+
+	if msg.Type != "Results" || len(msg.Channel.Alternatives) == 0 {
+		return stt.TranscriptEvent{}, false
+	}
+
+	alt := msg.Channel.Alternatives[0]
+	if alt.Transcript == "" {
+		return stt.TranscriptEvent{}, false
+	}
+
+	var words []stt.Word
+	for _, w := range alt.Words {
+		words = append(words, stt.Word{
+			Text:       w.Word,
+			Start:      time.Duration(w.Start * float64(time.Second)),
+			End:        time.Duration(w.End * float64(time.Second)),
+			Confidence: w.Confidence,
+		})
+	}
+
+	return stt.TranscriptEvent{
+		Text:       alt.Transcript,
+		IsFinal:    msg.IsFinal,
+		Confidence: alt.Confidence,
+		Timestamp:  time.Duration(msg.Start * float64(time.Second)),
+		Language:   language,
+		Words:      words,
+	}, true
+}
+
+// readStreamMessages reads WebSocket messages and sends parsed events to the channel.
+func (e *Engine) readStreamMessages(ctx context.Context, conn *websocket.Conn, language string, events chan<- stt.TranscriptEvent, errs chan<- error) {
+	defer close(events)
+	for {
+		_, data, readErr := conn.Read(ctx)
+		if readErr != nil {
+			if ctx.Err() == nil {
+				errs <- fmt.Errorf("deepgram: websocket read: %w", readErr)
+			}
+			return
+		}
+		if event, ok := e.parseStreamMessage(data, language); ok {
+			events <- event
+		}
+	}
+}
+
+// sendAudioStream sends audio chunks over the WebSocket and signals end of stream.
+func (e *Engine) sendAudioStream(ctx context.Context, conn *websocket.Conn, audioStream iter.Seq2[[]byte, error], errs chan<- error) {
+	for chunk, streamErr := range audioStream {
+		if streamErr != nil {
+			errs <- streamErr
+			return
+		}
+		if writeErr := conn.Write(ctx, websocket.MessageBinary, chunk); writeErr != nil {
+			if ctx.Err() == nil {
+				errs <- fmt.Errorf("deepgram: websocket write: %w", writeErr)
+			}
+			return
+		}
+	}
+	// Signal end of stream with close message.
+	conn.Write(ctx, websocket.MessageText, []byte(`{"type": "CloseStream"}`))
+}
+
 // TranscribeStream converts a streaming audio source to transcript events
 // using Deepgram's WebSocket API.
 func (e *Engine) TranscribeStream(ctx context.Context, audioStream iter.Seq2[[]byte, error], opts ...stt.Option) iter.Seq2[stt.TranscriptEvent, error] {
@@ -187,104 +276,40 @@ func (e *Engine) TranscribeStream(ctx context.Context, audioStream iter.Seq2[[]b
 			opt(&cfg)
 		}
 
-		params := e.buildQueryParams(cfg)
-		wsEndpoint := e.wsURL + "/listen?" + params.Encode()
-
-		headers := http.Header{}
-		headers.Set("Authorization", "Token "+e.apiKey)
-
-		conn, _, err := websocket.Dial(ctx, wsEndpoint, &websocket.DialOptions{
-			HTTPHeader: headers,
-		})
+		conn, err := e.dialStream(ctx, cfg)
 		if err != nil {
-			yield(stt.TranscriptEvent{}, fmt.Errorf("deepgram: websocket dial: %w", err))
+			yield(stt.TranscriptEvent{}, err)
 			return
 		}
 		defer conn.Close(websocket.StatusNormalClosure, "")
 
-		// Read events in a goroutine.
 		events := make(chan stt.TranscriptEvent, 16)
 		errs := make(chan error, 1)
-		go func() {
-			defer close(events)
-			for {
-				_, data, readErr := conn.Read(ctx)
-				if readErr != nil {
-					if ctx.Err() == nil {
-						errs <- fmt.Errorf("deepgram: websocket read: %w", readErr)
-					}
-					return
-				}
 
-				var msg deepgramStreamResponse
-				if jsonErr := json.Unmarshal(data, &msg); jsonErr != nil {
-					continue
-				}
+		go e.readStreamMessages(ctx, conn, cfg.Language, events, errs)
+		go e.sendAudioStream(ctx, conn, audioStream, errs)
 
-				if msg.Type != "Results" || len(msg.Channel.Alternatives) == 0 {
-					continue
-				}
+		drainStreamEvents(ctx, events, errs, yield)
+	}
+}
 
-				alt := msg.Channel.Alternatives[0]
-				if alt.Transcript == "" {
-					continue
-				}
-
-				var words []stt.Word
-				for _, w := range alt.Words {
-					words = append(words, stt.Word{
-						Text:       w.Word,
-						Start:      time.Duration(w.Start * float64(time.Second)),
-						End:        time.Duration(w.End * float64(time.Second)),
-						Confidence: w.Confidence,
-					})
-				}
-
-				events <- stt.TranscriptEvent{
-					Text:       alt.Transcript,
-					IsFinal:    msg.IsFinal,
-					Confidence: alt.Confidence,
-					Timestamp:  time.Duration(msg.Start * float64(time.Second)),
-					Language:   cfg.Language,
-					Words:      words,
-				}
-			}
-		}()
-
-		// Send audio chunks.
-		go func() {
-			for chunk, streamErr := range audioStream {
-				if streamErr != nil {
-					errs <- streamErr
-					return
-				}
-				if writeErr := conn.Write(ctx, websocket.MessageBinary, chunk); writeErr != nil {
-					if ctx.Err() == nil {
-						errs <- fmt.Errorf("deepgram: websocket write: %w", writeErr)
-					}
-					return
-				}
-			}
-			// Signal end of stream with close message.
-			conn.Write(ctx, websocket.MessageText, []byte(`{"type": "CloseStream"}`))
-		}()
-
-		for {
-			select {
-			case event, ok := <-events:
-				if !ok {
-					return
-				}
-				if !yield(event, nil) {
-					return
-				}
-			case err := <-errs:
-				yield(stt.TranscriptEvent{}, err)
-				return
-			case <-ctx.Done():
-				yield(stt.TranscriptEvent{}, ctx.Err())
+// drainStreamEvents reads from event and error channels, yielding to the caller.
+func drainStreamEvents(ctx context.Context, events <-chan stt.TranscriptEvent, errs <-chan error, yield func(stt.TranscriptEvent, error) bool) {
+	for {
+		select {
+		case event, ok := <-events:
+			if !ok {
 				return
 			}
+			if !yield(event, nil) {
+				return
+			}
+		case err := <-errs:
+			yield(stt.TranscriptEvent{}, err)
+			return
+		case <-ctx.Done():
+			yield(stt.TranscriptEvent{}, ctx.Err())
+			return
 		}
 	}
 }

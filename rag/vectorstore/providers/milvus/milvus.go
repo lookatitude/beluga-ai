@@ -126,30 +126,45 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 		opt(cfg)
 	}
 
-	body := map[string]any{
-		"collectionName": s.collection,
-		"data":           [][]float64{float32SliceToFloat64(query)},
-		"limit":          k,
-		"outputFields":   []string{"id", "content", "*"},
-	}
-
-	if len(cfg.Filter) > 0 {
-		filter := ""
-		for key, val := range cfg.Filter {
-			if filter != "" {
-				filter += " and "
-			}
-			filter += fmt.Sprintf(`%s == "%v"`, key, val)
-		}
-		body["filter"] = filter
-	}
+	body := buildSearchBody(s.collection, query, k, cfg)
 
 	respBody, err := s.doJSON(ctx, http.MethodPost, "/v2/vectordb/entities/search", body)
 	if err != nil {
 		return nil, err
 	}
 
-	// Parse manually for flexible field handling.
+	return parseSearchResponse(respBody, cfg.Threshold)
+}
+
+// buildSearchBody constructs the JSON body for a Milvus search request.
+func buildSearchBody(collection string, query []float32, k int, cfg *vectorstore.SearchConfig) map[string]any {
+	body := map[string]any{
+		"collectionName": collection,
+		"data":           [][]float64{float32SliceToFloat64(query)},
+		"limit":          k,
+		"outputFields":   []string{"id", "content", "*"},
+	}
+
+	if len(cfg.Filter) > 0 {
+		body["filter"] = buildMetadataFilter(cfg.Filter)
+	}
+	return body
+}
+
+// buildMetadataFilter constructs a Milvus filter expression from metadata key-value pairs.
+func buildMetadataFilter(filter map[string]any) string {
+	expr := ""
+	for key, val := range filter {
+		if expr != "" {
+			expr += " and "
+		}
+		expr += fmt.Sprintf(`%s == "%v"`, key, val)
+	}
+	return expr
+}
+
+// parseSearchResponse parses a Milvus search response body into documents.
+func parseSearchResponse(respBody []byte, threshold float64) ([]schema.Document, error) {
 	var raw map[string]any
 	if err := json.Unmarshal(respBody, &raw); err != nil {
 		return nil, fmt.Errorf("milvus: unmarshal response: %w", err)
@@ -160,53 +175,57 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 		return nil, nil
 	}
 
-	docs := make([]schema.Document, 0, len(dataRaw))
+	var docs []schema.Document
 	for _, itemRaw := range dataRaw {
-		// Milvus returns search results as nested arrays.
-		items, ok := itemRaw.([]any)
-		if !ok {
-			// If not nested, treat as single item.
-			if obj, ok := itemRaw.(map[string]any); ok {
-				items = []any{obj}
-			} else {
+		items := flattenResultItem(itemRaw)
+		for _, obj := range items {
+			doc := resultObjectToDocument(obj)
+			if threshold > 0 && doc.Score < threshold {
 				continue
 			}
-		}
-		for _, subItem := range items {
-			obj, ok := subItem.(map[string]any)
-			if !ok {
-				continue
-			}
-
-			doc := schema.Document{
-				Metadata: make(map[string]any),
-			}
-
-			if id, ok := obj["id"].(string); ok {
-				doc.ID = id
-			}
-			if content, ok := obj["content"].(string); ok {
-				doc.Content = content
-			}
-			if dist, ok := obj["distance"].(float64); ok {
-				doc.Score = 1.0 - dist // Convert distance to similarity.
-			}
-
-			for k, v := range obj {
-				if k != "id" && k != "content" && k != "distance" && k != "embedding" {
-					doc.Metadata[k] = v
-				}
-			}
-
-			if cfg.Threshold > 0 && doc.Score < cfg.Threshold {
-				continue
-			}
-
 			docs = append(docs, doc)
 		}
 	}
-
 	return docs, nil
+}
+
+// flattenResultItem normalizes a Milvus result item (which may be nested) into a flat slice of objects.
+func flattenResultItem(itemRaw any) []map[string]any {
+	if items, ok := itemRaw.([]any); ok {
+		var result []map[string]any
+		for _, sub := range items {
+			if obj, ok := sub.(map[string]any); ok {
+				result = append(result, obj)
+			}
+		}
+		return result
+	}
+	if obj, ok := itemRaw.(map[string]any); ok {
+		return []map[string]any{obj}
+	}
+	return nil
+}
+
+// resultObjectToDocument converts a single Milvus result object to a schema.Document.
+func resultObjectToDocument(obj map[string]any) schema.Document {
+	doc := schema.Document{
+		Metadata: make(map[string]any),
+	}
+	if id, ok := obj["id"].(string); ok {
+		doc.ID = id
+	}
+	if content, ok := obj["content"].(string); ok {
+		doc.Content = content
+	}
+	if dist, ok := obj["distance"].(float64); ok {
+		doc.Score = 1.0 - dist // Convert distance to similarity.
+	}
+	for k, v := range obj {
+		if k != "id" && k != "content" && k != "distance" && k != "embedding" {
+			doc.Metadata[k] = v
+		}
+	}
+	return doc
 }
 
 // Delete removes documents with the given IDs from the store.

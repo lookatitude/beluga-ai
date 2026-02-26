@@ -88,18 +88,8 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 				return
 			}
 
-			sc := schema.StreamChunk{ModelID: m.model}
-			switch {
-			case event.TextGeneration != nil:
-				sc.Delta = event.TextGeneration.Text
-			case event.ToolCallsGeneration != nil:
-				sc.ToolCalls = convertToolCalls(event.ToolCallsGeneration.ToolCalls)
-			case event.StreamEnd != nil:
-				sc.FinishReason = string(event.StreamEnd.FinishReason)
-				if event.StreamEnd.Response != nil && event.StreamEnd.Response.Meta != nil {
-					sc.Usage = convertUsage(event.StreamEnd.Response.Meta)
-				}
-			default:
+			sc, ok := convertStreamEvent(event, m.model)
+			if !ok {
 				continue
 			}
 			if !yield(sc, nil) {
@@ -107,6 +97,26 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 			}
 		}
 	}
+}
+
+// convertStreamEvent converts a Cohere stream event to a StreamChunk.
+// Returns false if the event should be skipped.
+func convertStreamEvent(event coherego.StreamedChatResponse, modelID string) (schema.StreamChunk, bool) {
+	sc := schema.StreamChunk{ModelID: modelID}
+	switch {
+	case event.TextGeneration != nil:
+		sc.Delta = event.TextGeneration.Text
+	case event.ToolCallsGeneration != nil:
+		sc.ToolCalls = convertToolCalls(event.ToolCallsGeneration.ToolCalls)
+	case event.StreamEnd != nil:
+		sc.FinishReason = string(event.StreamEnd.FinishReason)
+		if event.StreamEnd.Response != nil && event.StreamEnd.Response.Meta != nil {
+			sc.Usage = convertUsage(event.StreamEnd.Response.Meta)
+		}
+	default:
+		return sc, false
+	}
+	return sc, true
 }
 
 // BindTools returns a new Model with the given tool definitions.
@@ -200,9 +210,21 @@ func splitMessages(msgs []schema.Message) (preamble string, history []*coherego.
 		return "", nil, ""
 	}
 
-	// Extract system messages into preamble
-	var systemParts []string
-	var nonSystem []schema.Message
+	systemParts, nonSystem := partitionMessages(msgs)
+	preamble = joinSystemParts(systemParts)
+
+	if len(nonSystem) == 0 {
+		return preamble, nil, ""
+	}
+
+	message = messageText(nonSystem[len(nonSystem)-1])
+	history = buildChatHistory(nonSystem[:len(nonSystem)-1])
+
+	return preamble, history, message
+}
+
+// partitionMessages separates system messages from non-system messages.
+func partitionMessages(msgs []schema.Message) (systemParts []string, nonSystem []schema.Message) {
 	for _, msg := range msgs {
 		if sm, ok := msg.(*schema.SystemMessage); ok {
 			systemParts = append(systemParts, sm.Text())
@@ -210,40 +232,44 @@ func splitMessages(msgs []schema.Message) (preamble string, history []*coherego.
 			nonSystem = append(nonSystem, msg)
 		}
 	}
-	if len(systemParts) > 0 {
-		for i, s := range systemParts {
-			if i > 0 {
-				preamble += "\n"
-			}
-			preamble += s
+	return systemParts, nonSystem
+}
+
+// joinSystemParts joins system message texts with newlines.
+func joinSystemParts(parts []string) string {
+	result := ""
+	for i, s := range parts {
+		if i > 0 {
+			result += "\n"
+		}
+		result += s
+	}
+	return result
+}
+
+// buildChatHistory converts non-system messages to Cohere chat history.
+func buildChatHistory(msgs []schema.Message) []*coherego.Message {
+	var history []*coherego.Message
+	for _, msg := range msgs {
+		if cm := convertToCohereMessage(msg); cm != nil {
+			history = append(history, cm)
 		}
 	}
+	return history
+}
 
-	if len(nonSystem) == 0 {
-		return preamble, nil, ""
+// messageText extracts the text content from any message type.
+func messageText(msg schema.Message) string {
+	switch m := msg.(type) {
+	case *schema.HumanMessage:
+		return m.Text()
+	case *schema.AIMessage:
+		return m.Text()
+	case *schema.ToolMessage:
+		return m.Text()
+	default:
+		return ""
 	}
-
-	// Last message becomes the "message" field.
-	// All prior non-system messages become chat_history.
-	last := nonSystem[len(nonSystem)-1]
-	if hm, ok := last.(*schema.HumanMessage); ok {
-		message = hm.Text()
-	} else if am, ok := last.(*schema.AIMessage); ok {
-		message = am.Text()
-	} else if tm, ok := last.(*schema.ToolMessage); ok {
-		message = tm.Text()
-	}
-
-	if len(nonSystem) > 1 {
-		for _, msg := range nonSystem[:len(nonSystem)-1] {
-			cm := convertToCohereMessage(msg)
-			if cm != nil {
-				history = append(history, cm)
-			}
-		}
-	}
-
-	return preamble, history, message
 }
 
 func convertToCohereMessage(msg schema.Message) *coherego.Message {
@@ -276,26 +302,33 @@ func convertToolDefs(tools []schema.ToolDefinition) []*coherego.Tool {
 			Description: t.Description,
 		}
 		if t.InputSchema != nil {
-			if props, ok := t.InputSchema["properties"].(map[string]any); ok {
-				paramDefs := make(map[string]*coherego.ToolParameterDefinitionsValue)
-				for k, v := range props {
-					pv := &coherego.ToolParameterDefinitionsValue{}
-					if vm, ok := v.(map[string]any); ok {
-						if desc, ok := vm["description"].(string); ok {
-							pv.Description = &desc
-						}
-						if typ, ok := vm["type"].(string); ok {
-							pv.Type = typ
-						}
-					}
-					paramDefs[k] = pv
-				}
-				ct.ParameterDefinitions = paramDefs
-			}
+			ct.ParameterDefinitions = extractParamDefs(t.InputSchema)
 		}
 		out[i] = ct
 	}
 	return out
+}
+
+// extractParamDefs converts a JSON Schema properties map to Cohere parameter definitions.
+func extractParamDefs(inputSchema map[string]any) map[string]*coherego.ToolParameterDefinitionsValue {
+	props, ok := inputSchema["properties"].(map[string]any)
+	if !ok {
+		return nil
+	}
+	paramDefs := make(map[string]*coherego.ToolParameterDefinitionsValue, len(props))
+	for k, v := range props {
+		pv := &coherego.ToolParameterDefinitionsValue{}
+		if vm, ok := v.(map[string]any); ok {
+			if desc, ok := vm["description"].(string); ok {
+				pv.Description = &desc
+			}
+			if typ, ok := vm["type"].(string); ok {
+				pv.Type = typ
+			}
+		}
+		paramDefs[k] = pv
+	}
+	return paramDefs
 }
 
 func convertResponse(resp *coherego.NonStreamedChatResponse, modelID string) *schema.AIMessage {

@@ -46,51 +46,45 @@ func (p *CompositePolicy) Name() string { return p.name }
 // Errors from child policies are propagated immediately.
 func (p *CompositePolicy) Authorize(ctx context.Context, subject string, permission Permission, resource string) (bool, error) {
 	if len(p.policies) == 0 {
-		// No policies — default deny.
 		return false, nil
 	}
 
 	switch p.mode {
 	case AllowIfAny:
-		for _, policy := range p.policies {
-			allowed, err := policy.Authorize(ctx, subject, permission, resource)
-			if err != nil {
-				return false, err
-			}
-			if allowed {
-				return true, nil
-			}
-		}
-		return false, nil
-
-	case AllowIfAll:
-		for _, policy := range p.policies {
-			allowed, err := policy.Authorize(ctx, subject, permission, resource)
-			if err != nil {
-				return false, err
-			}
-			if !allowed {
-				return false, nil
-			}
-		}
-		return true, nil
-
-	case DenyIfAny:
-		for _, policy := range p.policies {
-			allowed, err := policy.Authorize(ctx, subject, permission, resource)
-			if err != nil {
-				return false, err
-			}
-			if !allowed {
-				return false, nil
-			}
-		}
-		return true, nil
-
+		return p.authorizeAny(ctx, subject, permission, resource)
+	case AllowIfAll, DenyIfAny:
+		return p.authorizeAll(ctx, subject, permission, resource)
 	default:
-		// Unknown mode — default deny.
 		return false, nil
 	}
+}
+
+// authorizeAny returns true if any child policy allows access.
+func (p *CompositePolicy) authorizeAny(ctx context.Context, subject string, permission Permission, resource string) (bool, error) {
+	for _, policy := range p.policies {
+		allowed, err := policy.Authorize(ctx, subject, permission, resource)
+		if err != nil {
+			return false, err
+		}
+		if allowed {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// authorizeAll returns true only if all child policies allow access.
+func (p *CompositePolicy) authorizeAll(ctx context.Context, subject string, permission Permission, resource string) (bool, error) {
+	for _, policy := range p.policies {
+		allowed, err := policy.Authorize(ctx, subject, permission, resource)
+		if err != nil {
+			return false, err
+		}
+		if !allowed {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 // Ensure CompositePolicy implements Policy at compile time.

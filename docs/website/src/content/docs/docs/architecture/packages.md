@@ -235,7 +235,7 @@ type ChatModel interface {
 | Type | Purpose |
 |------|---------|
 | `Factory` | `func(cfg config.ProviderConfig) (ChatModel, error)` |
-| `RouterStrategy` | Interface for routing across models (RoundRobin, Failover, CostOptimized) |
+| `ModelSelector` | Interface for routing across models (RoundRobin, Failover, CostOptimized) |
 | `ContextManager` | Interface for fitting messages within token budgets (Truncate, Sliding, Summarize) |
 | `Tokenizer` | Interface for token counting |
 | `Middleware` | `func(ChatModel) ChatModel` |

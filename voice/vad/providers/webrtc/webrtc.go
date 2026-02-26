@@ -14,10 +14,10 @@ const (
 	defaultZCRThreshold    = 0.1
 )
 
-var _ voice.VAD = (*VAD)(nil) // compile-time interface check
+var _ voice.ActivityDetector = (*VAD)(nil) // compile-time interface check
 
 func init() {
-	voice.RegisterVAD("webrtc", func(cfg map[string]any) (voice.VAD, error) {
+	voice.RegisterVAD("webrtc", func(cfg map[string]any) (voice.ActivityDetector, error) {
 		energyThreshold := defaultEnergyThreshold
 		if v, ok := cfg["threshold"]; ok {
 			switch t := v.(type) {
@@ -40,7 +40,7 @@ func init() {
 	})
 }
 
-// VAD implements voice.VAD using energy and zero-crossing rate analysis.
+// VAD implements voice.ActivityDetector using energy and zero-crossing rate analysis.
 type VAD struct {
 	energyThreshold float64
 	zcrThreshold    float64
@@ -62,6 +62,63 @@ func New(energyThreshold, zcrThreshold float64) *VAD {
 	}
 }
 
+// decodeSamples converts raw 16-bit little-endian PCM bytes to int16 samples.
+func decodeSamples(audio []byte) []int16 {
+	numSamples := len(audio) / 2
+	samples := make([]int16, numSamples)
+	for i := range numSamples {
+		samples[i] = int16(binary.LittleEndian.Uint16(audio[i*2 : i*2+2]))
+	}
+	return samples
+}
+
+// computeRMS computes the root-mean-square energy of the samples.
+func computeRMS(samples []int16) float64 {
+	var sumSquares float64
+	for _, s := range samples {
+		sumSquares += float64(s) * float64(s)
+	}
+	return math.Sqrt(sumSquares / float64(len(samples)))
+}
+
+// computeZCR computes the zero-crossing rate of the samples.
+func computeZCR(samples []int16) float64 {
+	var crossings int
+	for i := 1; i < len(samples); i++ {
+		if (samples[i-1] >= 0 && samples[i] < 0) ||
+			(samples[i-1] < 0 && samples[i] >= 0) {
+			crossings++
+		}
+	}
+	return float64(crossings) / float64(len(samples)-1)
+}
+
+// computeConfidence calculates the speech confidence score from RMS and ZCR analysis.
+func (v *VAD) computeConfidence(rms float64, zcrBelow bool) float64 {
+	confidence := rms / (v.energyThreshold * 2)
+	if confidence > 1.0 {
+		confidence = 1.0
+	}
+	if !zcrBelow {
+		confidence *= 0.5 // reduce confidence for high ZCR (likely noise)
+	}
+	return confidence
+}
+
+// resolveEventType determines the VAD event type based on current and previous speech state.
+func (v *VAD) resolveEventType(isSpeech bool) voice.VADEventType {
+	switch {
+	case isSpeech && !v.wasSpeaking:
+		return voice.VADSpeechStart
+	case !isSpeech && v.wasSpeaking:
+		return voice.VADSpeechEnd
+	case isSpeech:
+		return voice.VADSpeechStart // ongoing speech
+	default:
+		return voice.VADSilence
+	}
+}
+
 // DetectActivity analyses 16-bit little-endian PCM audio and returns whether
 // speech is present based on energy and zero-crossing rate.
 func (v *VAD) DetectActivity(_ context.Context, audio []byte) (voice.ActivityResult, error) {
@@ -72,59 +129,19 @@ func (v *VAD) DetectActivity(_ context.Context, audio []byte) (voice.ActivityRes
 		}, nil
 	}
 
-	numSamples := len(audio) / 2
-	samples := make([]int16, numSamples)
-	for i := range numSamples {
-		samples[i] = int16(binary.LittleEndian.Uint16(audio[i*2 : i*2+2]))
-	}
+	samples := decodeSamples(audio)
+	rms := computeRMS(samples)
+	zcr := computeZCR(samples)
 
-	// Compute RMS energy.
-	var sumSquares float64
-	for _, s := range samples {
-		sumSquares += float64(s) * float64(s)
-	}
-	rms := math.Sqrt(sumSquares / float64(numSamples))
-
-	// Compute zero-crossing rate (ZCR).
-	var crossings int
-	for i := 1; i < numSamples; i++ {
-		if (samples[i-1] >= 0 && samples[i] < 0) ||
-			(samples[i-1] < 0 && samples[i] >= 0) {
-			crossings++
-		}
-	}
-	zcr := float64(crossings) / float64(numSamples-1)
-
-	// Speech is detected when energy is above threshold and ZCR suggests
-	// voiced content (not just noise which tends to have high ZCR).
 	energyAbove := rms >= v.energyThreshold
 	zcrBelow := zcr <= v.zcrThreshold || v.zcrThreshold == 0
 	isSpeech := energyAbove && zcrBelow
-
-	// Compute confidence.
-	confidence := rms / (v.energyThreshold * 2)
-	if confidence > 1.0 {
-		confidence = 1.0
-	}
-	if !zcrBelow {
-		confidence *= 0.5 // reduce confidence for high ZCR (likely noise)
-	}
+	confidence := v.computeConfidence(rms, zcrBelow)
 
 	v.mu.Lock()
 	defer v.mu.Unlock()
 
-	var eventType voice.VADEventType
-	switch {
-	case isSpeech && !v.wasSpeaking:
-		eventType = voice.VADSpeechStart
-	case !isSpeech && v.wasSpeaking:
-		eventType = voice.VADSpeechEnd
-	case isSpeech:
-		eventType = voice.VADSpeechStart // ongoing speech
-	default:
-		eventType = voice.VADSilence
-	}
-
+	eventType := v.resolveEventType(isSpeech)
 	v.wasSpeaking = isSpeech
 
 	return voice.ActivityResult{

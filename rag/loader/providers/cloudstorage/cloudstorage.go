@@ -117,19 +117,12 @@ func (l *Loader) Load(ctx context.Context, source string) ([]schema.Document, er
 	}
 
 	// Add auth headers for GCS and Azure.
-	switch provider {
-	case "gcs":
-		if l.accessKey != "" {
-			req.Header.Set("Authorization", "Bearer "+l.accessKey)
-		}
-	case "azure":
-		if l.accessKey != "" {
+	if l.accessKey != "" {
+		switch provider {
+		case "azure":
 			req.Header.Set("x-ms-blob-type", "BlockBlob")
 			req.Header.Set("Authorization", "Bearer "+l.accessKey)
-		}
-	case "s3":
-		if l.accessKey != "" {
-			// Simplified auth header for S3 - in production, use AWS SDK signing.
+		case "gcs", "s3":
 			req.Header.Set("Authorization", "Bearer "+l.accessKey)
 		}
 	}

@@ -105,7 +105,7 @@ func TestStdlibAdapter_RegisterAgent(t *testing.T) {
 
 	t.Run("nil agent returns error", func(t *testing.T) {
 		adapter := NewStdlibAdapter(Config{})
-		if err := adapter.RegisterAgent("/api/agent", nil); err == nil {
+		if adapter.RegisterAgent("/api/agent", nil) == nil {
 			t.Fatal("expected error for nil agent")
 		}
 	})
@@ -124,7 +124,7 @@ func TestStdlibAdapter_RegisterHandler(t *testing.T) {
 
 	t.Run("nil handler returns error", func(t *testing.T) {
 		adapter := NewStdlibAdapter(Config{})
-		if err := adapter.RegisterHandler("/health", nil); err == nil {
+		if adapter.RegisterHandler("/health", nil) == nil {
 			t.Fatal("expected error for nil handler")
 		}
 	})

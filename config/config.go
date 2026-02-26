@@ -121,41 +121,36 @@ func applyDefaultsSelectiveValue(v reflect.Value, provided map[string]json.RawMe
 			continue
 		}
 
-		// Determine JSON key for this field.
-		jsonKey := sf.Name
-		if tag := sf.Tag.Get("json"); tag != "" {
-			parts := strings.Split(tag, ",")
-			if parts[0] != "" && parts[0] != "-" {
-				jsonKey = parts[0]
-			}
-		}
-
-		if field.Kind() == reflect.Struct {
-			// For nested structs, check if the key was provided and pass its sub-map.
-			var nested map[string]json.RawMessage
-			if raw, ok := provided[jsonKey]; ok {
-				_ = json.Unmarshal(raw, &nested)
-			}
-			applyDefaultsSelectiveValue(field, nested)
-			continue
-		}
-
-		// Skip if the field was explicitly provided in JSON.
-		if _, ok := provided[jsonKey]; ok {
-			continue
-		}
-
-		if !field.IsZero() {
-			continue
-		}
-
-		def := sf.Tag.Get("default")
-		if def == "" {
-			continue
-		}
-
-		setFieldFromString(field, def)
+		jsonKey := jsonKeyForField(sf)
+		applyDefaultSelectiveField(field, sf, jsonKey, provided)
 	}
+}
+
+// applyDefaultSelectiveField applies a default to a single field if it was
+// not explicitly provided in the JSON input.
+func applyDefaultSelectiveField(field reflect.Value, sf reflect.StructField, jsonKey string, provided map[string]json.RawMessage) {
+	if field.Kind() == reflect.Struct {
+		var nested map[string]json.RawMessage
+		if raw, ok := provided[jsonKey]; ok {
+			_ = json.Unmarshal(raw, &nested)
+		}
+		applyDefaultsSelectiveValue(field, nested)
+		return
+	}
+
+	if _, ok := provided[jsonKey]; ok {
+		return
+	}
+	if !field.IsZero() {
+		return
+	}
+
+	def := sf.Tag.Get("default")
+	if def == "" {
+		return
+	}
+
+	setFieldFromString(field, def)
 }
 
 // applyDefaults sets zero-valued struct fields to their `default` tag values.
@@ -226,34 +221,30 @@ func validateRequiredStruct(v reflect.Value, provided map[string]json.RawMessage
 			continue
 		}
 
-		// Determine JSON key for this field.
-		jsonKey := sf.Name
-		if jsonTag := sf.Tag.Get("json"); jsonTag != "" {
-			parts := strings.Split(jsonTag, ",")
-			if parts[0] != "" && parts[0] != "-" {
-				jsonKey = parts[0]
-			}
-		}
+		jsonKey := jsonKeyForField(sf)
 
-		if field.Kind() == reflect.Struct {
-			var nested map[string]json.RawMessage
-			if raw, ok := provided[jsonKey]; ok {
-				_ = json.Unmarshal(raw, &nested)
-			}
-			if err := validateRequiredStruct(field, nested); err != nil {
-				return err
-			}
-			continue
+		if err := validateRequiredField(field, sf, jsonKey, provided); err != nil {
+			return err
 		}
+	}
+	return nil
+}
 
-		// A field is required and missing if: it has required:"true", its
-		// value is zero, AND it was not explicitly provided in the JSON.
-		if sf.Tag.Get("required") == "true" && field.IsZero() {
-			if _, ok := provided[jsonKey]; !ok {
-				return &ValidationError{
-					Field:   jsonKey,
-					Message: "field is required",
-				}
+// validateRequiredField checks the required constraint on a single field.
+func validateRequiredField(field reflect.Value, sf reflect.StructField, jsonKey string, provided map[string]json.RawMessage) error {
+	if field.Kind() == reflect.Struct {
+		var nested map[string]json.RawMessage
+		if raw, ok := provided[jsonKey]; ok {
+			_ = json.Unmarshal(raw, &nested)
+		}
+		return validateRequiredStruct(field, nested)
+	}
+
+	if sf.Tag.Get("required") == "true" && field.IsZero() {
+		if _, ok := provided[jsonKey]; !ok {
+			return &ValidationError{
+				Field:   jsonKey,
+				Message: "field is required",
 			}
 		}
 	}
@@ -271,36 +262,40 @@ func validateStruct(v reflect.Value) error {
 			continue
 		}
 
-		// Recurse into nested structs.
-		if field.Kind() == reflect.Struct {
-			if err := validateStruct(field); err != nil {
-				return err
-			}
-			continue
-		}
-
-		fieldName := sf.Name
-		if jsonTag := sf.Tag.Get("json"); jsonTag != "" {
-			parts := strings.Split(jsonTag, ",")
-			if parts[0] != "" && parts[0] != "-" {
-				fieldName = parts[0]
-			}
-		}
-
-		// Check required.
-		if sf.Tag.Get("required") == "true" && field.IsZero() {
-			return &ValidationError{
-				Field:   fieldName,
-				Message: "field is required",
-			}
-		}
-
-		// Check min/max for numeric types.
-		if err := validateNumericBounds(field, sf, fieldName); err != nil {
+		if err := validateStructField(field, sf); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// validateStructField validates a single struct field against its tags.
+func validateStructField(field reflect.Value, sf reflect.StructField) error {
+	if field.Kind() == reflect.Struct {
+		return validateStruct(field)
+	}
+
+	fieldName := jsonKeyForField(sf)
+
+	if sf.Tag.Get("required") == "true" && field.IsZero() {
+		return &ValidationError{
+			Field:   fieldName,
+			Message: "field is required",
+		}
+	}
+
+	return validateNumericBounds(field, sf, fieldName)
+}
+
+// jsonKeyForField returns the JSON key for a struct field, falling back to the field name.
+func jsonKeyForField(sf reflect.StructField) string {
+	if jsonTag := sf.Tag.Get("json"); jsonTag != "" {
+		parts := strings.Split(jsonTag, ",")
+		if parts[0] != "" && parts[0] != "-" {
+			return parts[0]
+		}
+	}
+	return sf.Name
 }
 
 // validateNumericBounds checks min/max constraints on numeric fields.
@@ -405,21 +400,11 @@ func setFieldFromString(field reflect.Value, s string) bool {
 		}
 		field.SetBool(b)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		// Support time.Duration (int64 with special parsing).
-		if field.Type().String() == "time.Duration" {
-			// Try parsing as an integer (nanoseconds) for simplicity in env vars.
-			n, err := strconv.ParseInt(s, 10, 64)
-			if err != nil {
-				return false
-			}
-			field.SetInt(n)
-		} else {
-			n, err := strconv.ParseInt(s, 10, 64)
-			if err != nil {
-				return false
-			}
-			field.SetInt(n)
+		n, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return false
 		}
+		field.SetInt(n)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		n, err := strconv.ParseUint(s, 10, 64)
 		if err != nil {

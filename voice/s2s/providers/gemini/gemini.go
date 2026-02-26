@@ -183,6 +183,64 @@ func (s *geminiSession) sendSetup(ctx context.Context) error {
 	return s.conn.Write(ctx, websocket.MessageText, data)
 }
 
+// handleServerContent processes server content messages and emits session events.
+func (s *geminiSession) handleServerContent(content *geminiContent) {
+	if content.ModelTurn != nil {
+		for _, part := range content.ModelTurn.Parts {
+			s.handleContentPart(part)
+		}
+	}
+	if content.TurnComplete {
+		s.events <- s2s.SessionEvent{
+			Type: s2s.EventTurnEnd,
+		}
+	}
+}
+
+// handleContentPart processes a single content part and emits the appropriate event.
+func (s *geminiSession) handleContentPart(part geminiPart) {
+	if part.Text != "" {
+		s.events <- s2s.SessionEvent{
+			Type: s2s.EventTextOutput,
+			Text: part.Text,
+		}
+	}
+	if part.InlineData != nil {
+		audioData, decErr := base64.StdEncoding.DecodeString(part.InlineData.Data)
+		if decErr == nil && len(audioData) > 0 {
+			s.events <- s2s.SessionEvent{
+				Type:  s2s.EventAudioOutput,
+				Audio: audioData,
+			}
+		}
+	}
+}
+
+// handleToolCall processes tool call messages and emits session events.
+func (s *geminiSession) handleToolCall(tc *geminiToolCall) {
+	for _, fc := range tc.FunctionCalls {
+		args, _ := json.Marshal(fc.Args)
+		s.events <- s2s.SessionEvent{
+			Type: s2s.EventToolCall,
+			ToolCall: &schema.ToolCall{
+				ID:        fc.ID,
+				Name:      fc.Name,
+				Arguments: string(args),
+			},
+		}
+	}
+}
+
+// handleServerMessage dispatches a parsed server message to the appropriate handler.
+func (s *geminiSession) handleServerMessage(msg geminiServerMsg) {
+	if msg.ServerContent != nil {
+		s.handleServerContent(msg.ServerContent)
+	}
+	if msg.ToolCall != nil {
+		s.handleToolCall(msg.ToolCall)
+	}
+}
+
 func (s *geminiSession) readLoop(ctx context.Context) {
 	defer close(s.events)
 	for {
@@ -207,46 +265,7 @@ func (s *geminiSession) readLoop(ctx context.Context) {
 			continue
 		}
 
-		if msg.ServerContent != nil {
-			if msg.ServerContent.ModelTurn != nil {
-				for _, part := range msg.ServerContent.ModelTurn.Parts {
-					if part.Text != "" {
-						s.events <- s2s.SessionEvent{
-							Type: s2s.EventTextOutput,
-							Text: part.Text,
-						}
-					}
-					if part.InlineData != nil {
-						audioData, decErr := base64.StdEncoding.DecodeString(part.InlineData.Data)
-						if decErr == nil && len(audioData) > 0 {
-							s.events <- s2s.SessionEvent{
-								Type:  s2s.EventAudioOutput,
-								Audio: audioData,
-							}
-						}
-					}
-				}
-			}
-			if msg.ServerContent.TurnComplete {
-				s.events <- s2s.SessionEvent{
-					Type: s2s.EventTurnEnd,
-				}
-			}
-		}
-
-		if msg.ToolCall != nil {
-			for _, fc := range msg.ToolCall.FunctionCalls {
-				args, _ := json.Marshal(fc.Args)
-				s.events <- s2s.SessionEvent{
-					Type: s2s.EventToolCall,
-					ToolCall: &schema.ToolCall{
-						ID:        fc.ID,
-						Name:      fc.Name,
-						Arguments: string(args),
-					},
-				}
-			}
-		}
+		s.handleServerMessage(msg)
 	}
 }
 

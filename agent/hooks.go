@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 
+	"github.com/lookatitude/beluga-ai/internal/hookutil"
 	"github.com/lookatitude/beluga-ai/tool"
 )
 
@@ -59,133 +60,46 @@ type ToolCallInfo struct {
 // Callbacks are called in the order the hooks were provided.
 // For error-returning callbacks, the first error short-circuits.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		OnStart: func(ctx context.Context, input string) error {
-			for _, h := range hooks {
-				if h.OnStart != nil {
-					if err := h.OnStart(ctx, input); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		OnEnd: func(ctx context.Context, result string, err error) {
-			for _, h := range hooks {
-				if h.OnEnd != nil {
-					h.OnEnd(ctx, result, err)
-				}
-			}
-		},
-		OnError: func(ctx context.Context, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if e := h.OnError(ctx, err); e != nil {
-						return e
-					}
-				}
-			}
-			return err
-		},
-		BeforePlan: func(ctx context.Context, state PlannerState) error {
-			for _, h := range hooks {
-				if h.BeforePlan != nil {
-					if err := h.BeforePlan(ctx, state); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		AfterPlan: func(ctx context.Context, actions []Action) error {
-			for _, h := range hooks {
-				if h.AfterPlan != nil {
-					if err := h.AfterPlan(ctx, actions); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		BeforeAct: func(ctx context.Context, action Action) error {
-			for _, h := range hooks {
-				if h.BeforeAct != nil {
-					if err := h.BeforeAct(ctx, action); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		AfterAct: func(ctx context.Context, action Action, obs Observation) error {
-			for _, h := range hooks {
-				if h.AfterAct != nil {
-					if err := h.AfterAct(ctx, action, obs); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		OnToolCall: func(ctx context.Context, call ToolCallInfo) error {
-			for _, h := range hooks {
-				if h.OnToolCall != nil {
-					if err := h.OnToolCall(ctx, call); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		OnToolResult: func(ctx context.Context, call ToolCallInfo, result *tool.Result) error {
-			for _, h := range hooks {
-				if h.OnToolResult != nil {
-					if err := h.OnToolResult(ctx, call, result); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		OnIteration: func(ctx context.Context, iteration int) error {
-			for _, h := range hooks {
-				if h.OnIteration != nil {
-					if err := h.OnIteration(ctx, iteration); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		OnHandoff: func(ctx context.Context, from, to string) error {
-			for _, h := range hooks {
-				if h.OnHandoff != nil {
-					if err := h.OnHandoff(ctx, from, to); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		BeforeGenerate: func(ctx context.Context) error {
-			for _, h := range hooks {
-				if h.BeforeGenerate != nil {
-					if err := h.BeforeGenerate(ctx); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		AfterGenerate: func(ctx context.Context) error {
-			for _, h := range hooks {
-				if h.AfterGenerate != nil {
-					if err := h.AfterGenerate(ctx); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
+		OnStart: hookutil.ComposeError1(h, func(hk Hooks) func(context.Context, string) error {
+			return hk.OnStart
+		}),
+		OnEnd: hookutil.ComposeVoid2(h, func(hk Hooks) func(context.Context, string, error) {
+			return hk.OnEnd
+		}),
+		OnError: hookutil.ComposeErrorPassthrough(h, func(hk Hooks) func(context.Context, error) error {
+			return hk.OnError
+		}),
+		BeforePlan: hookutil.ComposeError1(h, func(hk Hooks) func(context.Context, PlannerState) error {
+			return hk.BeforePlan
+		}),
+		AfterPlan: hookutil.ComposeError1(h, func(hk Hooks) func(context.Context, []Action) error {
+			return hk.AfterPlan
+		}),
+		BeforeAct: hookutil.ComposeError1(h, func(hk Hooks) func(context.Context, Action) error {
+			return hk.BeforeAct
+		}),
+		AfterAct: hookutil.ComposeError2(h, func(hk Hooks) func(context.Context, Action, Observation) error {
+			return hk.AfterAct
+		}),
+		OnToolCall: hookutil.ComposeError1(h, func(hk Hooks) func(context.Context, ToolCallInfo) error {
+			return hk.OnToolCall
+		}),
+		OnToolResult: hookutil.ComposeError2(h, func(hk Hooks) func(context.Context, ToolCallInfo, *tool.Result) error {
+			return hk.OnToolResult
+		}),
+		OnIteration: hookutil.ComposeError1(h, func(hk Hooks) func(context.Context, int) error {
+			return hk.OnIteration
+		}),
+		OnHandoff: hookutil.ComposeError2(h, func(hk Hooks) func(context.Context, string, string) error {
+			return hk.OnHandoff
+		}),
+		BeforeGenerate: hookutil.ComposeError0(h, func(hk Hooks) func(context.Context) error {
+			return hk.BeforeGenerate
+		}),
+		AfterGenerate: hookutil.ComposeError0(h, func(hk Hooks) func(context.Context) error {
+			return hk.AfterGenerate
+		}),
 	}
 }

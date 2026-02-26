@@ -113,29 +113,34 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 	}
 
 	return func(yield func(schema.StreamChunk, error) bool) {
-		output, err := m.client.ConverseStream(ctx, input)
-		if err != nil {
-			yield(schema.StreamChunk{}, fmt.Errorf("bedrock: stream failed: %w", err))
-			return
-		}
-		stream := output.GetStream()
-		if stream == nil {
-			return
-		}
-		defer stream.Close()
+		consumeBedrockStream(ctx, m.client, input, m.modelID, yield)
+	}
+}
 
-		for event := range stream.Events() {
-			chunk := convertStreamEvent(event, m.modelID)
-			if chunk == nil {
-				continue
-			}
-			if !yield(*chunk, nil) {
-				return
-			}
+// consumeBedrockStream opens a Bedrock converse stream and yields chunks to the caller.
+func consumeBedrockStream(ctx context.Context, client ConverseAPI, input *bedrockruntime.ConverseStreamInput, modelID string, yield func(schema.StreamChunk, error) bool) {
+	output, err := client.ConverseStream(ctx, input)
+	if err != nil {
+		yield(schema.StreamChunk{}, fmt.Errorf("bedrock: stream failed: %w", err))
+		return
+	}
+	stream := output.GetStream()
+	if stream == nil {
+		return
+	}
+	defer stream.Close()
+
+	for event := range stream.Events() {
+		chunk := convertStreamEvent(event, modelID)
+		if chunk == nil {
+			continue
 		}
-		if err := stream.Err(); err != nil {
-			yield(schema.StreamChunk{}, fmt.Errorf("bedrock: stream error: %w", err))
+		if !yield(*chunk, nil) {
+			return
 		}
+	}
+	if err := stream.Err(); err != nil {
+		yield(schema.StreamChunk{}, fmt.Errorf("bedrock: stream error: %w", err))
 	}
 }
 

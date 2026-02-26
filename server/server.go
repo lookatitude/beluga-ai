@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/internal/httputil"
 )
 
 // ServerAdapter is the interface that HTTP framework adapters must implement.
@@ -90,10 +91,9 @@ func List() []string {
 // StdlibAdapter is the built-in ServerAdapter that uses the standard library
 // net/http package.
 type StdlibAdapter struct {
-	mux    *http.ServeMux
-	server *http.Server
-	cfg    Config
-	mu     sync.RWMutex
+	mux *http.ServeMux
+	lc  httputil.ServerLifecycle
+	cfg Config
 }
 
 // NewStdlibAdapter creates a new StdlibAdapter with the given configuration.
@@ -112,8 +112,6 @@ func (s *StdlibAdapter) RegisterAgent(path string, a agent.Agent) error {
 		return fmt.Errorf("server/register-agent: agent must not be nil")
 	}
 	handler := NewAgentHandler(a)
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.mux.Handle(path+"/", handler)
 	return nil
 }
@@ -123,8 +121,6 @@ func (s *StdlibAdapter) RegisterHandler(path string, handler http.Handler) error
 	if handler == nil {
 		return fmt.Errorf("server/register-handler: handler must not be nil")
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.mux.Handle(path, handler)
 	return nil
 }
@@ -132,49 +128,14 @@ func (s *StdlibAdapter) RegisterHandler(path string, handler http.Handler) error
 // Serve starts the HTTP server on the given address. It blocks until the
 // server exits or the context is canceled.
 func (s *StdlibAdapter) Serve(ctx context.Context, addr string) error {
-	s.mu.Lock()
-	s.server = &http.Server{
-		Addr:         addr,
-		Handler:      s.mux,
-		ReadTimeout:  s.cfg.ReadTimeout,
-		WriteTimeout: s.cfg.WriteTimeout,
-		IdleTimeout:  s.cfg.IdleTimeout,
-	}
-	s.mu.Unlock()
-
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- s.server.ListenAndServe()
-	}()
-
-	select {
-	case <-ctx.Done():
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if err := s.server.Shutdown(shutdownCtx); err != nil {
-			return fmt.Errorf("server/serve: shutdown error: %w", err)
-		}
-		return ctx.Err()
-	case err := <-errCh:
-		if err == http.ErrServerClosed {
-			return nil
-		}
-		return fmt.Errorf("server/serve: %w", err)
-	}
+	return s.lc.Serve(ctx, addr, s.mux,
+		s.cfg.ReadTimeout, s.cfg.WriteTimeout, s.cfg.IdleTimeout,
+		"server/serve")
 }
 
 // Shutdown gracefully shuts down the server.
 func (s *StdlibAdapter) Shutdown(ctx context.Context) error {
-	s.mu.RLock()
-	srv := s.server
-	s.mu.RUnlock()
-	if srv == nil {
-		return nil
-	}
-	if err := srv.Shutdown(ctx); err != nil {
-		return fmt.Errorf("server/shutdown: %w", err)
-	}
-	return nil
+	return s.lc.Shutdown(ctx, "server/shutdown")
 }
 
 func init() {

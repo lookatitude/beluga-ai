@@ -70,155 +70,226 @@ func NewExecutor(opts ...ExecutorOption) *Executor {
 	return e
 }
 
+// runContext holds the mutable state for a single execution of the reasoning loop.
+type runContext struct {
+	agentID     string
+	hooks       Hooks
+	reg         *tool.Registry
+	state       PlannerState
+	yield       func(Event, error) bool
+	finalResult string
+	finalErr    error
+}
+
+// yieldError emits an error event and records it as the final error.
+func (rc *runContext) yieldError(err error) {
+	rc.finalErr = err
+	rc.yield(Event{Type: EventError, AgentID: rc.agentID}, err)
+}
+
 // Run executes the reasoning loop, yielding events as they occur.
 // The loop: Plan → Execute actions → Observe results → Replan → repeat.
 func (e *Executor) Run(ctx context.Context, input string, agentID string, tools []tool.Tool, messages []schema.Message, hooks Hooks) iter.Seq2[Event, error] {
 	return func(yield func(Event, error) bool) {
-		// Apply timeout
-		if e.timeout > 0 {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(ctx, e.timeout)
+		ctx, cancel := e.applyTimeout(ctx)
+		if cancel != nil {
 			defer cancel()
 		}
 
-		// Build tool registry from provided tools
-		reg := tool.NewRegistry()
-		for _, t := range tools {
-			_ = reg.Add(t)
+		rc := e.newRunContext(agentID, tools, hooks, yield, input, messages)
+
+		if hooks.OnStart != nil {
+			if err := hooks.OnStart(ctx, input); err != nil {
+				rc.yieldError(err)
+				return
+			}
 		}
 
-		// Initialize planner state
-		state := PlannerState{
+		defer func() {
+			if hooks.OnEnd != nil {
+				hooks.OnEnd(ctx, rc.finalResult, rc.finalErr)
+			}
+		}()
+
+		e.runLoop(ctx, rc, agentID)
+	}
+}
+
+// applyTimeout wraps ctx with a timeout if configured. Returns the context
+// and a cancel func (nil if no timeout was applied).
+func (e *Executor) applyTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
+	if e.timeout > 0 {
+		return context.WithTimeout(ctx, e.timeout)
+	}
+	return ctx, nil
+}
+
+// newRunContext initialises a runContext for a single execution.
+func (e *Executor) newRunContext(agentID string, tools []tool.Tool, hooks Hooks, yield func(Event, error) bool, input string, messages []schema.Message) *runContext {
+	reg := tool.NewRegistry()
+	for _, t := range tools {
+		_ = reg.Add(t)
+	}
+	return &runContext{
+		agentID: agentID,
+		hooks:   hooks,
+		reg:     reg,
+		yield:   yield,
+		state: PlannerState{
 			Input:    input,
 			Messages: messages,
 			Tools:    tools,
 			Metadata: make(map[string]any),
-		}
-
-		// OnStart hook
-		if hooks.OnStart != nil {
-			if err := hooks.OnStart(ctx, input); err != nil {
-				yield(Event{Type: EventError, AgentID: agentID}, err)
-				return
-			}
-		}
-
-		var finalResult string
-		var finalErr error
-
-		defer func() {
-			if hooks.OnEnd != nil {
-				hooks.OnEnd(ctx, finalResult, finalErr)
-			}
-		}()
-
-		for i := 0; i < e.maxIterations; i++ {
-			// Check context
-			if err := ctx.Err(); err != nil {
-				finalErr = fmt.Errorf("agent execution cancelled: %w", err)
-				yield(Event{Type: EventError, AgentID: agentID}, finalErr)
-				return
-			}
-
-			state.Iteration = i
-
-			// BeforePlan hook
-			if hooks.BeforePlan != nil {
-				if err := hooks.BeforePlan(ctx, state); err != nil {
-					finalErr = err
-					yield(Event{Type: EventError, AgentID: agentID}, err)
-					return
-				}
-			}
-
-			// Plan or Replan
-			var actions []Action
-			var err error
-			if i == 0 {
-				actions, err = e.planner.Plan(ctx, state)
-			} else {
-				actions, err = e.planner.Replan(ctx, state)
-			}
-			if err != nil {
-				if hooks.OnError != nil {
-					err = hooks.OnError(ctx, err)
-				}
-				if err != nil {
-					finalErr = err
-					yield(Event{Type: EventError, AgentID: agentID}, err)
-					return
-				}
-			}
-
-			// AfterPlan hook
-			if hooks.AfterPlan != nil {
-				if err := hooks.AfterPlan(ctx, actions); err != nil {
-					finalErr = err
-					yield(Event{Type: EventError, AgentID: agentID}, err)
-					return
-				}
-			}
-
-			// Execute each action
-			done := false
-			for _, action := range actions {
-				// BeforeAct hook
-				if hooks.BeforeAct != nil {
-					if err := hooks.BeforeAct(ctx, action); err != nil {
-						finalErr = err
-						yield(Event{Type: EventError, AgentID: agentID}, err)
-						return
-					}
-				}
-
-				obs := e.executeAction(ctx, agentID, action, reg, hooks, yield)
-
-				// AfterAct hook
-				if hooks.AfterAct != nil {
-					if err := hooks.AfterAct(ctx, action, obs); err != nil {
-						finalErr = err
-						yield(Event{Type: EventError, AgentID: agentID}, err)
-						return
-					}
-				}
-
-				state.Observations = append(state.Observations, obs)
-
-				if action.Type == ActionFinish {
-					finalResult = action.Message
-					done = true
-					break
-				}
-				if action.Type == ActionHandoff {
-					done = true
-					break
-				}
-			}
-
-			if done {
-				if !yield(Event{Type: EventDone, AgentID: agentID, Text: finalResult}, nil) {
-					return
-				}
-				return
-			}
-
-			// OnIteration hook
-			if hooks.OnIteration != nil {
-				if err := hooks.OnIteration(ctx, i); err != nil {
-					finalErr = err
-					yield(Event{Type: EventError, AgentID: agentID}, err)
-					return
-				}
-			}
-
-			// Update messages from observations for next iteration
-			state.Messages = e.buildMessages(state)
-		}
-
-		// Max iterations reached
-		finalErr = fmt.Errorf("agent reached maximum iterations (%d)", e.maxIterations)
-		yield(Event{Type: EventError, AgentID: agentID}, finalErr)
+		},
 	}
+}
+
+// runLoop drives the plan-act-observe iterations.
+func (e *Executor) runLoop(ctx context.Context, rc *runContext, agentID string) {
+	for i := 0; i < e.maxIterations; i++ {
+		if err := ctx.Err(); err != nil {
+			rc.yieldError(fmt.Errorf("agent execution cancelled: %w", err))
+			return
+		}
+
+		rc.state.Iteration = i
+
+		done, shouldReturn := e.runIteration(ctx, rc, i)
+		if shouldReturn {
+			return
+		}
+		if done {
+			rc.yield(Event{Type: EventDone, AgentID: agentID, Text: rc.finalResult}, nil)
+			return
+		}
+
+		rc.state.Messages = e.buildMessages(rc.state)
+	}
+
+	rc.yieldError(fmt.Errorf("agent reached maximum iterations (%d)", e.maxIterations))
+}
+
+// runIteration executes a single plan-act-observe cycle. It returns (done, shouldReturn).
+// done=true means the agent finished or handed off. shouldReturn=true means an error
+// was yielded and the caller should return immediately.
+func (e *Executor) runIteration(ctx context.Context, rc *runContext, i int) (bool, bool) {
+	if rc.callHookBeforePlan(ctx) {
+		return false, true
+	}
+
+	actions, err := e.planActions(ctx, rc.state, i)
+	if err != nil {
+		if rc.hooks.OnError != nil {
+			err = rc.hooks.OnError(ctx, err)
+		}
+		if err != nil {
+			rc.yieldError(err)
+			return false, true
+		}
+	}
+
+	if rc.callHookAfterPlan(ctx, actions) {
+		return false, true
+	}
+
+	done, shouldReturn := e.executeActions(ctx, rc, actions)
+	if shouldReturn {
+		return false, true
+	}
+	if done {
+		return true, false
+	}
+
+	if rc.callHookOnIteration(ctx, i) {
+		return false, true
+	}
+
+	return false, false
+}
+
+// callHookBeforePlan invokes the BeforePlan hook if set. Returns true on error.
+func (rc *runContext) callHookBeforePlan(ctx context.Context) bool {
+	if rc.hooks.BeforePlan == nil {
+		return false
+	}
+	if err := rc.hooks.BeforePlan(ctx, rc.state); err != nil {
+		rc.yieldError(err)
+		return true
+	}
+	return false
+}
+
+// callHookAfterPlan invokes the AfterPlan hook if set. Returns true on error.
+func (rc *runContext) callHookAfterPlan(ctx context.Context, actions []Action) bool {
+	if rc.hooks.AfterPlan == nil {
+		return false
+	}
+	if err := rc.hooks.AfterPlan(ctx, actions); err != nil {
+		rc.yieldError(err)
+		return true
+	}
+	return false
+}
+
+// callHookOnIteration invokes the OnIteration hook if set. Returns true on error.
+func (rc *runContext) callHookOnIteration(ctx context.Context, i int) bool {
+	if rc.hooks.OnIteration == nil {
+		return false
+	}
+	if err := rc.hooks.OnIteration(ctx, i); err != nil {
+		rc.yieldError(err)
+		return true
+	}
+	return false
+}
+
+// planActions calls Plan or Replan depending on the iteration.
+func (e *Executor) planActions(ctx context.Context, state PlannerState, iteration int) ([]Action, error) {
+	if iteration == 0 {
+		return e.planner.Plan(ctx, state)
+	}
+	return e.planner.Replan(ctx, state)
+}
+
+// executeActions runs each action in sequence, returning (done, shouldReturn).
+func (e *Executor) executeActions(ctx context.Context, rc *runContext, actions []Action) (bool, bool) {
+	for _, action := range actions {
+		done, shouldReturn := e.executeSingleAction(ctx, rc, action)
+		if shouldReturn || done {
+			return done, shouldReturn
+		}
+	}
+	return false, false
+}
+
+// executeSingleAction runs one action with before/after hooks. Returns (done, shouldReturn).
+func (e *Executor) executeSingleAction(ctx context.Context, rc *runContext, action Action) (bool, bool) {
+	if rc.hooks.BeforeAct != nil {
+		if err := rc.hooks.BeforeAct(ctx, action); err != nil {
+			rc.yieldError(err)
+			return false, true
+		}
+	}
+
+	obs := e.executeAction(ctx, rc.agentID, action, rc.reg, rc.hooks, rc.yield)
+
+	if rc.hooks.AfterAct != nil {
+		if err := rc.hooks.AfterAct(ctx, action, obs); err != nil {
+			rc.yieldError(err)
+			return false, true
+		}
+	}
+
+	rc.state.Observations = append(rc.state.Observations, obs)
+
+	if action.Type == ActionFinish {
+		rc.finalResult = action.Message
+		return true, false
+	}
+	if action.Type == ActionHandoff {
+		return true, false
+	}
+	return false, false
 }
 
 // executeAction handles a single action and returns an observation.
@@ -234,118 +305,15 @@ func (e *Executor) executeAction(
 
 	switch action.Type {
 	case ActionTool:
-		if action.ToolCall == nil {
-			return Observation{
-				Action:  action,
-				Error:   fmt.Errorf("tool action missing tool call"),
-				Latency: time.Since(start),
-			}
-		}
+		return e.executeToolAction(ctx, agentID, action, reg, hooks, yield, start)
 
-		// Emit tool call event
-		yield(Event{
-			Type:     EventToolCall,
-			AgentID:  agentID,
-			ToolCall: action.ToolCall,
-		}, nil)
-
-		// OnToolCall hook
-		callInfo := ToolCallInfo{
-			Name:      action.ToolCall.Name,
-			Arguments: action.ToolCall.Arguments,
-			CallID:    action.ToolCall.ID,
-		}
-		if hooks.OnToolCall != nil {
-			if err := hooks.OnToolCall(ctx, callInfo); err != nil {
-				return Observation{
-					Action:  action,
-					Error:   err,
-					Latency: time.Since(start),
-				}
-			}
-		}
-
-		// Look up and execute tool
-		t, err := reg.Get(action.ToolCall.Name)
-		if err != nil {
-			result := tool.ErrorResult(fmt.Errorf("tool not found: %s", action.ToolCall.Name))
-			yield(Event{
-				Type:       EventToolResult,
-				AgentID:    agentID,
-				ToolResult: result,
-			}, nil)
-			return Observation{
-				Action:  action,
-				Result:  result,
-				Error:   err,
-				Latency: time.Since(start),
-			}
-		}
-
-		// Parse arguments
-		var args map[string]any
-		if action.ToolCall.Arguments != "" {
-			if err := json.Unmarshal([]byte(action.ToolCall.Arguments), &args); err != nil {
-				result := tool.ErrorResult(fmt.Errorf("invalid tool arguments: %w", err))
-				yield(Event{
-					Type:       EventToolResult,
-					AgentID:    agentID,
-					ToolResult: result,
-				}, nil)
-				return Observation{
-					Action:  action,
-					Result:  result,
-					Error:   err,
-					Latency: time.Since(start),
-				}
-			}
-		}
-
-		result, err := t.Execute(ctx, args)
-		if err != nil {
-			result = tool.ErrorResult(err)
-		}
-
-		// OnToolResult hook
-		if hooks.OnToolResult != nil {
-			_ = hooks.OnToolResult(ctx, callInfo, result)
-		}
-
-		// Emit tool result event
-		yield(Event{
-			Type:       EventToolResult,
-			AgentID:    agentID,
-			ToolResult: result,
-		}, nil)
-
-		return Observation{
-			Action:  action,
-			Result:  result,
-			Error:   err,
-			Latency: time.Since(start),
-		}
-
-	case ActionRespond:
+	case ActionRespond, ActionFinish:
 		yield(Event{
 			Type:    EventText,
 			AgentID: agentID,
 			Text:    action.Message,
 		}, nil)
-		return Observation{
-			Action:  action,
-			Latency: time.Since(start),
-		}
-
-	case ActionFinish:
-		yield(Event{
-			Type:    EventText,
-			AgentID: agentID,
-			Text:    action.Message,
-		}, nil)
-		return Observation{
-			Action:  action,
-			Latency: time.Since(start),
-		}
+		return Observation{Action: action, Latency: time.Since(start)}
 
 	case ActionHandoff:
 		yield(Event{
@@ -356,10 +324,7 @@ func (e *Executor) executeAction(
 				"target": action.Metadata["target"],
 			},
 		}, nil)
-		return Observation{
-			Action:  action,
-			Latency: time.Since(start),
-		}
+		return Observation{Action: action, Latency: time.Since(start)}
 
 	default:
 		return Observation{
@@ -368,6 +333,74 @@ func (e *Executor) executeAction(
 			Latency: time.Since(start),
 		}
 	}
+}
+
+// executeToolAction handles ActionTool: looks up the tool, parses arguments,
+// executes it, and emits the appropriate events.
+func (e *Executor) executeToolAction(
+	ctx context.Context,
+	agentID string,
+	action Action,
+	reg *tool.Registry,
+	hooks Hooks,
+	yield func(Event, error) bool,
+	start time.Time,
+) Observation {
+	if action.ToolCall == nil {
+		return Observation{
+			Action:  action,
+			Error:   fmt.Errorf("tool action missing tool call"),
+			Latency: time.Since(start),
+		}
+	}
+
+	yield(Event{Type: EventToolCall, AgentID: agentID, ToolCall: action.ToolCall}, nil)
+
+	callInfo := ToolCallInfo{
+		Name:      action.ToolCall.Name,
+		Arguments: action.ToolCall.Arguments,
+		CallID:    action.ToolCall.ID,
+	}
+	if hooks.OnToolCall != nil {
+		if err := hooks.OnToolCall(ctx, callInfo); err != nil {
+			return Observation{Action: action, Error: err, Latency: time.Since(start)}
+		}
+	}
+
+	result, err := e.lookupAndExecuteTool(ctx, action, reg)
+
+	if hooks.OnToolResult != nil {
+		_ = hooks.OnToolResult(ctx, callInfo, result)
+	}
+
+	yield(Event{Type: EventToolResult, AgentID: agentID, ToolResult: result}, nil)
+
+	return Observation{Action: action, Result: result, Error: err, Latency: time.Since(start)}
+}
+
+// lookupAndExecuteTool resolves the tool, parses args, and executes it.
+func (e *Executor) lookupAndExecuteTool(
+	ctx context.Context,
+	action Action,
+	reg *tool.Registry,
+) (*tool.Result, error) {
+	t, err := reg.Get(action.ToolCall.Name)
+	if err != nil {
+		return tool.ErrorResult(fmt.Errorf("tool not found: %s", action.ToolCall.Name)), err
+	}
+
+	var args map[string]any
+	if action.ToolCall.Arguments != "" {
+		if err := json.Unmarshal([]byte(action.ToolCall.Arguments), &args); err != nil {
+			return tool.ErrorResult(fmt.Errorf("invalid tool arguments: %w", err)), err
+		}
+	}
+
+	result, err := t.Execute(ctx, args)
+	if err != nil {
+		return tool.ErrorResult(err), err
+	}
+	return result, nil
 }
 
 // buildMessages converts the current state (input + observations) into

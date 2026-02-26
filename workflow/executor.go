@@ -110,65 +110,95 @@ func (e *DefaultExecutor) Execute(ctx context.Context, fn WorkflowFunc, opts Wor
 	}
 
 	// Run the workflow function asynchronously.
-	go func() {
-		defer cancel()
-
-		wfContext := &defaultWorkflowContext{
-			Context:  wfCtx,
-			executor: e,
-			workflow: rw,
-			wfID:     opts.ID,
-		}
-
-		result, err := fn(wfContext, opts.Input)
-
-		e.mu.Lock()
-		delete(e.running, opts.ID)
-		e.mu.Unlock()
-
-		if wfCtx.Err() != nil && err == nil {
-			err = wfCtx.Err()
-		}
-
-		handle.mu.Lock()
-		if err != nil {
-			handle.status = StatusFailed
-			handle.err = err
-			if e.hooks.OnWorkflowFail != nil {
-				e.hooks.OnWorkflowFail(ctx, opts.ID, err)
-			}
-		} else {
-			handle.status = StatusCompleted
-			handle.result = result
-			if e.hooks.OnWorkflowComplete != nil {
-				e.hooks.OnWorkflowComplete(ctx, opts.ID, result)
-			}
-		}
-		handle.mu.Unlock()
-		close(handle.done)
-
-		// Persist final state.
-		if e.store != nil {
-			finalState := WorkflowState{
-				WorkflowID: opts.ID,
-				RunID:      runID,
-				Status:     handle.Status(),
-				Input:      opts.Input,
-				Result:     result,
-				UpdatedAt:  time.Now(),
-			}
-			if err != nil {
-				finalState.Error = err.Error()
-			}
-			e.store.Save(ctx, finalState)
-		}
-	}()
+	go e.runWorkflow(ctx, wfCtx, runWorkflowParams{
+		cancel: cancel,
+		fn:     fn,
+		rw:     rw,
+		handle: handle,
+		opts:   opts,
+		runID:  runID,
+	})
 
 	return handle, nil
 }
 
+// runWorkflowParams groups the parameters for runWorkflow.
+type runWorkflowParams struct {
+	cancel context.CancelFunc
+	fn     WorkflowFunc
+	rw     *runningWorkflow
+	handle *defaultHandle
+	opts   WorkflowOptions
+	runID  string
+}
+
+// runWorkflow is the goroutine body for a workflow execution.
+func (e *DefaultExecutor) runWorkflow(parentCtx, wfCtx context.Context, p runWorkflowParams) {
+	defer p.cancel()
+
+	wfContext := &defaultWorkflowContext{
+		Context:  wfCtx,
+		executor: e,
+		workflow: p.rw,
+		wfID:     p.opts.ID,
+	}
+
+	result, err := p.fn(wfContext, p.opts.Input)
+
+	e.mu.Lock()
+	delete(e.running, p.opts.ID)
+	e.mu.Unlock()
+
+	if wfCtx.Err() != nil && err == nil {
+		err = wfCtx.Err()
+	}
+
+	e.finalizeHandle(parentCtx, p.handle, p.opts.ID, result, err)
+
+	e.persistFinalState(parentCtx, p.opts.ID, p.runID, p.opts.Input, p.handle, result, err)
+}
+
+// finalizeHandle updates the handle status, result, and error, then signals completion.
+func (e *DefaultExecutor) finalizeHandle(ctx context.Context, handle *defaultHandle, wfID string, result any, err error) {
+	handle.mu.Lock()
+	if err != nil {
+		handle.status = StatusFailed
+		handle.err = err
+		if e.hooks.OnWorkflowFail != nil {
+			e.hooks.OnWorkflowFail(ctx, wfID, err)
+		}
+	} else {
+		handle.status = StatusCompleted
+		handle.result = result
+		if e.hooks.OnWorkflowComplete != nil {
+			e.hooks.OnWorkflowComplete(ctx, wfID, result)
+		}
+	}
+	handle.mu.Unlock()
+	close(handle.done)
+}
+
+// persistFinalState saves the final workflow state to the store if configured.
+func (e *DefaultExecutor) persistFinalState(ctx context.Context, wfID, runID string, input any, handle *defaultHandle, result any, err error) {
+	if e.store == nil {
+		return
+	}
+	finalState := WorkflowState{
+		WorkflowID: wfID,
+		RunID:      runID,
+		Status:     handle.Status(),
+		Input:      input,
+		Result:     result,
+		UpdatedAt:  time.Now(),
+	}
+	if err != nil {
+		finalState.Error = err.Error()
+	}
+	e.store.Save(ctx, finalState)
+}
+
 // Signal sends a signal to a running workflow.
-func (e *DefaultExecutor) Signal(_ context.Context, workflowID string, signal Signal) error {
+func (e *DefaultExecutor) Signal(ctx context.Context, workflowID string, signal Signal) error {
 	e.mu.RLock()
 	rw, ok := e.running[workflowID]
 	e.mu.RUnlock()
@@ -186,7 +216,7 @@ func (e *DefaultExecutor) Signal(_ context.Context, workflowID string, signal Si
 	rw.mu.Unlock()
 
 	if e.hooks.OnSignal != nil {
-		e.hooks.OnSignal(context.Background(), workflowID, signal)
+		e.hooks.OnSignal(ctx, workflowID, signal)
 	}
 
 	ch <- signal.Payload
@@ -194,7 +224,7 @@ func (e *DefaultExecutor) Signal(_ context.Context, workflowID string, signal Si
 }
 
 // Query retrieves state from a running workflow. Currently returns the status.
-func (e *DefaultExecutor) Query(_ context.Context, workflowID string, queryType string) (any, error) {
+func (e *DefaultExecutor) Query(ctx context.Context, workflowID string, queryType string) (any, error) {
 	e.mu.RLock()
 	rw, ok := e.running[workflowID]
 	e.mu.RUnlock()
@@ -202,7 +232,7 @@ func (e *DefaultExecutor) Query(_ context.Context, workflowID string, queryType 
 	if !ok {
 		// Check the store for completed workflows.
 		if e.store != nil {
-			state, err := e.store.Load(context.Background(), workflowID)
+			state, err := e.store.Load(ctx, workflowID)
 			if err != nil {
 				return nil, fmt.Errorf("workflow/query: %w", err)
 			}

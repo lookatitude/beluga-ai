@@ -111,50 +111,54 @@ func (g *Graph) Stream(ctx context.Context, input any, opts ...core.Option) iter
 			return
 		}
 
-		current := g.entry
-		value := input
+		g.streamTraversal(ctx, input, yield, opts)
+	}
+}
 
-		for depth := 0; depth < maxTraversalDepth; depth++ {
-			node, ok := g.nodes[current]
-			if !ok {
-				yield(nil, fmt.Errorf("orchestration/graph: node %q not found", current))
-				return
-			}
+// streamTraversal walks the graph, streaming the terminal node's output.
+func (g *Graph) streamTraversal(ctx context.Context, input any, yield func(any, error) bool, opts []core.Option) {
+	current := g.entry
+	value := input
 
-			// Check if this is a terminal node (no matching next).
-			// We need to invoke first to get the value for edge conditions,
-			// but for the terminal node we want to stream instead.
-			// Strategy: peek at edges. If no outgoing edges, stream this node.
-			if !g.hasOutgoingEdges(current) {
-				for val, err := range node.Stream(ctx, value, opts...) {
-					if !yield(val, err) {
-						return
-					}
-					if err != nil {
-						return
-					}
-				}
-				return
-			}
-
-			// Non-terminal: invoke and follow edges.
-			result, err := node.Invoke(ctx, value, opts...)
-			if err != nil {
-				yield(nil, fmt.Errorf("orchestration/graph: node %q: %w", current, err))
-				return
-			}
-			value = result
-
-			next := g.nextNode(current, value)
-			if next == "" {
-				// No matching conditions — this is effectively terminal.
-				yield(value, nil)
-				return
-			}
-			current = next
+	for depth := 0; depth < maxTraversalDepth; depth++ {
+		node, ok := g.nodes[current]
+		if !ok {
+			yield(nil, fmt.Errorf("orchestration/graph: node %q not found", current))
+			return
 		}
 
-		yield(nil, fmt.Errorf("orchestration/graph: max traversal depth (%d) exceeded", maxTraversalDepth))
+		if !g.hasOutgoingEdges(current) {
+			streamNode(ctx, node, value, yield, opts)
+			return
+		}
+
+		result, err := node.Invoke(ctx, value, opts...)
+		if err != nil {
+			yield(nil, fmt.Errorf("orchestration/graph: node %q: %w", current, err))
+			return
+		}
+		value = result
+
+		next := g.nextNode(current, value)
+		if next == "" {
+			yield(value, nil)
+			return
+		}
+		current = next
+	}
+
+	yield(nil, fmt.Errorf("orchestration/graph: max traversal depth (%d) exceeded", maxTraversalDepth))
+}
+
+// streamNode streams a runnable node's output through the yield function.
+func streamNode(ctx context.Context, node core.Runnable, value any, yield func(any, error) bool, opts []core.Option) {
+	for val, err := range node.Stream(ctx, value, opts...) {
+		if !yield(val, err) {
+			return
+		}
+		if err != nil {
+			return
+		}
 	}
 }
 

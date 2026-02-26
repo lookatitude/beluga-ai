@@ -164,28 +164,41 @@ func (g *GraphStore) Neighbors(_ context.Context, entityID string, depth int) ([
 	for d := 0; d < depth && len(frontier) > 0; d++ {
 		var nextFrontier []string
 		for _, nodeID := range frontier {
-			for _, rel := range g.relations {
-				var neighborID string
-				if rel.From == nodeID {
-					neighborID = rel.To
-				} else if rel.To == nodeID {
-					neighborID = rel.From
-				} else {
-					continue
-				}
-				resultRelations = append(resultRelations, rel)
-				if !visited[neighborID] {
-					visited[neighborID] = true
-					nextFrontier = append(nextFrontier, neighborID)
-					if e, ok := g.entities[neighborID]; ok {
-						resultEntities = append(resultEntities, e)
-					}
+			neighbors, rels := g.findNeighbors(nodeID, visited)
+			resultRelations = append(resultRelations, rels...)
+			for _, nID := range neighbors {
+				if e, ok := g.entities[nID]; ok {
+					resultEntities = append(resultEntities, e)
 				}
 			}
+			nextFrontier = append(nextFrontier, neighbors...)
 		}
 		frontier = nextFrontier
 	}
 	return resultEntities, resultRelations, nil
+}
+
+// findNeighbors returns unvisited neighbor IDs and their relations for a node.
+// It marks discovered neighbors as visited.
+func (g *GraphStore) findNeighbors(nodeID string, visited map[string]bool) ([]string, []memory.Relation) {
+	var neighbors []string
+	var rels []memory.Relation
+	for _, rel := range g.relations {
+		neighborID := ""
+		if rel.From == nodeID {
+			neighborID = rel.To
+		} else if rel.To == nodeID {
+			neighborID = rel.From
+		} else {
+			continue
+		}
+		rels = append(rels, rel)
+		if !visited[neighborID] {
+			visited[neighborID] = true
+			neighbors = append(neighbors, neighborID)
+		}
+	}
+	return neighbors, rels
 }
 
 // Verify interface compliance.

@@ -141,63 +141,66 @@ func (s *MarkdownSplitter) parseSections(text string) []markdownSection {
 // buildChunks creates chunks from sections, optionally prepending header context.
 func (s *MarkdownSplitter) buildChunks(sections []markdownSection) []string {
 	var chunks []string
-
-	// Track active header hierarchy.
-	headers := make(map[int]string) // level → heading text
+	headers := make(map[int]string) // level -> heading text
 
 	for _, sec := range sections {
-		// Update header hierarchy.
-		if sec.level > 0 {
-			headers[sec.level] = sec.heading
-			// Clear lower-level headers.
-			for l := range headers {
-				if l > sec.level {
-					delete(headers, l)
-				}
-			}
-		}
-
-		// Build chunk content.
-		var chunk strings.Builder
-
-		if s.preserveHeaders && sec.level > 0 {
-			// Prepend parent headers.
-			for l := 1; l < sec.level; l++ {
-				if h, ok := headers[l]; ok {
-					chunk.WriteString(h)
-					chunk.WriteString("\n")
-				}
-			}
-			chunk.WriteString(sec.heading)
-			chunk.WriteString("\n")
-		}
-
-		if sec.content != "" {
-			if chunk.Len() > 0 {
-				chunk.WriteString("\n")
-			}
-			chunk.WriteString(sec.content)
-		}
-
-		text := strings.TrimSpace(chunk.String())
+		updateHeaderHierarchy(headers, sec.level, sec.heading)
+		text := s.buildSectionText(sec, headers)
 		if text == "" {
 			continue
 		}
+		chunks = s.appendChunkText(chunks, text)
+	}
+	return chunks
+}
 
-		// If chunk exceeds size, use recursive character splitting as fallback.
-		if len(text) > s.chunkSize {
-			rs := NewRecursiveSplitter(
-				WithChunkSize(s.chunkSize),
-				WithChunkOverlap(s.chunkOverlap),
-			)
-			subChunks := rs.splitText(text, DefaultSeparators)
-			chunks = append(chunks, subChunks...)
-		} else {
-			chunks = append(chunks, text)
+// updateHeaderHierarchy updates the header map and clears child headers.
+func updateHeaderHierarchy(headers map[int]string, level int, heading string) {
+	if level > 0 {
+		headers[level] = heading
+		for l := range headers {
+			if l > level {
+				delete(headers, l)
+			}
 		}
 	}
+}
 
-	return chunks
+// buildSectionText builds the full text for a section, including parent headers if configured.
+func (s *MarkdownSplitter) buildSectionText(sec markdownSection, headers map[int]string) string {
+	var chunk strings.Builder
+
+	if s.preserveHeaders && sec.level > 0 {
+		for l := 1; l < sec.level; l++ {
+			if h, ok := headers[l]; ok {
+				chunk.WriteString(h)
+				chunk.WriteString("\n")
+			}
+		}
+		chunk.WriteString(sec.heading)
+		chunk.WriteString("\n")
+	}
+
+	if sec.content != "" {
+		if chunk.Len() > 0 {
+			chunk.WriteString("\n")
+		}
+		chunk.WriteString(sec.content)
+	}
+	return strings.TrimSpace(chunk.String())
+}
+
+// appendChunkText appends text to chunks, splitting with RecursiveSplitter if oversized.
+func (s *MarkdownSplitter) appendChunkText(chunks []string, text string) []string {
+	if len(text) > s.chunkSize {
+		rs := NewRecursiveSplitter(
+			WithChunkSize(s.chunkSize),
+			WithChunkOverlap(s.chunkOverlap),
+		)
+		subChunks := rs.splitText(text, DefaultSeparators)
+		return append(chunks, subChunks...)
+	}
+	return append(chunks, text)
 }
 
 // headingLevel returns the ATX heading level (1-6) or 0 if not a heading.
