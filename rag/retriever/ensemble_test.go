@@ -392,7 +392,7 @@ func TestEnsembleRetriever_SingleRetriever(t *testing.T) {
 
 // Compile-time interface checks
 var (
-	_ FusionStrategy = (*RRFStrategy)(nil)
-	_ FusionStrategy = (*WeightedStrategy)(nil)
+	_ Fuser = (*RRFStrategy)(nil)
+	_ Fuser = (*WeightedStrategy)(nil)
 	_ Retriever      = (*EnsembleRetriever)(nil)
 )

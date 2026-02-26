@@ -14,10 +14,10 @@ const (
 	defaultZCRThreshold    = 0.1
 )
 
-var _ voice.VAD = (*VAD)(nil) // compile-time interface check
+var _ voice.ActivityDetector = (*VAD)(nil) // compile-time interface check
 
 func init() {
-	voice.RegisterVAD("webrtc", func(cfg map[string]any) (voice.VAD, error) {
+	voice.RegisterVAD("webrtc", func(cfg map[string]any) (voice.ActivityDetector, error) {
 		energyThreshold := defaultEnergyThreshold
 		if v, ok := cfg["threshold"]; ok {
 			switch t := v.(type) {
@@ -40,7 +40,7 @@ func init() {
 	})
 }
 
-// VAD implements voice.VAD using energy and zero-crossing rate analysis.
+// VAD implements voice.ActivityDetector using energy and zero-crossing rate analysis.
 type VAD struct {
 	energyThreshold float64
 	zcrThreshold    float64

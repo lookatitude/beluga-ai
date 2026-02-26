@@ -107,7 +107,7 @@ tokenizer is unavailable.
 ## Routing
 
 `Router` implements ChatModel by delegating to one of several backend
-models chosen by a pluggable `RouterStrategy`. Built-in strategies include
+models chosen by a pluggable `ModelSelector`. Built-in strategies include
 `RoundRobin` and `FailoverChain`. For automatic retry across models, use
 `FailoverRouter`:
 

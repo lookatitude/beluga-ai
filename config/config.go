@@ -405,21 +405,11 @@ func setFieldFromString(field reflect.Value, s string) bool {
 		}
 		field.SetBool(b)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		// Support time.Duration (int64 with special parsing).
-		if field.Type().String() == "time.Duration" {
-			// Try parsing as an integer (nanoseconds) for simplicity in env vars.
-			n, err := strconv.ParseInt(s, 10, 64)
-			if err != nil {
-				return false
-			}
-			field.SetInt(n)
-		} else {
-			n, err := strconv.ParseInt(s, 10, 64)
-			if err != nil {
-				return false
-			}
-			field.SetInt(n)
+		n, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return false
 		}
+		field.SetInt(n)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		n, err := strconv.ParseUint(s, 10, 64)
 		if err != nil {

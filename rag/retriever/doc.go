@@ -42,7 +42,7 @@
 //
 // Hybrid and ensemble:
 //   - [NewHybridRetriever] — combines dense vector + sparse BM25 with RRF fusion
-//   - [NewEnsembleRetriever] — merges results from multiple retrievers using [FusionStrategy]
+//   - [NewEnsembleRetriever] — merges results from multiple retrievers using [Fuser]
 //
 // LLM-augmented:
 //   - [NewHyDERetriever] — Hypothetical Document Embeddings (generates hypothetical

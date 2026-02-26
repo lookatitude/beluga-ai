@@ -8,8 +8,8 @@ import (
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
-// FusionStrategy combines multiple result sets into a single ranked list.
-type FusionStrategy interface {
+// Fuser combines multiple result sets into a single ranked list.
+type Fuser interface {
 	// Fuse merges multiple result sets into a single ranked list of documents
 	// with updated Score fields.
 	Fuse(ctx context.Context, results [][]schema.Document) ([]schema.Document, error)
@@ -122,7 +122,7 @@ func (s *WeightedStrategy) Fuse(_ context.Context, results [][]schema.Document) 
 // vector + BM25 with RRF).
 type EnsembleRetriever struct {
 	retrievers []Retriever
-	strategy   FusionStrategy
+	strategy   Fuser
 	hooks      Hooks
 }
 
@@ -139,7 +139,7 @@ func WithEnsembleHooks(h Hooks) EnsembleOption {
 // NewEnsembleRetriever creates a retriever that queries all inner retrievers
 // and fuses results using the given strategy. If strategy is nil, RRF with
 // k=60 is used.
-func NewEnsembleRetriever(retrievers []Retriever, strategy FusionStrategy, opts ...EnsembleOption) *EnsembleRetriever {
+func NewEnsembleRetriever(retrievers []Retriever, strategy Fuser, opts ...EnsembleOption) *EnsembleRetriever {
 	if strategy == nil {
 		strategy = NewRRFStrategy(60)
 	}

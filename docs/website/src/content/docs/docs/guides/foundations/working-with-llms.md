@@ -379,7 +379,7 @@ resp, err := failover.Generate(ctx, msgs)
 
 ### Custom Routing Strategy
 
-Implement `RouterStrategy` for custom selection logic. The strategy receives the full list of available models and the current message list, giving it enough context to make informed routing decisions — for example, routing based on message length, content type, or cost constraints.
+Implement `ModelSelector` for custom selection logic. The strategy receives the full list of available models and the current message list, giving it enough context to make informed routing decisions — for example, routing based on message length, content type, or cost constraints.
 
 ```go
 type CostAwareStrategy struct{}

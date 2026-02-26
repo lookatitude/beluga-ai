@@ -82,7 +82,7 @@ func TestAdapter_RegisterAgent(t *testing.T) {
 
 	t.Run("nil agent returns error", func(t *testing.T) {
 		a := New(server.Config{})
-		if err := a.RegisterAgent("/chat", nil); err == nil {
+		if a.RegisterAgent("/chat", nil) == nil {
 			t.Fatal("expected error for nil agent")
 		}
 	})
@@ -90,8 +90,7 @@ func TestAdapter_RegisterAgent(t *testing.T) {
 
 func TestAdapter_RegisterHandler(t *testing.T) {
 	a := New(server.Config{})
-	err := a.RegisterHandler("/health", nil)
-	if err == nil {
+	if a.RegisterHandler("/health", nil) == nil {
 		t.Fatal("expected error for RegisterHandler on gRPC adapter")
 	}
 }

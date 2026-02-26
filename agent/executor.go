@@ -325,18 +325,7 @@ func (e *Executor) executeAction(
 			Latency: time.Since(start),
 		}
 
-	case ActionRespond:
-		yield(Event{
-			Type:    EventText,
-			AgentID: agentID,
-			Text:    action.Message,
-		}, nil)
-		return Observation{
-			Action:  action,
-			Latency: time.Since(start),
-		}
-
-	case ActionFinish:
+	case ActionRespond, ActionFinish:
 		yield(Event{
 			Type:    EventText,
 			AgentID: agentID,

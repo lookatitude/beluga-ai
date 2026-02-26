@@ -63,19 +63,7 @@ func (p *CompositePolicy) Authorize(ctx context.Context, subject string, permiss
 		}
 		return false, nil
 
-	case AllowIfAll:
-		for _, policy := range p.policies {
-			allowed, err := policy.Authorize(ctx, subject, permission, resource)
-			if err != nil {
-				return false, err
-			}
-			if !allowed {
-				return false, nil
-			}
-		}
-		return true, nil
-
-	case DenyIfAny:
+	case AllowIfAll, DenyIfAny:
 		for _, policy := range p.policies {
 			allowed, err := policy.Authorize(ctx, subject, permission, resource)
 			if err != nil {

@@ -10,8 +10,8 @@ import (
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
-// RouterStrategy selects which ChatModel to use for a given request.
-type RouterStrategy interface {
+// ModelSelector selects which ChatModel to use for a given request.
+type ModelSelector interface {
 	// Select picks a model from the available models for the given messages.
 	Select(ctx context.Context, models []ChatModel, msgs []schema.Message) (ChatModel, error)
 }
@@ -20,7 +20,7 @@ type RouterStrategy interface {
 type RouterOption func(*Router)
 
 // WithStrategy sets the routing strategy. Defaults to RoundRobin if unset.
-func WithStrategy(s RouterStrategy) RouterOption {
+func WithStrategy(s ModelSelector) RouterOption {
 	return func(r *Router) {
 		r.strategy = s
 	}
@@ -34,11 +34,11 @@ func WithModels(models ...ChatModel) RouterOption {
 }
 
 // Router implements ChatModel by delegating to one of several backend models
-// chosen by a pluggable RouterStrategy. This allows transparent load balancing,
+// chosen by a pluggable ModelSelector. This allows transparent load balancing,
 // failover, and cost optimization across multiple LLM providers.
 type Router struct {
 	models   []ChatModel
-	strategy RouterStrategy
+	strategy ModelSelector
 	tools    []schema.ToolDefinition
 }
 

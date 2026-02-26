@@ -125,7 +125,7 @@ func TestExecutor_Cancel(t *testing.T) {
 
 func TestExecutor_CancelNotFound(t *testing.T) {
 	exec := NewExecutor()
-	if err := exec.Cancel(context.Background(), "nonexistent"); err == nil {
+	if exec.Cancel(context.Background(), "nonexistent") == nil {
 		t.Fatal("expected error for nonexistent workflow")
 	}
 }
@@ -164,7 +164,7 @@ func TestExecutor_Signal(t *testing.T) {
 
 func TestExecutor_SignalNotFound(t *testing.T) {
 	exec := NewExecutor()
-	if err := exec.Signal(context.Background(), "nonexistent", Signal{Name: "test"}); err == nil {
+	if exec.Signal(context.Background(), "nonexistent", Signal{Name: "test"}) == nil {
 		t.Fatal("expected error for nonexistent workflow")
 	}
 }

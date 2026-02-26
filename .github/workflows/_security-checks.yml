@@ -30,10 +30,6 @@ on:
         description: "Number of license violations"
         value: ${{ jobs.go-licenses.outputs.licenses_violations }}
 
-permissions:
-  contents: read
-  security-events: write
-
 env:
   GO_VERSION: "1.25.7"
 
@@ -41,6 +37,8 @@ jobs:
   snyk:
     name: Snyk Vulnerability Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       snyk_status: ${{ steps.snyk_result.outputs.status }}
       snyk_vulns: ${{ steps.snyk_result.outputs.vulns }}
@@ -77,6 +75,9 @@ jobs:
   trivy:
     name: Trivy Vulnerability Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     outputs:
       trivy_status: ${{ steps.trivy_result.outputs.status }}
       trivy_findings: ${{ steps.trivy_result.outputs.findings }}
@@ -125,6 +126,8 @@ jobs:
   gitleaks:
     name: Gitleaks Secret Detection
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       gitleaks_status: ${{ steps.gitleaks_result.outputs.status }}
     steps:
@@ -153,6 +156,8 @@ jobs:
   go-licenses:
     name: License Compliance
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       licenses_status: ${{ steps.licenses_result.outputs.status }}
       licenses_violations: ${{ steps.licenses_result.outputs.violations }}

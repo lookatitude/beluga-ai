@@ -108,12 +108,12 @@ func TestManager_AddPolicy(t *testing.T) {
 	}
 
 	// Empty pattern should fail.
-	if err := mgr.AddPolicy(ApprovalPolicy{ToolPattern: ""}); err == nil {
+	if mgr.AddPolicy(ApprovalPolicy{ToolPattern: ""}) == nil {
 		t.Fatal("expected error for empty pattern")
 	}
 
 	// Invalid glob pattern should fail.
-	if err := mgr.AddPolicy(ApprovalPolicy{ToolPattern: "[invalid"}); err == nil {
+	if mgr.AddPolicy(ApprovalPolicy{ToolPattern: "[invalid"}) == nil {
 		t.Fatal("expected error for invalid pattern")
 	}
 }

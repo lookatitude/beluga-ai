@@ -107,7 +107,7 @@ func ComposeHooks(hooks ...Hooks) Hooks {
 // PipelineConfig holds the configuration for a VoicePipeline.
 type PipelineConfig struct {
 	Transport Transport
-	VAD       VAD
+	VAD       ActivityDetector
 	STT       Transcriber
 	LLM       LLMProcessor
 	TTS       Synthesizer
@@ -130,7 +130,7 @@ func WithTransport(t Transport) PipelineOption {
 }
 
 // WithVAD sets the voice activity detector for the pipeline.
-func WithVAD(v VAD) PipelineOption {
+func WithVAD(v ActivityDetector) PipelineOption {
 	return func(cfg *PipelineConfig) {
 		cfg.VAD = v
 	}

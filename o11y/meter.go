@@ -95,7 +95,7 @@ func InitMeter(serviceName string) error {
 // TokenUsage records the number of input and output tokens consumed by a
 // GenAI operation.
 func TokenUsage(ctx context.Context, input, output int) {
-	if err := initInstruments(); err != nil {
+	if initInstruments() != nil {
 		return
 	}
 	inputTokenCounter.Add(ctx, int64(input),
@@ -108,7 +108,7 @@ func TokenUsage(ctx context.Context, input, output int) {
 
 // OperationDuration records the duration of a GenAI operation in milliseconds.
 func OperationDuration(ctx context.Context, durationMs float64) {
-	if err := initInstruments(); err != nil {
+	if initInstruments() != nil {
 		return
 	}
 	operationDuration.Record(ctx, durationMs)
@@ -116,7 +116,7 @@ func OperationDuration(ctx context.Context, durationMs float64) {
 
 // Cost records the estimated monetary cost of a GenAI operation in USD.
 func Cost(ctx context.Context, cost float64) {
-	if err := initInstruments(); err != nil {
+	if initInstruments() != nil {
 		return
 	}
 	costGauge.Add(ctx, cost)

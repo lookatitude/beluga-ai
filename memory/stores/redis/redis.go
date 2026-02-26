@@ -172,12 +172,7 @@ func unmarshalMessage(data []byte) (schema.Message, error) {
 
 	parts := make([]schema.ContentPart, 0, len(sm.Parts))
 	for _, sp := range sm.Parts {
-		switch schema.ContentType(sp.Type) {
-		case schema.ContentText:
-			parts = append(parts, schema.TextPart{Text: sp.Text})
-		default:
-			parts = append(parts, schema.TextPart{Text: sp.Text})
-		}
+		parts = append(parts, schema.TextPart{Text: sp.Text})
 	}
 
 	switch schema.Role(sm.Role) {

@@ -16,7 +16,9 @@ import (
 )
 
 const (
-	defaultBaseURL = "https://api.gladia.io/v2"
+	defaultBaseURL     = "https://api.gladia.io/v2"
+	headerGladiaKey   = "x-gladia-key"
+	headerContentType = "Content-Type"
 )
 
 var _ stt.STT = (*Engine)(nil) // compile-time interface check
@@ -71,14 +73,20 @@ type transcriptionResponse struct {
 	Status     string `json:"status"`
 }
 
+// transcriptionTranscription holds the transcription text within a result.
+type transcriptionTranscription struct {
+	FullTranscript string `json:"full_transcript"`
+}
+
+// transcriptionResultData holds the inner result data of a transcription.
+type transcriptionResultData struct {
+	Transcription transcriptionTranscription `json:"transcription"`
+}
+
 // transcriptionResult holds the final transcription result.
 type transcriptionResult struct {
-	Status string `json:"status"`
-	Result struct {
-		Transcription struct {
-			FullTranscript string `json:"full_transcript"`
-		} `json:"transcription"`
-	} `json:"result"`
+	Status string                `json:"status"`
+	Result transcriptionResultData `json:"result"`
 }
 
 // Transcribe converts audio to text using Gladia's REST API.
@@ -108,8 +116,8 @@ func (e *Engine) Transcribe(ctx context.Context, audio []byte, opts ...stt.Optio
 	if err != nil {
 		return "", fmt.Errorf("gladia: create upload request: %w", err)
 	}
-	uploadReq.Header.Set("x-gladia-key", e.apiKey)
-	uploadReq.Header.Set("Content-Type", w.FormDataContentType())
+	uploadReq.Header.Set(headerGladiaKey, e.apiKey)
+	uploadReq.Header.Set(headerContentType, w.FormDataContentType())
 
 	uploadResp, err := http.DefaultClient.Do(uploadReq)
 	if err != nil {
@@ -139,8 +147,8 @@ func (e *Engine) Transcribe(ctx context.Context, audio []byte, opts ...stt.Optio
 	if err != nil {
 		return "", fmt.Errorf("gladia: create transcription request: %w", err)
 	}
-	createReq.Header.Set("x-gladia-key", e.apiKey)
-	createReq.Header.Set("Content-Type", "application/json")
+	createReq.Header.Set(headerGladiaKey, e.apiKey)
+	createReq.Header.Set(headerContentType, "application/json")
 
 	createResp, err := http.DefaultClient.Do(createReq)
 	if err != nil {
@@ -175,7 +183,7 @@ func (e *Engine) Transcribe(ctx context.Context, audio []byte, opts ...stt.Optio
 		if err != nil {
 			return "", fmt.Errorf("gladia: create poll request: %w", err)
 		}
-		pollReq.Header.Set("x-gladia-key", e.apiKey)
+		pollReq.Header.Set(headerGladiaKey, e.apiKey)
 
 		pollResp, err := http.DefaultClient.Do(pollReq)
 		if err != nil {
@@ -235,8 +243,8 @@ func (e *Engine) TranscribeStream(ctx context.Context, audioStream iter.Seq2[[]b
 			yield(stt.TranscriptEvent{}, fmt.Errorf("gladia: create live request: %w", err))
 			return
 		}
-		httpReq.Header.Set("x-gladia-key", e.apiKey)
-		httpReq.Header.Set("Content-Type", "application/json")
+		httpReq.Header.Set(headerGladiaKey, e.apiKey)
+		httpReq.Header.Set(headerContentType, "application/json")
 
 		httpResp, err := http.DefaultClient.Do(httpReq)
 		if err != nil {

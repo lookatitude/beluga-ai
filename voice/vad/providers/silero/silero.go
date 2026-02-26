@@ -16,10 +16,10 @@ const (
 	defaultSampleRate = 16000
 )
 
-var _ voice.VAD = (*VAD)(nil) // compile-time interface check
+var _ voice.ActivityDetector = (*VAD)(nil) // compile-time interface check
 
 func init() {
-	voice.RegisterVAD("silero", func(cfg map[string]any) (voice.VAD, error) {
+	voice.RegisterVAD("silero", func(cfg map[string]any) (voice.ActivityDetector, error) {
 		threshold := defaultThreshold
 		if v, ok := cfg["threshold"]; ok {
 			switch t := v.(type) {
@@ -63,7 +63,7 @@ type Config struct {
 	ModelPath string
 }
 
-// VAD implements voice.VAD using the Silero VAD model.
+// VAD implements voice.ActivityDetector using the Silero VAD model.
 // When the ONNX model is not available, it falls back to an energy-based
 // detector with the Silero-calibrated threshold.
 type VAD struct {

@@ -34,6 +34,6 @@
 //
 // # Exported Types
 //
-//   - [VAD] — implements voice.VAD using energy + ZCR analysis
+//   - [VAD] — implements voice.ActivityDetector using energy + ZCR analysis
 //   - [New] — constructor accepting energy and ZCR thresholds
 package webrtc

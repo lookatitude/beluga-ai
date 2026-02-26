@@ -8,17 +8,18 @@ on:
       - ".claude/**"
       - "docs/website/**"
 
-permissions:
-  contents: read
-  security-events: write
-
 jobs:
   ci:
     name: CI Checks
+    permissions:
+      contents: read
     uses: ./.github/workflows/_ci-checks.yml
 
   security:
     name: Security Checks
+    permissions:
+      contents: read
+      security-events: write
     uses: ./.github/workflows/_security-checks.yml
     secrets:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}

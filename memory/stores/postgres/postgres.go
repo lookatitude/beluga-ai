@@ -179,12 +179,7 @@ func scanMessages(rows pgx.Rows) ([]schema.Message, error) {
 
 		parts := make([]schema.ContentPart, 0, len(sc.Parts))
 		for _, sp := range sc.Parts {
-			switch schema.ContentType(sp.Type) {
-			case schema.ContentText:
-				parts = append(parts, schema.TextPart{Text: sp.Text})
-			default:
-				parts = append(parts, schema.TextPart{Text: sp.Text})
-			}
+			parts = append(parts, schema.TextPart{Text: sp.Text})
 		}
 
 		var msg schema.Message

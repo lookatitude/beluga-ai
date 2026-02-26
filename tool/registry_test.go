@@ -35,7 +35,7 @@ func TestRegistry_Add_Duplicate(t *testing.T) {
 	if err := reg.Add(t1); err != nil {
 		t.Fatalf("first Add error: %v", err)
 	}
-	if err := reg.Add(t2); err == nil {
+	if reg.Add(t2) == nil {
 		t.Fatal("expected error on duplicate Add")
 	}
 }
@@ -96,7 +96,7 @@ func TestRegistry_Remove(t *testing.T) {
 
 func TestRegistry_Remove_NotFound(t *testing.T) {
 	reg := NewRegistry()
-	if err := reg.Remove("nonexistent"); err == nil {
+	if reg.Remove("nonexistent") == nil {
 		t.Fatal("expected error removing non-existent tool")
 	}
 }

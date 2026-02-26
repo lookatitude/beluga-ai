@@ -11,12 +11,6 @@ on:
       - ".claude/**"
       - "docs/website/**"
 
-permissions:
-  contents: write
-  pages: write
-  id-token: write
-  security-events: write
-
 concurrency:
   group: "main-pipeline"
   cancel-in-progress: true
@@ -28,10 +22,15 @@ env:
 jobs:
   ci:
     name: CI Checks
+    permissions:
+      contents: read
     uses: ./.github/workflows/_ci-checks.yml
 
   security:
     name: Security Checks
+    permissions:
+      contents: read
+      security-events: write
     uses: ./.github/workflows/_security-checks.yml
     secrets:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -41,6 +40,8 @@ jobs:
     name: SonarCloud Analysis
     needs: ci
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
         with:
@@ -60,6 +61,8 @@ jobs:
     name: Generate Reports
     needs: [ci, security]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     if: always()
     steps:
       - uses: actions/checkout@v6
@@ -232,6 +235,8 @@ jobs:
     name: Generate GoDoc
     needs: [ci]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
 
@@ -290,6 +295,8 @@ jobs:
     name: Build Website
     needs: [godoc, generate-reports]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
 
@@ -363,6 +370,9 @@ jobs:
     name: Deploy to GitHub Pages
     needs: build-website
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

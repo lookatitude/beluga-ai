@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+const errFmtRequest = "hitl/request: %w"
+
 // seq is a package-level counter for generating unique request IDs.
 var seq atomic.Int64
 
@@ -160,10 +162,10 @@ func (m *DefaultManager) RequestInteraction(ctx context.Context, req Interaction
 	if err != nil {
 		if m.hooks.OnError != nil {
 			if e := m.hooks.OnError(ctx, err); e != nil {
-				return nil, fmt.Errorf("hitl/request: %w", e)
+				return nil, fmt.Errorf(errFmtRequest, e)
 			}
 		}
-		return nil, fmt.Errorf("hitl/request: %w", err)
+		return nil, fmt.Errorf(errFmtRequest, err)
 	}
 
 	if autoApprove {
@@ -232,7 +234,7 @@ func (m *DefaultManager) RequestInteraction(ctx context.Context, req Interaction
 		if m.hooks.OnTimeout != nil {
 			m.hooks.OnTimeout(ctx, req)
 		}
-		return nil, fmt.Errorf("hitl/request: %w", timeoutCtx.Err())
+		return nil, fmt.Errorf(errFmtRequest, timeoutCtx.Err())
 	}
 }
 

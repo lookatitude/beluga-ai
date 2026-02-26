@@ -20,7 +20,7 @@ type TemplateInfo struct {
 type PromptManager interface {
 	// Get retrieves a template by name and version. If version is empty,
 	// the latest version is returned.
-	Get(name string, version string) (*Template, error)
+	Get(name, version string) (*Template, error)
 
 	// Render retrieves a template by name (latest version), renders it with
 	// the given variables, and returns the result as a slice of schema.Message.

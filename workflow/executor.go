@@ -168,7 +168,7 @@ func (e *DefaultExecutor) Execute(ctx context.Context, fn WorkflowFunc, opts Wor
 }
 
 // Signal sends a signal to a running workflow.
-func (e *DefaultExecutor) Signal(_ context.Context, workflowID string, signal Signal) error {
+func (e *DefaultExecutor) Signal(ctx context.Context, workflowID string, signal Signal) error {
 	e.mu.RLock()
 	rw, ok := e.running[workflowID]
 	e.mu.RUnlock()
@@ -186,7 +186,7 @@ func (e *DefaultExecutor) Signal(_ context.Context, workflowID string, signal Si
 	rw.mu.Unlock()
 
 	if e.hooks.OnSignal != nil {
-		e.hooks.OnSignal(context.Background(), workflowID, signal)
+		e.hooks.OnSignal(ctx, workflowID, signal)
 	}
 
 	ch <- signal.Payload
@@ -194,7 +194,7 @@ func (e *DefaultExecutor) Signal(_ context.Context, workflowID string, signal Si
 }
 
 // Query retrieves state from a running workflow. Currently returns the status.
-func (e *DefaultExecutor) Query(_ context.Context, workflowID string, queryType string) (any, error) {
+func (e *DefaultExecutor) Query(ctx context.Context, workflowID string, queryType string) (any, error) {
 	e.mu.RLock()
 	rw, ok := e.running[workflowID]
 	e.mu.RUnlock()
@@ -202,7 +202,7 @@ func (e *DefaultExecutor) Query(_ context.Context, workflowID string, queryType 
 	if !ok {
 		// Check the store for completed workflows.
 		if e.store != nil {
-			state, err := e.store.Load(context.Background(), workflowID)
+			state, err := e.store.Load(ctx, workflowID)
 			if err != nil {
 				return nil, fmt.Errorf("workflow/query: %w", err)
 			}
