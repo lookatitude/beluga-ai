@@ -1,6 +1,10 @@
 package workflow
 
-import "context"
+import (
+	"context"
+
+	"github.com/lookatitude/beluga-ai/internal/hookutil"
+)
 
 // Hooks provides lifecycle callbacks for the workflow executor.
 // All fields are optional; nil hooks are skipped.
@@ -21,86 +25,30 @@ type Hooks struct {
 	OnRetry func(ctx context.Context, workflowID string, err error)
 }
 
-func composeOnWorkflowStart(hooks []Hooks) func(context.Context, string, any) {
-	return func(ctx context.Context, wfID string, input any) {
-		for _, h := range hooks {
-			if h.OnWorkflowStart != nil {
-				h.OnWorkflowStart(ctx, wfID, input)
-			}
-		}
-	}
-}
-
-func composeOnWorkflowComplete(hooks []Hooks) func(context.Context, string, any) {
-	return func(ctx context.Context, wfID string, result any) {
-		for _, h := range hooks {
-			if h.OnWorkflowComplete != nil {
-				h.OnWorkflowComplete(ctx, wfID, result)
-			}
-		}
-	}
-}
-
-func composeOnWorkflowFail(hooks []Hooks) func(context.Context, string, error) {
-	return func(ctx context.Context, wfID string, err error) {
-		for _, h := range hooks {
-			if h.OnWorkflowFail != nil {
-				h.OnWorkflowFail(ctx, wfID, err)
-			}
-		}
-	}
-}
-
-func composeOnActivityStart(hooks []Hooks) func(context.Context, string, any) {
-	return func(ctx context.Context, wfID string, input any) {
-		for _, h := range hooks {
-			if h.OnActivityStart != nil {
-				h.OnActivityStart(ctx, wfID, input)
-			}
-		}
-	}
-}
-
-func composeOnActivityComplete(hooks []Hooks) func(context.Context, string, any) {
-	return func(ctx context.Context, wfID string, result any) {
-		for _, h := range hooks {
-			if h.OnActivityComplete != nil {
-				h.OnActivityComplete(ctx, wfID, result)
-			}
-		}
-	}
-}
-
-func composeOnSignal(hooks []Hooks) func(context.Context, string, Signal) {
-	return func(ctx context.Context, wfID string, signal Signal) {
-		for _, h := range hooks {
-			if h.OnSignal != nil {
-				h.OnSignal(ctx, wfID, signal)
-			}
-		}
-	}
-}
-
-func composeOnRetry(hooks []Hooks) func(context.Context, string, error) {
-	return func(ctx context.Context, wfID string, err error) {
-		for _, h := range hooks {
-			if h.OnRetry != nil {
-				h.OnRetry(ctx, wfID, err)
-			}
-		}
-	}
-}
-
 // ComposeHooks merges multiple Hooks into one. Callbacks are called in order.
 func ComposeHooks(hooks ...Hooks) Hooks {
 	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		OnWorkflowStart:    composeOnWorkflowStart(h),
-		OnWorkflowComplete: composeOnWorkflowComplete(h),
-		OnWorkflowFail:     composeOnWorkflowFail(h),
-		OnActivityStart:    composeOnActivityStart(h),
-		OnActivityComplete: composeOnActivityComplete(h),
-		OnSignal:           composeOnSignal(h),
-		OnRetry:            composeOnRetry(h),
+		OnWorkflowStart: hookutil.ComposeVoid2(h, func(hk Hooks) func(context.Context, string, any) {
+			return hk.OnWorkflowStart
+		}),
+		OnWorkflowComplete: hookutil.ComposeVoid2(h, func(hk Hooks) func(context.Context, string, any) {
+			return hk.OnWorkflowComplete
+		}),
+		OnWorkflowFail: hookutil.ComposeVoid2(h, func(hk Hooks) func(context.Context, string, error) {
+			return hk.OnWorkflowFail
+		}),
+		OnActivityStart: hookutil.ComposeVoid2(h, func(hk Hooks) func(context.Context, string, any) {
+			return hk.OnActivityStart
+		}),
+		OnActivityComplete: hookutil.ComposeVoid2(h, func(hk Hooks) func(context.Context, string, any) {
+			return hk.OnActivityComplete
+		}),
+		OnSignal: hookutil.ComposeVoid2(h, func(hk Hooks) func(context.Context, string, Signal) {
+			return hk.OnSignal
+		}),
+		OnRetry: hookutil.ComposeVoid2(h, func(hk Hooks) func(context.Context, string, error) {
+			return hk.OnRetry
+		}),
 	}
 }

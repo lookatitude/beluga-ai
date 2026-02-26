@@ -1,6 +1,10 @@
 package tool
 
-import "context"
+import (
+	"context"
+
+	"github.com/lookatitude/beluga-ai/internal/hookutil"
+)
 
 // Hooks provides lifecycle callbacks for tool execution. All fields are
 // optional — nil hooks are skipped. Hooks can be composed using ComposeHooks.
@@ -20,42 +24,6 @@ type Hooks struct {
 	OnError func(ctx context.Context, toolName string, err error) error
 }
 
-func composeBeforeExecute(hooks []Hooks) func(context.Context, string, map[string]any) error {
-	return func(ctx context.Context, toolName string, input map[string]any) error {
-		for _, h := range hooks {
-			if h.BeforeExecute != nil {
-				if err := h.BeforeExecute(ctx, toolName, input); err != nil {
-					return err
-				}
-			}
-		}
-		return nil
-	}
-}
-
-func composeAfterExecute(hooks []Hooks) func(context.Context, string, *Result, error) {
-	return func(ctx context.Context, toolName string, result *Result, err error) {
-		for _, h := range hooks {
-			if h.AfterExecute != nil {
-				h.AfterExecute(ctx, toolName, result, err)
-			}
-		}
-	}
-}
-
-func composeOnError(hooks []Hooks) func(context.Context, string, error) error {
-	return func(ctx context.Context, toolName string, err error) error {
-		for _, h := range hooks {
-			if h.OnError != nil {
-				if newErr := h.OnError(ctx, toolName, err); newErr != nil {
-					return newErr
-				}
-			}
-		}
-		return err
-	}
-}
-
 // ComposeHooks merges multiple Hooks into a single Hooks struct.
 // BeforeExecute hooks run in order; if any returns an error, subsequent hooks
 // are skipped. AfterExecute hooks run in order unconditionally. OnError hooks
@@ -63,9 +31,15 @@ func composeOnError(hooks []Hooks) func(context.Context, string, error) error {
 func ComposeHooks(hooks ...Hooks) Hooks {
 	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		BeforeExecute: composeBeforeExecute(h),
-		AfterExecute:  composeAfterExecute(h),
-		OnError:       composeOnError(h),
+		BeforeExecute: hookutil.ComposeError2(h, func(hk Hooks) func(context.Context, string, map[string]any) error {
+			return hk.BeforeExecute
+		}),
+		AfterExecute: hookutil.ComposeVoid3(h, func(hk Hooks) func(context.Context, string, *Result, error) {
+			return hk.AfterExecute
+		}),
+		OnError: hookutil.ComposeErrorPassthrough1(h, func(hk Hooks) func(context.Context, string, error) error {
+			return hk.OnError
+		}),
 	}
 }
 
@@ -80,8 +54,8 @@ type hookedTool struct {
 	hooks Hooks
 }
 
-func (h *hookedTool) Name() string              { return h.tool.Name() }
-func (h *hookedTool) Description() string        { return h.tool.Description() }
+func (h *hookedTool) Name() string               { return h.tool.Name() }
+func (h *hookedTool) Description() string         { return h.tool.Description() }
 func (h *hookedTool) InputSchema() map[string]any { return h.tool.InputSchema() }
 
 func (h *hookedTool) Execute(ctx context.Context, input map[string]any) (*Result, error) {

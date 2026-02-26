@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"iter"
 
+	"github.com/lookatitude/beluga-ai/internal/hookutil"
 	"github.com/lookatitude/beluga-ai/voice"
 )
 
@@ -127,46 +128,19 @@ type Hooks struct {
 	OnError func(ctx context.Context, err error) error
 }
 
-func composeBeforeSynthesize(hooks []Hooks) func(context.Context, string) {
-	return func(ctx context.Context, text string) {
-		for _, h := range hooks {
-			if h.BeforeSynthesize != nil {
-				h.BeforeSynthesize(ctx, text)
-			}
-		}
-	}
-}
-
-func composeOnAudioChunk(hooks []Hooks) func(context.Context, []byte) {
-	return func(ctx context.Context, chunk []byte) {
-		for _, h := range hooks {
-			if h.OnAudioChunk != nil {
-				h.OnAudioChunk(ctx, chunk)
-			}
-		}
-	}
-}
-
-func composeOnError(hooks []Hooks) func(context.Context, error) error {
-	return func(ctx context.Context, err error) error {
-		for _, h := range hooks {
-			if h.OnError != nil {
-				if e := h.OnError(ctx, err); e != nil {
-					return e
-				}
-			}
-		}
-		return err
-	}
-}
-
 // ComposeHooks merges multiple Hooks into a single Hooks value.
 func ComposeHooks(hooks ...Hooks) Hooks {
 	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		BeforeSynthesize: composeBeforeSynthesize(h),
-		OnAudioChunk:     composeOnAudioChunk(h),
-		OnError:          composeOnError(h),
+		BeforeSynthesize: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, string) {
+			return hk.BeforeSynthesize
+		}),
+		OnAudioChunk: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, []byte) {
+			return hk.OnAudioChunk
+		}),
+		OnError: hookutil.ComposeErrorPassthrough(h, func(hk Hooks) func(context.Context, error) error {
+			return hk.OnError
+		}),
 	}
 }
 
@@ -191,20 +165,7 @@ func synthesizeFrame(ctx context.Context, engine TTS, frame voice.Frame, sampleR
 // It reads text frames from in, runs synthesis, and emits audio frames
 // to out with the synthesized audio.
 func AsFrameProcessor(engine TTS, sampleRate int, opts ...Option) voice.FrameProcessor {
-	return voice.FrameProcessorFunc(func(ctx context.Context, in <-chan voice.Frame, out chan<- voice.Frame) error {
-		defer close(out)
-		for {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case frame, ok := <-in:
-				if !ok {
-					return nil
-				}
-				if err := synthesizeFrame(ctx, engine, frame, sampleRate, out, opts...); err != nil {
-					return err
-				}
-			}
-		}
+	return voice.FrameLoop(func(ctx context.Context, frame voice.Frame, out chan<- voice.Frame) error {
+		return synthesizeFrame(ctx, engine, frame, sampleRate, out, opts...)
 	})
 }

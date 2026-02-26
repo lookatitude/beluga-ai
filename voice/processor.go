@@ -70,6 +70,31 @@ func runChain(ctx context.Context, processors []FrameProcessor, in <-chan Frame,
 	return firstErr
 }
 
+// FrameHandler is a function that processes a single frame and writes results to out.
+type FrameHandler func(ctx context.Context, frame Frame, out chan<- Frame) error
+
+// FrameLoop creates a FrameProcessor that reads frames from in, calls handler
+// for each one, and closes out when done. This is the standard read-process-write
+// loop used by STT, TTS, and similar processors.
+func FrameLoop(handler FrameHandler) FrameProcessor {
+	return FrameProcessorFunc(func(ctx context.Context, in <-chan Frame, out chan<- Frame) error {
+		defer close(out)
+		for {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case frame, ok := <-in:
+				if !ok {
+					return nil
+				}
+				if err := handler(ctx, frame, out); err != nil {
+					return err
+				}
+			}
+		}
+	})
+}
+
 // Chain connects multiple FrameProcessors in series. Frames flow from the
 // first processor to the last. Returns a single FrameProcessor representing
 // the full pipeline.

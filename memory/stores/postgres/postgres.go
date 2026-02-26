@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/lookatitude/beluga-ai/memory"
+	"github.com/lookatitude/beluga-ai/memory/stores/internal/storeutil"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -62,38 +63,9 @@ func (s *MessageStore) EnsureTable(ctx context.Context) error {
 	return err
 }
 
-// storedPart is the JSON representation of a schema.ContentPart.
-type storedPart struct {
-	Type string `json:"type"`
-	Text string `json:"text,omitempty"`
-}
-
-// storedContent is the JSON representation of a message's content.
-type storedContent struct {
-	Parts      []storedPart      `json:"parts"`
-	ToolCalls  []schema.ToolCall `json:"tool_calls,omitempty"`
-	ToolCallID string            `json:"tool_call_id,omitempty"`
-	ModelID    string            `json:"model_id,omitempty"`
-}
-
 // Append adds a message to the store.
 func (s *MessageStore) Append(ctx context.Context, msg schema.Message) error {
-	sc := storedContent{}
-	for _, p := range msg.GetContent() {
-		sp := storedPart{Type: string(p.PartType())}
-		if tp, ok := p.(schema.TextPart); ok {
-			sp.Text = tp.Text
-		}
-		sc.Parts = append(sc.Parts, sp)
-	}
-	if ai, ok := msg.(*schema.AIMessage); ok {
-		sc.ToolCalls = ai.ToolCalls
-		sc.ModelID = ai.ModelID
-	}
-	if tm, ok := msg.(*schema.ToolMessage); ok {
-		sc.ToolCallID = tm.ToolCallID
-	}
-
+	sc := storeutil.EncodeContent(msg)
 	contentJSON, err := json.Marshal(sc)
 	if err != nil {
 		return fmt.Errorf("postgres: marshal content: %w", err)
@@ -179,7 +151,7 @@ func scanMessages(rows pgx.Rows) ([]schema.Message, error) {
 
 // decodeMessage reconstructs a schema.Message from stored row data.
 func decodeMessage(role string, contentJSON, metadataJSON []byte) (schema.Message, error) {
-	var sc storedContent
+	var sc storeutil.StoredContent
 	if err := json.Unmarshal(contentJSON, &sc); err != nil {
 		return nil, fmt.Errorf("postgres: unmarshal content: %w", err)
 	}
@@ -191,28 +163,7 @@ func decodeMessage(role string, contentJSON, metadataJSON []byte) (schema.Messag
 		}
 	}
 
-	parts := make([]schema.ContentPart, 0, len(sc.Parts))
-	for _, sp := range sc.Parts {
-		parts = append(parts, schema.TextPart{Text: sp.Text})
-	}
-
-	return buildMessage(role, parts, metadata, sc), nil
-}
-
-// buildMessage creates the correct schema.Message type for the given role.
-func buildMessage(role string, parts []schema.ContentPart, metadata map[string]any, sc storedContent) schema.Message {
-	switch schema.Role(role) {
-	case schema.RoleSystem:
-		return &schema.SystemMessage{Parts: parts, Metadata: metadata}
-	case schema.RoleHuman:
-		return &schema.HumanMessage{Parts: parts, Metadata: metadata}
-	case schema.RoleAI:
-		return &schema.AIMessage{Parts: parts, ToolCalls: sc.ToolCalls, ModelID: sc.ModelID, Metadata: metadata}
-	case schema.RoleTool:
-		return &schema.ToolMessage{ToolCallID: sc.ToolCallID, Parts: parts, Metadata: metadata}
-	default:
-		return &schema.HumanMessage{Parts: parts, Metadata: metadata}
-	}
+	return storeutil.BuildMessage(role, storeutil.DecodeParts(sc.Parts), metadata, sc), nil
 }
 
 // Verify interface compliance.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/lookatitude/beluga-ai/internal/hookutil"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/voice"
 )
@@ -162,57 +163,22 @@ type Hooks struct {
 	OnError func(ctx context.Context, err error) error
 }
 
-func composeOnTurn(hooks []Hooks) func(context.Context, string, string) {
-	return func(ctx context.Context, userText, agentText string) {
-		for _, h := range hooks {
-			if h.OnTurn != nil {
-				h.OnTurn(ctx, userText, agentText)
-			}
-		}
-	}
-}
-
-func composeOnInterrupt(hooks []Hooks) func(context.Context) {
-	return func(ctx context.Context) {
-		for _, h := range hooks {
-			if h.OnInterrupt != nil {
-				h.OnInterrupt(ctx)
-			}
-		}
-	}
-}
-
-func composeOnToolCall(hooks []Hooks) func(context.Context, schema.ToolCall) {
-	return func(ctx context.Context, call schema.ToolCall) {
-		for _, h := range hooks {
-			if h.OnToolCall != nil {
-				h.OnToolCall(ctx, call)
-			}
-		}
-	}
-}
-
-func composeOnError(hooks []Hooks) func(context.Context, error) error {
-	return func(ctx context.Context, err error) error {
-		for _, h := range hooks {
-			if h.OnError != nil {
-				if e := h.OnError(ctx, err); e != nil {
-					return e
-				}
-			}
-		}
-		return err
-	}
-}
-
 // ComposeHooks merges multiple Hooks into a single Hooks value.
 func ComposeHooks(hooks ...Hooks) Hooks {
 	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		OnTurn:      composeOnTurn(h),
-		OnInterrupt: composeOnInterrupt(h),
-		OnToolCall:  composeOnToolCall(h),
-		OnError:     composeOnError(h),
+		OnTurn: hookutil.ComposeVoid2(h, func(hk Hooks) func(context.Context, string, string) {
+			return hk.OnTurn
+		}),
+		OnInterrupt: hookutil.ComposeVoid0(h, func(hk Hooks) func(context.Context) {
+			return hk.OnInterrupt
+		}),
+		OnToolCall: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, schema.ToolCall) {
+			return hk.OnToolCall
+		}),
+		OnError: hookutil.ComposeErrorPassthrough(h, func(hk Hooks) func(context.Context, error) error {
+			return hk.OnError
+		}),
 	}
 }
 

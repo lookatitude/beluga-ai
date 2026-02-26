@@ -6,6 +6,7 @@ import (
 	"iter"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/internal/hookutil"
 	"github.com/lookatitude/beluga-ai/voice"
 )
 
@@ -148,46 +149,19 @@ type Hooks struct {
 	OnError func(ctx context.Context, err error) error
 }
 
-func composeOnTranscript(hooks []Hooks) func(context.Context, TranscriptEvent) {
-	return func(ctx context.Context, event TranscriptEvent) {
-		for _, h := range hooks {
-			if h.OnTranscript != nil {
-				h.OnTranscript(ctx, event)
-			}
-		}
-	}
-}
-
-func composeOnUtterance(hooks []Hooks) func(context.Context, string) {
-	return func(ctx context.Context, text string) {
-		for _, h := range hooks {
-			if h.OnUtterance != nil {
-				h.OnUtterance(ctx, text)
-			}
-		}
-	}
-}
-
-func composeOnError(hooks []Hooks) func(context.Context, error) error {
-	return func(ctx context.Context, err error) error {
-		for _, h := range hooks {
-			if h.OnError != nil {
-				if e := h.OnError(ctx, err); e != nil {
-					return e
-				}
-			}
-		}
-		return err
-	}
-}
-
 // ComposeHooks merges multiple Hooks into a single Hooks value.
 func ComposeHooks(hooks ...Hooks) Hooks {
 	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		OnTranscript: composeOnTranscript(h),
-		OnUtterance:  composeOnUtterance(h),
-		OnError:      composeOnError(h),
+		OnTranscript: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, TranscriptEvent) {
+			return hk.OnTranscript
+		}),
+		OnUtterance: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, string) {
+			return hk.OnUtterance
+		}),
+		OnError: hookutil.ComposeErrorPassthrough(h, func(hk Hooks) func(context.Context, error) error {
+			return hk.OnError
+		}),
 	}
 }
 
@@ -212,20 +186,7 @@ func transcribeFrame(ctx context.Context, engine STT, frame voice.Frame, out cha
 // It reads audio frames from in, runs transcription, and emits text frames
 // to out with transcription results.
 func AsFrameProcessor(engine STT, opts ...Option) voice.FrameProcessor {
-	return voice.FrameProcessorFunc(func(ctx context.Context, in <-chan voice.Frame, out chan<- voice.Frame) error {
-		defer close(out)
-		for {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case frame, ok := <-in:
-				if !ok {
-					return nil
-				}
-				if err := transcribeFrame(ctx, engine, frame, out, opts...); err != nil {
-					return err
-				}
-			}
-		}
+	return voice.FrameLoop(func(ctx context.Context, frame voice.Frame, out chan<- voice.Frame) error {
+		return transcribeFrame(ctx, engine, frame, out, opts...)
 	})
 }

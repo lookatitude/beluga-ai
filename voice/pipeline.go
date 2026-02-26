@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"iter"
 
+	"github.com/lookatitude/beluga-ai/internal/hookutil"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -59,69 +60,26 @@ type Hooks struct {
 	OnError func(ctx context.Context, err error) error
 }
 
-func composeOnSpeechStart(hooks []Hooks) func(context.Context) {
-	return func(ctx context.Context) {
-		for _, h := range hooks {
-			if h.OnSpeechStart != nil {
-				h.OnSpeechStart(ctx)
-			}
-		}
-	}
-}
-
-func composeOnSpeechEnd(hooks []Hooks) func(context.Context) {
-	return func(ctx context.Context) {
-		for _, h := range hooks {
-			if h.OnSpeechEnd != nil {
-				h.OnSpeechEnd(ctx)
-			}
-		}
-	}
-}
-
-func composeOnTranscript(hooks []Hooks) func(context.Context, string) {
-	return func(ctx context.Context, text string) {
-		for _, h := range hooks {
-			if h.OnTranscript != nil {
-				h.OnTranscript(ctx, text)
-			}
-		}
-	}
-}
-
-func composeOnResponse(hooks []Hooks) func(context.Context, string) {
-	return func(ctx context.Context, text string) {
-		for _, h := range hooks {
-			if h.OnResponse != nil {
-				h.OnResponse(ctx, text)
-			}
-		}
-	}
-}
-
-func composeOnError(hooks []Hooks) func(context.Context, error) error {
-	return func(ctx context.Context, err error) error {
-		for _, h := range hooks {
-			if h.OnError != nil {
-				if e := h.OnError(ctx, err); e != nil {
-					return e
-				}
-			}
-		}
-		return err
-	}
-}
-
 // ComposeHooks merges multiple Hooks into a single Hooks value.
 // Callbacks are called in the order the hooks were provided.
 func ComposeHooks(hooks ...Hooks) Hooks {
 	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		OnSpeechStart: composeOnSpeechStart(h),
-		OnSpeechEnd:   composeOnSpeechEnd(h),
-		OnTranscript:  composeOnTranscript(h),
-		OnResponse:    composeOnResponse(h),
-		OnError:       composeOnError(h),
+		OnSpeechStart: hookutil.ComposeVoid0(h, func(hk Hooks) func(context.Context) {
+			return hk.OnSpeechStart
+		}),
+		OnSpeechEnd: hookutil.ComposeVoid0(h, func(hk Hooks) func(context.Context) {
+			return hk.OnSpeechEnd
+		}),
+		OnTranscript: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, string) {
+			return hk.OnTranscript
+		}),
+		OnResponse: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, string) {
+			return hk.OnResponse
+		}),
+		OnError: hookutil.ComposeErrorPassthrough(h, func(hk Hooks) func(context.Context, error) error {
+			return hk.OnError
+		}),
 	}
 }
 
@@ -330,21 +288,8 @@ func (p *VoicePipeline) handleVADFrame(ctx context.Context, frame Frame, out cha
 // vadProcessor creates a FrameProcessor that runs VAD on audio frames and
 // injects control frames for speech start/end events.
 func (p *VoicePipeline) vadProcessor() FrameProcessor {
-	return FrameProcessorFunc(func(ctx context.Context, in <-chan Frame, out chan<- Frame) error {
-		defer close(out)
-		for {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case frame, ok := <-in:
-				if !ok {
-					return nil
-				}
-				if err := p.handleVADFrame(ctx, frame, out); err != nil {
-					return err
-				}
-			}
-		}
+	return FrameLoop(func(ctx context.Context, frame Frame, out chan<- Frame) error {
+		return p.handleVADFrame(ctx, frame, out)
 	})
 }
 

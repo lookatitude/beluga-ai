@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"sync"
-	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 
 	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/internal/httputil"
 	"github.com/lookatitude/beluga-ai/server"
 )
 
@@ -18,9 +17,8 @@ import (
 type Adapter struct {
 	mux *http.ServeMux
 	api huma.API
-	srv *http.Server
+	lc  httputil.ServerLifecycle
 	cfg server.Config
-	mu  sync.RWMutex
 }
 
 // Compile-time interface check.
@@ -53,8 +51,6 @@ func (a *Adapter) RegisterAgent(path string, ag agent.Agent) error {
 	}
 	handler := server.NewAgentHandler(ag)
 	stripped := http.StripPrefix(path, handler)
-	a.mu.Lock()
-	defer a.mu.Unlock()
 	a.mux.Handle(path+"/", stripped)
 	return nil
 }
@@ -64,8 +60,6 @@ func (a *Adapter) RegisterHandler(path string, handler http.Handler) error {
 	if handler == nil {
 		return fmt.Errorf("server/huma: handler must not be nil")
 	}
-	a.mu.Lock()
-	defer a.mu.Unlock()
 	a.mux.Handle(path, handler)
 	return nil
 }
@@ -73,49 +67,14 @@ func (a *Adapter) RegisterHandler(path string, handler http.Handler) error {
 // Serve starts the HTTP server on the given address. It blocks until the
 // server exits or the context is canceled.
 func (a *Adapter) Serve(ctx context.Context, addr string) error {
-	a.mu.Lock()
-	a.srv = &http.Server{
-		Addr:         addr,
-		Handler:      a.mux,
-		ReadTimeout:  a.cfg.ReadTimeout,
-		WriteTimeout: a.cfg.WriteTimeout,
-		IdleTimeout:  a.cfg.IdleTimeout,
-	}
-	a.mu.Unlock()
-
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- a.srv.ListenAndServe()
-	}()
-
-	select {
-	case <-ctx.Done():
-		shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
-		defer cancel()
-		if err := a.srv.Shutdown(shutdownCtx); err != nil {
-			return fmt.Errorf("server/huma: shutdown error: %w", err)
-		}
-		return ctx.Err()
-	case err := <-errCh:
-		if err == http.ErrServerClosed {
-			return nil
-		}
-		return fmt.Errorf("server/huma: %w", err)
-	}
+	return a.lc.Serve(ctx, addr, a.mux,
+		a.cfg.ReadTimeout, a.cfg.WriteTimeout, a.cfg.IdleTimeout,
+		"server/huma")
 }
 
 // Shutdown gracefully shuts down the server.
 func (a *Adapter) Shutdown(ctx context.Context) error {
-	a.mu.RLock()
-	srv := a.srv
-	a.mu.RUnlock()
-	if srv == nil {
-		return nil
-	}
-	if err := srv.Shutdown(ctx); err != nil {
-		return fmt.Errorf("server/huma: shutdown error: %w", err)
-	}
-	return nil
+	return a.lc.Shutdown(ctx, "server/huma")
 }
 
 // API returns the underlying huma.API for advanced configuration.

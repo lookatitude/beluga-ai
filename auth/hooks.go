@@ -1,6 +1,10 @@
 package auth
 
-import "context"
+import (
+	"context"
+
+	"github.com/lookatitude/beluga-ai/internal/hookutil"
+)
 
 // Hooks provides optional callback functions for authorization operations.
 // All fields are optional — nil hooks are skipped. Hooks can be composed
@@ -22,61 +26,23 @@ type Hooks struct {
 	OnError func(ctx context.Context, err error) error
 }
 
-func composeOnAuthorize(hooks []Hooks) func(context.Context, string, Permission, string) error {
-	return func(ctx context.Context, subject string, permission Permission, resource string) error {
-		for _, h := range hooks {
-			if h.OnAuthorize != nil {
-				if err := h.OnAuthorize(ctx, subject, permission, resource); err != nil {
-					return err
-				}
-			}
-		}
-		return nil
-	}
-}
-
-func composeOnAllow(hooks []Hooks) func(context.Context, string, Permission, string) {
-	return func(ctx context.Context, subject string, permission Permission, resource string) {
-		for _, h := range hooks {
-			if h.OnAllow != nil {
-				h.OnAllow(ctx, subject, permission, resource)
-			}
-		}
-	}
-}
-
-func composeOnDeny(hooks []Hooks) func(context.Context, string, Permission, string) {
-	return func(ctx context.Context, subject string, permission Permission, resource string) {
-		for _, h := range hooks {
-			if h.OnDeny != nil {
-				h.OnDeny(ctx, subject, permission, resource)
-			}
-		}
-	}
-}
-
-func composeOnError(hooks []Hooks) func(context.Context, error) error {
-	return func(ctx context.Context, err error) error {
-		for _, h := range hooks {
-			if h.OnError != nil {
-				if e := h.OnError(ctx, err); e != nil {
-					return e
-				}
-			}
-		}
-		return err
-	}
-}
-
 // ComposeHooks merges multiple Hooks into a single Hooks value.
 // Callbacks are called in the order the hooks were provided.
 // For OnAuthorize and OnError, the first error returned short-circuits.
 func ComposeHooks(hooks ...Hooks) Hooks {
 	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		OnAuthorize: composeOnAuthorize(h),
-		OnAllow:     composeOnAllow(h),
-		OnDeny:      composeOnDeny(h),
-		OnError:     composeOnError(h),
+		OnAuthorize: hookutil.ComposeError3(h, func(hk Hooks) func(context.Context, string, Permission, string) error {
+			return hk.OnAuthorize
+		}),
+		OnAllow: hookutil.ComposeVoid3(h, func(hk Hooks) func(context.Context, string, Permission, string) {
+			return hk.OnAllow
+		}),
+		OnDeny: hookutil.ComposeVoid3(h, func(hk Hooks) func(context.Context, string, Permission, string) {
+			return hk.OnDeny
+		}),
+		OnError: hookutil.ComposeErrorPassthrough(h, func(hk Hooks) func(context.Context, error) error {
+			return hk.OnError
+		}),
 	}
 }
