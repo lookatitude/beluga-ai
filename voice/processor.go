@@ -22,6 +22,18 @@ func (f FrameProcessorFunc) Process(ctx context.Context, in <-chan Frame, out ch
 	return f(ctx, in, out)
 }
 
+// resolveChainIO returns the input and output channels for processor at index i
+// in a chain of processors connected by intermediate channels.
+func resolveChainIO(i, total int, in <-chan Frame, out chan<- Frame, channels []chan Frame) (<-chan Frame, chan<- Frame) {
+	if i == 0 {
+		return in, channels[0]
+	}
+	if i == total-1 {
+		return channels[i-1], out
+	}
+	return channels[i-1], channels[i]
+}
+
 // Chain connects multiple FrameProcessors in series. Frames flow from the
 // first processor to the last. Returns a single FrameProcessor representing
 // the full pipeline.
@@ -39,7 +51,6 @@ func Chain(processors ...FrameProcessor) FrameProcessor {
 		return processors[0]
 	}
 	return FrameProcessorFunc(func(ctx context.Context, in <-chan Frame, out chan<- Frame) error {
-		// Create intermediate channels between processors.
 		channels := make([]chan Frame, len(processors)-1)
 		for i := range channels {
 			channels[i] = make(chan Frame, 64)
@@ -47,28 +58,13 @@ func Chain(processors ...FrameProcessor) FrameProcessor {
 
 		errc := make(chan error, len(processors))
 
-		// Start all processors.
 		for i, p := range processors {
-			var pIn <-chan Frame
-			var pOut chan<- Frame
-
-			if i == 0 {
-				pIn = in
-				pOut = channels[0]
-			} else if i == len(processors)-1 {
-				pIn = channels[i-1]
-				pOut = out
-			} else {
-				pIn = channels[i-1]
-				pOut = channels[i]
-			}
-
+			pIn, pOut := resolveChainIO(i, len(processors), in, out, channels)
 			go func(proc FrameProcessor, procIn <-chan Frame, procOut chan<- Frame) {
 				errc <- proc.Process(ctx, procIn, procOut)
 			}(p, pIn, pOut)
 		}
 
-		// Wait for all processors to finish, return first error.
 		var firstErr error
 		for range processors {
 			if err := <-errc; err != nil && firstErr == nil {

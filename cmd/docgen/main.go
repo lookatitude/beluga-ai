@@ -108,56 +108,68 @@ func findModuleRoot() (string, error) {
 	}
 }
 
+// skippedDirs contains directory names to skip during doc collection.
+var skippedDirs = map[string]bool{
+	"vendor": true, ".git": true, "node_modules": true, "docs": true, "examples": true,
+}
+
 // collectDocFiles finds all doc.go files and extracts package doc comments.
 func collectDocFiles(root string) (map[string]packageGroup, error) {
 	pkgs := make(map[string]packageGroup)
 
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return nil // skip errors
+			return nil
 		}
-		// Skip vendor, .git, node_modules, docs
 		base := filepath.Base(path)
-		if info.IsDir() && (base == "vendor" || base == ".git" || base == "node_modules" || base == "docs" || base == "examples") {
+		if info.IsDir() && skippedDirs[base] {
 			return filepath.SkipDir
 		}
 		if base != "doc.go" {
 			return nil
 		}
 
-		rel, err := filepath.Rel(root, filepath.Dir(path))
-		if err != nil {
-			return nil
-		}
-
-		// Skip internal packages
-		if strings.Contains(rel, "internal/") || rel == "internal" {
-			return nil
-		}
-
-		importPath := modulePath + "/" + filepath.ToSlash(rel)
-		if rel == "." {
-			importPath = modulePath
-		}
-
-		doc, pkgName, err := extractDocComment(path)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "warning: could not parse %s: %v\n", path, err)
-			return nil
-		}
-
-		isProvider := strings.Contains(rel, "/providers/") || strings.Contains(rel, "/stores/") || strings.Contains(rel, "/adapters/")
-
-		pkgs[rel] = packageGroup{
-			ImportPath: importPath,
-			PkgName:    pkgName,
-			DocComment: doc,
-			IsProvider: isProvider,
+		pg, rel, ok := processDocFile(root, path)
+		if ok {
+			pkgs[rel] = pg
 		}
 		return nil
 	})
 
 	return pkgs, err
+}
+
+// processDocFile processes a single doc.go file and returns its packageGroup
+// and relative path. Returns false if the file should be skipped.
+func processDocFile(root, path string) (packageGroup, string, bool) {
+	rel, err := filepath.Rel(root, filepath.Dir(path))
+	if err != nil {
+		return packageGroup{}, "", false
+	}
+
+	if strings.Contains(rel, "internal/") || rel == "internal" {
+		return packageGroup{}, "", false
+	}
+
+	importPath := modulePath + "/" + filepath.ToSlash(rel)
+	if rel == "." {
+		importPath = modulePath
+	}
+
+	doc, pkgName, err := extractDocComment(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warning: could not parse %s: %v\n", path, err)
+		return packageGroup{}, "", false
+	}
+
+	isProvider := strings.Contains(rel, "/providers/") || strings.Contains(rel, "/stores/") || strings.Contains(rel, "/adapters/")
+
+	return packageGroup{
+		ImportPath: importPath,
+		PkgName:    pkgName,
+		DocComment: doc,
+		IsProvider: isProvider,
+	}, rel, true
 }
 
 // extractDocComment parses a doc.go file and returns the package doc comment and package name.
@@ -201,65 +213,63 @@ func godocToMarkdown(doc string) string {
 
 	for i := 0; i < len(lines); i++ {
 		line := lines[i]
-
-		// Godoc section headers: "# SectionName" becomes "## SectionName"
-		if strings.HasPrefix(line, "# ") {
-			if inCode {
-				out = append(out, "```")
-				inCode = false
-			}
-			out = append(out, "##"+line[1:])
-			continue
+		var processed string
+		processed, inCode = convertGodocLine(line, lines, i, inCode, &out)
+		if processed != "" {
+			out = append(out, processed)
 		}
-
-		// Code block detection: lines starting with tab or spaces that look like code
-		if isCodeLine(line) {
-			if !inCode {
-				out = append(out, "```go")
-				inCode = true
-			}
-			// Remove the leading tab
-			trimmed := strings.TrimPrefix(line, "\t")
-			out = append(out, trimmed)
-			continue
-		}
-
-		// End code block — but peek ahead for continuation
-		if inCode && !isCodeLine(line) {
-			if line == "" && i+1 < len(lines) && isCodeLine(lines[i+1]) {
-				// Blank line between two code blocks — keep it open
-				out = append(out, "")
-				continue
-			}
-			out = append(out, "```")
-			inCode = false
-		}
-
-		// List items: "  - item" -> "- item"
-		if strings.HasPrefix(line, "  - ") || strings.HasPrefix(line, "   - ") {
-			out = append(out, strings.TrimLeft(line, " "))
-			continue
-		}
-
-		// List continuation: "    continued text" -> "  continued text"
-		if strings.HasPrefix(line, "    ") && !strings.HasPrefix(line, "    -") {
-			out = append(out, "  "+strings.TrimLeft(line, " "))
-			continue
-		}
-
-		// Godoc links: [TypeName] -> `TypeName`
-		processed := processGodocLinks(line)
-		out = append(out, processed)
 	}
 
 	if inCode {
 		out = append(out, "```")
 	}
 
-	// Clean up multiple blank lines
 	result := strings.Join(out, "\n")
 	result = multiBlankRe.ReplaceAllString(result, "\n\n")
 	return strings.TrimSpace(result)
+}
+
+// convertGodocLine processes a single godoc line and appends to out as needed.
+// Returns any final line to append and the updated inCode state.
+func convertGodocLine(line string, lines []string, i int, inCode bool, out *[]string) (string, bool) {
+	// Godoc section headers
+	if strings.HasPrefix(line, "# ") {
+		if inCode {
+			*out = append(*out, "```")
+			inCode = false
+		}
+		return "##" + line[1:], inCode
+	}
+
+	// Code block detection
+	if isCodeLine(line) {
+		if !inCode {
+			*out = append(*out, "```go")
+			inCode = true
+		}
+		return strings.TrimPrefix(line, "\t"), inCode
+	}
+
+	// End code block — but peek ahead for continuation
+	if inCode && !isCodeLine(line) {
+		if line == "" && i+1 < len(lines) && isCodeLine(lines[i+1]) {
+			return "", inCode
+		}
+		*out = append(*out, "```")
+		inCode = false
+	}
+
+	// List items
+	if strings.HasPrefix(line, "  - ") || strings.HasPrefix(line, "   - ") {
+		return strings.TrimLeft(line, " "), inCode
+	}
+
+	// List continuation
+	if strings.HasPrefix(line, "    ") && !strings.HasPrefix(line, "    -") {
+		return "  " + strings.TrimLeft(line, " "), inCode
+	}
+
+	return processGodocLinks(line), inCode
 }
 
 // isCodeLine checks if a line is a code block line in godoc format.
@@ -551,6 +561,12 @@ func renderPage(p page) string {
 	return sb.String()
 }
 
+// indexSection defines a section header and the filenames to include.
+type indexSection struct {
+	heading   string
+	filenames []string
+}
+
 // renderIndex generates the API reference index page.
 func renderIndex(pages []page) string {
 	var sb strings.Builder
@@ -562,81 +578,19 @@ description: "Complete API documentation for all Beluga AI v2 packages, generate
 
 Complete API reference for all Beluga AI v2 packages. This documentation is generated from the Go source code doc comments.
 
-## Foundation
-
-| Package | Description |
-|---------|-------------|
 `)
 
-	// Foundation
-	foundationPages := []string{"core.md", "schema.md", "config.md"}
-	for _, pg := range pages {
-		for _, fp := range foundationPages {
-			if pg.Filename == fp {
-				slug := strings.TrimSuffix(pg.Filename, ".md")
-				sb.WriteString(fmt.Sprintf("| [%s](./%s/) | %s |\n", pg.Title, slug, pg.Description))
-			}
-		}
+	sections := []indexSection{
+		{"Foundation", []string{"core.md", "schema.md", "config.md"}},
+		{"LLM & Agents", []string{"llm.md", "llm-providers.md", "agent.md", "agent-workflow.md", "tool.md"}},
+		{"Memory & RAG", []string{"memory.md", "memory-stores.md", "rag-embedding.md", "rag-embedding-providers.md", "rag-vectorstore.md", "rag-vectorstore-providers.md", "rag-retriever.md", "rag-loader.md", "rag-splitter.md"}},
+		{"Voice", []string{"voice.md", "voice-stt.md", "voice-tts.md", "voice-s2s.md", "voice-transport.md", "voice-vad.md"}},
+		{"Infrastructure", []string{"guard.md", "resilience.md", "cache.md", "hitl.md", "auth.md", "eval.md", "state.md", "prompt.md", "orchestration.md", "workflow.md"}},
+		{"Protocol & Server", []string{"protocol.md", "protocol-mcp.md", "protocol-a2a.md", "protocol-rest.md", "server.md", "o11y.md"}},
 	}
 
-	sb.WriteString("\n## LLM & Agents\n\n| Package | Description |\n|---------|-------------|\n")
-
-	llmPages := []string{"llm.md", "llm-providers.md", "agent.md", "agent-workflow.md", "tool.md"}
-	for _, pg := range pages {
-		for _, fp := range llmPages {
-			if pg.Filename == fp {
-				slug := strings.TrimSuffix(pg.Filename, ".md")
-				sb.WriteString(fmt.Sprintf("| [%s](./%s/) | %s |\n", pg.Title, slug, pg.Description))
-			}
-		}
-	}
-
-	sb.WriteString("\n## Memory & RAG\n\n| Package | Description |\n|---------|-------------|\n")
-
-	ragPages := []string{"memory.md", "memory-stores.md", "rag-embedding.md", "rag-embedding-providers.md", "rag-vectorstore.md", "rag-vectorstore-providers.md", "rag-retriever.md", "rag-loader.md", "rag-splitter.md"}
-	for _, pg := range pages {
-		for _, fp := range ragPages {
-			if pg.Filename == fp {
-				slug := strings.TrimSuffix(pg.Filename, ".md")
-				sb.WriteString(fmt.Sprintf("| [%s](./%s/) | %s |\n", pg.Title, slug, pg.Description))
-			}
-		}
-	}
-
-	sb.WriteString("\n## Voice\n\n| Package | Description |\n|---------|-------------|\n")
-
-	voicePages := []string{"voice.md", "voice-stt.md", "voice-tts.md", "voice-s2s.md", "voice-transport.md", "voice-vad.md"}
-	for _, pg := range pages {
-		for _, fp := range voicePages {
-			if pg.Filename == fp {
-				slug := strings.TrimSuffix(pg.Filename, ".md")
-				sb.WriteString(fmt.Sprintf("| [%s](./%s/) | %s |\n", pg.Title, slug, pg.Description))
-			}
-		}
-	}
-
-	sb.WriteString("\n## Infrastructure\n\n| Package | Description |\n|---------|-------------|\n")
-
-	infraPages := []string{"guard.md", "resilience.md", "cache.md", "hitl.md", "auth.md", "eval.md", "state.md", "prompt.md", "orchestration.md", "workflow.md"}
-	for _, pg := range pages {
-		for _, fp := range infraPages {
-			if pg.Filename == fp {
-				slug := strings.TrimSuffix(pg.Filename, ".md")
-				sb.WriteString(fmt.Sprintf("| [%s](./%s/) | %s |\n", pg.Title, slug, pg.Description))
-			}
-		}
-	}
-
-	sb.WriteString("\n## Protocol & Server\n\n| Package | Description |\n|---------|-------------|\n")
-
-	protoPages := []string{"protocol.md", "protocol-mcp.md", "protocol-a2a.md", "protocol-rest.md", "server.md", "o11y.md"}
-	for _, pg := range pages {
-		for _, fp := range protoPages {
-			if pg.Filename == fp {
-				slug := strings.TrimSuffix(pg.Filename, ".md")
-				sb.WriteString(fmt.Sprintf("| [%s](./%s/) | %s |\n", pg.Title, slug, pg.Description))
-			}
-		}
+	for _, section := range sections {
+		writeIndexSection(&sb, section.heading, section.filenames, pages)
 	}
 
 	sb.WriteString(`
@@ -678,6 +632,20 @@ All streaming uses Go 1.23+ ` + "`iter.Seq2`" + `:
 ` + "```\n")
 
 	return sb.String()
+}
+
+// writeIndexSection writes one section of the index page: a heading and a table of matching pages.
+func writeIndexSection(sb *strings.Builder, heading string, filenames []string, pages []page) {
+	sb.WriteString(fmt.Sprintf("## %s\n\n| Package | Description |\n|---------|-------------|\n", heading))
+	for _, pg := range pages {
+		for _, fp := range filenames {
+			if pg.Filename == fp {
+				slug := strings.TrimSuffix(pg.Filename, ".md")
+				sb.WriteString(fmt.Sprintf("| [%s](./%s/) | %s |\n", pg.Title, slug, pg.Description))
+			}
+		}
+	}
+	sb.WriteString("\n")
 }
 
 // escapeYAML escapes special characters in YAML string values.

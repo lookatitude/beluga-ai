@@ -23,47 +23,64 @@ type Hooks struct {
 	OnError func(ctx context.Context, err error) error
 }
 
+func composeBeforeStep(hooks []Hooks) func(context.Context, string, any) error {
+	return func(ctx context.Context, stepName string, input any) error {
+		for _, h := range hooks {
+			if h.BeforeStep != nil {
+				if err := h.BeforeStep(ctx, stepName, input); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+}
+
+func composeAfterStep(hooks []Hooks) func(context.Context, string, any, error) {
+	return func(ctx context.Context, stepName string, output any, err error) {
+		for _, h := range hooks {
+			if h.AfterStep != nil {
+				h.AfterStep(ctx, stepName, output, err)
+			}
+		}
+	}
+}
+
+func composeOnBranch(hooks []Hooks) func(context.Context, string, string) error {
+	return func(ctx context.Context, from, to string) error {
+		for _, h := range hooks {
+			if h.OnBranch != nil {
+				if err := h.OnBranch(ctx, from, to); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+}
+
+func composeOnError(hooks []Hooks) func(context.Context, error) error {
+	return func(ctx context.Context, err error) error {
+		for _, h := range hooks {
+			if h.OnError != nil {
+				if e := h.OnError(ctx, err); e != nil {
+					return e
+				}
+			}
+		}
+		return err
+	}
+}
+
 // ComposeHooks merges multiple Hooks into a single Hooks value.
 // Callbacks are called in the order the hooks were provided.
 // For BeforeStep, OnBranch, and OnError, the first error returned short-circuits.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		BeforeStep: func(ctx context.Context, stepName string, input any) error {
-			for _, h := range hooks {
-				if h.BeforeStep != nil {
-					if err := h.BeforeStep(ctx, stepName, input); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		AfterStep: func(ctx context.Context, stepName string, output any, err error) {
-			for _, h := range hooks {
-				if h.AfterStep != nil {
-					h.AfterStep(ctx, stepName, output, err)
-				}
-			}
-		},
-		OnBranch: func(ctx context.Context, from, to string) error {
-			for _, h := range hooks {
-				if h.OnBranch != nil {
-					if err := h.OnBranch(ctx, from, to); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		OnError: func(ctx context.Context, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if e := h.OnError(ctx, err); e != nil {
-						return e
-					}
-				}
-			}
-			return err
-		},
+		BeforeStep: composeBeforeStep(h),
+		AfterStep:  composeAfterStep(h),
+		OnBranch:   composeOnBranch(h),
+		OnError:    composeOnError(h),
 	}
 }

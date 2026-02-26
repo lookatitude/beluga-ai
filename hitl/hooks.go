@@ -24,52 +24,73 @@ type Hooks struct {
 	OnError func(ctx context.Context, err error) error
 }
 
+func composeOnRequest(hooks []Hooks) func(context.Context, InteractionRequest) error {
+	return func(ctx context.Context, req InteractionRequest) error {
+		for _, h := range hooks {
+			if h.OnRequest != nil {
+				if err := h.OnRequest(ctx, req); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+}
+
+func composeOnApprove(hooks []Hooks) func(context.Context, InteractionRequest, InteractionResponse) {
+	return func(ctx context.Context, req InteractionRequest, resp InteractionResponse) {
+		for _, h := range hooks {
+			if h.OnApprove != nil {
+				h.OnApprove(ctx, req, resp)
+			}
+		}
+	}
+}
+
+func composeOnReject(hooks []Hooks) func(context.Context, InteractionRequest, InteractionResponse) {
+	return func(ctx context.Context, req InteractionRequest, resp InteractionResponse) {
+		for _, h := range hooks {
+			if h.OnReject != nil {
+				h.OnReject(ctx, req, resp)
+			}
+		}
+	}
+}
+
+func composeOnTimeout(hooks []Hooks) func(context.Context, InteractionRequest) {
+	return func(ctx context.Context, req InteractionRequest) {
+		for _, h := range hooks {
+			if h.OnTimeout != nil {
+				h.OnTimeout(ctx, req)
+			}
+		}
+	}
+}
+
+func composeOnError(hooks []Hooks) func(context.Context, error) error {
+	return func(ctx context.Context, err error) error {
+		for _, h := range hooks {
+			if h.OnError != nil {
+				if e := h.OnError(ctx, err); e != nil {
+					return e
+				}
+			}
+		}
+		return err
+	}
+}
+
 // ComposeHooks merges multiple Hooks into one. Callbacks are called in the
 // order the hooks were provided. For OnRequest and OnError, the first non-nil
 // error return short-circuits (stops further hooks). OnError returns the
 // original error if all hooks return nil.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		OnRequest: func(ctx context.Context, req InteractionRequest) error {
-			for _, h := range hooks {
-				if h.OnRequest != nil {
-					if err := h.OnRequest(ctx, req); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		OnApprove: func(ctx context.Context, req InteractionRequest, resp InteractionResponse) {
-			for _, h := range hooks {
-				if h.OnApprove != nil {
-					h.OnApprove(ctx, req, resp)
-				}
-			}
-		},
-		OnReject: func(ctx context.Context, req InteractionRequest, resp InteractionResponse) {
-			for _, h := range hooks {
-				if h.OnReject != nil {
-					h.OnReject(ctx, req, resp)
-				}
-			}
-		},
-		OnTimeout: func(ctx context.Context, req InteractionRequest) {
-			for _, h := range hooks {
-				if h.OnTimeout != nil {
-					h.OnTimeout(ctx, req)
-				}
-			}
-		},
-		OnError: func(ctx context.Context, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if e := h.OnError(ctx, err); e != nil {
-						return e
-					}
-				}
-			}
-			return err
-		},
+		OnRequest: composeOnRequest(h),
+		OnApprove: composeOnApprove(h),
+		OnReject:  composeOnReject(h),
+		OnTimeout: composeOnTimeout(h),
+		OnError:   composeOnError(h),
 	}
 }

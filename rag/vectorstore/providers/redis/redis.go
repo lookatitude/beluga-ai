@@ -221,12 +221,10 @@ func parseFTSearchResult(cmd *goredis.Cmd, prefix string, threshold float64) ([]
 		return nil, nil
 	}
 
-	// First element is the total count.
 	total, ok := raw[0].(int64)
 	if !ok {
 		return nil, fmt.Errorf("redis: unexpected result format")
 	}
-
 	if total == 0 {
 		return nil, nil
 	}
@@ -239,50 +237,55 @@ func parseFTSearchResult(cmd *goredis.Cmd, prefix string, threshold float64) ([]
 		if !ok {
 			continue
 		}
-
 		fields, ok := raw[i+1].([]any)
 		if !ok {
 			continue
 		}
 
-		doc := schema.Document{
-			ID:       strings.TrimPrefix(key, prefix),
-			Metadata: make(map[string]any),
-		}
-
-		for j := 0; j < len(fields)-1; j += 2 {
-			fieldName, ok := fields[j].(string)
-			if !ok {
-				continue
-			}
-			fieldVal := fields[j+1]
-
-			switch fieldName {
-			case "content":
-				if v, ok := fieldVal.(string); ok {
-					doc.Content = v
-				}
-			case "score":
-				if v, ok := fieldVal.(string); ok {
-					if score, err := strconv.ParseFloat(v, 64); err == nil {
-						doc.Score = 1.0 - score // Convert cosine distance to similarity.
-					}
-				}
-			case "embedding":
-				// Skip binary embedding data.
-			default:
-				if v, ok := fieldVal.(string); ok {
-					doc.Metadata[fieldName] = v
-				}
-			}
-		}
-
+		doc := parseRedisDoc(key, prefix, fields)
 		if threshold > 0 && doc.Score < threshold {
 			continue
 		}
-
 		docs = append(docs, doc)
 	}
 
 	return docs, nil
+}
+
+// parseRedisDoc converts a Redis FT.SEARCH result pair into a Document.
+func parseRedisDoc(key, prefix string, fields []any) schema.Document {
+	doc := schema.Document{
+		ID:       strings.TrimPrefix(key, prefix),
+		Metadata: make(map[string]any),
+	}
+	for j := 0; j < len(fields)-1; j += 2 {
+		fieldName, ok := fields[j].(string)
+		if !ok {
+			continue
+		}
+		applyRedisField(&doc, fieldName, fields[j+1])
+	}
+	return doc
+}
+
+// applyRedisField sets a document field from a Redis field name and value.
+func applyRedisField(doc *schema.Document, name string, val any) {
+	switch name {
+	case "content":
+		if v, ok := val.(string); ok {
+			doc.Content = v
+		}
+	case "score":
+		if v, ok := val.(string); ok {
+			if score, err := strconv.ParseFloat(v, 64); err == nil {
+				doc.Score = 1.0 - score // Convert cosine distance to similarity.
+			}
+		}
+	case "embedding":
+		// Skip binary embedding data.
+	default:
+		if v, ok := val.(string); ok {
+			doc.Metadata[name] = v
+		}
+	}
 }

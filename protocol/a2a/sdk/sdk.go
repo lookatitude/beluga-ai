@@ -229,27 +229,39 @@ func extractResultText(result a2a.SendMessageResult) string {
 		return ""
 	}
 
-	// The result can be a Task or a Message.
 	switch r := result.(type) {
 	case *a2a.Task:
-		if r.Status.Message != nil {
-			return extractInput(r.Status.Message)
-		}
-		// Check artifacts.
-		for _, artifact := range r.Artifacts {
-			for _, part := range artifact.Parts {
-				if tp, ok := part.(a2a.TextPart); ok {
-					return tp.Text
-				}
-				if tp, ok := part.(*a2a.TextPart); ok {
-					return tp.Text
-				}
-			}
-		}
+		return extractTaskText(r)
 	case *a2a.Message:
 		return extractInput(r)
 	}
 
+	return ""
+}
+
+// extractTaskText extracts text from a Task's status message or artifacts.
+func extractTaskText(task *a2a.Task) string {
+	if task.Status.Message != nil {
+		return extractInput(task.Status.Message)
+	}
+	for _, artifact := range task.Artifacts {
+		if text := extractArtifactText(artifact); text != "" {
+			return text
+		}
+	}
+	return ""
+}
+
+// extractArtifactText returns the first text part from an artifact.
+func extractArtifactText(artifact *a2a.Artifact) string {
+	for _, part := range artifact.Parts {
+		if tp, ok := part.(a2a.TextPart); ok {
+			return tp.Text
+		}
+		if tp, ok := part.(*a2a.TextPart); ok {
+			return tp.Text
+		}
+	}
 	return ""
 }
 

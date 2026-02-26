@@ -156,35 +156,9 @@ func scanMessages(rows *sql.Rows) ([]schema.Message, error) {
 			return nil, fmt.Errorf("sqlite: scan: %w", err)
 		}
 
-		var sc storedContent
-		if err := json.Unmarshal([]byte(contentStr), &sc); err != nil {
-			return nil, fmt.Errorf("sqlite: unmarshal content: %w", err)
-		}
-
-		var metadata map[string]any
-		if metadataStr != "" && metadataStr != "null" {
-			if err := json.Unmarshal([]byte(metadataStr), &metadata); err != nil {
-				return nil, fmt.Errorf("sqlite: unmarshal metadata: %w", err)
-			}
-		}
-
-		parts := make([]schema.ContentPart, 0, len(sc.Parts))
-		for _, sp := range sc.Parts {
-			parts = append(parts, schema.TextPart{Text: sp.Text})
-		}
-
-		var msg schema.Message
-		switch schema.Role(role) {
-		case schema.RoleSystem:
-			msg = &schema.SystemMessage{Parts: parts, Metadata: metadata}
-		case schema.RoleHuman:
-			msg = &schema.HumanMessage{Parts: parts, Metadata: metadata}
-		case schema.RoleAI:
-			msg = &schema.AIMessage{Parts: parts, ToolCalls: sc.ToolCalls, ModelID: sc.ModelID, Metadata: metadata}
-		case schema.RoleTool:
-			msg = &schema.ToolMessage{ToolCallID: sc.ToolCallID, Parts: parts, Metadata: metadata}
-		default:
-			msg = &schema.HumanMessage{Parts: parts, Metadata: metadata}
+		msg, err := decodeMessage(role, []byte(contentStr), metadataStr)
+		if err != nil {
+			return nil, err
 		}
 		msgs = append(msgs, msg)
 	}
@@ -192,6 +166,44 @@ func scanMessages(rows *sql.Rows) ([]schema.Message, error) {
 		return nil, fmt.Errorf("sqlite: rows: %w", err)
 	}
 	return msgs, nil
+}
+
+// decodeMessage reconstructs a schema.Message from stored row data.
+func decodeMessage(role string, contentBytes []byte, metadataStr string) (schema.Message, error) {
+	var sc storedContent
+	if err := json.Unmarshal(contentBytes, &sc); err != nil {
+		return nil, fmt.Errorf("sqlite: unmarshal content: %w", err)
+	}
+
+	var metadata map[string]any
+	if metadataStr != "" && metadataStr != "null" {
+		if err := json.Unmarshal([]byte(metadataStr), &metadata); err != nil {
+			return nil, fmt.Errorf("sqlite: unmarshal metadata: %w", err)
+		}
+	}
+
+	parts := make([]schema.ContentPart, 0, len(sc.Parts))
+	for _, sp := range sc.Parts {
+		parts = append(parts, schema.TextPart{Text: sp.Text})
+	}
+
+	return buildMessage(role, parts, metadata, sc), nil
+}
+
+// buildMessage creates the correct schema.Message type for the given role.
+func buildMessage(role string, parts []schema.ContentPart, metadata map[string]any, sc storedContent) schema.Message {
+	switch schema.Role(role) {
+	case schema.RoleSystem:
+		return &schema.SystemMessage{Parts: parts, Metadata: metadata}
+	case schema.RoleHuman:
+		return &schema.HumanMessage{Parts: parts, Metadata: metadata}
+	case schema.RoleAI:
+		return &schema.AIMessage{Parts: parts, ToolCalls: sc.ToolCalls, ModelID: sc.ModelID, Metadata: metadata}
+	case schema.RoleTool:
+		return &schema.ToolMessage{ToolCallID: sc.ToolCallID, Parts: parts, Metadata: metadata}
+	default:
+		return &schema.HumanMessage{Parts: parts, Metadata: metadata}
+	}
 }
 
 // Verify interface compliance.

@@ -121,19 +121,9 @@ func (g *Graph) Stream(ctx context.Context, input any, opts ...core.Option) iter
 				return
 			}
 
-			// Check if this is a terminal node (no matching next).
-			// We need to invoke first to get the value for edge conditions,
-			// but for the terminal node we want to stream instead.
-			// Strategy: peek at edges. If no outgoing edges, stream this node.
+			// Terminal node: stream its output directly.
 			if !g.hasOutgoingEdges(current) {
-				for val, err := range node.Stream(ctx, value, opts...) {
-					if !yield(val, err) {
-						return
-					}
-					if err != nil {
-						return
-					}
-				}
+				streamNode(ctx, node, value, yield, opts)
 				return
 			}
 
@@ -147,7 +137,6 @@ func (g *Graph) Stream(ctx context.Context, input any, opts ...core.Option) iter
 
 			next := g.nextNode(current, value)
 			if next == "" {
-				// No matching conditions — this is effectively terminal.
 				yield(value, nil)
 				return
 			}
@@ -155,6 +144,18 @@ func (g *Graph) Stream(ctx context.Context, input any, opts ...core.Option) iter
 		}
 
 		yield(nil, fmt.Errorf("orchestration/graph: max traversal depth (%d) exceeded", maxTraversalDepth))
+	}
+}
+
+// streamNode streams a runnable node's output through the yield function.
+func streamNode(ctx context.Context, node core.Runnable, value any, yield func(any, error) bool, opts []core.Option) {
+	for val, err := range node.Stream(ctx, value, opts...) {
+		if !yield(val, err) {
+			return
+		}
+		if err != nil {
+			return
+		}
 	}
 }
 

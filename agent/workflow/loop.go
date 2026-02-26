@@ -107,24 +107,11 @@ func (a *LoopAgent) Stream(ctx context.Context, input string, opts ...agent.Opti
 				return
 			}
 
-			var result strings.Builder
-			for event, err := range a.child.Stream(ctx, current, opts...) {
-				if err != nil {
-					yield(agent.Event{
-						Type:    agent.EventError,
-						AgentID: a.id,
-					}, fmt.Errorf("loop agent %q: iteration %d failed: %w", a.id, i, err))
-					return
-				}
-				if !yield(event, nil) {
-					return
-				}
-				if event.Type == agent.EventText {
-					result.WriteString(event.Text)
-				}
+			result, ok := a.streamIteration(ctx, current, i, yield, opts)
+			if !ok {
+				return
 			}
-
-			current = result.String()
+			current = result
 
 			if a.condition != nil && a.condition(i, current) {
 				break
@@ -137,4 +124,26 @@ func (a *LoopAgent) Stream(ctx context.Context, input string, opts ...agent.Opti
 			Text:    current,
 		}, nil)
 	}
+}
+
+// streamIteration streams one iteration of the child agent, forwarding events.
+// Returns the accumulated text and true on success, or ("", false) on error or stop.
+func (a *LoopAgent) streamIteration(ctx context.Context, input string, iteration int, yield func(agent.Event, error) bool, opts []agent.Option) (string, bool) {
+	var result strings.Builder
+	for event, err := range a.child.Stream(ctx, input, opts...) {
+		if err != nil {
+			yield(agent.Event{
+				Type:    agent.EventError,
+				AgentID: a.id,
+			}, fmt.Errorf("loop agent %q: iteration %d failed: %w", a.id, iteration, err))
+			return "", false
+		}
+		if !yield(event, nil) {
+			return "", false
+		}
+		if event.Type == agent.EventText {
+			result.WriteString(event.Text)
+		}
+	}
+	return result.String(), true
 }

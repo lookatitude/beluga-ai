@@ -94,16 +94,7 @@ func (s *Supervisor) Stream(ctx context.Context, input any, opts ...core.Option)
 			inputStr := fmt.Sprintf("%v", current)
 
 			if round == s.maxRounds-1 {
-				// Last round — stream the output.
-				for event, sErr := range selected.Stream(ctx, inputStr) {
-					if sErr != nil {
-						yield(nil, fmt.Errorf("orchestration/supervisor: agent %q: %w", selected.ID(), sErr))
-						return
-					}
-					if !yield(event, nil) {
-						return
-					}
-				}
+				streamAgent(ctx, selected, inputStr, yield)
 				return
 			}
 
@@ -113,6 +104,19 @@ func (s *Supervisor) Stream(ctx context.Context, input any, opts ...core.Option)
 				return
 			}
 			current = result
+		}
+	}
+}
+
+// streamAgent streams an agent's output through the yield function.
+func streamAgent(ctx context.Context, a agent.Agent, input string, yield func(any, error) bool) {
+	for event, err := range a.Stream(ctx, input) {
+		if err != nil {
+			yield(nil, fmt.Errorf("orchestration/supervisor: agent %q: %w", a.ID(), err))
+			return
+		}
+		if !yield(event, nil) {
+			return
 		}
 	}
 }

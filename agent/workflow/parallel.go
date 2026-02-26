@@ -69,13 +69,15 @@ func (a *ParallelAgent) Invoke(ctx context.Context, input string, opts ...agent.
 	return strings.Join(results, "\n"), nil
 }
 
+// eventErr bundles an event and error for channel transport.
+type eventErr struct {
+	event agent.Event
+	err   error
+}
+
 // Stream runs all children concurrently, yielding events from all.
 func (a *ParallelAgent) Stream(ctx context.Context, input string, opts ...agent.Option) iter.Seq2[agent.Event, error] {
 	return func(yield func(agent.Event, error) bool) {
-		type eventErr struct {
-			event agent.Event
-			err   error
-		}
 		ch := make(chan eventErr, len(a.children)*8)
 
 		var wg sync.WaitGroup
@@ -84,12 +86,7 @@ func (a *ParallelAgent) Stream(ctx context.Context, input string, opts ...agent.
 		for _, child := range a.children {
 			go func(child agent.Agent) {
 				defer wg.Done()
-				for event, err := range child.Stream(ctx, input, opts...) {
-					ch <- eventErr{event: event, err: err}
-					if err != nil {
-						return
-					}
-				}
+				streamChildToChan(ctx, child, input, ch, opts)
 			}(child)
 		}
 
@@ -111,5 +108,15 @@ func (a *ParallelAgent) Stream(ctx context.Context, input string, opts ...agent.
 			Type:    agent.EventDone,
 			AgentID: a.id,
 		}, nil)
+	}
+}
+
+// streamChildToChan streams a child agent's events into a channel.
+func streamChildToChan(ctx context.Context, child agent.Agent, input string, ch chan<- eventErr, opts []agent.Option) {
+	for event, err := range child.Stream(ctx, input, opts...) {
+		ch <- eventErr{event: event, err: err}
+		if err != nil {
+			return
+		}
 	}
 }

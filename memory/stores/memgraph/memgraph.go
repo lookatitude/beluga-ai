@@ -184,31 +184,7 @@ func (g *GraphStore) Query(ctx context.Context, query string) ([]memory.GraphRes
 		return nil, fmt.Errorf("memgraph/query: %w", err)
 	}
 
-	var entities []memory.Entity
-	var relations []memory.Relation
-	entitySeen := make(map[string]bool)
-	relSeen := make(map[string]bool)
-
-	for _, rec := range records {
-		for _, val := range rec.values {
-			switch v := val.(type) {
-			case nodeWrapper:
-				id := nodeID(v)
-				if !entitySeen[id] {
-					entitySeen[id] = true
-					entities = append(entities, nodeToEntity(v))
-				}
-			case relWrapper:
-				if !relSeen[v.elementID] {
-					relSeen[v.elementID] = true
-					relations = append(relations, relToRelation(v))
-				}
-			case []any:
-				extractFromList(v, &entities, &relations, entitySeen, relSeen)
-			}
-		}
-	}
-
+	entities, relations := collectRecordValues(records)
 	return []memory.GraphResult{{
 		Entities:  entities,
 		Relations: relations,
@@ -230,6 +206,12 @@ func (g *GraphStore) Neighbors(ctx context.Context, entityID string, depth int) 
 		return nil, nil, fmt.Errorf("memgraph/neighbors: %w", err)
 	}
 
+	entities, relations := collectRecordValues(records)
+	return entities, relations, nil
+}
+
+// collectRecordValues extracts deduplicated entities and relations from records.
+func collectRecordValues(records []record) ([]memory.Entity, []memory.Relation) {
 	entitySeen := make(map[string]bool)
 	relSeen := make(map[string]bool)
 	var entities []memory.Entity
@@ -255,7 +237,7 @@ func (g *GraphStore) Neighbors(ctx context.Context, entityID string, depth int) 
 		}
 	}
 
-	return entities, relations, nil
+	return entities, relations
 }
 
 // extractFromList processes list values (e.g., variable-length paths).

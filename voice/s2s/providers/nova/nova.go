@@ -154,6 +154,78 @@ func (s *novaSession) sendSetup(ctx context.Context) error {
 	return s.conn.Write(ctx, websocket.MessageText, data)
 }
 
+// handleServerEvent dispatches a parsed Nova server event to the appropriate handler.
+func (s *novaSession) handleServerEvent(event novaServerEvent) {
+	switch event.Type {
+	case "contentBlockDelta":
+		s.handleContentDelta(event)
+	case "contentBlockStop", "messageStop":
+		s.events <- s2s.SessionEvent{Type: s2s.EventTurnEnd}
+	case "toolUse":
+		s.handleToolUse(event)
+	case "inputTranscript":
+		s.handleTranscript(event)
+	case "error":
+		s.handleError(event)
+	}
+}
+
+// handleContentDelta processes audio and text content delta events.
+func (s *novaSession) handleContentDelta(event novaServerEvent) {
+	if event.AudioChunk != "" {
+		audioData, decErr := base64.StdEncoding.DecodeString(event.AudioChunk)
+		if decErr == nil && len(audioData) > 0 {
+			s.events <- s2s.SessionEvent{
+				Type:  s2s.EventAudioOutput,
+				Audio: audioData,
+			}
+		}
+	}
+	if event.Text != "" {
+		s.events <- s2s.SessionEvent{
+			Type: s2s.EventTextOutput,
+			Text: event.Text,
+		}
+	}
+}
+
+// handleToolUse processes tool use events.
+func (s *novaSession) handleToolUse(event novaServerEvent) {
+	if event.ToolUse != nil {
+		args, _ := json.Marshal(event.ToolUse.Input)
+		s.events <- s2s.SessionEvent{
+			Type: s2s.EventToolCall,
+			ToolCall: &schema.ToolCall{
+				ID:        event.ToolUse.ToolUseID,
+				Name:      event.ToolUse.Name,
+				Arguments: string(args),
+			},
+		}
+	}
+}
+
+// handleTranscript processes input transcript events.
+func (s *novaSession) handleTranscript(event novaServerEvent) {
+	if event.Transcript != "" {
+		s.events <- s2s.SessionEvent{
+			Type: s2s.EventTranscript,
+			Text: event.Transcript,
+		}
+	}
+}
+
+// handleError processes error events.
+func (s *novaSession) handleError(event novaServerEvent) {
+	msg := "unknown error"
+	if event.Error != nil {
+		msg = event.Error.Message
+	}
+	s.events <- s2s.SessionEvent{
+		Type:  s2s.EventError,
+		Error: fmt.Errorf("nova: %s", msg),
+	}
+}
+
 func (s *novaSession) readLoop(ctx context.Context) {
 	defer close(s.events)
 	for {
@@ -178,60 +250,7 @@ func (s *novaSession) readLoop(ctx context.Context) {
 			continue
 		}
 
-		switch event.Type {
-		case "contentBlockDelta":
-			if event.AudioChunk != "" {
-				audioData, decErr := base64.StdEncoding.DecodeString(event.AudioChunk)
-				if decErr == nil && len(audioData) > 0 {
-					s.events <- s2s.SessionEvent{
-						Type:  s2s.EventAudioOutput,
-						Audio: audioData,
-					}
-				}
-			}
-			if event.Text != "" {
-				s.events <- s2s.SessionEvent{
-					Type: s2s.EventTextOutput,
-					Text: event.Text,
-				}
-			}
-
-		case "contentBlockStop", "messageStop":
-			s.events <- s2s.SessionEvent{
-				Type: s2s.EventTurnEnd,
-			}
-
-		case "toolUse":
-			if event.ToolUse != nil {
-				args, _ := json.Marshal(event.ToolUse.Input)
-				s.events <- s2s.SessionEvent{
-					Type: s2s.EventToolCall,
-					ToolCall: &schema.ToolCall{
-						ID:        event.ToolUse.ToolUseID,
-						Name:      event.ToolUse.Name,
-						Arguments: string(args),
-					},
-				}
-			}
-
-		case "inputTranscript":
-			if event.Transcript != "" {
-				s.events <- s2s.SessionEvent{
-					Type: s2s.EventTranscript,
-					Text: event.Transcript,
-				}
-			}
-
-		case "error":
-			msg := "unknown error"
-			if event.Error != nil {
-				msg = event.Error.Message
-			}
-			s.events <- s2s.SessionEvent{
-				Type:  s2s.EventError,
-				Error: fmt.Errorf("nova: %s", msg),
-			}
-		}
+		s.handleServerEvent(event)
 	}
 }
 

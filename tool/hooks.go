@@ -20,39 +20,52 @@ type Hooks struct {
 	OnError func(ctx context.Context, toolName string, err error) error
 }
 
+func composeBeforeExecute(hooks []Hooks) func(context.Context, string, map[string]any) error {
+	return func(ctx context.Context, toolName string, input map[string]any) error {
+		for _, h := range hooks {
+			if h.BeforeExecute != nil {
+				if err := h.BeforeExecute(ctx, toolName, input); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+}
+
+func composeAfterExecute(hooks []Hooks) func(context.Context, string, *Result, error) {
+	return func(ctx context.Context, toolName string, result *Result, err error) {
+		for _, h := range hooks {
+			if h.AfterExecute != nil {
+				h.AfterExecute(ctx, toolName, result, err)
+			}
+		}
+	}
+}
+
+func composeOnError(hooks []Hooks) func(context.Context, string, error) error {
+	return func(ctx context.Context, toolName string, err error) error {
+		for _, h := range hooks {
+			if h.OnError != nil {
+				if newErr := h.OnError(ctx, toolName, err); newErr != nil {
+					return newErr
+				}
+			}
+		}
+		return err
+	}
+}
+
 // ComposeHooks merges multiple Hooks into a single Hooks struct.
 // BeforeExecute hooks run in order; if any returns an error, subsequent hooks
 // are skipped. AfterExecute hooks run in order unconditionally. OnError hooks
 // run in order; the first non-nil return wins.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		BeforeExecute: func(ctx context.Context, toolName string, input map[string]any) error {
-			for _, h := range hooks {
-				if h.BeforeExecute != nil {
-					if err := h.BeforeExecute(ctx, toolName, input); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		AfterExecute: func(ctx context.Context, toolName string, result *Result, err error) {
-			for _, h := range hooks {
-				if h.AfterExecute != nil {
-					h.AfterExecute(ctx, toolName, result, err)
-				}
-			}
-		},
-		OnError: func(ctx context.Context, toolName string, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if newErr := h.OnError(ctx, toolName, err); newErr != nil {
-						return newErr
-					}
-				}
-			}
-			return err
-		},
+		BeforeExecute: composeBeforeExecute(h),
+		AfterExecute:  composeAfterExecute(h),
+		OnError:       composeOnError(h),
 	}
 }
 

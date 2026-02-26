@@ -206,14 +206,12 @@ func DoJSON[T any](ctx context.Context, c *Client, method, path string, body any
 	for attempt := range c.retries + 1 {
 		resp, err := c.Do(ctx, method, path, body, nil)
 		if err != nil {
-			// Retry on network/transport errors (connection refused, timeout, DNS failures).
 			if isNetworkError(err) && attempt < c.retries {
-				delay := retryDelay(nil, c.backoff, attempt)
-				select {
-				case <-ctx.Done():
-					return zero, ctx.Err()
-				case <-time.After(delay):
+				if retried := waitForRetry(ctx, nil, c.backoff, attempt); retried {
 					continue
+				}
+				if ctxErr := ctx.Err(); ctxErr != nil {
+					return zero, ctxErr
 				}
 			}
 			return zero, err
@@ -232,37 +230,55 @@ func DoJSON[T any](ctx context.Context, c *Client, method, path string, body any
 		resp.Body.Close()
 
 		if isRetryable(resp.StatusCode) && attempt < c.retries {
-			delay := retryDelay(resp, c.backoff, attempt)
-			select {
-			case <-ctx.Done():
-				return zero, ctx.Err()
-			case <-time.After(delay):
+			if retried := waitForRetry(ctx, resp, c.backoff, attempt); retried {
 				continue
+			}
+			// Context was cancelled during wait.
+			if err := ctx.Err(); err != nil {
+				return zero, err
 			}
 		}
 
-		apiErr := &APIError{
-			StatusCode: resp.StatusCode,
-			Body:       string(respBody),
-		}
-		// Try to extract a message from JSON error body.
-		var errBody struct {
-			Error struct {
-				Message string `json:"message"`
-			} `json:"error"`
-			Message string `json:"message"`
-		}
-		if json.Unmarshal(respBody, &errBody) == nil {
-			if errBody.Error.Message != "" {
-				apiErr.Message = errBody.Error.Message
-			} else if errBody.Message != "" {
-				apiErr.Message = errBody.Message
-			}
-		}
-		return zero, apiErr
+		return zero, newAPIError(resp.StatusCode, respBody)
 	}
 
 	return zero, fmt.Errorf("httpclient: exhausted retries")
+}
+
+// waitForRetry waits for the retry delay, respecting context cancellation.
+// Returns true if the caller should continue to the next attempt, or false
+// if the context was cancelled.
+func waitForRetry(ctx context.Context, resp *http.Response, backoff time.Duration, attempt int) bool {
+	delay := retryDelay(resp, backoff, attempt)
+	select {
+	case <-ctx.Done():
+		return false
+	case <-time.After(delay):
+		return true
+	}
+}
+
+// newAPIError creates an APIError from a response status code and body,
+// attempting to extract an error message from JSON.
+func newAPIError(statusCode int, respBody []byte) *APIError {
+	apiErr := &APIError{
+		StatusCode: statusCode,
+		Body:       string(respBody),
+	}
+	var errBody struct {
+		Error struct {
+			Message string `json:"message"`
+		} `json:"error"`
+		Message string `json:"message"`
+	}
+	if json.Unmarshal(respBody, &errBody) == nil {
+		if errBody.Error.Message != "" {
+			apiErr.Message = errBody.Error.Message
+		} else if errBody.Message != "" {
+			apiErr.Message = errBody.Message
+		}
+	}
+	return apiErr
 }
 
 // SSEEvent represents a Server-Sent Event.
@@ -323,29 +339,11 @@ func StreamSSEWithBody(ctx context.Context, c *Client, method, path string, body
 				continue
 			}
 
-			// Ignore comments.
 			if strings.HasPrefix(line, ":") {
 				continue
 			}
 
-			field, value, _ := strings.Cut(line, ":")
-			value = strings.TrimPrefix(value, " ")
-
-			switch field {
-			case "event":
-				event.Event = value
-			case "data":
-				if event.Data != "" {
-					event.Data += "\n"
-				}
-				event.Data += value
-			case "id":
-				event.ID = value
-			case "retry":
-				if ms, err := strconv.Atoi(value); err == nil {
-					event.Retry = ms
-				}
-			}
+			parseSSEField(line, &event)
 		}
 
 		if err := scanner.Err(); err != nil {
@@ -356,6 +354,28 @@ func StreamSSEWithBody(ctx context.Context, c *Client, method, path string, body
 		// Dispatch final event if not terminated by empty line.
 		if event.Data != "" || event.Event != "" {
 			yield(event, nil)
+		}
+	}
+}
+
+// parseSSEField parses a single SSE field line and updates the event.
+func parseSSEField(line string, event *SSEEvent) {
+	field, value, _ := strings.Cut(line, ":")
+	value = strings.TrimPrefix(value, " ")
+
+	switch field {
+	case "event":
+		event.Event = value
+	case "data":
+		if event.Data != "" {
+			event.Data += "\n"
+		}
+		event.Data += value
+	case "id":
+		event.ID = value
+	case "retry":
+		if ms, err := strconv.Atoi(value); err == nil {
+			event.Retry = ms
 		}
 	}
 }

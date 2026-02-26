@@ -263,6 +263,27 @@ func (p *VoicePipeline) Run(ctx context.Context) error {
 	return nil
 }
 
+// processVADResult emits control frames for VAD state transitions and
+// forwards speech audio frames to out.
+func (p *VoicePipeline) processVADResult(ctx context.Context, result ActivityResult, frame Frame, out chan<- Frame) {
+	switch result.EventType {
+	case VADSpeechStart:
+		if p.config.Hooks.OnSpeechStart != nil {
+			p.config.Hooks.OnSpeechStart(ctx)
+		}
+		out <- NewControlFrame(SignalStart)
+	case VADSpeechEnd:
+		if p.config.Hooks.OnSpeechEnd != nil {
+			p.config.Hooks.OnSpeechEnd(ctx)
+		}
+		out <- NewControlFrame(SignalEndOfUtterance)
+	}
+
+	if result.IsSpeech {
+		out <- frame
+	}
+}
+
 // vadProcessor creates a FrameProcessor that runs VAD on audio frames and
 // injects control frames for speech start/end events.
 func (p *VoicePipeline) vadProcessor() FrameProcessor {
@@ -276,7 +297,6 @@ func (p *VoicePipeline) vadProcessor() FrameProcessor {
 				if !ok {
 					return nil
 				}
-				// Only run VAD on audio frames; pass others through.
 				if frame.Type != FrameAudio {
 					out <- frame
 					continue
@@ -292,24 +312,7 @@ func (p *VoicePipeline) vadProcessor() FrameProcessor {
 					continue
 				}
 
-				// Emit control frames on state transitions.
-				switch result.EventType {
-				case VADSpeechStart:
-					if p.config.Hooks.OnSpeechStart != nil {
-						p.config.Hooks.OnSpeechStart(ctx)
-					}
-					out <- NewControlFrame(SignalStart)
-				case VADSpeechEnd:
-					if p.config.Hooks.OnSpeechEnd != nil {
-						p.config.Hooks.OnSpeechEnd(ctx)
-					}
-					out <- NewControlFrame(SignalEndOfUtterance)
-				}
-
-				// Forward audio frames that contain speech.
-				if result.IsSpeech {
-					out <- frame
-				}
+				p.processVADResult(ctx, result, frame, out)
 			}
 		}
 	})

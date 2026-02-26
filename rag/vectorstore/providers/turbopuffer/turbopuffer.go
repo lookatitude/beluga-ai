@@ -181,23 +181,7 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 
 	docs := make([]schema.Document, 0, len(results))
 	for _, r := range results {
-		doc := schema.Document{
-			ID:       r.ID,
-			Score:    1.0 - r.Dist, // Convert distance to similarity.
-			Metadata: make(map[string]any),
-		}
-
-		if content, ok := r.Attributes["content"].(string); ok {
-			doc.Content = content
-		}
-
-		for k, v := range r.Attributes {
-			if k != "content" {
-				doc.Metadata[k] = v
-			}
-		}
-
-		docs = append(docs, doc)
+		docs = append(docs, attributesToDocument(r.ID, 1.0-r.Dist, r.Attributes))
 	}
 
 	return docs, nil
@@ -261,6 +245,24 @@ func (s *Store) doJSON(ctx context.Context, method, path string, body any) ([]by
 	}
 
 	return respBody, nil
+}
+
+// attributesToDocument converts a Turbopuffer result to a schema.Document.
+func attributesToDocument(id string, score float64, attrs map[string]any) schema.Document {
+	doc := schema.Document{
+		ID:       id,
+		Score:    score,
+		Metadata: make(map[string]any),
+	}
+	if content, ok := attrs["content"].(string); ok {
+		doc.Content = content
+	}
+	for k, v := range attrs {
+		if k != "content" {
+			doc.Metadata[k] = v
+		}
+	}
+	return doc
 }
 
 // float32SliceToFloat64 converts []float32 to []float64 for JSON serialization.

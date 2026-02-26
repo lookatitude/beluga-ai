@@ -225,14 +225,7 @@ func splitMessages(msgs []schema.Message) (preamble string, history []*coherego.
 
 	// Last message becomes the "message" field.
 	// All prior non-system messages become chat_history.
-	last := nonSystem[len(nonSystem)-1]
-	if hm, ok := last.(*schema.HumanMessage); ok {
-		message = hm.Text()
-	} else if am, ok := last.(*schema.AIMessage); ok {
-		message = am.Text()
-	} else if tm, ok := last.(*schema.ToolMessage); ok {
-		message = tm.Text()
-	}
+	message = messageText(nonSystem[len(nonSystem)-1])
 
 	if len(nonSystem) > 1 {
 		for _, msg := range nonSystem[:len(nonSystem)-1] {
@@ -244,6 +237,20 @@ func splitMessages(msgs []schema.Message) (preamble string, history []*coherego.
 	}
 
 	return preamble, history, message
+}
+
+// messageText extracts the text content from any message type.
+func messageText(msg schema.Message) string {
+	switch m := msg.(type) {
+	case *schema.HumanMessage:
+		return m.Text()
+	case *schema.AIMessage:
+		return m.Text()
+	case *schema.ToolMessage:
+		return m.Text()
+	default:
+		return ""
+	}
 }
 
 func convertToCohereMessage(msg schema.Message) *coherego.Message {
@@ -276,26 +283,33 @@ func convertToolDefs(tools []schema.ToolDefinition) []*coherego.Tool {
 			Description: t.Description,
 		}
 		if t.InputSchema != nil {
-			if props, ok := t.InputSchema["properties"].(map[string]any); ok {
-				paramDefs := make(map[string]*coherego.ToolParameterDefinitionsValue)
-				for k, v := range props {
-					pv := &coherego.ToolParameterDefinitionsValue{}
-					if vm, ok := v.(map[string]any); ok {
-						if desc, ok := vm["description"].(string); ok {
-							pv.Description = &desc
-						}
-						if typ, ok := vm["type"].(string); ok {
-							pv.Type = typ
-						}
-					}
-					paramDefs[k] = pv
-				}
-				ct.ParameterDefinitions = paramDefs
-			}
+			ct.ParameterDefinitions = extractParamDefs(t.InputSchema)
 		}
 		out[i] = ct
 	}
 	return out
+}
+
+// extractParamDefs converts a JSON Schema properties map to Cohere parameter definitions.
+func extractParamDefs(inputSchema map[string]any) map[string]*coherego.ToolParameterDefinitionsValue {
+	props, ok := inputSchema["properties"].(map[string]any)
+	if !ok {
+		return nil
+	}
+	paramDefs := make(map[string]*coherego.ToolParameterDefinitionsValue, len(props))
+	for k, v := range props {
+		pv := &coherego.ToolParameterDefinitionsValue{}
+		if vm, ok := v.(map[string]any); ok {
+			if desc, ok := vm["description"].(string); ok {
+				pv.Description = &desc
+			}
+			if typ, ok := vm["type"].(string); ok {
+				pv.Type = typ
+			}
+		}
+		paramDefs[k] = pv
+	}
+	return paramDefs
 }
 
 func convertResponse(resp *coherego.NonStreamedChatResponse, modelID string) *schema.AIMessage {

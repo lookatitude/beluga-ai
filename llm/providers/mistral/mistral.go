@@ -96,29 +96,7 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 					yield(schema.StreamChunk{}, chunk.Error)
 					return
 				}
-				sc := schema.StreamChunk{ModelID: m.model}
-				if len(chunk.Choices) > 0 {
-					delta := chunk.Choices[0].Delta
-					sc.Delta = delta.Content
-					sc.FinishReason = string(chunk.Choices[0].FinishReason)
-					if len(delta.ToolCalls) > 0 {
-						sc.ToolCalls = make([]schema.ToolCall, len(delta.ToolCalls))
-						for i, tc := range delta.ToolCalls {
-							sc.ToolCalls[i] = schema.ToolCall{
-								ID:        tc.Id,
-								Name:      tc.Function.Name,
-								Arguments: tc.Function.Arguments,
-							}
-						}
-					}
-				}
-				if chunk.Usage.TotalTokens > 0 {
-					sc.Usage = &schema.Usage{
-						InputTokens:  chunk.Usage.PromptTokens,
-						OutputTokens: chunk.Usage.CompletionTokens,
-						TotalTokens:  chunk.Usage.TotalTokens,
-					}
-				}
+				sc := convertStreamChunk(chunk, m.model)
 				if !yield(sc, nil) {
 					return
 				}
@@ -170,6 +148,40 @@ func (m *Model) buildParams(opts []llm.GenerateOption) *mistral.ChatRequestParam
 		params.ResponseFormat = mistral.ResponseFormatJsonObject
 	}
 	return params
+}
+
+// convertStreamChunk converts a Mistral stream chunk to a Beluga StreamChunk.
+func convertStreamChunk(chunk mistral.ChatCompletionStreamResponse, modelID string) schema.StreamChunk {
+	sc := schema.StreamChunk{ModelID: modelID}
+	if len(chunk.Choices) > 0 {
+		delta := chunk.Choices[0].Delta
+		sc.Delta = delta.Content
+		sc.FinishReason = string(chunk.Choices[0].FinishReason)
+		if len(delta.ToolCalls) > 0 {
+			sc.ToolCalls = convertMistralToolCalls(delta.ToolCalls)
+		}
+	}
+	if chunk.Usage.TotalTokens > 0 {
+		sc.Usage = &schema.Usage{
+			InputTokens:  chunk.Usage.PromptTokens,
+			OutputTokens: chunk.Usage.CompletionTokens,
+			TotalTokens:  chunk.Usage.TotalTokens,
+		}
+	}
+	return sc
+}
+
+// convertMistralToolCalls converts Mistral tool calls to Beluga tool calls.
+func convertMistralToolCalls(calls []mistral.ToolCall) []schema.ToolCall {
+	out := make([]schema.ToolCall, len(calls))
+	for i, tc := range calls {
+		out[i] = schema.ToolCall{
+			ID:        tc.Id,
+			Name:      tc.Function.Name,
+			Arguments: tc.Function.Arguments,
+		}
+	}
+	return out
 }
 
 func convertMessages(msgs []schema.Message) []mistral.ChatMessage {
@@ -252,20 +264,25 @@ func convertResponse(resp *mistral.ChatCompletionResponse) *schema.AIMessage {
 			ai.Parts = []schema.ContentPart{schema.TextPart{Text: choice.Message.Content}}
 		}
 		if len(choice.Message.ToolCalls) > 0 {
-			ai.ToolCalls = make([]schema.ToolCall, len(choice.Message.ToolCalls))
-			for i, tc := range choice.Message.ToolCalls {
-				args := tc.Function.Arguments
-				// Ensure arguments is valid JSON string
-				if _, err := json.Marshal(json.RawMessage(args)); err != nil {
-					args = "{}"
-				}
-				ai.ToolCalls[i] = schema.ToolCall{
-					ID:        tc.Id,
-					Name:      tc.Function.Name,
-					Arguments: args,
-				}
-			}
+			ai.ToolCalls = convertResponseToolCalls(choice.Message.ToolCalls)
 		}
 	}
 	return ai
+}
+
+// convertResponseToolCalls converts response tool calls, validating JSON arguments.
+func convertResponseToolCalls(calls []mistral.ToolCall) []schema.ToolCall {
+	out := make([]schema.ToolCall, len(calls))
+	for i, tc := range calls {
+		args := tc.Function.Arguments
+		if _, err := json.Marshal(json.RawMessage(args)); err != nil {
+			args = "{}"
+		}
+		out[i] = schema.ToolCall{
+			ID:        tc.Id,
+			Name:      tc.Function.Name,
+			Arguments: args,
+		}
+	}
+	return out
 }

@@ -199,6 +199,48 @@ func ComposeHooks(hooks ...Hooks) Hooks {
 	}
 }
 
+// forwardSessionEvents reads session events and forwards them as voice frames.
+func forwardSessionEvents(session Session, out chan<- voice.Frame, done chan<- error) {
+	defer close(done)
+	for event := range session.Recv() {
+		switch event.Type {
+		case EventAudioOutput:
+			sampleRate := 24000 // default S2S sample rate
+			out <- voice.NewAudioFrame(event.Audio, sampleRate)
+		case EventTextOutput:
+			out <- voice.NewTextFrame(event.Text)
+		case EventTurnEnd:
+			out <- voice.NewControlFrame(voice.SignalEndOfUtterance)
+		case EventError:
+			if event.Error != nil {
+				done <- event.Error
+				return
+			}
+		}
+	}
+}
+
+// forwardInputFrame sends a single input frame to the session.
+func forwardInputFrame(ctx context.Context, session Session, frame voice.Frame) error {
+	switch frame.Type {
+	case voice.FrameAudio:
+		if sendErr := session.SendAudio(ctx, frame.Data); sendErr != nil {
+			return fmt.Errorf("s2s: send audio: %w", sendErr)
+		}
+	case voice.FrameText:
+		if sendErr := session.SendText(ctx, frame.Text()); sendErr != nil {
+			return fmt.Errorf("s2s: send text: %w", sendErr)
+		}
+	case voice.FrameControl:
+		if frame.Signal() == voice.SignalInterrupt {
+			if intErr := session.Interrupt(ctx); intErr != nil {
+				return fmt.Errorf("s2s: interrupt: %w", intErr)
+			}
+		}
+	}
+	return nil
+}
+
 // AsFrameProcessor wraps an S2S engine as a voice.FrameProcessor.
 // It creates a session, forwards audio frames, and emits output audio frames.
 func AsFrameProcessor(engine S2S, opts ...Option) voice.FrameProcessor {
@@ -211,29 +253,9 @@ func AsFrameProcessor(engine S2S, opts ...Option) voice.FrameProcessor {
 		}
 		defer session.Close()
 
-		// Forward output events to out channel.
 		done := make(chan error, 1)
-		go func() {
-			defer close(done)
-			for event := range session.Recv() {
-				switch event.Type {
-				case EventAudioOutput:
-					sampleRate := 24000 // default S2S sample rate
-					out <- voice.NewAudioFrame(event.Audio, sampleRate)
-				case EventTextOutput:
-					out <- voice.NewTextFrame(event.Text)
-				case EventTurnEnd:
-					out <- voice.NewControlFrame(voice.SignalEndOfUtterance)
-				case EventError:
-					if event.Error != nil {
-						done <- event.Error
-						return
-					}
-				}
-			}
-		}()
+		go forwardSessionEvents(session, out, done)
 
-		// Forward input audio frames to session.
 		for {
 			select {
 			case <-ctx.Done():
@@ -242,21 +264,8 @@ func AsFrameProcessor(engine S2S, opts ...Option) voice.FrameProcessor {
 				if !ok {
 					return <-done
 				}
-				switch frame.Type {
-				case voice.FrameAudio:
-					if sendErr := session.SendAudio(ctx, frame.Data); sendErr != nil {
-						return fmt.Errorf("s2s: send audio: %w", sendErr)
-					}
-				case voice.FrameText:
-					if sendErr := session.SendText(ctx, frame.Text()); sendErr != nil {
-						return fmt.Errorf("s2s: send text: %w", sendErr)
-					}
-				case voice.FrameControl:
-					if frame.Signal() == voice.SignalInterrupt {
-						if intErr := session.Interrupt(ctx); intErr != nil {
-							return fmt.Errorf("s2s: interrupt: %w", intErr)
-						}
-					}
+				if fwdErr := forwardInputFrame(ctx, session, frame); fwdErr != nil {
+					return fwdErr
 				}
 			}
 		}

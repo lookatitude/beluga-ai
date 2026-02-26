@@ -45,88 +45,125 @@ type Hooks struct {
 	OnError func(ctx context.Context, err error) error
 }
 
+func composeBeforeSave(hooks []Hooks) func(context.Context, schema.Message, schema.Message) error {
+	return func(ctx context.Context, input, output schema.Message) error {
+		for _, h := range hooks {
+			if h.BeforeSave != nil {
+				if err := h.BeforeSave(ctx, input, output); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+}
+
+func composeAfterSave(hooks []Hooks) func(context.Context, schema.Message, schema.Message, error) {
+	return func(ctx context.Context, input, output schema.Message, err error) {
+		for _, h := range hooks {
+			if h.AfterSave != nil {
+				h.AfterSave(ctx, input, output, err)
+			}
+		}
+	}
+}
+
+func composeBeforeLoad(hooks []Hooks) func(context.Context, string) error {
+	return func(ctx context.Context, query string) error {
+		for _, h := range hooks {
+			if h.BeforeLoad != nil {
+				if err := h.BeforeLoad(ctx, query); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+}
+
+func composeAfterLoad(hooks []Hooks) func(context.Context, string, []schema.Message, error) {
+	return func(ctx context.Context, query string, msgs []schema.Message, err error) {
+		for _, h := range hooks {
+			if h.AfterLoad != nil {
+				h.AfterLoad(ctx, query, msgs, err)
+			}
+		}
+	}
+}
+
+func composeBeforeSearch(hooks []Hooks) func(context.Context, string, int) error {
+	return func(ctx context.Context, query string, k int) error {
+		for _, h := range hooks {
+			if h.BeforeSearch != nil {
+				if err := h.BeforeSearch(ctx, query, k); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+}
+
+func composeAfterSearch(hooks []Hooks) func(context.Context, string, int, []schema.Document, error) {
+	return func(ctx context.Context, query string, k int, docs []schema.Document, err error) {
+		for _, h := range hooks {
+			if h.AfterSearch != nil {
+				h.AfterSearch(ctx, query, k, docs, err)
+			}
+		}
+	}
+}
+
+func composeBeforeClear(hooks []Hooks) func(context.Context) error {
+	return func(ctx context.Context) error {
+		for _, h := range hooks {
+			if h.BeforeClear != nil {
+				if err := h.BeforeClear(ctx); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+}
+
+func composeAfterClear(hooks []Hooks) func(context.Context, error) {
+	return func(ctx context.Context, err error) {
+		for _, h := range hooks {
+			if h.AfterClear != nil {
+				h.AfterClear(ctx, err)
+			}
+		}
+	}
+}
+
+func composeOnError(hooks []Hooks) func(context.Context, error) error {
+	return func(ctx context.Context, err error) error {
+		for _, h := range hooks {
+			if h.OnError != nil {
+				if e := h.OnError(ctx, err); e != nil {
+					return e
+				}
+			}
+		}
+		return err
+	}
+}
+
 // ComposeHooks merges multiple Hooks into a single Hooks value.
 // Callbacks are called in the order the hooks were provided.
 // For Before* hooks and OnError, the first error returned short-circuits.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		BeforeSave: func(ctx context.Context, input, output schema.Message) error {
-			for _, h := range hooks {
-				if h.BeforeSave != nil {
-					if err := h.BeforeSave(ctx, input, output); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		AfterSave: func(ctx context.Context, input, output schema.Message, err error) {
-			for _, h := range hooks {
-				if h.AfterSave != nil {
-					h.AfterSave(ctx, input, output, err)
-				}
-			}
-		},
-		BeforeLoad: func(ctx context.Context, query string) error {
-			for _, h := range hooks {
-				if h.BeforeLoad != nil {
-					if err := h.BeforeLoad(ctx, query); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		AfterLoad: func(ctx context.Context, query string, msgs []schema.Message, err error) {
-			for _, h := range hooks {
-				if h.AfterLoad != nil {
-					h.AfterLoad(ctx, query, msgs, err)
-				}
-			}
-		},
-		BeforeSearch: func(ctx context.Context, query string, k int) error {
-			for _, h := range hooks {
-				if h.BeforeSearch != nil {
-					if err := h.BeforeSearch(ctx, query, k); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		AfterSearch: func(ctx context.Context, query string, k int, docs []schema.Document, err error) {
-			for _, h := range hooks {
-				if h.AfterSearch != nil {
-					h.AfterSearch(ctx, query, k, docs, err)
-				}
-			}
-		},
-		BeforeClear: func(ctx context.Context) error {
-			for _, h := range hooks {
-				if h.BeforeClear != nil {
-					if err := h.BeforeClear(ctx); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		AfterClear: func(ctx context.Context, err error) {
-			for _, h := range hooks {
-				if h.AfterClear != nil {
-					h.AfterClear(ctx, err)
-				}
-			}
-		},
-		OnError: func(ctx context.Context, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if e := h.OnError(ctx, err); e != nil {
-						return e
-					}
-				}
-			}
-			return err
-		},
+		BeforeSave:   composeBeforeSave(h),
+		AfterSave:    composeAfterSave(h),
+		BeforeLoad:   composeBeforeLoad(h),
+		AfterLoad:    composeAfterLoad(h),
+		BeforeSearch: composeBeforeSearch(h),
+		AfterSearch:  composeAfterSearch(h),
+		BeforeClear:  composeBeforeClear(h),
+		AfterClear:   composeAfterClear(h),
+		OnError:      composeOnError(h),
 	}
 }

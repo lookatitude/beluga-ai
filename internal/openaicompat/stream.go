@@ -14,33 +14,7 @@ func StreamToSeq(stream *ssestream.Stream[openai.ChatCompletionChunk], modelID s
 	return func(yield func(schema.StreamChunk, error) bool) {
 		defer stream.Close()
 		for stream.Next() {
-			chunk := stream.Current()
-			sc := schema.StreamChunk{
-				ModelID: modelID,
-			}
-			if len(chunk.Choices) > 0 {
-				delta := chunk.Choices[0].Delta
-				sc.Delta = delta.Content
-				sc.FinishReason = chunk.Choices[0].FinishReason
-				if len(delta.ToolCalls) > 0 {
-					sc.ToolCalls = make([]schema.ToolCall, len(delta.ToolCalls))
-					for i, tc := range delta.ToolCalls {
-						sc.ToolCalls[i] = schema.ToolCall{
-							ID:        tc.ID,
-							Name:      tc.Function.Name,
-							Arguments: tc.Function.Arguments,
-						}
-					}
-				}
-			}
-			if chunk.Usage.TotalTokens > 0 {
-				sc.Usage = &schema.Usage{
-					InputTokens:  int(chunk.Usage.PromptTokens),
-					OutputTokens: int(chunk.Usage.CompletionTokens),
-					TotalTokens:  int(chunk.Usage.TotalTokens),
-					CachedTokens: int(chunk.Usage.PromptTokensDetails.CachedTokens),
-				}
-			}
+			sc := convertChunk(stream.Current(), modelID)
 			if !yield(sc, nil) {
 				return
 			}
@@ -49,4 +23,33 @@ func StreamToSeq(stream *ssestream.Stream[openai.ChatCompletionChunk], modelID s
 			yield(schema.StreamChunk{}, err)
 		}
 	}
+}
+
+// convertChunk converts an OpenAI stream chunk to a Beluga StreamChunk.
+func convertChunk(chunk openai.ChatCompletionChunk, modelID string) schema.StreamChunk {
+	sc := schema.StreamChunk{ModelID: modelID}
+	if len(chunk.Choices) > 0 {
+		delta := chunk.Choices[0].Delta
+		sc.Delta = delta.Content
+		sc.FinishReason = chunk.Choices[0].FinishReason
+		if len(delta.ToolCalls) > 0 {
+			sc.ToolCalls = make([]schema.ToolCall, len(delta.ToolCalls))
+			for i, tc := range delta.ToolCalls {
+				sc.ToolCalls[i] = schema.ToolCall{
+					ID:        tc.ID,
+					Name:      tc.Function.Name,
+					Arguments: tc.Function.Arguments,
+				}
+			}
+		}
+	}
+	if chunk.Usage.TotalTokens > 0 {
+		sc.Usage = &schema.Usage{
+			InputTokens:  int(chunk.Usage.PromptTokens),
+			OutputTokens: int(chunk.Usage.CompletionTokens),
+			TotalTokens:  int(chunk.Usage.TotalTokens),
+			CachedTokens: int(chunk.Usage.PromptTokensDetails.CachedTokens),
+		}
+	}
+	return sc
 }
