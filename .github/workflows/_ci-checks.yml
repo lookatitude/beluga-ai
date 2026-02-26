@@ -55,18 +55,20 @@ jobs:
       - name: Parse lint results
         id: lint_result
         if: always()
+        env:
+          LINT_OUTCOME: ${{ steps.golangci.outcome }}
         run: |
           if [ -f lint-report.json ]; then
             ISSUES=$(jq '.Issues | length // 0' lint-report.json 2>/dev/null || echo "0")
           else
             ISSUES=0
           fi
-          if [ "${{ steps.golangci.outcome }}" = "success" ]; then
-            echo "status=passing" >> $GITHUB_OUTPUT
+          if [ "$LINT_OUTCOME" = "success" ]; then
+            echo "status=passing" >> "$GITHUB_OUTPUT"
           else
-            echo "status=failing" >> $GITHUB_OUTPUT
+            echo "status=failing" >> "$GITHUB_OUTPUT"
           fi
-          echo "issues_count=${ISSUES}" >> $GITHUB_OUTPUT
+          echo "issues_count=${ISSUES}" >> "$GITHUB_OUTPUT"
 
   build:
     name: Build

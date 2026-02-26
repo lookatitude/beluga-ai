@@ -73,14 +73,16 @@ jobs:
       - name: Parse Snyk results
         id: snyk_result
         if: always()
+        env:
+          SNYK_OUTCOME: ${{ steps.snyk_scan.outcome }}
         run: |
-          if [ "${{ steps.snyk_scan.outcome }}" = "success" ]; then
-            echo "status=clean" >> $GITHUB_OUTPUT
-            echo "vulns=0" >> $GITHUB_OUTPUT
+          if [ "$SNYK_OUTCOME" = "success" ]; then
+            echo "status=clean" >> "$GITHUB_OUTPUT"
+            echo "vulns=0" >> "$GITHUB_OUTPUT"
           else
             VULNS=$(jq '.vulnerabilities | length // 0' snyk-report.json 2>/dev/null || echo "unknown")
-            echo "status=vulnerabilities-found" >> $GITHUB_OUTPUT
-            echo "vulns=${VULNS}" >> $GITHUB_OUTPUT
+            echo "status=vulnerabilities-found" >> "$GITHUB_OUTPUT"
+            echo "vulns=${VULNS}" >> "$GITHUB_OUTPUT"
           fi
 
   trivy:
@@ -157,11 +159,13 @@ jobs:
       - name: Set Gitleaks status
         id: gitleaks_result
         if: always()
+        env:
+          GITLEAKS_OUTCOME: ${{ steps.gitleaks_scan.outcome }}
         run: |
-          if [ "${{ steps.gitleaks_scan.outcome }}" = "success" ]; then
-            echo "status=clean" >> $GITHUB_OUTPUT
+          if [ "$GITLEAKS_OUTCOME" = "success" ]; then
+            echo "status=clean" >> "$GITHUB_OUTPUT"
           else
-            echo "status=secrets-detected" >> $GITHUB_OUTPUT
+            echo "status=secrets-detected" >> "$GITHUB_OUTPUT"
           fi
 
   go-licenses:
@@ -239,14 +243,16 @@ jobs:
       - name: Parse govulncheck results
         id: result
         if: always()
+        env:
+          SCAN_OUTCOME: ${{ steps.scan.outcome }}
         run: |
-          if [ "${{ steps.scan.outcome }}" = "success" ]; then
-            echo "status=clean" >> $GITHUB_OUTPUT
-            echo "vulns=0" >> $GITHUB_OUTPUT
+          if [ "$SCAN_OUTCOME" = "success" ]; then
+            echo "status=clean" >> "$GITHUB_OUTPUT"
+            echo "vulns=0" >> "$GITHUB_OUTPUT"
           else
             VULNS=$(grep -c "^Vulnerability #" govulncheck-output.txt 2>/dev/null || echo "unknown")
-            echo "status=vulnerabilities-found" >> $GITHUB_OUTPUT
-            echo "vulns=${VULNS}" >> $GITHUB_OUTPUT
+            echo "status=vulnerabilities-found" >> "$GITHUB_OUTPUT"
+            echo "vulns=${VULNS}" >> "$GITHUB_OUTPUT"
           fi
 
   gosec:
