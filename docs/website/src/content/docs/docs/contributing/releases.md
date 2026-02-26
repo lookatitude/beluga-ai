@@ -113,11 +113,35 @@ PR Checks                Post-Merge               Tag / Release
 │ Lint             │    │ Full test suite   │    │ git-cliff changelog │
 │ Build            │ →  │ Coverage report   │ →  │ GoReleaser          │
 │ Unit tests       │    │ Security scans    │    │ GitHub Release      │
-│ Integration tests│    │ Docs deploy       │    │ Docs rebuild        │
-│ Security scans   │    │                   │    │                     │
+│ Integration tests│    │ SonarCloud        │    │ Docs rebuild        │
+│ Security scans   │    │ Auto-version tag  │    │                     │
+│ SonarCloud       │    │ Docs deploy       │    │                     │
 ─────────────           ──────────────           ──────────────
 ```
 
-1. **PR Checks** — Run on every pull request. Must all pass before merge.
-2. **Post-Merge** — Run after merge to `main`. Generates coverage reports, runs full security scans, and deploys documentation.
+1. **PR Checks** — Run on every pull request. Must all pass before merge. Includes CI, security scans, and SonarCloud analysis. The [Greptile](https://greptile.com) GitHub App also provides AI code review on every PR.
+2. **Post-Merge** — Run after merge to `main`. Generates coverage reports, runs full security scans, deploys documentation, and auto-tags the next version.
 3. **Tag / Release** — Triggered when a `v*.*.*` tag is pushed. Generates changelog, creates GitHub Release, and rebuilds docs.
+
+## Security Scanning
+
+Every PR and push to `main` runs a comprehensive, multi-layered security pipeline:
+
+| Scanner | What it does |
+|---|---|
+| **Snyk** | Dependency vulnerability scanning with severity thresholds against the Snyk vulnerability database |
+| **Trivy** | Filesystem and dependency scanning for CRITICAL/HIGH vulnerabilities (SARIF upload to GitHub Security tab) |
+| **govulncheck** | Go team's official vulnerability scanner — uses symbol-level reachability to only flag vulnerabilities in code paths your project actually calls |
+| **gosec** | Static analysis for Go security issues (SARIF upload to GitHub Security tab) |
+| **CodeQL** | Deep semantic static analysis by GitHub (runs on push, PR, and weekly schedule) |
+| **Gitleaks** | Scans for accidentally committed API keys, tokens, and passwords |
+| **go-licenses** | Verifies all dependencies use compatible licenses (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, MPL-2.0) |
+
+Security scans also run weekly (Monday 4am UTC) to catch newly disclosed CVEs in existing dependencies.
+
+## Code Review
+
+| Tool | How it works |
+|---|---|
+| **Greptile** | AI-powered code review via GitHub App — automatically reviews every PR with contextual feedback based on full codebase understanding |
+| **SonarCloud** | Code quality, duplication detection, and maintainability analysis (runs as a CI job) |

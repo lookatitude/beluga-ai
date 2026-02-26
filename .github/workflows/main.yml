@@ -74,6 +74,14 @@ jobs:
         continue-on-error: true
 
       - name: Generate CODE-QUALITY.md
+        env:
+          LINT_STATUS: ${{ needs.ci.outputs.lint_status }}
+          LINT_ISSUES: ${{ needs.ci.outputs.lint_issues_count }}
+          TEST_STATUS: ${{ needs.ci.outputs.test_status }}
+          TEST_COUNT: ${{ needs.ci.outputs.test_count }}
+          COVERAGE: ${{ needs.ci.outputs.coverage_pct }}
+          INT_STATUS: ${{ needs.ci.outputs.integration_status }}
+          INT_COUNT: ${{ needs.ci.outputs.integration_count }}
         run: |
           cat > CODE-QUALITY.md << 'HEADER'
           # Code Quality Report
@@ -89,8 +97,6 @@ jobs:
           # Linting section
           echo "## Linting" >> CODE-QUALITY.md
           echo "" >> CODE-QUALITY.md
-          LINT_STATUS="${{ needs.ci.outputs.lint_status }}"
-          LINT_ISSUES="${{ needs.ci.outputs.lint_issues_count }}"
           if [ "$LINT_STATUS" = "passing" ]; then
             echo "**Status:** Passing" >> CODE-QUALITY.md
           else
@@ -104,9 +110,6 @@ jobs:
           # Unit tests section
           echo "## Unit Tests" >> CODE-QUALITY.md
           echo "" >> CODE-QUALITY.md
-          TEST_STATUS="${{ needs.ci.outputs.test_status }}"
-          TEST_COUNT="${{ needs.ci.outputs.test_count }}"
-          COVERAGE="${{ needs.ci.outputs.coverage_pct }}"
           if [ "$TEST_STATUS" = "passing" ]; then
             echo "**Status:** Passing" >> CODE-QUALITY.md
           else
@@ -119,8 +122,6 @@ jobs:
           # Integration tests section
           echo "## Integration Tests" >> CODE-QUALITY.md
           echo "" >> CODE-QUALITY.md
-          INT_STATUS="${{ needs.ci.outputs.integration_status }}"
-          INT_COUNT="${{ needs.ci.outputs.integration_count }}"
           if [ "$INT_STATUS" = "passing" ]; then
             echo "**Status:** Passing" >> CODE-QUALITY.md
           else
@@ -145,6 +146,17 @@ jobs:
           echo "Full analysis available at [SonarCloud Dashboard](https://sonarcloud.io/project/overview?id=lookatitude_beluga-ai)" >> CODE-QUALITY.md
 
       - name: Generate SECURITY.md
+        env:
+          SNYK_STATUS: ${{ needs.security.outputs.snyk_status }}
+          SNYK_VULNS: ${{ needs.security.outputs.snyk_vulns }}
+          TRIVY_STATUS: ${{ needs.security.outputs.trivy_status }}
+          TRIVY_FINDINGS: ${{ needs.security.outputs.trivy_findings }}
+          GOVULNCHECK_STATUS: ${{ needs.security.outputs.govulncheck_status }}
+          GOVULNCHECK_VULNS: ${{ needs.security.outputs.govulncheck_vulns }}
+          GOSEC_STATUS: ${{ needs.security.outputs.gosec_status }}
+          GITLEAKS_STATUS: ${{ needs.security.outputs.gitleaks_status }}
+          LIC_STATUS: ${{ needs.security.outputs.licenses_status }}
+          LIC_VIOLATIONS: ${{ needs.security.outputs.licenses_violations }}
         run: |
           cat > SECURITY.md << 'HEADER'
           # Security Report
@@ -160,8 +172,6 @@ jobs:
           # Snyk section
           echo "## Dependency Vulnerabilities (Snyk)" >> SECURITY.md
           echo "" >> SECURITY.md
-          SNYK_STATUS="${{ needs.security.outputs.snyk_status }}"
-          SNYK_VULNS="${{ needs.security.outputs.snyk_vulns }}"
           if [ "$SNYK_STATUS" = "clean" ]; then
             echo "**Status:** No vulnerabilities found" >> SECURITY.md
           else
@@ -174,8 +184,6 @@ jobs:
           # Trivy section
           echo "## Dependency & Filesystem Scan (Trivy)" >> SECURITY.md
           echo "" >> SECURITY.md
-          TRIVY_STATUS="${{ needs.security.outputs.trivy_status }}"
-          TRIVY_FINDINGS="${{ needs.security.outputs.trivy_findings }}"
           if [ "$TRIVY_STATUS" = "clean" ]; then
             echo "**Status:** No findings (CRITICAL/HIGH)" >> SECURITY.md
           else
@@ -185,10 +193,35 @@ jobs:
           echo "Results uploaded to [GitHub Security tab](../../security/code-scanning)" >> SECURITY.md
           echo "" >> SECURITY.md
 
+          # govulncheck section
+          echo "## Go Vulnerability Database (govulncheck)" >> SECURITY.md
+          echo "" >> SECURITY.md
+          if [ "$GOVULNCHECK_STATUS" = "clean" ]; then
+            echo "**Status:** No vulnerabilities found" >> SECURITY.md
+          else
+            echo "**Status:** ${GOVULNCHECK_VULNS:-unknown} vulnerabilities found" >> SECURITY.md
+          fi
+          echo "" >> SECURITY.md
+          echo "Scanned using the Go team's official vulnerability scanner with symbol-level reachability analysis." >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "[Go Vulnerability Database](https://vuln.go.dev)" >> SECURITY.md
+          echo "" >> SECURITY.md
+
+          # gosec section
+          echo "## Static Security Analysis (gosec)" >> SECURITY.md
+          echo "" >> SECURITY.md
+          if [ "$GOSEC_STATUS" = "clean" ]; then
+            echo "**Status:** No findings" >> SECURITY.md
+          else
+            echo "**Status:** Findings detected — review required" >> SECURITY.md
+          fi
+          echo "" >> SECURITY.md
+          echo "SARIF results uploaded to [GitHub Security tab](../../security/code-scanning)" >> SECURITY.md
+          echo "" >> SECURITY.md
+
           # Gitleaks section
           echo "## Secret Detection (Gitleaks)" >> SECURITY.md
           echo "" >> SECURITY.md
-          GITLEAKS_STATUS="${{ needs.security.outputs.gitleaks_status }}"
           if [ "$GITLEAKS_STATUS" = "clean" ]; then
             echo "**Status:** No secrets detected" >> SECURITY.md
           else
@@ -199,8 +232,6 @@ jobs:
           # License compliance section
           echo "## License Compliance (go-licenses)" >> SECURITY.md
           echo "" >> SECURITY.md
-          LIC_STATUS="${{ needs.security.outputs.licenses_status }}"
-          LIC_VIOLATIONS="${{ needs.security.outputs.licenses_violations }}"
           if [ "$LIC_STATUS" = "compliant" ]; then
             echo "**Status:** All dependencies compliant" >> SECURITY.md
           else

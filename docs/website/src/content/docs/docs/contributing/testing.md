@@ -249,10 +249,12 @@ func TestAgentStream(t *testing.T) {
 
 All tests run automatically on every pull request via GitHub Actions. The CI pipeline runs:
 
-1. **Unit tests** — `make test`
-2. **Integration tests** — `make integration-test`
-3. **Linter** — `make lint`
-4. **Build** — `make build`
-5. **Coverage** — Coverage report is generated and checked
+1. **Lint** — `go vet` and `golangci-lint` (13 linters including gosec, staticcheck, errcheck)
+2. **Build** — `go build ./...` and `go mod tidy` verification
+3. **Unit tests** — `go test -race` with coverage reporting
+4. **Integration tests** — `go test -race -tags integration`
+5. **Security scans** — Snyk (dependency vulnerabilities), Trivy (filesystem scanning), govulncheck (Go vulnerability database), gosec (static security analysis), Gitleaks (secret detection), go-licenses (license compliance)
+6. **SonarCloud** — Code quality, duplication detection, and maintainability analysis
+7. **Greptile** — AI-powered code review via GitHub App (automatic on every PR)
 
 All checks must pass before a PR can be merged. See the [Pull Request Process](/docs/contributing/pull-requests/) for details.

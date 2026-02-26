@@ -20,6 +20,15 @@ on:
       trivy_findings:
         description: "Number of Trivy findings"
         value: ${{ jobs.trivy.outputs.trivy_findings }}
+      govulncheck_status:
+        description: "govulncheck scan status"
+        value: ${{ jobs.govulncheck.outputs.govulncheck_status }}
+      govulncheck_vulns:
+        description: "Number of govulncheck vulnerabilities"
+        value: ${{ jobs.govulncheck.outputs.govulncheck_vulns }}
+      gosec_status:
+        description: "gosec scan status"
+        value: ${{ jobs.gosec.outputs.gosec_status }}
       gitleaks_status:
         description: "Gitleaks scan status"
         value: ${{ jobs.gitleaks.outputs.gitleaks_status }}
@@ -29,6 +38,8 @@ on:
       licenses_violations:
         description: "Number of license violations"
         value: ${{ jobs.go-licenses.outputs.licenses_violations }}
+  schedule:
+    - cron: "0 4 * * 1" # Weekly Monday 4am UTC
 
 env:
   GO_VERSION: "1.25.7"
@@ -62,14 +73,16 @@ jobs:
       - name: Parse Snyk results
         id: snyk_result
         if: always()
+        env:
+          SNYK_OUTCOME: ${{ steps.snyk_scan.outcome }}
         run: |
-          if [ "${{ steps.snyk_scan.outcome }}" = "success" ]; then
-            echo "status=clean" >> $GITHUB_OUTPUT
-            echo "vulns=0" >> $GITHUB_OUTPUT
+          if [ "$SNYK_OUTCOME" = "success" ]; then
+            echo "status=clean" >> "$GITHUB_OUTPUT"
+            echo "vulns=0" >> "$GITHUB_OUTPUT"
           else
             VULNS=$(jq '.vulnerabilities | length // 0' snyk-report.json 2>/dev/null || echo "unknown")
-            echo "status=vulnerabilities-found" >> $GITHUB_OUTPUT
-            echo "vulns=${VULNS}" >> $GITHUB_OUTPUT
+            echo "status=vulnerabilities-found" >> "$GITHUB_OUTPUT"
+            echo "vulns=${VULNS}" >> "$GITHUB_OUTPUT"
           fi
 
   trivy:
@@ -146,11 +159,13 @@ jobs:
       - name: Set Gitleaks status
         id: gitleaks_result
         if: always()
+        env:
+          GITLEAKS_OUTCOME: ${{ steps.gitleaks_scan.outcome }}
         run: |
-          if [ "${{ steps.gitleaks_scan.outcome }}" = "success" ]; then
-            echo "status=clean" >> $GITHUB_OUTPUT
+          if [ "$GITLEAKS_OUTCOME" = "success" ]; then
+            echo "status=clean" >> "$GITHUB_OUTPUT"
           else
-            echo "status=secrets-detected" >> $GITHUB_OUTPUT
+            echo "status=secrets-detected" >> "$GITHUB_OUTPUT"
           fi
 
   go-licenses:
@@ -202,3 +217,99 @@ jobs:
         with:
           name: license-inventory
           path: licenses.csv
+
+  govulncheck:
+    name: Go Vulnerability Check (govulncheck)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      govulncheck_status: ${{ steps.result.outputs.status }}
+      govulncheck_vulns: ${{ steps.result.outputs.vulns }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run govulncheck
+        id: scan
+        continue-on-error: true
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./... 2>&1 | tee govulncheck-output.txt
+
+      - name: Parse govulncheck results
+        id: result
+        if: always()
+        env:
+          SCAN_OUTCOME: ${{ steps.scan.outcome }}
+        run: |
+          if [ "$SCAN_OUTCOME" = "success" ]; then
+            echo "status=clean" >> "$GITHUB_OUTPUT"
+            echo "vulns=0" >> "$GITHUB_OUTPUT"
+          else
+            VULNS=$(grep -c "^Vulnerability #" govulncheck-output.txt 2>/dev/null || echo "unknown")
+            echo "status=vulnerabilities-found" >> "$GITHUB_OUTPUT"
+            echo "vulns=${VULNS}" >> "$GITHUB_OUTPUT"
+          fi
+
+  gosec:
+    name: Go Security Scanner (gosec)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    outputs:
+      gosec_status: ${{ steps.result.outputs.status }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run gosec
+        id: gosec_scan
+        uses: securego/gosec@d4617f51baf75f4f809066386a4f9d27b3ac3e46 # v2.21.4
+        continue-on-error: true
+        with:
+          args: -no-fail -fmt sarif -out gosec-results.sarif ./...
+
+      - name: Sanitize gosec SARIF
+        if: always() && hashFiles('gosec-results.sarif') != ''
+        run: |
+          # gosec emits invalid SARIF: relationships arrays may contain
+          # non-object entries. Strip them so codeql-action/upload-sarif
+          # accepts the file.
+          jq '
+            walk(
+              if type == "object" and has("relationships") then
+                .relationships = [.relationships[] | select(type == "object")]
+              else . end
+            )
+          ' gosec-results.sarif > gosec-results-clean.sarif
+          mv gosec-results-clean.sarif gosec-results.sarif
+
+      - name: Upload gosec SARIF
+        if: always() && hashFiles('gosec-results.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: gosec-results.sarif
+          category: gosec
+
+      - name: Set gosec status
+        id: result
+        if: always()
+        run: |
+          if [ -f gosec-results.sarif ]; then
+            FINDINGS=$(jq '[.runs[].results[]] | length // 0' gosec-results.sarif 2>/dev/null || echo "0")
+          else
+            FINDINGS=0
+          fi
+          if [ "$FINDINGS" -gt 0 ]; then
+            echo "status=findings-detected" >> $GITHUB_OUTPUT
+          else
+            echo "status=clean" >> $GITHUB_OUTPUT
+          fi

@@ -119,6 +119,40 @@ When the [Main](.github/workflows/main.yml) pipeline succeeds (CI and security c
 
 When a tag is created it is pushed to the repository, which triggers the [Release](.github/workflows/release.yml) workflow (GoReleaser, changelog, docs rebuild).
 
+### CI pipeline
+
+Every PR and push to `main` runs the full suite of automated checks:
+
+**Quality & Testing:**
+
+| Check | Description |
+|-------|-------------|
+| **golangci-lint** | 13 linters (gosec, staticcheck, errcheck, revive, etc.) |
+| **go vet** | Official Go static analysis |
+| **Unit tests** | `go test -race` with coverage reporting |
+| **Integration tests** | `go test -race -tags integration` |
+| **SonarCloud** | Code quality, duplication, and maintainability analysis |
+
+**Security scanning:**
+
+| Scanner | Purpose |
+|---------|---------|
+| **Snyk** | Dependency vulnerability scanning with severity thresholds |
+| **Trivy** | Filesystem and dependency scanning (SARIF upload to GitHub Security tab) |
+| **govulncheck** | Go team's official vulnerability scanner — symbol-level reachability analysis against the [Go vulnerability database](https://vuln.go.dev) |
+| **gosec** | Static analysis for Go security issues (SARIF upload to GitHub Security tab) |
+| **CodeQL** | Deep semantic static analysis (weekly + push/PR) |
+| **Gitleaks** | Secret detection across git history |
+| **go-licenses** | Dependency license compliance (MIT, Apache-2.0, BSD-2/3-Clause, ISC, MPL-2.0) |
+
+Security scans also run on a weekly schedule (Monday 4am UTC) to catch newly disclosed CVEs.
+
+**Code review:**
+
+| Tool | Description |
+|------|-------------|
+| **Greptile** | AI-powered code review on every PR via GitHub App — provides contextual feedback based on full codebase understanding |
+
 ### Major releases (manual only)
 
 Major versions are **never created automatically**. When breaking changes land on `main`, the auto-release is skipped. To publish a major release:

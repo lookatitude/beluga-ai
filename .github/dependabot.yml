@@ -10,10 +10,20 @@ updates:
     groups:
       aws-sdk:
         patterns: ["github.com/aws/*"]
+        update-types: ["minor", "patch"]
       otel:
         patterns: ["go.opentelemetry.io/*"]
+        update-types: ["minor", "patch"]
       google:
         patterns: ["cloud.google.com/*", "google.golang.org/*"]
+        update-types: ["minor", "patch"]
+      go-minor-patch:
+        update-types: ["minor", "patch"]
+        exclude-patterns:
+          - "github.com/aws/*"
+          - "go.opentelemetry.io/*"
+          - "cloud.google.com/*"
+          - "google.golang.org/*"
 
   - package-ecosystem: "github-actions"
     directory: "/"

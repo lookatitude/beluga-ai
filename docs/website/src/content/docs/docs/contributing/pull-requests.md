@@ -125,11 +125,18 @@ The following checks must pass before merge:
 
 | Check | Description |
 |---|---|
-| **Lint** | `golangci-lint` with project configuration |
-| **Build** | `go build ./...` across supported platforms |
-| **Unit Tests** | All unit tests pass |
-| **Integration Tests** | Integration tests pass with required services |
-| **Security Scans** | Dependency vulnerability and code security checks |
+| **Lint** | `golangci-lint` with project configuration (13 linters including gosec, staticcheck, errcheck) |
+| **Build** | `go build ./...` and `go mod tidy` verification |
+| **Unit Tests** | All unit tests pass with race detector enabled |
+| **Integration Tests** | Integration tests pass (build tag `integration`) |
+| **Snyk** | Dependency vulnerability scanning with severity thresholds |
+| **Trivy** | Filesystem and dependency scanning (SARIF results in GitHub Security tab) |
+| **govulncheck** | Go vulnerability database scan with symbol-level reachability |
+| **gosec** | Static security analysis (SARIF results in GitHub Security tab) |
+| **Gitleaks** | Secret detection |
+| **License Compliance** | Dependency license verification |
+| **SonarCloud** | Code quality and maintainability analysis (internal PRs) |
+| **Greptile** | AI-powered code review via GitHub App (automatic on every PR) |
 
 If a CI check fails, click the details link to see the logs and fix the issue.
 
