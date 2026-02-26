@@ -136,7 +136,7 @@ The following checks must pass before merge:
 | **Gitleaks** | Secret detection |
 | **License Compliance** | Dependency license verification |
 | **SonarCloud** | Code quality and maintainability analysis (internal PRs) |
-| **Greptile** | AI-powered code review (internal PRs) |
+| **Greptile** | AI-powered code review via GitHub App (automatic on every PR) |
 
 If a CI check fails, click the details link to see the logs and fix the issue.
 

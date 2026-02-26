@@ -255,6 +255,6 @@ All tests run automatically on every pull request via GitHub Actions. The CI pip
 4. **Integration tests** — `go test -race -tags integration`
 5. **Security scans** — Snyk (dependency vulnerabilities), Trivy (filesystem scanning), govulncheck (Go vulnerability database), gosec (static security analysis), Gitleaks (secret detection), go-licenses (license compliance)
 6. **SonarCloud** — Code quality, duplication detection, and maintainability analysis
-7. **Greptile** — AI-powered code review (internal PRs)
+7. **Greptile** — AI-powered code review via GitHub App (automatic on every PR)
 
 All checks must pass before a PR can be merged. See the [Pull Request Process](/docs/contributing/pull-requests/) for details.

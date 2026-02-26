@@ -116,11 +116,10 @@ PR Checks                Post-Merge               Tag / Release
 │ Integration tests│    │ SonarCloud        │    │ Docs rebuild        │
 │ Security scans   │    │ Auto-version tag  │    │                     │
 │ SonarCloud       │    │ Docs deploy       │    │                     │
-│ Greptile review  │    │                   │    │                     │
 ─────────────           ──────────────           ──────────────
 ```
 
-1. **PR Checks** — Run on every pull request. Must all pass before merge. Includes CI, security scans, SonarCloud analysis, and Greptile AI code review.
+1. **PR Checks** — Run on every pull request. Must all pass before merge. Includes CI, security scans, and SonarCloud analysis. The [Greptile](https://greptile.com) GitHub App also provides AI code review on every PR.
 2. **Post-Merge** — Run after merge to `main`. Generates coverage reports, runs full security scans, deploys documentation, and auto-tags the next version.
 3. **Tag / Release** — Triggered when a `v*.*.*` tag is pushed. Generates changelog, creates GitHub Release, and rebuilds docs.
 
@@ -142,7 +141,7 @@ Security scans also run weekly (Monday 4am UTC) to catch newly disclosed CVEs in
 
 ## Code Review
 
-| Tool | What it does |
+| Tool | How it works |
 |---|---|
-| **Greptile** | AI-powered code review on every PR — provides contextual feedback based on codebase understanding (internal PRs only) |
-| **SonarCloud** | Code quality, duplication detection, and maintainability analysis |
+| **Greptile** | AI-powered code review via GitHub App — automatically reviews every PR with contextual feedback based on full codebase understanding |
+| **SonarCloud** | Code quality, duplication detection, and maintainability analysis (runs as a CI job) |

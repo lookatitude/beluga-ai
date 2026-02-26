@@ -151,7 +151,7 @@ Security scans also run on a weekly schedule (Monday 4am UTC) to catch newly dis
 
 | Tool | Description |
 |------|-------------|
-| **Greptile** | AI-powered code review on every PR (internal PRs only) |
+| **Greptile** | AI-powered code review on every PR via GitHub App — provides contextual feedback based on full codebase understanding |
 
 ### Major releases (manual only)
 
