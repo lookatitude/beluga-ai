@@ -185,6 +185,35 @@ jobs:
           echo "Results uploaded to [GitHub Security tab](../../security/code-scanning)" >> SECURITY.md
           echo "" >> SECURITY.md
 
+          # govulncheck section
+          echo "## Go Vulnerability Database (govulncheck)" >> SECURITY.md
+          echo "" >> SECURITY.md
+          GOVULNCHECK_STATUS="${{ needs.security.outputs.govulncheck_status }}"
+          GOVULNCHECK_VULNS="${{ needs.security.outputs.govulncheck_vulns }}"
+          if [ "$GOVULNCHECK_STATUS" = "clean" ]; then
+            echo "**Status:** No vulnerabilities found" >> SECURITY.md
+          else
+            echo "**Status:** ${GOVULNCHECK_VULNS:-unknown} vulnerabilities found" >> SECURITY.md
+          fi
+          echo "" >> SECURITY.md
+          echo "Scanned using the Go team's official vulnerability scanner with symbol-level reachability analysis." >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "[Go Vulnerability Database](https://vuln.go.dev)" >> SECURITY.md
+          echo "" >> SECURITY.md
+
+          # gosec section
+          echo "## Static Security Analysis (gosec)" >> SECURITY.md
+          echo "" >> SECURITY.md
+          GOSEC_STATUS="${{ needs.security.outputs.gosec_status }}"
+          if [ "$GOSEC_STATUS" = "clean" ]; then
+            echo "**Status:** No findings" >> SECURITY.md
+          else
+            echo "**Status:** Findings detected — review required" >> SECURITY.md
+          fi
+          echo "" >> SECURITY.md
+          echo "SARIF results uploaded to [GitHub Security tab](../../security/code-scanning)" >> SECURITY.md
+          echo "" >> SECURITY.md
+
           # Gitleaks section
           echo "## Secret Detection (Gitleaks)" >> SECURITY.md
           echo "" >> SECURITY.md
