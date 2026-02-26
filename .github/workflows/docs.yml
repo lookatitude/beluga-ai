@@ -69,7 +69,7 @@ jobs:
           echo "Generated ${FILE_COUNT} godoc files"
 
       - name: Upload godoc artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: godoc
           path: godoc-output/
