@@ -272,7 +272,7 @@ jobs:
 
       - name: Run gosec
         id: gosec_scan
-        uses: securego/gosec@v2.21.4
+        uses: securego/gosec@d4617f51baf75f4f809066386a4f9d27b3ac3e46 # v2.21.4
         continue-on-error: true
         with:
           args: -no-fail -fmt sarif -out gosec-results.sarif ./...
