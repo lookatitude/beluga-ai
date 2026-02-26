@@ -110,8 +110,7 @@ func (e *DefaultExecutor) Execute(ctx context.Context, fn WorkflowFunc, opts Wor
 	}
 
 	// Run the workflow function asynchronously.
-	go e.runWorkflow(ctx, runWorkflowParams{
-		wfCtx:  wfCtx,
+	go e.runWorkflow(ctx, wfCtx, runWorkflowParams{
 		cancel: cancel,
 		fn:     fn,
 		rw:     rw,
@@ -125,7 +124,6 @@ func (e *DefaultExecutor) Execute(ctx context.Context, fn WorkflowFunc, opts Wor
 
 // runWorkflowParams groups the parameters for runWorkflow.
 type runWorkflowParams struct {
-	wfCtx  context.Context
 	cancel context.CancelFunc
 	fn     WorkflowFunc
 	rw     *runningWorkflow
@@ -135,11 +133,11 @@ type runWorkflowParams struct {
 }
 
 // runWorkflow is the goroutine body for a workflow execution.
-func (e *DefaultExecutor) runWorkflow(parentCtx context.Context, p runWorkflowParams) {
+func (e *DefaultExecutor) runWorkflow(parentCtx, wfCtx context.Context, p runWorkflowParams) {
 	defer p.cancel()
 
 	wfContext := &defaultWorkflowContext{
-		Context:  p.wfCtx,
+		Context:  wfCtx,
 		executor: e,
 		workflow: p.rw,
 		wfID:     p.opts.ID,
@@ -151,8 +149,8 @@ func (e *DefaultExecutor) runWorkflow(parentCtx context.Context, p runWorkflowPa
 	delete(e.running, p.opts.ID)
 	e.mu.Unlock()
 
-	if p.wfCtx.Err() != nil && err == nil {
-		err = p.wfCtx.Err()
+	if wfCtx.Err() != nil && err == nil {
+		err = wfCtx.Err()
 	}
 
 	e.finalizeHandle(parentCtx, p.handle, p.opts.ID, result, err)
