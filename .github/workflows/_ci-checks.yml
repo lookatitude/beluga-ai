@@ -2,6 +2,9 @@ name: CI Checks
 
 on:
   workflow_call:
+    secrets:
+      SONAR_TOKEN:
+        required: false
     outputs:
       lint_status:
         description: "Lint status (passing/failing)"
@@ -177,3 +180,43 @@ jobs:
             echo "status=passing" >> $GITHUB_OUTPUT
           fi
           echo "test_count=${TEST_COUNT}" >> $GITHUB_OUTPUT
+
+  sonarcloud:
+    name: SonarCloud Analysis
+    needs: test
+    runs-on: ubuntu-latest
+    # Skip on fork PRs (no SONAR_TOKEN available) and when token is not configured
+    if: |
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+    steps:
+      - name: Check for SonarCloud token
+        id: check_token
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -n "$SONAR_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "SonarCloud token not configured — skipping analysis."
+          fi
+
+      - uses: actions/checkout@v6
+        if: steps.check_token.outputs.available == 'true'
+        with:
+          fetch-depth: 0
+
+      - name: Download coverage
+        if: steps.check_token.outputs.available == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage
+
+      - name: SonarCloud Scan
+        if: steps.check_token.outputs.available == 'true'
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

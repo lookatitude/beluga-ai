@@ -25,6 +25,8 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/_ci-checks.yml
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   security:
     name: Security Checks
@@ -35,27 +37,6 @@ jobs:
     secrets:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
-
-  sonarcloud:
-    name: SonarCloud Analysis
-    needs: ci
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Download coverage
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v7
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   generate-reports:
     name: Generate Reports
@@ -449,7 +430,8 @@ jobs:
   # commits since the last tag: minor for feat, patch otherwise.
   # Breaking changes (feat!:, fix!:, BREAKING CHANGE) skip auto-release;
   # major versions must be published manually via the Release workflow.
-  # The pushed tag triggers .github/workflows/release.yml.
+  # After pushing the tag, release.yml is triggered via workflow_dispatch
+  # (GITHUB_TOKEN tag pushes do not trigger other workflows).
   release-tag:
     name: Bump Version and Create Release Tag
     needs: [ci, security]
@@ -540,8 +522,30 @@ jobs:
 
       - name: Create and push tag
         if: steps.bump.outputs.skip != 'true'
+        env:
+          RELEASE_TAG: ${{ steps.bump.outputs.tag }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "${{ steps.bump.outputs.tag }}"
-          git push origin "${{ steps.bump.outputs.tag }}"
+          git tag "$RELEASE_TAG"
+          git push origin "$RELEASE_TAG"
+
+      # GITHUB_TOKEN tag pushes do NOT trigger other workflows (anti-loop protection),
+      # so we explicitly trigger the release workflow via workflow_dispatch.
+      - name: Trigger release workflow
+        if: steps.bump.outputs.skip != 'true'
+        uses: actions/github-script@v8
+        env:
+          RELEASE_TAG: ${{ steps.bump.outputs.tag }}
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'release.yml',
+              ref: 'main',
+              inputs: {
+                tag: process.env.RELEASE_TAG,
+                ref: 'main'
+              }
+            });
