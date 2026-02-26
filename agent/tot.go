@@ -144,28 +144,12 @@ func (p *ToTPlanner) searchBFS(ctx context.Context, state PlannerState) ([]strin
 	h := &thoughtHeap{}
 	heap.Init(h)
 
-	// Generate initial thoughts
+	// Generate and enqueue initial thoughts
 	thoughts, err := p.generateThoughts(ctx, state.Input, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	// Evaluate and enqueue initial thoughts
-	for _, t := range thoughts {
-		score, err := p.evaluateThought(ctx, state.Input, t)
-		if err != nil {
-			continue
-		}
-		if score <= 0 { // "impossible" — prune
-			continue
-		}
-		heap.Push(h, &thoughtNode{
-			thought: t,
-			score:   score,
-			depth:   1,
-			path:    []string{t},
-		})
-	}
+	p.enqueueThoughts(ctx, h, thoughts, state.Input, nil, 1)
 
 	var bestPath []string
 	bestScore := -1.0
@@ -173,43 +157,20 @@ func (p *ToTPlanner) searchBFS(ctx context.Context, state PlannerState) ([]strin
 	for h.Len() > 0 {
 		node := heap.Pop(h).(*thoughtNode)
 
-		// Track best complete path
 		if node.score > bestScore {
 			bestScore = node.score
 			bestPath = node.path
 		}
 
-		// Stop expanding if we've reached max depth
 		if node.depth >= p.maxDepth {
 			continue
 		}
 
-		// Generate child thoughts
 		children, err := p.generateThoughts(ctx, state.Input, node.path)
 		if err != nil {
 			continue
 		}
-
-		for _, child := range children {
-			score, err := p.evaluateThought(ctx, state.Input, child)
-			if err != nil {
-				continue
-			}
-			if score <= 0 { // prune impossible branches
-				continue
-			}
-
-			childPath := make([]string, len(node.path)+1)
-			copy(childPath, node.path)
-			childPath[len(node.path)] = child
-
-			heap.Push(h, &thoughtNode{
-				thought: child,
-				score:   score,
-				depth:   node.depth + 1,
-				path:    childPath,
-			})
-		}
+		p.enqueueThoughts(ctx, h, children, state.Input, node.path, node.depth+1)
 	}
 
 	if bestPath == nil {
@@ -217,6 +178,29 @@ func (p *ToTPlanner) searchBFS(ctx context.Context, state PlannerState) ([]strin
 	}
 
 	return bestPath, nil
+}
+
+// enqueueThoughts evaluates each thought and pushes viable ones onto the heap.
+func (p *ToTPlanner) enqueueThoughts(ctx context.Context, h *thoughtHeap, thoughts []string, input string, parentPath []string, depth int) {
+	for _, t := range thoughts {
+		score, err := p.evaluateThought(ctx, input, t)
+		if err != nil || score <= 0 {
+			continue
+		}
+
+		path := make([]string, len(parentPath)+1)
+		if len(parentPath) > 0 {
+			copy(path, parentPath)
+		}
+		path[len(parentPath)] = t
+
+		heap.Push(h, &thoughtNode{
+			thought: t,
+			score:   score,
+			depth:   depth,
+			path:    path,
+		})
+	}
 }
 
 // searchDFS performs depth-first search over the thought tree.

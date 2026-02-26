@@ -204,45 +204,69 @@ func DoJSON[T any](ctx context.Context, c *Client, method, path string, body any
 	var zero T
 
 	for attempt := range c.retries + 1 {
-		resp, err := c.Do(ctx, method, path, body, nil)
-		if err != nil {
-			if isNetworkError(err) && attempt < c.retries {
-				if retried := waitForRetry(ctx, nil, c.backoff, attempt); retried {
-					continue
-				}
-				if ctxErr := ctx.Err(); ctxErr != nil {
-					return zero, ctxErr
-				}
-			}
-			return zero, err
+		result, err, done := doJSONAttempt[T](ctx, c, method, path, body, attempt)
+		if done {
+			return result, err
 		}
-
-		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-			defer resp.Body.Close()
-			var result T
-			if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-				return zero, fmt.Errorf("httpclient: decode response: %w", err)
-			}
-			return result, nil
-		}
-
-		respBody, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
-
-		if isRetryable(resp.StatusCode) && attempt < c.retries {
-			if retried := waitForRetry(ctx, resp, c.backoff, attempt); retried {
-				continue
-			}
-			// Context was cancelled during wait.
-			if err := ctx.Err(); err != nil {
-				return zero, err
-			}
-		}
-
-		return zero, newAPIError(resp.StatusCode, respBody)
 	}
 
 	return zero, fmt.Errorf("httpclient: exhausted retries")
+}
+
+// doJSONAttempt executes a single attempt of DoJSON. It returns (result, err, done).
+// done=false means the caller should continue to the next retry attempt.
+func doJSONAttempt[T any](ctx context.Context, c *Client, method, path string, body any, attempt int) (T, error, bool) {
+	var zero T
+
+	resp, err := c.Do(ctx, method, path, body, nil)
+	if err != nil {
+		return zero, err, !shouldRetryNetErr(ctx, c, err, attempt)
+	}
+
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		return decodeJSONResponse[T](resp)
+	}
+
+	apiErr, shouldRetry := handleErrorResponse(ctx, c, resp, attempt)
+	return zero, apiErr, !shouldRetry
+}
+
+// shouldRetryNetErr checks if a network error should be retried, and waits if so.
+// Returns true if the caller should retry (continue to next attempt).
+func shouldRetryNetErr(ctx context.Context, c *Client, err error, attempt int) bool {
+	if !isNetworkError(err) || attempt >= c.retries {
+		return false
+	}
+	return waitForRetry(ctx, nil, c.backoff, attempt)
+}
+
+// decodeJSONResponse reads and decodes a successful JSON response.
+func decodeJSONResponse[T any](resp *http.Response) (T, error, bool) {
+	defer resp.Body.Close()
+	var result T
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return result, fmt.Errorf("httpclient: decode response: %w", err), true
+	}
+	return result, nil, true
+}
+
+// handleErrorResponse processes a non-2xx response, retrying if appropriate.
+// Returns the error and whether the caller should retry.
+func handleErrorResponse(ctx context.Context, c *Client, resp *http.Response, attempt int) (error, bool) {
+	respBody, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+
+	if isRetryable(resp.StatusCode) && attempt < c.retries {
+		if waitForRetry(ctx, resp, c.backoff, attempt) {
+			return newAPIError(resp.StatusCode, respBody), true
+		}
+		// Context was cancelled during retry wait.
+		if err := ctx.Err(); err != nil {
+			return err, false
+		}
+	}
+
+	return newAPIError(resp.StatusCode, respBody), false
 }
 
 // waitForRetry waits for the retry delay, respecting context cancellation.
@@ -317,45 +341,55 @@ func StreamSSEWithBody(ctx context.Context, c *Client, method, path string, body
 			return
 		}
 
-		scanner := bufio.NewScanner(resp.Body)
-		var event SSEEvent
+		scanSSEStream(ctx, resp.Body, yield)
+	}
+}
 
-		for scanner.Scan() {
-			if ctx.Err() != nil {
-				yield(SSEEvent{}, ctx.Err())
-				return
-			}
+// scanSSEStream reads SSE events from a reader and yields them.
+func scanSSEStream(ctx context.Context, r io.Reader, yield func(SSEEvent, error) bool) {
+	scanner := bufio.NewScanner(r)
+	var event SSEEvent
 
-			line := scanner.Text()
-
-			if line == "" {
-				// Empty line = dispatch event.
-				if event.Data != "" || event.Event != "" {
-					if !yield(event, nil) {
-						return
-					}
-					event = SSEEvent{}
-				}
-				continue
-			}
-
-			if strings.HasPrefix(line, ":") {
-				continue
-			}
-
-			parseSSEField(line, &event)
-		}
-
-		if err := scanner.Err(); err != nil {
-			yield(SSEEvent{}, fmt.Errorf("httpclient: sse scan: %w", err))
+	for scanner.Scan() {
+		if ctx.Err() != nil {
+			yield(SSEEvent{}, ctx.Err())
 			return
 		}
 
-		// Dispatch final event if not terminated by empty line.
-		if event.Data != "" || event.Event != "" {
-			yield(event, nil)
+		line := scanner.Text()
+
+		if line == "" {
+			if !dispatchSSEEvent(&event, yield) {
+				return
+			}
+			continue
 		}
+
+		if strings.HasPrefix(line, ":") {
+			continue
+		}
+
+		parseSSEField(line, &event)
 	}
+
+	if err := scanner.Err(); err != nil {
+		yield(SSEEvent{}, fmt.Errorf("httpclient: sse scan: %w", err))
+		return
+	}
+
+	// Dispatch final event if not terminated by empty line.
+	dispatchSSEEvent(&event, yield)
+}
+
+// dispatchSSEEvent yields the event if it has data, then resets it.
+// Returns false if the yield function returns false (consumer stopped).
+func dispatchSSEEvent(event *SSEEvent, yield func(SSEEvent, error) bool) bool {
+	if event.Data == "" && event.Event == "" {
+		return true
+	}
+	ok := yield(*event, nil)
+	*event = SSEEvent{}
+	return ok
 }
 
 // parseSSEField parses a single SSE field line and updates the event.

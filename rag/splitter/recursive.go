@@ -99,21 +99,26 @@ func (s *RecursiveSplitter) splitText(text string, separators []string) []string
 		return nil
 	}
 
-	// Find the appropriate separator.
-	separator := ""
-	remainingSeps := separators
+	separator, remainingSeps := s.chooseSeparator(separators, text)
+	splits := s.splitBySeparator(text, separator)
+
+	return s.mergeSplits(splits, separator, remainingSeps)
+}
+
+// chooseSeparator finds the most significant separator that exists in the text.
+func (s *RecursiveSplitter) chooseSeparator(separators []string, text string) (string, []string) {
 	for i, sep := range separators {
 		if sep == "" || strings.Contains(text, sep) {
-			separator = sep
-			remainingSeps = separators[i+1:]
-			break
+			return sep, separators[i+1:]
 		}
 	}
+	return "", nil
+}
 
-	// Split by the chosen separator.
-	var splits []string
+// splitBySeparator splits text using the given separator, or by character chunks if separator is empty.
+func (s *RecursiveSplitter) splitBySeparator(text, separator string) []string {
 	if separator == "" {
-		// Character-level split.
+		var splits []string
 		for i := 0; i < len(text); i += s.chunkSize {
 			end := i + s.chunkSize
 			if end > len(text) {
@@ -121,11 +126,13 @@ func (s *RecursiveSplitter) splitText(text string, separators []string) []string
 			}
 			splits = append(splits, text[i:end])
 		}
-	} else {
-		splits = strings.Split(text, separator)
+		return splits
 	}
+	return strings.Split(text, separator)
+}
 
-	// Merge small splits and recurse on large ones.
+// mergeSplits merges small splits and recurses on oversized ones.
+func (s *RecursiveSplitter) mergeSplits(splits []string, separator string, remainingSeps []string) []string {
 	var chunks []string
 	var current strings.Builder
 
@@ -134,42 +141,7 @@ func (s *RecursiveSplitter) splitText(text string, separators []string) []string
 		if split == "" {
 			continue
 		}
-
-		candidate := split
-		if current.Len() > 0 {
-			candidate = current.String() + separator + split
-		}
-
-		if len(candidate) <= s.chunkSize {
-			current.Reset()
-			current.WriteString(candidate)
-			continue
-		}
-
-		// Flush current buffer if non-empty.
-		if current.Len() > 0 {
-			if trimmed := strings.TrimSpace(current.String()); trimmed != "" {
-				chunks = append(chunks, trimmed)
-			}
-			// Start overlap from current.
-			overlap := s.getOverlap(current.String())
-			current.Reset()
-			if overlap != "" {
-				current.WriteString(overlap)
-			}
-		}
-
-		// If the split itself is too large, recurse with next separator.
-		if len(split) > s.chunkSize && len(remainingSeps) > 0 {
-			subChunks := s.splitText(split, remainingSeps)
-			chunks = append(chunks, subChunks...)
-			current.Reset()
-		} else {
-			if current.Len() > 0 {
-				current.WriteString(separator)
-			}
-			current.WriteString(split)
-		}
+		chunks = s.processSplit(split, separator, remainingSeps, &current, chunks)
 	}
 
 	// Flush remaining.
@@ -178,7 +150,45 @@ func (s *RecursiveSplitter) splitText(text string, separators []string) []string
 			chunks = append(chunks, trimmed)
 		}
 	}
+	return chunks
+}
 
+// processSplit handles a single split: merges it into the current buffer or flushes and recurses.
+func (s *RecursiveSplitter) processSplit(split, separator string, remainingSeps []string, current *strings.Builder, chunks []string) []string {
+	candidate := split
+	if current.Len() > 0 {
+		candidate = current.String() + separator + split
+	}
+
+	if len(candidate) <= s.chunkSize {
+		current.Reset()
+		current.WriteString(candidate)
+		return chunks
+	}
+
+	// Flush current buffer if non-empty.
+	if current.Len() > 0 {
+		if trimmed := strings.TrimSpace(current.String()); trimmed != "" {
+			chunks = append(chunks, trimmed)
+		}
+		overlap := s.getOverlap(current.String())
+		current.Reset()
+		if overlap != "" {
+			current.WriteString(overlap)
+		}
+	}
+
+	// If the split itself is too large, recurse with next separator.
+	if len(split) > s.chunkSize && len(remainingSeps) > 0 {
+		subChunks := s.splitText(split, remainingSeps)
+		chunks = append(chunks, subChunks...)
+		current.Reset()
+	} else {
+		if current.Len() > 0 {
+			current.WriteString(separator)
+		}
+		current.WriteString(split)
+	}
 	return chunks
 }
 

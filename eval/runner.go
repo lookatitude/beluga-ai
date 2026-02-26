@@ -166,20 +166,21 @@ func (r *EvalRunner) Run(ctx context.Context) (*EvalReport, error) {
 func (r *EvalRunner) processSample(ctx context.Context, idx int, s EvalSample, results []SampleResult, mu *sync.Mutex, stopped *bool, firstErr *error) {
 	if r.hooks.BeforeSample != nil {
 		if err := r.hooks.BeforeSample(ctx, s); err != nil {
-			mu.Lock()
-			results[idx] = SampleResult{Sample: s, Error: err}
-			if r.cfg.StopOnError {
-				*stopped = true
-				if *firstErr == nil {
-					*firstErr = err
-				}
-			}
-			mu.Unlock()
+			r.recordResult(idx, SampleResult{Sample: s, Error: err}, results, mu, stopped, firstErr)
 			return
 		}
 	}
 
 	result := r.evaluateSample(ctx, s)
+	r.recordResult(idx, result, results, mu, stopped, firstErr)
+
+	if r.hooks.AfterSample != nil {
+		r.hooks.AfterSample(ctx, result)
+	}
+}
+
+// recordResult stores a sample result and updates the stopped/error state under lock.
+func (r *EvalRunner) recordResult(idx int, result SampleResult, results []SampleResult, mu *sync.Mutex, stopped *bool, firstErr *error) {
 	mu.Lock()
 	results[idx] = result
 	if result.Error != nil && r.cfg.StopOnError {
@@ -189,10 +190,6 @@ func (r *EvalRunner) processSample(ctx context.Context, idx int, s EvalSample, r
 		}
 	}
 	mu.Unlock()
-
-	if r.hooks.AfterSample != nil {
-		r.hooks.AfterSample(ctx, result)
-	}
 }
 
 // evaluateSample runs all metrics against a single sample.

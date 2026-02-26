@@ -119,29 +119,34 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 		opt(cfg)
 	}
 
-	// Build GraphQL nearVector query.
-	whereClause := ""
-	if len(cfg.Filter) > 0 {
-		operands := make([]string, 0, len(cfg.Filter))
-		for key, val := range cfg.Filter {
-			operands = append(operands, fmt.Sprintf(
-				`{path:["%s"],operator:Equal,valueText:"%v"}`, key, val))
-		}
-		if len(operands) == 1 {
-			whereClause = fmt.Sprintf(`, where: %s`, operands[0])
-		} else {
-			whereClause = fmt.Sprintf(`, where: {operator:And,operands:[%s]}`,
-				joinStrings(operands, ","))
-		}
+	graphQL := buildGraphQLQuery(s.class, query, k, cfg)
+	body := map[string]any{"query": graphQL}
+
+	respBody, err := s.doJSON(ctx, http.MethodPost, "/v1/graphql", body)
+	if err != nil {
+		return nil, err
 	}
 
+	classResults, err := extractClassResults(respBody, s.class)
+	if err != nil {
+		return nil, err
+	}
+	if classResults == nil {
+		return nil, nil
+	}
+
+	return parseClassResults(classResults, cfg.Threshold), nil
+}
+
+// buildGraphQLQuery constructs the GraphQL query for a Weaviate nearVector search.
+func buildGraphQLQuery(class string, query []float32, k int, cfg *vectorstore.SearchConfig) string {
+	whereClause := buildWhereClause(cfg.Filter)
 	distanceClause := ""
 	if cfg.Threshold > 0 {
-		// Weaviate distance = 1 - similarity for cosine.
 		distanceClause = fmt.Sprintf(`, distance: %f`, 1.0-cfg.Threshold)
 	}
 
-	graphQL := fmt.Sprintf(`{
+	return fmt.Sprintf(`{
 		Get {
 			%s(
 				limit: %d,
@@ -156,36 +161,32 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 				}
 			}
 		}
-	}`, s.class, k, float32SliceToJSONArray(query), distanceClause, whereClause)
+	}`, class, k, float32SliceToJSONArray(query), distanceClause, whereClause)
+}
 
-	body := map[string]any{
-		"query": graphQL,
+// buildWhereClause constructs a Weaviate GraphQL where clause from filter metadata.
+func buildWhereClause(filter map[string]any) string {
+	if len(filter) == 0 {
+		return ""
 	}
-
-	respBody, err := s.doJSON(ctx, http.MethodPost, "/v1/graphql", body)
-	if err != nil {
-		return nil, err
+	operands := make([]string, 0, len(filter))
+	for key, val := range filter {
+		operands = append(operands, fmt.Sprintf(
+			`{path:["%s"],operator:Equal,valueText:"%v"}`, key, val))
 	}
-
-	var result struct {
-		Data struct {
-			Get map[string][]struct {
-				Content   string `json:"content"`
-				BelugaID  string `json:"_beluga_id"`
-				Additional struct {
-					ID       string  `json:"id"`
-					Distance float64 `json:"distance"`
-				} `json:"_additional"`
-			} `json:""`
-		} `json:"data"`
+	if len(operands) == 1 {
+		return fmt.Sprintf(`, where: %s`, operands[0])
 	}
+	return fmt.Sprintf(`, where: {operator:And,operands:[%s]}`,
+		joinStrings(operands, ","))
+}
 
-	// Parse response manually since the class name is dynamic.
+// extractClassResults parses the raw Weaviate GraphQL response and extracts the class results array.
+func extractClassResults(respBody []byte, class string) ([]any, error) {
 	var raw map[string]any
 	if err := json.Unmarshal(respBody, &raw); err != nil {
 		return nil, fmt.Errorf("weaviate: unmarshal response: %w", err)
 	}
-
 	dataMap, ok := raw["data"].(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("weaviate: missing data in response")
@@ -194,57 +195,56 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 	if !ok {
 		return nil, fmt.Errorf("weaviate: missing Get in response")
 	}
-	classResults, ok := getMap[s.class].([]any)
+	classResults, ok := getMap[class].([]any)
 	if !ok {
 		return nil, nil
 	}
+	return classResults, nil
+}
 
+// parseClassResults converts raw Weaviate result objects into schema.Documents.
+func parseClassResults(classResults []any, threshold float64) []schema.Document {
 	docs := make([]schema.Document, 0, len(classResults))
 	for _, item := range classResults {
 		obj, ok := item.(map[string]any)
 		if !ok {
 			continue
 		}
-
-		doc := schema.Document{
-			Metadata: make(map[string]any),
-		}
-
-		if id, ok := obj["_beluga_id"].(string); ok {
-			doc.ID = id
-		}
-		if content, ok := obj["content"].(string); ok {
-			doc.Content = content
-		}
-
-		// Extract additional fields.
-		if additional, ok := obj["_additional"].(map[string]any); ok {
-			if dist, ok := additional["distance"].(float64); ok {
-				doc.Score = 1.0 - dist // Convert distance to similarity.
-			}
-			if doc.ID == "" {
-				if id, ok := additional["id"].(string); ok {
-					doc.ID = id
-				}
-			}
-		}
-
-		// Copy remaining properties to metadata.
-		for k, v := range obj {
-			if k != "content" && k != "_beluga_id" && k != "_additional" {
-				doc.Metadata[k] = v
-			}
-		}
-
-		if cfg.Threshold > 0 && doc.Score < cfg.Threshold {
+		doc := weaviateObjectToDocument(obj)
+		if threshold > 0 && doc.Score < threshold {
 			continue
 		}
-
 		docs = append(docs, doc)
 	}
+	return docs
+}
 
-	_ = result // suppress unused warning
-	return docs, nil
+// weaviateObjectToDocument converts a single Weaviate result object to a schema.Document.
+func weaviateObjectToDocument(obj map[string]any) schema.Document {
+	doc := schema.Document{Metadata: make(map[string]any)}
+
+	if id, ok := obj["_beluga_id"].(string); ok {
+		doc.ID = id
+	}
+	if content, ok := obj["content"].(string); ok {
+		doc.Content = content
+	}
+	if additional, ok := obj["_additional"].(map[string]any); ok {
+		if dist, ok := additional["distance"].(float64); ok {
+			doc.Score = 1.0 - dist
+		}
+		if doc.ID == "" {
+			if id, ok := additional["id"].(string); ok {
+				doc.ID = id
+			}
+		}
+	}
+	for k, v := range obj {
+		if k != "content" && k != "_beluga_id" && k != "_additional" {
+			doc.Metadata[k] = v
+		}
+	}
+	return doc
 }
 
 // Delete removes documents with the given IDs from the store.

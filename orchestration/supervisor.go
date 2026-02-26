@@ -79,32 +79,37 @@ func (s *Supervisor) Stream(ctx context.Context, input any, opts ...core.Option)
 			return
 		}
 
-		current := input
-		for round := 0; round < s.maxRounds; round++ {
-			selected, err := s.strategy(ctx, current, s.agents)
-			if err != nil {
-				yield(nil, fmt.Errorf("orchestration/supervisor: strategy: %w", err))
-				return
-			}
-			if selected == nil {
-				yield(current, nil)
-				return
-			}
+		s.streamRounds(ctx, input, yield)
+	}
+}
 
-			inputStr := fmt.Sprintf("%v", current)
-
-			if round == s.maxRounds-1 {
-				streamAgent(ctx, selected, inputStr, yield)
-				return
-			}
-
-			result, err := selected.Invoke(ctx, inputStr)
-			if err != nil {
-				yield(nil, fmt.Errorf("orchestration/supervisor: agent %q: %w", selected.ID(), err))
-				return
-			}
-			current = result
+// streamRounds iterates through delegation rounds, streaming the final round.
+func (s *Supervisor) streamRounds(ctx context.Context, input any, yield func(any, error) bool) {
+	current := input
+	for round := 0; round < s.maxRounds; round++ {
+		selected, err := s.strategy(ctx, current, s.agents)
+		if err != nil {
+			yield(nil, fmt.Errorf("orchestration/supervisor: strategy: %w", err))
+			return
 		}
+		if selected == nil {
+			yield(current, nil)
+			return
+		}
+
+		inputStr := fmt.Sprintf("%v", current)
+
+		if round == s.maxRounds-1 {
+			streamAgent(ctx, selected, inputStr, yield)
+			return
+		}
+
+		result, err := selected.Invoke(ctx, inputStr)
+		if err != nil {
+			yield(nil, fmt.Errorf("orchestration/supervisor: agent %q: %w", selected.ID(), err))
+			return
+		}
+		current = result
 	}
 }
 
@@ -128,28 +133,38 @@ func DelegateBySkill() StrategyFunc {
 		inputStr := strings.ToLower(fmt.Sprintf("%v", input))
 		words := strings.Fields(inputStr)
 
-		var best agent.Agent
-		bestScore := 0
-
-		for _, a := range agents {
-			goal := strings.ToLower(a.Persona().Goal)
-			score := 0
-			for _, w := range words {
-				if len(w) > 2 && strings.Contains(goal, w) {
-					score++
-				}
-			}
-			if score > bestScore {
-				bestScore = score
-				best = a
-			}
-		}
-
+		best := bestSkillMatch(words, agents)
 		if best == nil && len(agents) > 0 {
 			best = agents[0]
 		}
 		return best, nil
 	}
+}
+
+// bestSkillMatch returns the agent whose goal has the most keyword overlap with words.
+func bestSkillMatch(words []string, agents []agent.Agent) agent.Agent {
+	var best agent.Agent
+	bestScore := 0
+
+	for _, a := range agents {
+		score := skillScore(words, strings.ToLower(a.Persona().Goal))
+		if score > bestScore {
+			bestScore = score
+			best = a
+		}
+	}
+	return best
+}
+
+// skillScore counts how many words (longer than 2 chars) appear in the goal string.
+func skillScore(words []string, goal string) int {
+	score := 0
+	for _, w := range words {
+		if len(w) > 2 && strings.Contains(goal, w) {
+			score++
+		}
+	}
+	return score
 }
 
 // RoundRobin returns a strategy that cycles through agents in order.

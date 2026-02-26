@@ -306,209 +306,151 @@ func processGodocLinks(line string) string {
 	})
 }
 
+// pageSpec defines how to generate a single documentation page.
+type pageSpec struct {
+	filename    string
+	title       string
+	description string
+	paths       []string
+}
+
+// pathResolver provides helper methods for resolving package paths.
+type pathResolver struct {
+	allPaths []string
+	pkgs     map[string]packageGroup
+}
+
+// withPrefix returns all paths matching a prefix.
+func (r *pathResolver) withPrefix(prefix string) []string {
+	var result []string
+	for _, p := range r.allPaths {
+		if strings.HasPrefix(p, prefix) {
+			result = append(result, p)
+		}
+	}
+	return result
+}
+
+// providers returns provider/store/adapter paths under a prefix.
+func (r *pathResolver) providers(prefix string) []string {
+	var result []string
+	for _, p := range r.allPaths {
+		if strings.HasPrefix(p, prefix) && (strings.Contains(p, "/providers/") || strings.Contains(p, "/stores/") || strings.Contains(p, "/adapters/")) {
+			result = append(result, p)
+		}
+	}
+	return result
+}
+
+// main returns a single-element slice if the path exists, nil otherwise.
+func (r *pathResolver) main(path string) []string {
+	if _, ok := r.pkgs[path]; ok {
+		return []string{path}
+	}
+	return nil
+}
+
+// mainAndProviders returns the main path plus provider paths under a prefix.
+func (r *pathResolver) mainAndProviders(mainPkg, providerPrefix string) []string {
+	result := r.main(mainPkg)
+	result = append(result, r.providers(providerPrefix)...)
+	return result
+}
+
 // buildPages groups packages into page definitions.
 func buildPages(pkgs map[string]packageGroup) []page {
-	var pages []page
-
-	// Define page groupings: output filename -> list of package relative paths
-	type pageSpec struct {
-		filename    string
-		title       string
-		description string
-		paths       []string // relative paths to include (in order)
-	}
-
-	// Collect all known paths
 	allPaths := make([]string, 0, len(pkgs))
 	for p := range pkgs {
 		allPaths = append(allPaths, p)
 	}
 	sort.Strings(allPaths)
 
-	// Helper to collect paths matching a prefix
-	pathsWithPrefix := func(prefix string) []string {
-		var result []string
-		for _, p := range allPaths {
-			if strings.HasPrefix(p, prefix) {
-				result = append(result, p)
-			}
-		}
-		return result
-	}
+	res := &pathResolver{allPaths: allPaths, pkgs: pkgs}
+	specs := buildPageSpecs(res)
+	return specsToPages(specs, pkgs)
+}
 
-	// Helper to get provider paths under a prefix
-	providerPaths := func(prefix string) []string {
-		var result []string
-		for _, p := range allPaths {
-			if strings.HasPrefix(p, prefix) && (strings.Contains(p, "/providers/") || strings.Contains(p, "/stores/") || strings.Contains(p, "/adapters/")) {
-				result = append(result, p)
-			}
-		}
-		return result
-	}
-
-	// Helper to get only the main package (not providers)
-	mainPath := func(path string) []string {
-		if _, ok := pkgs[path]; ok {
-			return []string{path}
-		}
-		return nil
-	}
-
-	specs := []pageSpec{
+// buildPageSpecs defines all documentation page specifications.
+func buildPageSpecs(r *pathResolver) []pageSpec {
+	return []pageSpec{
 		// Foundation
-		{"core.md", "Core Package", "Foundation primitives: streams, Runnable, events, errors, lifecycle, multi-tenancy", mainPath("core")},
-		{"schema.md", "Schema Package", "Shared types: messages, content parts, tool definitions, documents, events, sessions", mainPath("schema")},
-		{"config.md", "Config Package", "Configuration loading, validation, environment variables, and hot-reload", mainPath("config")},
-
+		{"core.md", "Core Package", "Foundation primitives: streams, Runnable, events, errors, lifecycle, multi-tenancy", r.main("core")},
+		{"schema.md", "Schema Package", "Shared types: messages, content parts, tool definitions, documents, events, sessions", r.main("schema")},
+		{"config.md", "Config Package", "Configuration loading, validation, environment variables, and hot-reload", r.main("config")},
 		// LLM
-		{"llm.md", "LLM Package", "ChatModel interface, provider registry, middleware, hooks, structured output, routing", mainPath("llm")},
-		{"llm-providers.md", "LLM Providers", "All LLM provider implementations: OpenAI, Anthropic, Google, Ollama, Bedrock, and more", providerPaths("llm/")},
-
+		{"llm.md", "LLM Package", "ChatModel interface, provider registry, middleware, hooks, structured output, routing", r.main("llm")},
+		{"llm-providers.md", "LLM Providers", "All LLM provider implementations: OpenAI, Anthropic, Google, Ollama, Bedrock, and more", r.providers("llm/")},
 		// Agent
-		{"agent.md", "Agent Package", "Agent runtime, BaseAgent, Executor, Planner strategies, handoffs, and event bus", mainPath("agent")},
-		{"agent-workflow.md", "Agent Workflows", "Sequential, Parallel, and Loop workflow agents for multi-agent orchestration", mainPath("agent/workflow")},
-
+		{"agent.md", "Agent Package", "Agent runtime, BaseAgent, Executor, Planner strategies, handoffs, and event bus", r.main("agent")},
+		{"agent-workflow.md", "Agent Workflows", "Sequential, Parallel, and Loop workflow agents for multi-agent orchestration", r.main("agent/workflow")},
 		// Tool
-		{"tool.md", "Tool Package", "Tool interface, FuncTool, registry, MCP client integration, and middleware", mainPath("tool")},
-
+		{"tool.md", "Tool Package", "Tool interface, FuncTool, registry, MCP client integration, and middleware", r.main("tool")},
 		// Memory
-		{"memory.md", "Memory Package", "MemGPT-inspired 3-tier memory: Core, Recall, Archival, graph memory, composite", mainPath("memory")},
-		{"memory-stores.md", "Memory Store Providers", "Memory store implementations: in-memory, Redis, PostgreSQL, SQLite, MongoDB, Neo4j, Memgraph, Dragonfly", providerPaths("memory/")},
-
+		{"memory.md", "Memory Package", "MemGPT-inspired 3-tier memory: Core, Recall, Archival, graph memory, composite", r.main("memory")},
+		{"memory-stores.md", "Memory Store Providers", "Memory store implementations: in-memory, Redis, PostgreSQL, SQLite, MongoDB, Neo4j, Memgraph, Dragonfly", r.providers("memory/")},
 		// RAG
-		{"rag-embedding.md", "RAG Embedding", "Embedder interface for converting text to vector embeddings", mainPath("rag/embedding")},
-		{"rag-embedding-providers.md", "Embedding Providers", "Embedding provider implementations: OpenAI, Cohere, Google, Jina, Mistral, Ollama, Voyage, and more", providerPaths("rag/embedding/")},
-		{"rag-vectorstore.md", "RAG Vector Store", "VectorStore interface for similarity search over document embeddings", mainPath("rag/vectorstore")},
-		{"rag-vectorstore-providers.md", "Vector Store Providers", "Vector store implementations: pgvector, Pinecone, Qdrant, Weaviate, Milvus, Elasticsearch, and more", providerPaths("rag/vectorstore/")},
-		{"rag-retriever.md", "RAG Retriever", "Retriever strategies: Vector, Hybrid, HyDE, CRAG, Multi-Query, Ensemble, Rerank, Adaptive", mainPath("rag/retriever")},
-		{"rag-loader.md", "RAG Document Loaders", "Document loaders for files, cloud storage, APIs, and web content", func() []string {
-			result := mainPath("rag/loader")
-			result = append(result, providerPaths("rag/loader/")...)
-			return result
-		}()},
-		{"rag-splitter.md", "RAG Text Splitters", "Text splitting strategies for chunking documents", mainPath("rag/splitter")},
-
+		{"rag-embedding.md", "RAG Embedding", "Embedder interface for converting text to vector embeddings", r.main("rag/embedding")},
+		{"rag-embedding-providers.md", "Embedding Providers", "Embedding provider implementations: OpenAI, Cohere, Google, Jina, Mistral, Ollama, Voyage, and more", r.providers("rag/embedding/")},
+		{"rag-vectorstore.md", "RAG Vector Store", "VectorStore interface for similarity search over document embeddings", r.main("rag/vectorstore")},
+		{"rag-vectorstore-providers.md", "Vector Store Providers", "Vector store implementations: pgvector, Pinecone, Qdrant, Weaviate, Milvus, Elasticsearch, and more", r.providers("rag/vectorstore/")},
+		{"rag-retriever.md", "RAG Retriever", "Retriever strategies: Vector, Hybrid, HyDE, CRAG, Multi-Query, Ensemble, Rerank, Adaptive", r.main("rag/retriever")},
+		{"rag-loader.md", "RAG Document Loaders", "Document loaders for files, cloud storage, APIs, and web content", r.mainAndProviders("rag/loader", "rag/loader/")},
+		{"rag-splitter.md", "RAG Text Splitters", "Text splitting strategies for chunking documents", r.main("rag/splitter")},
 		// Voice
-		{"voice.md", "Voice Package", "Frame-based voice pipeline, VAD, hybrid cascade/S2S switching", mainPath("voice")},
-		{"voice-stt.md", "Voice STT", "Speech-to-text interface and providers: Deepgram, AssemblyAI, Whisper, Groq, ElevenLabs, Gladia", func() []string {
-			result := mainPath("voice/stt")
-			result = append(result, providerPaths("voice/stt/")...)
-			return result
-		}()},
-		{"voice-tts.md", "Voice TTS", "Text-to-speech interface and providers: ElevenLabs, Cartesia, PlayHT, Fish, Groq, LMNT, Smallest", func() []string {
-			result := mainPath("voice/tts")
-			result = append(result, providerPaths("voice/tts/")...)
-			return result
-		}()},
-		{"voice-s2s.md", "Voice S2S", "Speech-to-speech interface and providers: OpenAI Realtime, Gemini Live, Nova S2S", func() []string {
-			result := mainPath("voice/s2s")
-			result = append(result, providerPaths("voice/s2s/")...)
-			return result
-		}()},
-		{"voice-transport.md", "Voice Transport", "Transport layer for voice sessions: WebSocket, LiveKit, Daily, Pipecat", func() []string {
-			result := mainPath("voice/transport")
-			result = append(result, providerPaths("voice/transport/")...)
-			return result
-		}()},
-		{"voice-vad.md", "Voice VAD", "Voice activity detection providers: Silero, WebRTC", func() []string {
-			var result []string
-			for _, p := range allPaths {
-				if strings.HasPrefix(p, "voice/vad/") {
-					result = append(result, p)
-				}
-			}
-			return result
-		}()},
-
+		{"voice.md", "Voice Package", "Frame-based voice pipeline, VAD, hybrid cascade/S2S switching", r.main("voice")},
+		{"voice-stt.md", "Voice STT", "Speech-to-text interface and providers: Deepgram, AssemblyAI, Whisper, Groq, ElevenLabs, Gladia", r.mainAndProviders("voice/stt", "voice/stt/")},
+		{"voice-tts.md", "Voice TTS", "Text-to-speech interface and providers: ElevenLabs, Cartesia, PlayHT, Fish, Groq, LMNT, Smallest", r.mainAndProviders("voice/tts", "voice/tts/")},
+		{"voice-s2s.md", "Voice S2S", "Speech-to-speech interface and providers: OpenAI Realtime, Gemini Live, Nova S2S", r.mainAndProviders("voice/s2s", "voice/s2s/")},
+		{"voice-transport.md", "Voice Transport", "Transport layer for voice sessions: WebSocket, LiveKit, Daily, Pipecat", r.mainAndProviders("voice/transport", "voice/transport/")},
+		{"voice-vad.md", "Voice VAD", "Voice activity detection providers: Silero, WebRTC", r.withPrefix("voice/vad/")},
 		// Infrastructure
-		{"guard.md", "Guard Package", "Three-stage safety pipeline: input, output, tool guards with built-in and external providers", func() []string {
-			result := mainPath("guard")
-			result = append(result, providerPaths("guard/")...)
-			return result
-		}()},
-		{"resilience.md", "Resilience Package", "Circuit breaker, hedge, retry, and rate limiting patterns", mainPath("resilience")},
-		{"cache.md", "Cache Package", "Exact, semantic, and prompt caching with pluggable backends", func() []string {
-			result := mainPath("cache")
-			result = append(result, providerPaths("cache/")...)
-			return result
-		}()},
-		{"hitl.md", "HITL Package", "Human-in-the-loop: confidence-based approval, escalation policies", mainPath("hitl")},
-		{"auth.md", "Auth Package", "RBAC, ABAC, and capability-based security", mainPath("auth")},
-		{"eval.md", "Eval Package", "Evaluation framework: metrics, runners, and provider integrations", func() []string {
-			result := pathsWithPrefix("eval")
-			return result
-		}()},
-		{"state.md", "State Package", "Shared agent state with watch and notify", func() []string {
-			result := mainPath("state")
-			result = append(result, providerPaths("state/")...)
-			return result
-		}()},
-		{"prompt.md", "Prompt Package", "Prompt management, templating, and versioning", func() []string {
-			result := mainPath("prompt")
-			result = append(result, providerPaths("prompt/")...)
-			return result
-		}()},
-		{"orchestration.md", "Orchestration Package", "Chain, Graph, Router, Parallel, and Supervisor orchestration patterns", mainPath("orchestration")},
-		{"workflow.md", "Workflow Package", "Durable execution engine with provider integrations", func() []string {
-			result := mainPath("workflow")
-			result = append(result, providerPaths("workflow/")...)
-			return result
-		}()},
-
+		{"guard.md", "Guard Package", "Three-stage safety pipeline: input, output, tool guards with built-in and external providers", r.mainAndProviders("guard", "guard/")},
+		{"resilience.md", "Resilience Package", "Circuit breaker, hedge, retry, and rate limiting patterns", r.main("resilience")},
+		{"cache.md", "Cache Package", "Exact, semantic, and prompt caching with pluggable backends", r.mainAndProviders("cache", "cache/")},
+		{"hitl.md", "HITL Package", "Human-in-the-loop: confidence-based approval, escalation policies", r.main("hitl")},
+		{"auth.md", "Auth Package", "RBAC, ABAC, and capability-based security", r.main("auth")},
+		{"eval.md", "Eval Package", "Evaluation framework: metrics, runners, and provider integrations", r.withPrefix("eval")},
+		{"state.md", "State Package", "Shared agent state with watch and notify", r.mainAndProviders("state", "state/")},
+		{"prompt.md", "Prompt Package", "Prompt management, templating, and versioning", r.mainAndProviders("prompt", "prompt/")},
+		{"orchestration.md", "Orchestration Package", "Chain, Graph, Router, Parallel, and Supervisor orchestration patterns", r.main("orchestration")},
+		{"workflow.md", "Workflow Package", "Durable execution engine with provider integrations", r.mainAndProviders("workflow", "workflow/")},
 		// Protocol & Server
-		{"protocol.md", "Protocol Package", "Protocol abstractions for MCP, A2A, REST, and OpenAI Agents compatibility", mainPath("protocol")},
-		{"protocol-mcp.md", "MCP Protocol", "Model Context Protocol server/client, SDK, registry, and Composio integration", func() []string {
-			var result []string
-			for _, p := range allPaths {
-				if strings.HasPrefix(p, "protocol/mcp") {
-					result = append(result, p)
-				}
-			}
-			return result
-		}()},
-		{"protocol-a2a.md", "A2A Protocol", "Agent-to-Agent protocol types and SDK implementation", func() []string {
-			var result []string
-			for _, p := range allPaths {
-				if strings.HasPrefix(p, "protocol/a2a") {
-					result = append(result, p)
-				}
-			}
-			return result
-		}()},
-		{"protocol-rest.md", "REST & OpenAI Agents", "REST/SSE API server and OpenAI Agents protocol compatibility", func() []string {
-			var result []string
-			for _, p := range allPaths {
-				if p == "protocol/rest" || p == "protocol/openai_agents" {
-					result = append(result, p)
-				}
-			}
-			return result
-		}()},
-		{"server.md", "Server Adapters", "HTTP framework adapters: Gin, Fiber, Echo, Chi, gRPC, Connect, Huma", func() []string {
-			return pathsWithPrefix("server")
-		}()},
-		{"o11y.md", "Observability Package", "OpenTelemetry GenAI conventions, tracing, and provider integrations", func() []string {
-			return pathsWithPrefix("o11y")
-		}()},
+		{"protocol.md", "Protocol Package", "Protocol abstractions for MCP, A2A, REST, and OpenAI Agents compatibility", r.main("protocol")},
+		{"protocol-mcp.md", "MCP Protocol", "Model Context Protocol server/client, SDK, registry, and Composio integration", r.withPrefix("protocol/mcp")},
+		{"protocol-a2a.md", "A2A Protocol", "Agent-to-Agent protocol types and SDK implementation", r.withPrefix("protocol/a2a")},
+		{"protocol-rest.md", "REST & OpenAI Agents", "REST/SSE API server and OpenAI Agents protocol compatibility", filterPaths(r.allPaths, func(p string) bool { return p == "protocol/rest" || p == "protocol/openai_agents" })},
+		{"server.md", "Server Adapters", "HTTP framework adapters: Gin, Fiber, Echo, Chi, gRPC, Connect, Huma", r.withPrefix("server")},
+		{"o11y.md", "Observability Package", "OpenTelemetry GenAI conventions, tracing, and provider integrations", r.withPrefix("o11y")},
 	}
+}
 
+// filterPaths returns paths matching a predicate.
+func filterPaths(allPaths []string, pred func(string) bool) []string {
+	var result []string
+	for _, p := range allPaths {
+		if pred(p) {
+			result = append(result, p)
+		}
+	}
+	return result
+}
+
+// specsToPages converts page specifications into page objects by resolving package groups.
+func specsToPages(specs []pageSpec, pkgs map[string]packageGroup) []page {
+	var pages []page
 	for _, spec := range specs {
 		if len(spec.paths) == 0 {
 			continue
 		}
-
 		var groups []packageGroup
 		for _, p := range spec.paths {
 			if pg, ok := pkgs[p]; ok {
 				groups = append(groups, pg)
 			}
 		}
-
 		if len(groups) == 0 {
 			continue
 		}
-
 		pages = append(pages, page{
 			Filename:    spec.filename,
 			Title:       spec.title,
@@ -516,7 +458,6 @@ func buildPages(pkgs map[string]packageGroup) []page {
 			Packages:    groups,
 		})
 	}
-
 	return pages
 }
 

@@ -355,22 +355,27 @@ func (e *Engine) TranscribeStream(ctx context.Context, audioStream iter.Seq2[[]b
 		go e.readStreamMessages(ctx, conn, cfg.Language, events, errs)
 		go e.sendAudioStream(ctx, conn, audioStream, errs)
 
-		for {
-			select {
-			case event, ok := <-events:
-				if !ok {
-					return
-				}
-				if !yield(event, nil) {
-					return
-				}
-			case err := <-errs:
-				yield(stt.TranscriptEvent{}, err)
-				return
-			case <-ctx.Done():
-				yield(stt.TranscriptEvent{}, ctx.Err())
+		drainStreamEvents(ctx, events, errs, yield)
+	}
+}
+
+// drainStreamEvents reads from event and error channels, yielding to the caller.
+func drainStreamEvents(ctx context.Context, events <-chan stt.TranscriptEvent, errs <-chan error, yield func(stt.TranscriptEvent, error) bool) {
+	for {
+		select {
+		case event, ok := <-events:
+			if !ok {
 				return
 			}
+			if !yield(event, nil) {
+				return
+			}
+		case err := <-errs:
+			yield(stt.TranscriptEvent{}, err)
+			return
+		case <-ctx.Done():
+			yield(stt.TranscriptEvent{}, ctx.Err())
+			return
 		}
 	}
 }

@@ -110,61 +110,82 @@ func (e *DefaultExecutor) Execute(ctx context.Context, fn WorkflowFunc, opts Wor
 	}
 
 	// Run the workflow function asynchronously.
-	go func() {
-		defer cancel()
-
-		wfContext := &defaultWorkflowContext{
-			Context:  wfCtx,
-			executor: e,
-			workflow: rw,
-			wfID:     opts.ID,
-		}
-
-		result, err := fn(wfContext, opts.Input)
-
-		e.mu.Lock()
-		delete(e.running, opts.ID)
-		e.mu.Unlock()
-
-		if wfCtx.Err() != nil && err == nil {
-			err = wfCtx.Err()
-		}
-
-		handle.mu.Lock()
-		if err != nil {
-			handle.status = StatusFailed
-			handle.err = err
-			if e.hooks.OnWorkflowFail != nil {
-				e.hooks.OnWorkflowFail(ctx, opts.ID, err)
-			}
-		} else {
-			handle.status = StatusCompleted
-			handle.result = result
-			if e.hooks.OnWorkflowComplete != nil {
-				e.hooks.OnWorkflowComplete(ctx, opts.ID, result)
-			}
-		}
-		handle.mu.Unlock()
-		close(handle.done)
-
-		// Persist final state.
-		if e.store != nil {
-			finalState := WorkflowState{
-				WorkflowID: opts.ID,
-				RunID:      runID,
-				Status:     handle.Status(),
-				Input:      opts.Input,
-				Result:     result,
-				UpdatedAt:  time.Now(),
-			}
-			if err != nil {
-				finalState.Error = err.Error()
-			}
-			e.store.Save(ctx, finalState)
-		}
-	}()
+	go e.runWorkflow(ctx, wfCtx, cancel, fn, rw, handle, opts, runID)
 
 	return handle, nil
+}
+
+// runWorkflow is the goroutine body for a workflow execution.
+func (e *DefaultExecutor) runWorkflow(
+	parentCtx, wfCtx context.Context,
+	cancel context.CancelFunc,
+	fn WorkflowFunc,
+	rw *runningWorkflow,
+	handle *defaultHandle,
+	opts WorkflowOptions,
+	runID string,
+) {
+	defer cancel()
+
+	wfContext := &defaultWorkflowContext{
+		Context:  wfCtx,
+		executor: e,
+		workflow: rw,
+		wfID:     opts.ID,
+	}
+
+	result, err := fn(wfContext, opts.Input)
+
+	e.mu.Lock()
+	delete(e.running, opts.ID)
+	e.mu.Unlock()
+
+	if wfCtx.Err() != nil && err == nil {
+		err = wfCtx.Err()
+	}
+
+	e.finalizeHandle(parentCtx, handle, opts.ID, result, err)
+
+	e.persistFinalState(parentCtx, opts.ID, runID, opts.Input, handle, result, err)
+}
+
+// finalizeHandle updates the handle status, result, and error, then signals completion.
+func (e *DefaultExecutor) finalizeHandle(ctx context.Context, handle *defaultHandle, wfID string, result any, err error) {
+	handle.mu.Lock()
+	if err != nil {
+		handle.status = StatusFailed
+		handle.err = err
+		if e.hooks.OnWorkflowFail != nil {
+			e.hooks.OnWorkflowFail(ctx, wfID, err)
+		}
+	} else {
+		handle.status = StatusCompleted
+		handle.result = result
+		if e.hooks.OnWorkflowComplete != nil {
+			e.hooks.OnWorkflowComplete(ctx, wfID, result)
+		}
+	}
+	handle.mu.Unlock()
+	close(handle.done)
+}
+
+// persistFinalState saves the final workflow state to the store if configured.
+func (e *DefaultExecutor) persistFinalState(ctx context.Context, wfID, runID string, input any, handle *defaultHandle, result any, err error) {
+	if e.store == nil {
+		return
+	}
+	finalState := WorkflowState{
+		WorkflowID: wfID,
+		RunID:      runID,
+		Status:     handle.Status(),
+		Input:      input,
+		Result:     result,
+		UpdatedAt:  time.Now(),
+	}
+	if err != nil {
+		finalState.Error = err.Error()
+	}
+	e.store.Save(ctx, finalState)
 }
 
 // Signal sends a signal to a running workflow.

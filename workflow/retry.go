@@ -32,15 +32,7 @@ func DefaultRetryPolicy() RetryPolicy {
 
 // executeWithRetry executes the given function with retries according to the policy.
 func executeWithRetry(ctx context.Context, policy RetryPolicy, fn func(ctx context.Context) error) error {
-	if policy.MaxAttempts <= 0 {
-		policy.MaxAttempts = 1
-	}
-	if policy.InitialInterval <= 0 {
-		policy.InitialInterval = 100 * time.Millisecond
-	}
-	if policy.BackoffCoefficient <= 0 {
-		policy.BackoffCoefficient = 2.0
-	}
+	normalizeRetryPolicy(&policy)
 
 	var lastErr error
 	interval := policy.InitialInterval
@@ -59,26 +51,50 @@ func executeWithRetry(ctx context.Context, policy RetryPolicy, fn func(ctx conte
 			break
 		}
 
-		// Add jitter: 0.5x to 1.5x the interval.
-		jitter := time.Duration(float64(interval) * (0.5 + rand.Float64()))
-		if policy.MaxInterval > 0 && jitter > policy.MaxInterval {
-			jitter = policy.MaxInterval
+		if err := sleepWithJitter(ctx, interval, policy.MaxInterval); err != nil {
+			return err
 		}
 
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(jitter):
-		}
-
-		// Exponential backoff.
-		interval = time.Duration(float64(interval) * policy.BackoffCoefficient)
-		if policy.MaxInterval > 0 && interval > policy.MaxInterval {
-			interval = policy.MaxInterval
-		}
+		interval = nextInterval(interval, policy.BackoffCoefficient, policy.MaxInterval)
 	}
 
 	return fmt.Errorf("workflow/retry: max attempts (%d) exceeded: %w", policy.MaxAttempts, lastErr)
+}
+
+// normalizeRetryPolicy fills in zero-valued fields with sensible defaults.
+func normalizeRetryPolicy(p *RetryPolicy) {
+	if p.MaxAttempts <= 0 {
+		p.MaxAttempts = 1
+	}
+	if p.InitialInterval <= 0 {
+		p.InitialInterval = 100 * time.Millisecond
+	}
+	if p.BackoffCoefficient <= 0 {
+		p.BackoffCoefficient = 2.0
+	}
+}
+
+// sleepWithJitter waits for interval with jitter applied, respecting ctx and maxInterval.
+func sleepWithJitter(ctx context.Context, interval, maxInterval time.Duration) error {
+	jitter := time.Duration(float64(interval) * (0.5 + rand.Float64()))
+	if maxInterval > 0 && jitter > maxInterval {
+		jitter = maxInterval
+	}
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(jitter):
+		return nil
+	}
+}
+
+// nextInterval computes the next backoff interval, capped by maxInterval.
+func nextInterval(current time.Duration, coefficient float64, maxInterval time.Duration) time.Duration {
+	next := time.Duration(float64(current) * coefficient)
+	if maxInterval > 0 && next > maxInterval {
+		return maxInterval
+	}
+	return next
 }
 
 // computeInterval calculates the retry interval for a given attempt.

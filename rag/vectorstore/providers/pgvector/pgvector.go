@@ -161,37 +161,8 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 	}
 
 	op := distanceOperator(cfg.Strategy)
-
-	// Build WHERE clause for metadata filters.
-	var conditions []string
-	var args []any
-	argIdx := 3 // $1=query, $2=k
-
-	for key, val := range cfg.Filter {
-		argIdx++
-		conditions = append(conditions, fmt.Sprintf("metadata->>$%d = $%d", argIdx-1, argIdx))
-		args = append(args, key, fmt.Sprintf("%v", val))
-		argIdx++
-	}
-
-	whereClause := ""
-	if len(conditions) > 0 {
-		whereClause = "WHERE " + strings.Join(conditions, " AND ")
-	}
-
-	// Build the score expression. For cosine (<=>), the operator returns
-	// distance so we convert to similarity: 1 - distance.
-	// For dot product (<#>), it returns negative inner product, so: -1 * distance.
-	// For euclidean (<->), it returns distance.
-	var scoreExpr string
-	switch cfg.Strategy {
-	case vectorstore.DotProduct:
-		scoreExpr = fmt.Sprintf("(embedding %s $1) * -1", op)
-	case vectorstore.Euclidean:
-		scoreExpr = fmt.Sprintf("(embedding %s $1) * -1", op)
-	default: // Cosine
-		scoreExpr = fmt.Sprintf("1 - (embedding %s $1)", op)
-	}
+	whereClause, filterArgs := buildFilterClause(cfg.Filter)
+	scoreExpr := buildScoreExpr(cfg.Strategy, op)
 
 	sql := fmt.Sprintf(
 		`SELECT id, content, metadata, %s AS score FROM %s %s ORDER BY embedding %s $1 LIMIT $2`,
@@ -199,7 +170,7 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 	)
 
 	vec := pgvec.NewVector(query)
-	allArgs := append([]any{vec, k}, args...)
+	allArgs := append([]any{vec, k}, filterArgs...)
 
 	rows, err := s.pool.Query(ctx, sql, allArgs...)
 	if err != nil {
@@ -207,32 +178,58 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 	}
 	defer rows.Close()
 
+	return scanPgvectorRows(rows, cfg.Threshold)
+}
+
+// buildFilterClause builds the WHERE clause and args for metadata filters.
+func buildFilterClause(filter map[string]any) (string, []any) {
+	if len(filter) == 0 {
+		return "", nil
+	}
+	var conditions []string
+	var args []any
+	argIdx := 3 // $1=query, $2=k
+	for key, val := range filter {
+		argIdx++
+		conditions = append(conditions, fmt.Sprintf("metadata->>$%d = $%d", argIdx-1, argIdx))
+		args = append(args, key, fmt.Sprintf("%v", val))
+		argIdx++
+	}
+	return "WHERE " + strings.Join(conditions, " AND "), args
+}
+
+// buildScoreExpr returns the SQL expression for computing similarity score.
+func buildScoreExpr(strategy vectorstore.SearchStrategy, op string) string {
+	switch strategy {
+	case vectorstore.DotProduct, vectorstore.Euclidean:
+		return fmt.Sprintf("(embedding %s $1) * -1", op)
+	default: // Cosine
+		return fmt.Sprintf("1 - (embedding %s $1)", op)
+	}
+}
+
+// scanPgvectorRows reads search rows and converts them to documents, applying threshold filtering.
+func scanPgvectorRows(rows pgx.Rows, threshold float64) ([]schema.Document, error) {
 	var results []schema.Document
 	for rows.Next() {
 		var doc schema.Document
 		var metaJSON []byte
-
 		if err := rows.Scan(&doc.ID, &doc.Content, &metaJSON, &doc.Score); err != nil {
 			return nil, fmt.Errorf("pgvector: scan: %w", err)
 		}
-
 		if len(metaJSON) > 0 {
 			if err := json.Unmarshal(metaJSON, &doc.Metadata); err != nil {
 				return nil, fmt.Errorf("pgvector: unmarshal metadata: %w", err)
 			}
 		}
-
-		if cfg.Threshold > 0 && doc.Score < cfg.Threshold {
+		if threshold > 0 && doc.Score < threshold {
 			continue
 		}
-
 		results = append(results, doc)
 	}
-
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("pgvector: rows: %w", err)
 	}
-
 	return results, nil
 }
 

@@ -64,6 +64,31 @@ func (m *hookedModel) Generate(ctx context.Context, msgs []schema.Message, opts 
 	return resp, err
 }
 
+// handleStreamError invokes the OnError hook and yields the error if not suppressed.
+// Returns false if iteration should stop.
+func (m *hookedModel) handleStreamError(ctx context.Context, err error, yield func(schema.StreamChunk, error) bool) {
+	if m.hooks.OnError != nil {
+		err = m.hooks.OnError(ctx, err)
+	}
+	if err != nil {
+		yield(schema.StreamChunk{}, err)
+	}
+}
+
+// handleStreamChunk invokes OnStream and OnToolCall hooks, then yields the chunk.
+// Returns false if iteration should stop.
+func (m *hookedModel) handleStreamChunk(ctx context.Context, chunk schema.StreamChunk, yield func(schema.StreamChunk, error) bool) bool {
+	if m.hooks.OnStream != nil {
+		m.hooks.OnStream(ctx, chunk)
+	}
+	for _, tc := range chunk.ToolCalls {
+		if m.hooks.OnToolCall != nil {
+			m.hooks.OnToolCall(ctx, tc)
+		}
+	}
+	return yield(chunk, nil)
+}
+
 func (m *hookedModel) Stream(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) iter.Seq2[schema.StreamChunk, error] {
 	if m.hooks.BeforeGenerate != nil {
 		if err := m.hooks.BeforeGenerate(ctx, msgs); err != nil {
@@ -77,26 +102,10 @@ func (m *hookedModel) Stream(ctx context.Context, msgs []schema.Message, opts ..
 	return func(yield func(schema.StreamChunk, error) bool) {
 		for chunk, err := range inner {
 			if err != nil {
-				if m.hooks.OnError != nil {
-					err = m.hooks.OnError(ctx, err)
-				}
-				if err != nil {
-					yield(schema.StreamChunk{}, err)
-				}
+				m.handleStreamError(ctx, err, yield)
 				return
 			}
-
-			if m.hooks.OnStream != nil {
-				m.hooks.OnStream(ctx, chunk)
-			}
-
-			for _, tc := range chunk.ToolCalls {
-				if m.hooks.OnToolCall != nil {
-					m.hooks.OnToolCall(ctx, tc)
-				}
-			}
-
-			if !yield(chunk, nil) {
+			if !m.handleStreamChunk(ctx, chunk, yield) {
 				return
 			}
 		}
@@ -197,6 +206,19 @@ func (m *fallbackModel) Generate(ctx context.Context, msgs []schema.Message, opt
 	return resp, err
 }
 
+// yieldStream forwards all chunks from stream to yield, stopping on error or
+// when yield returns false.
+func yieldStream(stream iter.Seq2[schema.StreamChunk, error], yield func(schema.StreamChunk, error) bool) {
+	for chunk, err := range stream {
+		if !yield(chunk, err) {
+			return
+		}
+		if err != nil {
+			return
+		}
+	}
+}
+
 func (m *fallbackModel) Stream(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) iter.Seq2[schema.StreamChunk, error] {
 	// Try the primary first; if the first chunk is an error, fall back.
 	inner := m.primary.Stream(ctx, msgs, opts...)
@@ -204,15 +226,7 @@ func (m *fallbackModel) Stream(ctx context.Context, msgs []schema.Message, opts 
 		first := true
 		for chunk, err := range inner {
 			if first && err != nil && core.IsRetryable(err) {
-				// Fall back to the secondary model.
-				for fbChunk, fbErr := range m.fallback.Stream(ctx, msgs, opts...) {
-					if !yield(fbChunk, fbErr) {
-						return
-					}
-					if fbErr != nil {
-						return
-					}
-				}
+				yieldStream(m.fallback.Stream(ctx, msgs, opts...), yield)
 				return
 			}
 			first = false

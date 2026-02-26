@@ -83,23 +83,28 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 	}
 
 	return func(yield func(schema.StreamChunk, error) bool) {
-		for {
-			select {
-			case <-ctx.Done():
-				yield(schema.StreamChunk{}, ctx.Err())
+		consumeStreamChannel(ctx, ch, m.model, yield)
+	}
+}
+
+// consumeStreamChannel reads from the Mistral stream channel and yields chunks.
+func consumeStreamChannel(ctx context.Context, ch <-chan mistral.ChatCompletionStreamResponse, modelID string, yield func(schema.StreamChunk, error) bool) {
+	for {
+		select {
+		case <-ctx.Done():
+			yield(schema.StreamChunk{}, ctx.Err())
+			return
+		case chunk, ok := <-ch:
+			if !ok {
 				return
-			case chunk, ok := <-ch:
-				if !ok {
-					return
-				}
-				if chunk.Error != nil {
-					yield(schema.StreamChunk{}, chunk.Error)
-					return
-				}
-				sc := convertStreamChunk(chunk, m.model)
-				if !yield(sc, nil) {
-					return
-				}
+			}
+			if chunk.Error != nil {
+				yield(schema.StreamChunk{}, chunk.Error)
+				return
+			}
+			sc := convertStreamChunk(chunk, modelID)
+			if !yield(sc, nil) {
+				return
 			}
 		}
 	}

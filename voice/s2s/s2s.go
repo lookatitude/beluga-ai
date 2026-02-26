@@ -162,40 +162,57 @@ type Hooks struct {
 	OnError func(ctx context.Context, err error) error
 }
 
+func composeOnTurn(hooks []Hooks) func(context.Context, string, string) {
+	return func(ctx context.Context, userText, agentText string) {
+		for _, h := range hooks {
+			if h.OnTurn != nil {
+				h.OnTurn(ctx, userText, agentText)
+			}
+		}
+	}
+}
+
+func composeOnInterrupt(hooks []Hooks) func(context.Context) {
+	return func(ctx context.Context) {
+		for _, h := range hooks {
+			if h.OnInterrupt != nil {
+				h.OnInterrupt(ctx)
+			}
+		}
+	}
+}
+
+func composeOnToolCall(hooks []Hooks) func(context.Context, schema.ToolCall) {
+	return func(ctx context.Context, call schema.ToolCall) {
+		for _, h := range hooks {
+			if h.OnToolCall != nil {
+				h.OnToolCall(ctx, call)
+			}
+		}
+	}
+}
+
+func composeOnError(hooks []Hooks) func(context.Context, error) error {
+	return func(ctx context.Context, err error) error {
+		for _, h := range hooks {
+			if h.OnError != nil {
+				if e := h.OnError(ctx, err); e != nil {
+					return e
+				}
+			}
+		}
+		return err
+	}
+}
+
 // ComposeHooks merges multiple Hooks into a single Hooks value.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		OnTurn: func(ctx context.Context, userText, agentText string) {
-			for _, h := range hooks {
-				if h.OnTurn != nil {
-					h.OnTurn(ctx, userText, agentText)
-				}
-			}
-		},
-		OnInterrupt: func(ctx context.Context) {
-			for _, h := range hooks {
-				if h.OnInterrupt != nil {
-					h.OnInterrupt(ctx)
-				}
-			}
-		},
-		OnToolCall: func(ctx context.Context, call schema.ToolCall) {
-			for _, h := range hooks {
-				if h.OnToolCall != nil {
-					h.OnToolCall(ctx, call)
-				}
-			}
-		},
-		OnError: func(ctx context.Context, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if e := h.OnError(ctx, err); e != nil {
-						return e
-					}
-				}
-			}
-			return err
-		},
+		OnTurn:      composeOnTurn(h),
+		OnInterrupt: composeOnInterrupt(h),
+		OnToolCall:  composeOnToolCall(h),
+		OnError:     composeOnError(h),
 	}
 }
 

@@ -165,6 +165,25 @@ func (fr *FailoverRouter) Generate(ctx context.Context, msgs []schema.Message, o
 	return nil, lastErr
 }
 
+// tryStreamModel attempts to stream from a single model. Returns true if the
+// model failed with a retryable error and should fall over to the next model.
+// Returns false if streaming completed or the consumer stopped.
+func tryStreamModel(model ChatModel, ctx context.Context, msgs []schema.Message, opts []GenerateOption, yield func(schema.StreamChunk, error) bool) (failover bool) {
+	inner := model.Stream(ctx, msgs, opts...)
+	for chunk, err := range inner {
+		if err != nil && core.IsRetryable(err) {
+			return true
+		}
+		if !yield(chunk, err) {
+			return false
+		}
+		if err != nil {
+			return false
+		}
+	}
+	return false
+}
+
 // Stream tries each model in order. If the first chunk from a model is an
 // error and it is retryable, the next model is tried.
 func (fr *FailoverRouter) Stream(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) iter.Seq2[schema.StreamChunk, error] {
@@ -173,21 +192,7 @@ func (fr *FailoverRouter) Stream(ctx context.Context, msgs []schema.Message, opt
 			if len(fr.tools) > 0 {
 				model = model.BindTools(fr.tools)
 			}
-			inner := model.Stream(ctx, msgs, opts...)
-			failed := false
-			for chunk, err := range inner {
-				if err != nil && core.IsRetryable(err) {
-					failed = true
-					break
-				}
-				if !yield(chunk, err) {
-					return
-				}
-				if err != nil {
-					return
-				}
-			}
-			if !failed {
+			if !tryStreamModel(model, ctx, msgs, opts, yield) {
 				return
 			}
 		}

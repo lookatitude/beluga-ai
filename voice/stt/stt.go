@@ -148,34 +148,64 @@ type Hooks struct {
 	OnError func(ctx context.Context, err error) error
 }
 
+func composeOnTranscript(hooks []Hooks) func(context.Context, TranscriptEvent) {
+	return func(ctx context.Context, event TranscriptEvent) {
+		for _, h := range hooks {
+			if h.OnTranscript != nil {
+				h.OnTranscript(ctx, event)
+			}
+		}
+	}
+}
+
+func composeOnUtterance(hooks []Hooks) func(context.Context, string) {
+	return func(ctx context.Context, text string) {
+		for _, h := range hooks {
+			if h.OnUtterance != nil {
+				h.OnUtterance(ctx, text)
+			}
+		}
+	}
+}
+
+func composeOnError(hooks []Hooks) func(context.Context, error) error {
+	return func(ctx context.Context, err error) error {
+		for _, h := range hooks {
+			if h.OnError != nil {
+				if e := h.OnError(ctx, err); e != nil {
+					return e
+				}
+			}
+		}
+		return err
+	}
+}
+
 // ComposeHooks merges multiple Hooks into a single Hooks value.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		OnTranscript: func(ctx context.Context, event TranscriptEvent) {
-			for _, h := range hooks {
-				if h.OnTranscript != nil {
-					h.OnTranscript(ctx, event)
-				}
-			}
-		},
-		OnUtterance: func(ctx context.Context, text string) {
-			for _, h := range hooks {
-				if h.OnUtterance != nil {
-					h.OnUtterance(ctx, text)
-				}
-			}
-		},
-		OnError: func(ctx context.Context, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if e := h.OnError(ctx, err); e != nil {
-						return e
-					}
-				}
-			}
-			return err
-		},
+		OnTranscript: composeOnTranscript(h),
+		OnUtterance:  composeOnUtterance(h),
+		OnError:      composeOnError(h),
 	}
+}
+
+// transcribeFrame transcribes a single audio frame and sends the result to out.
+// Non-audio frames are passed through unchanged.
+func transcribeFrame(ctx context.Context, engine STT, frame voice.Frame, out chan<- voice.Frame, opts ...Option) error {
+	if frame.Type != voice.FrameAudio {
+		out <- frame
+		return nil
+	}
+	text, err := engine.Transcribe(ctx, frame.Data, opts...)
+	if err != nil {
+		return fmt.Errorf("stt: transcribe: %w", err)
+	}
+	if text != "" {
+		out <- voice.NewTextFrame(text)
+	}
+	return nil
 }
 
 // AsFrameProcessor wraps an STT engine as a voice.FrameProcessor.
@@ -192,18 +222,8 @@ func AsFrameProcessor(engine STT, opts ...Option) voice.FrameProcessor {
 				if !ok {
 					return nil
 				}
-				// Pass through non-audio frames.
-				if frame.Type != voice.FrameAudio {
-					out <- frame
-					continue
-				}
-				// Transcribe the audio chunk.
-				text, err := engine.Transcribe(ctx, frame.Data, opts...)
-				if err != nil {
-					return fmt.Errorf("stt: transcribe: %w", err)
-				}
-				if text != "" {
-					out <- voice.NewTextFrame(text)
+				if err := transcribeFrame(ctx, engine, frame, out, opts...); err != nil {
+					return err
 				}
 			}
 		}

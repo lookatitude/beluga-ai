@@ -28,6 +28,20 @@ type hookedManager struct {
 	hooks Hooks
 }
 
+// fireDecisionHooks invokes OnApprove or OnReject hooks based on the response decision.
+func (m *hookedManager) fireDecisionHooks(ctx context.Context, req InteractionRequest, resp InteractionResponse) {
+	switch resp.Decision {
+	case DecisionApprove:
+		if m.hooks.OnApprove != nil {
+			m.hooks.OnApprove(ctx, req, resp)
+		}
+	case DecisionReject:
+		if m.hooks.OnReject != nil {
+			m.hooks.OnReject(ctx, req, resp)
+		}
+	}
+}
+
 func (m *hookedManager) RequestInteraction(ctx context.Context, req InteractionRequest) (*InteractionResponse, error) {
 	if m.hooks.OnRequest != nil {
 		if err := m.hooks.OnRequest(ctx, req); err != nil {
@@ -48,16 +62,7 @@ func (m *hookedManager) RequestInteraction(ctx context.Context, req InteractionR
 	}
 
 	if resp != nil {
-		switch resp.Decision {
-		case DecisionApprove:
-			if m.hooks.OnApprove != nil {
-				m.hooks.OnApprove(ctx, req, *resp)
-			}
-		case DecisionReject:
-			if m.hooks.OnReject != nil {
-				m.hooks.OnReject(ctx, req, *resp)
-			}
-		}
+		m.fireDecisionHooks(ctx, req, *resp)
 	}
 
 	return resp, nil

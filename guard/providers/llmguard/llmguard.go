@@ -96,22 +96,7 @@ func (g *Guard) Name() string {
 // Validate sends the content to LLM Guard for validation. It uses the
 // /analyze/prompt endpoint for input and /analyze/output for output content.
 func (g *Guard) Validate(ctx context.Context, input guard.GuardInput) (guard.GuardResult, error) {
-	var resp analyzeResponse
-	var err error
-
-	if input.Role == "output" {
-		req := analyzeOutputRequest{
-			Prompt: "",
-			Output: input.Content,
-		}
-		resp, err = httpclient.DoJSON[analyzeResponse](ctx, g.client, "POST", "/analyze/output", req)
-	} else {
-		req := analyzeRequest{
-			Prompt: input.Content,
-		}
-		resp, err = httpclient.DoJSON[analyzeResponse](ctx, g.client, "POST", "/analyze/prompt", req)
-	}
-
+	resp, err := g.callAnalyze(ctx, input)
 	if err != nil {
 		return guard.GuardResult{}, fmt.Errorf("llmguard: validate: %w", err)
 	}
@@ -122,26 +107,42 @@ func (g *Guard) Validate(ctx context.Context, input guard.GuardInput) (guard.Gua
 	}
 
 	if !resp.IsValid {
-		// Find the first failing scanner for the reason.
-		for _, s := range resp.Scanners {
-			if !s.IsValid {
-				result.Reason = fmt.Sprintf("scanner %s failed (score=%.2f, threshold=%.2f)", s.Name, s.Score, s.Threshold)
-				break
-			}
-		}
-		if result.Reason == "" {
-			result.Reason = "blocked by LLM Guard"
-		}
+		result.Reason = findFailureReason(resp.Scanners)
 	}
-
-	// Use sanitized content if available and different.
-	if input.Role == "output" && resp.SanitizedOutput != "" && resp.SanitizedOutput != input.Content {
-		result.Modified = resp.SanitizedOutput
-	} else if resp.SanitizedPrompt != "" && resp.SanitizedPrompt != input.Content {
-		result.Modified = resp.SanitizedPrompt
-	}
+	result.Modified = extractSanitized(input.Role, input.Content, resp)
 
 	return result, nil
+}
+
+// callAnalyze calls the appropriate LLM Guard analyze endpoint.
+func (g *Guard) callAnalyze(ctx context.Context, input guard.GuardInput) (analyzeResponse, error) {
+	if input.Role == "output" {
+		req := analyzeOutputRequest{Prompt: "", Output: input.Content}
+		return httpclient.DoJSON[analyzeResponse](ctx, g.client, "POST", "/analyze/output", req)
+	}
+	req := analyzeRequest{Prompt: input.Content}
+	return httpclient.DoJSON[analyzeResponse](ctx, g.client, "POST", "/analyze/prompt", req)
+}
+
+// findFailureReason returns the reason for the first failing scanner.
+func findFailureReason(scanners []scannerResult) string {
+	for _, s := range scanners {
+		if !s.IsValid {
+			return fmt.Sprintf("scanner %s failed (score=%.2f, threshold=%.2f)", s.Name, s.Score, s.Threshold)
+		}
+	}
+	return "blocked by LLM Guard"
+}
+
+// extractSanitized returns the sanitized content if available and different from input.
+func extractSanitized(role, content string, resp analyzeResponse) string {
+	if role == "output" && resp.SanitizedOutput != "" && resp.SanitizedOutput != content {
+		return resp.SanitizedOutput
+	}
+	if resp.SanitizedPrompt != "" && resp.SanitizedPrompt != content {
+		return resp.SanitizedPrompt
+	}
+	return ""
 }
 
 // compile-time interface check

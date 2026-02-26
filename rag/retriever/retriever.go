@@ -83,34 +83,47 @@ type Hooks struct {
 	OnRerank func(ctx context.Context, query string, before, after []schema.Document)
 }
 
+func composeBeforeRetrieve(hooks []Hooks) func(context.Context, string) error {
+	return func(ctx context.Context, query string) error {
+		for _, h := range hooks {
+			if h.BeforeRetrieve != nil {
+				if err := h.BeforeRetrieve(ctx, query); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+}
+
+func composeAfterRetrieve(hooks []Hooks) func(context.Context, []schema.Document, error) {
+	return func(ctx context.Context, docs []schema.Document, err error) {
+		for _, h := range hooks {
+			if h.AfterRetrieve != nil {
+				h.AfterRetrieve(ctx, docs, err)
+			}
+		}
+	}
+}
+
+func composeOnRerank(hooks []Hooks) func(context.Context, string, []schema.Document, []schema.Document) {
+	return func(ctx context.Context, query string, before, after []schema.Document) {
+		for _, h := range hooks {
+			if h.OnRerank != nil {
+				h.OnRerank(ctx, query, before, after)
+			}
+		}
+	}
+}
+
 // ComposeHooks merges multiple Hooks into a single Hooks value.
 // Callbacks are called in the order the hooks were provided.
 // For BeforeRetrieve, the first error returned short-circuits.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		BeforeRetrieve: func(ctx context.Context, query string) error {
-			for _, h := range hooks {
-				if h.BeforeRetrieve != nil {
-					if err := h.BeforeRetrieve(ctx, query); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		},
-		AfterRetrieve: func(ctx context.Context, docs []schema.Document, err error) {
-			for _, h := range hooks {
-				if h.AfterRetrieve != nil {
-					h.AfterRetrieve(ctx, docs, err)
-				}
-			}
-		},
-		OnRerank: func(ctx context.Context, query string, before, after []schema.Document) {
-			for _, h := range hooks {
-				if h.OnRerank != nil {
-					h.OnRerank(ctx, query, before, after)
-				}
-			}
-		},
+		BeforeRetrieve: composeBeforeRetrieve(h),
+		AfterRetrieve:  composeAfterRetrieve(h),
+		OnRerank:       composeOnRerank(h),
 	}
 }

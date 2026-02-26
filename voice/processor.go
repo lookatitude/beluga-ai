@@ -34,43 +34,53 @@ func resolveChainIO(i, total int, in <-chan Frame, out chan<- Frame, channels []
 	return channels[i-1], channels[i]
 }
 
+// passthroughProcessor returns a FrameProcessor that forwards all frames unchanged.
+func passthroughProcessor() FrameProcessor {
+	return FrameProcessorFunc(func(_ context.Context, in <-chan Frame, out chan<- Frame) error {
+		defer close(out)
+		for f := range in {
+			out <- f
+		}
+		return nil
+	})
+}
+
+// runChain launches all processors as goroutines connected by intermediate
+// channels and returns the first error encountered.
+func runChain(ctx context.Context, processors []FrameProcessor, in <-chan Frame, out chan<- Frame) error {
+	channels := make([]chan Frame, len(processors)-1)
+	for i := range channels {
+		channels[i] = make(chan Frame, 64)
+	}
+
+	errc := make(chan error, len(processors))
+	for i, p := range processors {
+		pIn, pOut := resolveChainIO(i, len(processors), in, out, channels)
+		go func(proc FrameProcessor, procIn <-chan Frame, procOut chan<- Frame) {
+			errc <- proc.Process(ctx, procIn, procOut)
+		}(p, pIn, pOut)
+	}
+
+	var firstErr error
+	for range processors {
+		if err := <-errc; err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+	return firstErr
+}
+
 // Chain connects multiple FrameProcessors in series. Frames flow from the
 // first processor to the last. Returns a single FrameProcessor representing
 // the full pipeline.
 func Chain(processors ...FrameProcessor) FrameProcessor {
 	if len(processors) == 0 {
-		return FrameProcessorFunc(func(_ context.Context, in <-chan Frame, out chan<- Frame) error {
-			defer close(out)
-			for f := range in {
-				out <- f
-			}
-			return nil
-		})
+		return passthroughProcessor()
 	}
 	if len(processors) == 1 {
 		return processors[0]
 	}
 	return FrameProcessorFunc(func(ctx context.Context, in <-chan Frame, out chan<- Frame) error {
-		channels := make([]chan Frame, len(processors)-1)
-		for i := range channels {
-			channels[i] = make(chan Frame, 64)
-		}
-
-		errc := make(chan error, len(processors))
-
-		for i, p := range processors {
-			pIn, pOut := resolveChainIO(i, len(processors), in, out, channels)
-			go func(proc FrameProcessor, procIn <-chan Frame, procOut chan<- Frame) {
-				errc <- proc.Process(ctx, procIn, procOut)
-			}(p, pIn, pOut)
-		}
-
-		var firstErr error
-		for range processors {
-			if err := <-errc; err != nil && firstErr == nil {
-				firstErr = err
-			}
-		}
-		return firstErr
+		return runChain(ctx, processors, in, out)
 	})
 }

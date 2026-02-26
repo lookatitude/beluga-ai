@@ -81,31 +81,39 @@ func (w *FileWatcher) Watch(ctx context.Context, callback func(newConfig any)) e
 		case <-w.done:
 			return nil
 		case <-ticker.C:
-			w.mu.Lock()
-			if w.closed {
-				w.mu.Unlock()
+			if w.isClosed() {
 				return nil
 			}
-			w.mu.Unlock()
-
-			data, err := os.ReadFile(w.path)
-			if err != nil {
-				// File temporarily unavailable — skip this tick.
-				continue
-			}
-
-			hash := sha256.Sum256(data)
-			w.mu.Lock()
-			changed := hash != w.lastHash
-			if changed {
-				w.lastHash = hash
-			}
-			w.mu.Unlock()
-
-			if changed {
-				callback(data)
-			}
+			w.checkAndNotify(callback)
 		}
+	}
+}
+
+// isClosed returns whether the watcher has been closed.
+func (w *FileWatcher) isClosed() bool {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.closed
+}
+
+// checkAndNotify reads the file, compares its hash, and invokes callback if changed.
+func (w *FileWatcher) checkAndNotify(callback func(newConfig any)) {
+	data, err := os.ReadFile(w.path)
+	if err != nil {
+		// File temporarily unavailable — skip this tick.
+		return
+	}
+
+	hash := sha256.Sum256(data)
+	w.mu.Lock()
+	changed := hash != w.lastHash
+	if changed {
+		w.lastHash = hash
+	}
+	w.mu.Unlock()
+
+	if changed {
+		callback(data)
 	}
 }
 

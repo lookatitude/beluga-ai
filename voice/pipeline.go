@@ -59,48 +59,69 @@ type Hooks struct {
 	OnError func(ctx context.Context, err error) error
 }
 
+func composeOnSpeechStart(hooks []Hooks) func(context.Context) {
+	return func(ctx context.Context) {
+		for _, h := range hooks {
+			if h.OnSpeechStart != nil {
+				h.OnSpeechStart(ctx)
+			}
+		}
+	}
+}
+
+func composeOnSpeechEnd(hooks []Hooks) func(context.Context) {
+	return func(ctx context.Context) {
+		for _, h := range hooks {
+			if h.OnSpeechEnd != nil {
+				h.OnSpeechEnd(ctx)
+			}
+		}
+	}
+}
+
+func composeOnTranscript(hooks []Hooks) func(context.Context, string) {
+	return func(ctx context.Context, text string) {
+		for _, h := range hooks {
+			if h.OnTranscript != nil {
+				h.OnTranscript(ctx, text)
+			}
+		}
+	}
+}
+
+func composeOnResponse(hooks []Hooks) func(context.Context, string) {
+	return func(ctx context.Context, text string) {
+		for _, h := range hooks {
+			if h.OnResponse != nil {
+				h.OnResponse(ctx, text)
+			}
+		}
+	}
+}
+
+func composeOnError(hooks []Hooks) func(context.Context, error) error {
+	return func(ctx context.Context, err error) error {
+		for _, h := range hooks {
+			if h.OnError != nil {
+				if e := h.OnError(ctx, err); e != nil {
+					return e
+				}
+			}
+		}
+		return err
+	}
+}
+
 // ComposeHooks merges multiple Hooks into a single Hooks value.
 // Callbacks are called in the order the hooks were provided.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		OnSpeechStart: func(ctx context.Context) {
-			for _, h := range hooks {
-				if h.OnSpeechStart != nil {
-					h.OnSpeechStart(ctx)
-				}
-			}
-		},
-		OnSpeechEnd: func(ctx context.Context) {
-			for _, h := range hooks {
-				if h.OnSpeechEnd != nil {
-					h.OnSpeechEnd(ctx)
-				}
-			}
-		},
-		OnTranscript: func(ctx context.Context, text string) {
-			for _, h := range hooks {
-				if h.OnTranscript != nil {
-					h.OnTranscript(ctx, text)
-				}
-			}
-		},
-		OnResponse: func(ctx context.Context, text string) {
-			for _, h := range hooks {
-				if h.OnResponse != nil {
-					h.OnResponse(ctx, text)
-				}
-			}
-		},
-		OnError: func(ctx context.Context, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if e := h.OnError(ctx, err); e != nil {
-						return e
-					}
-				}
-			}
-			return err
-		},
+		OnSpeechStart: composeOnSpeechStart(h),
+		OnSpeechEnd:   composeOnSpeechEnd(h),
+		OnTranscript:  composeOnTranscript(h),
+		OnResponse:    composeOnResponse(h),
+		OnError:       composeOnError(h),
 	}
 }
 
@@ -284,6 +305,28 @@ func (p *VoicePipeline) processVADResult(ctx context.Context, result ActivityRes
 	}
 }
 
+// handleVADFrame processes a single audio frame through VAD and emits results.
+// Returns a non-nil error only if a hook error should stop the processor.
+func (p *VoicePipeline) handleVADFrame(ctx context.Context, frame Frame, out chan<- Frame) error {
+	if frame.Type != FrameAudio {
+		out <- frame
+		return nil
+	}
+
+	result, err := p.config.VAD.DetectActivity(ctx, frame.Data)
+	if err != nil {
+		if p.config.Hooks.OnError != nil {
+			if hookErr := p.config.Hooks.OnError(ctx, err); hookErr != nil {
+				return hookErr
+			}
+		}
+		return nil
+	}
+
+	p.processVADResult(ctx, result, frame, out)
+	return nil
+}
+
 // vadProcessor creates a FrameProcessor that runs VAD on audio frames and
 // injects control frames for speech start/end events.
 func (p *VoicePipeline) vadProcessor() FrameProcessor {
@@ -297,22 +340,9 @@ func (p *VoicePipeline) vadProcessor() FrameProcessor {
 				if !ok {
 					return nil
 				}
-				if frame.Type != FrameAudio {
-					out <- frame
-					continue
+				if err := p.handleVADFrame(ctx, frame, out); err != nil {
+					return err
 				}
-
-				result, err := p.config.VAD.DetectActivity(ctx, frame.Data)
-				if err != nil {
-					if p.config.Hooks.OnError != nil {
-						if hookErr := p.config.Hooks.OnError(ctx, err); hookErr != nil {
-							return hookErr
-						}
-					}
-					continue
-				}
-
-				p.processVADResult(ctx, result, frame, out)
 			}
 		}
 	})

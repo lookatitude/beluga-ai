@@ -138,26 +138,9 @@ func (m *DefaultManager) ShouldApprove(_ context.Context, toolName string, confi
 	return false, nil
 }
 
-// RequestInteraction sends an interaction request, optionally notifies via the
-// configured Notifier, and blocks until a response is received or the
-// timeout/context expires.
-//
-// If policies allow auto-approval (ShouldApprove returns true), the request
-// is immediately approved without waiting for a human.
-func (m *DefaultManager) RequestInteraction(ctx context.Context, req InteractionRequest) (*InteractionResponse, error) {
-	// Assign an ID if not provided.
-	if req.ID == "" {
-		req.ID = generateID()
-	}
-
-	// Fire OnRequest hook.
-	if m.hooks.OnRequest != nil {
-		if err := m.hooks.OnRequest(ctx, req); err != nil {
-			return nil, fmt.Errorf("hitl/request: on_request hook: %w", err)
-		}
-	}
-
-	// Check if auto-approval applies.
+// checkAutoApproval checks policies and returns an auto-approved response if applicable.
+// Returns (nil, nil) when human approval is needed.
+func (m *DefaultManager) checkAutoApproval(ctx context.Context, req InteractionRequest) (*InteractionResponse, error) {
 	autoApprove, err := m.ShouldApprove(ctx, req.ToolName, req.Confidence, req.RiskLevel)
 	if err != nil {
 		if m.hooks.OnError != nil {
@@ -167,16 +150,90 @@ func (m *DefaultManager) RequestInteraction(ctx context.Context, req Interaction
 		}
 		return nil, fmt.Errorf(errFmtRequest, err)
 	}
+	if !autoApprove {
+		return nil, nil
+	}
+	resp := &InteractionResponse{
+		RequestID: req.ID,
+		Decision:  DecisionApprove,
+	}
+	if m.hooks.OnApprove != nil {
+		m.hooks.OnApprove(ctx, req, *resp)
+	}
+	return resp, nil
+}
 
-	if autoApprove {
-		resp := &InteractionResponse{
-			RequestID: req.ID,
-			Decision:  DecisionApprove,
-		}
+// fireDecisionHooks invokes OnApprove or OnReject hooks based on the response decision.
+func (m *DefaultManager) fireDecisionHooks(ctx context.Context, req InteractionRequest, resp InteractionResponse) {
+	switch resp.Decision {
+	case DecisionApprove:
 		if m.hooks.OnApprove != nil {
-			m.hooks.OnApprove(ctx, req, *resp)
+			m.hooks.OnApprove(ctx, req, resp)
 		}
-		return resp, nil
+	case DecisionReject:
+		if m.hooks.OnReject != nil {
+			m.hooks.OnReject(ctx, req, resp)
+		}
+	}
+}
+
+// awaitResponse waits for a human response or timeout and returns the result.
+func (m *DefaultManager) awaitResponse(ctx context.Context, req InteractionRequest, respCh <-chan InteractionResponse) (*InteractionResponse, error) {
+	timeout := m.defaultTimeout
+	if req.Timeout > 0 {
+		timeout = req.Timeout
+	}
+
+	timeoutCtx := ctx
+	var cancel context.CancelFunc
+	if timeout > 0 {
+		timeoutCtx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+
+	select {
+	case resp := <-respCh:
+		m.removePending(req.ID)
+		resp.RequestID = req.ID
+		m.fireDecisionHooks(ctx, req, resp)
+		return &resp, nil
+
+	case <-timeoutCtx.Done():
+		m.removePending(req.ID)
+		if m.hooks.OnTimeout != nil {
+			m.hooks.OnTimeout(ctx, req)
+		}
+		return nil, fmt.Errorf(errFmtRequest, timeoutCtx.Err())
+	}
+}
+
+// removePending deletes a request from the pending map.
+func (m *DefaultManager) removePending(id string) {
+	m.mu.Lock()
+	delete(m.pending, id)
+	m.mu.Unlock()
+}
+
+// RequestInteraction sends an interaction request, optionally notifies via the
+// configured Notifier, and blocks until a response is received or the
+// timeout/context expires.
+//
+// If policies allow auto-approval (ShouldApprove returns true), the request
+// is immediately approved without waiting for a human.
+func (m *DefaultManager) RequestInteraction(ctx context.Context, req InteractionRequest) (*InteractionResponse, error) {
+	if req.ID == "" {
+		req.ID = generateID()
+	}
+
+	if m.hooks.OnRequest != nil {
+		if err := m.hooks.OnRequest(ctx, req); err != nil {
+			return nil, fmt.Errorf("hitl/request: on_request hook: %w", err)
+		}
+	}
+
+	resp, err := m.checkAutoApproval(ctx, req)
+	if err != nil || resp != nil {
+		return resp, err
 	}
 
 	// Create a pending channel for this request.
@@ -194,48 +251,7 @@ func (m *DefaultManager) RequestInteraction(ctx context.Context, req Interaction
 		}
 	}
 
-	// Determine timeout: prefer per-request, fall back to default.
-	timeout := m.defaultTimeout
-	if req.Timeout > 0 {
-		timeout = req.Timeout
-	}
-
-	timeoutCtx := ctx
-	var cancel context.CancelFunc
-	if timeout > 0 {
-		timeoutCtx, cancel = context.WithTimeout(ctx, timeout)
-		defer cancel()
-	}
-
-	select {
-	case resp := <-respCh:
-		m.mu.Lock()
-		delete(m.pending, req.ID)
-		m.mu.Unlock()
-
-		resp.RequestID = req.ID
-		switch resp.Decision {
-		case DecisionApprove:
-			if m.hooks.OnApprove != nil {
-				m.hooks.OnApprove(ctx, req, resp)
-			}
-		case DecisionReject:
-			if m.hooks.OnReject != nil {
-				m.hooks.OnReject(ctx, req, resp)
-			}
-		}
-		return &resp, nil
-
-	case <-timeoutCtx.Done():
-		m.mu.Lock()
-		delete(m.pending, req.ID)
-		m.mu.Unlock()
-
-		if m.hooks.OnTimeout != nil {
-			m.hooks.OnTimeout(ctx, req)
-		}
-		return nil, fmt.Errorf(errFmtRequest, timeoutCtx.Err())
-	}
+	return m.awaitResponse(ctx, req, respCh)
 }
 
 // Respond delivers a human response to a pending interaction request.

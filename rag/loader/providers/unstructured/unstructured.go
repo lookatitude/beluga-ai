@@ -73,32 +73,33 @@ func (l *Loader) Load(ctx context.Context, source string) ([]schema.Document, er
 		return nil, fmt.Errorf("unstructured: source file path is required")
 	}
 
+	elements, err := l.uploadAndParse(ctx, source)
+	if err != nil {
+		return nil, err
+	}
+
+	return elementsToDocuments(elements, source), nil
+}
+
+// uploadAndParse uploads a file to the Unstructured API and decodes the response.
+func (l *Loader) uploadAndParse(ctx context.Context, source string) ([]element, error) {
 	f, err := os.Open(source)
 	if err != nil {
 		return nil, fmt.Errorf("unstructured: open file: %w", err)
 	}
 	defer f.Close()
 
-	var body bytes.Buffer
-	writer := multipart.NewWriter(&body)
-
-	part, err := writer.CreateFormFile("files", filepath.Base(source))
+	body, contentType, err := buildMultipartBody(f, filepath.Base(source))
 	if err != nil {
-		return nil, fmt.Errorf("unstructured: create form: %w", err)
-	}
-	if _, err := io.Copy(part, f); err != nil {
-		return nil, fmt.Errorf("unstructured: copy file: %w", err)
-	}
-	if err := writer.Close(); err != nil {
-		return nil, fmt.Errorf("unstructured: close writer: %w", err)
+		return nil, err
 	}
 
-	url := l.baseURL + "/general/v0/general"
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, &body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		l.baseURL+"/general/v0/general", body)
 	if err != nil {
 		return nil, fmt.Errorf("unstructured: create request: %w", err)
 	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("Content-Type", contentType)
 	if l.apiKey != "" {
 		req.Header.Set("unstructured-api-key", l.apiKey)
 	}
@@ -118,38 +119,57 @@ func (l *Loader) Load(ctx context.Context, source string) ([]schema.Document, er
 	if err := json.NewDecoder(resp.Body).Decode(&elements); err != nil {
 		return nil, fmt.Errorf("unstructured: decode response: %w", err)
 	}
+	return elements, nil
+}
 
+// buildMultipartBody creates a multipart form body from a file reader.
+func buildMultipartBody(r io.Reader, filename string) (*bytes.Buffer, string, error) {
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+
+	part, err := writer.CreateFormFile("files", filename)
+	if err != nil {
+		return nil, "", fmt.Errorf("unstructured: create form: %w", err)
+	}
+	if _, err := io.Copy(part, r); err != nil {
+		return nil, "", fmt.Errorf("unstructured: copy file: %w", err)
+	}
+	if err := writer.Close(); err != nil {
+		return nil, "", fmt.Errorf("unstructured: close writer: %w", err)
+	}
+	return &buf, writer.FormDataContentType(), nil
+}
+
+// elementsToDocuments combines extracted elements into a single document.
+func elementsToDocuments(elements []element, source string) []schema.Document {
 	if len(elements) == 0 {
-		return nil, nil
+		return nil
 	}
 
-	// Combine all text elements into a single document.
 	var content strings.Builder
-	for i, el := range elements {
+	for _, el := range elements {
 		if el.Text == "" {
 			continue
 		}
-		if i > 0 && content.Len() > 0 {
+		if content.Len() > 0 {
 			content.WriteString("\n\n")
 		}
 		content.WriteString(el.Text)
 	}
 
 	if content.Len() == 0 {
-		return nil, nil
-	}
-
-	meta := map[string]any{
-		"source":   source,
-		"format":   "unstructured",
-		"loader":   "unstructured",
-		"filename": filepath.Base(source),
-		"elements": len(elements),
+		return nil
 	}
 
 	return []schema.Document{{
-		ID:       source,
-		Content:  content.String(),
-		Metadata: meta,
-	}}, nil
+		ID:      source,
+		Content: content.String(),
+		Metadata: map[string]any{
+			"source":   source,
+			"format":   "unstructured",
+			"loader":   "unstructured",
+			"filename": filepath.Base(source),
+			"elements": len(elements),
+		},
+	}}
 }

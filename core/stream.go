@@ -117,19 +117,7 @@ func MergeStreams[T any](ctx context.Context, streams ...Stream[T]) Stream[T] {
 		wg.Add(len(streams))
 
 		for _, s := range streams {
-			go func(s Stream[T]) {
-				defer wg.Done()
-				for event, err := range s {
-					select {
-					case <-ctx.Done():
-						return
-					case ch <- eventOrErr[T]{event: event, err: err}:
-						if err != nil {
-							return
-						}
-					}
-				}
-			}(s)
+			go mergeStreamProducer(ctx, s, ch, &wg)
 		}
 
 		go func() {
@@ -137,13 +125,33 @@ func MergeStreams[T any](ctx context.Context, streams ...Stream[T]) Stream[T] {
 			close(ch)
 		}()
 
-		for item := range ch {
-			if !yield(item.event, item.err) {
+		drainChannel(ch, yield)
+	}
+}
+
+// mergeStreamProducer reads events from a single stream and sends them to ch.
+func mergeStreamProducer[T any](ctx context.Context, s Stream[T], ch chan<- eventOrErr[T], wg *sync.WaitGroup) {
+	defer wg.Done()
+	for event, err := range s {
+		select {
+		case <-ctx.Done():
+			return
+		case ch <- eventOrErr[T]{event: event, err: err}:
+			if err != nil {
 				return
 			}
-			if item.err != nil {
-				return
-			}
+		}
+	}
+}
+
+// drainChannel yields items from ch until the channel closes or yield returns false.
+func drainChannel[T any](ch <-chan eventOrErr[T], yield func(Event[T], error) bool) {
+	for item := range ch {
+		if !yield(item.event, item.err) {
+			return
+		}
+		if item.err != nil {
+			return
 		}
 	}
 }
@@ -162,42 +170,49 @@ func FanOut[T any](ctx context.Context, src Stream[T], n int) []Stream[T] {
 		chs[i] = make(chan eventOrErr[T], 16)
 	}
 
-	go func() {
-		defer func() {
-			for _, ch := range chs {
-				close(ch)
-			}
-		}()
-		for event, err := range src {
-			item := eventOrErr[T]{event: event, err: err}
-			for _, ch := range chs {
-				select {
-				case <-ctx.Done():
-					return
-				case ch <- item:
-				}
-			}
-			if err != nil {
-				return
-			}
-		}
-	}()
+	go fanOutProducer(ctx, src, chs)
 
 	streams := make([]Stream[T], n)
 	for i := range chs {
-		ch := chs[i]
-		streams[i] = func(yield func(Event[T], error) bool) {
-			for item := range ch {
-				if !yield(item.event, item.err) {
-					return
-				}
-				if item.err != nil {
-					return
-				}
+		streams[i] = channelToStream(chs[i])
+	}
+	return streams
+}
+
+// fanOutProducer reads events from src and broadcasts them to all channels.
+func fanOutProducer[T any](ctx context.Context, src Stream[T], chs []chan eventOrErr[T]) {
+	defer func() {
+		for _, ch := range chs {
+			close(ch)
+		}
+	}()
+	for event, err := range src {
+		item := eventOrErr[T]{event: event, err: err}
+		for _, ch := range chs {
+			select {
+			case <-ctx.Done():
+				return
+			case ch <- item:
+			}
+		}
+		if err != nil {
+			return
+		}
+	}
+}
+
+// channelToStream converts a channel of eventOrErr into a Stream.
+func channelToStream[T any](ch <-chan eventOrErr[T]) Stream[T] {
+	return func(yield func(Event[T], error) bool) {
+		for item := range ch {
+			if !yield(item.event, item.err) {
+				return
+			}
+			if item.err != nil {
+				return
 			}
 		}
 	}
-	return streams
 }
 
 // BufferedStream wraps a producer stream with an internal channel buffer to

@@ -127,34 +127,64 @@ type Hooks struct {
 	OnError func(ctx context.Context, err error) error
 }
 
+func composeBeforeSynthesize(hooks []Hooks) func(context.Context, string) {
+	return func(ctx context.Context, text string) {
+		for _, h := range hooks {
+			if h.BeforeSynthesize != nil {
+				h.BeforeSynthesize(ctx, text)
+			}
+		}
+	}
+}
+
+func composeOnAudioChunk(hooks []Hooks) func(context.Context, []byte) {
+	return func(ctx context.Context, chunk []byte) {
+		for _, h := range hooks {
+			if h.OnAudioChunk != nil {
+				h.OnAudioChunk(ctx, chunk)
+			}
+		}
+	}
+}
+
+func composeOnError(hooks []Hooks) func(context.Context, error) error {
+	return func(ctx context.Context, err error) error {
+		for _, h := range hooks {
+			if h.OnError != nil {
+				if e := h.OnError(ctx, err); e != nil {
+					return e
+				}
+			}
+		}
+		return err
+	}
+}
+
 // ComposeHooks merges multiple Hooks into a single Hooks value.
 func ComposeHooks(hooks ...Hooks) Hooks {
+	h := append([]Hooks{}, hooks...)
 	return Hooks{
-		BeforeSynthesize: func(ctx context.Context, text string) {
-			for _, h := range hooks {
-				if h.BeforeSynthesize != nil {
-					h.BeforeSynthesize(ctx, text)
-				}
-			}
-		},
-		OnAudioChunk: func(ctx context.Context, chunk []byte) {
-			for _, h := range hooks {
-				if h.OnAudioChunk != nil {
-					h.OnAudioChunk(ctx, chunk)
-				}
-			}
-		},
-		OnError: func(ctx context.Context, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					if e := h.OnError(ctx, err); e != nil {
-						return e
-					}
-				}
-			}
-			return err
-		},
+		BeforeSynthesize: composeBeforeSynthesize(h),
+		OnAudioChunk:     composeOnAudioChunk(h),
+		OnError:          composeOnError(h),
 	}
+}
+
+// synthesizeFrame synthesizes a single text frame and sends the result to out.
+// Non-text frames are passed through unchanged.
+func synthesizeFrame(ctx context.Context, engine TTS, frame voice.Frame, sampleRate int, out chan<- voice.Frame, opts ...Option) error {
+	if frame.Type != voice.FrameText {
+		out <- frame
+		return nil
+	}
+	audio, err := engine.Synthesize(ctx, frame.Text(), opts...)
+	if err != nil {
+		return fmt.Errorf("tts: synthesize: %w", err)
+	}
+	if len(audio) > 0 {
+		out <- voice.NewAudioFrame(audio, sampleRate)
+	}
+	return nil
 }
 
 // AsFrameProcessor wraps a TTS engine as a voice.FrameProcessor.
@@ -171,18 +201,8 @@ func AsFrameProcessor(engine TTS, sampleRate int, opts ...Option) voice.FramePro
 				if !ok {
 					return nil
 				}
-				// Pass through non-text frames.
-				if frame.Type != voice.FrameText {
-					out <- frame
-					continue
-				}
-				// Synthesize the text.
-				audio, err := engine.Synthesize(ctx, frame.Text(), opts...)
-				if err != nil {
-					return fmt.Errorf("tts: synthesize: %w", err)
-				}
-				if len(audio) > 0 {
-					out <- voice.NewAudioFrame(audio, sampleRate)
+				if err := synthesizeFrame(ctx, engine, frame, sampleRate, out, opts...); err != nil {
+					return err
 				}
 			}
 		}
