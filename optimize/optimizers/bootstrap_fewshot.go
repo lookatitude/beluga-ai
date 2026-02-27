@@ -7,6 +7,12 @@ import (
 	"github.com/lookatitude/beluga-ai/optimize"
 )
 
+func init() {
+	optimize.RegisterOptimizer("bootstrapfewshot", func(cfg optimize.OptimizerConfig) (optimize.Optimizer, error) {
+		return NewBootstrapFewShot(), nil
+	})
+}
+
 // BootstrapFewShot bootstraps few-shot examples from training data.
 // It uses a teacher program to generate demonstrations and filters by metric threshold.
 type BootstrapFewShot struct {
@@ -23,48 +29,67 @@ type BootstrapFewShot struct {
 	// MaxRounds is the number of bootstrap attempts per example.
 	MaxRounds int
 
-	// Temperature for teacher generation (higher = more diverse).
-	Temperature float64
-
 	// MetricThreshold is the minimum score to accept a demonstration.
 	MetricThreshold float64
 }
 
-// Config holds BootstrapFewShot configuration.
-type BootstrapFewShotConfig struct {
-	Teacher           optimize.Program
-	MaxBootstrapped   int
-	MaxLabeled        int
-	MaxRounds         int
-	Temperature       float64
-	MetricThreshold   float64
+// Option configures a BootstrapFewShot optimizer.
+type Option func(*BootstrapFewShot)
+
+// NewBootstrapFewShot creates a new BootstrapFewShot optimizer with defaults.
+func NewBootstrapFewShot(opts ...Option) *BootstrapFewShot {
+	bs := &BootstrapFewShot{
+		MaxBootstrapped: 4,
+		MaxLabeled:      16,
+		MaxRounds:       1,
+		MetricThreshold: 1.0,
+	}
+	for _, opt := range opts {
+		opt(bs)
+	}
+	return bs
 }
 
-// NewBootstrapFewShot creates a new BootstrapFewShot optimizer.
-func NewBootstrapFewShot(config BootstrapFewShotConfig) *BootstrapFewShot {
-	if config.MaxBootstrapped == 0 {
-		config.MaxBootstrapped = 4
+// WithTeacher sets the teacher program for bootstrapping.
+func WithTeacher(teacher optimize.Program) Option {
+	return func(bs *BootstrapFewShot) {
+		bs.Teacher = teacher
 	}
-	if config.MaxLabeled == 0 {
-		config.MaxLabeled = 16
-	}
-	if config.MaxRounds == 0 {
-		config.MaxRounds = 1
-	}
-	if config.Temperature == 0 {
-		config.Temperature = 1.0
-	}
-	if config.MetricThreshold == 0 {
-		config.MetricThreshold = 1.0 // Default: require perfect match
-	}
+}
 
-	return &BootstrapFewShot{
-		Teacher:           config.Teacher,
-		MaxBootstrapped:   config.MaxBootstrapped,
-		MaxLabeled:        config.MaxLabeled,
-		MaxRounds:         config.MaxRounds,
-		Temperature:       config.Temperature,
-		MetricThreshold:   config.MetricThreshold,
+// WithMaxBootstrapped sets the maximum number of bootstrapped examples.
+func WithMaxBootstrapped(n int) Option {
+	return func(bs *BootstrapFewShot) {
+		if n > 0 {
+			bs.MaxBootstrapped = n
+		}
+	}
+}
+
+// WithMaxLabeled sets the maximum number of labeled examples.
+func WithMaxLabeled(n int) Option {
+	return func(bs *BootstrapFewShot) {
+		if n > 0 {
+			bs.MaxLabeled = n
+		}
+	}
+}
+
+// WithMaxRounds sets the number of bootstrap attempts per example.
+func WithMaxRounds(n int) Option {
+	return func(bs *BootstrapFewShot) {
+		if n > 0 {
+			bs.MaxRounds = n
+		}
+	}
+}
+
+// WithMetricThreshold sets the minimum score to accept a demonstration.
+func WithMetricThreshold(threshold float64) Option {
+	return func(bs *BootstrapFewShot) {
+		if threshold >= 0 {
+			bs.MetricThreshold = threshold
+		}
 	}
 }
 
