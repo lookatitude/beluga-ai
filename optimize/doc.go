@@ -9,11 +9,13 @@
 // Core Concepts
 //
 // Optimizer: The main abstraction that transforms an uncompiled program into an
-// optimized version. The package includes four optimizer implementations:
-//   - BootstrapFewShot: Simplest optimizer, bootstraps few-shot examples
-//   - MIPROv2: Bayesian optimization with TPE sampler
-//   - GEPA: Genetic-Pareto prompt evolution (state-of-the-art)
-//   - SIMBA: Stochastic introspective mini-batch ascent
+// optimized version. Optimizers are registered by name and can be created via the
+// registry:
+//
+//   - "bootstrapfewshot" — Bootstraps few-shot examples from training data
+//   - "mipro" — Bayesian optimization with TPE sampler (coming soon)
+//   - "gepa" — Genetic-Pareto prompt evolution (coming soon)
+//   - "simba" — Stochastic introspective mini-batch ascent (coming soon)
 //
 // Metric: Evaluates prediction quality. Binary metrics (0/1) work best.
 //
@@ -22,36 +24,37 @@
 //
 // Basic Usage
 //
-//	// Define a program
-//	qa := &ChainOfThought{
-//	    Signature: MustSignature("question,context -> answer"),
+// Create optimizer via registry:
+//
+//	optimizer, err := optimize.NewOptimizer("bootstrapfewshot", optimize.OptimizerConfig{})
+//	if err != nil {
+//	    log.Fatal(err)
 //	}
 //
-//	// Define metric
-//	metric := &F1Metric{Tokenizer: WordTokenizer}
+// Or create directly:
 //
-//	// Create optimizer
-//	optimizer := optimize.NewBootstrapFewShot(optimize.BootstrapFewShotConfig{
-//	    MaxBootstrapped: 4,
-//	})
+//	optimizer := optimizers.NewBootstrapFewShot(
+//	    optimizers.WithMaxBootstrapped(4),
+//	    optimizers.WithMetricThreshold(0.8),
+//	)
 //
-//	// Compile (optimize) the program
-//	compiled, err := optimizer.Compile(ctx, qa, optimize.CompileOptions{
+// Compile (optimize) a program:
+//
+//	compiled, err := optimizer.Compile(ctx, program, optimize.CompileOptions{
 //	    Trainset: trainset,
-//	    Metric:   metric,
+//	    Metric:   &metric.F1Metric{},
 //	    MaxCost:  &optimize.CostBudget{MaxDollars: 10},
 //	})
 //
-//	// Use the optimized program
-//	answer, err := compiled.Run(ctx, map[string]interface{}{
-//	    "question": "What is the capital of France?",
-//	    "context":  "France is a country in Europe.",
-//	})
+// Use the optimized program:
+//
+//	result, err := compiled.Run(ctx, inputs)
 //
 // Package Structure
 //
 //	optimize/
 //	├── interfaces.go          # Core interfaces (Optimizer, Metric, etc.)
+//	├── registry.go            # Optimizer registry for named creation
 //	├── metric/                # Metric implementations
 //	│   └── basic.go
 //	├── optimizers/            # Optimizer implementations
@@ -59,10 +62,19 @@
 //	│   ├── mipro.go
 //	│   ├── gepa.go
 //	│   └── simba.go
-//	├── bayesian/              # TPE sampler for MIPROv2
+//	├── bayesian/              # TPE sampler for MIPRO
 //	├── pareto/                # Pareto frontier for GEPA
 //	├── cost/                  # Cost tracking
 //	└── examples/              # Usage examples
+//
+// Design Patterns
+//
+// The optimize package follows Beluga AI design patterns:
+//
+//   - Registry pattern: Optimizers register via init() and are created by name
+//   - Functional options: Configurable via WithXxx option functions
+//   - Interface-based: Core abstractions are interfaces, not concrete types
+//   - Thread-safe: Registry uses sync.RWMutex for concurrent access
 //
 // References
 //
