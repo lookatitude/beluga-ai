@@ -4922,10 +4922,10 @@ rw@1:
   resolved "https://registry.yarnpkg.com/safer-buffer/-/safer-buffer-2.1.2.tgz#44fa161b0187b9549dd84bb91802f9bd8385cd6a"
   integrity sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==
 
-satori@^0.19.2:
-  version "0.19.2"
-  resolved "https://registry.yarnpkg.com/satori/-/satori-0.19.2.tgz#47e9e3d1413a783c3d54fca6e0d35126625e8e26"
-  integrity sha512-71plFHWcq6WJBM5sf/n0eHOmTBiKLUB/G8du7SmLTTLHKEKrV3TPHGKcEVIoyjnbhnjvu9HhLyF9MATB/zzL7g==
+satori@^0.25.0:
+  version "0.25.0"
+  resolved "https://registry.yarnpkg.com/satori/-/satori-0.25.0.tgz#6d08254afbd4e010cb01a78628ec0101f1e14fa6"
+  integrity sha512-utINfLxrYrmSnLvxFT4ZwgwWa8KOjrz7ans32V5wItgHVmzESl/9i33nE38uG0miycab8hUqQtDlOpqrIpB/iw==
   dependencies:
     "@shuding/opentype.js" "1.4.0-beta.0"
     css-background-parser "^0.1.0"
