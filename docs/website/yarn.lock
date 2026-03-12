@@ -175,10 +175,10 @@
   resolved "https://registry.yarnpkg.com/@astrojs/starlight-tailwind/-/starlight-tailwind-4.0.2.tgz#2b02901e5368b0db138e0cfcb301353616061c01"
   integrity sha512-SYN/6zq6hJO5tWqbQ2tWT9/jd8ubUkzkBCcF94vByC/ZJ20Mi5GPjFvAh89Yky/aIM+jXxT6W5q4p6l58GKHiQ==
 
-"@astrojs/starlight@^0.37.6":
-  version "0.37.6"
-  resolved "https://registry.yarnpkg.com/@astrojs/starlight/-/starlight-0.37.6.tgz#d98241dfde2b4a90da42721406b20ed7ae503e9b"
-  integrity sha512-wQrKwH431q+8FsLBnNQeG+R36TMtEGxTQ2AuiVpcx9APcazvL3n7wVW8mMmYyxX0POjTnxlcWPkdMGR3Yj1L+w==
+"@astrojs/starlight@^0.37.7":
+  version "0.37.7"
+  resolved "https://registry.yarnpkg.com/@astrojs/starlight/-/starlight-0.37.7.tgz#8387ccd21c313c295cea74bfcef3cc21a135abbb"
+  integrity sha512-KyBnou8aKIlPJUSNx6a1SN7XyH22oj/VAvTGC+Edld4Bnei1A//pmCRTBvSrSeoGrdUjK0ErFUfaEhhO1bPfDg==
   dependencies:
     "@astrojs/markdown-remark" "^6.3.1"
     "@astrojs/mdx" "^4.2.3"
