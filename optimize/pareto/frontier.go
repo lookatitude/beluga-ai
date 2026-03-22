@@ -1,16 +1,28 @@
-// Package pareto provides Pareto frontier data structures and operations
-// for multi-objective optimization.
+// Package pareto provides Pareto frontier data structures and multi-objective
+// optimization utilities for the GEPA optimizer and other evolutionary strategies.
+//
+// Core concepts:
+//   - Dominance: point A dominates point B when A is at least as good as B on all
+//     objectives and strictly better on at least one.
+//   - Frontier (Pareto front): the set of all mutually non-dominated points.
+//   - Archive: a size-bounded, generation-aware store that maintains the frontier
+//     across multiple rounds of an evolutionary algorithm.
+//
+// The package supports an arbitrary number of objectives. All objectives are
+// maximisation objectives; callers should negate minimisation objectives before
+// inserting points.
 package pareto
 
 import (
+	"math"
 	"sort"
 )
 
 // Point represents a point in multi-objective space.
 type Point struct {
-	ID       string
-	Objectives []float64 // One value per objective (higher is better)
-	Payload  interface{} // Associated data (e.g., prompt candidate)
+	ID         string
+	Objectives []float64   // One value per objective (higher is better)
+	Payload    interface{} // Associated data (e.g., prompt candidate)
 }
 
 // Frontier represents a Pareto frontier — a set of non-dominated points.
@@ -135,7 +147,9 @@ func (f *Frontier) Spacing() float64 {
 	return variance
 }
 
-// distance calculates Euclidean distance between two points.
+// distance calculates squared Euclidean distance between two points.
+// Squared distance is used internally to avoid unnecessary sqrt calls when only
+// relative ordering matters.
 func distance(a, b Point) float64 {
 	if len(a.Objectives) != len(b.Objectives) {
 		return 0.0
@@ -147,6 +161,246 @@ func distance(a, b Point) float64 {
 		sum += diff * diff
 	}
 	return sum // No sqrt needed for comparison
+}
+
+// EuclideanDistance returns the true Euclidean distance between two points.
+func EuclideanDistance(a, b Point) float64 {
+	return math.Sqrt(distance(a, b))
+}
+
+// CrowdingDistance computes the NSGA-II crowding distance for each point in the
+// frontier. Points with a higher crowding distance are in less crowded regions
+// of the objective space, which is useful for maintaining diversity.
+//
+// The returned slice has the same length as f.Get(). Boundary points receive
+// a distance of +Inf.
+func (f *Frontier) CrowdingDistance() []float64 {
+	pts := f.Get()
+	n := len(pts)
+	if n == 0 {
+		return nil
+	}
+
+	dist := make([]float64, n)
+	if n <= 2 {
+		for i := range dist {
+			dist[i] = math.Inf(1)
+		}
+		return dist
+	}
+
+	if len(pts[0].Objectives) == 0 {
+		return dist
+	}
+	numObj := len(pts[0].Objectives)
+
+	for obj := 0; obj < numObj; obj++ {
+		// Sort indices by this objective (ascending).
+		indices := make([]int, n)
+		for i := range indices {
+			indices[i] = i
+		}
+		sort.Slice(indices, func(a, b int) bool {
+			return pts[indices[a]].Objectives[obj] < pts[indices[b]].Objectives[obj]
+		})
+
+		// Boundary points get infinite distance.
+		dist[indices[0]] = math.Inf(1)
+		dist[indices[n-1]] = math.Inf(1)
+
+		objRange := pts[indices[n-1]].Objectives[obj] - pts[indices[0]].Objectives[obj]
+		if objRange == 0 {
+			continue
+		}
+
+		for i := 1; i < n-1; i++ {
+			dist[indices[i]] += (pts[indices[i+1]].Objectives[obj] - pts[indices[i-1]].Objectives[obj]) / objRange
+		}
+	}
+
+	return dist
+}
+
+// HypervolumeIndicator estimates the hypervolume dominated by the Pareto frontier
+// relative to a reference point (nadir). All objectives in the reference point
+// should be worse than any point on the frontier (i.e. the worst possible values).
+//
+// This implementation uses a sweep-line algorithm accurate for 2-objective problems
+// and an approximate decomposition for higher dimensions.
+func (f *Frontier) HypervolumeIndicator(reference []float64) float64 {
+	pts := f.Get()
+	if len(pts) == 0 || len(reference) == 0 {
+		return 0.0
+	}
+
+	numObj := len(reference)
+	if numObj != len(pts[0].Objectives) {
+		return 0.0
+	}
+
+	if numObj == 1 {
+		// 1-D: just the maximum span.
+		maxVal := pts[0].Objectives[0]
+		for _, p := range pts[1:] {
+			if p.Objectives[0] > maxVal {
+				maxVal = p.Objectives[0]
+			}
+		}
+		hv := maxVal - reference[0]
+		if hv < 0 {
+			return 0
+		}
+		return hv
+	}
+
+	if numObj == 2 {
+		return hypervolume2D(pts, reference)
+	}
+
+	// ≥3 objectives: Monte Carlo approximation.
+	return hypervolumeApprox(pts, reference, 10000)
+}
+
+// hypervolume2D computes exact hypervolume for 2-objective problems via sweep line.
+func hypervolume2D(pts []Point, ref []float64) float64 {
+	// Sort by objective 0 descending.
+	sorted := make([]Point, len(pts))
+	copy(sorted, pts)
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].Objectives[0] > sorted[j].Objectives[0]
+	})
+
+	hv := 0.0
+	prevX := ref[0]
+	for _, p := range sorted {
+		width := p.Objectives[0] - prevX
+		if width <= 0 {
+			continue
+		}
+		height := p.Objectives[1] - ref[1]
+		if height > 0 {
+			hv += width * height
+		}
+		prevX = p.Objectives[0]
+	}
+	return hv
+}
+
+// hypervolumeApprox uses Monte Carlo sampling to approximate the hypervolume.
+func hypervolumeApprox(pts []Point, ref []float64, samples int) float64 {
+	numObj := len(ref)
+
+	// Determine the bounding box.
+	upper := make([]float64, numObj)
+	for i := range upper {
+		upper[i] = ref[i]
+		for _, p := range pts {
+			if p.Objectives[i] > upper[i] {
+				upper[i] = p.Objectives[i]
+			}
+		}
+	}
+
+	// Volume of bounding box.
+	boxVol := 1.0
+	for i := range upper {
+		side := upper[i] - ref[i]
+		if side <= 0 {
+			return 0
+		}
+		boxVol *= side
+	}
+
+	// Use a deterministic sequence (Van der Corput) for low-discrepancy sampling.
+	dominated := 0
+	for s := 1; s <= samples; s++ {
+		point := make([]float64, numObj)
+		for d := 0; d < numObj; d++ {
+			point[d] = ref[d] + vanDerCorput(s, d+2)*(upper[d]-ref[d])
+		}
+		for _, p := range pts {
+			isDom := true
+			for i := range point {
+				if p.Objectives[i] < point[i] {
+					isDom = false
+					break
+				}
+			}
+			if isDom {
+				dominated++
+				break
+			}
+		}
+	}
+
+	return boxVol * float64(dominated) / float64(samples)
+}
+
+// vanDerCorput generates the s-th term of the Van der Corput sequence in base b.
+func vanDerCorput(s, b int) float64 {
+	q := 0.0
+	bk := 1.0 / float64(b)
+	for s > 0 {
+		q += float64(s%b) * bk
+		s /= b
+		bk /= float64(b)
+	}
+	return q
+}
+
+// RankNonDominated partitions points into non-domination ranks (NSGA-II style).
+// Rank 0 is the Pareto-optimal front; rank 1 is optimal after removing rank 0, etc.
+// Returns a slice where result[i] is the rank of pts[i].
+func RankNonDominated(pts []Point) []int {
+	n := len(pts)
+	ranks := make([]int, n)
+	dominated := make([]int, n)   // number of points that dominate i
+	dominates := make([][]int, n) // indices of points that i dominates
+
+	for i := 0; i < n; i++ {
+		for j := 0; j < n; j++ {
+			if i == j {
+				continue
+			}
+			if dominates_(pts[i], pts[j]) {
+				dominates[i] = append(dominates[i], j)
+			} else if dominates_(pts[j], pts[i]) {
+				dominated[i]++
+			}
+		}
+	}
+
+	// BFS over fronts.
+	current := make([]int, 0)
+	for i := 0; i < n; i++ {
+		if dominated[i] == 0 {
+			current = append(current, i)
+		}
+	}
+
+	rank := 0
+	for len(current) > 0 {
+		next := make([]int, 0)
+		for _, i := range current {
+			ranks[i] = rank
+			for _, j := range dominates[i] {
+				dominated[j]--
+				if dominated[j] == 0 {
+					next = append(next, j)
+				}
+			}
+		}
+		current = next
+		rank++
+	}
+
+	return ranks
+}
+
+// dominates_ is an alias for the package-level dominates function for use in
+// exported helpers that need to reference it without shadowing.
+func dominates_(a, b Point) bool {
+	return dominates(a, b)
 }
 
 // SelectByCoverage selects points from the frontier proportional to their coverage.
