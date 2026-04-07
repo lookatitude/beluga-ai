@@ -32,9 +32,13 @@ type Entry struct {
 	Action string
 
 	// Input holds the input data associated with the action.
+	// Callers MUST redact sensitive data such as PII, API keys, secrets, and
+	// passwords before logging to prevent information disclosure.
 	Input any
 
 	// Output holds the output data produced by the action.
+	// Callers MUST redact sensitive data such as PII, API keys, secrets, and
+	// passwords before logging to prevent information disclosure.
 	Output any
 
 	// Metadata carries arbitrary key-value string annotations.

@@ -223,6 +223,88 @@ func TestInMemoryStore_ConcurrentAccess(t *testing.T) {
 }
 
 // ----------------------------------------------------------------------------
+// MaxEntries and eviction
+// ----------------------------------------------------------------------------
+
+func TestInMemoryStore_MaxEntries_Default(t *testing.T) {
+	s := NewInMemoryStore()
+
+	// Default should be 100000
+	s.mu.RLock()
+	maxEntries := s.maxEntries
+	s.mu.RUnlock()
+	assert.Equal(t, 100000, maxEntries)
+}
+
+func TestInMemoryStore_MaxEntries_WithOption(t *testing.T) {
+	s := NewInMemoryStore(WithMaxEntries(10))
+	ctx := context.Background()
+
+	// Add 15 entries
+	for i := 0; i < 15; i++ {
+		require.NoError(t, s.Log(ctx, Entry{
+			Action: fmt.Sprintf("action.%d", i),
+		}))
+	}
+
+	// Should only have 10 entries (oldest 5 evicted)
+	results, err := s.Query(ctx, Filter{})
+	require.NoError(t, err)
+	assert.Equal(t, 10, len(results))
+
+	// Oldest 5 entries should be gone, verify by checking actions
+	// First result should be action.5
+	assert.Equal(t, "action.5", results[0].Action)
+	// Last result should be action.14
+	assert.Equal(t, "action.14", results[9].Action)
+}
+
+func TestInMemoryStore_MaxEntries_Eviction(t *testing.T) {
+	const maxEntries = 5
+	s := NewInMemoryStore(WithMaxEntries(maxEntries))
+	ctx := context.Background()
+
+	// Add more entries than maxEntries
+	for i := 0; i < 10; i++ {
+		require.NoError(t, s.Log(ctx, Entry{
+			ID:     fmt.Sprintf("entry-%d", i),
+			Action: "test.action",
+		}))
+	}
+
+	// Should only keep the last maxEntries entries
+	s.mu.RLock()
+	count := len(s.entries)
+	s.mu.RUnlock()
+	assert.Equal(t, maxEntries, count)
+}
+
+func TestInMemoryStore_MaxEntries_ContinuousAddition(t *testing.T) {
+	const maxEntries = 3
+	s := NewInMemoryStore(WithMaxEntries(maxEntries))
+	ctx := context.Background()
+
+	// Add entries one at a time and verify size stays bounded
+	for i := 0; i < 20; i++ {
+		require.NoError(t, s.Log(ctx, Entry{
+			ID:     fmt.Sprintf("entry-%d", i),
+			Action: "test.action",
+		}))
+
+		s.mu.RLock()
+		count := len(s.entries)
+		s.mu.RUnlock()
+
+		// Size should never exceed maxEntries
+		assert.LessOrEqual(t, count, maxEntries)
+		// Once full, size should stay constant
+		if i >= maxEntries-1 {
+			assert.Equal(t, maxEntries, count)
+		}
+	}
+}
+
+// ----------------------------------------------------------------------------
 // Registry
 // ----------------------------------------------------------------------------
 

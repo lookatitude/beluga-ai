@@ -13,18 +13,32 @@ var _ Store = (*InMemoryStore)(nil)
 
 // InMemoryStore is a thread-safe, in-memory implementation of [Store].
 // It is intended for development and testing. All entries are stored in a
-// slice protected by a read/write mutex.
+// slice protected by a read/write mutex. Memory growth is bounded by maxEntries;
+// when the limit is reached, the oldest entries are evicted.
 type InMemoryStore struct {
-	mu      sync.RWMutex
-	entries []Entry
+	mu         sync.RWMutex
+	entries    []Entry
+	maxEntries int
 }
 
 // InMemoryOption is a functional option for [NewInMemoryStore].
 type InMemoryOption func(*InMemoryStore)
 
+// WithMaxEntries returns an option that sets the maximum number of entries
+// to store in memory. When this limit is reached, the oldest entries are evicted.
+// The default is 100000 if not specified.
+func WithMaxEntries(n int) InMemoryOption {
+	return func(s *InMemoryStore) {
+		s.maxEntries = n
+	}
+}
+
 // NewInMemoryStore creates a new [InMemoryStore] with the given options applied.
+// If maxEntries is not specified via WithMaxEntries, it defaults to 100000.
 func NewInMemoryStore(opts ...InMemoryOption) *InMemoryStore {
-	s := &InMemoryStore{}
+	s := &InMemoryStore{
+		maxEntries: 100000,
+	}
 	for _, opt := range opts {
 		opt(s)
 	}
@@ -48,8 +62,19 @@ func (s *InMemoryStore) Log(ctx context.Context, entry Entry) error {
 	}
 
 	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	s.entries = append(s.entries, enriched)
-	s.mu.Unlock()
+
+	// Evict oldest entries if we exceed maxEntries
+	if len(s.entries) > s.maxEntries {
+		// Copy to a new slice, discarding the oldest entries
+		toKeep := len(s.entries) - s.maxEntries
+		newEntries := make([]Entry, len(s.entries)-toKeep)
+		copy(newEntries, s.entries[toKeep:])
+		s.entries = newEntries
+	}
+
 	return nil
 }
 
