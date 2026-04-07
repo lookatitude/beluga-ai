@@ -36,7 +36,7 @@ jobs:
 
       - name: Validate version format
         run: |
-          V="${{ inputs.version }}"
+          V="${{ inputs.tag }}"
           if ! echo "$V" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "Error: version must match vMAJOR.MINOR.PATCH (e.g. v2.1.1)"
             exit 1
@@ -45,22 +45,17 @@ jobs:
 
       - name: Check tag does not already exist
         run: |
-          if git rev-parse "${{ inputs.version }}" >/dev/null 2>&1; then
-            echo "Error: tag ${{ inputs.version }} already exists"
-            exit 1
+          if git rev-parse "${{ inputs.tag }}" >/dev/null 2>&1; then
+            echo "Tag ${{ inputs.tag }} already exists — skipping creation (likely pushed by main.yml)"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "${{ inputs.tag }}" -m "Release ${{ inputs.tag }}"
+            git push origin "${{ inputs.tag }}"
           fi
-
-      - name: Create and push tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          TAG="${{ inputs.version }}"
-          git tag -a "$TAG" -m "Release $TAG"
-          git push origin "$TAG"
 
   changes:
     name: Check Release-Relevant Changes
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -69,15 +64,15 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
           fetch-depth: 2
 
       - name: Determine whether release should run
         id: filter
         run: |
-          # Manual dispatch: always run release (user chose the tag)
+          # Manual/dispatched: always run release (tag was explicitly requested)
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "Manual release requested for ${{ github.event.inputs.tag }}."
+            echo "Release requested for ${{ inputs.tag }}."
             echo "release_needed=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -105,41 +100,47 @@ jobs:
 
   changelog:
     name: Generate Changelog
-    needs: changes
-    if: needs.changes.outputs.release_needed == 'true'
+    needs: [create-tag, changes]
+    if: |
+      always() &&
+      needs.changes.outputs.release_needed == 'true' &&
+      (needs.create-tag.result == 'success' || needs.create-tag.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
           fetch-depth: 0
 
       - name: Generate CHANGELOG.md
         uses: orhun/git-cliff-action@v4
         with:
           config: .cliff.toml
-          args: --output CHANGELOG.md ${{ github.event_name == 'workflow_dispatch' && format('--tag {0}', github.event.inputs.tag) || '' }}
+          args: --output CHANGELOG.md ${{ github.event_name == 'workflow_dispatch' && format('--tag {0}', inputs.tag) || '' }}
 
       - name: Commit CHANGELOG.md
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
-          commit_message: "chore(release): update CHANGELOG.md for ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }} [skip ci]"
+          commit_message: "chore(release): update CHANGELOG.md for ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }} [skip ci]"
           file_pattern: CHANGELOG.md
-          branch: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || 'main' }}
+          branch: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || 'main' }}
 
   release:
     name: GoReleaser
-    needs: [changes, changelog]
-    if: needs.changes.outputs.release_needed == 'true'
+    needs: [create-tag, changes, changelog]
+    if: |
+      always() &&
+      needs.changes.outputs.release_needed == 'true' &&
+      (needs.changelog.result == 'success' || needs.changelog.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
           fetch-depth: 0
 
       - uses: actions/setup-go@v6
@@ -153,13 +154,14 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Manual run: no tag in ref; set tag so GoReleaser knows the version
-          GORELEASER_CURRENT_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
+          GORELEASER_CURRENT_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
   trigger-docs:
     name: Trigger Docs Rebuild
     needs: [changes, release]
-    if: needs.changes.outputs.release_needed == 'true'
+    if: |
+      always() &&
+      needs.release.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
