@@ -104,6 +104,65 @@ const jsonLd = JSON.stringify({
     </div>
   </section>
 
+  <!-- Block 15.2b — Cost, Audit & Deployment -->
+  <section class="ent-section">
+    <div class="ent-section-inner">
+      <div class="ent-section-header">
+        <h2 class="ent-section-title">Built-in <span class="ent-title-muted">operational controls</span></h2>
+      </div>
+
+      <div class="ent-grid six-cards">
+        <div class="ent-cap-card">
+          <div class="ent-cap-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </div>
+          <h3 class="ent-cap-title">Cost Tracking</h3>
+          <p class="ent-cap-desc">The <code>cost/</code> package provides a <code>Tracker</code> interface for per-request, per-tenant, and per-session spend. Enforce hard and soft budget limits, and receive callbacks before limits are breached.</p>
+        </div>
+
+        <div class="ent-cap-card">
+          <div class="ent-cap-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+          </div>
+          <h3 class="ent-cap-title">Audit Logging</h3>
+          <p class="ent-cap-desc">The <code>audit/</code> package produces structured entries for every LLM call, tool execution, and agent handoff. Query by tenant, time range, or event type for compliance and incident investigation.</p>
+        </div>
+
+        <div class="ent-cap-card">
+          <div class="ent-cap-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+              <line x1="6" y1="6" x2="6.01" y2="6"/>
+              <line x1="6" y1="18" x2="6.01" y2="18"/>
+            </svg>
+          </div>
+          <h3 class="ent-cap-title">Deployment Utilities</h3>
+          <p class="ent-cap-desc">The <code>deploy/</code> package generates Dockerfile and Docker Compose configurations from agent definitions, and exposes <code>/healthz</code> and <code>/readyz</code> endpoints automatically.</p>
+        </div>
+
+        <div class="ent-cap-card">
+          <div class="ent-cap-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="2"/>
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+          </div>
+          <h3 class="ent-cap-title">Kubernetes Operator</h3>
+          <p class="ent-cap-desc">CRD-native operator with <code>Agent</code>, <code>Team</code>, and <code>ModelConfig</code> custom resources. A Helm chart is included for straightforward cluster installation and upgrades.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Block 15.3 — Deployment Story -->
   <section class="ent-section">
     <div class="ent-section-inner">
@@ -156,7 +215,7 @@ const jsonLd = JSON.stringify({
           </div>
           <div class="ent-deploy-text">
             <h3 class="ent-deploy-title">Kubernetes-native</h3>
-            <p class="ent-deploy-desc">Health checks, graceful shutdown, and lifecycle management built in. Ready for production orchestration.</p>
+            <p class="ent-deploy-desc">Health checks, graceful shutdown, and lifecycle management built in. CRD-native operator, Helm chart, and <code>deploy/</code> utilities for Dockerfile and Compose generation included.</p>
           </div>
         </div>
       </div>
