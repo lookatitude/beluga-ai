@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing to Beluga AI! Every contribution, whether it's a bug report, feature request, documentation improvement, or code change, helps make this framework better for everyone.
 
-For comprehensive developer documentation, visit our [Contributing Guide](https://lookatitude.github.io/beluga-ai/contributing/) on the docs website.
+For comprehensive developer documentation, visit our [Contributing Guide](https://beluga-ai.org/docs/contributing/) on the docs website.
 
 ## Code of Conduct
 
@@ -68,7 +68,7 @@ Open a [feature request](https://github.com/lookatitude/beluga-ai/issues/new?tem
    - `refactor/description` -- code refactoring
    - `test/description` -- test additions/fixes
 
-2. **Make your changes** following our [Code Style Guide](https://lookatitude.github.io/beluga-ai/contributing/code-style/).
+2. **Make your changes** following our [Code Style Guide](https://beluga-ai.org/docs/contributing/code-style/).
 
 3. **Write tests** for any new or changed functionality.
 
@@ -164,7 +164,7 @@ Major versions are **never created automatically**. When breaking changes land o
 
 You can also create and push a version tag directly (e.g. `git tag v1.2.3 && git push origin v1.2.3`). The Release workflow runs on any push to tags matching `v*.*.*`.
 
-See the [releases guide](https://lookatitude.github.io/beluga-ai/contributing/releases/) on the docs site for full details.
+See the [releases guide](https://beluga-ai.org/docs/contributing/releases/) on the docs site for full details.
 
 ## Security Vulnerabilities
 
