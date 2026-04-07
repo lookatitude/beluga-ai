@@ -98,6 +98,49 @@ func TestGenerateDockerfile(t *testing.T) {
 	}
 }
 
+// TestGenerateDockerfileInjectionPrevention validates that injection payloads in
+// GoVersion, BaseImage, and AgentConfig are rejected.
+func TestGenerateDockerfileInjectionPrevention(t *testing.T) {
+	tests := []struct {
+		name string
+		cfg  DockerfileConfig
+	}{
+		{
+			name: "newline in GoVersion rejected",
+			cfg:  DockerfileConfig{GoVersion: "1.23\nRUN malicious", AgentConfig: "config/a.yaml", Port: 8080},
+		},
+		{
+			name: "special chars in GoVersion rejected",
+			cfg:  DockerfileConfig{GoVersion: "1.23;rm -rf /", AgentConfig: "config/a.yaml", Port: 8080},
+		},
+		{
+			name: "newline in BaseImage rejected",
+			cfg:  DockerfileConfig{BaseImage: "alpine\nRUN evil", AgentConfig: "config/a.yaml", Port: 8080},
+		},
+		{
+			name: "shell metachar in BaseImage rejected",
+			cfg:  DockerfileConfig{BaseImage: "alpine$(whoami)", AgentConfig: "config/a.yaml", Port: 8080},
+		},
+		{
+			name: "newline in AgentConfig rejected",
+			cfg:  DockerfileConfig{AgentConfig: "config/a.yaml\nRUN evil", Port: 8080},
+		},
+		{
+			name: "absolute AgentConfig rejected",
+			cfg:  DockerfileConfig{AgentConfig: "/etc/passwd", Port: 8080},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := GenerateDockerfile(tt.cfg)
+			if err == nil {
+				t.Errorf("expected error for injection payload, got nil")
+			}
+		})
+	}
+}
+
 // ---------------------------------------------------------------------------
 // GenerateCompose tests
 // ---------------------------------------------------------------------------
@@ -215,6 +258,71 @@ func TestGenerateCompose(t *testing.T) {
 				if !strings.Contains(got, token) {
 					t.Errorf("Compose YAML missing expected token %q\nFull output:\n%s", token, got)
 				}
+			}
+		})
+	}
+}
+
+// TestGenerateComposeInjectionPrevention validates that injection payloads in
+// service names, config paths, environment keys/values, and depends_on entries
+// are rejected before YAML is generated.
+func TestGenerateComposeInjectionPrevention(t *testing.T) {
+	tests := []struct {
+		name string
+		cfg  ComposeConfig
+	}{
+		{
+			name: "newline in service Name rejected",
+			cfg: ComposeConfig{Agents: []AgentDeployment{
+				{Name: "svc\nevil:", ConfigPath: "cfg/a.yaml", Port: 8080},
+			}},
+		},
+		{
+			name: "special chars in service Name rejected",
+			cfg: ComposeConfig{Agents: []AgentDeployment{
+				{Name: "svc;evil", ConfigPath: "cfg/a.yaml", Port: 8080},
+			}},
+		},
+		{
+			name: "newline in ConfigPath rejected",
+			cfg: ComposeConfig{Agents: []AgentDeployment{
+				{Name: "svc", ConfigPath: "cfg/a.yaml\nevil: true", Port: 8080},
+			}},
+		},
+		{
+			name: "absolute ConfigPath rejected",
+			cfg: ComposeConfig{Agents: []AgentDeployment{
+				{Name: "svc", ConfigPath: "/etc/passwd", Port: 8080},
+			}},
+		},
+		{
+			name: "invalid env key rejected",
+			cfg: ComposeConfig{Agents: []AgentDeployment{
+				{Name: "svc", ConfigPath: "cfg/a.yaml", Port: 8080,
+					Environment: map[string]string{"BAD KEY!": "val"}},
+			}},
+		},
+		{
+			name: "newline in env value rejected",
+			cfg: ComposeConfig{Agents: []AgentDeployment{
+				{Name: "svc", ConfigPath: "cfg/a.yaml", Port: 8080,
+					Environment: map[string]string{"KEY": "val\nevil: injected"}},
+			}},
+		},
+		{
+			name: "special chars in DependsOn rejected",
+			cfg: ComposeConfig{Agents: []AgentDeployment{
+				{Name: "svc", ConfigPath: "cfg/a.yaml", Port: 8080,
+					DependsOn: []string{"dep;evil"}},
+			}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := GenerateCompose(tt.cfg)
+			if err == nil {
+				t.Errorf("expected error for injection payload, got nil")
 			}
 		})
 	}
@@ -349,9 +457,10 @@ func TestHealthEndpointReadyz(t *testing.T) {
 	}
 }
 
-// TestHealthEndpointReadyzErrorMessage verifies that the failing check's error
-// message is present in the response body.
-func TestHealthEndpointReadyzErrorMessage(t *testing.T) {
+// TestHealthEndpointReadyzErrorSuppressed verifies that raw error messages are
+// NOT present in the response body (information disclosure prevention) but the
+// check name is still reported so operators can identify which check failed.
+func TestHealthEndpointReadyzErrorSuppressed(t *testing.T) {
 	h := NewHealthEndpoint()
 	h.AddCheck("redis", func(_ context.Context) error {
 		return errors.New("dial tcp: connection refused")
@@ -361,12 +470,58 @@ func TestHealthEndpointReadyzErrorMessage(t *testing.T) {
 	h.Readyz()(rec, httptest.NewRequest(http.MethodGet, "/readyz", nil))
 
 	body := rec.Body.String()
-	if !strings.Contains(body, "connection refused") {
-		t.Errorf("expected error message in body, got: %s", body)
+	// Error message must NOT appear to prevent information disclosure.
+	if strings.Contains(body, "connection refused") {
+		t.Errorf("error message must not be disclosed in response body, got: %s", body)
 	}
+	// Check name must still appear so operators know which check failed.
 	if !strings.Contains(body, "redis") {
 		t.Errorf("expected check name 'redis' in body, got: %s", body)
 	}
+	// Status for failing check must be "unhealthy".
+	if !strings.Contains(body, "unhealthy") {
+		t.Errorf("expected 'unhealthy' status in body, got: %s", body)
+	}
+}
+
+// TestHealthEndpointMethodRestriction verifies that non-GET/HEAD methods are
+// rejected with 405 on both Healthz and Readyz.
+func TestHealthEndpointMethodRestriction(t *testing.T) {
+	h := NewHealthEndpoint()
+	methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+	for _, method := range methods {
+		t.Run("healthz/"+method, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			h.Healthz()(rec, httptest.NewRequest(method, "/healthz", nil))
+			if rec.Code != http.StatusMethodNotAllowed {
+				t.Errorf("expected 405, got %d", rec.Code)
+			}
+		})
+		t.Run("readyz/"+method, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			h.Readyz()(rec, httptest.NewRequest(method, "/readyz", nil))
+			if rec.Code != http.StatusMethodNotAllowed {
+				t.Errorf("expected 405, got %d", rec.Code)
+			}
+		})
+	}
+
+	// HEAD should be accepted.
+	t.Run("healthz/HEAD", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		h.Healthz()(rec, httptest.NewRequest(http.MethodHead, "/healthz", nil))
+		if rec.Code != http.StatusOK {
+			t.Errorf("expected 200 for HEAD, got %d", rec.Code)
+		}
+	})
+	t.Run("readyz/HEAD", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		h.Readyz()(rec, httptest.NewRequest(http.MethodHead, "/readyz", nil))
+		if rec.Code != http.StatusOK {
+			t.Errorf("expected 200 for HEAD, got %d", rec.Code)
+		}
+	})
 }
 
 // TestHealthEndpointAddCheckConcurrent verifies that AddCheck is safe to call

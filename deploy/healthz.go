@@ -18,9 +18,10 @@ type checkEntry struct {
 }
 
 // checkResult is the outcome of a single named check.
+// The Error field is intentionally omitted from the JSON response to prevent
+// information disclosure; error details should be logged internally instead.
 type checkResult struct {
 	Status string `json:"status"`
-	Error  string `json:"error,omitempty"`
 }
 
 // healthResponse is the JSON body returned by the health endpoints.
@@ -30,6 +31,11 @@ type healthResponse struct {
 }
 
 // HealthEndpoint exposes HTTP handlers for liveness and readiness checks.
+//
+// Health endpoints are intentionally unauthenticated to support orchestrator
+// probes (Kubernetes liveness/readiness). Restrict network access via
+// infrastructure controls (NetworkPolicy, firewall rules) rather than
+// application-layer authentication.
 //
 // Use [NewHealthEndpoint] to create an instance, [HealthEndpoint.AddCheck] to
 // register named readiness checks, and [HealthEndpoint.Healthz] /
@@ -58,8 +64,13 @@ func (h *HealthEndpoint) AddCheck(name string, check func(ctx context.Context) e
 // Healthz returns an [http.HandlerFunc] that always responds 200 OK with a
 // JSON body {"status":"ok"}. It serves as a liveness probe — confirming the
 // process is running and able to handle requests.
+// Only GET and HEAD requests are accepted; all other methods receive 405.
 func (h *HealthEndpoint) Healthz() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
 		writeJSON(w, http.StatusOK, healthResponse{Status: "ok"})
 	}
 }
@@ -68,11 +79,18 @@ func (h *HealthEndpoint) Healthz() http.HandlerFunc {
 // responds:
 //   - 200 OK when every check passes, with body {"status":"ok","checks":{...}}
 //   - 503 Service Unavailable when one or more checks fail, with the failing
-//     check names and error messages in the body.
+//     check names listed in the body (error details are intentionally suppressed
+//     to prevent information disclosure to unauthenticated callers).
 //
+// Only GET and HEAD requests are accepted; all other methods receive 405.
 // Each check is given a 5-second deadline derived from the request context.
 func (h *HealthEndpoint) Readyz() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
 		h.mu.RLock()
 		entries := make([]checkEntry, len(h.checks))
 		copy(entries, h.checks)
@@ -87,7 +105,10 @@ func (h *HealthEndpoint) Readyz() http.HandlerFunc {
 			cancel()
 
 			if err != nil {
-				results[e.name] = checkResult{Status: "fail", Error: err.Error()}
+				// Error details are intentionally suppressed here to prevent
+				// information disclosure to unauthenticated orchestrator probes.
+				// Log the full error internally via your observability stack.
+				results[e.name] = checkResult{Status: "unhealthy"}
 				allOK = false
 			} else {
 				results[e.name] = checkResult{Status: "ok"}

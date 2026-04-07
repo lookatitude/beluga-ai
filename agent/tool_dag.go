@@ -146,9 +146,12 @@ func (e *ToolDAGExecutor) executeWithDAG(ctx context.Context, calls []schema.Too
 
 	for completed < total {
 		if ctx.Err() != nil {
-			for i, n := range nodes {
+			for _, n := range nodes {
 				if results[n.index] == nil {
-					results[i] = cancelledResult()
+					// Use n.index (position in the original calls slice), not the
+					// loop variable i (position in the nodes slice), which may differ
+					// when the DAG reorders nodes.
+					results[n.index] = cancelledResult()
 				}
 			}
 			return

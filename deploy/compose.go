@@ -3,9 +3,17 @@ package deploy
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 )
+
+// serviceNameRe matches safe Docker Compose service names.
+var serviceNameRe = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+
+// envKeyRe matches valid POSIX environment variable names.
+var envKeyRe = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
 // AgentDeployment describes a single agent service within a Docker Compose file.
 type AgentDeployment struct {
@@ -36,7 +44,7 @@ type ComposeConfig struct {
 	Agents []AgentDeployment
 }
 
-// validate checks that cfg is well-formed.
+// validateComposeConfig checks that cfg is well-formed and safe to render as YAML.
 func validateComposeConfig(cfg ComposeConfig) error {
 	if len(cfg.Agents) == 0 {
 		return errors.New("deploy: ComposeConfig must contain at least one agent")
@@ -46,14 +54,39 @@ func validateComposeConfig(cfg ComposeConfig) error {
 		if a.Name == "" {
 			return fmt.Errorf("deploy: agent[%d].Name must not be empty", i)
 		}
+		// Validate Name against safe service name characters to prevent YAML injection.
+		if !serviceNameRe.MatchString(a.Name) {
+			return fmt.Errorf("deploy: agent[%d].Name %q contains invalid characters; must match ^[a-zA-Z0-9_-]+$", i, a.Name)
+		}
 		if a.ConfigPath == "" {
 			return fmt.Errorf("deploy: agent %q: ConfigPath must not be empty", a.Name)
 		}
-		if strings.Contains(a.ConfigPath, "..") {
-			return fmt.Errorf("deploy: agent %q: ConfigPath must not contain path traversal sequences", a.Name)
+		// Reject newlines in ConfigPath to prevent YAML injection.
+		if strings.ContainsAny(a.ConfigPath, "\n\r") {
+			return fmt.Errorf("deploy: agent %q: ConfigPath must not contain newlines", a.Name)
+		}
+		// Use filepath.Clean-based path traversal check instead of naive ".." substring match.
+		cleaned := filepath.Clean(a.ConfigPath)
+		if strings.HasPrefix(cleaned, "..") || filepath.IsAbs(cleaned) {
+			return fmt.Errorf("deploy: agent %q: ConfigPath must not contain path traversal sequences or be absolute", a.Name)
 		}
 		if a.Port < 1 || a.Port > 65535 {
 			return fmt.Errorf("deploy: agent %q: Port must be between 1 and 65535", a.Name)
+		}
+		// Validate environment variable keys and values.
+		for k, v := range a.Environment {
+			if !envKeyRe.MatchString(k) {
+				return fmt.Errorf("deploy: agent %q: environment key %q is not a valid POSIX variable name", a.Name, k)
+			}
+			if strings.ContainsAny(v, "\n\r") {
+				return fmt.Errorf("deploy: agent %q: environment value for key %q must not contain newlines", a.Name, k)
+			}
+		}
+		// Validate DependsOn entries against safe service name characters.
+		for _, dep := range a.DependsOn {
+			if !serviceNameRe.MatchString(dep) {
+				return fmt.Errorf("deploy: agent %q: DependsOn entry %q contains invalid characters", a.Name, dep)
+			}
 		}
 		names[a.Name] = struct{}{}
 	}
