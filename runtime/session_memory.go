@@ -16,13 +16,14 @@ var _ SessionService = (*InMemorySessionService)(nil)
 
 // sessionOptions holds configuration for InMemorySessionService.
 type sessionOptions struct {
-	ttl      time.Duration
-	tenantID string
+	ttl         time.Duration
+	tenantID    string
+	maxSessions int // 0 = unlimited
 }
 
-// defaultSessionOptions returns the default options: no TTL, no tenant scope.
+// defaultSessionOptions returns the default options: no TTL, no tenant scope, unlimited sessions.
 func defaultSessionOptions() sessionOptions {
-	return sessionOptions{}
+	return sessionOptions{maxSessions: 0}
 }
 
 // SessionOption is a functional option for configuring InMemorySessionService.
@@ -42,6 +43,15 @@ func WithSessionTTL(d time.Duration) SessionOption {
 func WithSessionTenantID(tenantID string) SessionOption {
 	return func(o *sessionOptions) {
 		o.tenantID = tenantID
+	}
+}
+
+// WithMaxSessions sets a limit on the number of concurrent sessions that can be
+// stored by the service. A value of 0 (default) means unlimited. When the limit
+// is reached, Create() will return an error.
+func WithMaxSessions(n int) SessionOption {
+	return func(o *sessionOptions) {
+		o.maxSessions = n
 	}
 }
 
@@ -68,6 +78,7 @@ func NewInMemorySessionService(opts ...SessionOption) *InMemorySessionService {
 
 // Create allocates a new Session for the given agentID, assigns a
 // crypto-random ID, and stores it. The returned session is a copy.
+// Returns an error if the session storage limit is reached.
 func (s *InMemorySessionService) Create(ctx context.Context, agentID string) (*Session, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -93,8 +104,14 @@ func (s *InMemorySessionService) Create(ctx context.Context, agentID string) (*S
 	}
 
 	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Check if we've hit the max sessions limit.
+	if s.opts.maxSessions > 0 && len(s.sessions) >= s.opts.maxSessions {
+		return nil, core.NewError("runtime.session.create", core.ErrInvalidInput, "session storage limit reached", nil)
+	}
+
 	s.sessions[id] = cloneSession(session)
-	s.mu.Unlock()
 
 	return session, nil
 }
@@ -112,12 +129,12 @@ func (s *InMemorySessionService) Get(ctx context.Context, sessionID string) (*Se
 
 	if !ok {
 		return nil, core.NewError("runtime.session.get", core.ErrNotFound,
-			"session not found: "+sessionID, nil)
+			"session not found", nil)
 	}
 
 	if !stored.ExpiresAt.IsZero() && time.Now().UTC().After(stored.ExpiresAt) {
 		return nil, core.NewError("runtime.session.get", core.ErrNotFound,
-			"session expired: "+sessionID, nil)
+			"session expired", nil)
 	}
 
 	return cloneSession(stored), nil
@@ -139,7 +156,7 @@ func (s *InMemorySessionService) Update(ctx context.Context, session *Session) e
 
 	if _, ok := s.sessions[session.ID]; !ok {
 		return core.NewError("runtime.session.update", core.ErrNotFound,
-			"session not found: "+session.ID, nil)
+			"session not found", nil)
 	}
 
 	copied := cloneSession(session)
@@ -160,7 +177,7 @@ func (s *InMemorySessionService) Delete(ctx context.Context, sessionID string) e
 
 	if _, ok := s.sessions[sessionID]; !ok {
 		return core.NewError("runtime.session.delete", core.ErrNotFound,
-			"session not found: "+sessionID, nil)
+			"session not found", nil)
 	}
 
 	delete(s.sessions, sessionID)
@@ -177,7 +194,7 @@ func generateSessionID() (string, error) {
 }
 
 // cloneSession returns a deep copy of s so callers cannot mutate stored
-// sessions through the returned pointer.
+// sessions through the returned pointer. This includes deep-cloning Turn metadata.
 func cloneSession(s *Session) *Session {
 	cp := *s
 
@@ -190,7 +207,16 @@ func cloneSession(s *Session) *Session {
 
 	if len(s.Turns) > 0 {
 		cp.Turns = make([]schema.Turn, len(s.Turns))
-		copy(cp.Turns, s.Turns)
+		for i, turn := range s.Turns {
+			cp.Turns[i] = turn
+			// Deep-clone Metadata map to prevent caller mutations.
+			if turn.Metadata != nil {
+				cp.Turns[i].Metadata = make(map[string]any, len(turn.Metadata))
+				for k, v := range turn.Metadata {
+					cp.Turns[i].Metadata[k] = v
+				}
+			}
+		}
 	}
 
 	return &cp
