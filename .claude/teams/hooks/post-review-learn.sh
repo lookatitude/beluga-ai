@@ -29,9 +29,13 @@ if [ -f "$REVIEW_LOG" ]; then
     POSITIVE=$(grep -i -E "(clean|correct|well.implemented|good pattern|approved)" "$REVIEW_LOG" | head -10 || true)
 fi
 
-# Determine filename suffix
-REVIEW_COUNT=$(find "$REVIEWER_RULES" -name "review-*.md" -type f 2>/dev/null | wc -l)
-SUFFIX="review-${TASK_ID}-$(( REVIEW_COUNT + 1 )).md"
+# Ensure rules directories exist and generate race-safe filenames
+TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+mkdir -p "$REVIEWER_RULES"
+mkdir -p "$IMPLEMENTER_RULES"
+# Sanitize TASK_ID to alphanumeric/dash/underscore only
+SAFE_TASK_ID="$(echo "$TASK_ID" | tr -cd 'a-zA-Z0-9_-')"
+SUFFIX="review-${SAFE_TASK_ID}-${TIMESTAMP}.md"
 
 # Write to reviewer's rules (what to watch for)
 if [ -n "$ISSUES" ] || [ -n "$POSITIVE" ]; then

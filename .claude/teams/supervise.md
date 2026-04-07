@@ -21,10 +21,10 @@ Dispatch the `arch-analyst` agent with this task:
 
 > Analyze the gap between the current Beluga AI codebase and the new v2 architecture defined in `docs/beluga-ai-v2-comprehensive-architecture.md` and `docs/beluga_full_runtime_architecture.svg`. Produce a structured implementation plan and save it to `.claude/teams/state/plan.md`.
 
-Use the Agent tool:
-- `subagent_type`: `architect`
-- `isolation`: `worktree`
-- `name`: `arch-analyst`
+Use the `dispatch` skill to route this task. The dispatch skill reads the agent's definition and accumulated learnings before dispatching:
+- agent: `arch-analyst`
+- task: the description above
+- context: none (first run)
 
 ### Step 1.2: Validate the plan
 
@@ -42,7 +42,7 @@ Wait for user approval before starting Phase 2.
 
 ## Phase 2: Implementation
 
-For each batch (1 through 4) in the plan:
+For each batch (1 through 5) in the plan:
 
 ### Step 2.1: Identify independent tasks in current batch
 
@@ -50,18 +50,19 @@ Read the plan, extract all tasks in the current batch that have no unresolved de
 
 ### Step 2.2: Dispatch implementers in parallel
 
-For each independent task, dispatch an `implementer` agent:
-- Use the Agent tool with `subagent_type: developer`, `isolation: worktree`
-- Name each agent `implementer-{package-name}` for tracking
-- Include in the prompt: the specific task from the plan, acceptance criteria, and relevant plan context
-- Run agents in parallel (multiple Agent tool calls in one message)
+For each independent task, use the `dispatch` skill to route to the `implementer` agent:
+- agent: `implementer`
+- task: the specific task from the plan with acceptance criteria
+- context: relevant plan context, any prior learnings
+
+The dispatch skill handles reading the agent's accumulated learnings from `rules/`, constructing the full prompt, dispatching via the Agent tool with worktree isolation, and running post-dispatch hooks. Run multiple dispatches in parallel for independent tasks.
 
 ### Step 2.3: Review each implementation
 
-For each completed implementer task, dispatch the `reviewer` agent:
-- Use the Agent tool with `subagent_type: security-reviewer`
-- Name it `reviewer-{package-name}`
-- Include: the git diff from the implementer's worktree branch, acceptance criteria
+For each completed implementer task, use the `dispatch` skill to route to the `reviewer` agent:
+- agent: `reviewer`
+- task: review the implementation against acceptance criteria
+- context: git diff from the implementer's worktree branch, acceptance criteria
 
 ### Step 2.4: Handle review results
 
@@ -91,21 +92,21 @@ Dispatch three agents in parallel:
 Dispatch with task:
 > Update all project documentation in `docs/` to reflect the newly implemented v2 packages. See your agent definition for specific targets.
 
-Use: `subagent_type: doc-writer`, `isolation: worktree`, `name: doc-writer`
+Use the `dispatch` skill: agent `doc-writer`, task as above.
 
 ### Step 3.2: website-dev
 
 Dispatch with task:
 > Update the Astro/Starlight website to match the Website Blueprint v2. See `docs/beluga-ai-website-blueprint-v2.md` for the full spec.
 
-Use: `subagent_type: developer`, `isolation: worktree`, `name: website-dev`
+Use the `dispatch` skill: agent `website-dev`, task as above.
 
 ### Step 3.3: notion-syncer
 
 Dispatch with task:
 > Sync all documentation to Notion and create/update the project tracking dashboard. See your agent definition for details.
 
-Use: `subagent_type: general-purpose`, `name: notion-syncer`
+Use the `dispatch` skill: agent `notion-syncer`, task as above.
 
 ### Step 3.4: Review documentation
 

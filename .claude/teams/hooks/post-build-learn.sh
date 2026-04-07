@@ -32,8 +32,11 @@ IMPORT_CYCLES=$(grep -i "import cycle" "$BUILD_LOG" | head -5 || true)
 
 # Only write if there's something to learn from
 if [ -n "$BUILD_ERRORS" ] || [ -n "$TEST_FAILURES" ] || [ -n "$VET_WARNINGS" ] || [ -n "$IMPORT_CYCLES" ]; then
-    BUILD_COUNT=$(find "$IMPLEMENTER_RULES" -name "build-*.md" -type f 2>/dev/null | wc -l)
-    RULE_FILE="$IMPLEMENTER_RULES/build-${TASK_ID}-$(( BUILD_COUNT + 1 )).md"
+    mkdir -p "$IMPLEMENTER_RULES"
+    TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+    # Sanitize TASK_ID to alphanumeric/dash/underscore only
+    SAFE_TASK_ID="$(echo "$TASK_ID" | tr -cd 'a-zA-Z0-9_-')"
+    RULE_FILE="$IMPLEMENTER_RULES/build-${SAFE_TASK_ID}-${TIMESTAMP}.md"
 
     cat > "$RULE_FILE" << RULEEOF
 ---
