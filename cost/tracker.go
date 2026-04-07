@@ -37,10 +37,16 @@ type InMemoryTracker struct {
 }
 
 // NewInMemoryTracker creates a new InMemoryTracker with the supplied options.
+// If maxEntries is not set (zero), it defaults to 100000 to prevent unbounded
+// memory growth.
 func NewInMemoryTracker(opts ...Option) *InMemoryTracker {
 	o := options{}
 	for _, opt := range opts {
 		opt(&o)
+	}
+	// Set a sensible default if maxEntries is not specified.
+	if o.maxEntries == 0 {
+		o.maxEntries = 100000
 	}
 	return &InMemoryTracker{opts: o}
 }
@@ -57,8 +63,11 @@ func (t *InMemoryTracker) Record(ctx context.Context, usage Usage) error {
 	defer t.mu.Unlock()
 
 	if t.opts.maxEntries > 0 && len(t.entries) >= t.opts.maxEntries {
-		// Evict oldest entry.
-		t.entries = t.entries[1:]
+		// Evict oldest entry. Create a new slice to allow GC to reclaim the
+		// underlying array.
+		newEntries := make([]Usage, len(t.entries)-1)
+		copy(newEntries, t.entries[1:])
+		t.entries = newEntries
 	}
 
 	t.entries = append(t.entries, usage)
