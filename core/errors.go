@@ -33,6 +33,9 @@ const (
 
 	// ErrBudgetExhausted indicates a token or cost budget has been exceeded.
 	ErrBudgetExhausted ErrorCode = "budget_exhausted"
+
+	// ErrNotFound indicates the requested resource does not exist.
+	ErrNotFound ErrorCode = "not_found"
 )
 
 // retryableCodes is the set of error codes that should be retried.
