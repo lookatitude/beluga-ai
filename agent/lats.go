@@ -10,6 +10,8 @@ import (
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
+const stepFmt = "Step %d: %s\n"
+
 func init() {
 	RegisterPlanner("lats", func(cfg PlannerConfig) (Planner, error) {
 		if cfg.LLM == nil {
@@ -235,7 +237,7 @@ func (p *LATSPlanner) expandNode(ctx context.Context, input string, node *MCTSNo
 	if len(path) > 1 { // skip root
 		pathContext = "\n\nReasoning so far:\n"
 		for i, step := range path[1:] {
-			pathContext += fmt.Sprintf("Step %d: %s\n", i+1, step)
+			pathContext += fmt.Sprintf(stepFmt, i+1, step)
 		}
 	}
 
@@ -273,7 +275,7 @@ func (p *LATSPlanner) evaluateNode(ctx context.Context, input string, node *MCTS
 	path := p.extractPath(node)
 	var pathText string
 	for i, step := range path {
-		pathText += fmt.Sprintf("Step %d: %s\n", i+1, step)
+		pathText += fmt.Sprintf(stepFmt, i+1, step)
 	}
 
 	prompt := fmt.Sprintf(
@@ -382,7 +384,7 @@ func (p *LATSPlanner) synthesize(ctx context.Context, state PlannerState, path [
 		if i == 0 {
 			continue // skip root (which is just the input)
 		}
-		fmt.Fprintf(&pathText, "Step %d: %s\n", i, step)
+		fmt.Fprintf(&pathText, stepFmt, i, step)
 	}
 
 	var reflectionText string
