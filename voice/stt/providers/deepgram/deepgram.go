@@ -22,6 +22,11 @@ const (
 	defaultModel   = "nova-2"
 )
 
+const (
+	authPrefix = "Token "
+	listenPath = "/listen?"
+)
+
 var _ stt.STT = (*Engine)(nil) // compile-time interface check
 
 func init() {
@@ -62,7 +67,7 @@ func New(cfg stt.Config) (*Engine, error) {
 
 	client := httpclient.New(
 		httpclient.WithBaseURL(baseURL),
-		httpclient.WithBearerToken("Token "+apiKey),
+		httpclient.WithBearerToken(authPrefix+apiKey),
 		httpclient.WithRetries(2),
 	)
 
@@ -103,11 +108,11 @@ func (e *Engine) Transcribe(ctx context.Context, audio []byte, opts ...stt.Optio
 	}
 
 	params := e.buildQueryParams(cfg)
-	path := "/listen?" + params.Encode()
+	path := listenPath + params.Encode()
 
 	resp, err := e.client.Do(ctx, http.MethodPost, path, nil, map[string]string{
 		"Content-Type":  "audio/wav",
-		"Authorization": "Token " + e.apiKey,
+		"Authorization": authPrefix + e.apiKey,
 	})
 	if err != nil {
 		return "", fmt.Errorf("deepgram: request failed: %w", err)
@@ -129,14 +134,14 @@ func (e *Engine) Transcribe(ctx context.Context, audio []byte, opts ...stt.Optio
 
 func (e *Engine) transcribeRaw(ctx context.Context, audio []byte, cfg stt.Config) (string, error) {
 	params := e.buildQueryParams(cfg)
-	u := e.baseURL + "/listen?" + params.Encode()
+	u := e.baseURL + listenPath + params.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, strings.NewReader(string(audio)))
 	if err != nil {
 		return "", fmt.Errorf("deepgram: create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "audio/wav")
-	req.Header.Set("Authorization", "Token "+e.apiKey)
+	req.Header.Set("Authorization", authPrefix+e.apiKey)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -181,10 +186,10 @@ type deepgramStreamResponse struct {
 // dialStream opens a WebSocket connection to Deepgram's streaming endpoint.
 func (e *Engine) dialStream(ctx context.Context, cfg stt.Config) (*websocket.Conn, error) {
 	params := e.buildQueryParams(cfg)
-	wsEndpoint := e.wsURL + "/listen?" + params.Encode()
+	wsEndpoint := e.wsURL + listenPath + params.Encode()
 
 	headers := http.Header{}
-	headers.Set("Authorization", "Token "+e.apiKey)
+	headers.Set("Authorization", authPrefix+e.apiKey)
 
 	conn, _, err := websocket.Dial(ctx, wsEndpoint, &websocket.DialOptions{
 		HTTPHeader: headers,
