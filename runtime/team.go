@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/tool"
 )
 
@@ -96,7 +97,8 @@ func (t *Team) Children() []agent.Agent { return t.agents }
 // and collecting all text events into a single result string.
 func (t *Team) Invoke(ctx context.Context, input string, opts ...agent.Option) (string, error) {
 	if len(t.agents) == 0 {
-		return "", fmt.Errorf("team %q: no agents configured", t.id)
+		return "", core.NewError("runtime.team.invoke", core.ErrInvalidInput,
+			fmt.Sprintf("team %q: no agents configured", t.id), nil)
 	}
 
 	var lastErr error
@@ -120,7 +122,8 @@ func (t *Team) Invoke(ctx context.Context, input string, opts ...agent.Option) (
 			}
 			lastStageText.WriteString(event.Text)
 		case agent.EventError:
-			lastErr = fmt.Errorf("team %q: agent error: %s", t.id, event.Text)
+			lastErr = core.NewError("runtime.team.invoke", core.ErrToolFailed,
+				fmt.Sprintf("team %q: agent error: %s", t.id, event.Text), nil)
 		}
 	}
 
@@ -135,7 +138,8 @@ func (t *Team) Invoke(ctx context.Context, input string, opts ...agent.Option) (
 func (t *Team) Stream(ctx context.Context, input string, _ ...agent.Option) iter.Seq2[agent.Event, error] {
 	if len(t.agents) == 0 {
 		return func(yield func(agent.Event, error) bool) {
-			yield(agent.Event{}, fmt.Errorf("team %q: no agents configured", t.id))
+			yield(agent.Event{}, core.NewError("runtime.team.stream", core.ErrInvalidInput,
+				fmt.Sprintf("team %q: no agents configured", t.id), nil))
 		}
 	}
 	return t.pattern.Execute(ctx, t.agents, input)
@@ -171,7 +175,8 @@ func (p *pipelinePattern) Execute(ctx context.Context, agents []agent.Agent, inp
 			// events from multiple internal stages.
 			result, err := a.Invoke(ctx, currentInput)
 			if err != nil {
-				if !yield(agent.Event{}, fmt.Errorf("pipeline stage %d (%s): %w", i, a.ID(), err)) {
+				if !yield(agent.Event{}, core.NewError("runtime.team.pipeline", core.ErrToolFailed,
+					fmt.Sprintf("pipeline stage %d (%s) failed", i, a.ID()), err)) {
 					return
 				}
 				return
@@ -243,7 +248,8 @@ func (s *supervisorPattern) Execute(ctx context.Context, agents []agent.Agent, i
 
 		for event, err := range s.coordinator.Stream(ctx, desc.String()) {
 			if err != nil {
-				if !yield(agent.Event{}, fmt.Errorf("supervisor coordinator: %w", err)) {
+				if !yield(agent.Event{}, core.NewError("runtime.team.supervisor", core.ErrToolFailed,
+					"supervisor coordinator failed", err)) {
 					return
 				}
 				return
@@ -307,7 +313,8 @@ func (sg *scatterGatherPattern) Execute(ctx context.Context, agents []agent.Agen
 		combined.WriteString("Agent outputs:\n")
 		for _, r := range results {
 			if r.err != nil {
-				if !yield(agent.Event{}, fmt.Errorf("scatter agent %s: %w", r.agentID, r.err)) {
+				if !yield(agent.Event{}, core.NewError("runtime.team.scatter", core.ErrToolFailed,
+					fmt.Sprintf("scatter agent %s failed", r.agentID), r.err)) {
 					return
 				}
 				return
@@ -318,7 +325,8 @@ func (sg *scatterGatherPattern) Execute(ctx context.Context, agents []agent.Agen
 		// Pass combined results to the aggregator
 		for event, err := range sg.aggregator.Stream(ctx, combined.String()) {
 			if err != nil {
-				if !yield(agent.Event{}, fmt.Errorf("scatter aggregator: %w", err)) {
+				if !yield(agent.Event{}, core.NewError("runtime.team.scatter", core.ErrToolFailed,
+					"scatter aggregator failed", err)) {
 					return
 				}
 				return

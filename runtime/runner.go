@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"iter"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -113,6 +114,10 @@ func NewRunner(a agent.Agent, opts ...RunnerOption) *Runner {
 //  4. Collect events and run the plugin chain's AfterTurn hooks.
 //  5. Yield the (potentially modified) events to the caller.
 //
+// The provided context controls the lifetime of the execution. Agents MUST
+// respect context cancellation. If an agent ignores a cancelled context, the
+// goroutine will complete when the agent's stream terminates naturally.
+//
 // Run respects context cancellation at every stage. If the Runner has been
 // shut down, Run returns a single error event.
 func (r *Runner) Run(ctx context.Context, sessionID string, input schema.Message) iter.Seq2[agent.Event, error] {
@@ -215,7 +220,7 @@ func (r *Runner) executeTurn(ctx context.Context, sessionID string, input schema
 	})
 	if updateErr := r.sessionService.Update(ctx, session); updateErr != nil {
 		// Log but do not fail the turn — the events were already produced.
-		_ = updateErr
+		slog.WarnContext(ctx, "failed to update session", "error", updateErr)
 	}
 
 	return events, nil

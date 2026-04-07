@@ -66,6 +66,8 @@ func (p *auditPlugin) OnError(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
 	}
+	// NOTE: Audit store access must be restricted to authorized operators.
+	// Error messages may contain internal details.
 	entry := audit.Entry{
 		Timestamp: time.Now().UTC(),
 		Action:    "agent.turn.error",

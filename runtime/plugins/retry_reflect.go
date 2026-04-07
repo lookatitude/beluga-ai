@@ -25,6 +25,11 @@ type retryPlugin struct {
 // error is returned unchanged. Non-retryable errors are always forwarded
 // immediately.
 //
+// WARNING: The retry counter is global across all sessions. In multi-tenant
+// deployments, consider implementing per-session retry tracking to prevent one
+// tenant's retries from consuming budget allocated for other tenants. For
+// per-session limiting, create one plugin instance per session.
+//
 // The internal retry counter is per-plugin-instance and accumulates across
 // all sessions served by the same Runner. For per-session limiting create
 // one plugin per session.

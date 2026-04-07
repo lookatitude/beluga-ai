@@ -16,10 +16,6 @@ const (
 
 // RunnerConfig holds configuration for a Runner.
 type RunnerConfig struct {
-	// MaxConcurrentSessions is the maximum number of concurrent Run() calls.
-	// Defaults to 0 (no limit beyond the worker pool size).
-	MaxConcurrentSessions int
-
 	// SessionTTL is the default time-to-live for sessions created by the Runner.
 	// A zero value means sessions do not expire.
 	SessionTTL time.Duration
