@@ -331,8 +331,7 @@ func (c *MCPClient) notify(ctx context.Context, method string, params any) error
 	}
 	// Drain body to allow HTTP connection reuse, then close.
 	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxResponseBodySize))
-	_ = resp.Body.Close()
-
+	resp.Body.Close()
 	// L1: Check HTTP status codes for notifications, consistent with call().
 	switch {
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
