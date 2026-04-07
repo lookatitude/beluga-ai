@@ -1,6 +1,6 @@
 ---
 title: "Package Layout — Beluga AI"
-description: "Every package in the Beluga AI framework, its interfaces, dependencies, and collaboration patterns. 23 top-level packages with 50+ interfaces."
+description: "Every package in the Beluga AI framework, its interfaces, dependencies, and collaboration patterns. 28 top-level packages with 50+ interfaces."
 head:
   - tag: meta
     attrs:
@@ -51,11 +51,22 @@ graph TB
         eval
         state
         prompt
+        cost
+        audit
+    end
+
+    subgraph runtime_layer [Runtime Layer]
+        runtime
     end
 
     subgraph protocols [Protocols & Servers]
         protocol
         server
+    end
+
+    subgraph deployment [Deployment]
+        deploy
+        k8s["k8s/operator"]
     end
 
     core --> schema
@@ -75,6 +86,9 @@ graph TB
     eval --> schema & llm & agent
     state --> core
     prompt --> schema
+    cost --> core
+    audit --> core
+    runtime --> agent & guard & cost & audit & orch
     protocol --> agent & tool & schema
     server --> protocol
 ```
@@ -101,6 +115,8 @@ beluga-ai/
 │   └── splitter/          # TextSplitter (recursive, markdown, token)
 ├── agent/                 # Agent, BaseAgent, Planner, Executor, Handoffs, Bus
 │   └── workflow/          # SequentialAgent, ParallelAgent, LoopAgent
+├── runtime/               # Runner, Team, Plugin, Session, WorkerPool
+│   └── plugins/           # RateLimit, AuditPlugin, CostTracking
 ├── voice/
 │   ├── stt/providers/     # whisper, deepgram, assemblyai, gladia, groq, elevenlabs
 │   ├── tts/providers/     # elevenlabs, cartesia, openai, playht, lmnt, fish, smallest
@@ -118,6 +134,11 @@ beluga-ai/
 ├── eval/                  # Metric, Runner, Dataset + providers (braintrust, deepeval, ragas)
 ├── state/                 # Store interface + providers (inmemory)
 ├── prompt/                # Template, Manager, Builder + providers (file)
+├── cost/                  # Tracker, BudgetChecker, Usage + providers (inmemory)
+├── audit/                 # Logger, Store, Entry + providers (inmemory)
+├── deploy/                # Dockerfile gen, Compose gen, health endpoints
+├── k8s/
+│   └── operator/          # CRD types (AgentResource, TeamResource), Reconciler
 ├── protocol/
 │   ├── mcp/               # MCP Server, Client, Registry
 │   ├── a2a/               # A2A Server, Client, AgentCard
@@ -420,6 +441,71 @@ graph TB
     end
 ```
 
+## Runtime Layer
+
+The runtime layer provides the lifecycle management layer that sits between agent definitions and the protocol/infrastructure layers. It coordinates execution, enforces cross-cutting concerns through a plugin system, and manages bounded concurrency. All production agent deployments should use `runtime.Runner` or `runtime.Team` rather than calling agent methods directly.
+
+### runtime/
+
+Agent lifecycle management: Runner, Team composition, Plugin system, Session management, and WorkerPool.
+
+**Key types**:
+
+| Type | Purpose |
+|------|---------|
+| `Runner` | Lifecycle manager for a single agent; handles sessions, plugins, and graceful shutdown |
+| `Team` | Groups agents and coordinates them via an `OrchestrationPattern`; implements `agent.Agent` for recursive composition |
+| `Plugin` | Cross-cutting concern interface: `BeforeTurn`, `AfterTurn`, `OnError` |
+| `PluginChain` | Executes plugins in registration order |
+| `Session` | Conversation state for one agent interaction |
+| `SessionService` | Manages session lifecycle; default is `InMemorySessionService` |
+| `WorkerPool` | Bounded concurrency; limits concurrent agent tasks to prevent resource exhaustion |
+
+**Orchestration patterns** (built-in, passed to `WithPattern`):
+
+| Pattern | Behavior |
+|---------|----------|
+| `PipelinePattern` | Sequential — text output of each agent feeds the next |
+| `SupervisorPattern` | Coordinator LLM delegates to member agents |
+| `ScatterGatherPattern` | All agents run in parallel; aggregator synthesizes results |
+
+**Built-in plugins** (`runtime/plugins/`): `RateLimit`, `AuditPlugin`, `CostTracking`.
+
+**Dependencies**: `agent`, `guard`, `cost`, `audit`, `orchestration`.
+
+```go
+import (
+    "context"
+    "fmt"
+
+    "github.com/lookatitude/beluga-ai/runtime"
+    "github.com/lookatitude/beluga-ai/runtime/plugins"
+)
+
+runner := runtime.NewRunner(myAgent,
+    runtime.WithWorkerPoolSize(20),
+    runtime.WithPlugins(
+        plugins.NewRateLimit(60),
+        plugins.NewAuditPlugin(auditStore),
+        plugins.NewCostTracking(tracker, budget),
+    ),
+)
+defer func() {
+    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+    if err := runner.Shutdown(ctx); err != nil {
+        fmt.Println("shutdown error:", err)
+    }
+}()
+
+for evt, err := range runner.Run(ctx, "session-1", schema.NewHumanMessage("hello")) {
+    if err != nil {
+        break
+    }
+    fmt.Print(evt.Text)
+}
+```
+
 ## Infrastructure Layer
 
 Infrastructure packages provide cross-cutting concerns that apply to multiple capability packages: safety guards, resilience patterns, caching, authentication, human-in-the-loop approval, evaluation, shared state, and prompt management. These packages import from both the foundation and capability layers, and they are applied via middleware or hooks rather than being embedded in capability code.
@@ -483,6 +569,50 @@ Implementations: RBAC, ABAC, Composite. OPA integration.
 | `eval/` | `Metric` | Evaluation metrics (faithfulness, relevance, hallucination, toxicity) |
 | `state/` | `Store` | Shared agent state with Watch |
 | `prompt/` | `PromptManager` | Template management, versioning, cache-optimal ordering |
+| `cost/` | `Tracker`, `BudgetChecker` | Token usage tracking and budget enforcement |
+| `audit/` | `Logger`, `Store` | Structured audit logging for agents, tools, and system actions |
+
+### cost/
+
+Token usage tracking and budget enforcement. Depends only on `core/`.
+
+```go
+type Tracker interface {
+    Record(ctx context.Context, usage Usage) error
+    Query(ctx context.Context, filter Filter) (Summary, error)
+}
+
+type BudgetChecker interface {
+    Check(ctx context.Context, budget Budget, estimated Usage) (BudgetDecision, error)
+}
+```
+
+`Budget` enforces two rolling windows: `MaxTokensPerHour` and `MaxCostPerDay`. When a threshold is reached, `BudgetAction` determines the response: `BudgetActionReject` (deny), `BudgetActionThrottle` (signal slow-down), or `BudgetActionAlert` (allow but set `BudgetDecision.Reason`).
+
+**Registry**: `Register("postgres", factory)`, `New("inmemory", cfg)`, `List()`. The "inmemory" backend is registered automatically.
+
+**Related**: `runtime/plugins.CostTracking`, `audit/`, `o11y/`.
+
+### audit/
+
+Structured audit logging for agents, tools, and system actions. Depends only on `core/`.
+
+```go
+type Logger interface {
+    Log(ctx context.Context, entry Entry) error
+}
+
+type Store interface {
+    Logger
+    Query(ctx context.Context, filter Filter) ([]Entry, error)
+}
+```
+
+Each `Entry` captures: `TenantID`, `AgentID`, `SessionID`, `Action`, `Input`, `Output`, `Duration`, `Error`. IDs and timestamps are generated automatically. Callers must redact PII and secrets from `Input`/`Output` before calling `Log` — see the security note in the source doc.
+
+**Registry**: `Register("postgres", factory)`, `New("inmemory", cfg)`, `List()`. The "inmemory" backend is registered automatically.
+
+**Related**: `runtime/plugins.AuditPlugin`, `cost/`.
 
 ## Protocol Layer
 
@@ -529,6 +659,68 @@ type ServerAdapter interface {
 ```
 
 Adapters: gin, chi, echo, fiber, huma, grpc, connect.
+
+## Deployment Layer
+
+Deployment packages generate artifacts and Kubernetes resources for running Beluga agents in production. They have no dependencies on core library packages and are never imported by them — the dependency is one-directional.
+
+### deploy/
+
+Generates deployment artifacts and exposes health endpoints. No dependencies on other Beluga packages.
+
+**Capabilities**:
+
+| Function / Type | Purpose |
+|-----------------|---------|
+| `GenerateDockerfile(cfg DockerfileConfig)` | Multi-stage Dockerfile — builder stage compiles Go binary, runtime stage uses distroless |
+| `GenerateCompose(cfg ComposeConfig)` | Docker Compose YAML — one service per `AgentDeployment` with env vars, ports, dependencies |
+| `NewHealthEndpoint()` | HTTP handler exposing `/healthz` (liveness) and `/readyz` (readiness) |
+| `HealthEndpoint.AddCheck(name, fn)` | Register a named readiness check; each runs with a 5-second deadline |
+
+All input is validated before rendering. Dockerfile generation rejects path traversal in `AgentConfig`. Compose generation rejects unresolvable `DependsOn` references. Health check error details are suppressed in HTTP responses to prevent information disclosure.
+
+```go
+import "github.com/lookatitude/beluga-ai/deploy"
+
+h := deploy.NewHealthEndpoint()
+h.AddCheck("database", func(ctx context.Context) error {
+    return db.PingContext(ctx)
+})
+mux := http.NewServeMux()
+mux.HandleFunc("/healthz", h.Healthz())
+mux.HandleFunc("/readyz", h.Readyz())
+```
+
+**Related**: `k8s/operator`, `runtime`.
+
+### k8s/operator/
+
+Kubernetes operator types and reconciliation logic for Beluga Agent and Team CRDs. Imports only `core/` and the Go standard library. Must never be imported by core library packages.
+
+**Key types**:
+
+| Type | Purpose |
+|------|---------|
+| `AgentResource` | Mirrors the BelugaAgent CRD spec |
+| `TeamResource` | Mirrors the BelugaTeam CRD spec |
+| `Reconciler` | Interface: `ReconcileAgent`, `ReconcileTeam` |
+| `ReconcileResult` | Deployment spec, Service spec, optional HPA spec — caller maps to K8s API objects |
+| `DefaultReconciler` | Built-in implementation deriving resource names, replica counts, and autoscaling from CRD spec |
+
+The package is intentionally decoupled from any Kubernetes client library. `ReconcileResult` values contain plain Go structs that callers translate to `client-go` or controller-runtime types, which keeps the operator package free of heavyweight dependencies.
+
+```go
+import "github.com/lookatitude/beluga-ai/k8s/operator"
+
+r := operator.NewDefaultReconciler()
+result, err := r.ReconcileAgent(ctx, agentResource)
+if err != nil {
+    return err
+}
+// result.Deployment, result.Service, result.HPA — apply via your K8s client.
+```
+
+**Related**: `deploy/`.
 
 ## Internal Utilities
 
@@ -617,7 +809,7 @@ sequenceDiagram
 
 | Category | Count |
 |----------|-------|
-| Top-level packages | 23 |
+| Top-level packages | 28 |
 | Interfaces | 50+ |
 | Registries | 19 |
 | Total providers | 100+ |
