@@ -170,6 +170,10 @@ type TeamSpec struct {
 	// Members lists the agent CRDs that form this team.
 	Members []TeamMemberRef `json:"members"`
 
+	// Pattern is the execution pattern for the team.
+	// Valid values: "sequential", "parallel", "supervisor".
+	Pattern string `json:"pattern,omitempty"`
+
 	// Supervisor is the optional name of the agent that orchestrates the team.
 	Supervisor string `json:"supervisor,omitempty"`
 
