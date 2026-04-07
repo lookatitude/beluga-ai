@@ -449,13 +449,17 @@ jobs:
   # commits since the last tag: minor for feat, patch otherwise.
   # Breaking changes (feat!:, fix!:, BREAKING CHANGE) skip auto-release;
   # major versions must be published manually via the Release workflow.
-  # The pushed tag triggers .github/workflows/release.yml.
+  #
+  # NOTE: Tags pushed via GITHUB_TOKEN do not trigger other workflows
+  # (GitHub's anti-recursion policy). Instead of relying on the tag push
+  # event, we explicitly dispatch the release workflow after tagging.
   release-tag:
     name: Bump Version and Create Release Tag
     needs: [ci, security]
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -545,3 +549,19 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag "${{ steps.bump.outputs.tag }}"
           git push origin "${{ steps.bump.outputs.tag }}"
+
+      - name: Trigger release workflow
+        if: steps.bump.outputs.skip != 'true'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'release.yml',
+              ref: 'main',
+              inputs: {
+                tag: '${{ steps.bump.outputs.tag }}',
+                ref: 'main'
+              }
+            });
