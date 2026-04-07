@@ -1,6 +1,6 @@
 {
   "currentPhase": 1,
-  "currentBatch": 2,
+  "currentBatch": 3,
   "tasks": [
     {"id": "batch1-event-pool", "package": "core/event_pool.go", "status": "completed", "reviewPasses": 2, "merged": true},
     {"id": "batch1-cost", "package": "cost/", "status": "completed", "reviewPasses": 2, "merged": true},
@@ -10,8 +10,14 @@
     {"id": "batch2-plugin", "package": "runtime/plugin.go", "status": "completed", "reviewPasses": 2, "merged": true},
     {"id": "batch2-runner", "package": "runtime/runner.go", "status": "completed", "reviewPasses": 2, "merged": true},
     {"id": "batch2-team", "package": "runtime/team.go", "status": "completed", "reviewPasses": 2, "merged": true},
-    {"id": "batch2-plugins", "package": "runtime/plugins/", "status": "completed", "reviewPasses": 2, "merged": true}
+    {"id": "batch2-plugins", "package": "runtime/plugins/", "status": "completed", "reviewPasses": 2, "merged": true},
+    {"id": "batch3-tool-dag", "package": "agent/tool_dag.go", "status": "completed", "reviewPasses": 2, "merged": true},
+    {"id": "batch3-orch-patterns", "package": "orchestration/handoff+pipeline", "status": "completed", "reviewPasses": 2, "merged": true},
+    {"id": "batch3-signal", "package": "workflow/signal.go", "status": "completed", "reviewPasses": 2, "merged": true},
+    {"id": "batch3-deploy", "package": "deploy/", "status": "completed", "reviewPasses": 2, "merged": true},
+    {"id": "batch3-frame", "package": "schema/frame.go", "status": "completed", "reviewPasses": 2, "merged": true},
+    {"id": "batch3-opa", "package": "auth/opa.go", "status": "completed", "reviewPasses": 2, "merged": true}
   ],
   "learningsCount": {"arch-analyst": 0, "implementer": 0, "reviewer": 0},
-  "lastUpdated": "2026-04-07T20:00:00Z"
+  "lastUpdated": "2026-04-07T22:00:00Z"
 }
