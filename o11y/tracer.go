@@ -157,8 +157,7 @@ func InitTracer(serviceName string, opts ...TracerOption) (func(), error) {
 
 	res, err := resource.Merge(
 		resource.Default(),
-		resource.NewWithAttributes(
-			semconv.SchemaURL,
+		resource.NewSchemaless(
 			semconv.ServiceNameKey.String(serviceName),
 		),
 	)
