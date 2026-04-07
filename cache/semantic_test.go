@@ -252,6 +252,26 @@ func TestSemanticCache_EmptyEmbedding(t *testing.T) {
 	}
 }
 
+func assertSemanticValue(t *testing.T, sc *SemanticCache, ctx context.Context, emb []float32, want any) {
+	t.Helper()
+	val, ok, err := sc.GetSemantic(ctx, emb, 0)
+	if err != nil {
+		t.Fatalf("GetSemantic() error = %v", err)
+	}
+	if !ok {
+		t.Fatal("GetSemantic() ok = false, want true")
+	}
+	if want == nil {
+		if val != nil {
+			t.Errorf("GetSemantic() = %v, want nil", val)
+		}
+		return
+	}
+	if val != want {
+		t.Errorf("GetSemantic() = %v, want %v", val, want)
+	}
+}
+
 func TestSemanticCache_DifferentValueTypes(t *testing.T) {
 	mc := newMockCache()
 	sc := NewSemanticCache(mc, 0.9)
@@ -273,22 +293,7 @@ func TestSemanticCache_DifferentValueTypes(t *testing.T) {
 			if err := sc.SetSemantic(ctx, tt.embedding, tt.value); err != nil {
 				t.Fatalf("SetSemantic() error = %v", err)
 			}
-			val, ok, err := sc.GetSemantic(ctx, tt.embedding, 0)
-			if err != nil {
-				t.Fatalf("GetSemantic() error = %v", err)
-			}
-			if !ok {
-				t.Fatal("GetSemantic() ok = false, want true")
-			}
-			if tt.value == nil {
-				if val != nil {
-					t.Errorf("GetSemantic() = %v, want nil", val)
-				}
-				return
-			}
-			if val != tt.value {
-				t.Errorf("GetSemantic() = %v, want %v", val, tt.value)
-			}
+			assertSemanticValue(t, sc, ctx, tt.embedding, tt.value)
 		})
 	}
 }

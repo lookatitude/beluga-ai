@@ -42,6 +42,8 @@ const (
 	outputDir  = "docs/website/src/content/docs/api-reference"
 )
 
+const goCodeFence = "```go\n"
+
 func main() {
 	root, err := findModuleRoot()
 	if err != nil {
@@ -549,7 +551,7 @@ Every extensible package provides:
 ### Middleware Pattern
 
 Wrap interfaces to add cross-cutting behavior:
-` + "```go\n" + `model = llm.ApplyMiddleware(model,
+` + goCodeFence + `model = llm.ApplyMiddleware(model,
     llm.WithLogging(logger),
     llm.WithRetry(3),
 )
@@ -557,7 +559,7 @@ Wrap interfaces to add cross-cutting behavior:
 ### Hooks Pattern
 
 Inject lifecycle callbacks without middleware:
-` + "```go\n" + `hooks := llm.Hooks{
+` + goCodeFence + `hooks := llm.Hooks{
     BeforeGenerate: func(ctx, msgs) error { ... },
     AfterGenerate:  func(ctx, resp, err) { ... },
 }
@@ -566,7 +568,7 @@ model = llm.WithHooks(model, hooks)
 ### Streaming Pattern
 
 All streaming uses Go 1.23+ ` + "`iter.Seq2`" + `:
-` + "```go\n" + `for chunk, err := range model.Stream(ctx, msgs) {
+` + goCodeFence + `for chunk, err := range model.Stream(ctx, msgs) {
     if err != nil { break }
     fmt.Print(chunk.Delta)
 }

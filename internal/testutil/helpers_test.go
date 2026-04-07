@@ -13,7 +13,8 @@ type mockT struct {
 	message string
 }
 
-func (m *mockT) Helper()                          {}
+func (m *mockT) Helper() { // no-op: satisfies testing.TB for testing
+}
 func (m *mockT) Fatalf(format string, args ...any) { m.failed = true }
 func (m *mockT) Fatal(args ...any)                 { m.failed = true }
 
@@ -125,7 +126,9 @@ func TestCollectStream(t *testing.T) {
 	})
 
 	t.Run("empty stream", func(t *testing.T) {
-		seq := func(yield func(string, error) bool) {}
+		seq := func(yield func(string, error) bool) {
+			// no-op: simulates an empty iterator to verify zero results are collected
+		}
 
 		results, err := CollectStream[string](iter.Seq2[string, error](seq))
 		if err != nil {

@@ -81,7 +81,9 @@ func TestWorkerPoolClosePreventsSubmit(t *testing.T) {
 	pool := NewWorkerPool(2)
 	pool.Close()
 
-	err := pool.Submit(func() {})
+	err := pool.Submit(func() {
+		// no-op: pool is closed; task body is never executed
+	})
 	if err != ErrPoolClosed {
 		t.Errorf("expected ErrPoolClosed, got %v", err)
 	}

@@ -12,6 +12,8 @@ import (
 	"github.com/lookatitude/beluga-ai/core"
 )
 
+const supervisorAgentErrFmt = "orchestration/supervisor: agent %q: %w"
+
 // StrategyFunc selects an agent from the available agents for the given input.
 // Returning a nil agent signals that execution should stop.
 type StrategyFunc func(ctx context.Context, input any, agents []agent.Agent) (agent.Agent, error)
@@ -64,7 +66,7 @@ func (s *Supervisor) Invoke(ctx context.Context, input any, opts ...core.Option)
 		inputStr := fmt.Sprintf("%v", current)
 		result, err := selected.Invoke(ctx, inputStr)
 		if err != nil {
-			return nil, fmt.Errorf("orchestration/supervisor: agent %q: %w", selected.ID(), err)
+			return nil, fmt.Errorf(supervisorAgentErrFmt, selected.ID(), err)
 		}
 		current = result
 	}
@@ -106,7 +108,7 @@ func (s *Supervisor) streamRounds(ctx context.Context, input any, yield func(any
 
 		result, err := selected.Invoke(ctx, inputStr)
 		if err != nil {
-			yield(nil, fmt.Errorf("orchestration/supervisor: agent %q: %w", selected.ID(), err))
+			yield(nil, fmt.Errorf(supervisorAgentErrFmt, selected.ID(), err))
 			return
 		}
 		current = result
@@ -117,7 +119,7 @@ func (s *Supervisor) streamRounds(ctx context.Context, input any, yield func(any
 func streamAgent(ctx context.Context, a agent.Agent, input string, yield func(any, error) bool) {
 	for event, err := range a.Stream(ctx, input) {
 		if err != nil {
-			yield(nil, fmt.Errorf("orchestration/supervisor: agent %q: %w", a.ID(), err))
+			yield(nil, fmt.Errorf(supervisorAgentErrFmt, a.ID(), err))
 			return
 		}
 		if !yield(event, nil) {

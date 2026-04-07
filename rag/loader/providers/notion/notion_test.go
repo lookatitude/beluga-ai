@@ -41,231 +41,203 @@ func TestNew(t *testing.T) {
 	})
 }
 
-func TestLoad(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, "2022-06-28", r.Header.Get("Notion-Version"))
-			assert.Contains(t, r.Header.Get("Authorization"), "Bearer ")
+func TestLoad_Success(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "2022-06-28", r.Header.Get("Notion-Version"))
+		assert.Contains(t, r.Header.Get("Authorization"), "Bearer ")
 
-			w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "application/json")
 
-			if r.URL.Path == "/v1/pages/abc123" {
-				page := pageResponse{
-					ID: "abc123",
-					Properties: map[string]property{
-						"Name": {Type: "title", Title: []richText{{PlainText: "Test Page"}}},
-					},
-				}
-				json.NewEncoder(w).Encode(page)
-				return
-			}
-
-			if r.URL.Path == "/v1/blocks/abc123/children" {
-				blocks := blockChildren{
-					Results: []block{
-						{
-							ID:   "b1",
-							Type: "heading_1",
-							Heading1: &richTextBlock{
-								RichText: []richText{{PlainText: "Title"}},
-							},
-						},
-						{
-							ID:   "b2",
-							Type: "paragraph",
-							Paragraph: &richTextBlock{
-								RichText: []richText{{PlainText: "Hello World"}},
-							},
-						},
-					},
-				}
-				json.NewEncoder(w).Encode(blocks)
-				return
-			}
-
+		switch r.URL.Path {
+		case "/v1/pages/abc123":
+			json.NewEncoder(w).Encode(pageResponse{
+				ID: "abc123",
+				Properties: map[string]property{
+					"Name": {Type: "title", Title: []richText{{PlainText: "Test Page"}}},
+				},
+			})
+		case "/v1/blocks/abc123/children":
+			json.NewEncoder(w).Encode(blockChildren{
+				Results: []block{
+					{ID: "b1", Type: "heading_1", Heading1: &richTextBlock{RichText: []richText{{PlainText: "Title"}}}},
+					{ID: "b2", Type: "paragraph", Paragraph: &richTextBlock{RichText: []richText{{PlainText: "Hello World"}}}},
+				},
+			})
+		default:
 			w.WriteHeader(http.StatusNotFound)
-		}))
-		defer srv.Close()
+		}
+	}))
+	defer srv.Close()
 
-		l, err := New(config.ProviderConfig{
-			APIKey:  "ntn-test",
-			BaseURL: srv.URL,
+	l, err := New(config.ProviderConfig{APIKey: "ntn-test", BaseURL: srv.URL})
+	require.NoError(t, err)
+
+	docs, err := l.Load(context.Background(), "abc123")
+	require.NoError(t, err)
+	require.Len(t, docs, 1)
+	assert.Equal(t, "abc123", docs[0].ID)
+	assert.Contains(t, docs[0].Content, "Title")
+	assert.Contains(t, docs[0].Content, "Hello World")
+	assert.Equal(t, "notion", docs[0].Metadata["loader"])
+	assert.Equal(t, "Test Page", docs[0].Metadata["title"])
+}
+
+func TestLoad_EmptySource(t *testing.T) {
+	l, err := New(config.ProviderConfig{APIKey: "test"})
+	require.NoError(t, err)
+
+	_, err = l.Load(context.Background(), "")
+	assert.Error(t, err)
+}
+
+func TestLoad_EmptyBlocks(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/v1/pages/empty" {
+			json.NewEncoder(w).Encode(pageResponse{ID: "empty"})
+			return
+		}
+		json.NewEncoder(w).Encode(blockChildren{})
+	}))
+	defer srv.Close()
+
+	l, err := New(config.ProviderConfig{APIKey: "test", BaseURL: srv.URL})
+	require.NoError(t, err)
+
+	docs, err := l.Load(context.Background(), "empty")
+	require.NoError(t, err)
+	assert.Nil(t, docs)
+}
+
+func TestLoad_ServerError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error":"failed"}`))
+	}))
+	defer srv.Close()
+
+	l, err := New(config.ProviderConfig{APIKey: "test", BaseURL: srv.URL})
+	require.NoError(t, err)
+
+	_, err = l.Load(context.Background(), "abc")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "notion")
+}
+
+func TestLoad_CodeBlock(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/v1/pages/code1" {
+			json.NewEncoder(w).Encode(pageResponse{ID: "code1"})
+			return
+		}
+		json.NewEncoder(w).Encode(blockChildren{
+			Results: []block{
+				{
+					ID:   "c1",
+					Type: "code",
+					Code: &codeBlock{
+						RichText: []richText{{PlainText: "fmt.Println(\"hello\")"}},
+						Language: "go",
+					},
+				},
+			},
 		})
-		require.NoError(t, err)
+	}))
+	defer srv.Close()
 
-		docs, err := l.Load(context.Background(), "abc123")
-		require.NoError(t, err)
-		require.Len(t, docs, 1)
-		assert.Equal(t, "abc123", docs[0].ID)
-		assert.Contains(t, docs[0].Content, "Title")
-		assert.Contains(t, docs[0].Content, "Hello World")
-		assert.Equal(t, "notion", docs[0].Metadata["loader"])
-		assert.Equal(t, "Test Page", docs[0].Metadata["title"])
-	})
+	l, err := New(config.ProviderConfig{APIKey: "test", BaseURL: srv.URL})
+	require.NoError(t, err)
 
-	t.Run("empty source", func(t *testing.T) {
-		l, err := New(config.ProviderConfig{APIKey: "test"})
-		require.NoError(t, err)
+	docs, err := l.Load(context.Background(), "code1")
+	require.NoError(t, err)
+	require.Len(t, docs, 1)
+	assert.Contains(t, docs[0].Content, "fmt.Println")
+}
 
-		_, err = l.Load(context.Background(), "")
-		assert.Error(t, err)
-	})
+func TestLoad_AllBlockTypes(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/v1/pages/alltypes" {
+			json.NewEncoder(w).Encode(pageResponse{ID: "alltypes"})
+			return
+		}
+		json.NewEncoder(w).Encode(blockChildren{
+			Results: []block{
+				{ID: "h2", Type: "heading_2", Heading2: &richTextBlock{RichText: []richText{{PlainText: "H2 Title"}}}},
+				{ID: "h3", Type: "heading_3", Heading3: &richTextBlock{RichText: []richText{{PlainText: "H3 Title"}}}},
+				{ID: "bullet", Type: "bulleted_list_item", BulletedList: &richTextBlock{RichText: []richText{{PlainText: "Bullet point"}}}},
+				{ID: "number", Type: "numbered_list_item", NumberedList: &richTextBlock{RichText: []richText{{PlainText: "Numbered item"}}}},
+				{ID: "toggle", Type: "toggle", Toggle: &richTextBlock{RichText: []richText{{PlainText: "Toggle content"}}}},
+				{ID: "quote", Type: "quote", Quote: &richTextBlock{RichText: []richText{{PlainText: "Quote text"}}}},
+				{ID: "callout", Type: "callout", Callout: &richTextBlock{RichText: []richText{{PlainText: "Callout info"}}}},
+				{ID: "unknown", Type: "unsupported_type"},
+			},
+		})
+	}))
+	defer srv.Close()
 
-	t.Run("empty blocks", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			if r.URL.Path == "/v1/pages/empty" {
-				json.NewEncoder(w).Encode(pageResponse{ID: "empty"})
-				return
-			}
-			json.NewEncoder(w).Encode(blockChildren{})
-		}))
-		defer srv.Close()
+	l, err := New(config.ProviderConfig{APIKey: "test", BaseURL: srv.URL})
+	require.NoError(t, err)
 
-		l, err := New(config.ProviderConfig{APIKey: "test", BaseURL: srv.URL})
-		require.NoError(t, err)
+	docs, err := l.Load(context.Background(), "alltypes")
+	require.NoError(t, err)
+	require.Len(t, docs, 1)
+	assert.Contains(t, docs[0].Content, "H2 Title")
+	assert.Contains(t, docs[0].Content, "H3 Title")
+	assert.Contains(t, docs[0].Content, "Bullet point")
+	assert.Contains(t, docs[0].Content, "Numbered item")
+	assert.Contains(t, docs[0].Content, "Toggle content")
+	assert.Contains(t, docs[0].Content, "Quote text")
+	assert.Contains(t, docs[0].Content, "Callout info")
+	assert.NotContains(t, docs[0].Content, "unsupported_type")
+}
 
-		docs, err := l.Load(context.Background(), "empty")
-		require.NoError(t, err)
-		assert.Nil(t, docs)
-	})
-
-	t.Run("server error", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(`{"error":"failed"}`))
-		}))
-		defer srv.Close()
-
-		l, err := New(config.ProviderConfig{APIKey: "test", BaseURL: srv.URL})
-		require.NoError(t, err)
-
-		_, err = l.Load(context.Background(), "abc")
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "notion")
-	})
-
-	t.Run("code block", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			if r.URL.Path == "/v1/pages/code1" {
-				json.NewEncoder(w).Encode(pageResponse{ID: "code1"})
-				return
-			}
-			blocks := blockChildren{
+func TestLoad_PageIDWithDashes(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/v1/pages/abc123def456":
+			json.NewEncoder(w).Encode(pageResponse{ID: "abc123def456"})
+		case "/v1/blocks/abc123def456/children":
+			json.NewEncoder(w).Encode(blockChildren{
 				Results: []block{
-					{
-						ID:   "c1",
-						Type: "code",
-						Code: &codeBlock{
-							RichText: []richText{{PlainText: "fmt.Println(\"hello\")"}},
-							Language: "go",
-						},
-					},
+					{ID: "p1", Type: "paragraph", Paragraph: &richTextBlock{RichText: []richText{{PlainText: "Test"}}}},
 				},
-			}
-			json.NewEncoder(w).Encode(blocks)
-		}))
-		defer srv.Close()
-
-		l, err := New(config.ProviderConfig{APIKey: "test", BaseURL: srv.URL})
-		require.NoError(t, err)
-
-		docs, err := l.Load(context.Background(), "code1")
-		require.NoError(t, err)
-		require.Len(t, docs, 1)
-		assert.Contains(t, docs[0].Content, "fmt.Println")
-	})
-
-	t.Run("all block types", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			if r.URL.Path == "/v1/pages/alltypes" {
-				json.NewEncoder(w).Encode(pageResponse{ID: "alltypes"})
-				return
-			}
-			blocks := blockChildren{
-				Results: []block{
-					{ID: "h2", Type: "heading_2", Heading2: &richTextBlock{RichText: []richText{{PlainText: "H2 Title"}}}},
-					{ID: "h3", Type: "heading_3", Heading3: &richTextBlock{RichText: []richText{{PlainText: "H3 Title"}}}},
-					{ID: "bullet", Type: "bulleted_list_item", BulletedList: &richTextBlock{RichText: []richText{{PlainText: "Bullet point"}}}},
-					{ID: "number", Type: "numbered_list_item", NumberedList: &richTextBlock{RichText: []richText{{PlainText: "Numbered item"}}}},
-					{ID: "toggle", Type: "toggle", Toggle: &richTextBlock{RichText: []richText{{PlainText: "Toggle content"}}}},
-					{ID: "quote", Type: "quote", Quote: &richTextBlock{RichText: []richText{{PlainText: "Quote text"}}}},
-					{ID: "callout", Type: "callout", Callout: &richTextBlock{RichText: []richText{{PlainText: "Callout info"}}}},
-					{ID: "unknown", Type: "unsupported_type"},
-				},
-			}
-			json.NewEncoder(w).Encode(blocks)
-		}))
-		defer srv.Close()
-
-		l, err := New(config.ProviderConfig{APIKey: "test", BaseURL: srv.URL})
-		require.NoError(t, err)
-
-		docs, err := l.Load(context.Background(), "alltypes")
-		require.NoError(t, err)
-		require.Len(t, docs, 1)
-		assert.Contains(t, docs[0].Content, "H2 Title")
-		assert.Contains(t, docs[0].Content, "H3 Title")
-		assert.Contains(t, docs[0].Content, "Bullet point")
-		assert.Contains(t, docs[0].Content, "Numbered item")
-		assert.Contains(t, docs[0].Content, "Toggle content")
-		assert.Contains(t, docs[0].Content, "Quote text")
-		assert.Contains(t, docs[0].Content, "Callout info")
-		assert.NotContains(t, docs[0].Content, "unsupported_type")
-	})
-
-	t.Run("page id with dashes", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			// Verify dashes are stripped
-			if r.URL.Path == "/v1/pages/abc123def456" {
-				json.NewEncoder(w).Encode(pageResponse{ID: "abc123def456"})
-				return
-			}
-			if r.URL.Path == "/v1/blocks/abc123def456/children" {
-				json.NewEncoder(w).Encode(blockChildren{
-					Results: []block{
-						{ID: "p1", Type: "paragraph", Paragraph: &richTextBlock{RichText: []richText{{PlainText: "Test"}}}},
-					},
-				})
-				return
-			}
+			})
+		default:
 			w.WriteHeader(http.StatusNotFound)
-		}))
-		defer srv.Close()
+		}
+	}))
+	defer srv.Close()
 
-		l, err := New(config.ProviderConfig{APIKey: "test", BaseURL: srv.URL})
-		require.NoError(t, err)
+	l, err := New(config.ProviderConfig{APIKey: "test", BaseURL: srv.URL})
+	require.NoError(t, err)
 
-		// Load with dashed page ID
-		docs, err := l.Load(context.Background(), "abc123-def456")
-		require.NoError(t, err)
-		require.Len(t, docs, 1)
-		assert.Equal(t, "abc123def456", docs[0].ID)
-	})
+	docs, err := l.Load(context.Background(), "abc123-def456")
+	require.NoError(t, err)
+	require.Len(t, docs, 1)
+	assert.Equal(t, "abc123def456", docs[0].ID)
+}
 
-	t.Run("blocks fetch error", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			if r.URL.Path == "/v1/pages/test123" {
-				json.NewEncoder(w).Encode(pageResponse{ID: "test123"})
-				return
-			}
-			// Fail on blocks fetch
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(`{"error":"failed to fetch blocks"}`))
-		}))
-		defer srv.Close()
+func TestLoad_BlocksFetchError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/v1/pages/test123" {
+			json.NewEncoder(w).Encode(pageResponse{ID: "test123"})
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error":"failed to fetch blocks"}`))
+	}))
+	defer srv.Close()
 
-		l, err := New(config.ProviderConfig{APIKey: "test", BaseURL: srv.URL})
-		require.NoError(t, err)
+	l, err := New(config.ProviderConfig{APIKey: "test", BaseURL: srv.URL})
+	require.NoError(t, err)
 
-		_, err = l.Load(context.Background(), "test123")
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "fetch blocks")
-	})
+	_, err = l.Load(context.Background(), "test123")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "fetch blocks")
 }
 
 func TestRegistryNew(t *testing.T) {

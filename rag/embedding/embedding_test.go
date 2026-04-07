@@ -244,112 +244,90 @@ func TestMiddleware_HooksAbort(t *testing.T) {
 	}
 }
 
-func TestMiddleware_AfterEmbedHook(t *testing.T) {
-	emb, _ := embedding.New("inmemory", config.ProviderConfig{})
-	ctx := context.Background()
-
-	var afterCalled bool
-	var capturedEmbeddings [][]float32
+func newAfterEmbedCapture() (embedding.Hooks, *bool, *[][]float32, *error) {
+	called := false
+	var captured [][]float32
 	var capturedErr error
-
 	hooks := embedding.Hooks{
 		AfterEmbed: func(_ context.Context, embeddings [][]float32, err error) {
-			afterCalled = true
-			capturedEmbeddings = embeddings
+			called = true
+			captured = embeddings
 			capturedErr = err
 		},
 	}
+	return hooks, &called, &captured, &capturedErr
+}
 
+func TestMiddleware_AfterEmbedHook_Embed(t *testing.T) {
+	emb, _ := embedding.New("inmemory", config.ProviderConfig{})
+	ctx := context.Background()
+	hooks, afterCalled, capturedEmbeddings, capturedErr := newAfterEmbedCapture()
 	wrapped := embedding.ApplyMiddleware(emb, embedding.WithHooks(hooks))
 
-	t.Run("Embed calls AfterEmbed hook", func(t *testing.T) {
-		afterCalled = false
-		capturedEmbeddings = nil
-		capturedErr = nil
+	vecs, err := wrapped.Embed(ctx, []string{"test"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !*afterCalled {
+		t.Fatal("AfterEmbed hook not called")
+	}
+	if len(*capturedEmbeddings) != 1 {
+		t.Fatalf("expected 1 embedding in hook, got %d", len(*capturedEmbeddings))
+	}
+	if len((*capturedEmbeddings)[0]) != len(vecs[0]) {
+		t.Fatalf("embedding dimension mismatch in hook: %d != %d", len((*capturedEmbeddings)[0]), len(vecs[0]))
+	}
+	if *capturedErr != nil {
+		t.Fatalf("expected nil error in hook, got %v", *capturedErr)
+	}
+}
 
-		vecs, err := wrapped.Embed(ctx, []string{"test"})
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if !afterCalled {
-			t.Fatal("AfterEmbed hook not called")
-		}
-		if len(capturedEmbeddings) != 1 {
-			t.Fatalf("expected 1 embedding in hook, got %d", len(capturedEmbeddings))
-		}
-		if len(capturedEmbeddings[0]) != len(vecs[0]) {
-			t.Fatalf("embedding dimension mismatch in hook: %d != %d", len(capturedEmbeddings[0]), len(vecs[0]))
-		}
-		if capturedErr != nil {
-			t.Fatalf("expected nil error in hook, got %v", capturedErr)
-		}
-	})
+func TestMiddleware_AfterEmbedHook_EmbedSingle(t *testing.T) {
+	emb, _ := embedding.New("inmemory", config.ProviderConfig{})
+	ctx := context.Background()
+	hooks, afterCalled, capturedEmbeddings, capturedErr := newAfterEmbedCapture()
+	wrapped := embedding.ApplyMiddleware(emb, embedding.WithHooks(hooks))
 
-	t.Run("EmbedSingle calls AfterEmbed with non-nil vec", func(t *testing.T) {
-		afterCalled = false
-		capturedEmbeddings = nil
-		capturedErr = nil
-
-		vec, err := wrapped.EmbedSingle(ctx, "test")
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if !afterCalled {
-			t.Fatal("AfterEmbed hook not called")
-		}
-		if len(capturedEmbeddings) != 1 {
-			t.Fatalf("expected 1 embedding in hook, got %d", len(capturedEmbeddings))
-		}
-		if len(capturedEmbeddings[0]) != len(vec) {
-			t.Fatalf("embedding dimension mismatch in hook: %d != %d", len(capturedEmbeddings[0]), len(vec))
-		}
-		if capturedErr != nil {
-			t.Fatalf("expected nil error in hook, got %v", capturedErr)
-		}
-	})
+	vec, err := wrapped.EmbedSingle(ctx, "test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !*afterCalled {
+		t.Fatal("AfterEmbed hook not called")
+	}
+	if len(*capturedEmbeddings) != 1 {
+		t.Fatalf("expected 1 embedding in hook, got %d", len(*capturedEmbeddings))
+	}
+	if len((*capturedEmbeddings)[0]) != len(vec) {
+		t.Fatalf("embedding dimension mismatch in hook: %d != %d", len((*capturedEmbeddings)[0]), len(vec))
+	}
+	if *capturedErr != nil {
+		t.Fatalf("expected nil error in hook, got %v", *capturedErr)
+	}
 }
 
 func TestMiddleware_EmbedSingleAfterEmbedWithError(t *testing.T) {
-	// Create a mock embedder that returns an error
 	mockEmb := &errorEmbedder{err: errors.New("embed error"), dims: 128}
 	ctx := context.Background()
-
-	var afterCalled bool
-	var capturedEmbeddings [][]float32
-	var capturedErr error
-
-	hooks := embedding.Hooks{
-		AfterEmbed: func(_ context.Context, embeddings [][]float32, err error) {
-			afterCalled = true
-			capturedEmbeddings = embeddings
-			capturedErr = err
-		},
-	}
-
+	hooks, afterCalled, capturedEmbeddings, capturedErr := newAfterEmbedCapture()
 	wrapped := embedding.ApplyMiddleware(mockEmb, embedding.WithHooks(hooks))
 
-	t.Run("EmbedSingle calls AfterEmbed with nil vec on error", func(t *testing.T) {
-		afterCalled = false
-		capturedEmbeddings = nil
-		capturedErr = nil
-
-		vec, err := wrapped.EmbedSingle(ctx, "test")
-		if err == nil {
-			t.Fatal("expected error")
-		}
-		if vec != nil {
-			t.Fatalf("expected nil vec, got %v", vec)
-		}
-		if !afterCalled {
-			t.Fatal("AfterEmbed hook not called")
-		}
-		if capturedEmbeddings != nil {
-			t.Fatalf("expected nil embeddings in hook, got %v", capturedEmbeddings)
-		}
-		if capturedErr == nil {
-			t.Fatal("expected non-nil error in hook")
-		}
-	})
+	vec, err := wrapped.EmbedSingle(ctx, "test")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if vec != nil {
+		t.Fatalf("expected nil vec, got %v", vec)
+	}
+	if !*afterCalled {
+		t.Fatal("AfterEmbed hook not called")
+	}
+	if *capturedEmbeddings != nil {
+		t.Fatalf("expected nil embeddings in hook, got %v", *capturedEmbeddings)
+	}
+	if *capturedErr == nil {
+		t.Fatal("expected non-nil error in hook")
+	}
 }
 
 // errorEmbedder is a mock embedder that always returns an error.

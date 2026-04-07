@@ -197,7 +197,9 @@ func TestComposeHooks_OnError_NonNilShortCircuits(t *testing.T) {
 func TestComposeHooks_NilHooksSkipped(t *testing.T) {
 	// All nil hooks — should not panic.
 	h1 := Hooks{} // all nil
-	h2 := Hooks{AfterGet: func(ctx context.Context, key string, val any, err error) {}}
+	h2 := Hooks{AfterGet: func(ctx context.Context, key string, val any, err error) {
+		// no-op: satisfies Hooks for testing; AfterGet behaviour not under test
+	}}
 
 	composed := ComposeHooks(h1, h2)
 

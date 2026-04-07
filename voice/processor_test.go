@@ -196,43 +196,25 @@ func TestChainErrorInMiddleProcessor(t *testing.T) {
 	}
 }
 
+func makeSuffixProcessor(suffix string) FrameProcessorFunc {
+	return FrameProcessorFunc(func(_ context.Context, in <-chan Frame, out chan<- Frame) error {
+		defer close(out)
+		for f := range in {
+			if f.Type == FrameText {
+				out <- NewTextFrame(f.Text() + suffix)
+			} else {
+				out <- f
+			}
+		}
+		return nil
+	})
+}
+
 func TestChainThreeProcessors(t *testing.T) {
 	// Three-processor chain exercises the intermediate channel path (i > 0 && i < len-1).
-	addA := FrameProcessorFunc(func(_ context.Context, in <-chan Frame, out chan<- Frame) error {
-		defer close(out)
-		for f := range in {
-			if f.Type == FrameText {
-				out <- NewTextFrame(f.Text() + "A")
-			} else {
-				out <- f
-			}
-		}
-		return nil
-	})
-
-	addB := FrameProcessorFunc(func(_ context.Context, in <-chan Frame, out chan<- Frame) error {
-		defer close(out)
-		for f := range in {
-			if f.Type == FrameText {
-				out <- NewTextFrame(f.Text() + "B")
-			} else {
-				out <- f
-			}
-		}
-		return nil
-	})
-
-	addC := FrameProcessorFunc(func(_ context.Context, in <-chan Frame, out chan<- Frame) error {
-		defer close(out)
-		for f := range in {
-			if f.Type == FrameText {
-				out <- NewTextFrame(f.Text() + "C")
-			} else {
-				out <- f
-			}
-		}
-		return nil
-	})
+	addA := makeSuffixProcessor("A")
+	addB := makeSuffixProcessor("B")
+	addC := makeSuffixProcessor("C")
 
 	chain := Chain(addA, addB, addC)
 	in := make(chan Frame, 1)

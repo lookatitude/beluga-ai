@@ -26,7 +26,9 @@ func (m *mockChatModel) Generate(ctx context.Context, msgs []schema.Message, opt
 }
 
 func (m *mockChatModel) Stream(_ context.Context, _ []schema.Message, _ ...llm.GenerateOption) iter.Seq2[schema.StreamChunk, error] {
-	return func(yield func(schema.StreamChunk, error) bool) {}
+	return func(yield func(schema.StreamChunk, error) bool) {
+		// no-op: satisfies llm.ChatModel for testing; streaming not exercised
+	}
 }
 
 func (m *mockChatModel) BindTools(_ []schema.ToolDefinition) llm.ChatModel {

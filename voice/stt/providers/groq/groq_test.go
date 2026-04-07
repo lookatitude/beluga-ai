@@ -208,7 +208,9 @@ func TestTranscribeStream(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		audioStream := func(yield func([]byte, error) bool) {}
+		audioStream := func(yield func([]byte, error) bool) {
+			// no-op: no audio to send; test verifies empty stream produces zero events
+		}
 
 		var count int
 		for range e.TranscribeStream(context.Background(), audioStream) {

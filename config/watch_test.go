@@ -128,7 +128,9 @@ func TestFileWatcher_Watch_NoChangeNoCallback(t *testing.T) {
 
 func TestFileWatcher_Watch_FileNotFound(t *testing.T) {
 	w := NewFileWatcher("/nonexistent/path/config.json", 100*time.Millisecond)
-	err := w.Watch(context.Background(), func(newConfig any) {})
+	err := w.Watch(context.Background(), func(newConfig any) {
+		// no-op: file not found, callback never invoked
+	})
 	if err == nil {
 		t.Fatal("expected error for missing file")
 	}
@@ -148,7 +150,9 @@ func TestFileWatcher_Watch_ContextCancellation(t *testing.T) {
 
 	watchDone := make(chan error, 1)
 	go func() {
-		watchDone <- w.Watch(ctx, func(newConfig any) {})
+		watchDone <- w.Watch(ctx, func(newConfig any) {
+			// no-op: context cancelled before any config change occurs
+		})
 	}()
 
 	// Let Watch start up.
@@ -177,7 +181,9 @@ func TestFileWatcher_Close(t *testing.T) {
 
 	watchDone := make(chan error, 1)
 	go func() {
-		watchDone <- w.Watch(context.Background(), func(newConfig any) {})
+		watchDone <- w.Watch(context.Background(), func(newConfig any) {
+			// no-op: watcher closed before any config change occurs
+		})
 	}()
 
 	// Let Watch start.

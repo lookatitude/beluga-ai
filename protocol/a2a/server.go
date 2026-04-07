@@ -13,6 +13,11 @@ import (
 	"github.com/lookatitude/beluga-ai/agent"
 )
 
+const (
+	contentTypeHeader = "Content-Type"
+	contentTypeJSON   = "application/json"
+)
+
 // A2AServer exposes a Beluga agent as an A2A remote agent via HTTP.
 // It provides endpoints for the Agent Card, task creation, status, and cancellation.
 type A2AServer struct {
@@ -76,7 +81,7 @@ func (s *A2AServer) Serve(ctx context.Context, addr string) error {
 }
 
 func (s *A2AServer) handleCard(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentTypeHeader, contentTypeJSON)
 	json.NewEncoder(w).Encode(s.card)
 }
 
@@ -114,7 +119,7 @@ func (s *A2AServer) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 	// Run the agent asynchronously.
 	go s.runTask(ctx, task)
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentTypeHeader, contentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(TaskResponse{Task: snapshot})
 }
@@ -172,7 +177,7 @@ func (s *A2AServer) handleGetTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentTypeHeader, contentTypeJSON)
 	json.NewEncoder(w).Encode(TaskResponse{Task: snapshot})
 }
 
@@ -205,7 +210,7 @@ func (s *A2AServer) handleTaskAction(w http.ResponseWriter, r *http.Request) {
 	snapshot := *task
 	s.mu.Unlock()
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentTypeHeader, contentTypeJSON)
 	json.NewEncoder(w).Encode(TaskResponse{Task: snapshot})
 }
 
@@ -216,7 +221,7 @@ func extractTaskID(path string) string {
 }
 
 func writeJSONError(w http.ResponseWriter, statusCode int, message string) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentTypeHeader, contentTypeJSON)
 	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(ErrorResponse{Error: message})
 }

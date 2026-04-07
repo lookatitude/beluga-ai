@@ -45,133 +45,99 @@ func TestNew(t *testing.T) {
 	})
 }
 
-func TestTranscribe(t *testing.T) {
-	t.Run("successful transcription", func(t *testing.T) {
-		pollCount := 0
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, "test-key", r.Header.Get("x-gladia-key"))
-
-			switch {
-			case r.URL.Path == "/upload":
-				json.NewEncoder(w).Encode(uploadResponse{
-					AudioURL: "https://storage.gladia.io/test123",
-				})
-
-			case r.URL.Path == "/transcription" && r.Method == http.MethodPost:
-				var req transcriptionRequest
-				json.NewDecoder(r.Body).Decode(&req)
-				assert.Equal(t, "https://storage.gladia.io/test123", req.AudioURL)
-
-				json.NewEncoder(w).Encode(transcriptionResponse{
-					ID:        "tx_456",
-					ResultURL: "",
-					Status:    "queued",
-				})
-
-			case r.URL.Path == "/transcription/tx_456" && r.Method == http.MethodGet:
-				pollCount++
-				if pollCount >= 2 {
-					json.NewEncoder(w).Encode(transcriptionResult{
-						Status: "done",
-						Result: transcriptionResultData{
-							Transcription: transcriptionTranscription{FullTranscript: "hello world"},
-						},
-					})
-				} else {
-					json.NewEncoder(w).Encode(transcriptionResult{Status: "processing"})
-				}
-			}
-		}))
-		defer srv.Close()
-
-		e, err := New(stt.Config{
-			Extra: map[string]any{
-				"api_key":  "test-key",
-				"base_url": srv.URL,
-			},
-		})
-		require.NoError(t, err)
-
-		text, err := e.Transcribe(context.Background(), []byte("fake-audio"))
-		require.NoError(t, err)
-		assert.Equal(t, "hello world", text)
-	})
-
-	t.Run("upload error", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte(`{"error":"unauthorized"}`))
-		}))
-		defer srv.Close()
-
-		e, err := New(stt.Config{
-			Extra: map[string]any{
-				"api_key":  "bad-key",
-				"base_url": srv.URL,
-			},
-		})
-		require.NoError(t, err)
-
-		_, err = e.Transcribe(context.Background(), []byte("audio"))
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "401")
-	})
-
-	t.Run("with language", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			switch {
-			case r.URL.Path == "/upload":
-				json.NewEncoder(w).Encode(uploadResponse{AudioURL: "https://storage.gladia.io/x"})
-			case r.URL.Path == "/transcription" && r.Method == http.MethodPost:
-				var req transcriptionRequest
-				json.NewDecoder(r.Body).Decode(&req)
-				assert.Equal(t, "fr", req.Language)
-				json.NewEncoder(w).Encode(transcriptionResponse{ID: "tx_fr", ResultURL: ""})
-			case r.URL.Path == "/transcription/tx_fr":
-				json.NewEncoder(w).Encode(transcriptionResult{
+func TestTranscribe_SuccessfulTranscription(t *testing.T) {
+	pollCount := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "test-key", r.Header.Get("x-gladia-key"))
+		switch {
+		case r.URL.Path == "/upload":
+			json.NewEncoder(w).Encode(uploadResponse{AudioURL: "https://storage.gladia.io/test123"}) //nolint:errcheck
+		case r.URL.Path == "/transcription" && r.Method == http.MethodPost:
+			var req transcriptionRequest
+			json.NewDecoder(r.Body).Decode(&req) //nolint:errcheck
+			assert.Equal(t, "https://storage.gladia.io/test123", req.AudioURL)
+			json.NewEncoder(w).Encode(transcriptionResponse{ID: "tx_456", ResultURL: "", Status: "queued"}) //nolint:errcheck
+		case r.URL.Path == "/transcription/tx_456" && r.Method == http.MethodGet:
+			pollCount++
+			if pollCount >= 2 {
+				json.NewEncoder(w).Encode(transcriptionResult{ //nolint:errcheck
 					Status: "done",
-					Result: transcriptionResultData{
-							Transcription: transcriptionTranscription{FullTranscript: "bonjour"},
-						},
-						})
+					Result: transcriptionResultData{Transcription: transcriptionTranscription{FullTranscript: "hello world"}},
+				})
+			} else {
+				json.NewEncoder(w).Encode(transcriptionResult{Status: "processing"}) //nolint:errcheck
 			}
-		}))
-		defer srv.Close()
+		}
+	}))
+	defer srv.Close()
 
-		e, err := New(stt.Config{
-			Language: "fr",
-			Extra: map[string]any{
-				"api_key":  "test-key",
-				"base_url": srv.URL,
-			},
-		})
-		require.NoError(t, err)
+	e, err := New(stt.Config{Extra: map[string]any{"api_key": "test-key", "base_url": srv.URL}})
+	require.NoError(t, err)
 
-		text, err := e.Transcribe(context.Background(), []byte("audio"))
-		require.NoError(t, err)
-		assert.Equal(t, "bonjour", text)
+	text, err := e.Transcribe(context.Background(), []byte("fake-audio"))
+	require.NoError(t, err)
+	assert.Equal(t, "hello world", text)
+}
+
+func TestTranscribe_UploadError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(`{"error":"unauthorized"}`)) //nolint:errcheck
+	}))
+	defer srv.Close()
+
+	e, err := New(stt.Config{Extra: map[string]any{"api_key": "bad-key", "base_url": srv.URL}})
+	require.NoError(t, err)
+
+	_, err = e.Transcribe(context.Background(), []byte("audio"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "401")
+}
+
+func TestTranscribe_WithLanguage(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/upload":
+			json.NewEncoder(w).Encode(uploadResponse{AudioURL: "https://storage.gladia.io/x"}) //nolint:errcheck
+		case r.URL.Path == "/transcription" && r.Method == http.MethodPost:
+			var req transcriptionRequest
+			json.NewDecoder(r.Body).Decode(&req) //nolint:errcheck
+			assert.Equal(t, "fr", req.Language)
+			json.NewEncoder(w).Encode(transcriptionResponse{ID: "tx_fr", ResultURL: ""}) //nolint:errcheck
+		case r.URL.Path == "/transcription/tx_fr":
+			json.NewEncoder(w).Encode(transcriptionResult{ //nolint:errcheck
+				Status: "done",
+				Result: transcriptionResultData{Transcription: transcriptionTranscription{FullTranscript: "bonjour"}},
+			})
+		}
+	}))
+	defer srv.Close()
+
+	e, err := New(stt.Config{
+		Language: "fr",
+		Extra:    map[string]any{"api_key": "test-key", "base_url": srv.URL},
 	})
+	require.NoError(t, err)
 
-	t.Run("context cancelled", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			time.Sleep(100 * time.Millisecond)
-		}))
-		defer srv.Close()
+	text, err := e.Transcribe(context.Background(), []byte("audio"))
+	require.NoError(t, err)
+	assert.Equal(t, "bonjour", text)
+}
 
-		e, err := New(stt.Config{
-			Extra: map[string]any{
-				"api_key":  "test-key",
-				"base_url": srv.URL,
-			},
-		})
-		require.NoError(t, err)
+func TestTranscribe_ContextCancelled(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(100 * time.Millisecond)
+	}))
+	defer srv.Close()
 
-		ctx, cancel := context.WithCancel(context.Background())
-		cancel()
+	e, err := New(stt.Config{Extra: map[string]any{"api_key": "test-key", "base_url": srv.URL}})
+	require.NoError(t, err)
 
-		_, err = e.Transcribe(ctx, []byte("audio"))
-		require.Error(t, err)
-	})
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err = e.Transcribe(ctx, []byte("audio"))
+	require.Error(t, err)
 }
 
 func TestTranscribe_CreateError(t *testing.T) {
@@ -324,351 +290,263 @@ func TestTranscribe_WithOption(t *testing.T) {
 	assert.Equal(t, "hallo", text)
 }
 
-func TestTranscribeStream(t *testing.T) {
-	t.Run("successful streaming", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "/live" {
-				json.NewEncoder(w).Encode(map[string]string{
-					"url": "ws://" + r.Host + "/ws",
-				})
+func TestTranscribeStream_SuccessfulStreaming(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/live" {
+			json.NewEncoder(w).Encode(map[string]string{"url": "ws://" + r.Host + "/ws"}) //nolint:errcheck
+			return
+		}
+		if r.URL.Path != "/ws" {
+			return
+		}
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		ctx := r.Context()
+		conn.Read(ctx) //nolint:errcheck
+		wsjson.Write(ctx, conn, gladiaStreamMsg{Type: "transcript", Transcript: "hello", Confidence: 0.85, IsFinal: false, Duration: 0.5})       //nolint:errcheck
+		wsjson.Write(ctx, conn, gladiaStreamMsg{Type: "transcript", Transcript: "hello world", Confidence: 0.95, IsFinal: true, Duration: 1.5}) //nolint:errcheck
+		conn.Close(websocket.StatusNormalClosure, "")                                                                                           //nolint:errcheck
+	}))
+	defer srv.Close()
+
+	e, err := New(stt.Config{Extra: map[string]any{"api_key": "test-key", "base_url": srv.URL}})
+	require.NoError(t, err)
+
+	audioStream := func(yield func([]byte, error) bool) { yield([]byte{0x01, 0x02}, nil) }
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var events []stt.TranscriptEvent
+	for event, err := range e.TranscribeStream(ctx, audioStream) {
+		if err != nil {
+			break
+		}
+		events = append(events, event)
+	}
+	require.GreaterOrEqual(t, len(events), 1)
+	assert.NotEmpty(t, events[0].Text)
+}
+
+func TestTranscribeStream_EmptyURLReturned(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]string{"url": ""}) //nolint:errcheck
+	}))
+	defer srv.Close()
+
+	e, err := New(stt.Config{Extra: map[string]any{"api_key": "test-key", "base_url": srv.URL}})
+	require.NoError(t, err)
+
+	audioStream := func(yield func([]byte, error) bool) {
+		// no-op: test exercises missing WebSocket URL error path
+	}
+
+	var gotErr error
+	for _, err := range e.TranscribeStream(context.Background(), audioStream) {
+		if err != nil {
+			gotErr = err
+			break
+		}
+	}
+	require.Error(t, gotErr)
+	assert.Contains(t, gotErr.Error(), "no websocket URL")
+}
+
+func TestTranscribeStream_LiveRequestHTTPError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("not json")) //nolint:errcheck
+	}))
+	defer srv.Close()
+
+	e, err := New(stt.Config{Extra: map[string]any{"api_key": "test-key", "base_url": srv.URL}})
+	require.NoError(t, err)
+
+	audioStream := func(yield func([]byte, error) bool) {
+		// no-op: test exercises HTTP error response path
+	}
+
+	var gotErr error
+	for _, err := range e.TranscribeStream(context.Background(), audioStream) {
+		if err != nil {
+			gotErr = err
+			break
+		}
+	}
+	require.Error(t, gotErr)
+}
+
+func TestTranscribeStream_ContextCancelled(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(time.Second)
+	}))
+	defer srv.Close()
+
+	e, err := New(stt.Config{Extra: map[string]any{"api_key": "test-key", "base_url": srv.URL}})
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	audioStream := func(yield func([]byte, error) bool) {
+		// no-op: test exercises cancelled-context error path
+	}
+
+	var gotErr error
+	for _, err := range e.TranscribeStream(ctx, audioStream) {
+		if err != nil {
+			gotErr = err
+			break
+		}
+	}
+	require.Error(t, gotErr)
+}
+
+func TestTranscribeStream_WithLanguageAndSampleRate(t *testing.T) {
+	var receivedInit map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/live" {
+			json.NewDecoder(r.Body).Decode(&receivedInit) //nolint:errcheck
+			json.NewEncoder(w).Encode(map[string]string{"url": "ws://" + r.Host + "/ws"}) //nolint:errcheck
+			return
+		}
+		if r.URL.Path != "/ws" {
+			return
+		}
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.Close(websocket.StatusNormalClosure, "") //nolint:errcheck
+		wsjson.Write(r.Context(), conn, gladiaStreamMsg{   //nolint:errcheck
+			Type: "transcript", Transcript: "test", IsFinal: true, Confidence: 0.9,
+		})
+	}))
+	defer srv.Close()
+
+	e, err := New(stt.Config{
+		Language:   "es",
+		SampleRate: 44100,
+		Extra:      map[string]any{"api_key": "test-key", "base_url": srv.URL},
+	})
+	require.NoError(t, err)
+
+	audioStream := func(yield func([]byte, error) bool) { yield([]byte{0x01}, nil) }
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	for _, err := range e.TranscribeStream(ctx, audioStream) {
+		if err != nil {
+			break
+		}
+	}
+	assert.Equal(t, "es", receivedInit["language"])
+	assert.Equal(t, float64(44100), receivedInit["sample_rate"])
+}
+
+func TestTranscribeStream_AudioStreamError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/live" {
+			json.NewEncoder(w).Encode(map[string]string{"url": "ws://" + r.Host + "/ws"}) //nolint:errcheck
+			return
+		}
+		if r.URL.Path != "/ws" {
+			return
+		}
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.Close(websocket.StatusNormalClosure, "") //nolint:errcheck
+		for {
+			if _, _, err := conn.Read(r.Context()); err != nil {
 				return
 			}
-			if r.URL.Path == "/ws" {
-				conn, err := websocket.Accept(w, r, nil)
-				if err != nil {
-					return
-				}
-
-				ctx := r.Context()
-
-				// Read one audio chunk from client
-				conn.Read(ctx)
-
-				// Send transcript events
-				wsjson.Write(ctx, conn, gladiaStreamMsg{
-					Type:       "transcript",
-					Transcript: "hello",
-					Confidence: 0.85,
-					IsFinal:    false,
-					Duration:   0.5,
-				})
-				wsjson.Write(ctx, conn, gladiaStreamMsg{
-					Type:       "transcript",
-					Transcript: "hello world",
-					Confidence: 0.95,
-					IsFinal:    true,
-					Duration:   1.5,
-				})
-
-				// Close the connection
-				conn.Close(websocket.StatusNormalClosure, "")
-				return
-			}
-		}))
-		defer srv.Close()
-
-		e, err := New(stt.Config{
-			Extra: map[string]any{
-				"api_key":  "test-key",
-				"base_url": srv.URL,
-			},
-		})
-		require.NoError(t, err)
-
-		audioStream := func(yield func([]byte, error) bool) {
-			yield([]byte{0x01, 0x02}, nil)
 		}
+	}))
+	defer srv.Close()
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+	e, err := New(stt.Config{Extra: map[string]any{"api_key": "test-key", "base_url": srv.URL}})
+	require.NoError(t, err)
 
-		var events []stt.TranscriptEvent
-		for event, err := range e.TranscribeStream(ctx, audioStream) {
-			if err != nil {
-				// WebSocket close is expected at end
-				break
-			}
-			events = append(events, event)
+	audioStream := func(yield func([]byte, error) bool) { yield(nil, assert.AnError) }
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var gotErr error
+	for _, err := range e.TranscribeStream(ctx, audioStream) {
+		if err != nil {
+			gotErr = err
+			break
 		}
-		require.GreaterOrEqual(t, len(events), 1)
-		assert.NotEmpty(t, events[0].Text)
-	})
+	}
+	require.Error(t, gotErr)
+}
 
-	t.Run("empty URL returned", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode(map[string]string{"url": ""})
-		}))
-		defer srv.Close()
-
-		e, err := New(stt.Config{
-			Extra: map[string]any{
-				"api_key":  "test-key",
-				"base_url": srv.URL,
-			},
-		})
-		require.NoError(t, err)
-
-		audioStream := func(yield func([]byte, error) bool) {}
-
-		var gotErr error
-		for _, err := range e.TranscribeStream(context.Background(), audioStream) {
-			if err != nil {
-				gotErr = err
-				break
-			}
+func TestTranscribeStream_EmptyTranscriptSkipped(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/live" {
+			json.NewEncoder(w).Encode(map[string]string{"url": "ws://" + r.Host + "/ws"}) //nolint:errcheck
+			return
 		}
-		require.Error(t, gotErr)
-		assert.Contains(t, gotErr.Error(), "no websocket URL")
-	})
-
-	t.Run("live request HTTP error", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("not json"))
-		}))
-		defer srv.Close()
-
-		e, err := New(stt.Config{
-			Extra: map[string]any{
-				"api_key":  "test-key",
-				"base_url": srv.URL,
-			},
-		})
-		require.NoError(t, err)
-
-		audioStream := func(yield func([]byte, error) bool) {}
-
-		var gotErr error
-		for _, err := range e.TranscribeStream(context.Background(), audioStream) {
-			if err != nil {
-				gotErr = err
-				break
-			}
+		if r.URL.Path != "/ws" {
+			return
 		}
-		// Either decode error or empty URL error
-		require.Error(t, gotErr)
-	})
-
-	t.Run("context cancelled", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			time.Sleep(time.Second)
-		}))
-		defer srv.Close()
-
-		e, err := New(stt.Config{
-			Extra: map[string]any{
-				"api_key":  "test-key",
-				"base_url": srv.URL,
-			},
-		})
-		require.NoError(t, err)
-
-		ctx, cancel := context.WithCancel(context.Background())
-		cancel()
-
-		audioStream := func(yield func([]byte, error) bool) {}
-
-		var gotErr error
-		for _, err := range e.TranscribeStream(ctx, audioStream) {
-			if err != nil {
-				gotErr = err
-				break
-			}
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
 		}
-		require.Error(t, gotErr)
-	})
+		defer conn.Close(websocket.StatusNormalClosure, "") //nolint:errcheck
+		ctx := r.Context()
+		wsjson.Write(ctx, conn, gladiaStreamMsg{Type: "transcript", Transcript: ""})                                                    //nolint:errcheck
+		wsjson.Write(ctx, conn, gladiaStreamMsg{Type: "transcript", Transcript: "actual", IsFinal: true, Confidence: 0.9}) //nolint:errcheck
+	}))
+	defer srv.Close()
 
-	t.Run("with language and sample rate", func(t *testing.T) {
-		var receivedInit map[string]any
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "/live" {
-				json.NewDecoder(r.Body).Decode(&receivedInit)
-				json.NewEncoder(w).Encode(map[string]string{
-					"url": "ws://" + r.Host + "/ws",
-				})
-				return
-			}
-			if r.URL.Path == "/ws" {
-				conn, err := websocket.Accept(w, r, nil)
-				if err != nil {
-					return
-				}
-				defer conn.Close(websocket.StatusNormalClosure, "")
-				wsjson.Write(r.Context(), conn, gladiaStreamMsg{
-					Type:       "transcript",
-					Transcript: "test",
-					IsFinal:    true,
-					Confidence: 0.9,
-				})
-				return
-			}
-		}))
-		defer srv.Close()
+	e, err := New(stt.Config{Extra: map[string]any{"api_key": "test-key", "base_url": srv.URL}})
+	require.NoError(t, err)
 
-		e, err := New(stt.Config{
-			Language:   "es",
-			SampleRate: 44100,
-			Extra: map[string]any{
-				"api_key":  "test-key",
-				"base_url": srv.URL,
-			},
-		})
-		require.NoError(t, err)
+	audioStream := func(yield func([]byte, error) bool) { yield([]byte{0x01}, nil) }
 
-		audioStream := func(yield func([]byte, error) bool) {
-			yield([]byte{0x01}, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var events []stt.TranscriptEvent
+	for event, err := range e.TranscribeStream(ctx, audioStream) {
+		if err != nil {
+			break
 		}
+		events = append(events, event)
+	}
+	require.Len(t, events, 1)
+	assert.Equal(t, "actual", events[0].Text)
+}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+func TestTranscribeStream_WebsocketDialFailure(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]string{"url": "ws://localhost:1/bad"}) //nolint:errcheck
+	}))
+	defer srv.Close()
 
-		for _, err := range e.TranscribeStream(ctx, audioStream) {
-			if err != nil {
-				break
-			}
+	e, err := New(stt.Config{Extra: map[string]any{"api_key": "test-key", "base_url": srv.URL}})
+	require.NoError(t, err)
+
+	audioStream := func(yield func([]byte, error) bool) {
+		// no-op: test exercises WebSocket dial error path
+	}
+
+	var gotErr error
+	for _, err := range e.TranscribeStream(context.Background(), audioStream) {
+		if err != nil {
+			gotErr = err
+			break
 		}
-		// Verify init request included language and sample rate
-		assert.Equal(t, "es", receivedInit["language"])
-		assert.Equal(t, float64(44100), receivedInit["sample_rate"])
-	})
-
-	t.Run("audio stream error", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "/live" {
-				json.NewEncoder(w).Encode(map[string]string{
-					"url": "ws://" + r.Host + "/ws",
-				})
-				return
-			}
-			if r.URL.Path == "/ws" {
-				conn, err := websocket.Accept(w, r, nil)
-				if err != nil {
-					return
-				}
-				defer conn.Close(websocket.StatusNormalClosure, "")
-				// Keep reading to allow audio send goroutine to work
-				for {
-					_, _, err := conn.Read(r.Context())
-					if err != nil {
-						return
-					}
-				}
-			}
-		}))
-		defer srv.Close()
-
-		e, err := New(stt.Config{
-			Extra: map[string]any{
-				"api_key":  "test-key",
-				"base_url": srv.URL,
-			},
-		})
-		require.NoError(t, err)
-
-		audioStream := func(yield func([]byte, error) bool) {
-			yield(nil, assert.AnError)
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		var gotErr error
-		for _, err := range e.TranscribeStream(ctx, audioStream) {
-			if err != nil {
-				gotErr = err
-				break
-			}
-		}
-		require.Error(t, gotErr)
-	})
-
-	t.Run("websocket message with empty transcript skipped", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "/live" {
-				json.NewEncoder(w).Encode(map[string]string{
-					"url": "ws://" + r.Host + "/ws",
-				})
-				return
-			}
-			if r.URL.Path == "/ws" {
-				conn, err := websocket.Accept(w, r, nil)
-				if err != nil {
-					return
-				}
-				defer conn.Close(websocket.StatusNormalClosure, "")
-				ctx := r.Context()
-				// Send empty transcript (should be skipped)
-				wsjson.Write(ctx, conn, gladiaStreamMsg{
-					Type:       "transcript",
-					Transcript: "",
-				})
-				// Send non-empty transcript
-				wsjson.Write(ctx, conn, gladiaStreamMsg{
-					Type:       "transcript",
-					Transcript: "actual",
-					IsFinal:    true,
-					Confidence: 0.9,
-				})
-				return
-			}
-		}))
-		defer srv.Close()
-
-		e, err := New(stt.Config{
-			Extra: map[string]any{
-				"api_key":  "test-key",
-				"base_url": srv.URL,
-			},
-		})
-		require.NoError(t, err)
-
-		audioStream := func(yield func([]byte, error) bool) {
-			yield([]byte{0x01}, nil)
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		var events []stt.TranscriptEvent
-		for event, err := range e.TranscribeStream(ctx, audioStream) {
-			if err != nil {
-				break
-			}
-			events = append(events, event)
-		}
-		// Only non-empty transcript should be received
-		require.Len(t, events, 1)
-		assert.Equal(t, "actual", events[0].Text)
-	})
-
-	t.Run("websocket dial failure", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Return a URL that won't accept WebSocket
-			json.NewEncoder(w).Encode(map[string]string{
-				"url": "ws://localhost:1/bad",
-			})
-		}))
-		defer srv.Close()
-
-		e, err := New(stt.Config{
-			Extra: map[string]any{
-				"api_key":  "test-key",
-				"base_url": srv.URL,
-			},
-		})
-		require.NoError(t, err)
-
-		audioStream := func(yield func([]byte, error) bool) {}
-
-		var gotErr error
-		for _, err := range e.TranscribeStream(context.Background(), audioStream) {
-			if err != nil {
-				gotErr = err
-				break
-			}
-		}
-		require.Error(t, gotErr)
-		assert.Contains(t, gotErr.Error(), "websocket dial")
-	})
+	}
+	require.Error(t, gotErr)
+	assert.Contains(t, gotErr.Error(), "websocket dial")
 }
 
 func TestTranscribe_UploadDecodeError(t *testing.T) {
@@ -816,39 +694,26 @@ func TestTranscribe_CreateTranscriptionHTTPFailed(t *testing.T) {
 func TestTranscribeStream_NonJSONWSMessage(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/live" {
-			json.NewEncoder(w).Encode(map[string]string{
-				"url": "ws://" + r.Host + "/ws",
-			})
+			json.NewEncoder(w).Encode(map[string]string{"url": "ws://" + r.Host + "/ws"}) //nolint:errcheck
 			return
 		}
-		if r.URL.Path == "/ws" {
-			conn, err := websocket.Accept(w, r, nil)
-			if err != nil {
-				return
-			}
-			ctx := r.Context()
-			// Send non-JSON message (should be skipped)
-			conn.Write(ctx, websocket.MessageText, []byte("not json"))
-			// Send valid message
-			wsjson.Write(ctx, conn, gladiaStreamMsg{
-				Type:       "transcript",
-				Transcript: "after noise",
-				IsFinal:    true,
-				Confidence: 0.9,
-			})
-			conn.Close(websocket.StatusNormalClosure, "")
+		if r.URL.Path != "/ws" {
 			return
 		}
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		ctx := r.Context()
+		conn.Write(ctx, websocket.MessageText, []byte("not json"))                                                                     //nolint:errcheck
+		wsjson.Write(ctx, conn, gladiaStreamMsg{Type: "transcript", Transcript: "after noise", IsFinal: true, Confidence: 0.9}) //nolint:errcheck
+		conn.Close(websocket.StatusNormalClosure, "")                                                                                  //nolint:errcheck
 	}))
 	defer srv.Close()
 
-	e, _ := New(stt.Config{
-		Extra: map[string]any{"api_key": "k", "base_url": srv.URL},
-	})
+	e, _ := New(stt.Config{Extra: map[string]any{"api_key": "k", "base_url": srv.URL}})
 
-	audioStream := func(yield func([]byte, error) bool) {
-		yield([]byte{0x01}, nil)
-	}
+	audioStream := func(yield func([]byte, error) bool) { yield([]byte{0x01}, nil) }
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -867,20 +732,17 @@ func TestTranscribeStream_NonJSONWSMessage(t *testing.T) {
 func TestTranscribeStream_WriteError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/live" {
-			json.NewEncoder(w).Encode(map[string]string{
-				"url": "ws://" + r.Host + "/ws",
-			})
+			json.NewEncoder(w).Encode(map[string]string{"url": "ws://" + r.Host + "/ws"}) //nolint:errcheck
 			return
 		}
-		if r.URL.Path == "/ws" {
-			conn, err := websocket.Accept(w, r, nil)
-			if err != nil {
-				return
-			}
-			// Close immediately so client write fails
-			conn.Close(websocket.StatusNormalClosure, "")
+		if r.URL.Path != "/ws" {
 			return
 		}
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		conn.Close(websocket.StatusNormalClosure, "") //nolint:errcheck
 	}))
 	defer srv.Close()
 
@@ -930,37 +792,31 @@ func TestTranscribe_UploadHTTPFailed(t *testing.T) {
 func TestTranscribeStream_ContextCancelledDuringStream(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/live" {
-			json.NewEncoder(w).Encode(map[string]string{
-				"url": "ws://" + r.Host + "/ws",
-			})
+			json.NewEncoder(w).Encode(map[string]string{"url": "ws://" + r.Host + "/ws"}) //nolint:errcheck
 			return
 		}
-		if r.URL.Path == "/ws" {
-			conn, err := websocket.Accept(w, r, nil)
-			if err != nil {
+		if r.URL.Path != "/ws" {
+			return
+		}
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.Close(websocket.StatusNormalClosure, "") //nolint:errcheck
+		for {
+			if _, _, err := conn.Read(r.Context()); err != nil {
 				return
-			}
-			defer conn.Close(websocket.StatusNormalClosure, "")
-			// Keep connection alive, wait for client to cancel
-			for {
-				_, _, err := conn.Read(r.Context())
-				if err != nil {
-					return
-				}
 			}
 		}
 	}))
 	defer srv.Close()
 
-	e, _ := New(stt.Config{
-		Extra: map[string]any{"api_key": "k", "base_url": srv.URL},
-	})
+	e, _ := New(stt.Config{Extra: map[string]any{"api_key": "k", "base_url": srv.URL}})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
 
 	audioStream := func(yield func([]byte, error) bool) {
-		// Send audio slowly so context times out
 		for {
 			time.Sleep(50 * time.Millisecond)
 			if !yield([]byte{0x01}, nil) {
@@ -982,44 +838,33 @@ func TestTranscribeStream_ContextCancelledDuringStream(t *testing.T) {
 func TestTranscribeStream_YieldReturnsFalse(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/live" {
-			json.NewEncoder(w).Encode(map[string]string{
-				"url": "ws://" + r.Host + "/ws",
-			})
+			json.NewEncoder(w).Encode(map[string]string{"url": "ws://" + r.Host + "/ws"}) //nolint:errcheck
 			return
 		}
-		if r.URL.Path == "/ws" {
-			conn, err := websocket.Accept(w, r, nil)
-			if err != nil {
-				return
-			}
-			defer conn.Close(websocket.StatusNormalClosure, "")
-			ctx := r.Context()
-			// Send multiple messages
-			for i := 0; i < 5; i++ {
-				wsjson.Write(ctx, conn, gladiaStreamMsg{
-					Type:       "transcript",
-					Transcript: "text",
-					IsFinal:    true,
-					Confidence: 0.9,
-				})
-			}
+		if r.URL.Path != "/ws" {
 			return
+		}
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.Close(websocket.StatusNormalClosure, "") //nolint:errcheck
+		ctx := r.Context()
+		for i := 0; i < 5; i++ {
+			wsjson.Write(ctx, conn, gladiaStreamMsg{ //nolint:errcheck
+				Type: "transcript", Transcript: "text", IsFinal: true, Confidence: 0.9,
+			})
 		}
 	}))
 	defer srv.Close()
 
-	e, _ := New(stt.Config{
-		Extra: map[string]any{"api_key": "k", "base_url": srv.URL},
-	})
+	e, _ := New(stt.Config{Extra: map[string]any{"api_key": "k", "base_url": srv.URL}})
 
-	audioStream := func(yield func([]byte, error) bool) {
-		yield([]byte{0x01}, nil)
-	}
+	audioStream := func(yield func([]byte, error) bool) { yield([]byte{0x01}, nil) }
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Break after first event — tests the yield returning false path
 	count := 0
 	for _, err := range e.TranscribeStream(ctx, audioStream) {
 		if err != nil {
@@ -1048,7 +893,9 @@ func TestTranscribeStream_LiveHTTPFailed(t *testing.T) {
 		Extra: map[string]any{"api_key": "k", "base_url": srv.URL},
 	})
 
-	audioStream := func(yield func([]byte, error) bool) {}
+	audioStream := func(yield func([]byte, error) bool) {
+		// no-op: no audio to send; test exercises live-request HTTP failure path
+	}
 
 	var gotErr error
 	for _, err := range e.TranscribeStream(context.Background(), audioStream) {

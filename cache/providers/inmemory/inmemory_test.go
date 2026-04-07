@@ -280,6 +280,26 @@ func TestInMemoryCache_Len(t *testing.T) {
 	}
 }
 
+func assertCachedValue(t *testing.T, c *InMemoryCache, ctx context.Context, key string, want any) {
+	t.Helper()
+	val, ok, err := c.Get(ctx, key)
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+	if !ok {
+		t.Fatal("Get() ok = false, want true")
+	}
+	if want == nil {
+		if val != nil {
+			t.Errorf("Get() = %v, want nil", val)
+		}
+		return
+	}
+	if fmt.Sprintf("%v", val) != fmt.Sprintf("%v", want) {
+		t.Errorf("Get() = %v, want %v", val, want)
+	}
+}
+
 func TestInMemoryCache_DifferentValueTypes(t *testing.T) {
 	c := newTestCache(time.Minute, 100)
 	ctx := context.Background()
@@ -303,24 +323,7 @@ func TestInMemoryCache_DifferentValueTypes(t *testing.T) {
 			if err := c.Set(ctx, tt.key, tt.value, 0); err != nil {
 				t.Fatalf("Set() error = %v", err)
 			}
-			val, ok, err := c.Get(ctx, tt.key)
-			if err != nil {
-				t.Fatalf("Get() error = %v", err)
-			}
-			if !ok {
-				t.Fatal("Get() ok = false, want true")
-			}
-			// For nil, check directly.
-			if tt.value == nil {
-				if val != nil {
-					t.Errorf("Get() = %v, want nil", val)
-				}
-				return
-			}
-			// For others, use fmt comparison.
-			if fmt.Sprintf("%v", val) != fmt.Sprintf("%v", tt.value) {
-				t.Errorf("Get() = %v, want %v", val, tt.value)
-			}
+			assertCachedValue(t, c, ctx, tt.key, tt.value)
 		})
 	}
 }

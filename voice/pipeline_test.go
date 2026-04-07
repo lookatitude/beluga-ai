@@ -222,7 +222,9 @@ func TestComposeHooksOnError(t *testing.T) {
 func TestComposeHooksNilFields(t *testing.T) {
 	// Composing hooks with nil fields should not panic.
 	h1 := Hooks{} // all nil
-	h2 := Hooks{OnSpeechEnd: func(_ context.Context) {}}
+	h2 := Hooks{OnSpeechEnd: func(_ context.Context) {
+		// no-op: satisfies Hooks for testing; OnSpeechEnd behaviour not under test
+	}}
 
 	composed := ComposeHooks(h1, h2)
 	// Should not panic.

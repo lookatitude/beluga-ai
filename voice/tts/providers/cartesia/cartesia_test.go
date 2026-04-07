@@ -165,6 +165,55 @@ func TestSynthesize(t *testing.T) {
 	})
 }
 
+func twoWordStream(yield func(string, error) bool) {
+	if !yield("Hello", nil) {
+		return
+	}
+	yield("World", nil)
+}
+
+func emptyFirstStream(yield func(string, error) bool) {
+	if !yield("", nil) {
+		return
+	}
+	yield("text", nil)
+}
+
+func singleWordStream(yield func(string, error) bool) {
+	yield("hello", nil)
+}
+
+func errorStream(yield func(string, error) bool) {
+	yield("", fmt.Errorf("stream error"))
+}
+
+func twoWordStopEarlyStream(yield func(string, error) bool) {
+	if !yield("first", nil) {
+		return
+	}
+	yield("second", nil)
+}
+
+func collectChunks(t *testing.T, iter func(func([]byte, error) bool)) [][]byte {
+	t.Helper()
+	var chunks [][]byte
+	for chunk, err := range iter {
+		require.NoError(t, err)
+		chunks = append(chunks, chunk)
+	}
+	return chunks
+}
+
+func requireFirstError(t *testing.T, iter func(func([]byte, error) bool)) error {
+	t.Helper()
+	for _, err := range iter {
+		require.Error(t, err)
+		return err
+	}
+	t.Fatal("expected at least one error from stream")
+	return nil
+}
+
 func TestSynthesizeStream(t *testing.T) {
 	t.Run("stream text chunks", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -181,19 +230,7 @@ func TestSynthesizeStream(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		textStream := func(yield func(string, error) bool) {
-			if !yield("Hello", nil) {
-				return
-			}
-			yield("World", nil)
-		}
-
-		var chunks [][]byte
-		for chunk, err := range e.SynthesizeStream(context.Background(), textStream) {
-			require.NoError(t, err)
-			chunks = append(chunks, chunk)
-		}
-
+		chunks := collectChunks(t, e.SynthesizeStream(context.Background(), twoWordStream))
 		assert.Equal(t, 2, len(chunks))
 	})
 
@@ -212,19 +249,7 @@ func TestSynthesizeStream(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		textStream := func(yield func(string, error) bool) {
-			if !yield("", nil) {
-				return
-			}
-			yield("text", nil)
-		}
-
-		var chunks [][]byte
-		for chunk, err := range e.SynthesizeStream(context.Background(), textStream) {
-			require.NoError(t, err)
-			chunks = append(chunks, chunk)
-		}
-
+		chunks := collectChunks(t, e.SynthesizeStream(context.Background(), emptyFirstStream))
 		assert.Equal(t, 1, len(chunks))
 	})
 
@@ -238,15 +263,8 @@ func TestSynthesizeStream(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		textStream := func(yield func(string, error) bool) {
-			yield("", fmt.Errorf("stream error"))
-		}
-
-		for _, err := range e.SynthesizeStream(context.Background(), textStream) {
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), "stream error")
-			break
-		}
+		streamErr := requireFirstError(t, e.SynthesizeStream(context.Background(), errorStream))
+		assert.Contains(t, streamErr.Error(), "stream error")
 	})
 
 	t.Run("context cancelled", func(t *testing.T) {
@@ -262,14 +280,7 @@ func TestSynthesizeStream(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		textStream := func(yield func(string, error) bool) {
-			yield("hello", nil)
-		}
-
-		for _, err := range e.SynthesizeStream(ctx, textStream) {
-			require.Error(t, err)
-			break
-		}
+		requireFirstError(t, e.SynthesizeStream(ctx, singleWordStream))
 	})
 
 	t.Run("synthesis error propagated", func(t *testing.T) {
@@ -288,14 +299,7 @@ func TestSynthesizeStream(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		textStream := func(yield func(string, error) bool) {
-			yield("hello", nil)
-		}
-
-		for _, err := range e.SynthesizeStream(context.Background(), textStream) {
-			require.Error(t, err)
-			break
-		}
+		requireFirstError(t, e.SynthesizeStream(context.Background(), singleWordStream))
 	})
 
 	t.Run("consumer stops early", func(t *testing.T) {
@@ -313,15 +317,8 @@ func TestSynthesizeStream(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		textStream := func(yield func(string, error) bool) {
-			if !yield("first", nil) {
-				return
-			}
-			yield("second", nil)
-		}
-
 		var count int
-		for chunk, err := range e.SynthesizeStream(context.Background(), textStream) {
+		for chunk, err := range e.SynthesizeStream(context.Background(), twoWordStopEarlyStream) {
 			require.NoError(t, err)
 			assert.NotEmpty(t, chunk)
 			count++
