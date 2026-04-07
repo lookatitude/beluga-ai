@@ -41,7 +41,7 @@ TASK_LOG="${BELUGA_TASK_LOG:-/dev/null}"
 DATE="$(date -u +%Y-%m-%d)"
 TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-# Count existing rules to generate a unique filename
+mkdir -p "$AGENT_RULES_DIR"
 RULE_COUNT=$(find "$AGENT_RULES_DIR" -name "*.md" -type f 2>/dev/null | wc -l)
 RULE_FILE="$AGENT_RULES_DIR/learning-${BELUGA_TASK_ID}-$(( RULE_COUNT + 1 )).md"
 
