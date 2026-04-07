@@ -1,34 +1,23 @@
 ---
 name: review
-description: Review code against Beluga AI v2 architecture and Go idioms.
+description: Run Security Review on specified code. Requires 2 consecutive clean passes.
 ---
 
-Review the specified code (or recent changes) against Beluga AI v2 architecture.
+Run a security review on the specified code or recent changes.
 
-## Steps
+## Workflow
 
-1. Read `docs/concepts.md` for the relevant package.
-2. Check against:
+1. **Security Reviewer** checks code against all security checklists.
+2. If issues found → report with severity and remediation.
+3. If clean → report as clean pass N/2.
+4. Loop until 2 consecutive clean passes.
 
-### Architecture
+## Checklists Applied
 
-- iter.Seq2 for streaming (not channels)
-- Registry pattern (Register/New/List)
-- Middleware `func(T) T`
-- Hooks (optional, composable)
-- Small interfaces (<= 4 methods)
-- context.Context first, functional options WithX()
-- Zero external deps in core/schema, no circular imports
-- Typed errors with ErrorCode
-
-### Go Idioms
-
-- Error wrapping %w, goroutine leak prevention, race safety
-- Resource cleanup with defer, doc comments on exports
-- Compile-time interface checks
-
-### Testing
-
-- Tests for all exports, error paths, context cancellation for streams
-
-3. Report: **Critical** / **Warning** / **Suggestion**.
+- Input validation & injection prevention
+- Authentication & authorization
+- Cryptography & data protection
+- Concurrency & resource safety
+- Error handling & information disclosure
+- Dependencies & supply chain
+- Architecture compliance

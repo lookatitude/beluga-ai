@@ -3,9 +3,15 @@ package transport
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
+	"github.com/coder/websocket"
 	"github.com/lookatitude/beluga-ai/voice"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -285,45 +291,233 @@ func TestMockAudioTransport_CloseError(t *testing.T) {
 	require.Error(t, err)
 }
 
+// --- WebSocketTransport test helpers ---
+
+// newWSTestServer creates an httptest server that upgrades to WebSocket and
+// runs handler on the accepted connection.
+func newWSTestServer(t *testing.T, handler func(*websocket.Conn)) *httptest.Server {
+	t.Helper()
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			t.Logf("websocket accept error: %v", err)
+			return
+		}
+		handler(conn)
+	}))
+}
+
+// wsURL converts an httptest server URL to a ws:// URL.
+func wsURL(srv *httptest.Server) string {
+	return "ws" + strings.TrimPrefix(srv.URL, "http")
+}
+
 // --- WebSocketTransport tests ---
 
-func TestWebSocketTransport_NewDefault(t *testing.T) {
-	ws := NewWebSocketTransport("ws://localhost:9000")
+func TestWebSocketTransport_ConnectSuccess(t *testing.T) {
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		// Keep connection alive until client closes.
+		conn.Read(context.Background())
+	})
+	defer srv.Close()
 
-	assert.Equal(t, "ws://localhost:9000", ws.url)
+	ws, err := NewWebSocketTransport(context.Background(), wsURL(srv))
+	require.NoError(t, err)
+	require.NotNil(t, ws)
+	defer ws.Close()
+
+	assert.Equal(t, wsURL(srv), ws.url)
 	assert.Equal(t, 16000, ws.config.sampleRate)
 	assert.Equal(t, 1, ws.config.channels)
-	assert.False(t, ws.closed)
 }
 
-func TestWebSocketTransport_NewWithOptions(t *testing.T) {
-	ws := NewWebSocketTransport("ws://example.com/audio",
+func TestWebSocketTransport_ConnectWithOptions(t *testing.T) {
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		conn.Read(context.Background())
+	})
+	defer srv.Close()
+
+	ws, err := NewWebSocketTransport(context.Background(), wsURL(srv),
 		WithWSSampleRate(44100),
 		WithWSChannels(2),
+		WithWSBufferSize(128),
+		WithWSReadLimit(2<<20),
+		WithWSWriteTimeout(10*time.Second),
 	)
+	require.NoError(t, err)
+	require.NotNil(t, ws)
+	defer ws.Close()
 
-	assert.Equal(t, "ws://example.com/audio", ws.url)
 	assert.Equal(t, 44100, ws.config.sampleRate)
 	assert.Equal(t, 2, ws.config.channels)
+	assert.Equal(t, 128, ws.config.bufferSize)
+	assert.Equal(t, int64(2<<20), ws.config.readLimit)
+	assert.Equal(t, 10*time.Second, ws.config.writeTimeout)
 }
 
-func TestWebSocketTransport_Recv(t *testing.T) {
-	ws := NewWebSocketTransport("ws://localhost:9000")
-
-	ch, err := ws.Recv(context.Background())
-	require.NoError(t, err)
-	require.NotNil(t, ch)
-
-	// The stub implementation closes the channel immediately, so range should exit.
-	var frames []voice.Frame
-	for f := range ch {
-		frames = append(frames, f)
+func TestWebSocketTransport_URLValidation(t *testing.T) {
+	tests := []struct {
+		name    string
+		url     string
+		wantErr string
+	}{
+		{"empty URL", "", "must not be empty"},
+		{"http scheme", "http://localhost:8080", "must use ws:// or wss://"},
+		{"https scheme", "https://localhost:8080", "must use ws:// or wss://"},
+		{"no scheme", "localhost:8080", "must use ws:// or wss://"},
+		{"ftp scheme", "ftp://localhost:8080", "must use ws:// or wss://"},
 	}
-	assert.Empty(t, frames)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := NewWebSocketTransport(context.Background(), tt.url)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.wantErr)
+		})
+	}
+}
+
+func TestWebSocketTransport_BufferSizeClamping(t *testing.T) {
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		conn.Read(context.Background())
+	})
+	defer srv.Close()
+
+	ws, err := NewWebSocketTransport(context.Background(), wsURL(srv),
+		WithWSBufferSize(-1),
+		WithWSReadLimit(-100),
+	)
+	require.NoError(t, err)
+	defer ws.Close()
+
+	assert.Equal(t, 64, ws.config.bufferSize, "negative bufferSize should be clamped to default")
+	assert.Equal(t, int64(1<<20), ws.config.readLimit, "negative readLimit should be clamped to default")
+}
+
+func TestWebSocketTransport_ConnectDialError(t *testing.T) {
+	_, err := NewWebSocketTransport(context.Background(), "ws://127.0.0.1:1/bad")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "websocket dial")
+}
+
+func TestWebSocketTransport_SendRecvAudioRoundTrip(t *testing.T) {
+	// Echo server: reads one binary message and sends it back.
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		mt, data, err := conn.Read(ctx)
+		if err != nil {
+			return
+		}
+		conn.Write(ctx, mt, data)
+		conn.Close(websocket.StatusNormalClosure, "")
+	})
+	defer srv.Close()
+
+	ctx := context.Background()
+	ws, err := NewWebSocketTransport(ctx, wsURL(srv))
+	require.NoError(t, err)
+	defer ws.Close()
+
+	// Send an audio frame.
+	audioData := []byte{0x01, 0x02, 0x03, 0x04}
+	err = ws.Send(ctx, voice.NewAudioFrame(audioData, 16000))
+	require.NoError(t, err)
+
+	// Receive the echoed frame.
+	ch, err := ws.Recv(ctx)
+	require.NoError(t, err)
+
+	select {
+	case frame := <-ch:
+		assert.Equal(t, voice.FrameAudio, frame.Type)
+		assert.Equal(t, audioData, frame.Data)
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for echoed audio frame")
+	}
+}
+
+func TestWebSocketTransport_SendRecvTextFrame(t *testing.T) {
+	// Echo server: reads one text message and sends it back.
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		mt, data, err := conn.Read(ctx)
+		if err != nil {
+			return
+		}
+		conn.Write(ctx, mt, data)
+		conn.Close(websocket.StatusNormalClosure, "")
+	})
+	defer srv.Close()
+
+	ctx := context.Background()
+	ws, err := NewWebSocketTransport(ctx, wsURL(srv))
+	require.NoError(t, err)
+	defer ws.Close()
+
+	// Send a text frame.
+	err = ws.Send(ctx, voice.NewTextFrame("hello world"))
+	require.NoError(t, err)
+
+	// Receive the echoed frame.
+	ch, err := ws.Recv(ctx)
+	require.NoError(t, err)
+
+	select {
+	case frame := <-ch:
+		assert.Equal(t, voice.FrameText, frame.Type)
+		assert.Equal(t, "hello world", frame.Text())
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for echoed text frame")
+	}
+}
+
+func TestWebSocketTransport_SendControlFrame(t *testing.T) {
+	// Server reads one text message, verifies it's a control frame, echoes it back.
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		mt, data, err := conn.Read(ctx)
+		if err != nil {
+			return
+		}
+		// Verify it was sent as text (JSON envelope).
+		if mt != websocket.MessageText {
+			return
+		}
+		conn.Write(ctx, mt, data)
+		conn.Close(websocket.StatusNormalClosure, "")
+	})
+	defer srv.Close()
+
+	ctx := context.Background()
+	ws, err := NewWebSocketTransport(ctx, wsURL(srv))
+	require.NoError(t, err)
+	defer ws.Close()
+
+	err = ws.Send(ctx, voice.NewControlFrame(voice.SignalInterrupt))
+	require.NoError(t, err)
+
+	ch, err := ws.Recv(ctx)
+	require.NoError(t, err)
+
+	select {
+	case frame := <-ch:
+		assert.Equal(t, voice.FrameControl, frame.Type)
+		assert.Equal(t, voice.SignalInterrupt, frame.Signal())
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for echoed control frame")
+	}
 }
 
 func TestWebSocketTransport_RecvClosed(t *testing.T) {
-	ws := NewWebSocketTransport("ws://localhost:9000")
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		conn.Read(context.Background())
+	})
+	defer srv.Close()
+
+	ws, err := NewWebSocketTransport(context.Background(), wsURL(srv))
+	require.NoError(t, err)
 	require.NoError(t, ws.Close())
 
 	ch, err := ws.Recv(context.Background())
@@ -332,52 +526,175 @@ func TestWebSocketTransport_RecvClosed(t *testing.T) {
 	assert.Contains(t, err.Error(), "closed")
 }
 
-func TestWebSocketTransport_Send(t *testing.T) {
-	ws := NewWebSocketTransport("ws://localhost:9000")
-
-	err := ws.Send(context.Background(), voice.NewAudioFrame([]byte{0x01, 0x02}, 16000))
-	require.NoError(t, err)
-
-	err = ws.Send(context.Background(), voice.NewTextFrame("hello"))
-	require.NoError(t, err)
-}
-
 func TestWebSocketTransport_SendClosed(t *testing.T) {
-	ws := NewWebSocketTransport("ws://localhost:9000")
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		conn.Read(context.Background())
+	})
+	defer srv.Close()
+
+	ws, err := NewWebSocketTransport(context.Background(), wsURL(srv))
+	require.NoError(t, err)
 	require.NoError(t, ws.Close())
 
-	err := ws.Send(context.Background(), voice.NewAudioFrame([]byte{0x01}, 16000))
+	err = ws.Send(context.Background(), voice.NewAudioFrame([]byte{0x01}, 16000))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "closed")
 }
 
-func TestWebSocketTransport_AudioOut(t *testing.T) {
-	ws := NewWebSocketTransport("ws://localhost:9000")
-
-	writer := ws.AudioOut()
-	assert.Equal(t, io.Discard, writer)
-}
-
-func TestWebSocketTransport_Close(t *testing.T) {
-	ws := NewWebSocketTransport("ws://localhost:9000")
-	assert.False(t, ws.closed)
-
-	err := ws.Close()
-	require.NoError(t, err)
-	assert.True(t, ws.closed)
-}
-
 func TestWebSocketTransport_CloseIdempotent(t *testing.T) {
-	ws := NewWebSocketTransport("ws://localhost:9000")
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		conn.Read(context.Background())
+	})
+	defer srv.Close()
 
-	err := ws.Close()
+	ws, err := NewWebSocketTransport(context.Background(), wsURL(srv))
 	require.NoError(t, err)
-	assert.True(t, ws.closed)
 
-	// Closing again should not error.
+	// First close should succeed.
 	err = ws.Close()
 	require.NoError(t, err)
-	assert.True(t, ws.closed)
+
+	// Second close should not panic and should return nil (sync.Once).
+	err = ws.Close()
+	require.NoError(t, err)
+}
+
+func TestWebSocketTransport_ContextCancellation(t *testing.T) {
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		// Keep connection alive.
+		conn.Read(context.Background())
+	})
+	defer srv.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	ws, err := NewWebSocketTransport(ctx, wsURL(srv))
+	require.NoError(t, err)
+	defer ws.Close()
+
+	ch, err := ws.Recv(ctx)
+	require.NoError(t, err)
+	require.NotNil(t, ch)
+
+	// Cancel the context — readLoop should exit and close the frames channel.
+	cancel()
+
+	// The frames channel should eventually be closed.
+	select {
+	case _, ok := <-ch:
+		// Either we got a frame or the channel closed; both are acceptable.
+		// We mainly care that it doesn't hang.
+		if ok {
+			// Drain remaining frames.
+			for f := range ch {
+				_ = f // discard
+			}
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for readLoop to stop after context cancel")
+	}
+}
+
+func TestWebSocketTransport_AudioOutWriter(t *testing.T) {
+	// Server collects binary messages.
+	received := make(chan []byte, 4)
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		for {
+			mt, data, err := conn.Read(ctx)
+			if err != nil {
+				return
+			}
+			if mt == websocket.MessageBinary {
+				received <- data
+			}
+		}
+	})
+	defer srv.Close()
+
+	ws, err := NewWebSocketTransport(context.Background(), wsURL(srv))
+	require.NoError(t, err)
+	defer ws.Close()
+
+	writer := ws.AudioOut()
+	require.NotNil(t, writer)
+
+	// AudioOut should return the same writer each time.
+	assert.Equal(t, writer, ws.AudioOut())
+
+	// Write audio data.
+	data := []byte{0xAA, 0xBB, 0xCC}
+	n, err := writer.Write(data)
+	require.NoError(t, err)
+	assert.Equal(t, 3, n)
+
+	// Verify the server received the binary message.
+	select {
+	case got := <-received:
+		assert.Equal(t, data, got)
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for server to receive audio data")
+	}
+}
+
+func TestWebSocketTransport_WireFrameJSON(t *testing.T) {
+	// Verify the wireFrame JSON format by having the server decode it.
+	decoded := make(chan wireFrame, 1)
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_, data, err := conn.Read(ctx)
+		if err != nil {
+			return
+		}
+		var wf wireFrame
+		if err := json.Unmarshal(data, &wf); err != nil {
+			return
+		}
+		decoded <- wf
+		conn.Close(websocket.StatusNormalClosure, "")
+	})
+	defer srv.Close()
+
+	ws, err := NewWebSocketTransport(context.Background(), wsURL(srv))
+	require.NoError(t, err)
+	defer ws.Close()
+
+	err = ws.Send(context.Background(), voice.NewTextFrame("wire format test"))
+	require.NoError(t, err)
+
+	select {
+	case wf := <-decoded:
+		assert.Equal(t, voice.FrameText, wf.Type)
+		assert.Equal(t, "wire format test", wf.Text)
+		assert.Nil(t, wf.Data, "text frames should not duplicate data")
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for server to decode wireFrame")
+	}
+}
+
+func TestWebSocketTransport_WithWSHeaders(t *testing.T) {
+	var receivedHeader string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		receivedHeader = r.Header.Get("X-Custom-Auth")
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		conn.Read(context.Background())
+	}))
+	defer srv.Close()
+
+	headers := http.Header{}
+	headers.Set("X-Custom-Auth", "bearer-token-123")
+
+	ws, err := NewWebSocketTransport(context.Background(), wsURL(srv),
+		WithWSHeaders(headers),
+	)
+	require.NoError(t, err)
+	defer ws.Close()
+
+	assert.Equal(t, "bearer-token-123", receivedHeader)
 }
 
 // --- Registry panic tests ---
@@ -412,41 +729,99 @@ func TestWebSocketTransport_RegistryIntegration(t *testing.T) {
 	names := List()
 	assert.Contains(t, names, "websocket")
 
+	// Start a test server for the registry to connect to.
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		// Echo one message then close.
+		mt, data, err := conn.Read(ctx)
+		if err != nil {
+			return
+		}
+		conn.Write(ctx, mt, data)
+		conn.Close(websocket.StatusNormalClosure, "")
+	})
+	defer srv.Close()
+
 	// Create a WebSocket transport via the registry with config options.
-	transport, err := New("websocket", Config{
-		URL:        "ws://integration-test:8080",
+	tr, err := New("websocket", Config{
+		URL:        wsURL(srv),
 		SampleRate: 48000,
 		Channels:   2,
 	})
 	require.NoError(t, err)
-	require.NotNil(t, transport)
-	defer transport.Close()
+	require.NotNil(t, tr)
+	defer tr.Close()
 
 	// Verify it's a *WebSocketTransport with the expected config.
-	ws, ok := transport.(*WebSocketTransport)
+	ws, ok := tr.(*WebSocketTransport)
 	require.True(t, ok, "expected *WebSocketTransport from registry")
-	assert.Equal(t, "ws://integration-test:8080", ws.url)
+	assert.Equal(t, wsURL(srv), ws.url)
 	assert.Equal(t, 48000, ws.config.sampleRate)
 	assert.Equal(t, 2, ws.config.channels)
 
-	// Verify the interface methods work.
-	ch, err := transport.Recv(context.Background())
+	// Verify the interface methods work: send and receive.
+	ch, err := tr.Recv(context.Background())
 	require.NoError(t, err)
 	require.NotNil(t, ch)
 
-	err = transport.Send(context.Background(), voice.NewTextFrame("test"))
+	err = tr.Send(context.Background(), voice.NewTextFrame("test"))
 	require.NoError(t, err)
 
-	writer := transport.AudioOut()
-	assert.Equal(t, io.Discard, writer)
+	select {
+	case frame := <-ch:
+		assert.Equal(t, voice.FrameText, frame.Type)
+		assert.Equal(t, "test", frame.Text())
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for echoed frame in registry integration test")
+	}
 
-	err = transport.Close()
+	// AudioOut should return a writer (not io.Discard anymore).
+	writer := tr.AudioOut()
+	assert.NotNil(t, writer)
+
+	err = tr.Close()
 	require.NoError(t, err)
 
 	// After close, Send and Recv should fail.
-	_, err = transport.Recv(context.Background())
+	_, err = tr.Recv(context.Background())
 	require.Error(t, err)
 
-	err = transport.Send(context.Background(), voice.NewTextFrame("fail"))
+	err = tr.Send(context.Background(), voice.NewTextFrame("fail"))
 	require.Error(t, err)
+}
+
+func TestWebSocketTransport_MalformedJSONResilience(t *testing.T) {
+	// Server sends: malformed text, then valid binary audio, then closes.
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		// Send a malformed JSON text message.
+		conn.Write(ctx, websocket.MessageText, []byte("not valid json {{{"))
+
+		// Follow with a valid binary audio frame.
+		conn.Write(ctx, websocket.MessageBinary, []byte{0xDE, 0xAD})
+
+		// Give client time to receive, then close.
+		time.Sleep(200 * time.Millisecond)
+		conn.Close(websocket.StatusNormalClosure, "")
+	})
+	defer srv.Close()
+
+	ws, err := NewWebSocketTransport(context.Background(), wsURL(srv))
+	require.NoError(t, err)
+	defer ws.Close()
+
+	ch, err := ws.Recv(context.Background())
+	require.NoError(t, err)
+
+	// The transport should skip the malformed text and deliver the audio frame.
+	select {
+	case frame := <-ch:
+		assert.Equal(t, voice.FrameAudio, frame.Type)
+		assert.Equal(t, []byte{0xDE, 0xAD}, frame.Data)
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for audio frame after malformed JSON")
+	}
 }

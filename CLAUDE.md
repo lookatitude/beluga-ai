@@ -1,225 +1,133 @@
 # Beluga AI v2 — Go-Native Agentic Framework
 
-## Project Overview
+**Repository**: `github.com/lookatitude/beluga-ai` | **Language**: Go 1.23+ | **Streaming**: `iter.Seq2[T, error]`
 
-Beluga AI v2 is a ground-up Go framework for building agentic AI systems. It combines production patterns from Google ADK, OpenAI Agents SDK, LangGraph, ByteDance Eino, and LiveKit into a unified framework with streaming-first design, protocol interoperability (MCP + A2A), and pluggable everything.
+## Architecture References
 
-**Repository**: `github.com/lookatitude/beluga-ai`
-**Language**: Go 1.23+ (uses `iter.Seq2[T, error]` for streaming)
-**Module path**: `github.com/lookatitude/beluga-ai`
-
-## Architecture Documents
-
-These are the authoritative references. **Read them before making any architectural decisions**:
-
-- `docs/concepts.md` — Architecture & design decisions (the "why")
+Read these before architectural decisions:
+- `docs/concepts.md` — Design decisions (the "why")
 - `docs/packages.md` — Package layout & interfaces (the "what")
-- `docs/providers.md` — Provider categories, extension guide, and discovery patterns
-- `docs/architecture.md` — Full architecture document with extensibility patterns (the "how")
+- `docs/providers.md` — Provider categories & extension guide
+- `docs/architecture.md` — Full architecture with extensibility patterns (the "how")
 
-## Go Conventions
+## Team
 
-### Module & Package Rules
-- Module path: `github.com/lookatitude/beluga-ai`
-- All imports use this module path
-- Package names are lowercase, single-word when possible (e.g., `llm`, `agent`, `tool`, `voice`)
-- No `pkg/` prefix — packages live at root: `core/`, `schema/`, `llm/`, `agent/`, etc.
-- `internal/` for shared utilities not part of public API
-- Provider packages nest under their parent: `llm/providers/openai/`, `rag/vectorstore/providers/pgvector/`
+| Agent | Role | When to Use |
+|-------|------|-------------|
+| `architect` | Design, plan, define acceptance criteria | New features, packages, design decisions |
+| `researcher` | Investigate topics, return evidence | When Architect needs research before designing |
+| `developer` | Code + tests for all packages | Any implementation task |
+| `security-reviewer` | Thorough security review | After Developer completes code (2 clean passes required) |
+| `qa-engineer` | Validate against acceptance criteria | After Security Review passes |
+| `doc-writer` | Package docs, tutorials, API reference | After implementation is approved |
 
-### Code Style
-- **Interfaces first**: Define the interface, then implementations. Keep interfaces small (1-4 methods).
-- **Functional options**: Use `WithX()` pattern for configuration, not builders or config structs alone.
-- **Error handling**: Return `(T, error)`. Use typed errors from `core/errors.go` with `ErrorCode`. Always check `IsRetryable()` for LLM/tool errors.
-- **Context propagation**: Every public function's first parameter is `context.Context`. No exceptions.
-- **Naming**: `New()` for constructors, `Register()` + `New()` + `List()` for registry pattern, `With()` for options.
-- **No global state** beyond `init()` registrations. Registry mutations only in `init()`.
-- **Embedding over inheritance**: Compose via struct embedding (e.g., `BaseAgent`), not interface hierarchies.
-- **Documentation**: Every exported type/func gets a doc comment. Include usage example in package doc.
-- **Test files**: `*_test.go` alongside source. Use `internal/testutil/` mocks for integration tests.
+## Workflows
 
-### Streaming Pattern
-```go
-// Primary streaming: iter.Seq2[T, error] (Go 1.23+)
-func (a *Agent) Stream(ctx context.Context, input string) iter.Seq2[Event, error] {
-    return func(yield func(Event, error) bool) {
-        // produce events
-    }
-}
+### Feature / Complex Task (use `/plan-feature` then `/implement`)
 
-// Consumers use range:
-for event, err := range agent.Stream(ctx, input) {
-    if err != nil { break }
-    // handle event
-}
+```
+Architect ──→ defines research topics ──→ Researcher investigates each topic
+    ↑                                            │
+    └──── returns structured findings ───────────┘
+    │
+    ▼
+Architect ──→ designs + plans with acceptance criteria
+    │
+    ▼
+Developer ──→ codes + writes tests ──→ Security Reviewer
+    ↑                                       │
+    │   ┌── if issues found ────────────────┘
+    │   │
+    └───┘ (loop until 2 consecutive clean passes)
+                                            │
+                                            ▼
+                                     QA Engineer validates
+                                     against acceptance criteria
+                                            │
+                                     ┌──────┴──────┐
+                                     │ PASS → Done  │
+                                     │ FAIL → Dev   │
+                                     └─────────────┘
 ```
 
-### Registry Pattern (used by ALL extensible packages)
-```go
-// Every extensible package follows this exact pattern:
-var registry = make(map[string]Factory)
+### Simple Bug Fix / Small Change
 
-func Register(name string, f Factory) { registry[name] = f }  // called in init()
-func New(name string, cfg Config) (Interface, error) { ... }   // factory lookup
-func List() []string { ... }                                    // discovery
+Skip Architect and Researcher. Developer fixes + tests → Security Review (2 clean passes) → QA validates.
 
-// Provider registration via init():
-func init() {
-    llm.Register("openai", func(cfg llm.ProviderConfig) (llm.ChatModel, error) {
-        return New(cfg)
-    })
-}
-```
+### Documentation Only
 
-### Middleware Pattern
-```go
-// Every extensible interface supports: func(T) T
-type Middleware func(ChatModel) ChatModel
+Doc Writer handles directly. No security review needed.
 
-func ApplyMiddleware(model ChatModel, mws ...Middleware) ChatModel {
-    for i := len(mws) - 1; i >= 0; i-- {
-        model = mws[i](model)
-    }
-    return model
-}
-```
+### Code Review (`/review`)
 
-### Hooks Pattern
-```go
-type Hooks struct {
-    OnStart    func(ctx context.Context, input any) error
-    OnEnd      func(ctx context.Context, result any, err error)
-    OnError    func(ctx context.Context, err error) error
-    // ... all fields optional, nil hooks are skipped
-}
+Security Reviewer runs full checklist. Must get 2 consecutive clean passes.
 
-func ComposeHooks(hooks ...Hooks) Hooks { ... }
-```
+## Go Conventions (Quick Reference)
+
+- **Module**: `github.com/lookatitude/beluga-ai`
+- **Packages**: lowercase, single-word, at root (no `pkg/` prefix)
+- **Interfaces**: 1-4 methods, define before implementing
+- **Config**: `WithX()` functional options
+- **Errors**: `(T, error)`, typed errors from `core/errors.go` with `ErrorCode`, check `IsRetryable()`
+- **Context**: `context.Context` always first parameter
+- **Streaming**: `iter.Seq2[T, error]` — never channels in public API
+- **Registry**: `Register()` + `New()` + `List()` in every extensible package (called in `init()`)
+- **Middleware**: `func(T) T`, applied outside-in
+- **Hooks**: Optional function fields, nil = skip, composable via `ComposeHooks()`
+- **Tests**: `*_test.go` alongside source, table-driven, integration tests use `//go:build integration`
+- **Deps**: Zero external deps in `core/` and `schema/` beyond stdlib + otel. No circular imports.
+
+## Key Design Decisions
+
+1. `iter.Seq2` for streaming — NOT channels
+2. Handoffs are tools — auto-generate `transfer_to_{name}`
+3. MemGPT 3-tier memory — Core/Recall/Archival + graph
+4. Guard pipeline is 3-stage — Input → Output → Tool
+5. Own durable execution engine — Temporal is a provider option
+6. Frame-based voice — FrameProcessor interface
+7. Registry pattern everywhere
+8. OTel GenAI conventions — `gen_ai.*` namespace
+9. Hybrid search default — Vector + BM25 + RRF fusion
+10. Prompt cache optimization — static content first
 
 ## Package Layout
 
 ```
 beluga-ai/
-├── core/         # Foundation: Stream, Runnable, Lifecycle, Errors, Tenant
-├── schema/       # Shared types: Message, ContentPart, Tool, Document, Event, Session
-├── config/       # Configuration: Load[T], Validate, hot-reload
-├── o11y/         # Observability: OTel GenAI conventions, slog, adapters
-├── llm/          # LLM abstraction: ChatModel, Router, Structured, Context Manager
-│   └── providers/  # openai, anthropic, google, ollama, bedrock, groq, ...
-├── tool/         # Tool system: Tool, FuncTool, MCP client, registry
-├── memory/       # Memory: Core/Recall/Archival/Graph tiers (MemGPT model)
-│   └── stores/     # inmemory, redis, postgres, sqlite, neo4j
-├── rag/          # RAG pipeline
-│   ├── embedding/  # Embedder interface + providers
-│   ├── vectorstore/  # VectorStore interface + providers
-│   ├── retriever/  # Retriever interface + strategies (hybrid, CRAG, HyDE)
-│   ├── loader/     # DocumentLoader implementations
-│   └── splitter/   # TextSplitter implementations
-├── agent/        # Agent runtime: BaseAgent, Planner, Executor, Handoffs
-│   └── workflow/   # SequentialAgent, ParallelAgent, LoopAgent
-├── voice/        # Voice pipeline: Frame-based, STT/TTS/S2S
-│   ├── stt/providers/
-│   ├── tts/providers/
-│   ├── s2s/providers/
-│   └── transport/
+├── core/           # Stream, Runnable, Lifecycle, Errors, Tenant
+├── schema/         # Message, ContentPart, Tool, Document, Event, Session
+├── config/         # Load[T], Validate, hot-reload
+├── o11y/           # OTel GenAI, slog, adapters
+├── llm/            # ChatModel, Router, Structured, Context Manager
+│   └── providers/
+├── tool/           # Tool, FuncTool, MCP client, registry
+├── memory/         # 3-tier + graph (MemGPT model)
+│   └── stores/
+├── rag/            # embedding/, vectorstore/, retriever/, loader/, splitter/
+├── agent/          # BaseAgent, Planner, Executor, Handoffs
+│   └── workflow/   # Sequential, Parallel, Loop agents
+├── voice/          # Frame-based pipeline, STT/TTS/S2S, transport
 ├── orchestration/  # Chain, Graph, Router, Parallel, Supervisor
-├── workflow/     # Durable execution engine
-├── protocol/     # MCP server/client, A2A server/client, REST
-├── guard/        # Safety: input→output→tool pipeline
-├── resilience/   # Circuit breaker, hedge, retry, rate limit
-├── cache/        # Exact + semantic + prompt cache
-├── hitl/         # Human-in-the-loop: confidence-based approval
-├── auth/         # RBAC, ABAC, capability-based security
-├── eval/         # Evaluation framework: metrics, runner
-├── state/        # Shared agent state with Watch
-├── prompt/       # Prompt management & versioning
-├── server/       # HTTP framework adapters (gin, fiber, echo, chi, grpc)
-└── internal/     # syncutil, jsonutil, testutil (mocks for all interfaces)
-```
-
-## Key Design Decisions to Enforce
-
-1. **iter.Seq2 for streaming** — NOT channels. Use `iter.Pull()` when pull semantics needed.
-2. **Handoffs are tools** — Agent transfers auto-generate `transfer_to_{name}` tools.
-3. **MemGPT 3-tier memory** — Core (always in context), Recall (searchable history), Archival (vector + graph).
-4. **Guard pipeline is 3-stage** — Input guards → Output guards → Tool guards. Always.
-5. **Own durable execution engine** — NOT Temporal as default. Temporal is a provider option.
-6. **Frame-based voice** — FrameProcessor interface, NOT monolithic pipeline.
-7. **Registry pattern everywhere** — `Register()` + `New()` + `List()` in every extensible package.
-8. **OTel GenAI conventions** — Use `gen_ai.*` attribute namespace.
-9. **Hybrid search default** — Vector + BM25 + RRF fusion for retrieval.
-10. **Prompt cache optimization** — Static content first ordering via PromptBuilder.
-
-## Testing Requirements
-
-- Unit tests for every exported function
-- Table-driven tests preferred
-- Use `internal/testutil/` mocks — every interface has a mock
-- Integration tests use build tags: `//go:build integration`
-- Benchmarks for hot paths (streaming, tool execution, retrieval)
-- `go vet`, `staticcheck`, `golangci-lint` must pass
-
-## Dependency Rules
-
-- `core/` and `schema/` — ZERO external deps beyond stdlib + otel
-- Provider packages may import provider SDKs
-- No circular imports — dependency flows downward through layers
-- Prefer stdlib where possible (e.g., `slog` for logging, `net/http` for transports)
-
-## Personas
-
-| Persona | Role | Agent(s) |
-|---------|------|----------|
-| **Architect** | Oversee architecture, define patterns, create plans, delegate to Team lead | `architect` |
-| **Researcher** | Research topics, gather info, return structured findings to Architect | `researcher` |
-| **Team lead** | Break plans into tasks, run develop/test/review loops per task | `team-lead` |
-| **Developer** | Go + distributed systems + AI; implement and test per framework patterns | `core-implementer`, `llm-implementer`, `agent-implementer`, `rag-implementer`, `voice-implementer`, `tool-implementer`, `protocol-implementer`, `infra-implementer` |
-| **Test developer** | Same as Developer; write tests implementations must pass | `test-writer` |
-| **Reviewer** | Same as Developer; review code, provide suggestions | `reviewer` |
-| **Doc writer** | Write package docs, tutorials, API reference | `doc-writer` |
-| **Website developer** | Astro + React + Tailwind specialist; build and adjust the documentation website UI, components, layouts, and styling | `website-developer` |
-
-### Task to Persona Mapping
-
-- Design / architecture / patterns --> **Architect** (`architect`)
-- Research / gather info --> **Researcher** (`researcher`)
-- Break plan into tasks, manage develop/test/review loop --> **Team lead** (`team-lead`)
-- Implement core, schema, config, o11y --> **Developer** (`core-implementer`)
-- Implement llm, providers, router --> **Developer** (`llm-implementer`)
-- Implement agent, planners, handoffs --> **Developer** (`agent-implementer`)
-- Implement rag pipeline --> **Developer** (`rag-implementer`)
-- Implement voice pipeline --> **Developer** (`voice-implementer`)
-- Implement tool system, MCP client --> **Developer** (`tool-implementer`)
-- Implement protocols, server adapters --> **Developer** (`protocol-implementer`)
-- Implement guard, resilience, cache, auth, workflow, eval, state, prompt --> **Developer** (`infra-implementer`)
-- Write tests / mocks / benchmarks --> **Test developer** (`test-writer`)
-- Review code --> **Reviewer** (`reviewer`)
-- Write documentation --> **Doc writer** (`doc-writer`)
-- Build / adjust website UI, components, layouts, styling --> **Website developer** (`website-developer`)
-
-### Workflow
-
-```
-Architect -> (optionally) Researcher -> Architect produces plan -> Team lead breaks into tasks
--> Per task: Developer implements -> Test developer writes tests -> Reviewer reviews
--> If pass: next task. If fail: iterate. -> All tasks done: conclude.
+├── workflow/       # Durable execution engine
+├── protocol/       # MCP server/client, A2A server/client, REST
+├── guard/          # Input→Output→Tool safety pipeline
+├── resilience/     # Circuit breaker, hedge, retry, rate limit
+├── cache/          # Exact + semantic + prompt cache
+├── hitl/           # Human-in-the-loop
+├── auth/           # RBAC, ABAC, capability-based
+├── eval/           # Metrics, runner
+├── state/          # Shared agent state with Watch
+├── prompt/         # Prompt management & versioning
+├── server/         # HTTP adapters (gin, fiber, echo, chi, grpc)
+└── internal/       # syncutil, jsonutil, testutil
 ```
 
 ## Skills
 
 - `go-framework` — Package structure, registries, lifecycle, functional options
-- `go-interfaces` — Interface design, hooks, middleware, extension contract
+- `go-interfaces` — Interface design, hooks, middleware, extension contracts
 - `go-testing` — Table-driven tests, stream testing, mocks, benchmarks
-- `provider-implementation` — Provider registration, error mapping, streaming, testing
+- `provider-implementation` — Provider registration, error mapping, streaming
 - `streaming-patterns` — iter.Seq2, composition, backpressure, context cancellation
 - `doc-writing` — Documentation structure, examples, enterprise standards
-- `website-development` — Astro, React, Tailwind CSS; website components, layouts, styling
-
-## Patterns (quick reference)
-
-- **Registry**: `Register()` + `New()` + `List()` in every extensible package. See `go-framework` skill.
-- **Middleware**: `func(T) T` — composable, applied outside-in. See `go-interfaces` skill.
-- **Hooks**: Optional function fields, nil = skip, composable via `ComposeHooks()`. See `go-interfaces` skill.
-- **Streaming**: `iter.Seq2[T, error]` for public API, never channels. See `streaming-patterns` skill.
-- **Options**: `WithX()` functional options for configuration. See `go-framework` skill.
-- **Errors**: `core.Error` with Op/Code/Message/Err. Check `IsRetryable()`. See CLAUDE.md conventions.
+- `website-development` — Astro + React + Tailwind for the docs site

@@ -1,18 +1,27 @@
 ---
 name: plan-feature
-description: Plan a new feature or package. Architect produces design, Team lead breaks into tasks.
+description: Plan a new feature or package using the full Architect → Researcher → Architect workflow.
 ---
 
 Plan the specified feature or package for Beluga AI v2.
 
-## Steps
+## Workflow
 
-1. Read `docs/concepts.md`, `docs/packages.md`, `docs/architecture.md`.
-2. Identify: dependencies, interfaces, extension points, providers needed.
-3. Determine package layer: Foundation (core, schema, config, o11y), Capability (llm, tool, memory, rag, agent, voice), Cross-cutting (guard, resilience, cache, eval, state, prompt, auth, hitl), Protocol (protocol, server), Orchestration (orchestration, workflow).
-4. Produce dependency-ordered task list with: description, acceptance criteria, constraints, suggested agent.
-5. Group parallelizable tasks.
+1. **Architect** analyzes the request:
+   - Read `docs/concepts.md`, `docs/packages.md`, `docs/architecture.md`.
+   - Identify affected packages, interfaces, dependencies.
+   - Produce a research brief with topics for the Researcher.
+
+2. **Researcher** investigates each topic:
+   - Search codebase, external docs, competitor frameworks.
+   - Return structured findings per topic.
+
+3. **Architect** produces the final plan:
+   - Design decisions with rationale.
+   - Interface definitions (Go code).
+   - Implementation tasks with acceptance criteria.
+   - Dependency order.
 
 ## Output
 
-Structured plan suitable for Team lead to execute via develop/test/review loops.
+A structured implementation plan ready for the Developer to execute, with acceptance criteria the QA Engineer can verify.
