@@ -43,7 +43,7 @@ TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 mkdir -p "$AGENT_RULES_DIR"
 RULE_COUNT=$(find "$AGENT_RULES_DIR" -name "*.md" -type f 2>/dev/null | wc -l)
-RULE_FILE="$AGENT_RULES_DIR/learning-${BELUGA_TASK_ID}-$(( RULE_COUNT + 1 )).md"
+RULE_FILE="$AGENT_RULES_DIR/learning-${BELUGA_TASK_ID}-${TIMESTAMP}-$$.md"
 
 # Extract key patterns from the task log:
 # - Lines containing "error", "fail", "retry", "unexpected", "workaround"
