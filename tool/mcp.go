@@ -219,18 +219,7 @@ func (c *MCPClient) call(ctx context.Context, method string, params any, dst any
 		return core.NewError(op, core.ErrInvalidInput, "create request", err)
 	}
 
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Accept", "application/json")
-
-	c.mu.Lock()
-	if c.sessionID != "" {
-		httpReq.Header.Set("Mcp-Session-Id", c.sessionID)
-	}
-	c.mu.Unlock()
-
-	for k, v := range c.opts.headers {
-		httpReq.Header.Set(k, v)
-	}
+	c.setHeaders(httpReq)
 
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -238,36 +227,17 @@ func (c *MCPClient) call(ctx context.Context, method string, params any, dst any
 	}
 	defer resp.Body.Close()
 
-	// Map HTTP status codes to core.Error.
-	switch {
-	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
-		return core.NewError(op, core.ErrAuth,
-			fmt.Sprintf("HTTP %d", resp.StatusCode), nil)
-	case resp.StatusCode == http.StatusTooManyRequests:
-		return core.NewError(op, core.ErrRateLimit, "rate limited", nil)
-	case resp.StatusCode >= 500:
-		return core.NewError(op, core.ErrProviderDown,
-			fmt.Sprintf("HTTP %d", resp.StatusCode), nil)
-	case resp.StatusCode < 200 || resp.StatusCode >= 300:
-		return core.NewError(op, core.ErrInvalidInput,
-			fmt.Sprintf("unexpected HTTP %d", resp.StatusCode), nil)
+	if err := c.checkStatusCode(op, resp.StatusCode); err != nil {
+		return err
 	}
+	c.captureSessionID(resp)
 
-	// Capture session ID from response.
-	if sid := resp.Header.Get("Mcp-Session-Id"); sid != "" {
-		c.mu.Lock()
-		c.sessionID = sid
-		c.mu.Unlock()
-	}
-
-	// L4: Validate Content-Type before decoding.
 	ct := resp.Header.Get("Content-Type")
 	if !strings.Contains(ct, "application/json") {
 		return core.NewError(op, core.ErrInvalidInput,
 			fmt.Sprintf("unexpected Content-Type %q, expected application/json", ct), nil)
 	}
 
-	// H1: Limit response body to prevent memory exhaustion from malicious servers.
 	limited := io.LimitReader(resp.Body, maxResponseBodySize)
 	var rpcResp jsonrpcResponse
 	if err := json.NewDecoder(limited).Decode(&rpcResp); err != nil {
@@ -292,6 +262,49 @@ func (c *MCPClient) call(ctx context.Context, method string, params any, dst any
 	return nil
 }
 
+// setHeaders applies standard MCP headers to an HTTP request.
+func (c *MCPClient) setHeaders(req *http.Request) {
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	c.mu.Lock()
+	if c.sessionID != "" {
+		req.Header.Set("Mcp-Session-Id", c.sessionID)
+	}
+	c.mu.Unlock()
+
+	for k, v := range c.opts.headers {
+		req.Header.Set(k, v)
+	}
+}
+
+// checkStatusCode maps HTTP status codes to typed core.Error.
+func (c *MCPClient) checkStatusCode(op string, code int) error {
+	switch {
+	case code == http.StatusUnauthorized || code == http.StatusForbidden:
+		return core.NewError(op, core.ErrAuth,
+			fmt.Sprintf("HTTP %d", code), nil)
+	case code == http.StatusTooManyRequests:
+		return core.NewError(op, core.ErrRateLimit, "rate limited", nil)
+	case code >= 500:
+		return core.NewError(op, core.ErrProviderDown,
+			fmt.Sprintf("HTTP %d", code), nil)
+	case code < 200 || code >= 300:
+		return core.NewError(op, core.ErrInvalidInput,
+			fmt.Sprintf("unexpected HTTP %d", code), nil)
+	}
+	return nil
+}
+
+// captureSessionID reads the Mcp-Session-Id header from the response.
+func (c *MCPClient) captureSessionID(resp *http.Response) {
+	if sid := resp.Header.Get("Mcp-Session-Id"); sid != "" {
+		c.mu.Lock()
+		c.sessionID = sid
+		c.mu.Unlock()
+	}
+}
+
 // notify sends a JSON-RPC 2.0 notification (no ID, no response expected).
 func (c *MCPClient) notify(ctx context.Context, method string, params any) error {
 	const op = "mcp.notify"
@@ -312,39 +325,17 @@ func (c *MCPClient) notify(ctx context.Context, method string, params any) error
 		return core.NewError(op, core.ErrInvalidInput, "create request", err)
 	}
 
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Accept", "application/json")
-
-	c.mu.Lock()
-	if c.sessionID != "" {
-		httpReq.Header.Set("Mcp-Session-Id", c.sessionID)
-	}
-	c.mu.Unlock()
-
-	for k, v := range c.opts.headers {
-		httpReq.Header.Set(k, v)
-	}
+	c.setHeaders(httpReq)
 
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
 		return core.NewError(op, core.ErrProviderDown, "send notification", err)
 	}
-	// Drain body to allow HTTP connection reuse, then close.
 	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxResponseBodySize))
-	resp.Body.Close()
-	// L1: Check HTTP status codes for notifications, consistent with call().
-	switch {
-	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
-		return core.NewError(op, core.ErrAuth,
-			fmt.Sprintf("HTTP %d", resp.StatusCode), nil)
-	case resp.StatusCode == http.StatusTooManyRequests:
-		return core.NewError(op, core.ErrRateLimit, "rate limited", nil)
-	case resp.StatusCode >= 500:
-		return core.NewError(op, core.ErrProviderDown,
-			fmt.Sprintf("HTTP %d", resp.StatusCode), nil)
-	case resp.StatusCode < 200 || resp.StatusCode >= 300:
-		return core.NewError(op, core.ErrInvalidInput,
-			fmt.Sprintf("unexpected HTTP %d", resp.StatusCode), nil)
+	_ = resp.Body.Close()
+
+	if err := c.checkStatusCode(op, resp.StatusCode); err != nil {
+		return err
 	}
 
 	return nil
@@ -475,15 +466,11 @@ func (c *MCPClient) ExecuteTool(ctx context.Context, name string, input map[stri
 	}
 
 	// Convert MCP content items to schema.ContentPart.
+	// All content types are rendered as text; future types (image, resource)
+	// can be added as additional cases.
 	parts := make([]schema.ContentPart, 0, len(result.Content))
 	for _, item := range result.Content {
-		switch item.Type {
-		case "text":
-			parts = append(parts, schema.TextPart{Text: item.Text})
-		default:
-			// Unknown content types are rendered as text.
-			parts = append(parts, schema.TextPart{Text: item.Text})
-		}
+		parts = append(parts, schema.TextPart{Text: item.Text})
 	}
 
 	return &Result{

@@ -585,7 +585,8 @@ func TestWebSocketTransport_ContextCancellation(t *testing.T) {
 		// We mainly care that it doesn't hang.
 		if ok {
 			// Drain remaining frames.
-			for range ch {
+			for f := range ch {
+				_ = f // discard
 			}
 		}
 	case <-time.After(5 * time.Second):
