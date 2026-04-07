@@ -29,131 +29,145 @@ func makeErrorStream[T any](events []Event[T], err error) Stream[T] {
 	}
 }
 
+func testCollectStreamEmpty(t *testing.T) {
+	t.Helper()
+	stream := makeStream[string](nil)
+	events, err := CollectStream(stream)
+	if err != nil {
+		t.Fatalf("CollectStream() error = %v", err)
+	}
+	if len(events) != 0 {
+		t.Errorf("len(events) = %d, want 0", len(events))
+	}
+}
+
+func testCollectStreamMultipleEvents(t *testing.T) {
+	t.Helper()
+	input := []Event[string]{
+		{Type: EventData, Payload: "hello"},
+		{Type: EventData, Payload: "world"},
+		{Type: EventDone, Payload: ""},
+	}
+	stream := makeStream(input)
+	events, err := CollectStream(stream)
+	if err != nil {
+		t.Fatalf("CollectStream() error = %v", err)
+	}
+	if len(events) != 3 {
+		t.Fatalf("len(events) = %d, want 3", len(events))
+	}
+	if events[0].Payload != "hello" {
+		t.Errorf("events[0].Payload = %q, want %q", events[0].Payload, "hello")
+	}
+	if events[1].Payload != "world" {
+		t.Errorf("events[1].Payload = %q, want %q", events[1].Payload, "world")
+	}
+}
+
+func testCollectStreamStopsOnError(t *testing.T) {
+	t.Helper()
+	input := []Event[string]{
+		{Type: EventData, Payload: "ok"},
+	}
+	stream := makeErrorStream(input, fmt.Errorf("stream failed"))
+	events, err := CollectStream(stream)
+	if err == nil {
+		t.Fatal("CollectStream() expected error, got nil")
+	}
+	if err.Error() != "stream failed" {
+		t.Errorf("error = %q, want %q", err.Error(), "stream failed")
+	}
+	if len(events) != 1 {
+		t.Errorf("len(events) = %d, want 1 (events before error)", len(events))
+	}
+}
+
 func TestCollectStream(t *testing.T) {
-	t.Run("empty_stream", func(t *testing.T) {
-		stream := makeStream[string](nil)
-		events, err := CollectStream(stream)
-		if err != nil {
-			t.Fatalf("CollectStream() error = %v", err)
-		}
-		if len(events) != 0 {
-			t.Errorf("len(events) = %d, want 0", len(events))
-		}
+	t.Run("empty_stream", testCollectStreamEmpty)
+	t.Run("multiple_events", testCollectStreamMultipleEvents)
+	t.Run("stops_on_error", testCollectStreamStopsOnError)
+}
+
+func testMapStreamTransformPayload(t *testing.T) {
+	t.Helper()
+	input := []Event[int]{
+		{Type: EventData, Payload: 1},
+		{Type: EventData, Payload: 2},
+		{Type: EventData, Payload: 3},
+	}
+	stream := makeStream(input)
+
+	mapped := MapStream(stream, func(e Event[int]) (Event[string], error) {
+		return Event[string]{
+			Type:    e.Type,
+			Payload: fmt.Sprintf("num-%d", e.Payload),
+		}, nil
 	})
 
-	t.Run("multiple_events", func(t *testing.T) {
-		input := []Event[string]{
-			{Type: EventData, Payload: "hello"},
-			{Type: EventData, Payload: "world"},
-			{Type: EventDone, Payload: ""},
+	events, err := CollectStream(mapped)
+	if err != nil {
+		t.Fatalf("CollectStream() error = %v", err)
+	}
+	if len(events) != 3 {
+		t.Fatalf("len(events) = %d, want 3", len(events))
+	}
+	if events[0].Payload != "num-1" {
+		t.Errorf("events[0].Payload = %q, want %q", events[0].Payload, "num-1")
+	}
+	if events[2].Payload != "num-3" {
+		t.Errorf("events[2].Payload = %q, want %q", events[2].Payload, "num-3")
+	}
+}
+
+func testMapStreamMapErrorStopsStream(t *testing.T) {
+	t.Helper()
+	input := []Event[int]{
+		{Type: EventData, Payload: 1},
+		{Type: EventData, Payload: 2},
+	}
+	stream := makeStream(input)
+
+	mapped := MapStream(stream, func(e Event[int]) (Event[string], error) {
+		if e.Payload == 2 {
+			return Event[string]{}, fmt.Errorf("bad value")
 		}
-		stream := makeStream(input)
-		events, err := CollectStream(stream)
-		if err != nil {
-			t.Fatalf("CollectStream() error = %v", err)
-		}
-		if len(events) != 3 {
-			t.Fatalf("len(events) = %d, want 3", len(events))
-		}
-		if events[0].Payload != "hello" {
-			t.Errorf("events[0].Payload = %q, want %q", events[0].Payload, "hello")
-		}
-		if events[1].Payload != "world" {
-			t.Errorf("events[1].Payload = %q, want %q", events[1].Payload, "world")
-		}
+		return Event[string]{Payload: "ok"}, nil
 	})
 
-	t.Run("stops_on_error", func(t *testing.T) {
-		input := []Event[string]{
-			{Type: EventData, Payload: "ok"},
-		}
-		stream := makeErrorStream(input, fmt.Errorf("stream failed"))
-		events, err := CollectStream(stream)
-		if err == nil {
-			t.Fatal("CollectStream() expected error, got nil")
-		}
-		if err.Error() != "stream failed" {
-			t.Errorf("error = %q, want %q", err.Error(), "stream failed")
-		}
-		if len(events) != 1 {
-			t.Errorf("len(events) = %d, want 1 (events before error)", len(events))
-		}
+	events, err := CollectStream(mapped)
+	if err == nil {
+		t.Fatal("expected error from map function")
+	}
+	if len(events) != 1 {
+		t.Errorf("len(events) = %d, want 1", len(events))
+	}
+}
+
+func testMapStreamSourceErrorPropagates(t *testing.T) {
+	t.Helper()
+	input := []Event[int]{{Type: EventData, Payload: 1}}
+	stream := makeErrorStream(input, fmt.Errorf("source error"))
+
+	mapped := MapStream(stream, func(e Event[int]) (Event[string], error) {
+		return Event[string]{Payload: "ok"}, nil
 	})
+
+	events, err := CollectStream(mapped)
+	if err == nil {
+		t.Fatal("expected source error to propagate")
+	}
+	if err.Error() != "source error" {
+		t.Errorf("error = %q, want %q", err.Error(), "source error")
+	}
+	if len(events) != 1 {
+		t.Errorf("len(events) = %d, want 1", len(events))
+	}
 }
 
 func TestMapStream(t *testing.T) {
-	t.Run("transform_payload", func(t *testing.T) {
-		input := []Event[int]{
-			{Type: EventData, Payload: 1},
-			{Type: EventData, Payload: 2},
-			{Type: EventData, Payload: 3},
-		}
-		stream := makeStream(input)
-
-		mapped := MapStream(stream, func(e Event[int]) (Event[string], error) {
-			return Event[string]{
-				Type:    e.Type,
-				Payload: fmt.Sprintf("num-%d", e.Payload),
-			}, nil
-		})
-
-		events, err := CollectStream(mapped)
-		if err != nil {
-			t.Fatalf("CollectStream() error = %v", err)
-		}
-		if len(events) != 3 {
-			t.Fatalf("len(events) = %d, want 3", len(events))
-		}
-		if events[0].Payload != "num-1" {
-			t.Errorf("events[0].Payload = %q, want %q", events[0].Payload, "num-1")
-		}
-		if events[2].Payload != "num-3" {
-			t.Errorf("events[2].Payload = %q, want %q", events[2].Payload, "num-3")
-		}
-	})
-
-	t.Run("map_error_stops_stream", func(t *testing.T) {
-		input := []Event[int]{
-			{Type: EventData, Payload: 1},
-			{Type: EventData, Payload: 2},
-		}
-		stream := makeStream(input)
-
-		mapped := MapStream(stream, func(e Event[int]) (Event[string], error) {
-			if e.Payload == 2 {
-				return Event[string]{}, fmt.Errorf("bad value")
-			}
-			return Event[string]{Payload: "ok"}, nil
-		})
-
-		events, err := CollectStream(mapped)
-		if err == nil {
-			t.Fatal("expected error from map function")
-		}
-		if len(events) != 1 {
-			t.Errorf("len(events) = %d, want 1", len(events))
-		}
-	})
-
-	t.Run("source_error_propagates", func(t *testing.T) {
-		input := []Event[int]{{Type: EventData, Payload: 1}}
-		stream := makeErrorStream(input, fmt.Errorf("source error"))
-
-		mapped := MapStream(stream, func(e Event[int]) (Event[string], error) {
-			return Event[string]{Payload: "ok"}, nil
-		})
-
-		events, err := CollectStream(mapped)
-		if err == nil {
-			t.Fatal("expected source error to propagate")
-		}
-		if err.Error() != "source error" {
-			t.Errorf("error = %q, want %q", err.Error(), "source error")
-		}
-		if len(events) != 1 {
-			t.Errorf("len(events) = %d, want 1", len(events))
-		}
-	})
+	t.Run("transform_payload", testMapStreamTransformPayload)
+	t.Run("map_error_stops_stream", testMapStreamMapErrorStopsStream)
+	t.Run("source_error_propagates", testMapStreamSourceErrorPropagates)
 }
 
 func TestFilterStream(t *testing.T) {
@@ -412,155 +426,170 @@ func TestFanOut(t *testing.T) {
 	}
 }
 
-func TestFlowController(t *testing.T) {
-	t.Run("basic_acquire_release", func(t *testing.T) {
-		fc := NewFlowController(2)
-		ctx := context.Background()
+func testFlowControllerBasicAcquireRelease(t *testing.T) {
+	t.Helper()
+	fc := NewFlowController(2)
+	ctx := context.Background()
 
-		// Acquire twice should succeed.
-		if err := fc.Acquire(ctx); err != nil {
-			t.Fatalf("first Acquire() error = %v", err)
-		}
-		if err := fc.Acquire(ctx); err != nil {
-			t.Fatalf("second Acquire() error = %v", err)
-		}
+	// Acquire twice should succeed.
+	if err := fc.Acquire(ctx); err != nil {
+		t.Fatalf("first Acquire() error = %v", err)
+	}
+	if err := fc.Acquire(ctx); err != nil {
+		t.Fatalf("second Acquire() error = %v", err)
+	}
 
-		// Release twice to free capacity.
-		fc.Release()
-		fc.Release()
+	// Release twice to free capacity.
+	fc.Release()
+	fc.Release()
 
-		// Acquire again should work.
-		if err := fc.Acquire(ctx); err != nil {
-			t.Fatalf("third Acquire() error = %v", err)
-		}
-		fc.Release()
-	})
+	// Acquire again should work.
+	if err := fc.Acquire(ctx); err != nil {
+		t.Fatalf("third Acquire() error = %v", err)
+	}
+	fc.Release()
+}
 
-	t.Run("try_acquire_when_full", func(t *testing.T) {
-		fc := NewFlowController(1)
-		ctx := context.Background()
+func testFlowControllerTryAcquireWhenFull(t *testing.T) {
+	t.Helper()
+	fc := NewFlowController(1)
+	ctx := context.Background()
 
-		// First acquire should succeed.
-		if err := fc.Acquire(ctx); err != nil {
-			t.Fatalf("Acquire() error = %v", err)
-		}
+	// First acquire should succeed.
+	if err := fc.Acquire(ctx); err != nil {
+		t.Fatalf("Acquire() error = %v", err)
+	}
 
-		// TryAcquire should fail when full.
-		if ok := fc.TryAcquire(); ok {
-			t.Error("TryAcquire() = true, want false (flow controller is full)")
-		}
+	// TryAcquire should fail when full.
+	if ok := fc.TryAcquire(); ok {
+		t.Error("TryAcquire() = true, want false (flow controller is full)")
+	}
 
-		// After release, TryAcquire should succeed.
-		fc.Release()
-		if ok := fc.TryAcquire(); !ok {
-			t.Error("TryAcquire() = false, want true (capacity available)")
-		}
+	// After release, TryAcquire should succeed.
+	fc.Release()
+	if ok := fc.TryAcquire(); !ok {
+		t.Error("TryAcquire() = false, want true (capacity available)")
+	}
 
-		fc.Release()
-	})
+	fc.Release()
+}
 
-	t.Run("try_acquire_when_available", func(t *testing.T) {
-		fc := NewFlowController(3)
+func testFlowControllerTryAcquireWhenAvailable(t *testing.T) {
+	t.Helper()
+	fc := NewFlowController(3)
 
-		// TryAcquire should succeed when capacity is available.
-		if ok := fc.TryAcquire(); !ok {
-			t.Error("TryAcquire() = false, want true")
-		}
-		if ok := fc.TryAcquire(); !ok {
-			t.Error("TryAcquire() = false, want true")
-		}
+	// TryAcquire should succeed when capacity is available.
+	if ok := fc.TryAcquire(); !ok {
+		t.Error("TryAcquire() = false, want true")
+	}
+	if ok := fc.TryAcquire(); !ok {
+		t.Error("TryAcquire() = false, want true")
+	}
 
-		fc.Release()
-		fc.Release()
-	})
+	fc.Release()
+	fc.Release()
+}
 
-	t.Run("context_cancellation_during_acquire", func(t *testing.T) {
-		fc := NewFlowController(1)
-		ctx, cancel := context.WithCancel(context.Background())
+func testFlowControllerContextCancellationDuringAcquire(t *testing.T) {
+	t.Helper()
+	fc := NewFlowController(1)
+	ctx, cancel := context.WithCancel(context.Background())
 
-		// Fill the controller.
-		if err := fc.Acquire(ctx); err != nil {
-			t.Fatalf("Acquire() error = %v", err)
-		}
+	// Fill the controller.
+	if err := fc.Acquire(ctx); err != nil {
+		t.Fatalf("Acquire() error = %v", err)
+	}
 
-		// Start a goroutine that tries to acquire (will block).
-		errCh := make(chan error, 1)
+	// Start a goroutine that tries to acquire (will block).
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- fc.Acquire(ctx)
+	}()
+
+	// Cancel the context.
+	cancel()
+
+	// The blocked acquire should return context.Canceled.
+	err := <-errCh
+	if err != context.Canceled {
+		t.Errorf("Acquire() error = %v, want context.Canceled", err)
+	}
+
+	fc.Release()
+}
+
+func testFlowControllerConcurrencySafety(t *testing.T) {
+	t.Helper()
+	fc := NewFlowController(10)
+	ctx := context.Background()
+
+	const goroutines = 20
+	const opsPerGoroutine = 50
+
+	// Launch multiple goroutines that acquire and release concurrently.
+	errCh := make(chan error, goroutines)
+	for i := 0; i < goroutines; i++ {
 		go func() {
-			errCh <- fc.Acquire(ctx)
-		}()
-
-		// Cancel the context.
-		cancel()
-
-		// The blocked acquire should return context.Canceled.
-		err := <-errCh
-		if err != context.Canceled {
-			t.Errorf("Acquire() error = %v, want context.Canceled", err)
-		}
-
-		fc.Release()
-	})
-
-	t.Run("concurrency_safety", func(t *testing.T) {
-		fc := NewFlowController(10)
-		ctx := context.Background()
-
-		const goroutines = 20
-		const opsPerGoroutine = 50
-
-		// Launch multiple goroutines that acquire and release concurrently.
-		errCh := make(chan error, goroutines)
-		for i := 0; i < goroutines; i++ {
-			go func() {
-				for j := 0; j < opsPerGoroutine; j++ {
-					if err := fc.Acquire(ctx); err != nil {
-						errCh <- err
-						return
-					}
-					// Simulate some work.
-					fc.Release()
+			for j := 0; j < opsPerGoroutine; j++ {
+				if err := fc.Acquire(ctx); err != nil {
+					errCh <- err
+					return
 				}
-				errCh <- nil
-			}()
-		}
-
-		// Wait for all goroutines to complete.
-		for i := 0; i < goroutines; i++ {
-			if err := <-errCh; err != nil {
-				t.Errorf("goroutine error: %v", err)
+				// Simulate some work.
+				fc.Release()
 			}
-		}
-	})
-
-	t.Run("max_concurrency_clamped_to_1", func(t *testing.T) {
-		fc := NewFlowController(0)
-		ctx := context.Background()
-
-		// Should allow at least 1 acquisition.
-		if err := fc.Acquire(ctx); err != nil {
-			t.Fatalf("Acquire() error = %v (maxConcurrency should be clamped to 1)", err)
-		}
-
-		// Second acquire should block (but we use TryAcquire to test).
-		if fc.TryAcquire() {
-			t.Error("TryAcquire() = true, want false (maxConcurrency=1)")
-			fc.Release()
-		}
-
-		fc.Release()
-	})
-
-	t.Run("multiple_release_doesnt_panic", func(t *testing.T) {
-		fc := NewFlowController(1)
-
-		// Release without acquire should not panic (graceful handling).
-		defer func() {
-			if r := recover(); r != nil {
-				t.Errorf("Release() panicked: %v", r)
-			}
+			errCh <- nil
 		}()
+	}
 
+	// Wait for all goroutines to complete.
+	for i := 0; i < goroutines; i++ {
+		if err := <-errCh; err != nil {
+			t.Errorf("goroutine error: %v", err)
+		}
+	}
+}
+
+func testFlowControllerMaxConcurrencyClampedTo1(t *testing.T) {
+	t.Helper()
+	fc := NewFlowController(0)
+	ctx := context.Background()
+
+	// Should allow at least 1 acquisition.
+	if err := fc.Acquire(ctx); err != nil {
+		t.Fatalf("Acquire() error = %v (maxConcurrency should be clamped to 1)", err)
+	}
+
+	// Second acquire should block (but we use TryAcquire to test).
+	if fc.TryAcquire() {
+		t.Error("TryAcquire() = true, want false (maxConcurrency=1)")
 		fc.Release()
-		fc.Release()
-	})
+	}
+
+	fc.Release()
+}
+
+func testFlowControllerMultipleReleaseDoesntPanic(t *testing.T) {
+	t.Helper()
+	fc := NewFlowController(1)
+
+	// Release without acquire should not panic (graceful handling).
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("Release() panicked: %v", r)
+		}
+	}()
+
+	fc.Release()
+	fc.Release()
+}
+
+func TestFlowController(t *testing.T) {
+	t.Run("basic_acquire_release", testFlowControllerBasicAcquireRelease)
+	t.Run("try_acquire_when_full", testFlowControllerTryAcquireWhenFull)
+	t.Run("try_acquire_when_available", testFlowControllerTryAcquireWhenAvailable)
+	t.Run("context_cancellation_during_acquire", testFlowControllerContextCancellationDuringAcquire)
+	t.Run("concurrency_safety", testFlowControllerConcurrencySafety)
+	t.Run("max_concurrency_clamped_to_1", testFlowControllerMaxConcurrencyClampedTo1)
+	t.Run("multiple_release_doesnt_panic", testFlowControllerMultipleReleaseDoesntPanic)
 }

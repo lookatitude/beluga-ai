@@ -57,7 +57,8 @@ func errorRunnable(err error) *mockRunnable {
 	}
 }
 
-func TestPipe_Invoke(t *testing.T) {
+func testPipeInvokeTableCases(t *testing.T) {
+	t.Helper()
 	tests := []struct {
 		name    string
 		a       Runnable
@@ -131,6 +132,10 @@ func TestPipe_Invoke(t *testing.T) {
 	}
 }
 
+func TestPipe_Invoke(t *testing.T) {
+	testPipeInvokeTableCases(t)
+}
+
 func TestPipe_Invoke_OptionsPassthrough(t *testing.T) {
 	var aOpts, bOpts []Option
 
@@ -187,117 +192,126 @@ func TestPipe_Invoke_ContextCancellation(t *testing.T) {
 	}
 }
 
-func TestPipe_Stream(t *testing.T) {
-	t.Run("streams_from_second", func(t *testing.T) {
-		a := transformRunnable("-A")
-		b := &mockRunnable{
-			streamFunc: func(_ context.Context, input any, _ ...Option) iter.Seq2[any, error] {
-				return func(yield func(any, error) bool) {
-					yield(fmt.Sprintf("%v-1", input), nil)
-					yield(fmt.Sprintf("%v-2", input), nil)
-				}
-			},
-		}
-
-		p := Pipe(a, b)
-		var results []any
-		for val, err := range p.Stream(context.Background(), "start") {
-			if err != nil {
-				t.Fatalf("Stream() unexpected error: %v", err)
+func testPipeStreamFromSecond(t *testing.T) {
+	t.Helper()
+	a := transformRunnable("-A")
+	b := &mockRunnable{
+		streamFunc: func(_ context.Context, input any, _ ...Option) iter.Seq2[any, error] {
+			return func(yield func(any, error) bool) {
+				yield(fmt.Sprintf("%v-1", input), nil)
+				yield(fmt.Sprintf("%v-2", input), nil)
 			}
-			results = append(results, val)
-		}
+		},
+	}
 
-		if len(results) != 2 {
-			t.Fatalf("len(results) = %d, want 2", len(results))
+	p := Pipe(a, b)
+	var results []any
+	for val, err := range p.Stream(context.Background(), "start") {
+		if err != nil {
+			t.Fatalf("Stream() unexpected error: %v", err)
 		}
-		if results[0] != "start-A-1" {
-			t.Errorf("results[0] = %v, want %q", results[0], "start-A-1")
-		}
-		if results[1] != "start-A-2" {
-			t.Errorf("results[1] = %v, want %q", results[1], "start-A-2")
-		}
-	})
+		results = append(results, val)
+	}
 
-	t.Run("first_invoke_error_yields_error", func(t *testing.T) {
-		a := errorRunnable(fmt.Errorf("a failed"))
-		b := transformRunnable("-B")
+	if len(results) != 2 {
+		t.Fatalf("len(results) = %d, want 2", len(results))
+	}
+	if results[0] != "start-A-1" {
+		t.Errorf("results[0] = %v, want %q", results[0], "start-A-1")
+	}
+	if results[1] != "start-A-2" {
+		t.Errorf("results[1] = %v, want %q", results[1], "start-A-2")
+	}
+}
 
-		p := Pipe(a, b)
-		var gotErr error
-		for _, err := range p.Stream(context.Background(), "x") {
-			if err != nil {
-				gotErr = err
-				break
+func testPipeStreamFirstInvokeError(t *testing.T) {
+	t.Helper()
+	a := errorRunnable(fmt.Errorf("a failed"))
+	b := transformRunnable("-B")
+
+	p := Pipe(a, b)
+	var gotErr error
+	for _, err := range p.Stream(context.Background(), "x") {
+		if err != nil {
+			gotErr = err
+			break
+		}
+	}
+	if gotErr == nil {
+		t.Fatal("Stream() expected error from first runnable, got nil")
+	}
+	if gotErr.Error() != "a failed" {
+		t.Errorf("error = %q, want %q", gotErr.Error(), "a failed")
+	}
+}
+
+func testPipeStreamSecondStreamError(t *testing.T) {
+	t.Helper()
+	a := &mockRunnable{}
+	b := &mockRunnable{
+		streamFunc: func(_ context.Context, _ any, _ ...Option) iter.Seq2[any, error] {
+			return func(yield func(any, error) bool) {
+				yield("ok", nil)
+				yield(nil, fmt.Errorf("stream err"))
 			}
-		}
-		if gotErr == nil {
-			t.Fatal("Stream() expected error from first runnable, got nil")
-		}
-		if gotErr.Error() != "a failed" {
-			t.Errorf("error = %q, want %q", gotErr.Error(), "a failed")
-		}
-	})
+		},
+	}
 
-	t.Run("second_stream_error", func(t *testing.T) {
-		a := &mockRunnable{}
-		b := &mockRunnable{
-			streamFunc: func(_ context.Context, _ any, _ ...Option) iter.Seq2[any, error] {
-				return func(yield func(any, error) bool) {
-					yield("ok", nil)
-					yield(nil, fmt.Errorf("stream err"))
-				}
-			},
+	p := Pipe(a, b)
+	var vals []any
+	var gotErr error
+	for val, err := range p.Stream(context.Background(), "in") {
+		if err != nil {
+			gotErr = err
+			break
 		}
+		vals = append(vals, val)
+	}
 
-		p := Pipe(a, b)
-		var vals []any
-		var gotErr error
-		for val, err := range p.Stream(context.Background(), "in") {
-			if err != nil {
-				gotErr = err
-				break
-			}
-			vals = append(vals, val)
-		}
+	if len(vals) != 1 {
+		t.Errorf("received %d values before error, want 1", len(vals))
+	}
+	if gotErr == nil || gotErr.Error() != "stream err" {
+		t.Errorf("error = %v, want %q", gotErr, "stream err")
+	}
+}
 
-		if len(vals) != 1 {
-			t.Errorf("received %d values before error, want 1", len(vals))
-		}
-		if gotErr == nil || gotErr.Error() != "stream err" {
-			t.Errorf("error = %v, want %q", gotErr, "stream err")
-		}
-	})
-
-	t.Run("early_break_stops_stream", func(t *testing.T) {
-		count := 0
-		a := &mockRunnable{}
-		b := &mockRunnable{
-			streamFunc: func(_ context.Context, _ any, _ ...Option) iter.Seq2[any, error] {
-				return func(yield func(any, error) bool) {
-					for i := 0; i < 100; i++ {
-						count++
-						if !yield(i, nil) {
-							return
-						}
+func testPipeStreamEarlyBreak(t *testing.T) {
+	t.Helper()
+	count := 0
+	a := &mockRunnable{}
+	b := &mockRunnable{
+		streamFunc: func(_ context.Context, _ any, _ ...Option) iter.Seq2[any, error] {
+			return func(yield func(any, error) bool) {
+				for i := 0; i < 100; i++ {
+					count++
+					if !yield(i, nil) {
+						return
 					}
 				}
-			},
-		}
-
-		p := Pipe(a, b)
-		for _, err := range p.Stream(context.Background(), "in") {
-			if err != nil {
-				break
 			}
-			break // Stop after first value.
-		}
+		},
+	}
 
-		// The stream should have stopped early.
-		if count >= 100 {
-			t.Errorf("stream produced %d values, expected early stop", count)
+	p := Pipe(a, b)
+	for _, err := range p.Stream(context.Background(), "in") {
+		if err != nil {
+			break
 		}
-	})
+		break // Stop after first value.
+	}
+
+	// The stream should have stopped early.
+	if count >= 100 {
+		t.Errorf("stream produced %d values, expected early stop", count)
+	}
+}
+
+func TestPipe_Stream(t *testing.T) {
+	t.Run("streams_from_second", testPipeStreamFromSecond)
+	t.Run("first_invoke_error_yields_error", testPipeStreamFirstInvokeError)
+	t.Run("second_stream_error", testPipeStreamSecondStreamError)
+	t.Run("early_break_stops_stream", testPipeStreamEarlyBreak)
 }
 
 func TestPipe_Chaining(t *testing.T) {
@@ -316,130 +330,145 @@ func TestPipe_Chaining(t *testing.T) {
 	}
 }
 
+func testParallelInvokeAllSucceed(t *testing.T) {
+	t.Helper()
+	r1 := transformRunnable("-1")
+	r2 := transformRunnable("-2")
+	r3 := transformRunnable("-3")
+
+	p := Parallel(r1, r2, r3)
+	got, err := p.Invoke(context.Background(), "in")
+	if err != nil {
+		t.Fatalf("Invoke() error = %v", err)
+	}
+
+	results, ok := got.([]any)
+	if !ok {
+		t.Fatalf("Invoke() result type = %T, want []any", got)
+	}
+	if len(results) != 3 {
+		t.Fatalf("len(results) = %d, want 3", len(results))
+	}
+	if results[0] != "in-1" {
+		t.Errorf("results[0] = %v, want %q", results[0], "in-1")
+	}
+	if results[1] != "in-2" {
+		t.Errorf("results[1] = %v, want %q", results[1], "in-2")
+	}
+	if results[2] != "in-3" {
+		t.Errorf("results[2] = %v, want %q", results[2], "in-3")
+	}
+}
+
+func testParallelInvokeOneError(t *testing.T) {
+	t.Helper()
+	r1 := transformRunnable("-ok")
+	r2 := errorRunnable(fmt.Errorf("r2 failed"))
+	r3 := transformRunnable("-ok")
+
+	p := Parallel(r1, r2, r3)
+	_, err := p.Invoke(context.Background(), "in")
+	if err == nil {
+		t.Fatal("Invoke() expected error, got nil")
+	}
+	if err.Error() != "r2 failed" {
+		t.Errorf("error = %q, want %q", err.Error(), "r2 failed")
+	}
+}
+
+func testParallelInvokeAllErrors(t *testing.T) {
+	t.Helper()
+	r1 := errorRunnable(fmt.Errorf("err1"))
+	r2 := errorRunnable(fmt.Errorf("err2"))
+
+	p := Parallel(r1, r2)
+	_, err := p.Invoke(context.Background(), "in")
+	if err == nil {
+		t.Fatal("Invoke() expected error, got nil")
+	}
+	// Should return the first error in order.
+	if err.Error() != "err1" {
+		t.Errorf("error = %q, want %q", err.Error(), "err1")
+	}
+}
+
+func testParallelInvokeNoRunnables(t *testing.T) {
+	t.Helper()
+	p := Parallel()
+	got, err := p.Invoke(context.Background(), "in")
+	if err != nil {
+		t.Fatalf("Invoke() error = %v", err)
+	}
+	results, ok := got.([]any)
+	if !ok {
+		t.Fatalf("result type = %T, want []any", got)
+	}
+	if len(results) != 0 {
+		t.Errorf("len(results) = %d, want 0", len(results))
+	}
+}
+
+func testParallelInvokeSingleRunnable(t *testing.T) {
+	t.Helper()
+	r := transformRunnable("-solo")
+	p := Parallel(r)
+	got, err := p.Invoke(context.Background(), "in")
+	if err != nil {
+		t.Fatalf("Invoke() error = %v", err)
+	}
+	results := got.([]any)
+	if len(results) != 1 {
+		t.Fatalf("len(results) = %d, want 1", len(results))
+	}
+	if results[0] != "in-solo" {
+		t.Errorf("results[0] = %v, want %q", results[0], "in-solo")
+	}
+}
+
+func testParallelInvokeNilInput(t *testing.T) {
+	t.Helper()
+	r := &mockRunnable{}
+	p := Parallel(r)
+	got, err := p.Invoke(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("Invoke() error = %v", err)
+	}
+	results := got.([]any)
+	if results[0] != nil {
+		t.Errorf("results[0] = %v, want nil", results[0])
+	}
+}
+
+func testParallelInvokeOptionsPassthrough(t *testing.T) {
+	t.Helper()
+	var received []Option
+	r := &mockRunnable{
+		invokeFunc: func(_ context.Context, input any, opts ...Option) (any, error) {
+			received = opts
+			return input, nil
+		},
+	}
+
+	opt := OptionFunc(func(_ any) { // no-op: tests option passthrough, not behavior
+	})
+	p := Parallel(r)
+	_, err := p.Invoke(context.Background(), "in", opt)
+	if err != nil {
+		t.Fatalf("Invoke() error = %v", err)
+	}
+	if len(received) != 1 {
+		t.Errorf("runnable received %d opts, want 1", len(received))
+	}
+}
+
 func TestParallel_Invoke(t *testing.T) {
-	t.Run("all_succeed", func(t *testing.T) {
-		r1 := transformRunnable("-1")
-		r2 := transformRunnable("-2")
-		r3 := transformRunnable("-3")
-
-		p := Parallel(r1, r2, r3)
-		got, err := p.Invoke(context.Background(), "in")
-		if err != nil {
-			t.Fatalf("Invoke() error = %v", err)
-		}
-
-		results, ok := got.([]any)
-		if !ok {
-			t.Fatalf("Invoke() result type = %T, want []any", got)
-		}
-		if len(results) != 3 {
-			t.Fatalf("len(results) = %d, want 3", len(results))
-		}
-		if results[0] != "in-1" {
-			t.Errorf("results[0] = %v, want %q", results[0], "in-1")
-		}
-		if results[1] != "in-2" {
-			t.Errorf("results[1] = %v, want %q", results[1], "in-2")
-		}
-		if results[2] != "in-3" {
-			t.Errorf("results[2] = %v, want %q", results[2], "in-3")
-		}
-	})
-
-	t.Run("one_error_returns_error", func(t *testing.T) {
-		r1 := transformRunnable("-ok")
-		r2 := errorRunnable(fmt.Errorf("r2 failed"))
-		r3 := transformRunnable("-ok")
-
-		p := Parallel(r1, r2, r3)
-		_, err := p.Invoke(context.Background(), "in")
-		if err == nil {
-			t.Fatal("Invoke() expected error, got nil")
-		}
-		if err.Error() != "r2 failed" {
-			t.Errorf("error = %q, want %q", err.Error(), "r2 failed")
-		}
-	})
-
-	t.Run("all_errors_returns_first", func(t *testing.T) {
-		r1 := errorRunnable(fmt.Errorf("err1"))
-		r2 := errorRunnable(fmt.Errorf("err2"))
-
-		p := Parallel(r1, r2)
-		_, err := p.Invoke(context.Background(), "in")
-		if err == nil {
-			t.Fatal("Invoke() expected error, got nil")
-		}
-		// Should return the first error in order.
-		if err.Error() != "err1" {
-			t.Errorf("error = %q, want %q", err.Error(), "err1")
-		}
-	})
-
-	t.Run("no_runnables", func(t *testing.T) {
-		p := Parallel()
-		got, err := p.Invoke(context.Background(), "in")
-		if err != nil {
-			t.Fatalf("Invoke() error = %v", err)
-		}
-		results, ok := got.([]any)
-		if !ok {
-			t.Fatalf("result type = %T, want []any", got)
-		}
-		if len(results) != 0 {
-			t.Errorf("len(results) = %d, want 0", len(results))
-		}
-	})
-
-	t.Run("single_runnable", func(t *testing.T) {
-		r := transformRunnable("-solo")
-		p := Parallel(r)
-		got, err := p.Invoke(context.Background(), "in")
-		if err != nil {
-			t.Fatalf("Invoke() error = %v", err)
-		}
-		results := got.([]any)
-		if len(results) != 1 {
-			t.Fatalf("len(results) = %d, want 1", len(results))
-		}
-		if results[0] != "in-solo" {
-			t.Errorf("results[0] = %v, want %q", results[0], "in-solo")
-		}
-	})
-
-	t.Run("nil_input", func(t *testing.T) {
-		r := &mockRunnable{}
-		p := Parallel(r)
-		got, err := p.Invoke(context.Background(), nil)
-		if err != nil {
-			t.Fatalf("Invoke() error = %v", err)
-		}
-		results := got.([]any)
-		if results[0] != nil {
-			t.Errorf("results[0] = %v, want nil", results[0])
-		}
-	})
-
-	t.Run("options_passthrough", func(t *testing.T) {
-		var received []Option
-		r := &mockRunnable{
-			invokeFunc: func(_ context.Context, input any, opts ...Option) (any, error) {
-				received = opts
-				return input, nil
-			},
-		}
-
-		opt := OptionFunc(func(_ any) { // no-op: tests option passthrough, not behavior
-		})
-		p := Parallel(r)
-		_, err := p.Invoke(context.Background(), "in", opt)
-		if err != nil {
-			t.Fatalf("Invoke() error = %v", err)
-		}
-		if len(received) != 1 {
-			t.Errorf("runnable received %d opts, want 1", len(received))
-		}
-	})
+	t.Run("all_succeed", testParallelInvokeAllSucceed)
+	t.Run("one_error_returns_error", testParallelInvokeOneError)
+	t.Run("all_errors_returns_first", testParallelInvokeAllErrors)
+	t.Run("no_runnables", testParallelInvokeNoRunnables)
+	t.Run("single_runnable", testParallelInvokeSingleRunnable)
+	t.Run("nil_input", testParallelInvokeNilInput)
+	t.Run("options_passthrough", testParallelInvokeOptionsPassthrough)
 }
 
 func TestParallel_Invoke_ContextCancellation(t *testing.T) {
@@ -462,60 +491,65 @@ func TestParallel_Invoke_ContextCancellation(t *testing.T) {
 	}
 }
 
+func testParallelStreamYieldsResultSlice(t *testing.T) {
+	t.Helper()
+	r1 := transformRunnable("-1")
+	r2 := transformRunnable("-2")
+
+	p := Parallel(r1, r2)
+	var results []any
+	var gotErr error
+	for val, err := range p.Stream(context.Background(), "in") {
+		if err != nil {
+			gotErr = err
+			break
+		}
+		results = append(results, val)
+	}
+
+	if gotErr != nil {
+		t.Fatalf("Stream() error = %v", gotErr)
+	}
+	if len(results) != 1 {
+		t.Fatalf("Stream yielded %d values, want 1", len(results))
+	}
+
+	slice, ok := results[0].([]any)
+	if !ok {
+		t.Fatalf("result type = %T, want []any", results[0])
+	}
+	if len(slice) != 2 {
+		t.Fatalf("len(slice) = %d, want 2", len(slice))
+	}
+	if slice[0] != "in-1" {
+		t.Errorf("slice[0] = %v, want %q", slice[0], "in-1")
+	}
+	if slice[1] != "in-2" {
+		t.Errorf("slice[1] = %v, want %q", slice[1], "in-2")
+	}
+}
+
+func testParallelStreamErrorPropagates(t *testing.T) {
+	t.Helper()
+	r1 := transformRunnable("-ok")
+	r2 := errorRunnable(fmt.Errorf("parallel err"))
+
+	p := Parallel(r1, r2)
+	var gotErr error
+	for _, err := range p.Stream(context.Background(), "in") {
+		if err != nil {
+			gotErr = err
+			break
+		}
+	}
+	if gotErr == nil || gotErr.Error() != "parallel err" {
+		t.Errorf("error = %v, want %q", gotErr, "parallel err")
+	}
+}
+
 func TestParallel_Stream(t *testing.T) {
-	t.Run("yields_result_slice", func(t *testing.T) {
-		r1 := transformRunnable("-1")
-		r2 := transformRunnable("-2")
-
-		p := Parallel(r1, r2)
-		var results []any
-		var gotErr error
-		for val, err := range p.Stream(context.Background(), "in") {
-			if err != nil {
-				gotErr = err
-				break
-			}
-			results = append(results, val)
-		}
-
-		if gotErr != nil {
-			t.Fatalf("Stream() error = %v", gotErr)
-		}
-		if len(results) != 1 {
-			t.Fatalf("Stream yielded %d values, want 1", len(results))
-		}
-
-		slice, ok := results[0].([]any)
-		if !ok {
-			t.Fatalf("result type = %T, want []any", results[0])
-		}
-		if len(slice) != 2 {
-			t.Fatalf("len(slice) = %d, want 2", len(slice))
-		}
-		if slice[0] != "in-1" {
-			t.Errorf("slice[0] = %v, want %q", slice[0], "in-1")
-		}
-		if slice[1] != "in-2" {
-			t.Errorf("slice[1] = %v, want %q", slice[1], "in-2")
-		}
-	})
-
-	t.Run("error_propagates", func(t *testing.T) {
-		r1 := transformRunnable("-ok")
-		r2 := errorRunnable(fmt.Errorf("parallel err"))
-
-		p := Parallel(r1, r2)
-		var gotErr error
-		for _, err := range p.Stream(context.Background(), "in") {
-			if err != nil {
-				gotErr = err
-				break
-			}
-		}
-		if gotErr == nil || gotErr.Error() != "parallel err" {
-			t.Errorf("error = %v, want %q", gotErr, "parallel err")
-		}
-	})
+	t.Run("yields_result_slice", testParallelStreamYieldsResultSlice)
+	t.Run("error_propagates", testParallelStreamErrorPropagates)
 }
 
 func TestParallel_Concurrent_Execution(t *testing.T) {

@@ -73,91 +73,102 @@ func TestOptionFunc_ImplementsOption(t *testing.T) {
 	})
 }
 
-func TestApplyOptions(t *testing.T) {
-	t.Run("multiple_options", func(t *testing.T) {
-		opts := []Option{
-			OptionFunc(func(target any) {
-				cfg := target.(*testConfig)
-				cfg.Name = "applied"
-			}),
-			OptionFunc(func(target any) {
-				cfg := target.(*testConfig)
-				cfg.Value = 99
-			}),
-			OptionFunc(func(target any) {
-				cfg := target.(*testConfig)
-				cfg.Enabled = true
-			}),
-		}
-
-		cfg := testConfig{}
-		ApplyOptions(&cfg, opts...)
-
-		if cfg.Name != "applied" {
-			t.Errorf("Name = %q, want %q", cfg.Name, "applied")
-		}
-		if cfg.Value != 99 {
-			t.Errorf("Value = %d, want 99", cfg.Value)
-		}
-		if !cfg.Enabled {
-			t.Error("Enabled = false, want true")
-		}
-	})
-
-	t.Run("no_options", func(t *testing.T) {
-		cfg := testConfig{Name: "unchanged", Value: 7, Enabled: true}
-		ApplyOptions(&cfg)
-
-		if cfg.Name != "unchanged" {
-			t.Errorf("Name = %q, want %q", cfg.Name, "unchanged")
-		}
-		if cfg.Value != 7 {
-			t.Errorf("Value = %d, want 7", cfg.Value)
-		}
-		if !cfg.Enabled {
-			t.Error("Enabled = false, want true")
-		}
-	})
-
-	t.Run("order_matters", func(t *testing.T) {
-		opts := []Option{
-			OptionFunc(func(target any) {
-				cfg := target.(*testConfig)
-				cfg.Name = "first"
-			}),
-			OptionFunc(func(target any) {
-				cfg := target.(*testConfig)
-				cfg.Name = "second"
-			}),
-		}
-
-		cfg := testConfig{}
-		ApplyOptions(&cfg, opts...)
-
-		if cfg.Name != "second" {
-			t.Errorf("Name = %q, want %q (last option wins)", cfg.Name, "second")
-		}
-	})
-
-	t.Run("nil_target_no_panic_with_nil_safe_option", func(t *testing.T) {
-		// An option that doesn't dereference target should work with nil.
-		opt := OptionFunc(func(_ any) {
-			// no-op
-		})
-		ApplyOptions(nil, opt)
-	})
-
-	t.Run("single_option", func(t *testing.T) {
-		cfg := testConfig{}
-		ApplyOptions(&cfg, OptionFunc(func(target any) {
+func testApplyOptionsMultipleOptions(t *testing.T) {
+	t.Helper()
+	opts := []Option{
+		OptionFunc(func(target any) {
 			cfg := target.(*testConfig)
-			cfg.Value = 1
-		}))
+			cfg.Name = "applied"
+		}),
+		OptionFunc(func(target any) {
+			cfg := target.(*testConfig)
+			cfg.Value = 99
+		}),
+		OptionFunc(func(target any) {
+			cfg := target.(*testConfig)
+			cfg.Enabled = true
+		}),
+	}
 
-		if cfg.Value != 1 {
-			t.Errorf("Value = %d, want 1", cfg.Value)
-		}
+	cfg := testConfig{}
+	ApplyOptions(&cfg, opts...)
+
+	if cfg.Name != "applied" {
+		t.Errorf("Name = %q, want %q", cfg.Name, "applied")
+	}
+	if cfg.Value != 99 {
+		t.Errorf("Value = %d, want 99", cfg.Value)
+	}
+	if !cfg.Enabled {
+		t.Error("Enabled = false, want true")
+	}
+}
+
+func testApplyOptionsNoOptions(t *testing.T) {
+	t.Helper()
+	cfg := testConfig{Name: "unchanged", Value: 7, Enabled: true}
+	ApplyOptions(&cfg)
+
+	if cfg.Name != "unchanged" {
+		t.Errorf("Name = %q, want %q", cfg.Name, "unchanged")
+	}
+	if cfg.Value != 7 {
+		t.Errorf("Value = %d, want 7", cfg.Value)
+	}
+	if !cfg.Enabled {
+		t.Error("Enabled = false, want true")
+	}
+}
+
+func testApplyOptionsOrderMatters(t *testing.T) {
+	t.Helper()
+	opts := []Option{
+		OptionFunc(func(target any) {
+			cfg := target.(*testConfig)
+			cfg.Name = "first"
+		}),
+		OptionFunc(func(target any) {
+			cfg := target.(*testConfig)
+			cfg.Name = "second"
+		}),
+	}
+
+	cfg := testConfig{}
+	ApplyOptions(&cfg, opts...)
+
+	if cfg.Name != "second" {
+		t.Errorf("Name = %q, want %q (last option wins)", cfg.Name, "second")
+	}
+}
+
+func testApplyOptionsNilTargetNoParicWithNilSafeOption(t *testing.T) {
+	t.Helper()
+	// An option that doesn't dereference target should work with nil.
+	opt := OptionFunc(func(_ any) {
+		// no-op
 	})
+	ApplyOptions(nil, opt)
+}
+
+func testApplyOptionsSingleOption(t *testing.T) {
+	t.Helper()
+	cfg := testConfig{}
+	ApplyOptions(&cfg, OptionFunc(func(target any) {
+		cfg := target.(*testConfig)
+		cfg.Value = 1
+	}))
+
+	if cfg.Value != 1 {
+		t.Errorf("Value = %d, want 1", cfg.Value)
+	}
+}
+
+func TestApplyOptions(t *testing.T) {
+	t.Run("multiple_options", testApplyOptionsMultipleOptions)
+	t.Run("no_options", testApplyOptionsNoOptions)
+	t.Run("order_matters", testApplyOptionsOrderMatters)
+	t.Run("nil_target_no_panic_with_nil_safe_option", testApplyOptionsNilTargetNoParicWithNilSafeOption)
+	t.Run("single_option", testApplyOptionsSingleOption)
 }
 
 func TestApplyOptions_Empty_Slice(t *testing.T) {
