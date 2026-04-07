@@ -1,0 +1,159 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: teams.beluga.ai
+  annotations:
+    beluga.ai/description: "Defines a multi-agent team with a coordination pattern, agent membership, and optional durable execution."
+spec:
+  group: beluga.ai
+  scope: Namespaced
+  names:
+    plural: teams
+    singular: team
+    kind: Team
+    shortNames:
+      - tm
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Pattern
+          type: string
+          jsonPath: .spec.pattern
+        - name: Agents
+          type: integer
+          jsonPath: .status.agentCount
+        - name: Ready
+          type: string
+          jsonPath: .status.conditions[?(@.type=="Ready")].status
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          description: "Team is the Beluga AI custom resource representing a coordinated group of agents."
+          type: object
+          required:
+            - spec
+          properties:
+            apiVersion:
+              type: string
+              description: "APIVersion defines the versioned schema of this representation of an object."
+            kind:
+              type: string
+              description: "Kind is a string value representing the REST resource this object represents."
+            metadata:
+              type: object
+            spec:
+              description: "TeamSpec defines the desired state of a Team."
+              type: object
+              required:
+                - pattern
+                - agentRefs
+              properties:
+                pattern:
+                  description: "Pattern is the multi-agent coordination strategy. supervisor: one LLM routes tasks; handoff: agents pass control sequentially; scatter-gather: fan-out then reduce; pipeline: fixed ordered stages; blackboard: shared state with autonomous contributors."
+                  type: string
+                  enum:
+                    - supervisor
+                    - handoff
+                    - scatter-gather
+                    - pipeline
+                    - blackboard
+                coordinatorModelRef:
+                  description: "CoordinatorModelRef is the name of a ModelConfig resource used by the supervisor or router agent. Required when pattern is 'supervisor'."
+                  type: string
+                  maxLength: 253
+                agentRefs:
+                  description: "AgentRefs lists the names of Agent resources that are members of this team."
+                  type: array
+                  minItems: 1
+                  items:
+                    type: string
+                    minLength: 1
+                    maxLength: 253
+                  x-kubernetes-list-type: set
+                durable:
+                  description: "Durable enables durable execution for this team, persisting state across pod restarts and retrying on failure."
+                  type: boolean
+                  default: false
+                durableConfig:
+                  description: "DurableConfig provides configuration for the durable execution engine when durable is true."
+                  type: object
+                  properties:
+                    retryPolicy:
+                      description: "RetryPolicy controls how failed steps are retried."
+                      type: object
+                      properties:
+                        maxAttempts:
+                          description: "MaxAttempts is the maximum number of retry attempts per step."
+                          type: integer
+                          minimum: 1
+                          default: 3
+                        backoffFactor:
+                          description: "BackoffFactor is the exponential backoff multiplier applied between retries."
+                          type: number
+                          minimum: 1.0
+                          default: 2.0
+                    executionTimeout:
+                      description: "ExecutionTimeout is the maximum wall-clock duration for a complete team execution (e.g. '30m')."
+                      type: string
+                expose:
+                  description: "Expose configures how the team is published as an external service endpoint."
+                  type: object
+                  properties:
+                    protocols:
+                      description: "Protocols lists the application protocols exposed by the team service. Supported: rest, a2a, grpc."
+                      type: array
+                      items:
+                        type: string
+                        enum:
+                          - rest
+                          - a2a
+                          - grpc
+                      x-kubernetes-list-type: set
+                    port:
+                      description: "Port is the container port on which the team service listens."
+                      type: integer
+                      minimum: 1
+                      maximum: 65535
+                      default: 8080
+            status:
+              description: "TeamStatus reflects the observed state of the Team."
+              type: object
+              properties:
+                conditions:
+                  description: "Conditions represent the latest available observations of the team's state."
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - type
+                      - status
+                    properties:
+                      type:
+                        description: "Type of the condition (e.g. 'Ready')."
+                        type: string
+                      status:
+                        description: "Status is 'True', 'False', or 'Unknown'."
+                        type: string
+                      reason:
+                        description: "Reason is a short machine-readable reason for the condition."
+                        type: string
+                      message:
+                        description: "Message is a human-readable description of the condition."
+                        type: string
+                      lastTransitionTime:
+                        description: "LastTransitionTime is when the condition last transitioned."
+                        type: string
+                        format: date-time
+                agentCount:
+                  description: "AgentCount is the number of agent members currently observed."
+                  type: integer
+                observedGeneration:
+                  description: "ObservedGeneration is the most recent generation the operator has reconciled."
+                  type: integer
+                  format: int64

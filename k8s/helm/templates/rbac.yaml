@@ -1,0 +1,46 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "beluga-operator.fullname" . }}
+  labels:
+    {{- include "beluga-operator.labels" . | nindent 4 }}
+rules:
+  # Core API groups — read pods, services, events; manage deployments.
+  - apiGroups: [""]
+    resources: ["pods", "services", "endpoints", "events", "configmaps", "secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Apps — manage Deployments and ReplicaSets.
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Autoscaling — manage HPAs.
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Beluga AI CRDs.
+  - apiGroups: ["beluga.ai"]
+    resources: ["agents", "teams", "modelconfigs", "toolservers", "memorystores", "guardpolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["beluga.ai"]
+    resources: ["agents/status", "teams/status"]
+    verbs: ["get", "update", "patch"]
+  # Leader election.
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "beluga-operator.fullname" . }}
+  labels:
+    {{- include "beluga-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "beluga-operator.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "beluga-operator.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}

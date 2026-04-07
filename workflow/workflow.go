@@ -28,6 +28,10 @@ type Signal struct {
 	Name string
 	// Payload carries the signal data.
 	Payload any
+	// SentAt records when the signal was sent.
+	SentAt time.Time
+	// SenderID identifies the source of the signal.
+	SenderID string
 }
 
 // WorkflowOptions configures a workflow execution.

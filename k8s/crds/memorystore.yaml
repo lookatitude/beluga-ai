@@ -1,0 +1,165 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: memorystores.beluga.ai
+  annotations:
+    beluga.ai/description: "Defines the 3-tier memory backend (Core/Recall/Archival) for Beluga AI agents."
+spec:
+  group: beluga.ai
+  scope: Namespaced
+  names:
+    plural: memorystores
+    singular: memorystore
+    kind: MemoryStore
+    shortNames:
+      - ms
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Type
+          type: string
+          jsonPath: .spec.type
+        - name: Ready
+          type: string
+          jsonPath: .status.conditions[?(@.type=="Ready")].status
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          description: "MemoryStore is the Beluga AI custom resource representing the 3-tier (Core/Recall/Archival) memory backend for agents."
+          type: object
+          required:
+            - spec
+          properties:
+            apiVersion:
+              type: string
+              description: "APIVersion defines the versioned schema of this representation of an object."
+            kind:
+              type: string
+              description: "Kind is a string value representing the REST resource this object represents."
+            metadata:
+              type: object
+            spec:
+              description: "MemoryStoreSpec defines the desired state of a MemoryStore."
+              type: object
+              required:
+                - type
+              properties:
+                type:
+                  description: "Type is the storage backend implementation. 'inmemory': ephemeral, single-process store suitable for development. 'redis': distributed in-memory store with persistence, suitable for multi-replica agents. 'postgres': relational store with full-text and vector search support. 'sqlite': embedded file-based store suitable for single-node deployments."
+                  type: string
+                  enum:
+                    - inmemory
+                    - redis
+                    - postgres
+                    - sqlite
+                connectionStringFrom:
+                  description: "ConnectionStringFrom references a Kubernetes Secret key containing the DSN or connection string for the backend. Mutually exclusive with connectionString."
+                  type: object
+                  properties:
+                    secretKeyRef:
+                      description: "SecretKeyRef selects a key from a Kubernetes Secret in the same namespace."
+                      type: object
+                      required:
+                        - name
+                        - key
+                      properties:
+                        name:
+                          description: "Name is the name of the Kubernetes Secret."
+                          type: string
+                          minLength: 1
+                          maxLength: 253
+                        key:
+                          description: "Key is the key within the Secret that holds the connection string value."
+                          type: string
+                          minLength: 1
+                          maxLength: 253
+                connectionString:
+                  description: "ConnectionString is the DSN or connection string for the storage backend (e.g. 'redis://redis:6379/0'). Prefer connectionStringFrom for production use to avoid storing secrets in the CRD spec."
+                  type: string
+                  maxLength: 2048
+                config:
+                  description: "Config is an arbitrary map of backend-specific configuration key-value pairs. Keys and values are both strings. Examples: {maxMemoryMB: '512', poolSize: '10', ttlSeconds: '3600'}."
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: false
+                  additionalProperties:
+                    type: string
+                    maxLength: 1024
+                tiers:
+                  description: "Tiers configures the individual MemGPT-style memory tiers. If omitted, sensible defaults are applied."
+                  type: object
+                  properties:
+                    core:
+                      description: "Core configures the in-context working memory tier. This tier is always injected into the system prompt."
+                      type: object
+                      properties:
+                        maxTokens:
+                          description: "MaxTokens is the token budget for the core memory tier."
+                          type: integer
+                          minimum: 64
+                          default: 2048
+                    recall:
+                      description: "Recall configures the searchable conversation history tier backed by the storage backend."
+                      type: object
+                      properties:
+                        maxMessages:
+                          description: "MaxMessages is the maximum number of messages retained in the recall tier."
+                          type: integer
+                          minimum: 1
+                          default: 10000
+                        ttlSeconds:
+                          description: "TtlSeconds is the time-to-live in seconds for recall messages (0 = no expiry)."
+                          type: integer
+                          minimum: 0
+                          default: 0
+                    archival:
+                      description: "Archival configures the long-term vector-search-backed memory tier."
+                      type: object
+                      properties:
+                        embedderRef:
+                          description: "EmbedderRef is the name of a ModelConfig resource providing the embedding model for archival memory indexing."
+                          type: string
+                          maxLength: 253
+                        topK:
+                          description: "TopK is the number of archival memories retrieved per semantic search query."
+                          type: integer
+                          minimum: 1
+                          default: 5
+            status:
+              description: "MemoryStoreStatus reflects the observed state of the MemoryStore."
+              type: object
+              properties:
+                conditions:
+                  description: "Conditions represent the latest available observations of the MemoryStore's state."
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - type
+                      - status
+                    properties:
+                      type:
+                        description: "Type of the condition (e.g. 'Ready')."
+                        type: string
+                      status:
+                        description: "Status is 'True', 'False', or 'Unknown'."
+                        type: string
+                      reason:
+                        description: "Reason is a short machine-readable reason for the condition."
+                        type: string
+                      message:
+                        description: "Message is a human-readable description of the condition."
+                        type: string
+                      lastTransitionTime:
+                        description: "LastTransitionTime is when the condition last transitioned."
+                        type: string
+                        format: date-time
+                observedGeneration:
+                  description: "ObservedGeneration is the most recent generation the operator has reconciled."
+                  type: integer
+                  format: int64

@@ -1,0 +1,207 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: guardpolicies.beluga.ai
+  annotations:
+    beluga.ai/description: "Defines the 3-stage safety pipeline applied to agent input, LLM output, and tool calls."
+spec:
+  group: beluga.ai
+  scope: Namespaced
+  names:
+    plural: guardpolicies
+    singular: guardpolicy
+    kind: GuardPolicy
+    shortNames:
+      - gp
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: InputGuards
+          type: integer
+          jsonPath: .status.inputGuardCount
+        - name: OutputGuards
+          type: integer
+          jsonPath: .status.outputGuardCount
+        - name: ToolGuards
+          type: integer
+          jsonPath: .status.toolGuardCount
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          description: "GuardPolicy is the Beluga AI custom resource defining the 3-stage safety pipeline: Input → Output → Tool."
+          type: object
+          required:
+            - spec
+          properties:
+            apiVersion:
+              type: string
+              description: "APIVersion defines the versioned schema of this representation of an object."
+            kind:
+              type: string
+              description: "Kind is a string value representing the REST resource this object represents."
+            metadata:
+              type: object
+            spec:
+              description: "GuardPolicySpec defines the desired state of a GuardPolicy."
+              type: object
+              properties:
+                input:
+                  description: "Input is the ordered list of guards applied to user messages before they reach the LLM. Evaluated in declaration order; a rejection from any guard blocks the request."
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - type
+                    properties:
+                      type:
+                        description: "Type identifies the guard implementation. Built-in types: prompt_injection, spotlighting, pii_detector, content_filter, length_limit, regex_block."
+                        type: string
+                        minLength: 1
+                        maxLength: 128
+                      provider:
+                        description: "Provider specifies the guard backend when multiple implementations exist (e.g. 'built-in', 'openai-moderation', 'aws-comprehend')."
+                        type: string
+                        maxLength: 128
+                      delimiter:
+                        description: "Delimiter is the spotlighting data boundary string used to separate instructions from user data (e.g. '<<<DATA>>>')."
+                        type: string
+                        maxLength: 64
+                      threshold:
+                        description: "Threshold is the confidence score above which the guard triggers (0.0–1.0)."
+                        type: number
+                        minimum: 0.0
+                        maximum: 1.0
+                      patterns:
+                        description: "Patterns is a list of regex or named entity patterns to detect (e.g. 'email', 'phone', 'ssn')."
+                        type: array
+                        items:
+                          type: string
+                          maxLength: 256
+                      action:
+                        description: "Action overrides the default block behaviour for this guard. Supported: block, redact, warn."
+                        type: string
+                        enum:
+                          - block
+                          - redact
+                          - warn
+                        default: block
+                output:
+                  description: "Output is the ordered list of guards applied to LLM responses before they are returned to the caller. Evaluated in declaration order."
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - type
+                    properties:
+                      type:
+                        description: "Type identifies the guard implementation. Built-in types: pii_redactor, content_filter, hallucination_check, citation_required, length_limit."
+                        type: string
+                        minLength: 1
+                        maxLength: 128
+                      provider:
+                        description: "Provider specifies the guard backend when multiple implementations exist."
+                        type: string
+                        maxLength: 128
+                      patterns:
+                        description: "Patterns is a list of regex or named entity patterns to redact from the output (e.g. 'email', 'phone', 'ssn')."
+                        type: array
+                        items:
+                          type: string
+                          maxLength: 256
+                      threshold:
+                        description: "Threshold is the confidence score above which the guard triggers (0.0–1.0)."
+                        type: number
+                        minimum: 0.0
+                        maximum: 1.0
+                      action:
+                        description: "Action overrides the default block behaviour for this guard. Supported: block, redact, warn."
+                        type: string
+                        enum:
+                          - block
+                          - redact
+                          - warn
+                        default: block
+                tool:
+                  description: "Tool is the ordered list of guards applied to tool-call requests generated by the LLM before tool execution. Evaluated in declaration order."
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - type
+                    properties:
+                      type:
+                        description: "Type identifies the guard implementation. Built-in types: capability_check, allowlist, denylist, arg_validator, rate_limit."
+                        type: string
+                        minLength: 1
+                        maxLength: 128
+                      provider:
+                        description: "Provider specifies the guard backend when multiple implementations exist."
+                        type: string
+                        maxLength: 128
+                      allowedTools:
+                        description: "AllowedTools is the explicit list of tool names the LLM is permitted to call. If set, any tool not in this list is blocked."
+                        type: array
+                        items:
+                          type: string
+                          maxLength: 256
+                      deniedTools:
+                        description: "DeniedTools is the list of tool names the LLM is never permitted to call."
+                        type: array
+                        items:
+                          type: string
+                          maxLength: 256
+                      action:
+                        description: "Action overrides the default block behaviour for this guard. Supported: block, warn."
+                        type: string
+                        enum:
+                          - block
+                          - warn
+                        default: block
+            status:
+              description: "GuardPolicyStatus reflects the observed state of the GuardPolicy."
+              type: object
+              properties:
+                conditions:
+                  description: "Conditions represent the latest available observations of the GuardPolicy's state."
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - type
+                      - status
+                    properties:
+                      type:
+                        description: "Type of the condition (e.g. 'Ready')."
+                        type: string
+                      status:
+                        description: "Status is 'True', 'False', or 'Unknown'."
+                        type: string
+                      reason:
+                        description: "Reason is a short machine-readable reason for the condition."
+                        type: string
+                      message:
+                        description: "Message is a human-readable description of the condition."
+                        type: string
+                      lastTransitionTime:
+                        description: "LastTransitionTime is when the condition last transitioned."
+                        type: string
+                        format: date-time
+                inputGuardCount:
+                  description: "InputGuardCount is the number of input guards configured."
+                  type: integer
+                outputGuardCount:
+                  description: "OutputGuardCount is the number of output guards configured."
+                  type: integer
+                toolGuardCount:
+                  description: "ToolGuardCount is the number of tool guards configured."
+                  type: integer
+                observedGeneration:
+                  description: "ObservedGeneration is the most recent generation the operator has reconciled."
+                  type: integer
+                  format: int64
