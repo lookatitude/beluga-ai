@@ -1,0 +1,140 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: toolservers.beluga.ai
+  annotations:
+    beluga.ai/description: "Defines a tool source — either a built-in Beluga tool or an external MCP server."
+spec:
+  group: beluga.ai
+  scope: Namespaced
+  names:
+    plural: toolservers
+    singular: toolserver
+    kind: ToolServer
+    shortNames:
+      - ts
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Type
+          type: string
+          jsonPath: .spec.type
+        - name: Name
+          type: string
+          jsonPath: .spec.name
+        - name: Ready
+          type: string
+          jsonPath: .status.conditions[?(@.type=="Ready")].status
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          description: "ToolServer is the Beluga AI custom resource representing a source of callable tools for agents."
+          type: object
+          required:
+            - spec
+          properties:
+            apiVersion:
+              type: string
+              description: "APIVersion defines the versioned schema of this representation of an object."
+            kind:
+              type: string
+              description: "Kind is a string value representing the REST resource this object represents."
+            metadata:
+              type: object
+            spec:
+              description: "ToolServerSpec defines the desired state of a ToolServer."
+              type: object
+              required:
+                - type
+              properties:
+                type:
+                  description: "Type distinguishes between built-in Beluga tools and external MCP protocol servers. 'builtin': tool is registered in the Beluga tool registry by name. 'mcp': tool is provided by a remote MCP server at the given URL."
+                  type: string
+                  enum:
+                    - builtin
+                    - mcp
+                name:
+                  description: "Name is the registered tool name for built-in tools (e.g. 'web_search'). Required when type is 'builtin'."
+                  type: string
+                  maxLength: 256
+                url:
+                  description: "URL is the HTTP(S) endpoint of the remote MCP server. Required when type is 'mcp'."
+                  type: string
+                  maxLength: 2048
+                transport:
+                  description: "Transport specifies the MCP wire protocol. Supported: streamable-http, sse, stdio. Defaults to 'streamable-http' for MCP servers."
+                  type: string
+                  enum:
+                    - streamable-http
+                    - sse
+                    - stdio
+                  default: streamable-http
+                authFrom:
+                  description: "AuthFrom references a Kubernetes Secret key that contains the bearer token or API key for authenticating with the MCP server."
+                  type: object
+                  properties:
+                    secretKeyRef:
+                      description: "SecretKeyRef selects a key from a Kubernetes Secret in the same namespace."
+                      type: object
+                      required:
+                        - name
+                        - key
+                      properties:
+                        name:
+                          description: "Name is the name of the Kubernetes Secret."
+                          type: string
+                          minLength: 1
+                          maxLength: 253
+                        key:
+                          description: "Key is the key within the Secret that holds the credential value."
+                          type: string
+                          minLength: 1
+                          maxLength: 253
+                timeout:
+                  description: "Timeout is the maximum duration to wait for a tool invocation response (e.g. '30s'). Defaults to '30s'."
+                  type: string
+                  default: 30s
+            status:
+              description: "ToolServerStatus reflects the observed state of the ToolServer."
+              type: object
+              properties:
+                conditions:
+                  description: "Conditions represent the latest available observations of the ToolServer's state."
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - type
+                      - status
+                    properties:
+                      type:
+                        description: "Type of the condition (e.g. 'Ready')."
+                        type: string
+                      status:
+                        description: "Status is 'True', 'False', or 'Unknown'."
+                        type: string
+                      reason:
+                        description: "Reason is a short machine-readable reason for the condition."
+                        type: string
+                      message:
+                        description: "Message is a human-readable description of the condition."
+                        type: string
+                      lastTransitionTime:
+                        description: "LastTransitionTime is when the condition last transitioned."
+                        type: string
+                        format: date-time
+                discoveredTools:
+                  description: "DiscoveredTools lists the tool names discovered from the server during the last successful reconciliation."
+                  type: array
+                  items:
+                    type: string
+                observedGeneration:
+                  description: "ObservedGeneration is the most recent generation the operator has reconciled."
+                  type: integer
+                  format: int64
