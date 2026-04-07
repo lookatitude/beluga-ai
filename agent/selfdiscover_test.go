@@ -114,33 +114,52 @@ func TestSelfDiscoverPlanner_Plan_ThreePhases(t *testing.T) {
 	}
 }
 
+// lastMsgText returns the text of the last message in msgs, or empty string if
+// it is not a *schema.HumanMessage.
+func lastMsgText(msgs []schema.Message) string {
+	if len(msgs) == 0 {
+		return ""
+	}
+	hm, ok := msgs[len(msgs)-1].(*schema.HumanMessage)
+	if !ok {
+		return ""
+	}
+	return hm.Text()
+}
+
+// collectModulesFromPrompt appends to dst any of the named modules whose name
+// appears in prompt, and returns the result.
+func collectModulesFromPrompt(dst []string, prompt string, names []string) []string {
+	for _, name := range names {
+		if strings.Contains(prompt, name) {
+			dst = append(dst, name)
+		}
+	}
+	return dst
+}
+
 func TestSelfDiscoverPlanner_Plan_SelectParsesModuleNames(t *testing.T) {
 	callCount := 0
 	var selectedModules []string
+	wantModules := []string{"decomposition", "critical_thinking", "abstraction"}
+
+	selectResponse := func() (*schema.AIMessage, error) {
+		return schema.NewAIMessage("1. decomposition\n- critical_thinking\nabstraction"), nil
+	}
+	adaptResponse := func(msgs []schema.Message) (*schema.AIMessage, error) {
+		prompt := lastMsgText(msgs)
+		selectedModules = collectModulesFromPrompt(selectedModules, prompt, wantModules)
+		return schema.NewAIMessage("Adapted structure"), nil
+	}
 
 	model := &testLLM{
 		generateFn: func(ctx context.Context, msgs []schema.Message) (*schema.AIMessage, error) {
 			callCount++
 			switch callCount {
 			case 1: // SELECT phase - return module names in various formats
-				return schema.NewAIMessage("1. decomposition\n- critical_thinking\nabstraction"), nil
+				return selectResponse()
 			case 2: // ADAPT phase - capture context to verify parsing
-				// Check that the selected modules are in the prompt
-				lastMsg := msgs[len(msgs)-1]
-				var prompt string
-				if hm, ok := lastMsg.(*schema.HumanMessage); ok {
-					prompt = hm.Text()
-				}
-				if strings.Contains(prompt, "decomposition") {
-					selectedModules = append(selectedModules, "decomposition")
-				}
-				if strings.Contains(prompt, "critical_thinking") {
-					selectedModules = append(selectedModules, "critical_thinking")
-				}
-				if strings.Contains(prompt, "abstraction") {
-					selectedModules = append(selectedModules, "abstraction")
-				}
-				return schema.NewAIMessage("Adapted structure"), nil
+				return adaptResponse(msgs)
 			case 3: // IMPLEMENT phase
 				return schema.NewAIMessage("Final answer"), nil
 			default:
