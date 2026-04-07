@@ -12,6 +12,8 @@ import (
 	"github.com/lookatitude/beluga-ai/workflow"
 )
 
+const workflowPathFmt = "/v1/workflows/%s"
+
 // HTTPClient defines the HTTP client interface for Inngest API calls.
 type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -68,7 +70,7 @@ func (s *Store) Save(ctx context.Context, state workflow.WorkflowState) error {
 		return fmt.Errorf("inngest/save: marshal: %w", err)
 	}
 
-	url := fmt.Sprintf("%s/v1/workflows/%s", s.baseURL, state.WorkflowID)
+	url := fmt.Sprintf("%s"+workflowPathFmt, s.baseURL, state.WorkflowID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(data))
 	if err != nil {
 		return fmt.Errorf("inngest/save: create request: %w", err)
@@ -98,7 +100,7 @@ func (s *Store) Save(ctx context.Context, state workflow.WorkflowState) error {
 
 // Load retrieves the workflow state by ID.
 func (s *Store) Load(ctx context.Context, workflowID string) (*workflow.WorkflowState, error) {
-	url := fmt.Sprintf("%s/v1/workflows/%s", s.baseURL, workflowID)
+	url := fmt.Sprintf("%s"+workflowPathFmt, s.baseURL, workflowID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("inngest/load: create request: %w", err)
@@ -148,7 +150,7 @@ func (s *Store) List(_ context.Context, filter workflow.WorkflowFilter) ([]workf
 
 // Delete removes a workflow state.
 func (s *Store) Delete(ctx context.Context, workflowID string) error {
-	url := fmt.Sprintf("%s/v1/workflows/%s", s.baseURL, workflowID)
+	url := fmt.Sprintf("%s"+workflowPathFmt, s.baseURL, workflowID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
 	if err != nil {
 		return fmt.Errorf("inngest/delete: create request: %w", err)
