@@ -7,6 +7,8 @@ import (
 	"github.com/lookatitude/beluga-ai/eval"
 )
 
+const missingMetaKeyFmt = "cost: missing metadata key %q"
+
 // ModelPricing defines per-token pricing for a model.
 type ModelPricing struct {
 	// InputTokenPrice is the price per 1 million input tokens in dollars.
@@ -54,7 +56,7 @@ func (c *Cost) Name() string { return "cost" }
 func (c *Cost) Score(_ context.Context, sample eval.EvalSample) (float64, error) {
 	modelRaw, ok := sample.Metadata["model"]
 	if !ok {
-		return 0, fmt.Errorf("cost: missing metadata key %q", "model")
+		return 0, fmt.Errorf(missingMetaKeyFmt, "model")
 	}
 	model, ok := modelRaw.(string)
 	if !ok {
@@ -68,7 +70,7 @@ func (c *Cost) Score(_ context.Context, sample eval.EvalSample) (float64, error)
 
 	inputRaw, ok := sample.Metadata["input_tokens"]
 	if !ok {
-		return 0, fmt.Errorf("cost: missing metadata key %q", "input_tokens")
+		return 0, fmt.Errorf(missingMetaKeyFmt, "input_tokens")
 	}
 	inputTokens, err := toFloat64(inputRaw)
 	if err != nil {
@@ -77,7 +79,7 @@ func (c *Cost) Score(_ context.Context, sample eval.EvalSample) (float64, error)
 
 	outputRaw, ok := sample.Metadata["output_tokens"]
 	if !ok {
-		return 0, fmt.Errorf("cost: missing metadata key %q", "output_tokens")
+		return 0, fmt.Errorf(missingMetaKeyFmt, "output_tokens")
 	}
 	outputTokens, err := toFloat64(outputRaw)
 	if err != nil {
