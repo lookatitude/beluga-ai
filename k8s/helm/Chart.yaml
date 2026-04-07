@@ -1,0 +1,15 @@
+apiVersion: v2
+name: beluga-operator
+description: Beluga AI Kubernetes Operator
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - beluga
+  - ai
+  - operator
+  - agent
+home: https://github.com/lookatitude/beluga-ai
+maintainers:
+  - name: Beluga AI Team
+    url: https://github.com/lookatitude/beluga-ai
