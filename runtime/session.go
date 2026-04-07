@@ -37,6 +37,19 @@ type Session struct {
 	ExpiresAt time.Time
 }
 
+// NewSession creates a Session with the given ID and agent ID, initializing
+// timestamps and an empty state map.
+func NewSession(id, agentID string) *Session {
+	now := time.Now()
+	return &Session{
+		ID:        id,
+		AgentID:   agentID,
+		State:     make(map[string]any),
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+}
+
 // SessionService manages session lifecycle: creation, retrieval, mutation,
 // and deletion. Implementations must be safe for concurrent use.
 type SessionService interface {
