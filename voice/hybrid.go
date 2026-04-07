@@ -3,6 +3,7 @@ package voice
 import (
 	"context"
 	"fmt"
+	"sync"
 )
 
 // PipelineMode identifies the active mode in a hybrid pipeline.
@@ -116,8 +117,10 @@ func WithHybridSession(s *VoiceSession) HybridPipelineOption {
 // HybridPipeline combines S2S and cascade pipelines, switching between them
 // based on a configurable policy. By default it uses S2S for regular
 // conversation and falls back to cascade for tool-heavy interactions.
+// All state access is protected by mu for concurrent safety.
 type HybridPipeline struct {
 	config HybridPipelineConfig
+	mu     sync.RWMutex
 	state  PipelineState
 }
 
@@ -144,34 +147,48 @@ func (h *HybridPipeline) Run(ctx context.Context) error {
 		return fmt.Errorf("voice: hybrid pipeline requires at least one of S2S or cascade")
 	}
 
+	// Snapshot state under read lock for the switch policy decision.
+	h.mu.RLock()
+	state := h.state
+	h.mu.RUnlock()
+
 	// Check if we should switch modes.
-	if h.config.SwitchPolicy != nil && h.config.SwitchPolicy.ShouldSwitch(ctx, h.state) {
+	if h.config.SwitchPolicy != nil && h.config.SwitchPolicy.ShouldSwitch(ctx, state) {
+		h.mu.Lock()
 		h.state.CurrentMode = ModeCascade
+		state.CurrentMode = ModeCascade
+		h.mu.Unlock()
 	}
 
-	switch h.state.CurrentMode {
+	switch state.CurrentMode {
 	case ModeS2S:
 		if h.config.S2S == nil {
 			// Fall back to cascade if S2S is not configured.
+			h.mu.Lock()
 			h.state.CurrentMode = ModeCascade
+			h.mu.Unlock()
 			return h.runCascade(ctx)
 		}
 		return h.runS2S(ctx)
 	case ModeCascade:
 		return h.runCascade(ctx)
 	default:
-		return fmt.Errorf("voice: unknown pipeline mode %q", h.state.CurrentMode)
+		return fmt.Errorf("voice: unknown pipeline mode %q", state.CurrentMode)
 	}
 }
 
 // CurrentMode returns the currently active pipeline mode.
 func (h *HybridPipeline) CurrentMode() PipelineMode {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 	return h.state.CurrentMode
 }
 
 // UpdateState updates the pipeline state, allowing external code to inform
 // the hybrid pipeline about tool calls and turn counts.
 func (h *HybridPipeline) UpdateState(toolCalls, turnCount int) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	h.state.ToolCallCount = toolCalls
 	h.state.TurnCount = turnCount
 }

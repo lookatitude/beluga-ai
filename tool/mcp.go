@@ -159,6 +159,7 @@ type MCPClient struct {
 	sessionID    string
 	capabilities *serverCapabilities
 	connected    bool
+	connecting   bool
 	mu           sync.Mutex
 }
 
@@ -328,7 +329,9 @@ func (c *MCPClient) notify(ctx context.Context, method string, params any) error
 	if err != nil {
 		return core.NewError(op, core.ErrProviderDown, "send notification", err)
 	}
-	resp.Body.Close()
+	// Drain body to allow HTTP connection reuse, then close.
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxResponseBodySize))
+	_ = resp.Body.Close()
 
 	// L1: Check HTTP status codes for notifications, consistent with call().
 	switch {
@@ -354,12 +357,29 @@ func (c *MCPClient) notify(ctx context.Context, method string, params any) error
 func (c *MCPClient) Connect(ctx context.Context) error {
 	const op = "mcp.Connect"
 
+	// Atomically check and set connecting flag to prevent TOCTOU race
+	// where concurrent goroutines both pass the connected check.
+	// We cannot hold the mutex during call()/notify() as they also acquire it.
 	c.mu.Lock()
 	if c.connected {
 		c.mu.Unlock()
 		return core.NewError(op, core.ErrInvalidInput, "already connected", nil)
 	}
+	if c.connecting {
+		c.mu.Unlock()
+		return core.NewError(op, core.ErrInvalidInput, "connect already in progress", nil)
+	}
+	c.connecting = true
 	c.mu.Unlock()
+
+	// On failure, clear the connecting flag so Connect can be retried.
+	defer func() {
+		c.mu.Lock()
+		if !c.connected {
+			c.connecting = false
+		}
+		c.mu.Unlock()
+	}()
 
 	// H3: Validate server URL.
 	if c.serverURL == "" {
@@ -508,7 +528,7 @@ func (c *MCPClient) Close(ctx context.Context) error {
 	// H1: Drain up to a bounded amount before closing to allow connection reuse
 	// while preventing memory exhaustion.
 	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxResponseBodySize))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	return nil
 }
