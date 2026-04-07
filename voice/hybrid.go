@@ -138,8 +138,7 @@ func NewHybridPipeline(opts ...HybridPipelineOption) *HybridPipeline {
 }
 
 // Run starts the hybrid pipeline. It begins in S2S mode and switches to
-// cascade mode when the switch policy indicates. This is a stub
-// implementation that will be expanded when S2S providers are implemented.
+// cascade mode when the switch policy indicates.
 func (h *HybridPipeline) Run(ctx context.Context) error {
 	if h.config.S2S == nil && h.config.Cascade == nil {
 		return fmt.Errorf("voice: hybrid pipeline requires at least one of S2S or cascade")

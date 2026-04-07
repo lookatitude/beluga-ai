@@ -1,0 +1,88 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash(go build:*)",
+      "Bash(go test:*)",
+      "Bash(go vet:*)",
+      "Bash(go mod:*)",
+      "Bash(go fmt:*)",
+      "Bash(go run:*)",
+      "Bash(go generate:*)",
+      "Bash(go tool:*)",
+      "Bash(gofmt:*)",
+      "Bash(goimports:*)",
+      "Bash(staticcheck:*)",
+      "Bash(golangci-lint:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)",
+      "Bash(git stash:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git blame:*)",
+      "Bash(git worktree:*)",
+      "Bash(rtk:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(which:*)",
+      "Bash(echo:*)",
+      "Bash(pwd:*)",
+      "Bash(mkdir:*)",
+      "Bash(tree:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /:*)",
+      "Bash(chmod 777:*)",
+      "Bash(curl * | bash:*)",
+      "Bash(wget * | bash:*)",
+      "Bash(eval:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Review this file change for security issues. Check for: hardcoded secrets/API keys, SQL injection, command injection via os/exec with user input, path traversal, use of unsafe package, weak crypto (MD5/SHA1 for security), unbounded allocations from external input, goroutine leaks (missing context cancellation), information disclosure in error messages. If ANY security issue is found, respond with decision:block and explain. Otherwise allow. Tool input: $ARGUMENTS",
+            "model": "claude-haiku-4-5-20251001",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if this bash command is safe for a Go project. Block if it: deletes files outside the project, modifies system files, installs packages globally without user intent, runs curl/wget piped to shell, uses force flags on git destructively (push --force to main, reset --hard without cause), or could leak credentials. Allow standard Go toolchain commands, git read operations, and file inspection. Command: $ARGUMENTS",
+            "model": "claude-haiku-4-5-20251001",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_response.filePath // .tool_input.file_path' 2>/dev/null); if [ -n \"$f\" ] && echo \"$f\" | grep -qE '\\.go$'; then gofmt -l \"$f\" 2>/dev/null | head -1 | { read -r line; if [ -n \"$line\" ]; then gofmt -w \"$f\" 2>/dev/null; echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"Auto-formatted with gofmt\"}}'; fi; }; fi",
+            "timeout": 10,
+            "statusMessage": "Formatting Go code..."
+          }
+        ]
+      }
+    ]
+  }
+}
