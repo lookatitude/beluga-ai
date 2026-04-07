@@ -492,6 +492,27 @@ func TestStartWithOptions(t *testing.T) {
 	})
 }
 
+// collectEvents drains up to maxEvents from session.Recv() with a timeout.
+func collectEvents(t *testing.T, session s2s.Session, maxEvents int, timeout time.Duration) []s2s.SessionEvent {
+	t.Helper()
+	var events []s2s.SessionEvent
+	timer := time.After(timeout)
+	for {
+		select {
+		case event, ok := <-session.Recv():
+			if !ok {
+				return events
+			}
+			events = append(events, event)
+			if len(events) >= maxEvents {
+				return events
+			}
+		case <-timer:
+			return events
+		}
+	}
+}
+
 func TestReadLoopEvents(t *testing.T) {
 	t.Run("connection error emits error event", func(t *testing.T) {
 		srv := newWSServer(t, func(conn *websocket.Conn) {
@@ -580,23 +601,7 @@ func TestReadLoopEvents(t *testing.T) {
 		require.NoError(t, err)
 		defer session.Close()
 
-		var events []s2s.SessionEvent
-		timeout := time.After(3 * time.Second)
-		for {
-			select {
-			case event, ok := <-session.Recv():
-				if !ok {
-					goto done
-				}
-				events = append(events, event)
-				if len(events) >= 2 {
-					goto done
-				}
-			case <-timeout:
-				goto done
-			}
-		}
-	done:
+		events := collectEvents(t, session, 2, 3*time.Second)
 		require.Len(t, events, 2)
 		assert.Equal(t, s2s.EventTextOutput, events[0].Type)
 		assert.Equal(t, "caption text", events[0].Text)
@@ -651,23 +656,7 @@ func TestReadLoopEvents(t *testing.T) {
 		require.NoError(t, err)
 		defer session.Close()
 
-		var events []s2s.SessionEvent
-		timeout := time.After(3 * time.Second)
-		for {
-			select {
-			case event, ok := <-session.Recv():
-				if !ok {
-					goto done2
-				}
-				events = append(events, event)
-				if len(events) >= 2 {
-					goto done2
-				}
-			case <-timeout:
-				goto done2
-			}
-		}
-	done2:
+		events := collectEvents(t, session, 2, 3*time.Second)
 		require.Len(t, events, 2)
 		assert.Equal(t, s2s.EventToolCall, events[0].Type)
 		assert.Equal(t, "call_1", events[0].ToolCall.ID)

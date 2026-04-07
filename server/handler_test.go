@@ -96,125 +96,99 @@ func TestHandleInvoke(t *testing.T) {
 	})
 }
 
-func TestHandleStream(t *testing.T) {
-	t.Run("success with events", func(t *testing.T) {
-		a := &mockAgent{
-			id: "test",
-			events: []agent.Event{
-				{Type: agent.EventText, Text: "Hello", AgentID: "test"},
-				{Type: agent.EventText, Text: " World", AgentID: "test"},
-				{Type: agent.EventDone, AgentID: "test"},
-			},
-		}
-		handler := NewAgentHandler(a)
+func doStreamRequest(t *testing.T, handler http.Handler, body string) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodPost, "/stream", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	return w
+}
 
-		body := `{"input":"hi"}`
-		req := httptest.NewRequest(http.MethodPost, "/stream", strings.NewReader(body))
-		req.Header.Set("Content-Type", "application/json")
-		w := httptest.NewRecorder()
+func TestHandleStream_SuccessWithEvents(t *testing.T) {
+	a := &mockAgent{
+		id: "test",
+		events: []agent.Event{
+			{Type: agent.EventText, Text: "Hello", AgentID: "test"},
+			{Type: agent.EventText, Text: " World", AgentID: "test"},
+			{Type: agent.EventDone, AgentID: "test"},
+		},
+	}
+	handler := NewAgentHandler(a)
+	w := doStreamRequest(t, handler, `{"input":"hi"}`)
 
-		handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	if got := w.Header().Get("Content-Type"); got != "text/event-stream" {
+		t.Errorf("Content-Type = %q, want %q", got, "text/event-stream")
+	}
+	respBody := w.Body.String()
+	if !strings.Contains(respBody, "event: text") {
+		t.Errorf("expected 'event: text' in response body, got:\n%s", respBody)
+	}
+	if !strings.Contains(respBody, `"Hello"`) {
+		t.Errorf("expected 'Hello' in response body, got:\n%s", respBody)
+	}
+	if !strings.Contains(respBody, "event: done") {
+		t.Errorf("expected 'event: done' in response body, got:\n%s", respBody)
+	}
+}
 
-		if w.Code != http.StatusOK {
-			t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
-		}
+func TestHandleStream_StreamError(t *testing.T) {
+	a := &errorStreamAgent{id: "test", err: errors.New("stream failed")}
+	handler := NewAgentHandler(a)
+	w := doStreamRequest(t, handler, `{"input":"hi"}`)
 
-		if got := w.Header().Get("Content-Type"); got != "text/event-stream" {
-			t.Errorf("Content-Type = %q, want %q", got, "text/event-stream")
-		}
+	respBody := w.Body.String()
+	if !strings.Contains(respBody, "event: error") {
+		t.Errorf("expected 'event: error' in response body, got:\n%s", respBody)
+	}
+	if !strings.Contains(respBody, "stream failed") {
+		t.Errorf("expected 'stream failed' in response body, got:\n%s", respBody)
+	}
+}
 
-		respBody := w.Body.String()
-		if !strings.Contains(respBody, "event: text") {
-			t.Errorf("expected 'event: text' in response body, got:\n%s", respBody)
-		}
-		if !strings.Contains(respBody, `"Hello"`) {
-			t.Errorf("expected 'Hello' in response body, got:\n%s", respBody)
-		}
-		if !strings.Contains(respBody, "event: done") {
-			t.Errorf("expected 'event: done' in response body, got:\n%s", respBody)
-		}
-	})
+func TestHandleStream_InvalidJSON(t *testing.T) {
+	a := &mockAgent{id: "test"}
+	handler := NewAgentHandler(a)
 
-	t.Run("stream error", func(t *testing.T) {
-		a := &errorStreamAgent{
-			id:  "test",
-			err: errors.New("stream failed"),
-		}
-		handler := NewAgentHandler(a)
+	req := httptest.NewRequest(http.MethodPost, "/stream", strings.NewReader("{bad"))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
 
-		body := `{"input":"hi"}`
-		req := httptest.NewRequest(http.MethodPost, "/stream", strings.NewReader(body))
-		req.Header.Set("Content-Type", "application/json")
-		w := httptest.NewRecorder()
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusBadRequest)
+	}
+}
 
-		handler.ServeHTTP(w, req)
+func TestHandleStream_EmptyEventsSendsDone(t *testing.T) {
+	a := &mockAgent{id: "test", events: nil}
+	handler := NewAgentHandler(a)
+	w := doStreamRequest(t, handler, `{"input":"hi"}`)
 
-		respBody := w.Body.String()
-		if !strings.Contains(respBody, "event: error") {
-			t.Errorf("expected 'event: error' in response body, got:\n%s", respBody)
-		}
-		if !strings.Contains(respBody, "stream failed") {
-			t.Errorf("expected 'stream failed' in response body, got:\n%s", respBody)
-		}
-	})
+	respBody := w.Body.String()
+	if !strings.Contains(respBody, "event: done") {
+		t.Errorf("expected final 'event: done' in response body, got:\n%s", respBody)
+	}
+}
 
-	t.Run("invalid JSON", func(t *testing.T) {
-		a := &mockAgent{id: "test"}
-		handler := NewAgentHandler(a)
+func TestHandleStream_EmptyTypeDefaultsToMessage(t *testing.T) {
+	a := &mockAgent{
+		id:     "test",
+		events: []agent.Event{{Type: "", Text: "some text", AgentID: "test"}},
+	}
+	handler := NewAgentHandler(a)
+	w := doStreamRequest(t, handler, `{"input":"hi"}`)
 
-		req := httptest.NewRequest(http.MethodPost, "/stream", strings.NewReader("{bad"))
-		req.Header.Set("Content-Type", "application/json")
-		w := httptest.NewRecorder()
-
-		handler.ServeHTTP(w, req)
-
-		if w.Code != http.StatusBadRequest {
-			t.Fatalf("status = %d, want %d", w.Code, http.StatusBadRequest)
-		}
-	})
-
-	t.Run("empty events stream sends done", func(t *testing.T) {
-		a := &mockAgent{id: "test", events: nil}
-		handler := NewAgentHandler(a)
-
-		body := `{"input":"hi"}`
-		req := httptest.NewRequest(http.MethodPost, "/stream", strings.NewReader(body))
-		req.Header.Set("Content-Type", "application/json")
-		w := httptest.NewRecorder()
-
-		handler.ServeHTTP(w, req)
-
-		respBody := w.Body.String()
-		if !strings.Contains(respBody, "event: done") {
-			t.Errorf("expected final 'event: done' in response body, got:\n%s", respBody)
-		}
-	})
-
-	t.Run("event with empty type defaults to message", func(t *testing.T) {
-		a := &mockAgent{
-			id: "test",
-			events: []agent.Event{
-				{Type: "", Text: "some text", AgentID: "test"},
-			},
-		}
-		handler := NewAgentHandler(a)
-
-		body := `{"input":"hi"}`
-		req := httptest.NewRequest(http.MethodPost, "/stream", strings.NewReader(body))
-		req.Header.Set("Content-Type", "application/json")
-		w := httptest.NewRecorder()
-
-		handler.ServeHTTP(w, req)
-
-		respBody := w.Body.String()
-		// Should have "event: message" due to default.
-		if !strings.Contains(respBody, "event: message") {
-			t.Errorf("expected 'event: message' for empty event type, got:\n%s", respBody)
-		}
-		if !strings.Contains(respBody, "some text") {
-			t.Errorf("expected 'some text' in response body, got:\n%s", respBody)
-		}
-	})
+	respBody := w.Body.String()
+	if !strings.Contains(respBody, "event: message") {
+		t.Errorf("expected 'event: message' for empty event type, got:\n%s", respBody)
+	}
+	if !strings.Contains(respBody, "some text") {
+		t.Errorf("expected 'some text' in response body, got:\n%s", respBody)
+	}
 }
 
 // errorStreamAgent emits a single error from Stream.

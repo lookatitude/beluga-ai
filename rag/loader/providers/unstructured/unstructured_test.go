@@ -438,6 +438,24 @@ func TestLoad_APIErrorMessageFormat(t *testing.T) {
 	assert.Contains(t, err.Error(), errorMsg)
 }
 
+func resolveTestSource(t *testing.T, source string, wantErr bool) string {
+	t.Helper()
+	const nonexistentFile = "/tmp/nonexistent-file-xyz-12345.pdf"
+	if source == "" && !wantErr {
+		dir := t.TempDir()
+		p := filepath.Join(dir, "test.txt")
+		require.NoError(t, os.WriteFile(p, []byte("content"), 0644))
+		return p
+	}
+	if source != "" && source != nonexistentFile {
+		dir := t.TempDir()
+		p := filepath.Join(dir, filepath.Base(source))
+		require.NoError(t, os.WriteFile(p, []byte("content"), 0644))
+		return p
+	}
+	return source
+}
+
 func TestLoad_TableDriven(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -450,15 +468,15 @@ func TestLoad_TableDriven(t *testing.T) {
 		checkDoc    func(t *testing.T, doc schema.Document)
 	}{
 		{
-			name:   "empty source path",
-			source: "",
-			wantErr: true,
+			name:        "empty source path",
+			source:      "",
+			wantErr:     true,
 			errContains: "source file path is required",
 		},
 		{
-			name:   "nonexistent file",
-			source: "/tmp/nonexistent-file-xyz-12345.pdf",
-			wantErr: true,
+			name:        "nonexistent file",
+			source:      "/tmp/nonexistent-file-xyz-12345.pdf",
+			wantErr:     true,
 			errContains: "open file",
 		},
 		{
@@ -500,18 +518,7 @@ func TestLoad_TableDriven(t *testing.T) {
 			l, err := New(config.ProviderConfig{BaseURL: ts.URL})
 			require.NoError(t, err)
 
-			// Create temp file if source is not provided
-			source := tt.source
-			if source == "" && !tt.wantErr {
-				dir := t.TempDir()
-				source = filepath.Join(dir, "test.txt")
-				require.NoError(t, os.WriteFile(source, []byte("content"), 0644))
-			} else if source != "" && source != "/tmp/nonexistent-file-xyz-12345.pdf" {
-				dir := t.TempDir()
-				actualPath := filepath.Join(dir, filepath.Base(source))
-				require.NoError(t, os.WriteFile(actualPath, []byte("content"), 0644))
-				source = actualPath
-			}
+			source := resolveTestSource(t, tt.source, tt.wantErr)
 
 			docs, err := l.Load(context.Background(), source)
 			if tt.wantErr {
