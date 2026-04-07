@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -62,7 +63,7 @@ func New(cfg Config) (*Store, error) {
 // Save persists the workflow state by sending it to the Inngest API.
 func (s *Store) Save(ctx context.Context, state workflow.WorkflowState) error {
 	if state.WorkflowID == "" {
-		return fmt.Errorf("inngest/save: workflow ID is required")
+		return errors.New("inngest/save: workflow ID is required")
 	}
 
 	data, err := json.Marshal(state)
@@ -100,7 +101,7 @@ func (s *Store) Save(ctx context.Context, state workflow.WorkflowState) error {
 
 // Load retrieves the workflow state by ID.
 func (s *Store) Load(ctx context.Context, workflowID string) (*workflow.WorkflowState, error) {
-	url := fmt.Sprintf("%s"+workflowPathFmt, s.baseURL, workflowID)
+	url := s.baseURL + fmt.Sprintf(workflowPathFmt, workflowID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("inngest/load: create request: %w", err)
@@ -150,7 +151,7 @@ func (s *Store) List(_ context.Context, filter workflow.WorkflowFilter) ([]workf
 
 // Delete removes a workflow state.
 func (s *Store) Delete(ctx context.Context, workflowID string) error {
-	url := fmt.Sprintf("%s"+workflowPathFmt, s.baseURL, workflowID)
+	url := s.baseURL + fmt.Sprintf(workflowPathFmt, workflowID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
 	if err != nil {
 		return fmt.Errorf("inngest/delete: create request: %w", err)

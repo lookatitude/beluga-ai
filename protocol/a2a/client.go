@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"iter"
 	"net/http"
@@ -19,6 +20,8 @@ const (
 	opGetTask    = "a2a/get_task: "
 	opCancelTask = "a2a/cancel_task: "
 	opInvoke     = "a2a/invoke: "
+
+	unexpectedStatusFmt = "unexpected status %d"
 )
 
 // A2AClient connects to a remote A2A agent over HTTP.
@@ -49,7 +52,7 @@ func (c *A2AClient) GetCard(ctx context.Context) (*AgentCard, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(opGetCard+"unexpected status %d", resp.StatusCode)
+		return nil, fmt.Errorf(opGetCard+unexpectedStatusFmt, resp.StatusCode)
 	}
 
 	var card AgentCard
@@ -105,10 +108,10 @@ func (c *A2AClient) GetTask(ctx context.Context, taskID string) (*Task, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf(opGetTask + "task not found")
+		return nil, errors.New(opGetTask + "task not found")
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(opGetTask+"unexpected status %d", resp.StatusCode)
+		return nil, fmt.Errorf(opGetTask+unexpectedStatusFmt, resp.StatusCode)
 	}
 
 	var taskResp TaskResponse
@@ -132,10 +135,10 @@ func (c *A2AClient) CancelTask(ctx context.Context, taskID string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return fmt.Errorf(opCancelTask + "task not found")
+		return errors.New(opCancelTask + "task not found")
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf(opCancelTask+"unexpected status %d", resp.StatusCode)
+		return fmt.Errorf(opCancelTask+unexpectedStatusFmt, resp.StatusCode)
 	}
 
 	return nil
@@ -204,7 +207,7 @@ func (a *remoteAgent) Invoke(ctx context.Context, input string, _ ...agent.Optio
 		case StatusFailed:
 			return "", fmt.Errorf(opInvoke+"task failed: %s", task.Error)
 		case StatusCanceled:
-			return "", fmt.Errorf(opInvoke + "task canceled")
+			return "", errors.New(opInvoke + "task canceled")
 		}
 
 		// Exponential backoff, capped at maxDelay.

@@ -74,7 +74,6 @@ func TestOptionFunc_ImplementsOption(t *testing.T) {
 }
 
 func testApplyOptionsMultipleOptions(t *testing.T) {
-	t.Helper()
 	opts := []Option{
 		OptionFunc(func(target any) {
 			cfg := target.(*testConfig)
@@ -105,7 +104,6 @@ func testApplyOptionsMultipleOptions(t *testing.T) {
 }
 
 func testApplyOptionsNoOptions(t *testing.T) {
-	t.Helper()
 	cfg := testConfig{Name: "unchanged", Value: 7, Enabled: true}
 	ApplyOptions(&cfg)
 
@@ -121,7 +119,6 @@ func testApplyOptionsNoOptions(t *testing.T) {
 }
 
 func testApplyOptionsOrderMatters(t *testing.T) {
-	t.Helper()
 	opts := []Option{
 		OptionFunc(func(target any) {
 			cfg := target.(*testConfig)
@@ -142,7 +139,6 @@ func testApplyOptionsOrderMatters(t *testing.T) {
 }
 
 func testApplyOptionsNilTargetNoParicWithNilSafeOption(t *testing.T) {
-	t.Helper()
 	// An option that doesn't dereference target should work with nil.
 	opt := OptionFunc(func(_ any) {
 		// no-op
@@ -151,7 +147,6 @@ func testApplyOptionsNilTargetNoParicWithNilSafeOption(t *testing.T) {
 }
 
 func testApplyOptionsSingleOption(t *testing.T) {
-	t.Helper()
 	cfg := testConfig{}
 	ApplyOptions(&cfg, OptionFunc(func(target any) {
 		cfg := target.(*testConfig)

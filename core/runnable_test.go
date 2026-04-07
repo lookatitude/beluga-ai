@@ -193,7 +193,6 @@ func TestPipe_Invoke_ContextCancellation(t *testing.T) {
 }
 
 func testPipeStreamFromSecond(t *testing.T) {
-	t.Helper()
 	a := transformRunnable("-A")
 	b := &mockRunnable{
 		streamFunc: func(_ context.Context, input any, _ ...Option) iter.Seq2[any, error] {
@@ -225,7 +224,6 @@ func testPipeStreamFromSecond(t *testing.T) {
 }
 
 func testPipeStreamFirstInvokeError(t *testing.T) {
-	t.Helper()
 	a := errorRunnable(fmt.Errorf("a failed"))
 	b := transformRunnable("-B")
 
@@ -246,7 +244,6 @@ func testPipeStreamFirstInvokeError(t *testing.T) {
 }
 
 func testPipeStreamSecondStreamError(t *testing.T) {
-	t.Helper()
 	a := &mockRunnable{}
 	b := &mockRunnable{
 		streamFunc: func(_ context.Context, _ any, _ ...Option) iter.Seq2[any, error] {
@@ -277,7 +274,6 @@ func testPipeStreamSecondStreamError(t *testing.T) {
 }
 
 func testPipeStreamEarlyBreak(t *testing.T) {
-	t.Helper()
 	count := 0
 	a := &mockRunnable{}
 	b := &mockRunnable{
@@ -331,7 +327,6 @@ func TestPipe_Chaining(t *testing.T) {
 }
 
 func testParallelInvokeAllSucceed(t *testing.T) {
-	t.Helper()
 	r1 := transformRunnable("-1")
 	r2 := transformRunnable("-2")
 	r3 := transformRunnable("-3")
@@ -361,7 +356,6 @@ func testParallelInvokeAllSucceed(t *testing.T) {
 }
 
 func testParallelInvokeOneError(t *testing.T) {
-	t.Helper()
 	r1 := transformRunnable("-ok")
 	r2 := errorRunnable(fmt.Errorf("r2 failed"))
 	r3 := transformRunnable("-ok")
@@ -377,7 +371,6 @@ func testParallelInvokeOneError(t *testing.T) {
 }
 
 func testParallelInvokeAllErrors(t *testing.T) {
-	t.Helper()
 	r1 := errorRunnable(fmt.Errorf("err1"))
 	r2 := errorRunnable(fmt.Errorf("err2"))
 
@@ -393,7 +386,6 @@ func testParallelInvokeAllErrors(t *testing.T) {
 }
 
 func testParallelInvokeNoRunnables(t *testing.T) {
-	t.Helper()
 	p := Parallel()
 	got, err := p.Invoke(context.Background(), "in")
 	if err != nil {
@@ -409,7 +401,6 @@ func testParallelInvokeNoRunnables(t *testing.T) {
 }
 
 func testParallelInvokeSingleRunnable(t *testing.T) {
-	t.Helper()
 	r := transformRunnable("-solo")
 	p := Parallel(r)
 	got, err := p.Invoke(context.Background(), "in")
@@ -426,7 +417,6 @@ func testParallelInvokeSingleRunnable(t *testing.T) {
 }
 
 func testParallelInvokeNilInput(t *testing.T) {
-	t.Helper()
 	r := &mockRunnable{}
 	p := Parallel(r)
 	got, err := p.Invoke(context.Background(), nil)
@@ -440,7 +430,6 @@ func testParallelInvokeNilInput(t *testing.T) {
 }
 
 func testParallelInvokeOptionsPassthrough(t *testing.T) {
-	t.Helper()
 	var received []Option
 	r := &mockRunnable{
 		invokeFunc: func(_ context.Context, input any, opts ...Option) (any, error) {
@@ -492,7 +481,6 @@ func TestParallel_Invoke_ContextCancellation(t *testing.T) {
 }
 
 func testParallelStreamYieldsResultSlice(t *testing.T) {
-	t.Helper()
 	r1 := transformRunnable("-1")
 	r2 := transformRunnable("-2")
 
@@ -530,7 +518,6 @@ func testParallelStreamYieldsResultSlice(t *testing.T) {
 }
 
 func testParallelStreamErrorPropagates(t *testing.T) {
-	t.Helper()
 	r1 := transformRunnable("-ok")
 	r2 := errorRunnable(fmt.Errorf("parallel err"))
 

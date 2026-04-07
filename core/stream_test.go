@@ -30,7 +30,6 @@ func makeErrorStream[T any](events []Event[T], err error) Stream[T] {
 }
 
 func testCollectStreamEmpty(t *testing.T) {
-	t.Helper()
 	stream := makeStream[string](nil)
 	events, err := CollectStream(stream)
 	if err != nil {
@@ -42,7 +41,6 @@ func testCollectStreamEmpty(t *testing.T) {
 }
 
 func testCollectStreamMultipleEvents(t *testing.T) {
-	t.Helper()
 	input := []Event[string]{
 		{Type: EventData, Payload: "hello"},
 		{Type: EventData, Payload: "world"},
@@ -65,7 +63,6 @@ func testCollectStreamMultipleEvents(t *testing.T) {
 }
 
 func testCollectStreamStopsOnError(t *testing.T) {
-	t.Helper()
 	input := []Event[string]{
 		{Type: EventData, Payload: "ok"},
 	}
@@ -89,7 +86,6 @@ func TestCollectStream(t *testing.T) {
 }
 
 func testMapStreamTransformPayload(t *testing.T) {
-	t.Helper()
 	input := []Event[int]{
 		{Type: EventData, Payload: 1},
 		{Type: EventData, Payload: 2},
@@ -120,7 +116,6 @@ func testMapStreamTransformPayload(t *testing.T) {
 }
 
 func testMapStreamMapErrorStopsStream(t *testing.T) {
-	t.Helper()
 	input := []Event[int]{
 		{Type: EventData, Payload: 1},
 		{Type: EventData, Payload: 2},
@@ -144,7 +139,6 @@ func testMapStreamMapErrorStopsStream(t *testing.T) {
 }
 
 func testMapStreamSourceErrorPropagates(t *testing.T) {
-	t.Helper()
 	input := []Event[int]{{Type: EventData, Payload: 1}}
 	stream := makeErrorStream(input, fmt.Errorf("source error"))
 
@@ -427,7 +421,6 @@ func TestFanOut(t *testing.T) {
 }
 
 func testFlowControllerBasicAcquireRelease(t *testing.T) {
-	t.Helper()
 	fc := NewFlowController(2)
 	ctx := context.Background()
 
@@ -451,7 +444,6 @@ func testFlowControllerBasicAcquireRelease(t *testing.T) {
 }
 
 func testFlowControllerTryAcquireWhenFull(t *testing.T) {
-	t.Helper()
 	fc := NewFlowController(1)
 	ctx := context.Background()
 
@@ -475,7 +467,6 @@ func testFlowControllerTryAcquireWhenFull(t *testing.T) {
 }
 
 func testFlowControllerTryAcquireWhenAvailable(t *testing.T) {
-	t.Helper()
 	fc := NewFlowController(3)
 
 	// TryAcquire should succeed when capacity is available.
@@ -491,7 +482,6 @@ func testFlowControllerTryAcquireWhenAvailable(t *testing.T) {
 }
 
 func testFlowControllerContextCancellationDuringAcquire(t *testing.T) {
-	t.Helper()
 	fc := NewFlowController(1)
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -519,7 +509,6 @@ func testFlowControllerContextCancellationDuringAcquire(t *testing.T) {
 }
 
 func testFlowControllerConcurrencySafety(t *testing.T) {
-	t.Helper()
 	fc := NewFlowController(10)
 	ctx := context.Background()
 
@@ -551,7 +540,6 @@ func testFlowControllerConcurrencySafety(t *testing.T) {
 }
 
 func testFlowControllerMaxConcurrencyClampedTo1(t *testing.T) {
-	t.Helper()
 	fc := NewFlowController(0)
 	ctx := context.Background()
 
@@ -570,7 +558,6 @@ func testFlowControllerMaxConcurrencyClampedTo1(t *testing.T) {
 }
 
 func testFlowControllerMultipleReleaseDoesntPanic(t *testing.T) {
-	t.Helper()
 	fc := NewFlowController(1)
 
 	// Release without acquire should not panic (graceful handling).
