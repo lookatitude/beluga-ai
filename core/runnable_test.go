@@ -147,8 +147,10 @@ func TestPipe_Invoke_OptionsPassthrough(t *testing.T) {
 		},
 	}
 
-	opt1 := OptionFunc(func(_ any) {})
-	opt2 := OptionFunc(func(_ any) {})
+	opt1 := OptionFunc(func(_ any) { // no-op: tests option passthrough, not behavior
+	})
+	opt2 := OptionFunc(func(_ any) { // no-op: tests option passthrough, not behavior
+	})
 
 	p := Pipe(a, b)
 	_, err := p.Invoke(context.Background(), "test", opt1, opt2)
@@ -427,7 +429,8 @@ func TestParallel_Invoke(t *testing.T) {
 			},
 		}
 
-		opt := OptionFunc(func(_ any) {})
+		opt := OptionFunc(func(_ any) { // no-op: tests option passthrough, not behavior
+		})
 		p := Parallel(r)
 		_, err := p.Invoke(context.Background(), "in", opt)
 		if err != nil {

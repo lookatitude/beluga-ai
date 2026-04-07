@@ -620,7 +620,9 @@ func TestServer_Serve_BusyPort(t *testing.T) {
 	srv := NewServer(a, card)
 
 	// Listen on a port to make it busy.
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// no-op: mock implementation not needed for this test
+	}))
 	defer ts.Close()
 
 	// Try to serve on the same address - the port extraction is tricky,

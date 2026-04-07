@@ -408,7 +408,9 @@ func TestTranscribeStream(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		audioStream := func(yield func([]byte, error) bool) {}
+		audioStream := func(yield func([]byte, error) bool) {
+			// no-op: no audio to send; test exercises missing WebSocket URL error path
+		}
 
 		var gotErr error
 		for _, err := range e.TranscribeStream(context.Background(), audioStream) {
@@ -435,7 +437,9 @@ func TestTranscribeStream(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		audioStream := func(yield func([]byte, error) bool) {}
+		audioStream := func(yield func([]byte, error) bool) {
+			// no-op: no audio to send; test exercises HTTP error response path
+		}
 
 		var gotErr error
 		for _, err := range e.TranscribeStream(context.Background(), audioStream) {
@@ -465,7 +469,9 @@ func TestTranscribeStream(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		audioStream := func(yield func([]byte, error) bool) {}
+		audioStream := func(yield func([]byte, error) bool) {
+			// no-op: no audio to send; test exercises cancelled-context error path
+		}
 
 		var gotErr error
 		for _, err := range e.TranscribeStream(ctx, audioStream) {
@@ -657,7 +663,9 @@ func TestTranscribeStream(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		audioStream := func(yield func([]byte, error) bool) {}
+		audioStream := func(yield func([]byte, error) bool) {
+			// no-op: no audio to send; test exercises WebSocket dial error path
+		}
 
 		var gotErr error
 		for _, err := range e.TranscribeStream(context.Background(), audioStream) {
@@ -1048,7 +1056,9 @@ func TestTranscribeStream_LiveHTTPFailed(t *testing.T) {
 		Extra: map[string]any{"api_key": "k", "base_url": srv.URL},
 	})
 
-	audioStream := func(yield func([]byte, error) bool) {}
+	audioStream := func(yield func([]byte, error) bool) {
+		// no-op: no audio to send; test exercises live-request HTTP failure path
+	}
 
 	var gotErr error
 	for _, err := range e.TranscribeStream(context.Background(), audioStream) {

@@ -629,7 +629,9 @@ func TestTranscribeStream(t *testing.T) {
 			},
 		})
 
-		audioStream := func(yield func([]byte, error) bool) {}
+		audioStream := func(yield func([]byte, error) bool) {
+			// no-op: no audio to send; test exercises connection error path
+		}
 
 		var gotErr error
 		for _, err := range e.TranscribeStream(context.Background(), audioStream) {
@@ -703,7 +705,9 @@ func TestTranscribeStream(t *testing.T) {
 			Extra:      map[string]any{"api_key": "k", "ws_url": wsURL},
 		})
 
-		audioStream := func(yield func([]byte, error) bool) {}
+		audioStream := func(yield func([]byte, error) bool) {
+			// no-op: no audio to send; test verifies server closes connection cleanly
+		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()

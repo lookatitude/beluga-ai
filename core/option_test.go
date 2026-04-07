@@ -69,7 +69,8 @@ func TestOptionFunc_Apply(t *testing.T) {
 
 func TestOptionFunc_ImplementsOption(t *testing.T) {
 	// Verify OptionFunc satisfies the Option interface at compile time.
-	var _ Option = OptionFunc(func(_ any) {})
+	var _ Option = OptionFunc(func(_ any) { // no-op: tests option passthrough, not behavior
+	})
 }
 
 func TestApplyOptions(t *testing.T) {

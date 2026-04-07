@@ -112,7 +112,9 @@ func TestInMemoryBus_Subscribe_CancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err := bus.Subscribe(ctx, "topic", func(event AgentEvent) {})
+	_, err := bus.Subscribe(ctx, "topic", func(event AgentEvent) {
+		// no-op: subscription cancelled before events arrive
+	})
 	if err == nil {
 		t.Fatal("expected error for cancelled context")
 	}

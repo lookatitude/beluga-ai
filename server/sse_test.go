@@ -122,7 +122,8 @@ type noFlushWriter struct{}
 
 func (w *noFlushWriter) Header() http.Header         { return http.Header{} }
 func (w *noFlushWriter) Write(b []byte) (int, error)  { return len(b), nil }
-func (w *noFlushWriter) WriteHeader(statusCode int)    {}
+func (w *noFlushWriter) WriteHeader(statusCode int) { // no-op: stub writer/flusher for testing error paths
+}
 
 // errWriter implements http.ResponseWriter and http.Flusher but returns error on Write.
 type errWriter struct {
@@ -140,9 +141,11 @@ func (w *errWriter) Write(b []byte) (int, error) {
 	return 0, fmt.Errorf("write error")
 }
 
-func (w *errWriter) WriteHeader(statusCode int) {}
+func (w *errWriter) WriteHeader(statusCode int) { // no-op: stub writer/flusher for testing error paths
+}
 
-func (w *errWriter) Flush() {}
+func (w *errWriter) Flush() { // no-op: stub writer/flusher for testing error paths
+}
 
 func TestSSEWriter_WriteEvent_Error(t *testing.T) {
 	w := &errWriter{}

@@ -473,7 +473,9 @@ func (m *reflexionTestLLM) Generate(ctx context.Context, msgs []schema.Message, 
 }
 
 func (m *reflexionTestLLM) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.GenerateOption) iter.Seq2[schema.StreamChunk, error] {
-	return func(yield func(schema.StreamChunk, error) bool) {}
+	return func(yield func(schema.StreamChunk, error) bool) {
+		// no-op: satisfies llm.ChatModel for testing; streaming not exercised
+	}
 }
 
 func (m *reflexionTestLLM) BindTools(tools []schema.ToolDefinition) llm.ChatModel {

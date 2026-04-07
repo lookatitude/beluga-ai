@@ -483,19 +483,22 @@ type nonFlushWriter struct{}
 
 func (w *nonFlushWriter) Header() http.Header        { return http.Header{} }
 func (w *nonFlushWriter) Write(b []byte) (int, error) { return len(b), nil }
-func (w *nonFlushWriter) WriteHeader(int)             {}
+func (w *nonFlushWriter) WriteHeader(int) { // no-op: stub writer/flusher for testing error paths
+}
 
 // errorWriter implements http.ResponseWriter but always returns errors on Write.
 type errorWriter struct{}
 
 func (w *errorWriter) Header() http.Header        { return http.Header{} }
 func (w *errorWriter) Write(b []byte) (int, error) { return 0, fmt.Errorf("write error") }
-func (w *errorWriter) WriteHeader(int)             {}
+func (w *errorWriter) WriteHeader(int) { // no-op: stub writer/flusher for testing error paths
+}
 
 // noopFlusher implements http.Flusher but does nothing.
 type noopFlusher struct{}
 
-func (f *noopFlusher) Flush() {}
+func (f *noopFlusher) Flush() { // no-op: stub writer/flusher for testing error paths
+}
 
 // parseSSEEvents reads SSE events from the response body.
 func parseSSEEvents(t *testing.T, resp *http.Response) []sseTestEvent {
@@ -547,7 +550,8 @@ func (w *countingErrorWriter) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
-func (w *countingErrorWriter) WriteHeader(int) {}
+func (w *countingErrorWriter) WriteHeader(int) { // no-op: stub writer/flusher for testing error paths
+}
 
 // TestSSEWriter_WriteEvent_EventLineError tests the error path when writing the event line fails.
 // This covers sse.go:47-49.
@@ -669,7 +673,9 @@ func TestRESTServer_Serve_AddressInUse(t *testing.T) {
 	srv.RegisterAgent("test", &mockAgent{id: "test"})
 
 	// Start a server to occupy a port.
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// no-op: mock implementation not needed for this test
+	}))
 	defer ts.Close()
 
 	// Extract the address from the test server.
