@@ -70,7 +70,7 @@ func (s *Store) Save(ctx context.Context, state workflow.WorkflowState) error {
 		return fmt.Errorf("inngest/save: marshal: %w", err)
 	}
 
-	url := fmt.Sprintf("%s"+workflowPathFmt, s.baseURL, state.WorkflowID)
+	url := s.baseURL + fmt.Sprintf(workflowPathFmt, state.WorkflowID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(data))
 	if err != nil {
 		return fmt.Errorf("inngest/save: create request: %w", err)
