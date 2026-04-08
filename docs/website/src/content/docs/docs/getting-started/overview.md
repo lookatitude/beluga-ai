@@ -135,6 +135,16 @@ RBAC, ABAC, and capability-based security. Agents operate with explicit, minimal
 
 Complex AI applications need coordination patterns beyond single-agent execution. Beluga provides five orchestration patterns (supervisor, hierarchical, scatter-gather, router, blackboard) plus a built-in durable execution engine that survives crashes, rate limits, and human-in-the-loop pauses. The durable engine is included so you can get started without external infrastructure; for production deployments with higher durability requirements, Temporal, NATS, Kafka, and Dapr are available as provider options behind the same `DurableExecutor` interface.
 
+### Agent Runtime & Operational Packages
+
+The `agent/` package includes a `Runner` for managing agent lifecycle (start, stop, health checks, graceful shutdown) and a `Team` type for declarative multi-agent composition. A `Plugin` system lets you extend agent behavior at runtime without modifying core agent code.
+
+Cost tracking and budget enforcement are built into the `cost/` package: track token spend per request, per-tenant, or per-session; enforce hard and soft budget limits; and receive callbacks when budgets are approached or exceeded.
+
+The `audit/` package produces structured audit log entries for every significant agent action — tool calls, handoffs, LLM invocations — with full query support by tenant, time range, and event type.
+
+Deployment utilities in the `deploy/` package generate Dockerfile and Docker Compose configurations from agent definitions, expose `/healthz` and `/readyz` endpoints, and produce Kubernetes manifests. For Kubernetes-native deployments, CRD-based resources (`Agent`, `Team`, `ModelConfig`) and a Helm chart are available alongside a controller that reconciles desired state.
+
 ### Protocol Interoperability
 
 Agents in production rarely operate in isolation — they need to consume external tools and collaborate with agents running in other systems. Beluga provides first-class **MCP** (Streamable HTTP) for tool/resource/prompt access and **A2A** (Agent-to-Agent protocol) for cross-system agent collaboration. Expose any agent as an A2A server or consume remote A2A agents as sub-agents, without writing transport or serialization code.

@@ -27,6 +27,7 @@ Complete API reference for all Beluga AI v2 packages. This documentation is gene
 | [Agent Package](./agent/) | Agent runtime, BaseAgent, Executor, Planner strategies, handoffs, and event bus |
 | [Agent Workflows](./agent-workflow/) | Sequential, Parallel, and Loop workflow agents for multi-agent orchestration |
 | [Tool Package](./tool/) | Tool interface, FuncTool, registry, MCP client integration, and middleware |
+| [Runtime Package](./runtime/) | Runner for agent lifecycle management, Team for multi-agent composition, Plugin system |
 
 ## Memory & RAG
 
@@ -67,6 +68,10 @@ Complete API reference for all Beluga AI v2 packages. This documentation is gene
 | [Prompt Package](./prompt/) | Prompt management, templating, and versioning |
 | [Orchestration Package](./orchestration/) | Chain, Graph, Router, Parallel, and Supervisor orchestration patterns |
 | [Workflow Package](./workflow/) | Durable execution engine with provider integrations |
+| [Cost Package](./cost/) | Tracker interface for per-request/tenant/session spend, budget enforcement |
+| [Audit Package](./audit/) | Structured audit entries for all agent actions; query by tenant and time |
+| [Deploy Package](./deploy/) | Dockerfile/Compose generation, health endpoints, Kubernetes manifest helpers |
+| [Kubernetes Package](./k8s/) | CRD-native operator (Agent, Team, ModelConfig resources) and Helm chart |
 
 ## Protocol & Server
 
