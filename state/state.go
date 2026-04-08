@@ -51,7 +51,33 @@ type StateChange struct {
 	Value any
 	// Op is the type of change.
 	Op ChangeOp
+	// Version is the monotonic revision counter for the key after the change.
+	// Zero means the store does not support versioning.
+	Version uint64
 }
+
+// VersionedStore extends Store with compare-and-swap semantics and per-key
+// version tracking. Implementations maintain a monotonic revision counter
+// per key, incremented on every mutation.
+type VersionedStore interface {
+	Store
+
+	// CompareAndSwap atomically sets the value for key only if the current
+	// version matches expectedVersion. It returns the new version on success.
+	// If the versions do not match, it returns ErrVersionMismatch.
+	CompareAndSwap(ctx context.Context, key string, expectedVersion uint64, value any) (newVersion uint64, err error)
+
+	// GetVersioned retrieves the value and current version for the given key.
+	// Returns (nil, 0, nil) if the key does not exist.
+	GetVersioned(ctx context.Context, key string) (value any, version uint64, err error)
+}
+
+// ErrVersionMismatch is returned by CompareAndSwap when the expected version
+// does not match the current version of the key.
+var ErrVersionMismatch = fmt.Errorf("state: version mismatch")
+
+// ErrStoreClosed is returned when an operation is attempted on a closed store.
+var ErrStoreClosed = fmt.Errorf("state: store is closed")
 
 // Scope defines the visibility level for state keys.
 type Scope string
