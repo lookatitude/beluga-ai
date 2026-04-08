@@ -51,6 +51,12 @@
 //     falls back to web search when relevance is low)
 //   - [NewMultiQueryRetriever] — generates query variations using an LLM for improved recall
 //   - [NewAdaptiveRetriever] — classifies query complexity and routes to appropriate strategy
+//   - [NewQueryRewriter] — rewrites low-relevance queries using an LLM and retries retrieval
+//   - [NewSubQuestionRetriever] — decomposes complex queries into sub-questions, routes each
+//     to named retrievers, and aggregates results
+//
+// Tool adapter:
+//   - [AsTool] — wraps a Retriever as a [tool.Tool] for agent integration
 //
 // Re-ranking:
 //   - [NewRerankRetriever] — wraps a retriever with a [Reranker] for two-stage
