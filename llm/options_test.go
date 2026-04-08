@@ -270,6 +270,152 @@ func TestToolChoice_Constants(t *testing.T) {
 	}
 }
 
+func TestReasoningEffort_Constants(t *testing.T) {
+	if ReasoningEffortLow != "low" {
+		t.Errorf("ReasoningEffortLow = %q, want %q", ReasoningEffortLow, "low")
+	}
+	if ReasoningEffortMedium != "medium" {
+		t.Errorf("ReasoningEffortMedium = %q, want %q", ReasoningEffortMedium, "medium")
+	}
+	if ReasoningEffortHigh != "high" {
+		t.Errorf("ReasoningEffortHigh = %q, want %q", ReasoningEffortHigh, "high")
+	}
+}
+
+func TestWithReasoning(t *testing.T) {
+	cfg := ReasoningConfig{
+		Effort:       ReasoningEffortHigh,
+		BudgetTokens: 10000,
+	}
+	opts := ApplyOptions(WithReasoning(cfg))
+	if opts.Reasoning == nil {
+		t.Fatal("Reasoning should not be nil")
+	}
+	if opts.Reasoning.Effort != ReasoningEffortHigh {
+		t.Errorf("Reasoning.Effort = %q, want %q", opts.Reasoning.Effort, ReasoningEffortHigh)
+	}
+	if opts.Reasoning.BudgetTokens != 10000 {
+		t.Errorf("Reasoning.BudgetTokens = %d, want 10000", opts.Reasoning.BudgetTokens)
+	}
+}
+
+func TestWithReasoningEffort(t *testing.T) {
+	tests := []struct {
+		name   string
+		effort ReasoningEffort
+	}{
+		{"low", ReasoningEffortLow},
+		{"medium", ReasoningEffortMedium},
+		{"high", ReasoningEffortHigh},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := ApplyOptions(WithReasoningEffort(tt.effort))
+			if opts.Reasoning == nil {
+				t.Fatal("Reasoning should not be nil")
+			}
+			if opts.Reasoning.Effort != tt.effort {
+				t.Errorf("Reasoning.Effort = %q, want %q", opts.Reasoning.Effort, tt.effort)
+			}
+		})
+	}
+}
+
+func TestWithReasoningEffort_CreatesConfig(t *testing.T) {
+	opts := ApplyOptions(WithReasoningEffort(ReasoningEffortMedium))
+	if opts.Reasoning == nil {
+		t.Fatal("WithReasoningEffort should create ReasoningConfig when nil")
+	}
+	if opts.Reasoning.BudgetTokens != 0 {
+		t.Errorf("BudgetTokens = %d, want 0 (default)", opts.Reasoning.BudgetTokens)
+	}
+}
+
+func TestWithReasoningBudget(t *testing.T) {
+	tests := []struct {
+		name   string
+		tokens int
+	}{
+		{"small", 1000},
+		{"medium", 10000},
+		{"large", 100000},
+		{"zero", 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := ApplyOptions(WithReasoningBudget(tt.tokens))
+			if opts.Reasoning == nil {
+				t.Fatal("Reasoning should not be nil")
+			}
+			if opts.Reasoning.BudgetTokens != tt.tokens {
+				t.Errorf("Reasoning.BudgetTokens = %d, want %d", opts.Reasoning.BudgetTokens, tt.tokens)
+			}
+		})
+	}
+}
+
+func TestWithReasoningBudget_CreatesConfig(t *testing.T) {
+	opts := ApplyOptions(WithReasoningBudget(5000))
+	if opts.Reasoning == nil {
+		t.Fatal("WithReasoningBudget should create ReasoningConfig when nil")
+	}
+	if opts.Reasoning.Effort != "" {
+		t.Errorf("Effort = %q, want empty (default)", opts.Reasoning.Effort)
+	}
+}
+
+func TestWithReasoningEffort_PreservesExistingBudget(t *testing.T) {
+	opts := ApplyOptions(
+		WithReasoningBudget(8000),
+		WithReasoningEffort(ReasoningEffortHigh),
+	)
+	if opts.Reasoning == nil {
+		t.Fatal("Reasoning should not be nil")
+	}
+	if opts.Reasoning.BudgetTokens != 8000 {
+		t.Errorf("BudgetTokens = %d, want 8000 (preserved)", opts.Reasoning.BudgetTokens)
+	}
+	if opts.Reasoning.Effort != ReasoningEffortHigh {
+		t.Errorf("Effort = %q, want %q", opts.Reasoning.Effort, ReasoningEffortHigh)
+	}
+}
+
+func TestWithReasoningBudget_PreservesExistingEffort(t *testing.T) {
+	opts := ApplyOptions(
+		WithReasoningEffort(ReasoningEffortLow),
+		WithReasoningBudget(3000),
+	)
+	if opts.Reasoning == nil {
+		t.Fatal("Reasoning should not be nil")
+	}
+	if opts.Reasoning.Effort != ReasoningEffortLow {
+		t.Errorf("Effort = %q, want %q (preserved)", opts.Reasoning.Effort, ReasoningEffortLow)
+	}
+	if opts.Reasoning.BudgetTokens != 3000 {
+		t.Errorf("BudgetTokens = %d, want 3000", opts.Reasoning.BudgetTokens)
+	}
+}
+
+func TestApplyOptions_Empty_ReasoningNil(t *testing.T) {
+	opts := ApplyOptions()
+	if opts.Reasoning != nil {
+		t.Error("expected nil Reasoning on empty options")
+	}
+}
+
+func TestWithReasoning_OverwritesPrevious(t *testing.T) {
+	opts := ApplyOptions(
+		WithReasoning(ReasoningConfig{Effort: ReasoningEffortLow, BudgetTokens: 100}),
+		WithReasoning(ReasoningConfig{Effort: ReasoningEffortHigh, BudgetTokens: 50000}),
+	)
+	if opts.Reasoning.Effort != ReasoningEffortHigh {
+		t.Errorf("Effort = %q, want %q (last applied wins)", opts.Reasoning.Effort, ReasoningEffortHigh)
+	}
+	if opts.Reasoning.BudgetTokens != 50000 {
+		t.Errorf("BudgetTokens = %d, want 50000 (last applied wins)", opts.Reasoning.BudgetTokens)
+	}
+}
+
 func TestWithTemperature_OverwritesPrevious(t *testing.T) {
 	opts := ApplyOptions(
 		WithTemperature(0.5),

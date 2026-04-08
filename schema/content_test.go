@@ -37,6 +37,30 @@ func TestFilePart_PartType(t *testing.T) {
 	}
 }
 
+func TestThinkingPart_PartType(t *testing.T) {
+	p := ThinkingPart{Text: "Let me think about this..."}
+	if got := p.PartType(); got != ContentThinking {
+		t.Errorf("PartType() = %q, want %q", got, ContentThinking)
+	}
+}
+
+func TestThinkingPart_Fields(t *testing.T) {
+	p := ThinkingPart{Text: "Step 1: analyze the problem"}
+	if p.Text != "Step 1: analyze the problem" {
+		t.Errorf("Text = %q, want %q", p.Text, "Step 1: analyze the problem")
+	}
+}
+
+func TestThinkingPart_EmptyFields(t *testing.T) {
+	p := ThinkingPart{}
+	if p.Text != "" {
+		t.Errorf("Text = %q, want empty", p.Text)
+	}
+	if p.PartType() != ContentThinking {
+		t.Errorf("PartType() = %q, want %q", p.PartType(), ContentThinking)
+	}
+}
+
 func TestContentPart_Interface(t *testing.T) {
 	// All types implement ContentPart.
 	parts := []ContentPart{
@@ -45,9 +69,10 @@ func TestContentPart_Interface(t *testing.T) {
 		AudioPart{Format: "mp3"},
 		VideoPart{MimeType: "video/mp4"},
 		FilePart{Name: "file.txt"},
+		ThinkingPart{Text: "reasoning"},
 	}
 
-	expected := []ContentType{ContentText, ContentImage, ContentAudio, ContentVideo, ContentFile}
+	expected := []ContentType{ContentText, ContentImage, ContentAudio, ContentVideo, ContentFile, ContentThinking}
 
 	for i, p := range parts {
 		if got := p.PartType(); got != expected[i] {
@@ -58,11 +83,12 @@ func TestContentPart_Interface(t *testing.T) {
 
 func TestContentType_Values(t *testing.T) {
 	types := map[ContentType]string{
-		ContentText:  "text",
-		ContentImage: "image",
-		ContentAudio: "audio",
-		ContentVideo: "video",
-		ContentFile:  "file",
+		ContentText:     "text",
+		ContentImage:    "image",
+		ContentAudio:    "audio",
+		ContentVideo:    "video",
+		ContentFile:     "file",
+		ContentThinking: "thinking",
 	}
 	for ct, want := range types {
 		if string(ct) != want {

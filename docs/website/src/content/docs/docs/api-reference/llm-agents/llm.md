@@ -116,6 +116,59 @@ calls:
 | `WithToolChoice(choice ToolChoice)` | `GenerateOption` | `ToolChoiceAuto`, `ToolChoiceNone`, `ToolChoiceRequired`. |
 | `WithSpecificTool(name string)` | `GenerateOption` | Force the model to call the named tool. |
 | `WithMetadata(kv map[string]any)` | `GenerateOption` | Provider-specific options. |
+| `WithReasoning(cfg ReasoningConfig)` | `GenerateOption` | Full reasoning configuration. |
+| `WithReasoningEffort(effort ReasoningEffort)` | `GenerateOption` | Reasoning effort level. |
+| `WithReasoningBudget(tokens int)` | `GenerateOption` | Reasoning token budget. |
+
+## Reasoning Models
+
+Beluga AI supports reasoning/chain-of-thought models such as OpenAI o-series
+and Claude with extended thinking. Use `ReasoningConfig` and the associated
+functional options to control reasoning behaviour:
+
+```go
+type ReasoningEffort string
+
+const (
+    ReasoningEffortLow    ReasoningEffort = "low"
+    ReasoningEffortMedium ReasoningEffort = "medium"
+    ReasoningEffortHigh   ReasoningEffort = "high"
+)
+
+type ReasoningConfig struct {
+    Effort       ReasoningEffort
+    BudgetTokens int
+}
+```
+
+| Option | Type | Description |
+|---|---|---|
+| `WithReasoning(cfg ReasoningConfig)` | `GenerateOption` | Set the full reasoning configuration. |
+| `WithReasoningEffort(effort ReasoningEffort)` | `GenerateOption` | Set reasoning effort level (creates config if nil). |
+| `WithReasoningBudget(tokens int)` | `GenerateOption` | Set reasoning token budget (creates config if nil). |
+
+Example:
+
+```go
+resp, err := model.Generate(ctx, msgs,
+    llm.WithReasoningEffort(llm.ReasoningEffortHigh),
+    llm.WithReasoningBudget(10000),
+)
+```
+
+Reasoning tokens are tracked in `schema.Usage.ReasoningTokens`, and reasoning
+content appears as `schema.ThinkingPart` in the response's content parts.
+During streaming, reasoning deltas arrive in `schema.StreamChunk.ReasoningDelta`.
+
+Use the `OnReasoning` hook to observe reasoning deltas as they stream:
+
+```go
+hooks := llm.Hooks{
+    OnReasoning: func(ctx context.Context, delta string) {
+        fmt.Print(delta) // stream reasoning to console
+    },
+}
+```
 
 ## Middleware
 
@@ -164,6 +217,7 @@ type Hooks struct {
     AfterGenerate  func(ctx context.Context, resp *schema.AIMessage, err error)
     OnStream       func(ctx context.Context, chunk schema.StreamChunk)
     OnToolCall     func(ctx context.Context, call schema.ToolCall)
+    OnReasoning    func(ctx context.Context, delta string)
     OnError        func(ctx context.Context, err error) error
 }
 ```

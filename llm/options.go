@@ -16,6 +16,29 @@ const (
 	ToolChoiceRequired ToolChoice = "required"
 )
 
+// ReasoningEffort controls how much effort a reasoning model spends on
+// chain-of-thought before producing a final answer.
+type ReasoningEffort string
+
+const (
+	// ReasoningEffortLow requests minimal reasoning effort.
+	ReasoningEffortLow ReasoningEffort = "low"
+	// ReasoningEffortMedium requests moderate reasoning effort.
+	ReasoningEffortMedium ReasoningEffort = "medium"
+	// ReasoningEffortHigh requests maximum reasoning effort.
+	ReasoningEffortHigh ReasoningEffort = "high"
+)
+
+// ReasoningConfig configures reasoning/chain-of-thought behaviour for models
+// that support it (e.g. OpenAI o-series, Claude with extended thinking).
+type ReasoningConfig struct {
+	// Effort controls the amount of reasoning the model performs.
+	Effort ReasoningEffort
+	// BudgetTokens sets an upper bound on the number of reasoning tokens
+	// the model may use. Zero means no explicit budget.
+	BudgetTokens int
+}
+
 // ResponseFormat controls the structure of the model's output.
 type ResponseFormat struct {
 	// Type is the format type: "text", "json_object", or "json_schema".
@@ -43,6 +66,9 @@ type GenerateOptions struct {
 	// SpecificTool names a specific tool the model must call (used when
 	// ToolChoice is not one of the standard values).
 	SpecificTool string
+	// Reasoning configures reasoning/chain-of-thought behaviour. Nil means
+	// no reasoning configuration (provider default).
+	Reasoning *ReasoningConfig
 	// Metadata holds provider-specific options that don't map to standard fields.
 	Metadata map[string]any
 }
@@ -102,6 +128,35 @@ func WithToolChoice(choice ToolChoice) GenerateOption {
 func WithSpecificTool(name string) GenerateOption {
 	return func(o *GenerateOptions) {
 		o.SpecificTool = name
+	}
+}
+
+// WithReasoning sets the full reasoning configuration.
+func WithReasoning(cfg ReasoningConfig) GenerateOption {
+	return func(o *GenerateOptions) {
+		o.Reasoning = &cfg
+	}
+}
+
+// WithReasoningEffort sets the reasoning effort level, creating a
+// ReasoningConfig if one does not already exist.
+func WithReasoningEffort(effort ReasoningEffort) GenerateOption {
+	return func(o *GenerateOptions) {
+		if o.Reasoning == nil {
+			o.Reasoning = &ReasoningConfig{}
+		}
+		o.Reasoning.Effort = effort
+	}
+}
+
+// WithReasoningBudget sets the reasoning token budget, creating a
+// ReasoningConfig if one does not already exist.
+func WithReasoningBudget(tokens int) GenerateOption {
+	return func(o *GenerateOptions) {
+		if o.Reasoning == nil {
+			o.Reasoning = &ReasoningConfig{}
+		}
+		o.Reasoning.BudgetTokens = tokens
 	}
 }
 

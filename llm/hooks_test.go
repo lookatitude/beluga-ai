@@ -161,6 +161,66 @@ func TestComposeHooks_OnToolCall_Order(t *testing.T) {
 	}
 }
 
+func TestComposeHooks_OnReasoning_Order(t *testing.T) {
+	var deltas []string
+	h1 := Hooks{
+		OnReasoning: func(ctx context.Context, delta string) {
+			deltas = append(deltas, "h1:"+delta)
+		},
+	}
+	h2 := Hooks{
+		OnReasoning: func(ctx context.Context, delta string) {
+			deltas = append(deltas, "h2:"+delta)
+		},
+	}
+
+	composed := ComposeHooks(h1, h2)
+	composed.OnReasoning(context.Background(), "thinking")
+
+	if len(deltas) != 2 || deltas[0] != "h1:thinking" || deltas[1] != "h2:thinking" {
+		t.Errorf("expected [h1:thinking, h2:thinking], got %v", deltas)
+	}
+}
+
+func TestComposeHooks_OnReasoning_ReceivesDelta(t *testing.T) {
+	var gotDelta string
+	h := Hooks{
+		OnReasoning: func(ctx context.Context, delta string) {
+			gotDelta = delta
+		},
+	}
+
+	composed := ComposeHooks(h)
+	composed.OnReasoning(context.Background(), "Let me analyze this step by step")
+
+	if gotDelta != "Let me analyze this step by step" {
+		t.Errorf("expected delta %q, got %q", "Let me analyze this step by step", gotDelta)
+	}
+}
+
+func TestComposeHooks_OnReasoning_NilSkipped(t *testing.T) {
+	var called bool
+	h1 := Hooks{} // OnReasoning is nil
+	h2 := Hooks{
+		OnReasoning: func(ctx context.Context, delta string) {
+			called = true
+		},
+	}
+
+	composed := ComposeHooks(h1, h2)
+	composed.OnReasoning(context.Background(), "delta")
+
+	if !called {
+		t.Error("h2.OnReasoning should have been called")
+	}
+}
+
+func TestComposeHooks_Empty_OnReasoning(t *testing.T) {
+	composed := ComposeHooks()
+	// Should not panic on empty compose.
+	composed.OnReasoning(context.Background(), "test")
+}
+
 func TestComposeHooks_OnError_ShortCircuits(t *testing.T) {
 	replacement := errors.New("replaced")
 	var called bool
@@ -238,10 +298,11 @@ func TestComposeHooks_Empty(t *testing.T) {
 	if err := composed.BeforeGenerate(context.Background(), nil); err != nil {
 		t.Errorf("BeforeGenerate on empty compose returned error: %v", err)
 	}
-	// AfterGenerate, OnStream, OnToolCall should not panic.
+	// AfterGenerate, OnStream, OnToolCall, OnReasoning should not panic.
 	composed.AfterGenerate(context.Background(), nil, nil)
 	composed.OnStream(context.Background(), schema.StreamChunk{})
 	composed.OnToolCall(context.Background(), schema.ToolCall{})
+	composed.OnReasoning(context.Background(), "test-reasoning")
 
 	// OnError should return the original error.
 	orig := errors.New("test")

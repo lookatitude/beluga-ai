@@ -14,6 +14,10 @@ const (
 	ContentVideo ContentType = "video"
 	// ContentFile represents a generic file content part.
 	ContentFile ContentType = "file"
+	// ContentThinking represents a reasoning/thinking content part from
+	// models that expose their chain-of-thought (e.g. OpenAI o-series,
+	// Claude with extended thinking).
+	ContentThinking ContentType = "thinking"
 )
 
 // ContentPart is the interface implemented by all multimodal content types.
@@ -84,3 +88,22 @@ type FilePart struct {
 
 // PartType returns ContentFile.
 func (f FilePart) PartType() ContentType { return ContentFile }
+
+// Compile-time interface checks.
+var _ ContentPart = TextPart{}
+var _ ContentPart = ImagePart{}
+var _ ContentPart = AudioPart{}
+var _ ContentPart = VideoPart{}
+var _ ContentPart = FilePart{}
+var _ ContentPart = ThinkingPart{}
+
+// ThinkingPart holds reasoning/chain-of-thought content from models that
+// expose their internal reasoning process (e.g. OpenAI o-series, Claude
+// with extended thinking).
+type ThinkingPart struct {
+	// Text is the reasoning content produced by the model.
+	Text string
+}
+
+// PartType returns ContentThinking.
+func (t ThinkingPart) PartType() ContentType { return ContentThinking }
