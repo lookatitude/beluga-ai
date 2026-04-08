@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/memory/procedural"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -38,14 +39,22 @@ func WithGraph(g GraphStore) CompositeOption {
 	}
 }
 
+// WithProcedural sets the procedural memory tier.
+func WithProcedural(p *procedural.ProceduralMemory) CompositeOption {
+	return func(m *CompositeMemory) {
+		m.procedural = p
+	}
+}
+
 // CompositeMemory combines all memory tiers into a unified Memory
 // implementation. Each tier is optional — only configured tiers participate
 // in Save/Load/Search operations.
 type CompositeMemory struct {
-	core     *Core
-	recall   *Recall
-	archival *Archival
-	graph    GraphStore
+	core       *Core
+	recall     *Recall
+	archival   *Archival
+	graph      GraphStore
+	procedural *procedural.ProceduralMemory
 }
 
 // NewComposite creates a CompositeMemory with the given tier options.
@@ -68,6 +77,9 @@ func (m *CompositeMemory) Archival() *Archival { return m.archival }
 
 // Graph returns the graph memory store, or nil if not configured.
 func (m *CompositeMemory) Graph() GraphStore { return m.graph }
+
+// Procedural returns the procedural memory tier, or nil if not configured.
+func (m *CompositeMemory) Procedural() *procedural.ProceduralMemory { return m.procedural }
 
 // Save implements Memory. Delegates to all configured tiers. Core memory is
 // skipped (it uses explicit edits). Recall and archival both receive the
