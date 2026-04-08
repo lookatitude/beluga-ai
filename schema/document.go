@@ -17,4 +17,8 @@ type Document struct {
 	// Embedding is the vector embedding of the document content.
 	// May be nil if the document has not been embedded.
 	Embedding []float32
+	// MultiVectorEmbedding holds per-token embeddings for late interaction
+	// models such as ColBERT. Each element is a token-level vector. Nil for
+	// single-vector documents.
+	MultiVectorEmbedding [][]float32
 }
