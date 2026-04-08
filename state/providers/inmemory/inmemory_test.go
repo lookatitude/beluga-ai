@@ -363,3 +363,210 @@ func TestVariousValueTypes(t *testing.T) {
 		})
 	}
 }
+
+// --- Versioned Store Tests ---
+
+func TestGetVersioned(t *testing.T) {
+	s := New()
+	defer s.Close()
+	ctx := context.Background()
+
+	// Non-existent key returns zero version.
+	val, ver, err := s.GetVersioned(ctx, "missing")
+	require.NoError(t, err)
+	assert.Nil(t, val)
+	assert.Equal(t, uint64(0), ver)
+
+	// Set increments version.
+	require.NoError(t, s.Set(ctx, "k", "v1"))
+	val, ver, err = s.GetVersioned(ctx, "k")
+	require.NoError(t, err)
+	assert.Equal(t, "v1", val)
+	assert.Equal(t, uint64(1), ver)
+
+	// Second set increments again.
+	require.NoError(t, s.Set(ctx, "k", "v2"))
+	val, ver, err = s.GetVersioned(ctx, "k")
+	require.NoError(t, err)
+	assert.Equal(t, "v2", val)
+	assert.Equal(t, uint64(2), ver)
+}
+
+func TestGetVersioned_ContextCancelled(t *testing.T) {
+	s := New()
+	defer s.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, _, err := s.GetVersioned(ctx, "k")
+	assert.Error(t, err)
+}
+
+func TestGetVersioned_StoreClosed(t *testing.T) {
+	s := New()
+	require.NoError(t, s.Close())
+
+	_, _, err := s.GetVersioned(context.Background(), "k")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "closed")
+}
+
+func TestCompareAndSwap_Success(t *testing.T) {
+	s := New()
+	defer s.Close()
+	ctx := context.Background()
+
+	// CAS on new key with expectedVersion=0.
+	newVer, err := s.CompareAndSwap(ctx, "k", 0, "first")
+	require.NoError(t, err)
+	assert.Equal(t, uint64(1), newVer)
+
+	val, ver, err := s.GetVersioned(ctx, "k")
+	require.NoError(t, err)
+	assert.Equal(t, "first", val)
+	assert.Equal(t, uint64(1), ver)
+
+	// CAS with correct version.
+	newVer, err = s.CompareAndSwap(ctx, "k", 1, "second")
+	require.NoError(t, err)
+	assert.Equal(t, uint64(2), newVer)
+
+	val, _, err = s.GetVersioned(ctx, "k")
+	require.NoError(t, err)
+	assert.Equal(t, "second", val)
+}
+
+func TestCompareAndSwap_VersionMismatch(t *testing.T) {
+	s := New()
+	defer s.Close()
+	ctx := context.Background()
+
+	require.NoError(t, s.Set(ctx, "k", "v1"))
+
+	// CAS with wrong version.
+	_, err := s.CompareAndSwap(ctx, "k", 0, "nope")
+	assert.ErrorIs(t, err, state.ErrVersionMismatch)
+
+	// Value should be unchanged.
+	val, _, err := s.GetVersioned(ctx, "k")
+	require.NoError(t, err)
+	assert.Equal(t, "v1", val)
+}
+
+func TestCompareAndSwap_ContextCancelled(t *testing.T) {
+	s := New()
+	defer s.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err := s.CompareAndSwap(ctx, "k", 0, "v")
+	assert.Error(t, err)
+}
+
+func TestCompareAndSwap_StoreClosed(t *testing.T) {
+	s := New()
+	require.NoError(t, s.Close())
+
+	_, err := s.CompareAndSwap(context.Background(), "k", 0, "v")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "closed")
+}
+
+func TestVersionInWatchNotification(t *testing.T) {
+	s := New()
+	defer s.Close()
+	ctx := context.Background()
+
+	ch, err := s.Watch(ctx, "k")
+	require.NoError(t, err)
+
+	require.NoError(t, s.Set(ctx, "k", "v1"))
+
+	select {
+	case change := <-ch:
+		assert.Equal(t, uint64(1), change.Version)
+	case <-time.After(time.Second):
+		t.Fatal("timeout")
+	}
+
+	require.NoError(t, s.Set(ctx, "k", "v2"))
+
+	select {
+	case change := <-ch:
+		assert.Equal(t, uint64(2), change.Version)
+	case <-time.After(time.Second):
+		t.Fatal("timeout")
+	}
+}
+
+func TestCompareAndSwap_ConcurrentContention(t *testing.T) {
+	s := New()
+	defer s.Close()
+	ctx := context.Background()
+
+	// Initialize key.
+	require.NoError(t, s.Set(ctx, "counter", 0))
+
+	const goroutines = 20
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+
+	successes := make(chan bool, goroutines*100)
+
+	for g := 0; g < goroutines; g++ {
+		go func() {
+			defer wg.Done()
+			for i := 0; i < 100; i++ {
+				val, ver, err := s.GetVersioned(ctx, "counter")
+				if err != nil {
+					continue
+				}
+				n, _ := val.(int)
+				_, err = s.CompareAndSwap(ctx, "counter", ver, n+1)
+				if err == nil {
+					successes <- true
+				}
+			}
+		}()
+	}
+
+	wg.Wait()
+	close(successes)
+
+	successCount := 0
+	for range successes {
+		successCount++
+	}
+
+	// Final value should equal number of successful CAS operations.
+	val, _, err := s.GetVersioned(ctx, "counter")
+	require.NoError(t, err)
+	assert.Equal(t, successCount, val.(int))
+}
+
+func TestDeleteIncrementsVersion(t *testing.T) {
+	s := New()
+	defer s.Close()
+	ctx := context.Background()
+
+	ch, err := s.Watch(ctx, "k")
+	require.NoError(t, err)
+
+	require.NoError(t, s.Set(ctx, "k", "v1"))
+	<-ch // consume set notification
+
+	require.NoError(t, s.Delete(ctx, "k"))
+
+	select {
+	case change := <-ch:
+		assert.Equal(t, state.OpDelete, change.Op)
+		assert.Equal(t, uint64(2), change.Version) // version 1 from set + 1
+	case <-time.After(time.Second):
+		t.Fatal("timeout")
+	}
+}
+
+// Compile-time check for VersionedStore.
+var _ state.VersionedStore = (*Store)(nil)
