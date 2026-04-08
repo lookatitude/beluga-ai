@@ -108,6 +108,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -120,12 +121,22 @@ jobs:
           config: .cliff.toml
           args: --output CHANGELOG.md ${{ github.event_name == 'workflow_dispatch' && format('--tag {0}', inputs.tag) || '' }}
 
-      - name: Commit CHANGELOG.md
-        uses: stefanzweifel/git-auto-commit-action@v7
+      - name: Create PR for CHANGELOG.md
+        uses: peter-evans/create-pull-request@v8
         with:
-          commit_message: "chore(release): update CHANGELOG.md for ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }} [skip ci]"
-          file_pattern: CHANGELOG.md
-          branch: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || 'main' }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ci/update-changelog
+          base: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || 'main' }}
+          delete-branch: true
+          title: "chore(release): update CHANGELOG.md for ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}"
+          commit-message: "chore(release): update CHANGELOG.md for ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }} [skip ci]"
+          body: |
+            Auto-generated changelog update for release ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}.
+
+            This PR was created automatically by the release workflow because branch protection
+            prevents direct pushes to main.
+          add-paths: |
+            CHANGELOG.md
 
   release:
     name: GoReleaser
