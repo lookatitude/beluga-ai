@@ -200,12 +200,13 @@ func (pfw *ParallelFileWalker) worker(ctx context.Context) {
 func (pfw *ParallelFileWalker) loadDocument(ctx context.Context, filePath string) (schema.Document, error) {
     data, err := os.ReadFile(filePath)
     if err != nil {
-        return nil, err
+        return schema.Document{}, err
     }
 
-    return schema.NewDocument(string(data), map[string]string{
-        "source": filePath,
-    }), nil
+    return schema.Document{
+        Content:  string(data),
+        Metadata: map[string]any{"source": filePath},
+    }, nil
 }
 
 // matchesExtension checks if a file matches allowed extensions.

@@ -166,7 +166,10 @@ type TraceExporter interface {
 Langfuse provides open-source LLM observability with prompt management and evaluation.
 
 ```go
-import _ "github.com/lookatitude/beluga-ai/o11y/providers/langfuse"
+import (
+    "github.com/lookatitude/beluga-ai/config"
+    _ "github.com/lookatitude/beluga-ai/o11y/providers/langfuse"
+)
 
 exporter, err := o11y.NewTraceExporter("langfuse", config.ProviderConfig{
     Options: map[string]any{
@@ -180,7 +183,10 @@ exporter, err := o11y.NewTraceExporter("langfuse", config.ProviderConfig{
 ### LangSmith (Opik)
 
 ```go
-import _ "github.com/lookatitude/beluga-ai/o11y/providers/opik"
+import (
+    "github.com/lookatitude/beluga-ai/config"
+    _ "github.com/lookatitude/beluga-ai/o11y/providers/opik"
+)
 
 exporter, err := o11y.NewTraceExporter("opik", config.ProviderConfig{
     Options: map[string]any{
@@ -195,7 +201,10 @@ exporter, err := o11y.NewTraceExporter("opik", config.ProviderConfig{
 Arize Phoenix provides open-source LLM tracing with embedding visualization.
 
 ```go
-import _ "github.com/lookatitude/beluga-ai/o11y/providers/phoenix"
+import (
+    "github.com/lookatitude/beluga-ai/config"
+    _ "github.com/lookatitude/beluga-ai/o11y/providers/phoenix"
+)
 
 exporter, err := o11y.NewTraceExporter("phoenix", config.ProviderConfig{
     Options: map[string]any{

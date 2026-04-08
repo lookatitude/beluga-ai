@@ -47,6 +47,7 @@ import (
     "log"
 
     "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/tool"
 
@@ -70,7 +71,7 @@ func main() {
     )
 
     // Create the LLM
-    model, err := llm.New("openai", llm.ProviderConfig{
+    model, err := llm.New("openai", config.ProviderConfig{
         APIKey: "your-api-key",
         Model:  "gpt-4o",
     })

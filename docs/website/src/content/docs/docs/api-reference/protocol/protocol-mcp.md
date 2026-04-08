@@ -58,13 +58,37 @@ result, err := client.CallTool(ctx, "search", map[string]any{"query": "hello"})
 
 ## Bridge Function
 
-FromMCP connects to an MCP server and returns its tools as native tool.Tool
-instances, enabling seamless integration of remote MCP tools into Beluga agents:
+`tool.FromMCP` connects to an MCP server and returns its tools as native
+`tool.Tool` instances, enabling seamless integration of remote MCP tools
+into Beluga agents. It returns the tools, a connected `*MCPClient` for
+reuse, and an error:
 
 ```go
-tools, err := mcp.FromMCP(ctx, "http://localhost:8080/mcp")
-agent := agent.New("assistant", agent.WithTools(tools...))
+import (
+    "context"
+    "fmt"
+
+    "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/tool"
+)
+
+tools, client, err := tool.FromMCP(ctx, "http://localhost:8080/mcp")
+if err != nil {
+    return fmt.Errorf("connect to MCP server: %w", err)
+}
+defer func() {
+    if closeErr := client.Close(ctx); closeErr != nil {
+        fmt.Println("MCP close error:", closeErr)
+    }
+}()
+
+myAgent := agent.New("assistant", agent.WithTools(tools...))
 ```
+
+The returned `*MCPClient` can be reused to make additional calls to the
+same server without re-initializing the connection. `Close` takes a
+context and sends an HTTP DELETE to terminate the MCP session. It is
+idempotent.
 
 ## Key Types
 

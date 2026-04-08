@@ -49,6 +49,7 @@ import (
     "context"
     "fmt"
 
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/memory"
     "github.com/lookatitude/beluga-ai/rag/embedding"
     "github.com/lookatitude/beluga-ai/rag/vectorstore"
@@ -126,7 +127,7 @@ func (m *IDEContextManager) IndexCode(ctx context.Context, projectID, filePath, 
     }
 
     // Store in vector database
-    if err := m.store.Add(ctx, []schema.Document{doc}, [][]float64{embeddings[0]}); err != nil {
+    if err := m.store.Add(ctx, []schema.Document{doc}, [][]float32{embeddings[0]}); err != nil {
         return fmt.Errorf("store code: %w", err)
     }
 
@@ -156,13 +157,13 @@ Retrieve relevant code context for developer queries:
 ```go
 func (m *IDEContextManager) GetRelevantContext(ctx context.Context, projectID, query string, topK int) (string, error) {
     // Generate query embedding
-    queryEmbeddings, err := m.embedder.Embed(ctx, []string{query})
+    queryEmbedding, err := m.embedder.EmbedSingle(ctx, query)
     if err != nil {
         return "", fmt.Errorf("embed query: %w", err)
     }
 
     // Search with project filter
-    results, err := m.store.SimilaritySearch(ctx, queryEmbeddings[0],
+    results, err := m.store.SimilaritySearch(ctx, queryEmbedding,
         vectorstore.WithTopK(topK),
         vectorstore.WithMetadataFilter(map[string]interface{}{
             "project_id": projectID,
@@ -189,6 +190,7 @@ Provide AI assistance grounded in project context:
 
 ```go
 import (
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/llm"
     _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
@@ -206,33 +208,33 @@ func (m *IDEContextManager) ProvideAssistance(ctx context.Context, projectID, qu
         return "", fmt.Errorf("get memory: %w", err)
     }
 
-    history, err := projectMem.Load(ctx)
+    rawHistory, err := projectMem.Load(ctx, projectID)
     if err != nil {
         return "", fmt.Errorf("load history: %w", err)
     }
+    // Convert stored items back to schema.Message for context assembly
+    history := make([]schema.Message, 0, len(rawHistory))
+    for _, item := range rawHistory {
+        if msg, ok := item.(schema.Message); ok {
+            history = append(history, msg)
+        }
+    }
 
     // Build messages with context
+    sysPrompt := "You are an AI assistant for a software development project.\n\nProject Context:\n" +
+        codeContext + "\n\nProvide helpful, context-aware assistance based on the project code."
     messages := []schema.Message{
-        &schema.SystemMessage{Parts: []schema.ContentPart{
-            schema.TextPart{Text: `You are an AI assistant for a software development project.
-
-Project Context:
-` + codeContext + `
-
-Provide helpful, context-aware assistance based on the project code.`},
-        }},
+        schema.NewSystemMessage(sysPrompt),
     }
 
     // Add conversation history
     messages = append(messages, history...)
 
     // Add current query
-    messages = append(messages, &schema.HumanMessage{Parts: []schema.ContentPart{
-        schema.TextPart{Text: query},
-    }})
+    messages = append(messages, schema.NewHumanMessage(query))
 
     // Generate response
-    model, err := llm.New("openai", llm.ProviderConfig{Model: "gpt-4o"})
+    model, err := llm.New("openai", config.ProviderConfig{Model: "gpt-4o"})
     if err != nil {
         return "", fmt.Errorf("create model: %w", err)
     }
@@ -242,11 +244,11 @@ Provide helpful, context-aware assistance based on the project code.`},
         return "", fmt.Errorf("generate response: %w", err)
     }
 
-    response := resp.Parts[0].(schema.TextPart).Text
+    response := resp.Text()
 
-    // Save to memory
-    if err := projectMem.Save(ctx, []schema.Message{
-        &schema.HumanMessage{Parts: []schema.ContentPart{schema.TextPart{Text: query}}},
+    // Save to memory (session-scoped; projectID is used as the session key)
+    if err := projectMem.Save(ctx, projectID, []any{
+        schema.NewHumanMessage(query),
         resp,
     }); err != nil {
         // Log error but return response

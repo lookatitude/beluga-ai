@@ -58,23 +58,22 @@ import (
     "fmt"
 
     "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/tool"
-    "github.com/lookatitude/beluga-ai/schema"
 
     _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
 
 // createBillingAgent builds an agent specialized in billing inquiries.
 func createBillingAgent(ctx context.Context) (agent.Agent, error) {
-    model, err := llm.New("openai", nil)
+    model, err := llm.New("openai", config.ProviderConfig{Model: "gpt-4o"})
     if err != nil {
         return nil, fmt.Errorf("create model: %w", err)
     }
 
     // Domain-specific tools
-    refundTool := tool.NewFuncTool[RefundInput](
-        "process_refund",
+    refundTool := tool.NewFuncTool("process_refund",
         "Process a refund for a customer order",
         func(ctx context.Context, input RefundInput) (*tool.Result, error) {
             // Call billing system API
@@ -86,8 +85,7 @@ func createBillingAgent(ctx context.Context) (agent.Agent, error) {
         },
     )
 
-    invoiceTool := tool.NewFuncTool[InvoiceInput](
-        "lookup_invoice",
+    invoiceTool := tool.NewFuncTool("lookup_invoice",
         "Look up invoice details by invoice or customer ID",
         func(ctx context.Context, input InvoiceInput) (*tool.Result, error) {
             invoice, err := billingAPI.GetInvoice(ctx, input.InvoiceID)
@@ -98,20 +96,16 @@ func createBillingAgent(ctx context.Context) (agent.Agent, error) {
         },
     )
 
-    billingAgent, err := agent.New(
-        agent.WithID("billing-agent"),
+    billingAgent := agent.New("billing-agent",
         agent.WithPersona(agent.Persona{
             Role:      "Billing Support Specialist",
             Goal:      "Resolve billing inquiries accurately and efficiently",
             Backstory: "You handle refunds, invoice questions, and payment issues. " +
                 "Always verify the customer's identity before processing financial transactions.",
         }),
-        agent.WithModel(model),
-        agent.WithTools(refundTool, invoiceTool),
+        agent.WithLLM(model),
+        agent.WithTools([]tool.Tool{refundTool, invoiceTool}),
     )
-    if err != nil {
-        return nil, fmt.Errorf("create billing agent: %w", err)
-    }
 
     return billingAgent, nil
 }
@@ -153,8 +147,7 @@ func createTriageAgent(ctx context.Context) (agent.Agent, error) {
     }
 
     // Triage agent with child agents — handoff tools are auto-generated
-    triageAgent, err := agent.New(
-        agent.WithID("triage-agent"),
+    triageAgent := agent.New("triage-agent",
         agent.WithPersona(agent.Persona{
             Role: "Customer Support Triage",
             Goal: "Classify customer inquiries and route to the right specialist",
@@ -162,12 +155,9 @@ func createTriageAgent(ctx context.Context) (agent.Agent, error) {
                 "whether the issue is billing, technical, or general, then " +
                 "transfer to the appropriate specialist agent.",
         }),
-        agent.WithModel(model),
-        agent.WithChildren(billingAgent, techAgent, generalAgent),
+        agent.WithLLM(model),
+        agent.WithChildren([]agent.Agent{billingAgent, techAgent, generalAgent}),
     )
-    if err != nil {
-        return nil, fmt.Errorf("create triage agent: %w", err)
-    }
 
     return triageAgent, nil
 }

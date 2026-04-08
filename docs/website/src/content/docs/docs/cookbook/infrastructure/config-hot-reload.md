@@ -1,22 +1,28 @@
 ---
 title: "Config Hot-Reload in Production"
-description: "Recipe for updating Go service configuration at runtime without restarts — rotate API keys, toggle features, and adjust limits with zero downtime."
+description: "Recipe for updating Go service configuration at runtime without restarts — rotate model settings, toggle features, and adjust limits with zero downtime."
 head:
   - tag: meta
     attrs:
       name: keywords
-      content: "Beluga AI, config hot-reload, Go zero downtime, runtime configuration, feature flags, API key rotation, production recipe"
+      content: "Beluga AI, config hot-reload, Go zero downtime, runtime configuration, feature flags, production recipe"
 ---
 
 ## Problem
 
-You need to update configuration values (API keys, model settings, feature flags) in a running production service without restarting the application or losing active requests. This is a critical challenge in production environments where downtime is unacceptable. Restarting services to apply config changes means closing active connections, terminating in-flight requests, and forcing clients to reconnect. For AI systems processing long-running agent workflows or streaming responses, this disruption is particularly problematic. Additionally, configuration changes often need to be rolled out quickly—such as rotating compromised API keys, adjusting rate limits under load, or switching model providers during an outage—without waiting for deployment windows.
+You need to update configuration values (model settings, feature flags, resource limits) in a running production service without restarting the application or losing active requests.
 
 ## Solution
 
-Implement a file watcher that monitors configuration files for changes and reloads them atomically, notifying registered listeners. This approach works because Beluga AI's config package supports loading from files, and Go's file system events allow detecting changes without polling. The key design principle is validate-before-apply: new configurations are loaded and validated before they replace the current configuration, preventing invalid configs from breaking running services. The listener pattern decouples configuration reloading from component logic, allowing each subsystem (LLM providers, agents, databases) to react to config changes independently. This design respects Beluga's Watch pattern from the config package and ensures thread-safe access to configuration state.
+Use `config.NewFileWatcher` to poll a JSON configuration file for changes and reload atomically using `config.Load[T]`. Validate the new configuration with `config.Validate` before replacing the current one so invalid files never disrupt a running service.
 
-The solution uses Go's sync.RWMutex for atomic config updates, allowing multiple concurrent readers while ensuring exclusive write access during reloads. This prevents race conditions where a reader might see a partially-updated configuration. By validating new configurations before applying them, the system maintains availability even when invalid config files are written to disk—the old, working configuration stays active until a valid replacement arrives.
+## Why This Matters
+
+Restarting services to apply config changes closes active connections and terminates in-flight requests. For AI systems processing long-running agent workflows or streaming responses, this disruption is costly. Hot-reload lets you adjust rate limits under load, switch model names, or toggle feature flags without a deployment window.
+
+The validate-before-apply pattern ensures that a corrupted or incomplete config file never replaces the working configuration. The old config stays active until a valid replacement arrives.
+
+**Security note:** Never store sensitive credentials (API keys, passwords, tokens) in config files on disk. Use environment variables or a secrets manager for credentials and load them via `config.LoadFromEnv` or `config.MergeEnv`. Hot-reload config files should contain only non-sensitive operational settings.
 
 ## Code Example
 
@@ -24,256 +30,159 @@ The solution uses Go's sync.RWMutex for atomic config updates, allowing multiple
 package main
 
 import (
-    "context"
-    "fmt"
-    "log"
-    "os"
-    "sync"
-    "time"
+	"context"
+	"fmt"
+	"log/slog"
+	"sync"
+	"time"
 
-    "go.opentelemetry.io/otel"
-    "go.opentelemetry.io/otel/attribute"
-    "go.opentelemetry.io/otel/trace"
-
-    "github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/config"
 )
 
-var tracer = otel.Tracer("beluga.config.hotreload")
-
-// ConfigReloader manages hot-reloading of configuration
-type ConfigReloader struct {
-    configPath    string
-    currentConfig *config.Config
-    listeners     []ConfigChangeListener
-    mu            sync.RWMutex
-    watcher       *FileWatcher
+// AppConfig is the application-specific configuration type.
+// Use JSON struct tags; config.Load[T] reads .json files.
+// Sensitive values (API keys) must come from environment variables, not this file.
+type AppConfig struct {
+	Model     string `json:"model"      default:"gpt-4o"`
+	MaxTokens int    `json:"max_tokens" default:"2048" min:"1" max:"32768"`
+	RateLimit int    `json:"rate_limit" default:"60"   min:"1" max:"10000"`
 }
 
-// ConfigChangeListener is notified when config changes
-type ConfigChangeListener interface {
-    OnConfigChange(oldConfig, newConfig *config.Config) error
+// ConfigReloader manages hot-reloading of typed configuration.
+type ConfigReloader[T any] struct {
+	mu      sync.RWMutex
+	current T
+	path    string
 }
 
-// NewConfigReloader creates a new config reloader
-func NewConfigReloader(configPath string) (*ConfigReloader, error) {
-    cfg, err := config.LoadFromFile(configPath)
-    if err != nil {
-        return nil, fmt.Errorf("failed to load initial config: %w", err)
-    }
+// NewConfigReloader loads the initial config and starts watching the file.
+// The returned cancel function stops the watcher.
+func NewConfigReloader[T any](ctx context.Context, path string) (*ConfigReloader[T], context.CancelFunc, error) {
+	cfg, err := config.Load[T](path)
+	if err != nil {
+		return nil, nil, fmt.Errorf("initial config load: %w", err)
+	}
 
-    reloader := &ConfigReloader{
-        configPath:    configPath,
-        currentConfig: cfg,
-        listeners:     []ConfigChangeListener{},
-    }
+	cr := &ConfigReloader[T]{current: cfg, path: path}
 
-    watcher, err := NewFileWatcher(configPath, reloader.onConfigFileChanged)
-    if err != nil {
-        return nil, fmt.Errorf("failed to create file watcher: %w", err)
-    }
-    reloader.watcher = watcher
+	watchCtx, cancel := context.WithCancel(ctx)
+	watcher := config.NewFileWatcher(path, 2*time.Second)
 
-    return reloader, nil
+	go func() {
+		if err := watcher.Watch(watchCtx, func(newRaw any) {
+			cr.reload()
+		}); err != nil && watchCtx.Err() == nil {
+			slog.Error("config watcher stopped unexpectedly", "error", err)
+		}
+		watcher.Close()
+	}()
+
+	return cr, cancel, nil
 }
 
-// RegisterListener registers a listener for config changes
-func (cr *ConfigReloader) RegisterListener(listener ConfigChangeListener) {
-    cr.mu.Lock()
-    defer cr.mu.Unlock()
-    cr.listeners = append(cr.listeners, listener)
+// Get returns the current configuration. Safe for concurrent use.
+func (cr *ConfigReloader[T]) Get() T {
+	cr.mu.RLock()
+	defer cr.mu.RUnlock()
+	return cr.current
 }
 
-// GetConfig returns the current configuration (thread-safe)
-func (cr *ConfigReloader) GetConfig() *config.Config {
-    cr.mu.RLock()
-    defer cr.mu.RUnlock()
-    return cr.currentConfig
-}
+// reload reads the config file, validates, and atomically replaces the current config.
+func (cr *ConfigReloader[T]) reload() {
+	newCfg, err := config.Load[T](cr.path)
+	if err != nil {
+		slog.Warn("config reload failed — keeping previous config", "error", err)
+		return
+	}
 
-// onConfigFileChanged handles config file changes
-func (cr *ConfigReloader) onConfigFileChanged(ctx context.Context) error {
-    ctx, span := tracer.Start(ctx, "reloader.on_config_changed")
-    defer span.End()
+	cr.mu.Lock()
+	cr.current = newCfg
+	cr.mu.Unlock()
 
-    span.SetAttributes(attribute.String("config.path", cr.configPath))
-
-    newConfig, err := config.LoadFromFile(cr.configPath)
-    if err != nil {
-        span.RecordError(err)
-        span.SetStatus(trace.StatusError, "failed to reload config")
-        log.Printf("Failed to reload config: %v", err)
-        return err
-    }
-
-    if err := config.ValidateConfig(newConfig); err != nil {
-        span.RecordError(err)
-        span.SetStatus(trace.StatusError, "invalid config")
-        log.Printf("Reloaded config is invalid: %v", err)
-        return err
-    }
-
-    cr.mu.Lock()
-    oldConfig := cr.currentConfig
-    cr.mu.Unlock()
-
-    for _, listener := range cr.listeners {
-        if err := listener.OnConfigChange(oldConfig, newConfig); err != nil {
-            span.RecordError(err)
-            log.Printf("Listener error on config change: %v", err)
-        }
-    }
-
-    cr.mu.Lock()
-    cr.currentConfig = newConfig
-    cr.mu.Unlock()
-
-    span.SetStatus(trace.StatusOK, "config reloaded successfully")
-    log.Printf("Config reloaded successfully from %s", cr.configPath)
-
-    return nil
-}
-
-// Stop stops the config reloader
-func (cr *ConfigReloader) Stop() {
-    if cr.watcher != nil {
-        cr.watcher.Stop()
-    }
-}
-
-// FileWatcher watches a file for changes
-type FileWatcher struct {
-    filePath string
-    callback func(context.Context) error
-    stopCh   chan struct{}
-    doneCh   chan struct{}
-}
-
-// NewFileWatcher creates a new file watcher
-func NewFileWatcher(filePath string, callback func(context.Context) error) (*FileWatcher, error) {
-    watcher := &FileWatcher{
-        filePath: filePath,
-        callback: callback,
-        stopCh:   make(chan struct{}),
-        doneCh:   make(chan struct{}),
-    }
-
-    go watcher.watch()
-    return watcher, nil
-}
-
-// watch monitors the file for changes
-func (fw *FileWatcher) watch() {
-    defer close(fw.doneCh)
-
-    ctx := context.Background()
-    lastModTime := time.Time{}
-
-    ticker := time.NewTicker(1 * time.Second)
-    defer ticker.Stop()
-
-    for {
-        select {
-        case <-fw.stopCh:
-            return
-        case <-ticker.C:
-            info, err := os.Stat(fw.filePath)
-            if err != nil {
-                continue
-            }
-
-            modTime := info.ModTime()
-            if modTime.After(lastModTime) {
-                lastModTime = modTime
-
-                // Debounce: wait to ensure file write is complete
-                time.Sleep(100 * time.Millisecond)
-
-                if err := fw.callback(ctx); err != nil {
-                    log.Printf("Error in config change callback: %v", err)
-                }
-            }
-        }
-    }
-}
-
-// Stop stops the file watcher
-func (fw *FileWatcher) Stop() {
-    close(fw.stopCh)
-    <-fw.doneCh
-}
-
-// LLMConfigListener updates LLM providers when config changes
-type LLMConfigListener struct {
-    llmProvider interface{}
-}
-
-func (l *LLMConfigListener) OnConfigChange(oldConfig, newConfig *config.Config) error {
-    log.Printf("LLM config changed, updating provider...")
-    return nil
+	slog.Info("config reloaded", "path", cr.path)
 }
 
 func main() {
-    reloader, err := NewConfigReloader("./config.yaml")
-    if err != nil {
-        log.Fatalf("Failed to create config reloader: %v", err)
-    }
-    defer reloader.Stop()
+	ctx := context.Background()
 
-    reloader.RegisterListener(&LLMConfigListener{})
+	reloader, cancel, err := NewConfigReloader[AppConfig](ctx, "./config.json")
+	if err != nil {
+		slog.Error("config reloader failed to start", "error", err)
+		return
+	}
+	defer cancel()
 
-    cfg := reloader.GetConfig()
-    fmt.Printf("Config loaded successfully\n")
+	cfg := reloader.Get()
+	fmt.Printf("Loaded config: model=%s max_tokens=%d\n", cfg.Model, cfg.MaxTokens)
 
-    // Config will automatically reload when file changes
-    select {}
+	// Config is automatically reloaded when config.json changes on disk.
+	// Call reloader.Get() on every request to pick up the latest values.
+	select {}
 }
 ```
 
 ## Explanation
 
-1. **Atomic config updates** — `sync.RWMutex` ensures thread-safe access to the current config. Readers can access concurrently, but updates are exclusive. This matters because without atomicity, concurrent goroutines could read partially-updated configuration state, leading to inconsistent behavior. For example, an agent might read a new model name but an old API key, causing authentication failures. The RWMutex pattern allows high-throughput config reads during normal operation while ensuring safe updates during reloads.
+1. **`config.Load[T](path)`** — Generic loader that reads a `.json` file, applies `default` struct tag values for zero-value fields, checks `required:"true"` tags, and enforces `min`/`max` constraints on numeric fields. Returns a typed value, not a map or `any`.
 
-2. **Validation before reload** — The new config is validated before applying it. If validation fails, the old config is kept and an error is logged. This prevents invalid configs from breaking the running service. This design choice is critical because configuration files can be corrupted during writes, contain syntax errors, or have semantically invalid values (like negative timeouts or missing required fields). By validating first, the system maintains availability even when bad configs are written to disk. The old configuration remains active until a valid replacement arrives, ensuring zero-downtime operation.
+2. **`config.NewFileWatcher(path, interval)`** — Returns a `config.Watcher` that polls the file every `interval` using SHA-256 hashing to detect changes without re-reading identical files on every tick.
 
-3. **Listener pattern** — Components that depend on config can register as listeners. When config changes, they're notified and can update themselves. This decouples config reloading from component logic. This matters because different components need different reactions to config changes: LLM providers might need to re-initialize clients with new API keys, rate limiters might need to adjust thresholds, and feature flags might enable new code paths. The listener pattern allows each component to handle its own update logic independently, avoiding a centralized "reload everything" approach that would be fragile and hard to maintain.
+3. **`watcher.Watch(ctx, callback)`** — Blocks until `ctx` is cancelled. The callback receives the raw file bytes as `any`. Because `config.Load[T]` reads from disk by path, the callback simply triggers a reload rather than parsing the bytes directly.
 
-Always validate new configs before applying them. Invalid configs should never replace valid ones, even if the file changes.
+4. **Validate-before-apply** — `config.Load[T]` always validates before returning. An invalid config file returns an error; the reloader logs a warning and keeps the previous config active.
+
+5. **`sync.RWMutex` for atomic updates** — Multiple concurrent readers can call `Get()` without blocking each other. The reload goroutine acquires an exclusive write lock only during the pointer swap, keeping the critical section minimal.
 
 ## Testing
 
 ```go
+import (
+	"context"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+)
+
 func TestConfigReloader_HotReload(t *testing.T) {
-    tempDir := t.TempDir()
-    configFile := filepath.Join(tempDir, "config.yaml")
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, "config.json")
 
-    initialConfig := `
-llm_providers:
-  - name: "test"
-    provider: "openai"
-    model_name: "gpt-3.5-turbo"
-`
-    os.WriteFile(configFile, []byte(initialConfig), 0644)
+	initial := AppConfig{Model: "gpt-4o", MaxTokens: 1024, RateLimit: 60}
+	writeJSON(t, cfgPath, initial)
 
-    reloader, err := NewConfigReloader(configFile)
-    require.NoError(t, err)
-    defer reloader.Stop()
+	ctx := context.Background()
+	reloader, cancel, err := NewConfigReloader[AppConfig](ctx, cfgPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer cancel()
 
-    cfg := reloader.GetConfig()
-    require.Len(t, cfg.LLMProviders, 1)
+	if reloader.Get().Model != "gpt-4o" {
+		t.Fatal("initial config not loaded")
+	}
 
-    updatedConfig := `
-llm_providers:
-  - name: "test"
-    provider: "openai"
-    model_name: "gpt-4"
-`
-    os.WriteFile(configFile, []byte(updatedConfig), 0644)
+	updated := AppConfig{Model: "gpt-4o-mini", MaxTokens: 2048, RateLimit: 120}
+	writeJSON(t, cfgPath, updated)
 
-    // Wait for reload
-    time.Sleep(2 * time.Second)
+	// Wait for the watcher to detect and apply the change.
+	time.Sleep(3 * time.Second)
 
-    cfg = reloader.GetConfig()
-    require.Equal(t, "gpt-4", cfg.LLMProviders[0].ModelName)
+	if got := reloader.Get().Model; got != "gpt-4o-mini" {
+		t.Errorf("expected gpt-4o-mini after reload, got %s", got)
+	}
+}
+
+func writeJSON(t *testing.T, path string, v any) {
+	t.Helper()
+	data, err := json.Marshal(v)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if err := os.WriteFile(path, data, 0600); err != nil {
+		t.Fatalf("write: %v", err)
+	}
 }
 ```
 
@@ -281,26 +190,27 @@ llm_providers:
 
 ### Watch Multiple Files
 
-Watch multiple config files and merge them:
+Run one `ConfigReloader` per file and merge results at the call site:
 
 ```go
-type MultiFileReloader struct {
-    files []string
-    // ...
+type MultiSourceConfig struct {
+	Base      AppConfig
+	Overrides AppConfig
 }
 ```
 
 ### Config Versioning
 
-Track config versions and rollback on errors:
+Track which config version is active for audit logs:
 
 ```go
-type VersionedConfig struct {
-    Version int
-    Config  *config.Config
+type VersionedConfig[T any] struct {
+	Version int
+	Loaded  time.Time
+	Config  T
 }
 ```
 
 ## Related Recipes
 
-- **[Masking Secrets in Logs](./config-secret-masking)** — Secure config logging
+- **[Masking Secrets in Logs](./config-secret-masking)** — Log configuration values without leaking sensitive data

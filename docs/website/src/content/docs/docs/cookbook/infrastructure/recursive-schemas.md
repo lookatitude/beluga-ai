@@ -142,7 +142,8 @@ func (gv *GraphValidator) validateMessage(ctx context.Context, msg schema.Messag
 	if msg == nil {
 		return fmt.Errorf("message is nil")
 	}
-	if msg.GetContent() == "" {
+	// GetContent returns []schema.ContentPart. An empty slice means no content.
+	if len(msg.GetContent()) == 0 {
 		return fmt.Errorf("message content is empty")
 	}
 	return nil

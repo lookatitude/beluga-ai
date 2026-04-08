@@ -83,7 +83,7 @@ func (cr *CohereReranker) RerankDocuments(ctx context.Context, query string, doc
     // Extract document texts
     texts := make([]string, len(documents))
     for i, doc := range documents {
-        texts[i] = doc.GetContent()
+        texts[i] = doc.Content
     }
 
     // Call Cohere rerank API

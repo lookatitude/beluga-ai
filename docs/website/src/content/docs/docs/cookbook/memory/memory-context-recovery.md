@@ -167,11 +167,18 @@ func (wcr *WindowContextRecovery) createSummary(messages []schema.Message) strin
     summary := fmt.Sprintf("Window with %d messages", len(messages))
 
     for _, msg := range messages {
-        content := msg.GetContent()
-        if len(content) > 50 {
-            content = content[:50] + "..."
+        // Extract text from ContentParts; GetContent() returns []schema.ContentPart.
+        var text string
+        for _, part := range msg.GetContent() {
+            if tp, ok := part.(schema.TextPart); ok {
+                text += tp.Text
+            }
         }
-        summary += fmt.Sprintf("; %s: %s", msg.GetType(), content)
+        if len(text) > 50 {
+            text = text[:50] + "..."
+        }
+        // GetRole() returns schema.Role, not a string type — it is printable as %s.
+        summary += fmt.Sprintf("; %s: %s", msg.GetRole(), text)
     }
 
     return summary

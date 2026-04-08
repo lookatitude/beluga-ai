@@ -31,6 +31,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/memory"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -118,14 +119,14 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	inner, _ := memory.New("inmemory", nil)
+	inner, _ := memory.New("recall", config.ProviderConfig{Provider: "recall"})
 	mem := NewMemoryWithTTL(inner, 24*time.Hour)
 	mem.StartCleanup(ctx, 1*time.Hour)
 
 	// Use mem as a normal Memory — old entries expire automatically.
 	err := mem.Save(ctx,
-		&schema.HumanMessage{Content: "Hello"},
-		&schema.AIMessage{Content: "Hi there!"},
+		schema.NewHumanMessage("Hello"),
+		schema.NewAIMessage("Hi there!"),
 	)
 	if err != nil {
 		slog.Error("save failed", "error", err)
@@ -153,6 +154,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/memory"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -208,14 +210,14 @@ func (w *WindowMemory) Clear(ctx context.Context) error {
 func main() {
 	ctx := context.Background()
 
-	inner, _ := memory.New("inmemory", nil)
+	inner, _ := memory.New("recall", config.ProviderConfig{Provider: "recall"})
 	mem := NewWindowMemory(inner, 10) // Keep last 10 turns.
 
 	// Simulate a long conversation.
 	for i := 0; i < 50; i++ {
 		err := mem.Save(ctx,
-			&schema.HumanMessage{Content: fmt.Sprintf("Message %d", i)},
-			&schema.AIMessage{Content: fmt.Sprintf("Response %d", i)},
+			schema.NewHumanMessage(fmt.Sprintf("Message %d", i)),
+			schema.NewAIMessage(fmt.Sprintf("Response %d", i)),
 		)
 		if err != nil {
 			slog.Error("save failed", "error", err)
@@ -255,8 +257,8 @@ import (
 	"github.com/lookatitude/beluga-ai/memory"
 	"github.com/lookatitude/beluga-ai/schema"
 
-	// Import providers — each registers via init().
-	_ "github.com/lookatitude/beluga-ai/memory/stores/inmemory"
+	// Import memory providers — each registers itself via init().
+	// Only import providers you depend on at runtime.
 	_ "github.com/lookatitude/beluga-ai/memory/stores/redis"
 	_ "github.com/lookatitude/beluga-ai/memory/stores/postgres"
 )
@@ -264,22 +266,25 @@ import (
 func main() {
 	ctx := context.Background()
 
-	// Select provider from environment or config.
+	// Select provider from environment. "recall" uses an in-memory store by default.
 	provider := os.Getenv("MEMORY_PROVIDER")
 	if provider == "" {
-		provider = "inmemory" // Default for development.
+		provider = "recall" // Default: in-memory recall tier.
 	}
 
+	// config.ProviderConfig is a struct, not a map.
+	// Provider-specific options go in the Options field.
 	cfg := config.ProviderConfig{
-		"provider": provider,
+		Provider: provider,
+		Options:  map[string]any{},
 	}
 
-	// Add provider-specific config.
+	// Add provider-specific options.
 	switch provider {
 	case "redis":
-		cfg["address"] = os.Getenv("REDIS_URL")
+		cfg.Options["address"] = os.Getenv("REDIS_URL")
 	case "postgres":
-		cfg["connection_string"] = os.Getenv("DATABASE_URL")
+		cfg.Options["connection_string"] = os.Getenv("DATABASE_URL")
 	}
 
 	mem, err := memory.New(provider, cfg)
@@ -294,8 +299,8 @@ func main() {
 
 	// Use mem as normal — behavior is identical regardless of provider.
 	err = mem.Save(ctx,
-		&schema.HumanMessage{Content: "Test message"},
-		&schema.AIMessage{Content: "Test response"},
+		schema.NewHumanMessage("Test message"),
+		schema.NewAIMessage("Test response"),
 	)
 	if err != nil {
 		slog.Error("save failed", "error", err)
@@ -338,11 +343,14 @@ func main() {
 	ctx := context.Background()
 
 	// Create a composite memory with graph tier enabled.
-	mem, err := memory.New("composite", map[string]any{
-		"core":     map[string]any{"provider": "inmemory"},
-		"recall":   map[string]any{"provider": "inmemory"},
-		"archival": map[string]any{"provider": "inmemory"},
-		"graph":    map[string]any{"provider": "inmemory"},
+	// config.ProviderConfig.Options holds provider-specific settings.
+	mem, err := memory.New("composite", config.ProviderConfig{
+		Provider: "composite",
+		Options: map[string]any{
+			"core":     "recall",
+			"recall":   "recall",
+			"archival": "archival",
+		},
 	})
 	if err != nil {
 		slog.Error("memory creation failed", "error", err)
@@ -361,8 +369,8 @@ func main() {
 
 	for _, turn := range turns {
 		err := mem.Save(ctx,
-			&schema.HumanMessage{Content: turn.input},
-			&schema.AIMessage{Content: turn.output},
+			schema.NewHumanMessage(turn.input),
+			schema.NewAIMessage(turn.output),
 		)
 		if err != nil {
 			slog.Error("save failed", "error", err)
@@ -453,28 +461,35 @@ func (c *CompressingMemory) prependSummaries(msgs []schema.Message) []schema.Mes
 	if len(c.summaries) == 0 {
 		return msgs
 	}
-	summaryMsg := &schema.SystemMessage{
-		Content: "Previous conversation summary:\n" + strings.Join(c.summaries, "\n---\n"),
-	}
+	summaryMsg := schema.NewSystemMessage(
+		"Previous conversation summary:\n" + strings.Join(c.summaries, "\n---\n"),
+	)
 	return append([]schema.Message{summaryMsg}, msgs...)
 }
 
 func (c *CompressingMemory) summarize(ctx context.Context, msgs []schema.Message) (string, error) {
 	var content strings.Builder
 	for _, msg := range msgs {
-		content.WriteString(msg.GetContent() + "\n")
+		// GetContent() returns []schema.ContentPart. Extract text parts.
+		for _, part := range msg.GetContent() {
+			if tp, ok := part.(schema.TextPart); ok {
+				content.WriteString(tp.Text)
+				content.WriteByte('\n')
+			}
+		}
 	}
 
 	prompt := []schema.Message{
-		&schema.SystemMessage{Content: "Summarize this conversation concisely, preserving key facts and decisions."},
-		&schema.HumanMessage{Content: content.String()},
+		schema.NewSystemMessage("Summarize this conversation concisely, preserving key facts and decisions."),
+		schema.NewHumanMessage(content.String()),
 	}
 
 	resp, err := c.model.Generate(ctx, prompt)
 	if err != nil {
 		return "", err
 	}
-	return resp.Content, nil
+	// resp is *schema.AIMessage; use Text() to extract content.
+	return resp.Text(), nil
 }
 
 func (c *CompressingMemory) Save(ctx context.Context, input, output schema.Message) error {
@@ -493,7 +508,7 @@ func (c *CompressingMemory) Clear(ctx context.Context) error {
 func main() {
 	ctx := context.Background()
 
-	inner, _ := memory.New("inmemory", nil)
+	inner, _ := memory.New("recall", config.ProviderConfig{Provider: "recall"})
 
 	// Compress when history exceeds 20 messages, keep last 10 intact.
 	mem := NewCompressingMemory(inner, nil /* model */, 20)
@@ -528,18 +543,14 @@ import (
 	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/memory"
 	"github.com/lookatitude/beluga-ai/schema"
-	_ "github.com/lookatitude/beluga-ai/memory/stores/inmemory"
 )
 
 func main() {
 	ctx := context.Background()
 
 	// Create a composite memory that combines all three tiers.
-	mem, err := memory.New("composite", config.ProviderConfig{
-		"core":     map[string]any{"provider": "inmemory"},
-		"recall":   map[string]any{"provider": "inmemory"},
-		"archival": map[string]any{"provider": "inmemory"},
-	})
+	// "composite" is the registered provider name. Tiers default to in-memory.
+	mem, err := memory.New("composite", config.ProviderConfig{Provider: "composite"})
 	if err != nil {
 		slog.Error("memory creation failed", "error", err)
 		return
@@ -547,8 +558,8 @@ func main() {
 
 	// Save adds to recall memory (and optionally archival).
 	err = mem.Save(ctx,
-		&schema.HumanMessage{Content: "My name is Alice and I work on the Beluga project."},
-		&schema.AIMessage{Content: "Nice to meet you, Alice! Noted about Beluga."},
+		schema.NewHumanMessage("My name is Alice and I work on the Beluga project."),
+		schema.NewAIMessage("Nice to meet you, Alice! Noted about Beluga."),
 	)
 	if err != nil {
 		slog.Error("save failed", "error", err)
@@ -595,7 +606,6 @@ import (
 	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/memory"
 	"github.com/lookatitude/beluga-ai/schema"
-	_ "github.com/lookatitude/beluga-ai/memory/stores/inmemory"
 )
 
 // SessionMemoryManager creates and caches per-session memory instances.
@@ -655,15 +665,15 @@ func (m *SessionMemoryManager) Cleanup(ctx context.Context, sessionID string) er
 func main() {
 	ctx := context.Background()
 
-	manager := NewSessionMemoryManager("inmemory", nil)
+	manager := NewSessionMemoryManager("recall", config.ProviderConfig{Provider: "recall"})
 
 	// Each session gets isolated memory.
 	mem1, _ := manager.GetOrCreate("session-alice")
 	mem2, _ := manager.GetOrCreate("session-bob")
 
 	err := mem1.Save(ctx,
-		&schema.HumanMessage{Content: "I prefer Go"},
-		&schema.AIMessage{Content: "Noted!"},
+		schema.NewHumanMessage("I prefer Go"),
+		schema.NewAIMessage("Noted!"),
 	)
 	if err != nil {
 		slog.Error("save failed", "error", err)
@@ -701,6 +711,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/memory"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -780,9 +791,9 @@ func (pm *PriorityMemory) scoreMessage(msg schema.Message, index, total int) flo
 	// Base weight by message type.
 	var weight float64
 	switch msg.GetRole() {
-	case "system":
+	case schema.RoleSystem:
 		weight = pm.priority.CoreWeight
-	case "human", "ai":
+	case schema.RoleHuman, schema.RoleAI:
 		weight = pm.priority.RecallWeight
 	default:
 		weight = pm.priority.ArchivalWeight
@@ -812,7 +823,7 @@ func (pm *PriorityMemory) Clear(ctx context.Context) error {
 func main() {
 	ctx := context.Background()
 
-	inner, _ := memory.New("inmemory", nil)
+	inner, _ := memory.New("recall", config.ProviderConfig{Provider: "recall"})
 	mem := NewPriorityMemory(inner, DefaultPriority(), 10)
 
 	// System/core memories will be weighted 3x over archival.

@@ -14,241 +14,253 @@ You need to execute multiple agent steps in parallel when they don't depend on e
 
 ## Solution
 
-Implement a parallel step executor that identifies independent steps, executes them concurrently with proper synchronization, and merges results. This works because many agent steps (like tool calls or data retrieval) can run independently, and Go's concurrency primitives allow safe parallel execution.
+Use `core.Parallel` for simple fan-out, or implement a dependency-aware executor that identifies independent steps and runs them concurrently. This works because many agent steps (tool calls, data retrieval) have no data dependencies on each other, and Go's concurrency primitives allow safe parallel execution.
 
 ## Why This Matters
 
 Agent workflows often consist of steps with varying dependencies. A naive sequential approach executes all steps one after another, even when many could run concurrently. For example, if an agent needs to search a database, call a weather API, and query a calendar service, running these sequentially triples the wall-clock time compared to running them in parallel.
 
-The challenge is correctly identifying which steps are independent and which have data dependencies. This recipe uses a dependency graph with topological ordering to determine which steps can safely run concurrently at each phase. Steps without dependencies run immediately, while dependent steps wait only for their specific prerequisites -- not for all prior steps to complete. This approach maximizes parallelism while maintaining correctness.
-
-Go's concurrency model (goroutines, `sync.WaitGroup`, channels) is well-suited for this pattern because goroutine creation is cheap, and mutexes protect shared result storage without significant overhead. The `sync.RWMutex` used here allows multiple goroutines to read completed results concurrently while writes are serialized, avoiding contention on the results map.
+Go's concurrency model (goroutines, `sync.WaitGroup`) is well-suited for this pattern because goroutine creation is cheap, and `sync.RWMutex` protects shared result storage without significant overhead.
 
 ## Code Example
+
+### Simple Parallel Execution with `core.Parallel`
+
+For independent steps with the same input, use `core.Parallel` directly:
 
 ```go
 package main
 
 import (
-    "context"
-    "fmt"
-    "log"
-    "sync"
+	"context"
+	"fmt"
+	"iter"
+	"log/slog"
 
-    "go.opentelemetry.io/otel"
-    "go.opentelemetry.io/otel/attribute"
-    "go.opentelemetry.io/otel/trace"
-
-    "github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/core"
 )
 
-var tracer = otel.Tracer("beluga.agents.parallel")
-
-// Step represents an agent step
-type Step struct {
-    ID      string
-    Action  core.Runnable
-    Depends []string // IDs of steps this depends on
+// stepRunnable implements core.Runnable for a named processing step.
+type stepRunnable struct {
+	name string
 }
 
-// ParallelStepExecutor executes steps in parallel
-type ParallelStepExecutor struct {
-    steps    []Step
-    results  map[string]interface{}
-    mu       sync.RWMutex
-    wg       sync.WaitGroup
+func (s *stepRunnable) Invoke(ctx context.Context, input any, opts ...core.Option) (any, error) {
+	return fmt.Sprintf("%s processed: %v", s.name, input), nil
 }
 
-// NewParallelStepExecutor creates a new executor
-func NewParallelStepExecutor(steps []Step) *ParallelStepExecutor {
-    return &ParallelStepExecutor{
-        steps:   steps,
-        results: make(map[string]interface{}),
-    }
-}
-
-// Execute executes steps in parallel respecting dependencies
-func (pse *ParallelStepExecutor) Execute(ctx context.Context) (map[string]interface{}, error) {
-    ctx, span := tracer.Start(ctx, "parallel_executor.execute")
-    defer span.End()
-
-    span.SetAttributes(attribute.Int("step_count", len(pse.steps)))
-
-    // Build dependency graph
-    graph := pse.buildDependencyGraph()
-
-    // Execute in topological order
-    executed := make(map[string]bool)
-    for len(executed) < len(pse.steps) {
-        // Find steps ready to execute
-        ready := pse.findReadySteps(graph, executed)
-
-        if len(ready) == 0 {
-            return nil, fmt.Errorf("circular dependency detected")
-        }
-
-        // Execute ready steps in parallel
-        var wg sync.WaitGroup
-        errCh := make(chan error, len(ready))
-
-        for _, stepID := range ready {
-            wg.Add(1)
-            go func(id string) {
-                defer wg.Done()
-
-                step := pse.findStep(id)
-                result, err := step.Action.Invoke(ctx, nil)
-                if err != nil {
-                    errCh <- fmt.Errorf("step %s failed: %w", id, err)
-                    return
-                }
-
-                pse.mu.Lock()
-                pse.results[id] = result
-                executed[id] = true
-                pse.mu.Unlock()
-            }(stepID)
-        }
-
-        wg.Wait()
-        close(errCh)
-
-        if len(errCh) > 0 {
-            err := <-errCh
-            span.RecordError(err)
-            span.SetStatus(trace.StatusError, err.Error())
-            return nil, err
-        }
-    }
-
-    span.SetStatus(trace.StatusOK, "all steps executed")
-    return pse.results, nil
-}
-
-// buildDependencyGraph builds a dependency graph
-func (pse *ParallelStepExecutor) buildDependencyGraph() map[string][]string {
-    graph := make(map[string][]string)
-    for _, step := range pse.steps {
-        graph[step.ID] = step.Depends
-    }
-    return graph
-}
-
-// findReadySteps finds steps that can be executed (dependencies satisfied)
-func (pse *ParallelStepExecutor) findReadySteps(graph map[string][]string, executed map[string]bool) []string {
-    ready := []string{}
-
-    for stepID, deps := range graph {
-        if executed[stepID] {
-            continue
-        }
-
-        allSatisfied := true
-        for _, dep := range deps {
-            if !executed[dep] {
-                allSatisfied = false
-                break
-            }
-        }
-
-        if allSatisfied {
-            ready = append(ready, stepID)
-        }
-    }
-
-    return ready
-}
-
-// findStep finds a step by ID
-func (pse *ParallelStepExecutor) findStep(id string) *Step {
-    for i := range pse.steps {
-        if pse.steps[i].ID == id {
-            return &pse.steps[i]
-        }
-    }
-    return nil
+func (s *stepRunnable) Stream(ctx context.Context, input any, opts ...core.Option) iter.Seq2[any, error] {
+	return func(yield func(any, error) bool) {
+		result, err := s.Invoke(ctx, input, opts...)
+		yield(result, err)
+	}
 }
 
 func main() {
-    ctx := context.Background()
+	ctx := context.Background()
 
-    // Create steps
-    steps := []Step{
-        {ID: "step1", Action: &MockRunnable{}, Depends: []string{}},
-        {ID: "step2", Action: &MockRunnable{}, Depends: []string{}},
-        {ID: "step3", Action: &MockRunnable{}, Depends: []string{"step1", "step2"}},
-    }
+	// Create independent processing runnables.
+	nodeA := &stepRunnable{name: "A"}
+	nodeB := &stepRunnable{name: "B"}
+	nodeC := &stepRunnable{name: "C"}
 
-    executor := NewParallelStepExecutor(steps)
-    results, err := executor.Execute(ctx)
-    if err != nil {
-        log.Fatalf("Execution failed: %v", err)
-    }
+	// Parallel fans out to all runnables and returns []any results.
+	parallel := core.Parallel(nodeA, nodeB, nodeC)
 
-    fmt.Printf("Executed %d steps\n", len(results))
+	result, err := parallel.Invoke(ctx, "hello")
+	if err != nil {
+		slog.Error("parallel execution failed", "error", err)
+		return
+	}
+
+	results, _ := result.([]any)
+	for i, r := range results {
+		fmt.Printf("Node %d: %v\n", i, r)
+	}
+}
+```
+
+### Dependency-Aware Parallel Executor
+
+For workflows where some steps depend on others, use a dependency graph with topological ordering:
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
+)
+
+// Step represents an agent step with dependencies.
+type Step struct {
+	ID      string
+	Action  core.Runnable
+	Depends []string // IDs of steps this step depends on.
 }
 
-type MockRunnable struct{}
-
-func (m *MockRunnable) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
-    return "result", nil
+// ParallelStepExecutor executes steps in parallel respecting dependencies.
+type ParallelStepExecutor struct {
+	steps   []Step
+	results map[string]any
+	mu      sync.RWMutex
 }
 
-func (m *MockRunnable) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
-    return nil, nil
+// NewParallelStepExecutor creates a new executor.
+func NewParallelStepExecutor(steps []Step) *ParallelStepExecutor {
+	return &ParallelStepExecutor{
+		steps:   steps,
+		results: make(map[string]any),
+	}
 }
 
-func (m *MockRunnable) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
-    return nil, nil
+// Execute runs steps in topological order, maximizing parallelism.
+func (pse *ParallelStepExecutor) Execute(ctx context.Context) (map[string]any, error) {
+	executed := make(map[string]bool)
+
+	for len(executed) < len(pse.steps) {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+
+		ready := pse.findReadySteps(executed)
+		if len(ready) == 0 {
+			return nil, fmt.Errorf("circular dependency detected in step graph")
+		}
+
+		var wg sync.WaitGroup
+		errCh := make(chan error, len(ready))
+
+		for _, stepID := range ready {
+			wg.Add(1)
+			go func(id string) {
+				defer wg.Done()
+
+				step := pse.findStep(id)
+				if step == nil {
+					errCh <- fmt.Errorf("step %q not found", id)
+					return
+				}
+
+				result, err := step.Action.Invoke(ctx, nil)
+				if err != nil {
+					errCh <- fmt.Errorf("step %q failed: %w", id, err)
+					return
+				}
+
+				pse.mu.Lock()
+				pse.results[id] = result
+				executed[id] = true
+				pse.mu.Unlock()
+			}(stepID)
+		}
+
+		wg.Wait()
+		close(errCh)
+
+		if err, ok := <-errCh; ok {
+			return nil, err
+		}
+	}
+
+	return pse.results, nil
+}
+
+// findReadySteps returns step IDs whose dependencies are all satisfied.
+func (pse *ParallelStepExecutor) findReadySteps(executed map[string]bool) []string {
+	pse.mu.RLock()
+	defer pse.mu.RUnlock()
+
+	var ready []string
+	for _, step := range pse.steps {
+		if executed[step.ID] {
+			continue
+		}
+		allSatisfied := true
+		for _, dep := range step.Depends {
+			if !executed[dep] {
+				allSatisfied = false
+				break
+			}
+		}
+		if allSatisfied {
+			ready = append(ready, step.ID)
+		}
+	}
+	return ready
+}
+
+// findStep finds a step by ID.
+func (pse *ParallelStepExecutor) findStep(id string) *Step {
+	for i := range pse.steps {
+		if pse.steps[i].ID == id {
+			return &pse.steps[i]
+		}
+	}
+	return nil
+}
+
+func main() {
+	ctx := context.Background()
+
+	mkRunnable := func(name string) core.Runnable {
+		return &stepRunnable{name: name}
+	}
+
+	steps := []Step{
+		{ID: "step1", Action: mkRunnable("step1"), Depends: []string{}},
+		{ID: "step2", Action: mkRunnable("step2"), Depends: []string{}},
+		{ID: "step3", Action: mkRunnable("step3"), Depends: []string{"step1", "step2"}},
+	}
+
+	executor := NewParallelStepExecutor(steps)
+	results, err := executor.Execute(ctx)
+	if err != nil {
+		slog.Error("execution failed", "error", err)
+		return
+	}
+
+	fmt.Printf("Executed %d steps\n", len(results))
+	for id, result := range results {
+		fmt.Printf("  %s: %v\n", id, result)
+	}
 }
 ```
 
 ## Explanation
 
-1. **Dependency resolution** -- The executor builds a dependency graph and runs steps in topological order. Steps without dependencies can run immediately, while dependent steps wait for their prerequisites. Circular dependencies are detected and reported as errors, preventing infinite loops.
+1. **`core.Parallel` for simple fan-out** -- When all steps receive the same input and have no dependencies, `core.Parallel` provides the simplest implementation. It runs all runnables concurrently via goroutines and returns a `[]any` slice of results in the same order as the input runnables.
 
-2. **Parallel execution** -- Steps that are ready at the same time execute concurrently using goroutines. This maximizes parallelism while respecting dependencies. The error channel collects failures from any goroutine, and the first error terminates the execution phase.
+2. **Dependency resolution** -- The `ParallelStepExecutor` builds a dependency graph and executes steps in topological order. Steps without unsatisfied dependencies run immediately in parallel; steps with dependencies wait for their prerequisites. Circular dependencies are detected when no ready steps are found.
 
-3. **Result synchronization** -- A `sync.RWMutex` protects the shared results map and the executed tracking map. This prevents race conditions when concurrent goroutines store their results. The lock is held only for the brief duration of the map write, minimizing contention.
+3. **Result synchronization** -- A `sync.RWMutex` protects the shared results map. The read lock in `findReadySteps` allows concurrent readers while writes are serialized, minimizing contention.
 
-4. **Observability** -- OpenTelemetry spans track the overall execution and report step counts, making it straightforward to identify bottlenecks in production workflows.
+4. **Error propagation** -- The error channel collects failures from any goroutine. After `wg.Wait()`, the first error (if any) is returned. The context is checked at the start of each phase to respect cancellation.
 
 ## Testing
 
 ```go
 func TestParallelStepExecutor_ExecutesInParallel(t *testing.T) {
-    steps := []Step{
-        {ID: "step1", Action: &MockRunnable{}, Depends: []string{}},
-        {ID: "step2", Action: &MockRunnable{}, Depends: []string{}},
-    }
+	mkRunnable := func(name string) core.Runnable {
+		return &stepRunnable{name: name}
+	}
+	steps := []Step{
+		{ID: "step1", Action: mkRunnable("step1"), Depends: []string{}},
+		{ID: "step2", Action: mkRunnable("step2"), Depends: []string{}},
+	}
 
-    executor := NewParallelStepExecutor(steps)
-    results, err := executor.Execute(context.Background())
-
-    require.NoError(t, err)
-    require.Len(t, results, 2)
-}
-```
-
-## Variations
-
-### Step Timeout
-
-Add timeouts to individual steps to prevent slow operations from blocking the entire workflow:
-
-```go
-func (pse *ParallelStepExecutor) ExecuteWithTimeout(ctx context.Context, stepTimeout time.Duration) (map[string]interface{}, error) {
-    // Add timeout per step
-}
-```
-
-### Step Retry
-
-Retry failed steps before propagating the error, useful when steps call unreliable external services:
-
-```go
-func (pse *ParallelStepExecutor) ExecuteWithRetry(ctx context.Context, maxRetries int) (map[string]interface{}, error) {
-    // Retry logic
+	executor := NewParallelStepExecutor(steps)
+	results, err := executor.Execute(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(results) != 2 {
+		t.Errorf("expected 2 results, got %d", len(results))
+	}
 }
 ```
 

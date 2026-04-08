@@ -43,7 +43,8 @@ import (
     "fmt"
     "strings"
 
-    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -100,16 +101,16 @@ Each specialist has a dedicated system prompt and potentially a different model.
 ```go
 func createSpecialists(ctx context.Context) (map[string]llm.ChatModel, error) {
     coder, err := llm.New("openai", config.ProviderConfig{
-        "api_key": os.Getenv("OPENAI_API_KEY"),
-        "model":   "gpt-4o",
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+        Model:  "gpt-4o",
     })
     if err != nil {
         return nil, err
     }
 
     writer, err := llm.New("openai", config.ProviderConfig{
-        "api_key": os.Getenv("OPENAI_API_KEY"),
-        "model":   "gpt-4o",
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+        Model:  "gpt-4o",
     })
     if err != nil {
         return nil, err

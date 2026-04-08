@@ -14,15 +14,13 @@ You need to manage conversation history that grows beyond token limits, intellig
 
 ## Solution
 
-Implement a history trimming strategy that prioritizes recent messages, preserves system messages and summaries, and uses semantic similarity to keep the most relevant historical context. This works because you can analyze message importance, create summaries of trimmed content, and maintain a sliding window of recent messages.
+Implement a history trimmer that prioritizes recent messages, always preserves system messages, and optionally summarizes older messages using an LLM call. When summarization is unavailable or produces a result that is still too large, aggressive trimming removes the oldest non-system messages until the history fits.
 
 ## Why This Matters
 
-Every LLM has a finite context window, and conversation history grows without bound. Without management, a chatbot that works perfectly for 10 exchanges will fail silently on exchange 50 when the history exceeds the model's token limit. The naive solution -- truncating from the beginning -- loses the system prompt and early context that may be critical to the conversation's purpose.
+Every LLM has a finite context window, and conversation history grows without bound. Without management, a chatbot that works perfectly for 10 exchanges will fail silently on exchange 50 when the history exceeds the model's token limit. Simple truncation from the beginning loses the system prompt and early context that defines the agent's behavior.
 
-The three-tier trimming strategy in this recipe addresses this by categorizing messages into system messages (always preserved), recent messages (preserved as the active conversation window), and old messages (candidates for summarization or removal). System messages contain the agent's instructions and personality, so losing them changes behavior. Recent messages contain the immediate conversational context that the user expects the agent to remember. Old messages contain historical context that may or may not be relevant to the current topic.
-
-Summarization is the key differentiator between intelligent trimming and simple truncation. When old messages are summarized rather than discarded, the agent retains awareness of what was discussed earlier without paying the full token cost. The summarizer itself is an LLM call, which adds latency and cost, so it should only be invoked when the history actually exceeds the token budget. The aggressive trim fallback ensures the conversation always stays within limits even when summarization is unavailable or insufficient -- this is the safety net that prevents API errors from oversized requests.
+The three-tier strategy (preserve system messages → keep recent messages → summarize or drop old messages) ensures the most valuable context survives trimming. Summarization compresses potentially thousands of tokens into a concise recap so the agent retains awareness of earlier discussion without paying the full token cost.
 
 ## Code Example
 
@@ -30,231 +28,251 @@ Summarization is the key differentiator between intelligent trimming and simple 
 package main
 
 import (
-    "context"
-    "fmt"
-    "log"
+	"context"
+	"fmt"
+	"log/slog"
+	"strings"
 
-    "go.opentelemetry.io/otel"
-    "go.opentelemetry.io/otel/attribute"
-    "go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
-    "github.com/lookatitude/beluga-ai/llm"
-    "github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/llm"
+	"github.com/lookatitude/beluga-ai/schema"
 )
 
 var tracer = otel.Tracer("beluga.chatmodels.history_trimming")
 
-// HistoryTrimmer manages conversation history with intelligent trimming
+// HistoryTrimmer manages conversation history with intelligent trimming.
 type HistoryTrimmer struct {
-    maxTokens  int
-    keepSystem bool
-    keepRecent int
-    summarizer llm.ChatModel
+	maxTokens  int
+	keepRecent int
+	summarizer llm.ChatModel // Optional. Pass nil to skip summarization.
 }
 
-// NewHistoryTrimmer creates a new history trimmer
-func NewHistoryTrimmer(maxTokens int, keepRecent int, keepSystem bool, summarizer llm.ChatModel) *HistoryTrimmer {
-    return &HistoryTrimmer{
-        maxTokens:  maxTokens,
-        keepSystem: keepSystem,
-        keepRecent: keepRecent,
-        summarizer: summarizer,
-    }
+// NewHistoryTrimmer creates a new history trimmer.
+// maxTokens: approximate token budget. keepRecent: number of non-system messages to always retain.
+func NewHistoryTrimmer(maxTokens, keepRecent int, summarizer llm.ChatModel) *HistoryTrimmer {
+	return &HistoryTrimmer{
+		maxTokens:  maxTokens,
+		keepRecent: keepRecent,
+		summarizer: summarizer,
+	}
 }
 
-// TrimHistory trims history to fit token limits
+// TrimHistory trims messages to fit the token budget.
 func (ht *HistoryTrimmer) TrimHistory(ctx context.Context, messages []schema.Message) ([]schema.Message, error) {
-    ctx, span := tracer.Start(ctx, "history_trimmer.trim")
-    defer span.End()
+	ctx, span := tracer.Start(ctx, "history_trimmer.trim")
+	defer span.End()
 
-    span.SetAttributes(
-        attribute.Int("input_message_count", len(messages)),
-        attribute.Int("max_tokens", ht.maxTokens),
-    )
+	span.SetAttributes(
+		attribute.Int("input_message_count", len(messages)),
+		attribute.Int("max_tokens", ht.maxTokens),
+	)
 
-    // Estimate tokens
-    totalTokens := ht.estimateTokens(messages)
+	if ht.estimateTokens(messages) <= ht.maxTokens {
+		span.SetAttributes(attribute.Bool("trimming_needed", false))
+		span.SetStatus(trace.StatusOK, "no trimming needed")
+		return messages, nil
+	}
 
-    if totalTokens <= ht.maxTokens {
-        span.SetAttributes(attribute.Bool("trimming_needed", false))
-        span.SetStatus(trace.StatusOK, "no trimming needed")
-        return messages, nil
-    }
+	systemMsgs, recentMsgs, oldMsgs := ht.categorize(messages)
 
-    // Separate system and recent messages
-    systemMsgs, recentMsgs, oldMsgs := ht.categorizeMessages(messages)
+	// Start with the must-keep messages.
+	trimmed := append(systemMsgs, recentMsgs...)
 
-    // Keep system messages if requested
-    trimmed := []schema.Message{}
-    if ht.keepSystem {
-        trimmed = append(trimmed, systemMsgs...)
-    }
+	// Attempt to inject a summary of old messages if there is budget.
+	usedTokens := ht.estimateTokens(trimmed)
+	remainingTokens := ht.maxTokens - usedTokens
 
-    // Keep recent messages
-    trimmed = append(trimmed, recentMsgs...)
+	if len(oldMsgs) > 0 && remainingTokens > 100 && ht.summarizer != nil {
+		summary, err := ht.summarize(ctx, oldMsgs)
+		if err == nil {
+			summaryTokens := ht.estimateTokens([]schema.Message{summary})
+			if summaryTokens <= remainingTokens {
+				// Insert summary between system messages and recent messages.
+				trimmed = append(systemMsgs, append([]schema.Message{summary}, recentMsgs...)...)
+			}
+		} else {
+			slog.WarnContext(ctx, "summarization failed, skipping", "error", err)
+		}
+	}
 
-    // Calculate tokens used
-    usedTokens := ht.estimateTokens(trimmed)
-    remainingTokens := ht.maxTokens - usedTokens
+	// Safety net: if still too large, drop oldest non-system messages.
+	if ht.estimateTokens(trimmed) > ht.maxTokens {
+		trimmed = ht.aggressiveTrim(trimmed)
+	}
 
-    // Summarize old messages if we have space and summarizer
-    if len(oldMsgs) > 0 && remainingTokens > 100 && ht.summarizer != nil {
-        summary, err := ht.summarizeMessages(ctx, oldMsgs)
-        if err == nil && ht.estimateTokens([]schema.Message{summary}) <= remainingTokens {
-            summarySlice := []schema.Message{summary}
-            trimmed = append(systemMsgs, append(summarySlice, recentMsgs...)...)
-        }
-    }
-
-    // If still too large, aggressively trim recent messages
-    trimmed = ht.aggressiveTrim(trimmed)
-
-    span.SetAttributes(
-        attribute.Int("output_message_count", len(trimmed)),
-        attribute.Int("trimmed_count", len(messages)-len(trimmed)),
-    )
-    span.SetStatus(trace.StatusOK, "history trimmed")
-
-    return trimmed, nil
+	span.SetAttributes(
+		attribute.Int("output_message_count", len(trimmed)),
+		attribute.Int("trimmed_count", len(messages)-len(trimmed)),
+	)
+	span.SetStatus(trace.StatusOK, "history trimmed")
+	return trimmed, nil
 }
 
-// categorizeMessages categorizes messages into system, recent, and old
-func (ht *HistoryTrimmer) categorizeMessages(messages []schema.Message) ([]schema.Message, []schema.Message, []schema.Message) {
-    systemMsgs := []schema.Message{}
-    recentMsgs := []schema.Message{}
-    oldMsgs := []schema.Message{}
+// categorize splits messages into system, recent, and old buckets.
+func (ht *HistoryTrimmer) categorize(messages []schema.Message) (system, recent, old []schema.Message) {
+	for _, msg := range messages {
+		if msg.GetRole() == schema.RoleSystem {
+			system = append(system, msg)
+		}
+	}
 
-    for i, msg := range messages {
-        if msg.GetType() == "system" {
-            systemMsgs = append(systemMsgs, msg)
-        } else if i >= len(messages)-ht.keepRecent {
-            recentMsgs = append(recentMsgs, msg)
-        } else {
-            oldMsgs = append(oldMsgs, msg)
-        }
-    }
+	nonSystem := make([]schema.Message, 0, len(messages))
+	for _, msg := range messages {
+		if msg.GetRole() != schema.RoleSystem {
+			nonSystem = append(nonSystem, msg)
+		}
+	}
 
-    return systemMsgs, recentMsgs, oldMsgs
+	cutoff := len(nonSystem) - ht.keepRecent
+	if cutoff < 0 {
+		cutoff = 0
+	}
+	old = nonSystem[:cutoff]
+	recent = nonSystem[cutoff:]
+	return
 }
 
-// summarizeMessages creates a summary of old messages
-func (ht *HistoryTrimmer) summarizeMessages(ctx context.Context, messages []schema.Message) (schema.Message, error) {
-    ctx, span := tracer.Start(ctx, "history_trimmer.summarize")
-    defer span.End()
+// summarize creates a brief summary of old messages via an LLM call.
+func (ht *HistoryTrimmer) summarize(ctx context.Context, messages []schema.Message) (schema.Message, error) {
+	ctx, span := tracer.Start(ctx, "history_trimmer.summarize")
+	defer span.End()
 
-    content := "Summarize the following conversation history:\n\n"
-    for _, msg := range messages {
-        content += fmt.Sprintf("%s: %s\n", msg.GetType(), msg.GetContent())
-    }
+	var sb strings.Builder
+	sb.WriteString("Summarize the following conversation history in 2-3 sentences:\n\n")
+	for _, msg := range messages {
+		// Use the typed Text() method to extract text from ContentPart slices.
+		switch m := msg.(type) {
+		case *schema.HumanMessage:
+			fmt.Fprintf(&sb, "Human: %s\n", m.Text())
+		case *schema.AIMessage:
+			fmt.Fprintf(&sb, "AI: %s\n", m.Text())
+		case *schema.SystemMessage:
+			fmt.Fprintf(&sb, "System: %s\n", m.Text())
+		default:
+			fmt.Fprintf(&sb, "[%s message]\n", msg.GetRole())
+		}
+	}
 
-    summaryPrompt := []schema.Message{
-        schema.NewSystemMessage("You are a conversation summarizer. Create a concise summary that preserves key information."),
-        schema.NewHumanMessage(content),
-    }
+	prompt := []schema.Message{
+		schema.NewSystemMessage("You are a conversation summarizer. Create a concise summary that preserves key facts and decisions."),
+		schema.NewHumanMessage(sb.String()),
+	}
 
-    response, err := ht.summarizer.Generate(ctx, summaryPrompt)
-    if err != nil {
-        span.RecordError(err)
-        span.SetStatus(trace.StatusError, err.Error())
-        return nil, err
-    }
+	response, err := ht.summarizer.Generate(ctx, prompt)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(trace.StatusError, err.Error())
+		return nil, err
+	}
 
-    summary := schema.NewSystemMessage("Previous conversation summary: " + response.GetContent())
-    span.SetStatus(trace.StatusOK, "summary created")
-
-    return summary, nil
+	// response is *schema.AIMessage; extract text via the Text() method.
+	summaryText := response.Text()
+	span.SetStatus(trace.StatusOK, "summary created")
+	return schema.NewSystemMessage("Previous conversation summary: " + summaryText), nil
 }
 
-// aggressiveTrim aggressively trims messages to fit limit
+// aggressiveTrim keeps system messages and as many recent messages as fit.
 func (ht *HistoryTrimmer) aggressiveTrim(messages []schema.Message) []schema.Message {
-    trimmed := []schema.Message{}
-    tokens := 0
+	var sys, rest []schema.Message
+	for _, m := range messages {
+		if m.GetRole() == schema.RoleSystem {
+			sys = append(sys, m)
+		} else {
+			rest = append(rest, m)
+		}
+	}
 
-    for _, msg := range messages {
-        if msg.GetType() == "system" {
-            trimmed = append(trimmed, msg)
-            tokens += ht.estimateTokens([]schema.Message{msg})
-        }
-    }
+	tokens := ht.estimateTokens(sys)
+	var kept []schema.Message
 
-    for i := len(messages) - 1; i >= 0; i-- {
-        if messages[i].GetType() == "system" {
-            continue
-        }
+	// Add from most recent backwards.
+	for i := len(rest) - 1; i >= 0; i-- {
+		msgTokens := ht.estimateTokens([]schema.Message{rest[i]})
+		if tokens+msgTokens > ht.maxTokens {
+			break
+		}
+		kept = append([]schema.Message{rest[i]}, kept...)
+		tokens += msgTokens
+	}
 
-        msgTokens := ht.estimateTokens([]schema.Message{messages[i]})
-        if tokens+msgTokens > ht.maxTokens {
-            break
-        }
-
-        trimmed = append(trimmed, messages[i])
-        tokens += msgTokens
-    }
-
-    // Reverse to maintain order
-    reversed := make([]schema.Message, len(trimmed))
-    for i, j := 0, len(trimmed)-1; i < len(trimmed); i, j = i+1, j-1 {
-        reversed[i] = trimmed[j]
-    }
-
-    return reversed
+	return append(sys, kept...)
 }
 
-// estimateTokens estimates token count (simplified)
+// estimateTokens approximates token count using the ~4 characters-per-token rule.
 func (ht *HistoryTrimmer) estimateTokens(messages []schema.Message) int {
-    total := 0
-    for _, msg := range messages {
-        total += len(msg.GetContent()) / 4
-        total += 5
-    }
-    return total
+	total := 0
+	for _, msg := range messages {
+		for _, part := range msg.GetContent() {
+			if tp, ok := part.(schema.TextPart); ok {
+				total += len(tp.Text) / 4
+			}
+		}
+		total += 5 // Per-message overhead.
+	}
+	return total
 }
 
 func main() {
-    ctx := context.Background()
+	ctx := context.Background()
 
-    // Create trimmer (pass nil summarizer if not available)
-    trimmer := NewHistoryTrimmer(1000, 5, true, nil)
+	// Pass nil summarizer to use trimming without summarization.
+	trimmer := NewHistoryTrimmer(200, 5, nil)
 
-    messages := []schema.Message{
-        schema.NewSystemMessage("You are a helpful assistant"),
-        schema.NewHumanMessage("Recent question 1"),
-        schema.NewAIMessage("Recent answer 1"),
-        schema.NewHumanMessage("Current question"),
-    }
+	messages := []schema.Message{
+		schema.NewSystemMessage("You are a helpful assistant."),
+		schema.NewHumanMessage("Message 1: tell me about Go."),
+		schema.NewAIMessage("Go is a statically typed, compiled language."),
+		schema.NewHumanMessage("Message 2: what about Python?"),
+		schema.NewAIMessage("Python is dynamically typed and interpreted."),
+		schema.NewHumanMessage("Current question: compare them."),
+	}
 
-    trimmed, err := trimmer.TrimHistory(ctx, messages)
-    if err != nil {
-        log.Fatalf("Failed to trim: %v", err)
-    }
-    fmt.Printf("Trimmed from %d to %d messages\n", len(messages), len(trimmed))
+	trimmed, err := trimmer.TrimHistory(ctx, messages)
+	if err != nil {
+		slog.Error("trim failed", "error", err)
+		return
+	}
+	fmt.Printf("Trimmed from %d to %d messages\n", len(messages), len(trimmed))
 }
 ```
 
 ## Explanation
 
-1. **Priority-based categorization** -- Messages are split into three categories: system messages (always preserved because they define agent behavior), recent messages (the last N messages that form the active conversation window), and old messages (everything else, which is a candidate for summarization or removal). This categorization ensures the most important context survives trimming.
+1. **`GetRole() schema.Role`** — Used to classify messages as system, human, or AI rather than `GetType()` (which does not exist on `schema.Message`). Role comparison uses the typed constants `schema.RoleSystem`, `schema.RoleHuman`, `schema.RoleAI`.
 
-2. **Summarization as compression** -- Old messages are summarized into a single system message using an LLM call when a summarizer is available. This compresses potentially thousands of tokens of conversation history into a concise summary that preserves key facts and decisions. The summary is injected between system messages and recent messages, maintaining chronological coherence.
+2. **`msg.Text()` via type switch** — `schema.Message.GetContent()` returns `[]schema.ContentPart`, not a string. To extract text for summarization, type-assert the message to the concrete type and call the `.Text()` method (`*schema.HumanMessage`, `*schema.AIMessage`, `*schema.SystemMessage` all implement it). Alternatively, iterate `GetContent()` and accumulate `schema.TextPart` values directly.
 
-3. **Aggressive trim as safety net** -- If summarization is unavailable (nil summarizer) or the summary itself is too large, aggressive trimming takes over. It works backwards from the most recent messages, adding them until the token budget is exhausted. System messages are always included first, guaranteeing that agent instructions survive even extreme trimming.
+3. **`response.Text()`** — `ht.summarizer.Generate()` returns `*schema.AIMessage`. Call `.Text()` on it to get the concatenated text content.
 
-4. **OTel observability** -- Spans record the input message count, output message count, and number of trimmed messages. This data helps you tune the `maxTokens` and `keepRecent` parameters based on actual conversation patterns rather than guesswork. A high trim rate might indicate the need for a larger context window or more aggressive summarization.
+4. **Three-tier trimming** — System messages are always preserved. The `keepRecent` most recent non-system messages are always kept. Old messages are summarized when possible, dropped when not.
 
 ## Testing
 
 ```go
 func TestHistoryTrimmer_TrimsWhenNeeded(t *testing.T) {
-    trimmer := NewHistoryTrimmer(100, 3, true, nil)
+	trimmer := NewHistoryTrimmer(50, 2, nil)
 
-    messages := make([]schema.Message, 20)
-    for i := 0; i < 20; i++ {
-        messages[i] = schema.NewHumanMessage(fmt.Sprintf("Message %d", i))
-    }
+	messages := []schema.Message{
+		schema.NewSystemMessage("System instructions."),
+	}
+	for i := 0; i < 10; i++ {
+		messages = append(messages, schema.NewHumanMessage(fmt.Sprintf("Message %d with enough text to consume tokens", i)))
+	}
 
-    trimmed, err := trimmer.TrimHistory(context.Background(), messages)
-    require.NoError(t, err)
-    require.LessOrEqual(t, len(trimmed), len(messages))
+	trimmed, err := trimmer.TrimHistory(context.Background(), messages)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(trimmed) >= len(messages) {
+		t.Errorf("expected trimming to reduce message count, got %d -> %d", len(messages), len(trimmed))
+	}
+	// System message must be preserved.
+	if trimmed[0].GetRole() != schema.RoleSystem {
+		t.Error("system message was not preserved")
+	}
 }
 ```
 
@@ -262,25 +280,18 @@ func TestHistoryTrimmer_TrimsWhenNeeded(t *testing.T) {
 
 ### Token-aware Trimming
 
-Use actual token counting instead of estimation:
+Replace the character-ratio estimator with actual tokenizer counts from `chunk.Usage` returned during streaming:
 
 ```go
-func (ht *HistoryTrimmer) TrimHistoryWithTokenCounter(ctx context.Context, messages []schema.Message, counter TokenCounter) ([]schema.Message, error) {
-    // Use actual token counting
-}
-```
-
-### Importance-based Trimming
-
-Score message importance and trim least important:
-
-```go
-func (ht *HistoryTrimmer) scoreMessageImportance(msg schema.Message) float64 {
-    // Score based on content, metadata, etc.
+func (ht *HistoryTrimmer) TrimWithUsage(ctx context.Context, messages []schema.Message, usage schema.Usage) ([]schema.Message, error) {
+	if usage.TotalTokens <= ht.maxTokens {
+		return messages, nil
+	}
+	return ht.TrimHistory(ctx, messages)
 }
 ```
 
 ## Related Recipes
 
-- **[Streaming Chunks with Metadata](./streaming-metadata)** — Stream with metadata
-- **[Memory Context Recovery](./memory-context-recovery)** — Recover context from windows
+- **[Streaming Chunks with Metadata](./streaming-metadata)** — Capture `Usage` from streaming responses
+- **[Token Counting without Latency](./token-counting)** — Estimate token counts without API round-trips

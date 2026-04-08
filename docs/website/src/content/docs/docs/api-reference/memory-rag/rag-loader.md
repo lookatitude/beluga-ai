@@ -42,6 +42,8 @@ The package follows Beluga's registry pattern. Providers register via
 init() and are instantiated with `New`:
 
 ```go
+import "github.com/lookatitude/beluga-ai/config"
+
 l, err := loader.New("text", config.ProviderConfig{})
 if err != nil {
     log.Fatal(err)

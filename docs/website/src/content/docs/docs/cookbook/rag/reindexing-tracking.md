@@ -174,7 +174,7 @@ func main() {
 
 	documents := make([]schema.Document, 500)
 	for i := range documents {
-		documents[i] = schema.NewDocument(fmt.Sprintf("doc %d", i), nil)
+		documents[i] = schema.Document{Content: fmt.Sprintf("doc %d", i)}
 	}
 
 	if err := tracker.StartReindex(ctx, "reindex-001", documents); err != nil {

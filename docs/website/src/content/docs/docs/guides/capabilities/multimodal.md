@@ -56,50 +56,48 @@ import (
     "log"
     "os"
 
-    "github.com/lookatitude/beluga-ai/pkg/llms"
-    "github.com/lookatitude/beluga-ai/pkg/schema"
+    "github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/schema"
+    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
 
-func AnalyzeImage(ctx context.Context, imagePath string) (string, error) {
+func AnalyzeImage(ctx context.Context, model llm.ChatModel, imagePath string) (string, error) {
     // Read image file
     imageData, err := os.ReadFile(imagePath)
     if err != nil {
         return "", fmt.Errorf("read image: %w", err)
     }
 
-    // Create multimodal message
+    // Create a multimodal message with text and image content parts
     messages := []schema.Message{
-        schema.NewUserMessage(
-            schema.TextPart("What do you see in this image? Describe it in detail."),
-            schema.ImagePart(imageData, "image/jpeg"),
-        ),
+        &schema.HumanMessage{Parts: []schema.ContentPart{
+            schema.TextPart{Text: "What do you see in this image? Describe it in detail."},
+            schema.ImagePart{Data: imageData, MimeType: "image/jpeg"},
+        }},
     }
 
-    // Use vision-capable model
-    config := llms.NewConfig(
-        llms.WithProvider("openai"),
-        llms.WithModelName("gpt-4o"), // Vision-capable model
-        llms.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-    )
-
-    factory := llms.NewFactory()
-    llm, err := factory.CreateLLM("openai", config)
-    if err != nil {
-        return "", err
-    }
-
-    response, err := llm.Generate(ctx, messages)
+    resp, err := model.Generate(ctx, messages)
     if err != nil {
         return "", fmt.Errorf("generate: %w", err)
     }
 
-    return response.Content, nil
+    return resp.Text(), nil
 }
 
 func main() {
     ctx := context.Background()
 
-    description, err := AnalyzeImage(ctx, "photo.jpg")
+    // Use vision-capable model via the registry pattern
+    model, err := llm.New("openai", config.ProviderConfig{
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+        Model:  "gpt-4o",
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    description, err := AnalyzeImage(ctx, model, "photo.jpg")
     if err != nil {
         log.Fatal(err)
     }
@@ -113,20 +111,20 @@ func main() {
 When images are accessible via URL, passing the URL instead of raw bytes avoids base64 encoding overhead and reduces request payload size. The provider fetches the image server-side, which is faster for large images and avoids the ~33% size increase from base64 encoding.
 
 ```go
-func AnalyzeImageURL(ctx context.Context, llm llms.LLM, imageURL string) (string, error) {
+func AnalyzeImageURL(ctx context.Context, model llm.ChatModel, imageURL string) (string, error) {
     messages := []schema.Message{
-        schema.NewUserMessage(
-            schema.TextPart("Describe this image."),
-            schema.ImageURLPart(imageURL),
-        ),
+        &schema.HumanMessage{Parts: []schema.ContentPart{
+            schema.TextPart{Text: "Describe this image."},
+            schema.ImagePart{URL: imageURL},
+        }},
     }
 
-    response, err := llm.Generate(ctx, messages)
+    resp, err := model.Generate(ctx, messages)
     if err != nil {
         return "", err
     }
 
-    return response.Content, nil
+    return resp.Text(), nil
 }
 ```
 
@@ -135,24 +133,30 @@ func AnalyzeImageURL(ctx context.Context, llm llms.LLM, imageURL string) (string
 You can include multiple images in a single message for comparison, batch analysis, or multi-page document processing. The model sees all images simultaneously and can reason about relationships between them.
 
 ```go
-func CompareImages(ctx context.Context, llm llms.LLM, image1Path, image2Path string) (string, error) {
-    img1, _ := os.ReadFile(image1Path)
-    img2, _ := os.ReadFile(image2Path)
-
-    messages := []schema.Message{
-        schema.NewUserMessage(
-            schema.TextPart("Compare these two images. What are the differences?"),
-            schema.ImagePart(img1, "image/jpeg"),
-            schema.ImagePart(img2, "image/jpeg"),
-        ),
+func CompareImages(ctx context.Context, model llm.ChatModel, image1Path, image2Path string) (string, error) {
+    img1, err := os.ReadFile(image1Path)
+    if err != nil {
+        return "", fmt.Errorf("read image1: %w", err)
+    }
+    img2, err := os.ReadFile(image2Path)
+    if err != nil {
+        return "", fmt.Errorf("read image2: %w", err)
     }
 
-    response, err := llm.Generate(ctx, messages)
+    messages := []schema.Message{
+        &schema.HumanMessage{Parts: []schema.ContentPart{
+            schema.TextPart{Text: "Compare these two images. What are the differences?"},
+            schema.ImagePart{Data: img1, MimeType: "image/jpeg"},
+            schema.ImagePart{Data: img2, MimeType: "image/jpeg"},
+        }},
+    }
+
+    resp, err := model.Generate(ctx, messages)
     if err != nil {
         return "", err
     }
 
-    return response.Content, nil
+    return resp.Text(), nil
 }
 ```
 
@@ -175,29 +179,21 @@ type Item struct {
     Price    float64 `json:"price"`
 }
 
-func ExtractReceipt(ctx context.Context, llm llms.LLM, receiptImage []byte) (*Receipt, error) {
-    // Define extraction schema
-    schemaJSON, _ := GenerateSchema[Receipt]()
+func ExtractReceipt(ctx context.Context, model llm.ChatModel, receiptImage []byte) (*Receipt, error) {
+    // Use StructuredOutput to get typed extraction with automatic retries.
+    structured := llm.NewStructured[Receipt](model)
 
     messages := []schema.Message{
         schema.NewSystemMessage("You are an expert at extracting structured data from receipts."),
-        schema.NewUserMessage(
-            schema.TextPart("Extract all information from this receipt."),
-            schema.ImagePart(receiptImage, "image/jpeg"),
-        ),
+        &schema.HumanMessage{Parts: []schema.ContentPart{
+            schema.TextPart{Text: "Extract all information from this receipt."},
+            schema.ImagePart{Data: receiptImage, MimeType: "image/jpeg"},
+        }},
     }
 
-    response, err := llm.Generate(ctx, messages,
-        llms.WithStructuredOutput(schemaJSON),
-        llms.WithTemperature(0.0),
-    )
+    receipt, err := structured.Generate(ctx, messages)
     if err != nil {
         return nil, err
-    }
-
-    var receipt Receipt
-    if err := json.Unmarshal([]byte(response.Content), &receipt); err != nil {
-        return nil, fmt.Errorf("unmarshal: %w", err)
     }
 
     return &receipt, nil
@@ -219,43 +215,36 @@ type IDCard struct {
     Photo        bool   `json:"photo_present"`
 }
 
-func VerifyID(ctx context.Context, llm llms.LLM, idImage []byte) (*IDCard, bool, error) {
-    schemaJSON, _ := GenerateSchema[IDCard]()
+func VerifyID(ctx context.Context, model llm.ChatModel, idImage []byte) (*IDCard, bool, error) {
+    structured := llm.NewStructured[IDCard](model)
 
     messages := []schema.Message{
         schema.NewSystemMessage("Extract ID card information. Verify the document appears authentic."),
-        schema.NewUserMessage(
-            schema.TextPart("Extract information and check for signs of tampering."),
-            schema.ImagePart(idImage, "image/jpeg"),
-        ),
+        &schema.HumanMessage{Parts: []schema.ContentPart{
+            schema.TextPart{Text: "Extract information and check for signs of tampering."},
+            schema.ImagePart{Data: idImage, MimeType: "image/jpeg"},
+        }},
     }
 
-    response, err := llm.Generate(ctx, messages,
-        llms.WithStructuredOutput(schemaJSON),
-    )
+    idCard, err := structured.Generate(ctx, messages)
     if err != nil {
         return nil, false, err
     }
 
-    var idCard IDCard
-    if err := json.Unmarshal([]byte(response.Content), &idCard); err != nil {
-        return nil, false, err
-    }
-
-    // Ask about authenticity
+    // Ask about authenticity in a separate call
     verifyMessages := []schema.Message{
-        schema.NewUserMessage(
-            schema.TextPart("Does this ID appear authentic? Answer YES or NO with brief reasoning."),
-            schema.ImagePart(idImage, "image/jpeg"),
-        ),
+        &schema.HumanMessage{Parts: []schema.ContentPart{
+            schema.TextPart{Text: "Does this ID appear authentic? Answer YES or NO with brief reasoning."},
+            schema.ImagePart{Data: idImage, MimeType: "image/jpeg"},
+        }},
     }
 
-    verifyResponse, err := llm.Generate(ctx, verifyMessages)
+    verifyResp, err := model.Generate(ctx, verifyMessages)
     if err != nil {
         return &idCard, false, err
     }
 
-    isAuthentic := strings.Contains(strings.ToUpper(verifyResponse.Content), "YES")
+    isAuthentic := strings.Contains(strings.ToUpper(verifyResp.Text()), "YES")
 
     return &idCard, isAuthentic, nil
 }
@@ -270,38 +259,22 @@ Audio-capable models (such as Google Gemini) can process audio files directly, e
 This example sends an audio recording to a model that supports native audio input. The model processes the audio end-to-end and returns a structured summary rather than a raw transcript.
 
 ```go
-func AnalyzeAudio(ctx context.Context, llm llms.LLM, audioPath string) (string, error) {
-    audioData, err := os.ReadFile(audioPath)
-    if err != nil {
-        return "", err
-    }
+import _ "github.com/lookatitude/beluga-ai/llm/providers/google"
 
+func AnalyzeAudio(ctx context.Context, model llm.ChatModel, audioData []byte) (string, error) {
     messages := []schema.Message{
-        schema.NewUserMessage(
-            schema.TextPart("Summarize this audio recording. Include: main topics, sentiment, and key decisions."),
-            schema.AudioPart(audioData, "audio/mp3"),
-        ),
+        &schema.HumanMessage{Parts: []schema.ContentPart{
+            schema.TextPart{Text: "Summarize this audio recording. Include: main topics, sentiment, and key decisions."},
+            schema.AudioPart{Data: audioData, Format: "mp3"},
+        }},
     }
 
-    // Use audio-capable model (e.g., Gemini 1.5)
-    config := llms.NewConfig(
-        llms.WithProvider("google"),
-        llms.WithModelName("gemini-1.5-pro"),
-        llms.WithAPIKey(os.Getenv("GOOGLE_API_KEY")),
-    )
-
-    factory := llms.NewFactory()
-    audioLLM, err := factory.CreateLLM("google", config)
+    resp, err := model.Generate(ctx, messages)
     if err != nil {
-        return "", err
+        return "", fmt.Errorf("generate audio analysis: %w", err)
     }
 
-    response, err := audioLLM.Generate(ctx, messages)
-    if err != nil {
-        return "", err
-    }
-
-    return response.Content, nil
+    return resp.Text(), nil
 }
 ```
 
@@ -326,27 +299,20 @@ type ActionItem struct {
     Deadline   string `json:"deadline"`
 }
 
-func SummarizeMeeting(ctx context.Context, llm llms.LLM, audioData []byte) (*MeetingSummary, error) {
-    schemaJSON, _ := GenerateSchema[MeetingSummary]()
+func SummarizeMeeting(ctx context.Context, model llm.ChatModel, audioData []byte) (*MeetingSummary, error) {
+    structured := llm.NewStructured[MeetingSummary](model)
 
     messages := []schema.Message{
         schema.NewSystemMessage("You are an expert meeting assistant. Extract structured information from meeting recordings."),
-        schema.NewUserMessage(
-            schema.TextPart("Analyze this meeting recording and extract all information."),
-            schema.AudioPart(audioData, "audio/mp3"),
-        ),
+        &schema.HumanMessage{Parts: []schema.ContentPart{
+            schema.TextPart{Text: "Analyze this meeting recording and extract all information."},
+            schema.AudioPart{Data: audioData, Format: "mp3"},
+        }},
     }
 
-    response, err := llm.Generate(ctx, messages,
-        llms.WithStructuredOutput(schemaJSON),
-    )
+    summary, err := structured.Generate(ctx, messages)
     if err != nil {
-        return nil, err
-    }
-
-    var summary MeetingSummary
-    if err := json.Unmarshal([]byte(response.Content), &summary); err != nil {
-        return nil, err
+        return nil, fmt.Errorf("summarize meeting: %w", err)
     }
 
     return &summary, nil
@@ -358,21 +324,21 @@ func SummarizeMeeting(ctx context.Context, llm llms.LLM, audioData []byte) (*Mee
 Some tasks require reasoning across multiple modalities simultaneously. Video analysis, for example, involves both visual frames and audio tracks. Multimodal models can process text, images, and audio in a single request, reasoning about the relationships between them — such as correlating what is shown on screen with what is being discussed in the audio.
 
 ```go
-func AnalyzeVideoFrame(ctx context.Context, llm llms.LLM, frame []byte, audioSegment []byte, timestamp time.Duration) (string, error) {
+func AnalyzeVideoFrame(ctx context.Context, model llm.ChatModel, frame []byte, audioSegment []byte, timestamp time.Duration) (string, error) {
     messages := []schema.Message{
-        schema.NewUserMessage(
-            schema.TextPart(fmt.Sprintf("What's happening at %s in this video? Consider both visual and audio.", timestamp)),
-            schema.ImagePart(frame, "image/jpeg"),
-            schema.AudioPart(audioSegment, "audio/mp3"),
-        ),
+        &schema.HumanMessage{Parts: []schema.ContentPart{
+            schema.TextPart{Text: fmt.Sprintf("What's happening at %s in this video? Consider both visual and audio.", timestamp)},
+            schema.ImagePart{Data: frame, MimeType: "image/jpeg"},
+            schema.AudioPart{Data: audioSegment, Format: "mp3"},
+        }},
     }
 
-    response, err := llm.Generate(ctx, messages)
+    resp, err := model.Generate(ctx, messages)
     if err != nil {
-        return "", err
+        return "", fmt.Errorf("analyze video frame: %w", err)
     }
 
-    return response.Content, nil
+    return resp.Text(), nil
 }
 ```
 
@@ -382,8 +348,8 @@ Standard RAG pipelines index text documents. But images and audio contain valuab
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/pkg/embeddings"
-    "github.com/lookatitude/beluga-ai/pkg/vectorstore"
+    "github.com/lookatitude/beluga-ai/rag/embedding"
+    "github.com/lookatitude/beluga-ai/rag/vectorstore"
 )
 
 type MultimodalDocument struct {
@@ -391,20 +357,19 @@ type MultimodalDocument struct {
     Type        string // "text", "image", "audio"
     Content     []byte
     TextSummary string // LLM-generated description
-    Embedding   []float32
-    Metadata    map[string]interface{}
+    Metadata    map[string]any
 }
 
 func IndexMultimodalDocument(
     ctx context.Context,
-    llm llms.LLM,
-    embedder embeddings.Embedder,
-    vectorDB vectorstore.VectorStore,
+    model llm.ChatModel,
+    embedder embedding.Embedder,
+    store vectorstore.VectorStore,
     doc MultimodalDocument,
 ) error {
     // Generate text summary for non-text content
     if doc.Type != "text" {
-        summary, err := generateSummary(ctx, llm, doc)
+        summary, err := generateSummary(ctx, model, doc)
         if err != nil {
             return fmt.Errorf("generate summary: %w", err)
         }
@@ -412,90 +377,86 @@ func IndexMultimodalDocument(
     }
 
     // Embed the summary
-    embedding, err := embedder.EmbedText(ctx, doc.TextSummary)
+    vecs, err := embedder.Embed(ctx, []string{doc.TextSummary})
     if err != nil {
         return fmt.Errorf("embed: %w", err)
     }
-    doc.Embedding = embedding
 
     // Store in vector database
     schemaDoc := schema.Document{
         PageContent: doc.TextSummary,
-        Metadata: map[string]interface{}{
+        Metadata: map[string]any{
             "id":   doc.ID,
             "type": doc.Type,
-            "original_content": doc.Content, // Or store URL
         },
     }
 
-    if err := vectorDB.AddDocuments(ctx, []schema.Document{schemaDoc}, [][]float32{embedding}); err != nil {
+    if err := store.Add(ctx, []schema.Document{schemaDoc}, vecs); err != nil {
         return fmt.Errorf("store: %w", err)
     }
 
     return nil
 }
 
-func generateSummary(ctx context.Context, llm llms.LLM, doc MultimodalDocument) (string, error) {
+func generateSummary(ctx context.Context, model llm.ChatModel, doc MultimodalDocument) (string, error) {
     var messages []schema.Message
 
     switch doc.Type {
     case "image":
         messages = []schema.Message{
-            schema.NewUserMessage(
-                schema.TextPart("Describe this image in detail for search indexing."),
-                schema.ImagePart(doc.Content, "image/jpeg"),
-            ),
+            &schema.HumanMessage{Parts: []schema.ContentPart{
+                schema.TextPart{Text: "Describe this image in detail for search indexing."},
+                schema.ImagePart{Data: doc.Content, MimeType: "image/jpeg"},
+            }},
         }
 
     case "audio":
         messages = []schema.Message{
-            schema.NewUserMessage(
-                schema.TextPart("Summarize this audio for search indexing."),
-                schema.AudioPart(doc.Content, "audio/mp3"),
-            ),
+            &schema.HumanMessage{Parts: []schema.ContentPart{
+                schema.TextPart{Text: "Summarize this audio for search indexing."},
+                schema.AudioPart{Data: doc.Content, Format: "mp3"},
+            }},
         }
 
     default:
         return "", fmt.Errorf("unsupported type: %s", doc.Type)
     }
 
-    response, err := llm.Generate(ctx, messages)
+    resp, err := model.Generate(ctx, messages)
     if err != nil {
-        return "", err
+        return "", fmt.Errorf("generate summary: %w", err)
     }
 
-    return response.Content, nil
+    return resp.Text(), nil
 }
 
-// Search across multimodal documents
+// SearchMultimodal finds documents across all modalities using a text query.
 func SearchMultimodal(
     ctx context.Context,
-    embedder embeddings.Embedder,
-    vectorDB vectorstore.VectorStore,
+    embedder embedding.Embedder,
+    store vectorstore.VectorStore,
     query string,
 ) ([]MultimodalDocument, error) {
-    // Embed query
-    queryEmbedding, err := embedder.EmbedText(ctx, query)
+    // Embed the query
+    vecs, err := embedder.Embed(ctx, []string{query})
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("embed query: %w", err)
     }
 
-    // Search vector database
-    results, err := vectorDB.SimilaritySearch(ctx, queryEmbedding, 10)
+    // Search the vector store
+    results, err := store.Search(ctx, vecs[0], 10)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("search: %w", err)
     }
 
     // Convert results
     var docs []MultimodalDocument
     for _, result := range results {
-        doc := MultimodalDocument{
+        docs = append(docs, MultimodalDocument{
             ID:          result.Metadata["id"].(string),
             Type:        result.Metadata["type"].(string),
             TextSummary: result.PageContent,
-            // Retrieve original content from storage
-        }
-        docs = append(docs, doc)
+        })
     }
 
     return docs, nil
@@ -511,13 +472,19 @@ Different providers have different strengths for multimodal tasks. Choosing the 
 GPT-4o offers high-quality image analysis with configurable detail levels. The `detail` parameter controls the resolution at which the model processes images: `low` is fast and cheap (suitable for thumbnails and simple images), `high` enables fine-grained OCR and detailed analysis, and `auto` lets the model decide.
 
 ```go
-config := llms.NewConfig(
-    llms.WithProvider("openai"),
-    llms.WithModelName("gpt-4o"),
-    llms.WithExtraOptions(map[string]interface{}{
-        "detail": "high", // "low", "high", or "auto"
-    }),
-)
+import _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+
+// API keys must come from environment variables or a secrets manager — never from code.
+model, err := llm.New("openai", config.ProviderConfig{
+    APIKey: os.Getenv("OPENAI_API_KEY"),
+    Model:  "gpt-4o",
+    Options: map[string]any{
+        "image_detail": "high", // "low", "high", or "auto"
+    },
+})
+if err != nil {
+    return err
+}
 ```
 
 ### Anthropic Claude 3
@@ -525,11 +492,15 @@ config := llms.NewConfig(
 Claude 3 excels at document understanding and complex visual reasoning tasks. It handles dense text in images well and supports long output generation, making it suitable for detailed document analysis and multi-step visual reasoning.
 
 ```go
-config := llms.NewConfig(
-    llms.WithProvider("anthropic"),
-    llms.WithModelName("claude-3-5-sonnet-20241022"),
-    llms.WithMaxTokens(4096), // Claude supports long outputs
-)
+import _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
+
+model, err := llm.New("anthropic", config.ProviderConfig{
+    APIKey: os.Getenv("ANTHROPIC_API_KEY"),
+    Model:  "claude-3-5-sonnet-20241022",
+})
+if err != nil {
+    return err
+}
 ```
 
 ### Google Gemini
@@ -537,15 +508,15 @@ config := llms.NewConfig(
 Gemini offers native audio processing (not available from OpenAI or Anthropic via their standard chat APIs) and an exceptionally long context window. This makes it the preferred choice for audio analysis tasks and for processing very large documents or multiple images in a single request.
 
 ```go
-config := llms.NewConfig(
-    llms.WithProvider("google"),
-    llms.WithModelName("gemini-1.5-pro"),
-    llms.WithExtraOptions(map[string]interface{}{
-        "safety_settings": []map[string]string{
-            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
-        },
-    }),
-)
+import _ "github.com/lookatitude/beluga-ai/llm/providers/google"
+
+model, err := llm.New("google", config.ProviderConfig{
+    APIKey: os.Getenv("GOOGLE_API_KEY"),
+    Model:  "gemini-1.5-pro",
+})
+if err != nil {
+    return err
+}
 ```
 
 ## Error Handling
@@ -553,13 +524,13 @@ config := llms.NewConfig(
 Multimodal API calls are more failure-prone than text-only calls: images may exceed size limits, audio formats may be unsupported, or a specific provider may be temporarily unavailable. A robust strategy uses provider fallback — trying a secondary provider when the primary fails. Beluga AI's router can automate this, but the manual pattern below shows the underlying logic.
 
 ```go
-func AnalyzeImageWithFallback(ctx context.Context, imagePath string) (string, error) {
-    imageData, err := os.ReadFile(imagePath)
-    if err != nil {
-        return "", err
-    }
+import (
+    _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
+    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+)
 
-    // Try primary provider
+func AnalyzeImageWithFallback(ctx context.Context, imageData []byte) (string, error) {
+    // Try primary provider first.
     result, err := tryProvider(ctx, "openai", "gpt-4o", imageData)
     if err == nil {
         return result, nil
@@ -567,7 +538,7 @@ func AnalyzeImageWithFallback(ctx context.Context, imagePath string) (string, er
 
     log.Printf("Primary provider failed: %v, trying fallback", err)
 
-    // Fallback to secondary provider
+    // Fallback to secondary provider on error.
     result, err = tryProvider(ctx, "anthropic", "claude-3-5-sonnet-20241022", imageData)
     if err != nil {
         return "", fmt.Errorf("all providers failed: %w", err)
@@ -576,31 +547,28 @@ func AnalyzeImageWithFallback(ctx context.Context, imagePath string) (string, er
     return result, nil
 }
 
-func tryProvider(ctx context.Context, provider, model string, imageData []byte) (string, error) {
-    config := llms.NewConfig(
-        llms.WithProvider(provider),
-        llms.WithModelName(model),
-    )
-
-    factory := llms.NewFactory()
-    llm, err := factory.CreateLLM(provider, config)
+func tryProvider(ctx context.Context, providerName, modelName string, imageData []byte) (string, error) {
+    // API keys come from environment variables — never hardcoded.
+    model, err := llm.New(providerName, config.ProviderConfig{
+        Model: modelName,
+    })
     if err != nil {
-        return "", err
+        return "", fmt.Errorf("create model %s: %w", providerName, err)
     }
 
     messages := []schema.Message{
-        schema.NewUserMessage(
-            schema.TextPart("Describe this image."),
-            schema.ImagePart(imageData, "image/jpeg"),
-        ),
+        &schema.HumanMessage{Parts: []schema.ContentPart{
+            schema.TextPart{Text: "Describe this image."},
+            schema.ImagePart{Data: imageData, MimeType: "image/jpeg"},
+        }},
     }
 
-    response, err := llm.Generate(ctx, messages)
+    resp, err := model.Generate(ctx, messages)
     if err != nil {
-        return "", err
+        return "", fmt.Errorf("generate (%s): %w", providerName, err)
     }
 
-    return response.Content, nil
+    return resp.Text(), nil
 }
 ```
 

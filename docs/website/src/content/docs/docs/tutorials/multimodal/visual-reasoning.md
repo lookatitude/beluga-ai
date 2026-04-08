@@ -69,6 +69,7 @@ import (
     "fmt"
     "os"
 
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/schema"
 
@@ -76,11 +77,9 @@ import (
 )
 
 func main() {
-    model, err := llm.New("openai", llm.ProviderConfig{
-        Options: map[string]any{
-            "api_key": os.Getenv("OPENAI_API_KEY"),
-            "model":   "gpt-4o",
-        },
+    model, err := llm.New("openai", config.ProviderConfig{
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+        Model:  "gpt-4o",
     })
     if err != nil {
         fmt.Printf("model creation failed: %v\n", err)

@@ -8,17 +8,19 @@ head:
       content: "Beluga AI, validation middleware, Go schema validation, custom rules, content filtering, business logic, composable validation"
 ---
 
-# Custom Validation Middleware
-
 ## Problem
 
-You need to add custom validation rules to schema operations (messages, documents, agent I/O) that go beyond the built-in validation, such as business-specific constraints, content filtering, or domain-specific checks. Standard schema validation handles structural concerns—required fields, type checking, format validation—but cannot enforce application-specific rules. For example, you might need to validate that user messages don't exceed token limits for your chosen model, that tool call parameters match business logic constraints (like date ranges or enum values), that agent responses don't contain prohibited content for your compliance requirements, or that RAG documents meet quality thresholds before indexing. These domain-specific validations cannot be hardcoded into the framework because they vary by application. You need a way to plug in custom validation logic without modifying Beluga's core schema package.
+You need to add custom validation rules to schema operations (messages, documents, agent I/O) that go beyond structural concerns — such as business-specific constraints, content filtering, or domain-specific checks.
+
+Standard schema validation handles type checking and required fields, but cannot enforce application-specific rules such as token length limits for a chosen model, prohibited content for compliance requirements, or quality thresholds before RAG indexing.
 
 ## Solution
 
-Create a validation middleware that wraps schema operations and applies custom validation rules. This works because Beluga AI's schema package uses the validator pattern and provides hooks for custom validation through `SchemaValidationConfig` with `CustomValidationRules`. The design follows the strategy pattern: validation logic is encapsulated in small, independent functions that each validate one concern. These functions are composed together through a registry, allowing you to mix and match validation rules per operation. The validator is stateless—it doesn't maintain mutable state between validations, making it thread-safe and testable. This approach integrates with Beluga's middleware pattern and OpenTelemetry tracing, providing observability into which validation rules pass or fail.
+Create a `CustomValidator` that holds a registry of named `ValidationRule` functions. Rules accept a `schema.Message` and return an error if validation fails. The orchestrator applies all rules in sequence, providing span-level observability for each pass or fail.
 
-The key design choice is separating validation rules from validation orchestration. Rules are simple functions that return an error if validation fails. The orchestrator (CustomValidator) manages the rule registry and applies rules in sequence. This separation allows rules to be tested independently, reused across validators, and composed dynamically based on context. The strategy pattern makes validation extensible: adding new rules doesn't require modifying existing code, just registering new functions.
+## Why This Matters
+
+Validation requirements evolve over time. By separating rules from orchestration logic, you can add new rules without modifying the validator itself. Each rule is self-contained and testable in isolation. Composing rules at construction time means different validator instances can have different rule sets for different contexts (user-facing vs. internal agents).
 
 ## Code Example
 
@@ -26,178 +28,210 @@ The key design choice is separating validation rules from validation orchestrati
 package main
 
 import (
-    "context"
-    "fmt"
-    "log"
-    "strings"
+	"context"
+	"fmt"
+	"log/slog"
+	"strings"
 
-    "go.opentelemetry.io/otel"
-    "go.opentelemetry.io/otel/attribute"
-    "go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
-    "github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/schema"
 )
 
 var tracer = otel.Tracer("beluga.schema.validation")
 
-// CustomValidator defines validation rules for schema objects
+// ValidationRule validates a single schema.Message.
+// Return an error if validation fails; nil if it passes.
+type ValidationRule func(ctx context.Context, msg schema.Message) error
+
+// CustomValidator applies a registry of named validation rules to messages.
 type CustomValidator struct {
-    rules map[string]ValidationRule
+	rules map[string]ValidationRule
 }
 
-// ValidationRule defines a single validation rule
-type ValidationRule func(ctx context.Context, obj interface{}) error
-
-// NewCustomValidator creates a new validator with custom rules
+// NewCustomValidator creates an empty validator. Register rules with RegisterRule.
 func NewCustomValidator() *CustomValidator {
-    return &CustomValidator{
-        rules: make(map[string]ValidationRule),
-    }
+	return &CustomValidator{rules: make(map[string]ValidationRule)}
 }
 
-// RegisterRule registers a validation rule by name
+// RegisterRule adds a named rule to the validator.
 func (v *CustomValidator) RegisterRule(name string, rule ValidationRule) {
-    v.rules[name] = rule
+	v.rules[name] = rule
 }
 
-// ValidateMessage applies custom validation to a message
+// ValidateMessage applies all registered rules to msg.
+// Returns on the first failure. All rule failures are recorded as OTel events.
 func (v *CustomValidator) ValidateMessage(ctx context.Context, msg schema.Message) error {
-    ctx, span := tracer.Start(ctx, "validator.validate_message")
-    defer span.End()
+	ctx, span := tracer.Start(ctx, "validator.validate_message")
+	defer span.End()
 
-    span.SetAttributes(
-        attribute.String("message.type", msg.GetType()),
-        attribute.String("message.role", string(msg.GetRole())),
-    )
+	span.SetAttributes(
+		attribute.String("message.role", string(msg.GetRole())),
+	)
 
-    // Apply all registered rules
-    for name, rule := range v.rules {
-        if err := rule(ctx, msg); err != nil {
-            span.RecordError(err)
-            span.SetStatus(trace.StatusError, fmt.Sprintf("rule %s failed", name))
-            return fmt.Errorf("validation rule %s failed: %w", name, err)
-        }
-    }
+	for name, rule := range v.rules {
+		if err := rule(ctx, msg); err != nil {
+			span.RecordError(err)
+			span.SetStatus(trace.StatusError, fmt.Sprintf("rule %s failed", name))
+			return fmt.Errorf("validation rule %q failed: %w", name, err)
+		}
+	}
 
-    span.SetStatus(trace.StatusOK, "validation passed")
-    return nil
+	span.SetStatus(trace.StatusOK, "validation passed")
+	return nil
 }
 
-// ContentLengthRule validates content length
-func ContentLengthRule(maxLength int) ValidationRule {
-    return func(ctx context.Context, obj interface{}) error {
-        msg, ok := obj.(schema.Message)
-        if !ok {
-            return nil // Skip if not a message
-        }
+// --- Built-in rules ---
 
-        content := msg.GetContent()
-        if len(content) > maxLength {
-            return fmt.Errorf("content length %d exceeds maximum %d", len(content), maxLength)
-        }
-        return nil
-    }
+// ContentLengthRule rejects messages whose text content exceeds maxBytes bytes.
+func ContentLengthRule(maxBytes int) ValidationRule {
+	return func(ctx context.Context, msg schema.Message) error {
+		// schema.Message.GetContent() returns []schema.ContentPart.
+		// Use the Text() helper on concrete types, or accumulate text parts manually.
+		total := 0
+		for _, part := range msg.GetContent() {
+			// TextPart is the only content part with a string representation.
+			if tp, ok := part.(schema.TextPart); ok {
+				total += len(tp.Text)
+			}
+		}
+		if total > maxBytes {
+			return fmt.Errorf("content length %d exceeds maximum %d bytes", total, maxBytes)
+		}
+		return nil
+	}
 }
 
-// ProhibitedWordsRule filters content for prohibited words
+// ProhibitedWordsRule rejects messages that contain any of the listed words.
 func ProhibitedWordsRule(prohibited []string) ValidationRule {
-    return func(ctx context.Context, obj interface{}) error {
-        msg, ok := obj.(schema.Message)
-        if !ok {
-            return nil
-        }
+	lower := make([]string, len(prohibited))
+	for i, w := range prohibited {
+		lower[i] = strings.ToLower(w)
+	}
+	return func(ctx context.Context, msg schema.Message) error {
+		for _, part := range msg.GetContent() {
+			if tp, ok := part.(schema.TextPart); ok {
+				text := strings.ToLower(tp.Text)
+				for _, word := range lower {
+					if strings.Contains(text, word) {
+						return fmt.Errorf("content contains prohibited word: %q", word)
+					}
+				}
+			}
+		}
+		return nil
+	}
+}
 
-        content := strings.ToLower(msg.GetContent())
-        for _, word := range prohibited {
-            if strings.Contains(content, strings.ToLower(word)) {
-                return fmt.Errorf("content contains prohibited word: %s", word)
-            }
-        }
-        return nil
-    }
+// RoleAllowlistRule rejects messages whose role is not in the allowlist.
+func RoleAllowlistRule(allowed ...schema.Role) ValidationRule {
+	set := make(map[schema.Role]bool, len(allowed))
+	for _, r := range allowed {
+		set[r] = true
+	}
+	return func(ctx context.Context, msg schema.Message) error {
+		if !set[msg.GetRole()] {
+			return fmt.Errorf("role %q is not allowed", msg.GetRole())
+		}
+		return nil
+	}
 }
 
 func main() {
-    ctx := context.Background()
+	ctx := context.Background()
 
-    // Create validator with custom rules
-    validator := NewCustomValidator()
-    validator.RegisterRule("content_length", ContentLengthRule(5000))
-    validator.RegisterRule("prohibited_words", ProhibitedWordsRule([]string{"spam", "phishing"}))
+	validator := NewCustomValidator()
+	validator.RegisterRule("content_length", ContentLengthRule(5000))
+	validator.RegisterRule("prohibited_words", ProhibitedWordsRule([]string{"spam", "phishing"}))
+	validator.RegisterRule("role_allowlist", RoleAllowlistRule(schema.RoleHuman, schema.RoleAI))
 
-    // Create a message
-    msg := schema.NewHumanMessage("Hello, this is a test message")
+	msg := schema.NewHumanMessage("Hello, this is a test message")
 
-    // Validate
-    if err := validator.ValidateMessage(ctx, msg); err != nil {
-        log.Fatalf("Validation failed: %v", err)
-    }
-    fmt.Println("Message validated successfully")
+	if err := validator.ValidateMessage(ctx, msg); err != nil {
+		slog.Error("validation failed", "error", err)
+		return
+	}
+	fmt.Println("Message validated successfully")
 }
 ```
 
 ## Explanation
 
-1. **CustomValidator structure** — Validation rules are separated from the validation logic, allowing multiple rules to be registered and applied in sequence. Each rule is independent and can be tested separately. This matters because validation requirements evolve over time: you might start with just length checks, then add content filtering, then add business logic validation. By separating rules from the orchestration logic, you can add new rules without modifying the validator itself. Each rule is self-contained—it either passes or returns an error—making them easy to test in isolation. The registry pattern (map of rules) allows dynamic composition: different validators can have different rule sets, and rules can be enabled or disabled based on configuration.
+1. **`ValidationRule` function type** — A function type rather than an interface keeps rules lightweight. Factory functions like `ContentLengthRule(maxBytes)` produce configured closures without requiring struct definitions for each rule.
 
-2. **ValidationRule function type** — A function type is used for rules, making it easy to create reusable validation functions. This follows the strategy pattern, allowing different validation strategies to be plugged in. This matters because validation logic is highly variable: some rules are simple (length checks), others are complex (calling external services for PII detection), and some are domain-specific (validating against business rules). By using a function type, you can create rules in multiple ways: inline lambdas for simple checks, factory functions that return configured validators (like ContentLengthRule(maxLength)), or methods on structs for stateful validators. The function signature includes context.Context, enabling rules to perform async operations, check deadlines, or access request-scoped values.
+2. **`GetContent() []ContentPart`** — `schema.Message.GetContent()` returns a slice of `ContentPart` values, not a string. Text content is extracted by type-asserting each part to `schema.TextPart`. This handles multimodal messages (images, audio) without discarding non-text parts.
 
-3. **OTel tracing integration** — The validator creates spans for each validation operation, recording which rules pass or fail. This is important because validation failures in production need to be traceable for debugging. This matters because when validation fails in production, you need to understand why. Was it a single rule that failed, or multiple? Which input triggered the failure? How often does this rule fail? OpenTelemetry tracing provides this observability: each validation creates a span, rule failures are recorded as errors, and attributes capture which rule failed and why. This makes it possible to monitor validation health, identify problematic rules, and debug validation issues without reproducing them locally.
+3. **`GetRole() schema.Role`** — Returns `schema.Role` (a typed string alias). Compare against `schema.RoleHuman`, `schema.RoleAI`, `schema.RoleSystem`, `schema.RoleTool` — not raw strings — for type safety.
 
-Keep validation rules stateless and composable. Each rule should validate one concern, making it easy to combine rules and test them independently.
+4. **OTel tracing** — Each `ValidateMessage` call creates a span. Rule failures are recorded as span errors, making it possible to monitor validation health and identify problematic rules in production without reproducing failures locally.
 
 ## Testing
 
 ```go
-func TestCustomValidator(t *testing.T) {
-    ctx := context.Background()
-    validator := NewCustomValidator()
-    validator.RegisterRule("content_length", ContentLengthRule(100))
+import (
+	"context"
+	"strings"
+	"testing"
 
-    // Test valid message
-    msg := schema.NewHumanMessage("Short message")
-    if err := validator.ValidateMessage(ctx, msg); err != nil {
-        t.Errorf("Expected validation to pass, got: %v", err)
-    }
+	"github.com/lookatitude/beluga-ai/schema"
+)
 
-    // Test invalid message
-    longMsg := schema.NewHumanMessage(strings.Repeat("a", 200))
-    if err := validator.ValidateMessage(ctx, longMsg); err == nil {
-        t.Error("Expected validation to fail for long message")
-    }
+func TestCustomValidator_PassesValidMessage(t *testing.T) {
+	validator := NewCustomValidator()
+	validator.RegisterRule("content_length", ContentLengthRule(100))
+
+	if err := validator.ValidateMessage(context.Background(), schema.NewHumanMessage("Short message")); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+func TestCustomValidator_RejectsLongMessage(t *testing.T) {
+	validator := NewCustomValidator()
+	validator.RegisterRule("content_length", ContentLengthRule(100))
+
+	long := schema.NewHumanMessage(strings.Repeat("a", 200))
+	if err := validator.ValidateMessage(context.Background(), long); err == nil {
+		t.Error("expected validation to fail for long message")
+	}
+}
+
+func TestCustomValidator_RejectsProhibitedWord(t *testing.T) {
+	validator := NewCustomValidator()
+	validator.RegisterRule("prohibited_words", ProhibitedWordsRule([]string{"spam"}))
+
+	msg := schema.NewHumanMessage("This is spam")
+	if err := validator.ValidateMessage(context.Background(), msg); err == nil {
+		t.Error("expected prohibited word rejection")
+	}
 }
 ```
 
 ## Variations
 
-### Integration with SchemaValidationConfig
-
-Integrate custom validators with Beluga AI's `SchemaValidationConfig`:
-
-```go
-config, _ := schema.NewSchemaValidationConfig(
-    schema.WithCustomValidationRules(map[string]any{
-        "content_length":   5000,
-        "prohibited_words": []string{"spam"},
-    }),
-)
-```
-
 ### Async Validation
 
-For expensive validation rules, use goroutines:
+For expensive rules (external PII detection, ML classifiers), run rules concurrently:
 
 ```go
-func (v *CustomValidator) ValidateMessageAsync(ctx context.Context, msg schema.Message) <-chan error {
-    errCh := make(chan error, 1)
-    go func() {
-        errCh <- v.ValidateMessage(ctx, msg)
-    }()
-    return errCh
+func (v *CustomValidator) ValidateMessageParallel(ctx context.Context, msg schema.Message) error {
+	errCh := make(chan error, len(v.rules))
+	for name, rule := range v.rules {
+		go func(n string, r ValidationRule) {
+			errCh <- r(ctx, msg)
+		}(name, rule)
+	}
+	for range v.rules {
+		if err := <-errCh; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 ```
 
 ## Related Recipes
 
-- [Schema Recursive Schema Handling](/docs/cookbook/schema-recursive-schema-handling) — Handle nested/recursive schema structures
-- [LLM Error Handling](/docs/cookbook/llm-error-handling) — Error handling patterns that work with validation
+- **[Recursive Schema Handling](./recursive-schemas)** — Handle nested/recursive schema structures
+- **[LLM Error Handling](/docs/cookbook/llm/llm-error-handling)** — Error handling patterns that complement validation

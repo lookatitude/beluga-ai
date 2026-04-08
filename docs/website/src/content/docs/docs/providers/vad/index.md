@@ -8,14 +8,14 @@ head:
       content: "voice activity detection, VAD, Silero VAD, WebRTC VAD, speech detection, Go voice, Beluga AI"
 ---
 
-Beluga AI provides a unified `voice.VAD` interface for detecting speech in audio streams. VAD providers analyze audio frames and report whether speech is present, along with confidence scores and state transitions (speech start, speech end, silence).
+Beluga AI provides a unified `voice.ActivityDetector` interface for detecting speech in audio streams. VAD providers analyze audio frames and report whether speech is present, along with confidence scores and state transitions (speech start, speech end, silence).
 
 ## How It Works
 
 All VAD providers implement the same interface:
 
 ```go
-type VAD interface {
+type ActivityDetector interface {
     DetectActivity(ctx context.Context, audio []byte) (ActivityResult, error)
 }
 ```

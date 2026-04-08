@@ -42,8 +42,8 @@ func main() {
 
     // High accuracy (paid API)
     openaiEmb, err := embedding.New("openai", config.ProviderConfig{
-        "api_key": os.Getenv("OPENAI_API_KEY"),
-        "model":   "text-embedding-3-large",
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+        Model:  "text-embedding-3-large",
     })
     if err != nil {
         fmt.Printf("OpenAI error: %v\n", err)
@@ -52,8 +52,8 @@ func main() {
 
     // Local, free, private
     ollamaEmb, err := embedding.New("ollama", config.ProviderConfig{
-        "base_url": "http://localhost:11434",
-        "model":    "nomic-embed-text",
+        BaseURL: "http://localhost:11434",
+        Model:   "nomic-embed-text",
     })
     if err != nil {
         fmt.Printf("Ollama error: %v\n", err)

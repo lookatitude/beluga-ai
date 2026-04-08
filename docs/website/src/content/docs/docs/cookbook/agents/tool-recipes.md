@@ -150,13 +150,15 @@ func main() {
 
 ```go
 // One-liner to import all tools from an MCP server.
-tools, err := tool.FromMCP(ctx, "https://mcp.example.com/v1",
+// FromMCP returns ([]Tool, *MCPClient, error). Callers must close the client.
+tools, mcpClient, err := tool.FromMCP(ctx, "https://mcp.example.com/v1",
 	tool.WithSessionID("session-123"),
 )
 if err != nil {
 	slog.Error("MCP import failed", "error", err)
 	return
 }
+defer mcpClient.Close(ctx)
 // Use with an agent:
 // agent.New("assistant", agent.WithTools(tools))
 ```
@@ -606,27 +608,33 @@ import (
 func main() {
 	reg := tool.NewRegistry()
 
-	// Register multiple tools.
+	// Register multiple tools. Add returns an error if the name is already taken.
 	type CalcInput struct {
 		Expr string `json:"expression" required:"true"`
 	}
-	reg.Add(tool.NewFuncTool("calculate", "Evaluate math expressions",
+	if err := reg.Add(tool.NewFuncTool("calculate", "Evaluate math expressions",
 		func(ctx context.Context, input CalcInput) (*tool.Result, error) {
 			return tool.TextResult("42"), nil
 		},
-	))
+	)); err != nil {
+		fmt.Println("registration error:", err)
+		return
+	}
 
 	type SearchInput struct {
 		Query string `json:"query" required:"true"`
 	}
-	reg.Add(tool.NewFuncTool("search", "Search the web",
+	if err := reg.Add(tool.NewFuncTool("search", "Search the web",
 		func(ctx context.Context, input SearchInput) (*tool.Result, error) {
 			return tool.TextResult("results for: " + input.Query), nil
 		},
-	))
+	)); err != nil {
+		fmt.Println("registration error:", err)
+		return
+	}
 
-	// Look up a specific tool.
-	if t, ok := reg.Get("calculate"); ok {
+	// Look up a specific tool. Get returns (Tool, error).
+	if t, err := reg.Get("calculate"); err == nil {
 		fmt.Printf("Found: %s -- %s\n", t.Name(), t.Description())
 	}
 
@@ -637,10 +645,7 @@ func main() {
 	}
 
 	// Convert to definitions for LLM binding.
-	defs := make([]interface{}, 0)
-	for _, t := range reg.All() {
-		defs = append(defs, tool.ToDefinition(t))
-	}
+	defs := reg.Definitions() // returns []map[string]any
 	fmt.Printf("Tool definitions for LLM: %d\n", len(defs))
 }
 ```

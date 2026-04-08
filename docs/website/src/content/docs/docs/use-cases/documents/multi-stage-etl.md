@@ -49,7 +49,8 @@ import (
     "fmt"
 
     "github.com/lookatitude/beluga-ai/core"
-    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/orchestration"
     "github.com/lookatitude/beluga-ai/schema"
 
@@ -64,7 +65,7 @@ type ETLPipeline struct {
 
 func NewETLPipeline(ctx context.Context) (*ETLPipeline, error) {
     // Create LLM for enrichment and quality checks
-    model, err := llm.New("openai", llm.ProviderConfig{
+    model, err := llm.New("openai", config.ProviderConfig{
         APIKey: os.Getenv("OPENAI_API_KEY"),
         Model:  "gpt-4",
     })

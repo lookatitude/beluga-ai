@@ -45,7 +45,8 @@ import (
     "fmt"
     "time"
 
-    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/schema"
 
     _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
@@ -86,17 +87,17 @@ func NewBenchmarkRunner(ctx context.Context) (*BenchmarkRunner, error) {
     providers := make(map[string]llm.ChatModel)
 
     // Initialize providers
-    openai, err := llm.New("openai", llm.ProviderConfig{Model: "gpt-4o"})
+    openai, err := llm.New("openai", config.ProviderConfig{Model: "gpt-4o"})
     if err == nil {
         providers["openai"] = openai
     }
 
-    anthropic, err := llm.New("anthropic", llm.ProviderConfig{Model: "claude-3-5-sonnet-20241022"})
+    anthropic, err := llm.New("anthropic", config.ProviderConfig{Model: "claude-3-5-sonnet-20241022"})
     if err == nil {
         providers["anthropic"] = anthropic
     }
 
-    google, err := llm.New("google", llm.ProviderConfig{Model: "gemini-2.0-flash-exp"})
+    google, err := llm.New("google", config.ProviderConfig{Model: "gemini-2.0-flash-exp"})
     if err == nil {
         providers["google"] = google
     }

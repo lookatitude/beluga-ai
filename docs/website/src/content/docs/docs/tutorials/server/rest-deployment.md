@@ -34,6 +34,7 @@ import (
     "net/http"
     "os"
 
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/schema"
 
@@ -173,11 +174,9 @@ The main function creates the model via the registry pattern (`llm.New("openai",
 
 ```go
 func main() {
-    model, err := llm.New("openai", llm.ProviderConfig{
-        Options: map[string]any{
-            "api_key": os.Getenv("OPENAI_API_KEY"),
-            "model":   "gpt-4o",
-        },
+    model, err := llm.New("openai", config.ProviderConfig{
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+        Model:  "gpt-4o",
     })
     if err != nil {
         slog.Error("failed to create model", "error", err)

@@ -1,6 +1,6 @@
 ---
 title: "Streaming Tool Call Handler"
-description: "Recipe for handling tool calls during streaming LLM responses in Go — detect, execute concurrently, and stream results back with Beluga AI."
+description: "Recipe for handling tool calls during streaming LLM responses in Go — detect, accumulate fragments, execute tools, and stream results back with Beluga AI."
 head:
   - tag: meta
     attrs:
@@ -10,19 +10,17 @@ head:
 
 ## Problem
 
-You need to handle tool calls that arrive during streaming LLM responses, executing tools as they're detected and streaming results back to the user, without waiting for the complete response.
+You need to handle tool calls that arrive during streaming LLM responses, executing tools as they complete and returning results to the model.
 
 ## Solution
 
-Implement a streaming tool handler that processes tool call chunks as they arrive, executes tools concurrently, and streams tool results back into the response stream. This works because Beluga AI's streaming interface provides tool call chunks incrementally, allowing you to start tool execution before the stream completes.
+Accumulate `schema.ToolCall` fragments from streaming chunks by ID. When `FinishReason` is `"tool_calls"`, all tool calls are complete and can be executed. This works because Beluga AI's streaming interface provides `schema.StreamChunk` values with a `ToolCalls` field that accumulates argument fragments.
 
 ## Why This Matters
 
-LLM tool calls during streaming present a latency optimization opportunity that most implementations miss. In a typical non-streaming flow, the application waits for the complete LLM response, parses out tool calls, executes them sequentially, and then sends results back. This serial approach wastes time because the LLM often signals a tool call early in its response (sometimes in the first few chunks), but execution doesn't start until the entire response is received.
+LLM tool calls during streaming arrive as fragments: the first chunk might contain the tool name and ID, while subsequent chunks contain pieces of the arguments JSON. You cannot execute a tool until you have the complete arguments. This recipe accumulates fragments by call ID, and when `FinishReason` indicates tool call completion, all accumulated calls are executed — potentially concurrently for multiple tool calls.
 
-By processing tool call chunks incrementally, you can start executing tools as soon as the tool call arguments are complete, potentially saving hundreds of milliseconds or more. When the LLM requests multiple tools, concurrent execution via goroutines compounds this advantage -- three tool calls that each take 200ms complete in 200ms total instead of 600ms.
-
-The implementation handles a subtle challenge: tool call arguments arrive split across multiple chunks. The `toolCallBuffer` accumulates these fragments until a chunk is marked as `Complete`, at which point the full tool call is dispatched. This buffering is necessary because JSON arguments may be split at arbitrary byte boundaries by the streaming protocol. The `activeTools` map with `context.CancelFunc` values enables cancellation of in-flight tool executions when the parent context is cancelled, preventing resource leaks in timeout scenarios.
+The `arguments` field accumulates across chunks so JSON that is split at arbitrary byte boundaries by the streaming protocol is correctly reassembled before execution.
 
 ## Code Example
 
@@ -30,252 +28,224 @@ The implementation handles a subtle challenge: tool call arguments arrive split 
 package main
 
 import (
-    "context"
-    "encoding/json"
-    "fmt"
-    "log"
-    "sync"
+	"context"
+	"encoding/json"
+	"fmt"
+	"log/slog"
+	"os"
 
-    "go.opentelemetry.io/otel"
-    "go.opentelemetry.io/otel/attribute"
-    "go.opentelemetry.io/otel/trace"
-
-    "github.com/lookatitude/beluga-ai/llm"
-    "github.com/lookatitude/beluga-ai/schema"
-    "github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/llm"
+	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/tool"
+	_ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
 
-var tracer = otel.Tracer("beluga.llms.streaming_tools")
-
-// StreamingToolHandler handles tool calls during streaming
-type StreamingToolHandler struct {
-    tools       map[string]tool.Tool
-    resultsCh   chan ToolResult
-    mu          sync.Mutex
-    activeTools map[string]context.CancelFunc
+// pendingCall accumulates tool call fragments from the stream.
+type pendingCall struct {
+	id        string
+	name      string
+	arguments string // JSON fragments accumulated across chunks.
 }
 
-// ToolResult represents a tool execution result
-type ToolResult struct {
-    ToolName string
-    Result   interface{}
-    Error    error
+// StreamingToolExecutor collects streaming tool call fragments and executes them.
+type StreamingToolExecutor struct {
+	registry *tool.Registry
+	pending  map[string]*pendingCall // keyed by call ID
 }
 
-// NewStreamingToolHandler creates a new streaming tool handler
-func NewStreamingToolHandler(toolList []tool.Tool) *StreamingToolHandler {
-    toolMap := make(map[string]tool.Tool)
-    for _, t := range toolList {
-        toolMap[t.Name()] = t
-    }
-
-    return &StreamingToolHandler{
-        tools:       toolMap,
-        resultsCh:   make(chan ToolResult, 10),
-        activeTools: make(map[string]context.CancelFunc),
-    }
+// NewStreamingToolExecutor creates a tool executor for use with a streaming model.
+func NewStreamingToolExecutor(reg *tool.Registry) *StreamingToolExecutor {
+	return &StreamingToolExecutor{
+		registry: reg,
+		pending:  make(map[string]*pendingCall),
+	}
 }
 
-// HandleStreamingWithTools processes a streaming response with tool calls
-func (sth *StreamingToolHandler) HandleStreamingWithTools(ctx context.Context, model llm.ChatModel, messages []schema.Message, toolList []tool.Tool) (<-chan schema.Message, error) {
-    ctx, span := tracer.Start(ctx, "streaming_tools.handle")
-    defer span.End()
+// ProcessChunk accumulates tool call data from a streaming chunk.
+// Returns completed tool results when FinishReason indicates tool_calls.
+func (e *StreamingToolExecutor) ProcessChunk(ctx context.Context, chunk schema.StreamChunk) ([]*tool.Result, error) {
+	// Accumulate tool call fragments by ID.
+	for _, tc := range chunk.ToolCalls {
+		if tc.ID != "" {
+			if _, exists := e.pending[tc.ID]; !exists {
+				e.pending[tc.ID] = &pendingCall{id: tc.ID, name: tc.Name}
+			}
+		}
+		// Accumulate arguments across chunks (fragments arrive incrementally).
+		if p, ok := e.pending[tc.ID]; ok {
+			p.arguments += tc.Arguments
+			if tc.Name != "" {
+				p.name = tc.Name
+			}
+		}
+	}
 
-    // Bind tools to model
-    modelWithTools := model.BindTools(toolList)
+	// Execute all pending tool calls when the finish reason signals completion.
+	if chunk.FinishReason != "tool_calls" {
+		return nil, nil
+	}
 
-    // Start streaming
-    streamCh, err := modelWithTools.StreamChat(ctx, messages)
-    if err != nil {
-        span.RecordError(err)
-        span.SetStatus(trace.StatusError, err.Error())
-        return nil, err
-    }
+	var results []*tool.Result
+	for id, call := range e.pending {
+		t, err := e.registry.Get(call.name)
+		if err != nil {
+			slog.Warn("unknown tool in stream", "name", call.name, "id", id)
+			results = append(results, tool.ErrorResult(fmt.Errorf("unknown tool %q", call.name)))
+			continue
+		}
 
-    // Create output channel
-    outputCh := make(chan schema.Message, 10)
+		// Unmarshal the accumulated JSON arguments.
+		var args map[string]any
+		if call.arguments != "" {
+			if err := json.Unmarshal([]byte(call.arguments), &args); err != nil {
+				results = append(results, tool.ErrorResult(fmt.Errorf("unmarshal args for %q: %w", call.name, err)))
+				continue
+			}
+		}
 
-    go func() {
-        defer close(outputCh)
+		result, err := t.Execute(ctx, args)
+		if err != nil {
+			results = append(results, tool.ErrorResult(err))
+		} else {
+			results = append(results, result)
+		}
+	}
 
-        var accumulatedContent string
-        var toolCalls []schema.ToolCall
-        var toolCallBuffer string
-
-        for chunk := range streamCh {
-            if chunk.Err != nil {
-                span.RecordError(chunk.Err)
-                return
-            }
-
-            // Accumulate content
-            if chunk.Content != "" {
-                accumulatedContent += chunk.Content
-            }
-
-            // Collect tool call chunks
-            if len(chunk.ToolCallChunks) > 0 {
-                for _, toolChunk := range chunk.ToolCallChunks {
-                    toolCallBuffer += toolChunk.Arguments
-
-                    // Check if tool call is complete
-                    if toolChunk.Complete {
-                        toolCall := schema.ToolCall{
-                            Name:      toolChunk.Name,
-                            Arguments: toolCallBuffer,
-                        }
-                        toolCalls = append(toolCalls, toolCall)
-
-                        // Execute tool asynchronously
-                        go sth.executeTool(ctx, toolCall)
-
-                        toolCallBuffer = ""
-                    }
-                }
-            }
-        }
-
-        // Send final message with accumulated content
-        if accumulatedContent != "" {
-            finalMsg := schema.NewAIMessage(accumulatedContent)
-            outputCh <- finalMsg
-        }
-
-        // Wait for tool results and send them
-        sth.sendToolResults(ctx, outputCh, len(toolCalls))
-    }()
-
-    return outputCh, nil
-}
-
-// executeTool executes a tool call
-func (sth *StreamingToolHandler) executeTool(ctx context.Context, toolCall schema.ToolCall) {
-    ctx, span := tracer.Start(ctx, "streaming_tools.execute")
-    defer span.End()
-
-    span.SetAttributes(
-        attribute.String("tool.name", toolCall.Name),
-    )
-
-    t, exists := sth.tools[toolCall.Name]
-    if !exists {
-        result := ToolResult{
-            ToolName: toolCall.Name,
-            Error:    fmt.Errorf("tool %s not found", toolCall.Name),
-        }
-        sth.resultsCh <- result
-        return
-    }
-
-    // Parse arguments
-    var args map[string]interface{}
-    if err := json.Unmarshal([]byte(toolCall.Arguments), &args); err != nil {
-        result := ToolResult{
-            ToolName: toolCall.Name,
-            Error:    fmt.Errorf("failed to parse arguments: %w", err),
-        }
-        sth.resultsCh <- result
-        return
-    }
-
-    // Execute tool
-    result, err := t.Execute(ctx, args)
-
-    sth.resultsCh <- ToolResult{
-        ToolName: toolCall.Name,
-        Result:   result,
-        Error:    err,
-    }
-}
-
-// sendToolResults sends tool results to output channel
-func (sth *StreamingToolHandler) sendToolResults(ctx context.Context, outputCh chan<- schema.Message, expectedCount int) {
-    for i := 0; i < expectedCount; i++ {
-        select {
-        case result := <-sth.resultsCh:
-            if result.Error != nil {
-                log.Printf("Tool %s failed: %v", result.ToolName, result.Error)
-                continue
-            }
-
-            resultJSON, _ := json.Marshal(result.Result)
-            toolMsg := schema.NewToolMessage(string(resultJSON), result.ToolName)
-            outputCh <- toolMsg
-
-        case <-ctx.Done():
-            return
-        }
-    }
+	// Clear pending calls after execution.
+	e.pending = make(map[string]*pendingCall)
+	return results, nil
 }
 
 func main() {
-    // Create tools
-    toolList := []tool.Tool{
-        // Add your tools here
-    }
+	ctx := context.Background()
 
-    // Create handler
-    handler := NewStreamingToolHandler(toolList)
+	reg := tool.NewRegistry()
+	type CalcInput struct {
+		Expression string `json:"expression" description:"Math expression to evaluate" required:"true"`
+	}
+	if err := reg.Add(tool.NewFuncTool("calculate", "Evaluate a math expression",
+		func(ctx context.Context, input CalcInput) (*tool.Result, error) {
+			return tool.TextResult("42"), nil
+		},
+	)); err != nil {
+		slog.Error("tool registration failed", "error", err)
+		return
+	}
 
-    fmt.Println("Streaming tool handler created")
+	model, err := llm.New("openai", config.ProviderConfig{
+		APIKey: os.Getenv("OPENAI_API_KEY"),
+		Model:  "gpt-4o",
+	})
+	if err != nil {
+		slog.Error("model creation failed", "error", err)
+		return
+	}
+
+	// Bind tool definitions to the model.
+	defs := make([]schema.ToolDefinition, 0, len(reg.All()))
+	for _, t := range reg.All() {
+		defs = append(defs, tool.ToDefinition(t))
+	}
+	boundModel := model.BindTools(defs)
+
+	msgs := []schema.Message{
+		schema.NewHumanMessage("What is 6 * 7?"),
+	}
+
+	executor := NewStreamingToolExecutor(reg)
+
+	for chunk, err := range boundModel.Stream(ctx, msgs) {
+		if err != nil {
+			slog.Error("stream error", "error", err)
+			break
+		}
+
+		// Print text deltas as they arrive.
+		if chunk.Delta != "" {
+			fmt.Print(chunk.Delta)
+		}
+
+		// Process tool call fragments; execute when complete.
+		results, err := executor.ProcessChunk(ctx, chunk)
+		if err != nil {
+			slog.Error("tool execution error", "error", err)
+			break
+		}
+		for _, r := range results {
+			data, _ := json.Marshal(r.Content)
+			fmt.Printf("\n[tool result: %s]\n", data)
+		}
+	}
+	fmt.Println()
 }
 ```
 
 ## Explanation
 
-1. **Incremental tool call collection** -- Tool call chunks are accumulated as they arrive. Tool calls may be split across multiple chunks because the streaming protocol fragments JSON arguments at arbitrary byte boundaries. The `toolCallBuffer` accumulates these fragments until a chunk marked as `Complete` is received, at which point the full tool call is assembled and dispatched.
+1. **Fragment accumulation by ID** -- Each tool call has an `ID` that uniquely identifies it across chunks. The executor stores a `pendingCall` per ID and appends argument fragments as they arrive. Without this accumulation, JSON split across chunk boundaries would fail to parse.
 
-2. **Concurrent tool execution** -- Tools are executed in separate goroutines as soon as they're detected. This allows multiple tools to run in parallel, reducing total execution time from the sum of all tool durations to the maximum of any single tool duration. The `resultsCh` channel collects results from all concurrent executions in a thread-safe manner.
+2. **Execution on `FinishReason == "tool_calls"`** -- This signals that all tool call arguments are complete. Only at this point is it safe to unmarshal the JSON and execute the tools. Executing before this point risks partial JSON.
 
-3. **Streaming results** -- Tool results are sent to the output channel as they complete, allowing downstream consumers to process results incrementally rather than waiting for all tools to finish. The `sendToolResults` method collects exactly the expected number of results, ensuring all tool executions are accounted for before the output channel closes.
+3. **Registry-based lookup** -- `registry.Get(name)` returns `(Tool, error)`. Unknown tool names produce an `ErrorResult` that the caller can log or return to the model for self-correction.
 
-4. **OTel instrumentation** -- Each tool execution gets its own span with the tool name as an attribute. This creates a trace tree showing the streaming response span as the parent with individual tool execution spans as children, making it straightforward to identify which tools are slow or failing in production.
-
-## Testing
-
-```go
-func TestStreamingToolHandler_ExecutesTools(t *testing.T) {
-    mockTool := &MockTool{name: "test_tool"}
-    handler := NewStreamingToolHandler([]tool.Tool{mockTool})
-
-    toolCall := schema.ToolCall{
-        Name:      "test_tool",
-        Arguments: `{"input": "test"}`,
-    }
-
-    ctx := context.Background()
-    handler.executeTool(ctx, toolCall)
-
-    result := <-handler.resultsCh
-    require.NoError(t, result.Error)
-}
-```
+4. **Clearing pending state** -- After execution, `pending` is reset so the executor can handle subsequent tool call rounds in a multi-turn agent loop.
 
 ## Variations
 
-### Tool Result Streaming
+### Concurrent Tool Execution
 
-Stream tool results as they're computed:
-
-```go
-func (sth *StreamingToolHandler) executeToolWithStreaming(ctx context.Context, toolCall schema.ToolCall, resultCh chan<- ToolResult) {
-    // Stream partial results
-}
-```
-
-### Tool Call Deduplication
-
-Deduplicate identical tool calls:
+When the model requests multiple tools in one response, execute them concurrently:
 
 ```go
-type ToolCallKey string
+func (e *StreamingToolExecutor) ProcessChunkConcurrent(ctx context.Context, chunk schema.StreamChunk) ([]*tool.Result, error) {
+	// Accumulate fragments (same as above).
+	// ...
 
-func (sth *StreamingToolHandler) deduplicateToolCalls(toolCalls []schema.ToolCall) []schema.ToolCall {
-    // Remove duplicates
+	if chunk.FinishReason != "tool_calls" {
+		return nil, nil
+	}
+
+	type result struct {
+		r   *tool.Result
+		idx int
+	}
+	calls := make([]*pendingCall, 0, len(e.pending))
+	for _, c := range e.pending {
+		calls = append(calls, c)
+	}
+
+	resultCh := make(chan result, len(calls))
+	for i, call := range calls {
+		go func(i int, call *pendingCall) {
+			t, err := e.registry.Get(call.name)
+			if err != nil {
+				resultCh <- result{r: tool.ErrorResult(err), idx: i}
+				return
+			}
+			var args map[string]any
+			if call.arguments != "" {
+				_ = json.Unmarshal([]byte(call.arguments), &args)
+			}
+			r, execErr := t.Execute(ctx, args)
+			if execErr != nil {
+				r = tool.ErrorResult(execErr)
+			}
+			resultCh <- result{r: r, idx: i}
+		}(i, call)
+	}
+
+	results := make([]*tool.Result, len(calls))
+	for range calls {
+		res := <-resultCh
+		results[res.idx] = res.r
+	}
+	e.pending = make(map[string]*pendingCall)
+	return results, nil
 }
 ```
 
 ## Related Recipes
 
-- **[Token Counting](./token-counting)** — Optimize token counting
-- **[Handling Tool Failures](./agents-tool-failures)** — Robust tool error handling
+- **[Streaming Metadata](/docs/cookbook/llm/streaming-metadata)** -- Capture token counts and finish reasons from streams
+- **[Tool Middleware](/docs/cookbook/agents/tool-recipes)** -- Apply retry and auth middleware to tools

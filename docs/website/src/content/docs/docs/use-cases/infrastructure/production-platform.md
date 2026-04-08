@@ -294,9 +294,7 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 
     // Check LLM provider
     _, err := model.Generate(ctx, []schema.Message{
-        &schema.HumanMessage{Parts: []schema.ContentPart{
-            schema.TextPart{Text: "ping"},
-        }},
+        schema.NewHumanMessage("ping"),
     }, llm.WithMaxTokens(1))
     if err != nil {
         checks["llm"] = "unhealthy: " + err.Error()

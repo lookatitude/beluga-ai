@@ -115,21 +115,25 @@ import (
     "strings"
 
     "github.com/lookatitude/beluga-ai/agent"
-    "github.com/lookatitude/beluga-ai/llm"
-    "github.com/lookatitude/beluga-ai/schema"
+    "github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/tool"
     _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
 
 // Create specialized agents with distinct roles and tool sets.
-// Each agent has a focused system prompt that defines its expertise,
+// Each agent has a focused persona that defines its expertise,
 // preventing the confusion that arises from overloading a single agent.
 func CreateAgents(ctx context.Context, model llm.ChatModel) map[string]agent.Agent {
     // Developer Agent
     devAgent := agent.New(
         "developer",
         agent.WithLLM(model),
-        agent.WithSystemPrompt("You are an expert Go developer. Write clean, idiomatic code with proper error handling."),
-        agent.WithTools([]schema.Tool{
+        agent.WithPersona(agent.Persona{
+            Role: "Go developer",
+            Goal: "write clean, idiomatic code with proper error handling",
+        }),
+        agent.WithTools([]tool.Tool{
             createCodeSearchTool(),
             createRunTestsTool(),
         }),
@@ -139,8 +143,11 @@ func CreateAgents(ctx context.Context, model llm.ChatModel) map[string]agent.Age
     qaAgent := agent.New(
         "qa",
         agent.WithLLM(model),
-        agent.WithSystemPrompt("You are a QA engineer. Review code for bugs, security issues, and best practices."),
-        agent.WithTools([]schema.Tool{
+        agent.WithPersona(agent.Persona{
+            Role: "QA engineer",
+            Goal: "review code for bugs, security issues, and best practices",
+        }),
+        agent.WithTools([]tool.Tool{
             createStaticAnalysisTool(),
             createSecurityScanTool(),
         }),
@@ -150,7 +157,10 @@ func CreateAgents(ctx context.Context, model llm.ChatModel) map[string]agent.Age
     writerAgent := agent.New(
         "tech_writer",
         agent.WithLLM(model),
-        agent.WithSystemPrompt("You are a technical writer. Create clear, concise documentation."),
+        agent.WithPersona(agent.Persona{
+            Role: "technical writer",
+            Goal: "create clear, concise documentation",
+        }),
     )
 
     return map[string]agent.Agent{
@@ -188,12 +198,13 @@ func (r *RouterAgent) Route(ctx context.Context, request string) (string, error)
         return "", fmt.Errorf("no agent for category: %s", category)
     }
 
-    resp, err := a.Invoke(ctx, request)
+    // Invoke returns (string, error) directly.
+    result, err := a.Invoke(ctx, request)
     if err != nil {
         return "", fmt.Errorf("agent execution failed: %w", err)
     }
 
-    return resp.Text(), nil
+    return result, nil
 }
 
 func (r *RouterAgent) classifyRequest(ctx context.Context, request string) (string, error) {
@@ -223,7 +234,7 @@ func main() {
 
     // Initialize the LLM through the registry pattern. The openai provider
     // was registered via its init() function in the blank import above.
-    model, err := llm.New("openai", llm.ProviderConfig{
+    model, err := llm.New("openai", config.ProviderConfig{
         APIKey: os.Getenv("OPENAI_API_KEY"),
         Model:  "gpt-4o",
     })
@@ -371,15 +382,16 @@ func (s *SupervisorAgent) executeTasks(ctx context.Context, tasks []Task) (map[s
             // Build context from previous results
             taskCtx := s.buildTaskContext(task, results)
 
-            resp, err := worker.Invoke(ctx, taskCtx)
+            // Invoke returns (string, error) directly.
+            result, err := worker.Invoke(ctx, taskCtx)
             if err != nil {
                 task.Status = "failed"
                 return nil, fmt.Errorf("task %s failed: %w", task.ID, err)
             }
 
-            task.Result = resp.Text()
+            task.Result = result
             task.Status = "complete"
-            results[task.ID] = resp.Text()
+            results[task.ID] = result
             completed[task.ID] = true
             progress = true
 
@@ -538,13 +550,13 @@ func (eb *EventBus) Publish(event Event) {
 
 // Agent that publishes events
 type EventPublishingAgent struct {
-    *agent.BaseAgent
-    bus *EventBus
+    inner agent.Agent
+    bus   *EventBus
 }
 
 func (a *EventPublishingAgent) Run(ctx context.Context, input string) (string, error) {
-    // Do work
-    resp, err := a.BaseAgent.Invoke(ctx, input)
+    // Invoke returns (string, error) directly.
+    result, err := a.inner.Invoke(ctx, input)
     if err != nil {
         return "", err
     }
@@ -552,12 +564,12 @@ func (a *EventPublishingAgent) Run(ctx context.Context, input string) (string, e
     // Publish completion event
     a.bus.Publish(Event{
         Type:      "task.completed",
-        AgentID:   a.Name(),
-        Payload:   resp.Text(),
+        AgentID:   a.inner.ID(),
+        Payload:   result,
         Timestamp: time.Now(),
     })
 
-    return resp.Text(), nil
+    return result, nil
 }
 
 // Agent that reacts to events. This goroutine listens for task completion
@@ -575,8 +587,9 @@ func StartReactiveAgent(ctx context.Context, a agent.Agent, bus *EventBus) {
                 // React to event
                 fmt.Printf("Agent reacting to event from %s\n", event.AgentID)
 
-                resp, _ := a.Invoke(ctx, fmt.Sprintf("Process: %v", event.Payload))
-                fmt.Printf("Reaction result: %s\n", resp.Text())
+                // Invoke returns (string, error) directly.
+                result, _ := a.Invoke(ctx, fmt.Sprintf("Process: %v", event.Payload))
+                fmt.Printf("Reaction result: %s\n", result)
             }
         }
     }()
@@ -645,7 +658,7 @@ func ResolveConflict(ctx context.Context, arbiter llm.ChatModel, responses []str
         return "", err
     }
 
-    return resolution.Text(), nil
+    return resolution.Text(), nil // AIMessage.Text() returns the response text
 }
 ```
 

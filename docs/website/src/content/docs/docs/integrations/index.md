@@ -33,7 +33,10 @@ Beluga AI uses a registry-based architecture where providers auto-register via G
 
 ```go
 // 1. Import the provider (auto-registers via init())
-import _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+import (
+    "github.com/lookatitude/beluga-ai/config"
+    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+)
 
 // 2. Configure
 cfg := config.ProviderConfig{

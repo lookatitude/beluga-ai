@@ -46,7 +46,8 @@ import (
     "context"
     "fmt"
 
-    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/rag/embedding"
     "github.com/lookatitude/beluga-ai/rag/loader"
     "github.com/lookatitude/beluga-ai/rag/splitter"
@@ -83,7 +84,7 @@ func NewKnowledgeQASystem(ctx context.Context) (*KnowledgeQASystem, error) {
         return nil, fmt.Errorf("create vector store: %w", err)
     }
 
-    model, err := llm.New("openai", llm.ProviderConfig{
+    model, err := llm.New("openai", config.ProviderConfig{
         APIKey: os.Getenv("OPENAI_API_KEY"),
         Model:  "gpt-4o",
     })

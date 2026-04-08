@@ -86,9 +86,10 @@ import (
 	_ "github.com/lookatitude/beluga-ai/voice/stt/providers/deepgram"
 )
 
-engine, err := stt.New("deepgram", stt.ProviderConfig{
-	APIKey: os.Getenv("DEEPGRAM_API_KEY"),
-	Model:  "nova-2",
+engine, err := stt.New("deepgram", stt.Config{
+	Model:   "nova-2",
+	Encoding: "linear16",
+	SampleRate: 16000,
 })
 if err != nil {
 	log.Fatal(err)
@@ -138,9 +139,10 @@ import (
 	_ "github.com/lookatitude/beluga-ai/voice/tts/providers/elevenlabs"
 )
 
-engine, err := tts.New("elevenlabs", tts.ProviderConfig{
-	APIKey: os.Getenv("ELEVENLABS_API_KEY"),
+engine, err := tts.New("elevenlabs", tts.Config{
+	Voice:  "rachel",
 	Model:  "eleven_turbo_v2_5",
+	Format: tts.FormatPCM,
 })
 if err != nil {
 	log.Fatal(err)
@@ -156,8 +158,8 @@ for chunk, err := range engine.SynthesizeStream(ctx, textStream) {
 	if err != nil {
 		break
 	}
-	// Play audio chunk immediately
-	player.Write(chunk.Data)
+	// Play audio chunk immediately (chunk is []byte)
+	player.Write(chunk)
 }
 
 // Use as FrameProcessor
@@ -186,21 +188,62 @@ import (
 	_ "github.com/lookatitude/beluga-ai/voice/s2s/providers/openai"
 )
 
-engine, err := s2s.New("openai", s2s.ProviderConfig{
-	APIKey: os.Getenv("OPENAI_API_KEY"),
-	Model:  "gpt-4o-realtime",
+engine, err := s2s.New("openai", s2s.Config{
+	Model:        "gpt-4o-realtime-preview",
+	Voice:        "alloy",
+	SampleRate:   24000,
+	Instructions: "You are a helpful voice assistant.",
 })
 if err != nil {
 	log.Fatal(err)
 }
 
-// Process audio directly
-for outFrame, err := range engine.Process(ctx, audioInStream) {
-	if err != nil {
-		break
-	}
-	transport.Send(outFrame)
+// Start a bidirectional session
+session, err := engine.Start(ctx)
+if err != nil {
+	log.Fatal(err)
 }
+defer session.Close()
+
+// Send audio input using a context-cancellable goroutine
+ctx, cancel := context.WithCancel(ctx)
+defer cancel()
+
+var wg sync.WaitGroup
+wg.Add(1)
+go func() {
+	defer wg.Done()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case audioChunk, ok := <-audioInCh:
+			if !ok {
+				return
+			}
+			if err := session.SendAudio(ctx, audioChunk); err != nil {
+				cancel()
+				return
+			}
+		}
+	}
+}()
+
+// Receive session events
+for event := range session.Recv() {
+	switch event.Type {
+	case s2s.EventAudioOutput:
+		transport.Write(event.Audio)
+	case s2s.EventTranscript:
+		log.Printf("User said: %s", event.Text)
+	case s2s.EventTurnEnd:
+		log.Println("Turn complete")
+	case s2s.EventError:
+		log.Printf("Session error: %v", event.Error)
+		cancel()
+	}
+}
+wg.Wait()
 ```
 
 ### S2S Providers
@@ -250,13 +293,18 @@ ws := transport.NewWebSocket(transport.WebSocketConfig{
 })
 
 // LiveKit transport
-lk, err := transport.New("livekit", transport.ProviderConfig{
-	Options: map[string]any{
-		"url":    os.Getenv("LIVEKIT_URL"),
+lk, err := transport.New("livekit", transport.Config{
+	URL:   os.Getenv("LIVEKIT_URL"),
+	Token: os.Getenv("LIVEKIT_TOKEN"),
+	Extra: map[string]any{
 		"api_key": os.Getenv("LIVEKIT_API_KEY"),
 		"secret":  os.Getenv("LIVEKIT_SECRET"),
 	},
 })
+if err != nil {
+	log.Fatal(err)
+}
+defer lk.Close()
 ```
 
 ### Transport Providers
@@ -294,6 +342,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/voice"
 	"github.com/lookatitude/beluga-ai/voice/stt"
@@ -309,23 +358,26 @@ func main() {
 	ctx := context.Background()
 
 	// Set up STT
-	sttEngine, err := stt.New("deepgram", stt.ProviderConfig{
-		APIKey: os.Getenv("DEEPGRAM_API_KEY"),
+	sttEngine, err := stt.New("deepgram", stt.Config{
+		Language:   "en-US",
+		SampleRate: 16000,
+		Encoding:   "linear16",
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Set up TTS
-	ttsEngine, err := tts.New("elevenlabs", tts.ProviderConfig{
-		APIKey: os.Getenv("ELEVENLABS_API_KEY"),
+	ttsEngine, err := tts.New("elevenlabs", tts.Config{
+		Voice:  "rachel",
+		Format: tts.FormatPCM,
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Set up LLM
-	model, err := llm.New("openai", llm.ProviderConfig{
+	model, err := llm.New("openai", config.ProviderConfig{
 		APIKey: os.Getenv("OPENAI_API_KEY"),
 		Model:  "gpt-4o",
 	})

@@ -47,7 +47,8 @@ import (
     "sync"
     "time"
 
-    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/schema"
 
     _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
@@ -80,7 +81,7 @@ func NewABTestingFramework(ctx context.Context) (*ABTestingFramework, error) {
 
 func (f *ABTestingFramework) CreateExperiment(ctx context.Context, experimentID string, modelAName string, modelBName string, splitRatio float64) error {
     // Create model A
-    modelA, err := llm.New(modelAName, llm.ProviderConfig{
+    modelA, err := llm.New(modelAName, config.ProviderConfig{
         APIKey: os.Getenv(fmt.Sprintf("%s_API_KEY", strings.ToUpper(modelAName))),
     })
     if err != nil {
@@ -88,7 +89,7 @@ func (f *ABTestingFramework) CreateExperiment(ctx context.Context, experimentID 
     }
 
     // Create model B
-    modelB, err := llm.New(modelBName, llm.ProviderConfig{
+    modelB, err := llm.New(modelBName, config.ProviderConfig{
         APIKey: os.Getenv(fmt.Sprintf("%s_API_KEY", strings.ToUpper(modelBName))),
     })
     if err != nil {

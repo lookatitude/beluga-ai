@@ -58,9 +58,10 @@ import (
     "strings"
 
     "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/llm"
-    "github.com/lookatitude/beluga-ai/tool"
     "github.com/lookatitude/beluga-ai/schema"
+    "github.com/lookatitude/beluga-ai/tool"
 
     _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
@@ -78,7 +79,7 @@ type LintInput struct {
 }
 
 func createReviewAgent(ctx context.Context) (agent.Agent, error) {
-    model, err := llm.New("openai", nil)
+    model, err := llm.New("openai", config.ProviderConfig{Model: "gpt-4o"})
     if err != nil {
         return nil, fmt.Errorf("create model: %w", err)
     }
@@ -145,8 +146,7 @@ func createReviewAgent(ctx context.Context) (agent.Agent, error) {
         },
     )
 
-    reviewAgent, err := agent.New(
-        agent.WithID("code-reviewer"),
+    reviewAgent := agent.New("code-reviewer",
         agent.WithPersona(agent.Persona{
             Role: "Senior Code Reviewer",
             Goal: "Identify bugs, security issues, and quality improvements in code changes",
@@ -155,12 +155,9 @@ func createReviewAgent(ctx context.Context) (agent.Agent, error) {
                 "Be constructive — explain why something is an issue and suggest a fix. " +
                 "Do not flag style preferences as bugs.",
         }),
-        agent.WithModel(model),
-        agent.WithTools(diffTool, fileListTool, lintTool),
+        agent.WithLLM(model),
+        agent.WithTools([]tool.Tool{diffTool, fileListTool, lintTool}),
     )
-    if err != nil {
-        return nil, fmt.Errorf("create review agent: %w", err)
-    }
 
     return reviewAgent, nil
 }
@@ -203,13 +200,9 @@ func reviewPR(ctx context.Context, reviewAgent agent.Agent, model llm.ChatModel,
     structured := llm.NewStructured[ReviewReport](model)
 
     msgs := []schema.Message{
-        &schema.SystemMessage{Parts: []schema.ContentPart{
-            schema.TextPart{Text: "Convert this code review analysis into a structured report. " +
-                "Be precise about file paths and line numbers."},
-        }},
-        &schema.HumanMessage{Parts: []schema.ContentPart{
-            schema.TextPart{Text: analysis},
-        }},
+        schema.NewSystemMessage("Convert this code review analysis into a structured report. " +
+            "Be precise about file paths and line numbers."),
+        schema.NewHumanMessage(analysis),
     }
 
     report, err := structured.Generate(ctx, msgs)

@@ -36,6 +36,8 @@ The package follows Beluga's registry pattern. Implementations register via
 init() and are instantiated with `New`:
 
 ```go
+import "github.com/lookatitude/beluga-ai/config"
+
 s, err := splitter.New("recursive", config.ProviderConfig{
     Options: map[string]any{"chunk_size": 1000, "chunk_overlap": 200},
 })

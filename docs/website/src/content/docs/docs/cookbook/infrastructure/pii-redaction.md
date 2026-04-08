@@ -163,13 +163,6 @@ func (pr *PIIRedactor) RedactStructured(ctx context.Context, data map[string]int
     return redacted, nil
 }
 
-func min(a, b int) int {
-    if a < b {
-        return a
-    }
-    return b
-}
-
 func (pr *PIIRedactor) sumCounts(counts map[string]int) int {
     total := 0
     for _, count := range counts {

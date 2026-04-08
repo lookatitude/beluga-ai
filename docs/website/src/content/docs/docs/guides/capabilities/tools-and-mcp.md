@@ -173,26 +173,18 @@ hooks := tool.Hooks{
 
 The [Model Context Protocol (MCP)](https://modelcontextprotocol.io) is an open standard that enables agents to discover and invoke tools hosted on remote servers. This is significant because it decouples tool implementation from agent implementation: a tool server can be written in any language and deployed independently, and agents discover available tools at runtime through the protocol's `ListTools` endpoint. MCP uses Streamable HTTP transport for reliable, bidirectional communication.
 
-Connect to a remote MCP server:
+Connect to a remote MCP server using the convenience function `tool.FromMCP`, which connects, lists tools, and returns both the tools and the client in one call:
 
 ```go
-import "github.com/lookatitude/beluga-ai/protocol/mcp"
+import "github.com/lookatitude/beluga-ai/tool"
 
-// Connect to an MCP server
-client, err := mcp.NewClient(mcp.ClientConfig{
-	ServerURL: "http://localhost:3001/mcp",
-	Transport: "streamable-http", // Streamable HTTP transport
-})
+// Connect to an MCP server and discover tools in one call.
+// FromMCP returns ([]tool.Tool, *tool.MCPClient, error).
+tools, client, err := tool.FromMCP(ctx, "http://localhost:3001/mcp")
 if err != nil {
 	log.Fatal(err)
 }
-defer client.Close()
-
-// Discover available tools
-tools, err := client.ListTools(ctx)
-if err != nil {
-	log.Fatal(err)
-}
+defer client.Close(ctx)
 
 for _, t := range tools {
 	fmt.Printf("Remote tool: %s - %s\n", t.Name(), t.Description())
@@ -205,26 +197,44 @@ a := agent.New("mcp-agent",
 )
 ```
 
+For finer control — setting custom HTTP headers, session IDs, or a custom HTTP client — create the client manually:
+
+```go
+client := tool.NewMCPClient("http://localhost:3001/mcp",
+	tool.WithSessionID("my-session"),
+	tool.WithMCPHeaders(map[string]string{"Authorization": "Bearer " + token}),
+)
+if err := client.Connect(ctx); err != nil {
+	log.Fatal(err)
+}
+defer client.Close(ctx)
+
+tools, err := client.ListTools(ctx)
+if err != nil {
+	log.Fatal(err)
+}
+```
+
 ### MCP with Multiple Servers
 
 In production, tools often span multiple services: a file operations server, a database query server, a notification server. MCP clients can connect to multiple servers simultaneously, and their tools can be combined into a single tool set for the agent. This architecture scales horizontally — each MCP server is an independent microservice.
 
 ```go
 // Connect to multiple MCP servers
-filesClient, err := mcp.NewClient(mcp.ClientConfig{
-	ServerURL: "http://files-server:3001/mcp",
-})
+fileTools, filesClient, err := tool.FromMCP(ctx, "http://files-server:3001/mcp")
+if err != nil {
+	log.Fatal(err)
+}
+defer filesClient.Close(ctx)
 
-dbClient, err := mcp.NewClient(mcp.ClientConfig{
-	ServerURL: "http://db-server:3002/mcp",
-})
+dbTools, dbClient, err := tool.FromMCP(ctx, "http://db-server:3002/mcp")
+if err != nil {
+	log.Fatal(err)
+}
+defer dbClient.Close(ctx)
 
 // Combine tools from multiple sources
-var allTools []tool.Tool
-fileTools, _ := filesClient.ListTools(ctx)
-dbTools, _ := dbClient.ListTools(ctx)
-allTools = append(allTools, fileTools...)
-allTools = append(allTools, dbTools...)
+allTools := append(fileTools, dbTools...)
 
 a := agent.New("multi-mcp",
 	agent.WithLLM(model),

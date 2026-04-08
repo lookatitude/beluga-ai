@@ -45,6 +45,7 @@ import (
     "log"
     "time"
 
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/orchestration"
     "github.com/lookatitude/beluga-ai/schema"
@@ -53,7 +54,7 @@ import (
 )
 
 func createOrderChain(ctx context.Context) (orchestration.Chain, error) {
-    model, err := llm.New("openai", llm.ProviderConfig{
+    model, err := llm.New("openai", config.ProviderConfig{
         APIKey: os.Getenv("OPENAI_API_KEY"),
         Model:  "gpt-4o",
     })
@@ -83,15 +84,13 @@ func createOrderChain(ctx context.Context) (orchestration.Chain, error) {
         prompt := fmt.Sprintf("Order value: $%.2f, Customer tier: %s. Should this order receive expedited processing? Answer yes or no with brief reasoning.", orderValue, customerTier)
 
         resp, err := model.Generate(ctx, []schema.Message{
-            &schema.HumanMessage{Parts: []schema.ContentPart{
-                schema.TextPart{Text: prompt},
-            }},
+            schema.NewHumanMessage(prompt),
         })
         if err != nil {
             return nil, fmt.Errorf("llm decision: %w", err)
         }
 
-        decision := resp.Parts[0].(schema.TextPart).Text
+        decision := resp.Text()
         input["expedited"] = decision
         return input, nil
     })
@@ -262,7 +261,7 @@ func OrderProcessingWorkflow(ctx temporalWorkflow.Context, order Order) (OrderRe
 
 // LLM activity for intelligent decision-making
 func LLMDecisionActivity(ctx context.Context, order Order) (string, error) {
-    model, err := llm.New("openai", llm.ProviderConfig{
+    model, err := llm.New("openai", config.ProviderConfig{
         APIKey: os.Getenv("OPENAI_API_KEY"),
         Model:  "gpt-4o",
     })
@@ -273,15 +272,13 @@ func LLMDecisionActivity(ctx context.Context, order Order) (string, error) {
     prompt := fmt.Sprintf("Order value: $%.2f, Customer tier: %s. Determine if this order needs special handling.", order.Value, order.CustomerTier)
 
     resp, err := model.Generate(ctx, []schema.Message{
-        &schema.HumanMessage{Parts: []schema.ContentPart{
-            schema.TextPart{Text: prompt},
-        }},
+        schema.NewHumanMessage(prompt),
     })
     if err != nil {
         return "", err
     }
 
-    return resp.Parts[0].(schema.TextPart).Text, nil
+    return resp.Text(), nil
 }
 ```
 

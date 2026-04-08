@@ -149,7 +149,7 @@ ORDER BY order_count DESC;`,
         return "", err
     }
 
-    return response.GetContent(), nil
+    return response.Text(), nil
 }
 ```
 
@@ -389,7 +389,7 @@ func GenerateSQLWithDynamicExamples(
         return "", err
     }
 
-    return response.GetContent(), nil
+    return response.Text(), nil
 }
 ```
 
@@ -472,7 +472,7 @@ func RAGWithCaching(
         return "", err
     }
 
-    return response.GetContent(), nil
+    return response.Text(), nil
 }
 ```
 
@@ -582,7 +582,7 @@ func AdaptiveSupport(
         return "", err
     }
 
-    return response.GetContent(), nil
+    return response.Text(), nil
 }
 ```
 

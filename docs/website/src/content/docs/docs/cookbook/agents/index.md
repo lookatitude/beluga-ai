@@ -96,41 +96,18 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 
 	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tool"
 )
 
-// validateToolCall checks that tool arguments match the expected schema.
-func validateToolCall(registry *tool.Registry, call schema.ToolCall) error {
-	t, ok := registry.Get(call.Name)
-	if !ok {
-		return fmt.Errorf("unknown tool: %q", call.Name)
+// validateToolExists checks that the named tool is registered.
+func validateToolExists(registry *tool.Registry, name string) error {
+	if _, err := registry.Get(name); err != nil {
+		return fmt.Errorf("unknown tool: %q", name)
 	}
-
-	// Marshal the arguments and check against the input schema.
-	inputSchema := t.InputSchema()
-	requiredFields, _ := inputSchema["required"].([]any)
-	properties, _ := inputSchema["properties"].(map[string]any)
-
-	for _, req := range requiredFields {
-		fieldName, _ := req.(string)
-		if _, ok := call.Arguments[fieldName]; !ok {
-			return fmt.Errorf("tool %q missing required field %q", call.Name, fieldName)
-		}
-	}
-
-	// Check for unexpected fields.
-	for key := range call.Arguments {
-		if _, ok := properties[key]; !ok {
-			slog.Warn("unexpected tool argument", "tool", call.Name, "field", key)
-		}
-	}
-
 	return nil
 }
 
@@ -147,17 +124,23 @@ func main() {
 			return tool.TextResult(fmt.Sprintf("Weather in %s: sunny, 22°C", input.City)), nil
 		},
 	)
-	reg.Add(weather)
+	if err := reg.Add(weather); err != nil {
+		slog.Error("tool registration failed", "error", err)
+		return
+	}
 
 	// Validate tool calls via hooks.
 	a := agent.New("assistant",
 		agent.WithTools(reg.All()),
 		agent.WithHooks(agent.Hooks{
-			OnToolCall: func(ctx context.Context, call schema.ToolCall) error {
-				if err := validateToolCall(reg, call); err != nil {
-					slog.Error("invalid tool call", "error", err)
-					return err // Agent will see the error and retry with corrected args.
+			OnToolCall: func(ctx context.Context, call agent.ToolCallInfo) error {
+				// Look up the tool and validate.
+				t, err := reg.Get(call.Name)
+				if err != nil {
+					slog.Error("unknown tool", "name", call.Name)
+					return fmt.Errorf("unknown tool: %q", call.Name)
 				}
+				_ = t
 				return nil
 			},
 		}),
@@ -636,14 +619,13 @@ import (
 	"github.com/lookatitude/beluga-ai/agent"
 	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/memory"
-	_ "github.com/lookatitude/beluga-ai/memory/stores/inmemory"
 )
 
 func main() {
 	ctx := context.Background()
 
-	// Create an in-memory store for development.
-	mem, err := memory.New("inmemory", config.ProviderConfig{})
+	// Create a recall memory store for development.
+	mem, err := memory.New("recall", config.ProviderConfig{Provider: "recall"})
 	if err != nil {
 		slog.Error("memory creation failed", "error", err)
 		return

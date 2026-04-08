@@ -12,23 +12,15 @@ head:
 
 Different operations in an agent workflow have vastly different time requirements. An LLM generation call might need 10 seconds, an embedding operation 2 seconds, and a vector search 500 milliseconds. Applying a single timeout to the entire workflow leads to two problems.
 
-First, a short timeout causes fast operations to fail when slow operations timeout, losing partial work. If your workflow generates embeddings, performs retrieval, and then calls an LLM, and the LLM times out, you've wasted the embedding and retrieval work. Second, a long timeout allows slow operations to block indefinitely. If embedding hangs, the entire workflow waits for the long timeout instead of failing fast.
-
-The challenge is providing per-operation timeouts while propagating parent timeouts to child operations. When a parent operation has 5 seconds remaining, child operations should respect that limit even if their configured timeout is 10 seconds. This requires timeout hierarchies and deadline propagation.
-
-Additionally, abrupt timeout cancellation can leave resources in an inconsistent state. A database transaction might timeout mid-write, a file mid-upload, or an LLM call mid-generation. You need graceful timeout handling that allows cleanup before terminating operations.
+First, a short timeout causes fast operations to fail when slow operations time out, losing partial work. Second, a long timeout allows slow operations to block indefinitely. The challenge is providing per-operation timeouts while propagating parent timeouts to child operations.
 
 ## Solution
 
-Per-operation timeout management solves this by assigning different timeouts based on operation type. The timeout manager maintains a registry of operation timeouts, allowing you to configure LLM calls, embeddings, retrievals, and tool calls independently. This configuration happens once at startup and applies uniformly across all agent executions.
+Wrap any `core.Runnable` in a `TimeoutRunnable` that applies an operation-specific timeout on `Invoke`. The `TimeoutManager` maps operation names to configured durations so each operation type gets exactly the time it needs.
 
-The timeout wrapper creates operation-specific contexts with appropriate deadlines. When an operation starts, it checks the configured timeout for that operation type and creates a context with that deadline. The goroutine pattern allows the operation to run while the wrapper monitors for timeout, completion, or errors.
+## Why This Matters
 
-Graceful timeout handling adds a grace period after timeout. When an operation times out, instead of immediately returning the error, the wrapper waits briefly for cleanup to complete. This is not a timeout extension; the operation has already been canceled via context. The grace period simply allows goroutines time to notice the cancellation and clean up resources.
-
-Deadline propagation ensures child operations respect parent timeouts. Before creating an operation-specific timeout, check if the parent context has a deadline. If the parent deadline is sooner than the operation timeout, use the parent deadline instead. This ensures that when a parent operation times out, all child operations also terminate.
-
-Batch timeout distribution divides the total timeout across items in a batch. If you have 10 items and a 5-second timeout, each item gets 500 milliseconds. This ensures the entire batch completes within the timeout while giving each item a fair share. The minimum per-item timeout prevents division from creating impractically short timeouts for large batches.
+Per-operation timeouts mean that a hung embedding call fails fast at 2 seconds rather than blocking the entire workflow for 30 seconds. Deadline propagation ensures that if a parent context has 3 seconds remaining, child operations inherit that limit even if their own configured timeout is 10 seconds.
 
 ## Code Example
 
@@ -36,293 +28,233 @@ Batch timeout distribution divides the total timeout across items in a batch. If
 package main
 
 import (
-    "context"
-    "fmt"
-    "time"
+	"context"
+	"fmt"
+	"iter"
+	"time"
 
-    "go.opentelemetry.io/otel"
-    "go.opentelemetry.io/otel/attribute"
-    "go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
-    "github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 var tracer = otel.Tracer("beluga.core.timeout")
 
-// TimeoutConfig defines timeout settings for an operation
-type TimeoutConfig struct {
-    OperationTimeout time.Duration
-    GracePeriod      time.Duration // Time to allow cleanup after timeout
-    PropagateTimeout bool          // Whether to propagate timeout to nested operations
-}
-
-// TimeoutManager manages timeouts for Runnable operations
+// TimeoutManager holds per-operation timeout configuration.
 type TimeoutManager struct {
-    defaultTimeout    time.Duration
-    operationTimeouts map[string]time.Duration
+	defaultTimeout    time.Duration
+	operationTimeouts map[string]time.Duration
 }
 
-// NewTimeoutManager creates a new timeout manager
+// NewTimeoutManager creates a TimeoutManager with the given default timeout.
 func NewTimeoutManager(defaultTimeout time.Duration) *TimeoutManager {
-    return &TimeoutManager{
-        defaultTimeout:    defaultTimeout,
-        operationTimeouts: make(map[string]time.Duration),
-    }
+	return &TimeoutManager{
+		defaultTimeout:    defaultTimeout,
+		operationTimeouts: make(map[string]time.Duration),
+	}
 }
 
-// SetOperationTimeout sets a specific timeout for an operation
+// SetOperationTimeout assigns a specific timeout for an operation name.
 func (tm *TimeoutManager) SetOperationTimeout(operation string, timeout time.Duration) {
-    tm.operationTimeouts[operation] = timeout
+	tm.operationTimeouts[operation] = timeout
 }
 
-// GetTimeout returns the timeout for an operation
+// GetTimeout returns the effective timeout for an operation.
+// If no per-operation timeout is set, the default is returned.
 func (tm *TimeoutManager) GetTimeout(operation string) time.Duration {
-    if timeout, exists := tm.operationTimeouts[operation]; exists {
-        return timeout
-    }
-    return tm.defaultTimeout
+	if timeout, ok := tm.operationTimeouts[operation]; ok {
+		return timeout
+	}
+	return tm.defaultTimeout
 }
 
-// TimeoutRunnable wraps a Runnable with timeout management
+// TimeoutRunnable wraps a core.Runnable with per-operation timeout management.
+// It implements core.Runnable so it is transparent to callers.
 type TimeoutRunnable struct {
-    runnable      core.Runnable
-    manager       *TimeoutManager
-    operationName string
+	runnable      core.Runnable
+	manager       *TimeoutManager
+	operationName string
 }
 
-// NewTimeoutRunnable creates a new timeout wrapper
+var _ core.Runnable = (*TimeoutRunnable)(nil)
+
+// NewTimeoutRunnable creates a timeout wrapper for the given runnable.
 func NewTimeoutRunnable(runnable core.Runnable, manager *TimeoutManager, operationName string) *TimeoutRunnable {
-    return &TimeoutRunnable{
-        runnable:      runnable,
-        manager:       manager,
-        operationName: operationName,
-    }
+	return &TimeoutRunnable{
+		runnable:      runnable,
+		manager:       manager,
+		operationName: operationName,
+	}
 }
 
-// Invoke executes with timeout management
+// Invoke executes the inner runnable with a deadline derived from the operation timeout.
+// If the parent context has a deadline that expires sooner, the parent deadline wins.
 func (tr *TimeoutRunnable) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
-    ctx, span := tracer.Start(ctx, "timeout.invoke")
-    defer span.End()
+	ctx, span := tracer.Start(ctx, "timeout.invoke")
+	defer span.End()
 
-    timeout := tr.manager.GetTimeout(tr.operationName)
-    span.SetAttributes(
-        attribute.String("timeout.operation", tr.operationName),
-        attribute.String("timeout.duration", timeout.String()),
-    )
+	timeout := tr.effectiveTimeout(ctx)
+	span.SetAttributes(
+		attribute.String("timeout.operation", tr.operationName),
+		attribute.String("timeout.duration", timeout.String()),
+	)
 
-    // Create timeout context
-    timeoutCtx, cancel := context.WithTimeout(ctx, timeout)
-    defer cancel()
+	timeoutCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 
-    // Execute with timeout
-    type result struct {
-        value any
-    }
-    resultCh := make(chan result, 1)
-    errCh := make(chan error, 1)
+	result, err := tr.runnable.Invoke(timeoutCtx, input, options...)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(trace.StatusError, err.Error())
+		if timeoutCtx.Err() != nil {
+			return nil, fmt.Errorf("operation %s timed out after %v: %w", tr.operationName, timeout, timeoutCtx.Err())
+		}
+		return nil, err
+	}
 
-    go func() {
-        res, err := tr.runnable.Invoke(timeoutCtx, input, options...)
-        if err != nil {
-            errCh <- err
-            return
-        }
-        resultCh <- result{value: res}
-    }()
-
-    select {
-    case res := <-resultCh:
-        span.SetStatus(trace.StatusOK, "operation completed")
-        return res.value, nil
-
-    case err := <-errCh:
-        span.RecordError(err)
-        span.SetStatus(trace.StatusError, err.Error())
-        return nil, err
-
-    case <-timeoutCtx.Done():
-        timeoutErr := fmt.Errorf("operation %s timed out after %v", tr.operationName, timeout)
-        span.RecordError(timeoutErr)
-        span.SetStatus(trace.StatusError, "timeout exceeded")
-
-        // Allow grace period for cleanup
-        if tr.manager.defaultTimeout > 0 {
-            graceCtx, graceCancel := context.WithTimeout(context.Background(), tr.manager.defaultTimeout)
-            defer graceCancel()
-
-            select {
-            case <-graceCtx.Done():
-            case <-time.After(100 * time.Millisecond):
-            }
-        }
-
-        return nil, timeoutErr
-    }
+	span.SetStatus(trace.StatusOK, "operation completed")
+	return result, nil
 }
 
-// Batch executes with per-item timeout management
-func (tr *TimeoutRunnable) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
-    ctx, span := tracer.Start(ctx, "timeout.batch")
-    defer span.End()
+// Stream delegates streaming to the inner runnable inside a timeout context.
+func (tr *TimeoutRunnable) Stream(ctx context.Context, input any, options ...core.Option) iter.Seq2[any, error] {
+	timeout := tr.effectiveTimeout(ctx)
+	timeoutCtx, cancel := context.WithTimeout(ctx, timeout)
 
-    span.SetAttributes(attribute.Int("batch.size", len(inputs)))
-
-    totalTimeout := tr.manager.GetTimeout(tr.operationName)
-    perItemTimeout := totalTimeout / time.Duration(len(inputs))
-    if perItemTimeout < 100*time.Millisecond {
-        perItemTimeout = 100 * time.Millisecond
-    }
-
-    results := make([]any, len(inputs))
-    errors := make([]error, len(inputs))
-
-    for i, input := range inputs {
-        itemCtx, cancel := context.WithTimeout(ctx, perItemTimeout)
-        result, err := tr.runnable.Invoke(itemCtx, input, options...)
-        cancel()
-
-        results[i] = result
-        errors[i] = err
-    }
-
-    for _, err := range errors {
-        if err != nil {
-            span.RecordError(err)
-            span.SetStatus(trace.StatusError, "batch operation failed")
-            return results, fmt.Errorf("batch operation failed: %w", err)
-        }
-    }
-
-    span.SetStatus(trace.StatusOK, "batch completed")
-    return results, nil
+	return func(yield func(any, error) bool) {
+		defer cancel()
+		for item, err := range tr.runnable.Stream(timeoutCtx, input, options...) {
+			if !yield(item, err) {
+				return
+			}
+			if err != nil {
+				return
+			}
+		}
+	}
 }
 
-// Stream manages timeout for streaming operations
-func (tr *TimeoutRunnable) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
-    ctx, span := tracer.Start(ctx, "timeout.stream")
-    defer span.End()
+// effectiveTimeout returns the smaller of the operation-specific timeout and
+// the remaining time on the parent context deadline.
+func (tr *TimeoutRunnable) effectiveTimeout(ctx context.Context) time.Duration {
+	operationTimeout := tr.manager.GetTimeout(tr.operationName)
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		return operationTimeout
+	}
+	remaining := time.Until(deadline)
+	if remaining < operationTimeout {
+		return remaining
+	}
+	return operationTimeout
+}
 
-    timeout := tr.manager.GetTimeout(tr.operationName)
-    timeoutCtx, cancel := context.WithTimeout(ctx, timeout)
+// --- Example usage ---
 
-    outputCh := make(chan any)
+// slowRunnable simulates an operation that takes longer than its timeout.
+type slowRunnable struct {
+	delay time.Duration
+}
 
-    go func() {
-        defer close(outputCh)
-        defer cancel()
+func (r *slowRunnable) Invoke(ctx context.Context, input any, opts ...core.Option) (any, error) {
+	select {
+	case <-time.After(r.delay):
+		return "done", nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
 
-        streamCh, err := tr.runnable.Stream(timeoutCtx, input, options...)
-        if err != nil {
-            outputCh <- err
-            return
-        }
-
-        for {
-            select {
-            case item, ok := <-streamCh:
-                if !ok {
-                    span.SetStatus(trace.StatusOK, "stream completed")
-                    return
-                }
-                select {
-                case outputCh <- item:
-                case <-timeoutCtx.Done():
-                    span.RecordError(timeoutCtx.Err())
-                    return
-                }
-            case <-timeoutCtx.Done():
-                span.RecordError(timeoutCtx.Err())
-                span.SetStatus(trace.StatusError, "stream timeout")
-                return
-            }
-        }
-    }()
-
-    return outputCh, nil
+func (r *slowRunnable) Stream(ctx context.Context, input any, opts ...core.Option) iter.Seq2[any, error] {
+	return func(yield func(any, error) bool) {
+		result, err := r.Invoke(ctx, input, opts...)
+		yield(result, err)
+	}
 }
 
 func main() {
-    manager := NewTimeoutManager(5 * time.Second)
-    manager.SetOperationTimeout("llm_call", 10*time.Second)
-    manager.SetOperationTimeout("embedding", 2*time.Second)
+	manager := NewTimeoutManager(5 * time.Second)
+	manager.SetOperationTimeout("llm_call", 10*time.Second)
+	manager.SetOperationTimeout("embedding", 2*time.Second)
 
-    // Create timeout-aware runnable
-    // timeoutRunnable := NewTimeoutRunnable(runnable, manager, "llm_call")
-    // result, err := timeoutRunnable.Invoke(ctx, input)
-    fmt.Println("Timeout manager created successfully")
+	// Wrap a slow runnable with the embedding timeout (2s).
+	inner := &slowRunnable{delay: 500 * time.Millisecond}
+	wrapped := NewTimeoutRunnable(inner, manager, "embedding")
+
+	result, err := wrapped.Invoke(context.Background(), "input")
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+	fmt.Println("result:", result)
 }
 ```
 
 ## Explanation
 
-1. **Per-operation timeouts optimize resource usage** — By assigning operation-specific timeouts, you allow fast operations to fail quickly while giving slow operations adequate time. This improves overall system responsiveness because failures propagate immediately for operations that should be fast, rather than waiting for a global timeout. Each operation gets exactly the time it needs, no more and no less.
+1. **`effectiveTimeout`** — Compares the configured operation timeout against the remaining time on the parent context deadline. This ensures that when a parent operation times out, child operations also terminate rather than running until their own longer timeout expires.
 
-2. **Graceful timeout handling prevents resource leaks** — The grace period after timeout allows goroutines time to notice context cancellation and clean up. Without this, you might leave database connections open, temporary files undeleted, or memory unreleased. The grace period is not for continuing work; the operation has already been canceled. It's purely for cleanup to complete safely.
+2. **`context.WithTimeout` on `Invoke`** — Creates a deadline-bounded context for each call. The `defer cancel()` pattern ensures the context is released immediately when the call returns, preventing goroutine leaks from the context's internal timer.
 
-3. **Batch timeout distribution ensures fairness** — Dividing timeout across batch items guarantees the entire batch completes within the timeout while giving each item equal opportunity. Without this, early items might consume most of the timeout, causing later items to fail immediately. The per-item minimum prevents impractically short timeouts that guarantee failure.
+3. **`Stream` timeout propagation** — The timeout context is passed to the inner runnable's `Stream`. The producer sees context cancellation and stops yielding, which terminates the `iter.Seq2` iterator cleanly.
 
-4. **Deadline propagation maintains timeout hierarchies** — When a parent operation times out, child operations must also terminate to avoid wasted work. By checking parent deadlines before setting operation-specific timeouts, you ensure that child operations respect parent limits. This prevents the situation where a parent times out but child operations continue executing, consuming resources for work that will be discarded.
+4. **Transparency** — `TimeoutRunnable` implements `core.Runnable` so it is substitutable anywhere a `core.Runnable` is expected. Timeout behavior is added through construction, not code changes.
 
 ## Testing
 
 ```go
-func TestTimeoutRunnable_TimeoutExceeded(t *testing.T) {
-    ctx := context.Background()
+func TestTimeoutRunnable_TimesOut(t *testing.T) {
+	manager := NewTimeoutManager(100 * time.Millisecond)
+	inner := &slowRunnable{delay: 2 * time.Second}
+	wrapped := NewTimeoutRunnable(inner, manager, "test_op")
 
-    slowRunnable := &MockRunnable{
-        invokeFunc: func(ctx context.Context, input any, opts ...core.Option) (any, error) {
-            time.Sleep(2 * time.Second)
-            return "result", nil
-        },
-    }
+	_, err := wrapped.Invoke(context.Background(), "input")
+	if err == nil {
+		t.Fatal("expected timeout error, got nil")
+	}
+}
 
-    manager := NewTimeoutManager(1 * time.Second)
-    timeoutRunnable := NewTimeoutRunnable(slowRunnable, manager, "test")
+func TestTimeoutRunnable_RespectsParentDeadline(t *testing.T) {
+	manager := NewTimeoutManager(10 * time.Second)
+	inner := &slowRunnable{delay: 2 * time.Second}
+	wrapped := NewTimeoutRunnable(inner, manager, "test_op")
 
-    _, err := timeoutRunnable.Invoke(ctx, "input")
+	// Parent gives 100ms — shorter than the 10s operation timeout.
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
 
-    if err == nil {
-        t.Error("Expected timeout error")
-    }
+	_, err := wrapped.Invoke(ctx, "input")
+	if err == nil {
+		t.Fatal("expected deadline exceeded, got nil")
+	}
 }
 ```
 
 ## Variations
 
-### Hierarchical Timeout Propagation
-
-Propagate remaining time to nested operations:
-
-```go
-func (tr *TimeoutRunnable) InvokeWithRemainingTime(ctx context.Context, input any, options ...core.Option) (any, error) {
-    deadline, ok := ctx.Deadline()
-    if !ok {
-        return tr.Invoke(ctx, input, options...)
-    }
-
-    remaining := time.Until(deadline)
-    if remaining < tr.manager.GetTimeout(tr.operationName) {
-        timeoutCtx, cancel := context.WithTimeout(ctx, remaining)
-        defer cancel()
-        return tr.runnable.Invoke(timeoutCtx, input, options...)
-    }
-
-    return tr.Invoke(ctx, input, options...)
-}
-```
-
 ### Adaptive Timeouts
 
-Adjust timeouts based on operation history:
+Adjust timeouts based on observed p99 latency from a metrics store:
 
 ```go
 type AdaptiveTimeoutManager struct {
-    baseTimeout time.Duration
-    history     []time.Duration
+	base    *TimeoutManager
+	metrics LatencyMetrics
+}
+
+func (a *AdaptiveTimeoutManager) GetTimeout(operation string) time.Duration {
+	p99 := a.metrics.P99(operation)
+	if p99 == 0 {
+		return a.base.GetTimeout(operation)
+	}
+	// Add 20% headroom above observed p99.
+	return time.Duration(float64(p99) * 1.2)
 }
 ```
 
 ## Related Recipes
 
-- **[Global Retry Wrappers](./global-retry)** — Combine retry with timeout management
-- **[LLM Error Handling](./llm-error-handling)** — Timeout handling for LLM operations
+- **[Global Retry Wrappers](/docs/cookbook/llm/global-retry)** — Combine retry with timeout management
+- **[LLM Error Handling](/docs/cookbook/llm/llm-error-handling)** — Timeout handling for LLM operations

@@ -40,7 +40,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	model, err := llm.New("openai", llm.ProviderConfig{
+	model, err := llm.New("openai", config.ProviderConfig{
 		APIKey: os.Getenv("OPENAI_API_KEY"),
 		Model:  "gpt-4o",
 	})

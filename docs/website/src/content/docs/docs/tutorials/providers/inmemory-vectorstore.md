@@ -43,8 +43,8 @@ func main() {
     ctx := context.Background()
 
     embedder, err := embedding.New("openai", config.ProviderConfig{
-        "api_key": os.Getenv("OPENAI_API_KEY"),
-        "model":   "text-embedding-3-small",
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+        Model:  "text-embedding-3-small",
     })
     if err != nil {
         log.Fatalf("create embedder: %v", err)
@@ -156,8 +156,10 @@ store, _ := vectorstore.New("inmemory", config.ProviderConfig{})
 
 // Production
 store, _ := vectorstore.New("pgvector", config.ProviderConfig{
-    "connection_string": os.Getenv("DATABASE_URL"),
-    "table_name":        "documents",
+    Options: map[string]any{
+        "connection_string": os.Getenv("DATABASE_URL"),
+        "table_name":        "documents",
+    },
 })
 ```
 

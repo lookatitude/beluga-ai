@@ -14,13 +14,13 @@ You need to handle cases where agents call tools that don't exist, provide inval
 
 ## Solution
 
-Implement a robust tool execution wrapper that validates tool calls, handles errors gracefully, provides feedback to the agent about failures, and allows the agent to retry with corrected tool calls. This works because Beluga AI's agent system supports tool result messages that can inform the agent about failures, enabling self-correction.
+Implement a robust tool execution wrapper that validates tool calls, handles errors gracefully, provides feedback to the agent about failures, and allows the agent to retry with corrected tool calls. This works because Beluga AI's agent hooks intercept every tool call before execution, enabling validation and self-correction.
 
 ## Why This Matters
 
-In agentic systems, tool execution failures are inevitable. Network requests time out, external APIs go down, and LLMs occasionally generate malformed tool calls. The critical insight is that failures should produce structured feedback rather than crash the agent loop. When an agent receives a clear error message explaining what went wrong ("tool 'search' not found, available tools: [get_weather, calculate]"), it can self-correct on the next iteration. Without this feedback loop, the agent either crashes or enters an infinite retry cycle.
+In agentic systems, tool execution failures are inevitable. Network requests time out, external APIs go down, and LLMs occasionally generate malformed tool calls. The critical insight is that failures should produce structured feedback rather than crash the agent loop. When an agent receives a clear error message explaining what went wrong, it can self-correct on the next iteration.
 
-This recipe implements three layers of defense: existence validation (does the tool exist?), argument validation (are the arguments well-formed?), and execution retry (is the failure transient?). Each layer uses Beluga AI's `core.IsRetryable()` to distinguish between transient errors that should be retried and permanent errors that require a different approach. OpenTelemetry spans provide observability into which layer caught the problem, making debugging straightforward in production.
+This recipe implements two layers of defense: existence validation (does the tool exist?) through `OnToolCall` hooks, and retry logic through `tool.WithRetry` middleware. Each layer uses `core.IsRetryable()` to distinguish between transient errors that should be retried and permanent errors that require a different approach.
 
 ## Code Example
 
@@ -28,241 +28,121 @@ This recipe implements three layers of defense: existence validation (does the t
 package main
 
 import (
-    "context"
-    "encoding/json"
-    "fmt"
-    "log"
+	"context"
+	"fmt"
+	"log/slog"
 
-    "go.opentelemetry.io/otel"
-    "go.opentelemetry.io/otel/attribute"
-    "go.opentelemetry.io/otel/trace"
-
-    "github.com/lookatitude/beluga-ai/agent"
-    "github.com/lookatitude/beluga-ai/schema"
-    "github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/tool"
 )
 
-var tracer = otel.Tracer("beluga.agents.tool_handling")
-
-// ToolExecutionHandler handles tool execution with error recovery
-type ToolExecutionHandler struct {
-    tools          map[string]tool.Tool
-    maxRetries     int
-    validateCalls  bool
-}
-
-// NewToolExecutionHandler creates a new tool execution handler
-func NewToolExecutionHandler(toolList []tool.Tool, maxRetries int) *ToolExecutionHandler {
-    toolMap := make(map[string]tool.Tool)
-    for _, t := range toolList {
-        toolMap[t.Name()] = t
-    }
-
-    return &ToolExecutionHandler{
-        tools:         toolMap,
-        maxRetries:    maxRetries,
-        validateCalls: true,
-    }
-}
-
-// ExecuteToolCall executes a tool call with error handling
-func (teh *ToolExecutionHandler) ExecuteToolCall(ctx context.Context, toolCall schema.ToolCall) (schema.Message, error) {
-    ctx, span := tracer.Start(ctx, "tool_handler.execute")
-    defer span.End()
-
-    span.SetAttributes(
-        attribute.String("tool.name", toolCall.Name),
-    )
-
-    // Validate tool exists
-    t, exists := teh.tools[toolCall.Name]
-    if !exists {
-        errorMsg := fmt.Sprintf("Tool '%s' not found. Available tools: %v", toolCall.Name, teh.getAvailableToolNames())
-        span.SetStatus(trace.StatusError, errorMsg)
-
-        return schema.NewToolMessage(
-            fmt.Sprintf(`{"error": "tool_not_found", "message": "%s"}`, errorMsg),
-            toolCall.Name,
-        ), nil
-    }
-
-    // Validate arguments
-    if teh.validateCalls {
-        if err := teh.validateArguments(ctx, t, toolCall.Arguments); err != nil {
-            errorMsg := fmt.Sprintf("Invalid arguments for tool '%s': %v. Expected schema: %s",
-                toolCall.Name, err, teh.getToolSchema(t))
-            span.SetStatus(trace.StatusError, errorMsg)
-
-            return schema.NewToolMessage(
-                fmt.Sprintf(`{"error": "invalid_arguments", "message": "%s"}`, errorMsg),
-                toolCall.Name,
-            ), nil
-        }
-    }
-
-    // Parse arguments
-    var args map[string]interface{}
-    if err := json.Unmarshal([]byte(toolCall.Arguments), &args); err != nil {
-        errorMsg := fmt.Sprintf("Failed to parse arguments: %v", err)
-        span.RecordError(err)
-        span.SetStatus(trace.StatusError, errorMsg)
-
-        return schema.NewToolMessage(
-            fmt.Sprintf(`{"error": "parse_error", "message": "%s"}`, errorMsg),
-            toolCall.Name,
-        ), nil
-    }
-
-    // Execute tool with retry
-    var result interface{}
-    var execErr error
-
-    for attempt := 0; attempt <= teh.maxRetries; attempt++ {
-        result, execErr = t.Execute(ctx, args)
-        if execErr == nil {
-            break
-        }
-
-        // Check if error is retryable
-        if !teh.isRetryableError(execErr) || attempt == teh.maxRetries {
-            break
-        }
-
-        log.Printf("Tool execution failed (attempt %d/%d): %v. Retrying...",
-            attempt+1, teh.maxRetries+1, execErr)
-    }
-
-    if execErr != nil {
-        errorMsg := fmt.Sprintf("Tool execution failed after %d attempts: %v",
-            teh.maxRetries+1, execErr)
-        span.RecordError(execErr)
-        span.SetStatus(trace.StatusError, errorMsg)
-
-        return schema.NewToolMessage(
-            fmt.Sprintf(`{"error": "execution_failed", "message": "%s"}`, errorMsg),
-            toolCall.Name,
-        ), nil
-    }
-
-    // Serialize result
-    resultJSON, err := json.Marshal(result)
-    if err != nil {
-        errorMsg := fmt.Sprintf("Failed to serialize result: %v", err)
-        span.RecordError(err)
-        return schema.NewToolMessage(
-            fmt.Sprintf(`{"error": "serialization_error", "message": "%s"}`, errorMsg),
-            toolCall.Name,
-        ), nil
-    }
-
-    span.SetStatus(trace.StatusOK, "tool executed successfully")
-    return schema.NewToolMessage(string(resultJSON), toolCall.Name), nil
-}
-
-// validateArguments validates tool call arguments
-func (teh *ToolExecutionHandler) validateArguments(ctx context.Context, t tool.Tool, argumentsJSON string) error {
-    var args map[string]interface{}
-    if err := json.Unmarshal([]byte(argumentsJSON), &args); err != nil {
-        return fmt.Errorf("invalid JSON: %w", err)
-    }
-    return nil
-}
-
-// getToolSchema returns tool schema information
-func (teh *ToolExecutionHandler) getToolSchema(t tool.Tool) string {
-    return t.Description()
-}
-
-// getAvailableToolNames returns list of available tool names
-func (teh *ToolExecutionHandler) getAvailableToolNames() []string {
-    names := make([]string, 0, len(teh.tools))
-    for name := range teh.tools {
-        names = append(names, name)
-    }
-    return names
-}
-
-// isRetryableError checks if an error is retryable
-func (teh *ToolExecutionHandler) isRetryableError(err error) bool {
-    errStr := err.Error()
-    retryablePatterns := []string{
-        "timeout",
-        "connection",
-        "temporarily unavailable",
-    }
-
-    for _, pattern := range retryablePatterns {
-        if contains(errStr, pattern) {
-            return true
-        }
-    }
-
-    return false
-}
-
-func contains(s, substr string) bool {
-    return len(s) >= len(substr)
-}
-
-// AgentWithToolHandling wraps an agent with tool error handling
-type AgentWithToolHandling struct {
-    agent   agent.Agent
-    handler *ToolExecutionHandler
-}
-
-// NewAgentWithToolHandling creates an agent with tool handling
-func NewAgentWithToolHandling(a agent.Agent, handler *ToolExecutionHandler) *AgentWithToolHandling {
-    return &AgentWithToolHandling{
-        agent:   a,
-        handler: handler,
-    }
-}
-
-// Invoke executes agent with tool error handling
-func (awth *AgentWithToolHandling) Invoke(ctx context.Context, input map[string]interface{}) (map[string]interface{}, error) {
-    return awth.agent.Invoke(ctx, input)
+// buildResilientRegistry creates a tool registry where every tool is wrapped
+// with retry middleware for transient failures.
+func buildResilientRegistry(maxRetries int, tools ...tool.Tool) (*tool.Registry, error) {
+	reg := tool.NewRegistry()
+	for _, t := range tools {
+		// Wrap each tool with retry middleware.
+		resilient := tool.ApplyMiddleware(t, tool.WithRetry(maxRetries))
+		if err := reg.Add(resilient); err != nil {
+			return nil, fmt.Errorf("register tool %q: %w", t.Name(), err)
+		}
+	}
+	return reg, nil
 }
 
 func main() {
-    // Create tools
-    toolList := []tool.Tool{
-        // Add your tools
-    }
+	ctx := context.Background()
 
-    // Create handler
-    handler := NewToolExecutionHandler(toolList, 3)
+	// Define tools.
+	type SearchInput struct {
+		Query string `json:"query" description:"Search query" required:"true"`
+	}
+	search := tool.NewFuncTool("search", "Search the web",
+		func(ctx context.Context, input SearchInput) (*tool.Result, error) {
+			// May fail transiently due to network issues.
+			return tool.TextResult("results for: " + input.Query), nil
+		},
+	)
 
-    fmt.Println("Tool error handler created")
+	type WeatherInput struct {
+		City string `json:"city" description:"City name" required:"true"`
+	}
+	weather := tool.NewFuncTool("get_weather", "Get current weather",
+		func(ctx context.Context, input WeatherInput) (*tool.Result, error) {
+			return tool.TextResult(fmt.Sprintf("Weather in %s: sunny, 22°C", input.City)), nil
+		},
+	)
+
+	// Build registry with retry middleware applied to every tool.
+	reg, err := buildResilientRegistry(3, search, weather)
+	if err != nil {
+		slog.Error("registry setup failed", "error", err)
+		return
+	}
+
+	// Use OnToolCall hook to validate that the tool exists before execution.
+	// This catches hallucinated tool names before they cause confusing errors.
+	a := agent.New("assistant",
+		agent.WithTools(reg.All()),
+		agent.WithHooks(agent.Hooks{
+			OnToolCall: func(ctx context.Context, call agent.ToolCallInfo) error {
+				if _, err := reg.Get(call.Name); err != nil {
+					// Return error to agent; LLM sees this and can self-correct.
+					available := reg.List()
+					return fmt.Errorf("tool %q not found; available tools: %v", call.Name, available)
+				}
+				return nil
+			},
+			OnToolResult: func(ctx context.Context, call agent.ToolCallInfo, result *tool.Result) error {
+				if result != nil && result.IsError {
+					slog.Warn("tool returned error result",
+						"tool", call.Name,
+						"call_id", call.CallID,
+					)
+				}
+				return nil
+			},
+		}),
+	)
+
+	result, err := a.Invoke(ctx, "Search for Go concurrency patterns and get Tokyo weather")
+	if err != nil {
+		// Check if retryable before giving up.
+		if core.IsRetryable(err) {
+			slog.Warn("retryable error from agent", "error", err)
+		} else {
+			slog.Error("agent failed with permanent error", "error", err)
+		}
+		return
+	}
+	fmt.Println(result)
 }
 ```
 
 ## Explanation
 
-1. **Tool existence validation** -- The handler checks if the tool exists before attempting execution. If it doesn't, it returns a helpful error message listing available tools. This helps the agent self-correct by knowing what tools are actually available. Listing available tools in the error message is important because it gives the LLM the information it needs to choose a valid tool on its next attempt.
+1. **Registry as the source of truth** -- The `OnToolCall` hook looks up the called tool in the same registry that was passed to the agent. If the LLM hallucinates a tool name, the hook returns a descriptive error that the agent loop feeds back to the LLM, enabling self-correction.
 
-2. **Argument validation** -- Arguments are validated against the tool's schema before execution. Invalid arguments return descriptive errors that help the agent understand what went wrong and how to fix it. This prevents wasted API calls to external services with malformed data.
+2. **Retry middleware on tools** -- `tool.WithRetry(n)` wraps each tool so transient errors (network timeouts, 5xx responses) are retried automatically. The retry logic calls `core.IsRetryable()` internally to avoid retrying permanent failures like authentication errors.
 
-3. **Retry with backoff** -- Transient failures (timeouts, connection issues) are retried automatically. The `isRetryableError` function classifies errors so that permanent failures like authentication errors fail fast rather than consuming retry budget.
+3. **Structured error feedback** -- By returning an error from `OnToolCall`, you give the agent a clear error message including the list of valid tool names. This is more helpful than a raw "tool not found" panic and allows the LLM to adjust its next action.
 
-4. **Structured error format** -- Tool errors are returned as `ToolMessage` objects with structured JSON containing an error type and human-readable message. This allows the agent to parse errors programmatically and adjust its behavior accordingly, rather than trying to extract meaning from unstructured error text.
+4. **OnToolResult for observability** -- The `OnToolResult` hook runs after every successful tool execution and receives the `tool.Result`. Use it to log domain errors (`result.IsError == true`) for debugging without blocking execution.
 
 ## Testing
 
 ```go
-func TestToolExecutionHandler_HandlesMissingTool(t *testing.T) {
-    handler := NewToolExecutionHandler([]tool.Tool{}, 0)
+func TestResilientRegistry_RejectsUnknownTool(t *testing.T) {
+	reg, err := buildResilientRegistry(1)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-    toolCall := schema.ToolCall{
-        Name:      "nonexistent_tool",
-        Arguments: "{}",
-    }
-
-    result, err := handler.ExecuteToolCall(context.Background(), toolCall)
-    require.NoError(t, err)
-
-    // Check that result contains error message
-    content := result.GetContent()
-    require.Contains(t, content, "tool_not_found")
+	_, lookupErr := reg.Get("nonexistent_tool")
+	if lookupErr == nil {
+		t.Error("expected error for unknown tool, got nil")
+	}
 }
 ```
 
@@ -270,21 +150,29 @@ func TestToolExecutionHandler_HandlesMissingTool(t *testing.T) {
 
 ### Tool Call Sanitization
 
-Sanitize tool calls to prevent injection:
+Sanitize tool call arguments before validation to prevent injection:
 
 ```go
-func (teh *ToolExecutionHandler) sanitizeToolCall(toolCall schema.ToolCall) schema.ToolCall {
-    // Remove dangerous arguments
-}
+OnToolCall: func(ctx context.Context, call agent.ToolCallInfo) error {
+	// Validate argument JSON length to prevent oversized payloads.
+	const maxArgLen = 4096
+	if len(call.Arguments) > maxArgLen {
+		return fmt.Errorf("tool %q: arguments too large (%d bytes, max %d)",
+			call.Name, len(call.Arguments), maxArgLen)
+	}
+	return nil
+},
 ```
 
 ### Tool Result Caching
 
-Cache tool results to avoid redundant calls:
+Cache deterministic tool results to avoid redundant network calls:
 
 ```go
-type CachedToolHandler struct {
-    cache map[string]interface{}
+func cachedTool(inner tool.Tool, cache map[string]*tool.Result) tool.Tool {
+	return tool.ApplyMiddleware(inner, func(next tool.Tool) tool.Tool {
+		return &cachingWrapper{inner: next, cache: cache}
+	})
 }
 ```
 

@@ -60,6 +60,7 @@ import (
     "fmt"
     "os"
 
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/schema"
 
@@ -67,11 +68,9 @@ import (
 )
 
 func main() {
-    model, err := llm.New("google", llm.ProviderConfig{
-        Options: map[string]any{
-            "api_key": os.Getenv("GOOGLE_API_KEY"),
-            "model":   "gemini-1.5-pro",
-        },
+    model, err := llm.New("google", config.ProviderConfig{
+        APIKey: os.Getenv("GOOGLE_API_KEY"),
+        Model:  "gemini-1.5-pro",
     })
     if err != nil {
         fmt.Printf("model creation failed: %v\n", err)

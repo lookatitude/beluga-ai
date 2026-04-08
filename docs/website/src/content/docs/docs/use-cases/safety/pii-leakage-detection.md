@@ -187,7 +187,8 @@ import (
     "fmt"
 
     "github.com/lookatitude/beluga-ai/guard"
-    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -227,7 +228,7 @@ func createGuardedModel(ctx context.Context) (llm.ChatModel, error) {
         return nil, err
     }
 
-    model, err := llm.New("openai", llm.ProviderConfig{
+    model, err := llm.New("openai", config.ProviderConfig{
         APIKey: os.Getenv("OPENAI_API_KEY"),
         Model:  "gpt-4",
     })

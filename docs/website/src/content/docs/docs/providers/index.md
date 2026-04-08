@@ -38,7 +38,8 @@ Every provider category uses the same pattern:
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/llm"
     _ "github.com/lookatitude/beluga-ai/llm/providers/openai"     // auto-registers
     _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"  // auto-registers
 )

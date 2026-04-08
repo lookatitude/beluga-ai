@@ -52,8 +52,8 @@ func main() {
     ctx := context.Background()
 
     embedder, err := embedding.New("google", config.ProviderConfig{
-        "api_key": os.Getenv("GOOGLE_API_KEY"),
-        "model":   "text-embedding-004",
+        APIKey: os.Getenv("GOOGLE_API_KEY"),
+        Model:  "text-embedding-004",
     })
     if err != nil {
         log.Fatalf("create embedder: %v", err)

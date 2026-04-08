@@ -49,7 +49,8 @@ import (
     "fmt"
 
     "github.com/lookatitude/beluga-ai/core"
-    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/orchestration"
     "github.com/lookatitude/beluga-ai/schema"
 
@@ -64,7 +65,7 @@ type InvoiceProcessor struct {
 
 func NewInvoiceProcessor(ctx context.Context) (*InvoiceProcessor, error) {
     // Create LLM for data extraction
-    model, err := llm.New("openai", llm.ProviderConfig{
+    model, err := llm.New("openai", config.ProviderConfig{
         APIKey: os.Getenv("OPENAI_API_KEY"),
         Model:  "gpt-4",
     })

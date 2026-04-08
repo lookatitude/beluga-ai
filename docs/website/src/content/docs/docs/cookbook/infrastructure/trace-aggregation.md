@@ -216,15 +216,27 @@ func (ta *TraceAggregator) GetTraceSummary(traceID string) (*AggregatedTrace, er
     return aggTrace, nil
 }
 
+// traceIDKey is a typed context key for the trace ID to avoid collisions.
+type traceIDKey struct{}
+
 // propagateTraceContext propagates trace context to agents.
 func (ta *TraceAggregator) propagateTraceContext(ctx context.Context, traceID string) context.Context {
-    return context.WithValue(ctx, "trace_id", traceID)
+    return context.WithValue(ctx, traceIDKey{}, traceID)
+}
+
+// getTraceID retrieves the trace ID from context.
+func getTraceID(ctx context.Context) (string, bool) {
+    id, ok := ctx.Value(traceIDKey{}).(string)
+    return id, ok && id != ""
 }
 
 // AgentTraceWrapper wraps agent operations with trace aggregation.
 func AgentTraceWrapper(aggregator *TraceAggregator, agentName string, operation func(context.Context) error) func(context.Context) error {
     return func(ctx context.Context) error {
-        traceID := ctx.Value("trace_id").(string)
+        traceID, ok := getTraceID(ctx)
+        if !ok {
+            return operation(ctx)
+        }
         startTime := time.Now()
 
         err := operation(ctx)
@@ -235,7 +247,9 @@ func AgentTraceWrapper(aggregator *TraceAggregator, agentName string, operation 
             status = codes.Error
         }
 
-        aggregator.AddAgentSpan(ctx, traceID, agentName, "operation", startTime, endTime, status, nil)
+        if addErr := aggregator.AddAgentSpan(ctx, traceID, agentName, "operation", startTime, endTime, status, nil); addErr != nil {
+            log.Printf("trace aggregation: AddAgentSpan: %v", addErr)
+        }
 
         return err
     }

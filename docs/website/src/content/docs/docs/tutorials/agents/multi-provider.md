@@ -48,8 +48,8 @@ func main() {
 
     // Create models from the registry
     gpt4, err := llm.New("openai", config.ProviderConfig{
-        "api_key": os.Getenv("OPENAI_API_KEY"),
-        "model":   "gpt-4o",
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+        Model:  "gpt-4o",
     })
     if err != nil {
         fmt.Printf("OpenAI error: %v\n", err)
@@ -57,8 +57,8 @@ func main() {
     }
 
     claude, err := llm.New("anthropic", config.ProviderConfig{
-        "api_key": os.Getenv("ANTHROPIC_API_KEY"),
-        "model":   "claude-sonnet-4-5-20250929",
+        APIKey: os.Getenv("ANTHROPIC_API_KEY"),
+        Model:  "claude-sonnet-4-5-20250929",
     })
     if err != nil {
         fmt.Printf("Anthropic error: %v\n", err)

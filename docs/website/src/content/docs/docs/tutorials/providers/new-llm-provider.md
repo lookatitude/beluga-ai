@@ -34,7 +34,7 @@ type ChatModel interface {
 
 ## Step 1: Define the Provider
 
-Create a package for your provider under `llm/providers/`. The compile-time interface check (`var _ llm.ChatModel = (*Model)(nil)`) ensures your implementation satisfies all four methods at build time. The constructor follows Beluga AI's convention of accepting `config.ProviderConfig` (a `map[string]any`) for configuration, which allows the registry to pass provider-specific settings without requiring a shared configuration type.
+Create a package for your provider under `llm/providers/`. The compile-time interface check (`var _ llm.ChatModel = (*Model)(nil)`) ensures your implementation satisfies all four methods at build time. The constructor accepts `config.ProviderConfig`, a typed struct with fields `APIKey`, `Model`, `BaseURL`, `Timeout`, and `Options` (for provider-specific extras). This struct is what the registry passes when `llm.New("mycustom", cfg)` is called.
 
 ```go
 package mycustom
@@ -62,19 +62,18 @@ type Model struct {
 var _ llm.ChatModel = (*Model)(nil)
 
 func New(cfg config.ProviderConfig) (*Model, error) {
-    apiKey, _ := cfg["api_key"].(string)
-    if apiKey == "" {
+    if cfg.APIKey == "" {
         return nil, fmt.Errorf("mycustom: api_key is required")
     }
 
-    model, _ := cfg["model"].(string)
-    if model == "" {
-        model = "mycustom-default"
+    modelID := cfg.Model
+    if modelID == "" {
+        modelID = "mycustom-default"
     }
 
     return &Model{
-        apiKey: apiKey,
-        model:  model,
+        apiKey: cfg.APIKey,
+        model:  modelID,
         client: &http.Client{},
     }, nil
 }
@@ -230,8 +229,8 @@ func main() {
     ctx := context.Background()
 
     model, err := llm.New("mycustom", config.ProviderConfig{
-        "api_key": os.Getenv("MYCUSTOM_API_KEY"),
-        "model":   "super-model-v1",
+        APIKey: os.Getenv("MYCUSTOM_API_KEY"),
+        Model:  "super-model-v1",
     })
     if err != nil {
         fmt.Printf("Error: %v\n", err)

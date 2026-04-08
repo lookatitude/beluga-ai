@@ -41,9 +41,11 @@ import (
     "fmt"
     "log/slog"
     "net/http"
+    "os"
     "strings"
     "sync"
 
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/schema"
 
@@ -207,11 +209,9 @@ func (g *Gateway) HandleTwilio(w http.ResponseWriter, r *http.Request) {
 
 ```go
 func main() {
-    model, err := llm.New("openai", llm.ProviderConfig{
-        Options: map[string]any{
-            "api_key": os.Getenv("OPENAI_API_KEY"),
-            "model":   "gpt-4o-mini",
-        },
+    model, err := llm.New("openai", config.ProviderConfig{
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+        Model:  "gpt-4o-mini",
     })
     if err != nil {
         slog.Error("model creation failed", "error", err)

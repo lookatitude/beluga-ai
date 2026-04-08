@@ -18,7 +18,7 @@ There is a fundamental tension in chunk sizing for RAG systems. Small chunks (10
 
 ## Solution
 
-Implement Parent Document Retrieval (PDR) that stores documents hierarchically: small chunks are indexed in the vector store for retrieval, while a separate mapping links each chunk to its parent document. At query time, the system retrieves matching chunks, looks up their parent documents, deduplicates parents (since multiple chunks from the same parent may match), and returns the parents sorted by the best chunk score. This gives the LLM sufficient context while maintaining retrieval precision.
+Implement Parent Document Retrieval (PDR) that stores documents hierarchically: small chunks are embedded and indexed in the vector store for retrieval, while a separate mapping links each chunk ID to its parent document. At query time, the system embeds the query, retrieves matching chunks, looks up their parent documents, deduplicates parents (since multiple chunks from the same parent may match), and returns the parents sorted by the best chunk score.
 
 ## Code Example
 
@@ -34,189 +34,184 @@ import (
     "go.opentelemetry.io/otel/attribute"
     "go.opentelemetry.io/otel/trace"
 
-    "github.com/lookatitude/beluga-ai/schema"
+    "github.com/lookatitude/beluga-ai/rag/embedding"
     "github.com/lookatitude/beluga-ai/rag/vectorstore"
+    "github.com/lookatitude/beluga-ai/schema"
 )
 
 var tracer = otel.Tracer("beluga.retrievers.pdr")
 
-// ParentDocumentRetriever implements PDR
+// ParentDocumentRetriever implements PDR: retrieves chunks, maps to parents.
 type ParentDocumentRetriever struct {
     chunkStore  vectorstore.VectorStore
-    parentStore map[string]schema.Document // Map of chunk ID to parent document
-    chunkK      int                        // Number of chunks to retrieve
-    parentDocs  int                        // Number of parent docs to return
+    embedder    embedding.Embedder
+    parentStore map[string]schema.Document // chunk ID -> parent document
+    chunkK      int                        // number of chunks to retrieve
+    parentDocs  int                        // number of parent docs to return
 }
 
-// NewParentDocumentRetriever creates a new PDR retriever
-func NewParentDocumentRetriever(chunkStore vectorstore.VectorStore, chunkK, parentDocs int) *ParentDocumentRetriever {
+// NewParentDocumentRetriever creates a new PDR retriever.
+func NewParentDocumentRetriever(chunkStore vectorstore.VectorStore, embedder embedding.Embedder, chunkK, parentDocs int) *ParentDocumentRetriever {
     return &ParentDocumentRetriever{
         chunkStore:  chunkStore,
+        embedder:    embedder,
         parentStore: make(map[string]schema.Document),
         chunkK:      chunkK,
         parentDocs:  parentDocs,
     }
 }
 
-// AddDocuments adds documents with parent-child relationships
-func (pdr *ParentDocumentRetriever) AddDocuments(ctx context.Context, parentDoc schema.Document, chunks []schema.Document, embedder interface{}) error {
-    ctx, span := tracer.Start(ctx, "pdr_retriever.add_documents")
+// IndexChunks embeds chunks and adds them to the vector store, recording the
+// parent document for each chunk ID.
+func (pdr *ParentDocumentRetriever) IndexChunks(ctx context.Context, parentDoc schema.Document, chunks []schema.Document) error {
+    ctx, span := tracer.Start(ctx, "pdr_retriever.index_chunks")
     defer span.End()
 
-    // Store chunks in vector store
-    chunkIDs, err := pdr.chunkStore.AddDocuments(ctx, chunks, vectorstore.WithEmbedder(embedder))
+    texts := make([]string, len(chunks))
+    for i, c := range chunks {
+        texts[i] = c.Content
+    }
+
+    embeddings, err := pdr.embedder.Embed(ctx, texts)
     if err != nil {
         span.RecordError(err)
         span.SetStatus(trace.StatusError, err.Error())
-        return err
+        return fmt.Errorf("pdr: embed chunks: %w", err)
     }
 
-    // Map chunk IDs to parent document
-    for _, chunkID := range chunkIDs {
-        pdr.parentStore[chunkID] = parentDoc
+    if err := pdr.chunkStore.Add(ctx, chunks, embeddings); err != nil {
+        span.RecordError(err)
+        span.SetStatus(trace.StatusError, err.Error())
+        return fmt.Errorf("pdr: add chunks: %w", err)
+    }
+
+    // Record chunk ID -> parent mapping.
+    for _, c := range chunks {
+        pdr.parentStore[c.ID] = parentDoc
     }
 
     span.SetAttributes(
         attribute.Int("chunk_count", len(chunks)),
         attribute.String("parent_id", parentDoc.ID),
     )
-    span.SetStatus(trace.StatusOK, "documents added")
+    span.SetStatus(trace.StatusOK, "chunks indexed")
 
     return nil
 }
 
-// GetRelevantDocuments retrieves parent documents via chunk matching
-func (pdr *ParentDocumentRetriever) GetRelevantDocuments(ctx context.Context, query string) ([]schema.Document, error) {
-    ctx, span := tracer.Start(ctx, "pdr_retriever.get_relevant")
-    defer span.End()
-
-    span.SetAttributes(attribute.String("query", query))
-
-    // Retrieve chunks
-    chunks, scores, err := pdr.chunkStore.SimilaritySearchByQuery(ctx, query, pdr.chunkK, nil)
-    if err != nil {
-        span.RecordError(err)
-        span.SetStatus(trace.StatusError, err.Error())
-        return nil, err
-    }
-
-    span.SetAttributes(attribute.Int("chunk_count", len(chunks)))
-
-    // Map chunks to parent documents
-    parentMap := make(map[string]ParentDocWithScore)
-
-    for i, chunk := range chunks {
-        chunkID := chunk.ID
-        parentDoc, exists := pdr.parentStore[chunkID]
-
-        if !exists {
-            // If no parent found, use chunk itself
-            parentDoc = chunk
-        }
-
-        // Track parent with best score
-        if existing, found := parentMap[parentDoc.ID]; !found || scores[i] > existing.Score {
-            parentMap[parentDoc.ID] = ParentDocWithScore{
-                Document: parentDoc,
-                Score:    scores[i],
-            }
-        }
-    }
-
-    // Convert to slice and sort by score
-    parents := make([]ParentDocWithScore, 0, len(parentMap))
-    for _, pds := range parentMap {
-        parents = append(parents, pds)
-    }
-
-    // Sort by score descending
-    sort.Slice(parents, func(i, j int) bool {
-        return parents[i].Score > parents[j].Score
-    })
-
-    // Limit to requested number
-    if len(parents) > pdr.parentDocs {
-        parents = parents[:pdr.parentDocs]
-    }
-
-    // Extract documents
-    result := make([]schema.Document, len(parents))
-    for i, pds := range parents {
-        result[i] = pds.Document
-    }
-
-    span.SetAttributes(
-        attribute.Int("parent_count", len(result)),
-        attribute.Float64("top_score", parents[0].Score),
-    )
-    span.SetStatus(trace.StatusOK, "parent documents retrieved")
-
-    return result, nil
-}
-
-// ParentDocWithScore represents a parent document with score
+// ParentDocWithScore tracks the best chunk score for a parent document.
 type ParentDocWithScore struct {
     Document schema.Document
     Score    float64
 }
 
+// Retrieve embeds the query, finds matching chunks, and returns deduplicated parent documents.
+func (pdr *ParentDocumentRetriever) Retrieve(ctx context.Context, query string) ([]schema.Document, error) {
+    ctx, span := tracer.Start(ctx, "pdr_retriever.retrieve")
+    defer span.End()
+
+    span.SetAttributes(attribute.String("query", query))
+
+    queryVec, err := pdr.embedder.EmbedSingle(ctx, query)
+    if err != nil {
+        span.RecordError(err)
+        span.SetStatus(trace.StatusError, err.Error())
+        return nil, fmt.Errorf("pdr: embed query: %w", err)
+    }
+
+    chunks, err := pdr.chunkStore.Search(ctx, queryVec, pdr.chunkK)
+    if err != nil {
+        span.RecordError(err)
+        span.SetStatus(trace.StatusError, err.Error())
+        return nil, fmt.Errorf("pdr: search chunks: %w", err)
+    }
+
+    span.SetAttributes(attribute.Int("chunk_count", len(chunks)))
+
+    // Map chunks to parent documents, keeping the best score per parent.
+    parentMap := make(map[string]ParentDocWithScore)
+    for _, chunk := range chunks {
+        parentDoc, exists := pdr.parentStore[chunk.ID]
+        if !exists {
+            parentDoc = chunk // fall back to chunk itself if no parent recorded
+        }
+
+        existing, found := parentMap[parentDoc.ID]
+        if !found || chunk.Score > existing.Score {
+            parentMap[parentDoc.ID] = ParentDocWithScore{
+                Document: parentDoc,
+                Score:    chunk.Score,
+            }
+        }
+    }
+
+    // Sort by descending score.
+    parents := make([]ParentDocWithScore, 0, len(parentMap))
+    for _, pds := range parentMap {
+        parents = append(parents, pds)
+    }
+    sort.Slice(parents, func(i, j int) bool {
+        return parents[i].Score > parents[j].Score
+    })
+
+    if len(parents) > pdr.parentDocs {
+        parents = parents[:pdr.parentDocs]
+    }
+
+    result := make([]schema.Document, len(parents))
+    for i, pds := range parents {
+        result[i] = pds.Document
+    }
+
+    if len(parents) > 0 {
+        span.SetAttributes(
+            attribute.Int("parent_count", len(result)),
+            attribute.Float64("top_score", parents[0].Score),
+        )
+    }
+    span.SetStatus(trace.StatusOK, "parent documents retrieved")
+
+    return result, nil
+}
+
 func main() {
     ctx := context.Background()
 
-    // Create retriever
-    // chunkStore := yourVectorStore
-    // pdr := NewParentDocumentRetriever(chunkStore, 10, 3)
+    // chunkStore and embedder are initialized via vectorstore.New / embedding.New.
+    var chunkStore vectorstore.VectorStore
+    var emb embedding.Embedder
 
-    // Add parent document with chunks
-    parentDoc := schema.NewDocument("Full document content...", nil)
+    pdr := NewParentDocumentRetriever(chunkStore, emb, 10, 3)
+
+    parentDoc := schema.Document{ID: "doc-1", Content: "Full document content..."}
     chunks := []schema.Document{
-        schema.NewDocument("Chunk 1 content", nil),
-        schema.NewDocument("Chunk 2 content", nil),
+        {ID: "chunk-1-1", Content: "Chunk 1 content", Metadata: map[string]any{"parent_id": "doc-1"}},
+        {ID: "chunk-1-2", Content: "Chunk 2 content", Metadata: map[string]any{"parent_id": "doc-1"}},
     }
 
-    // embedder := yourEmbedder
-    // pdr.AddDocuments(ctx, parentDoc, chunks, embedder)
+    if err := pdr.IndexChunks(ctx, parentDoc, chunks); err != nil {
+        fmt.Printf("index error: %v\n", err)
+        return
+    }
 
-    // Retrieve
-    // docs, err := pdr.GetRelevantDocuments(ctx, "query")
-    fmt.Println("PDR retriever created")
-    _ = ctx
-    _ = parentDoc
-    _ = chunks
+    docs, err := pdr.Retrieve(ctx, "query about document content")
+    if err != nil {
+        fmt.Printf("retrieve error: %v\n", err)
+        return
+    }
+    fmt.Printf("Retrieved %d parent documents\n", len(docs))
 }
 ```
 
 ## Explanation
 
-1. **Hierarchical storage** -- Chunks are stored in the vector store for similarity search, while a separate mapping links chunk IDs to parent documents. This dual storage allows precise chunk-level retrieval with comprehensive parent-level context in the response. The vector store only indexes the small chunks, keeping the index efficient, while the parent store provides the richer context needed for generation.
+1. **Hierarchical storage** -- Chunks are embedded and stored in the vector store for similarity search, while `parentStore` maps chunk IDs to parent documents. This dual storage allows precise chunk-level retrieval with comprehensive parent-level context. The vector store indexes only the small chunks, keeping the index efficient, while the parent map provides richer context for generation.
 
-2. **Score propagation** -- When multiple chunks from the same parent match a query, only the best score is kept for ranking. This prevents a parent with many low-relevance chunk matches from outranking a parent with one highly relevant chunk match. The best-score-wins approach ensures the final ranking reflects the strongest evidence for each parent document.
+2. **Score propagation** -- When multiple chunks from the same parent match a query, only the best `Score` (populated by `vectorstore.Search`) is kept for ranking. This prevents a parent with many low-relevance chunk matches from outranking one with a single highly relevant match.
 
-3. **Deduplication** -- Parent documents are deduplicated using a map keyed by parent ID, even when multiple chunks match. Without deduplication, the same parent document could appear multiple times in results, wasting context window space. The map-based approach handles deduplication efficiently in O(n) time.
+3. **Deduplication** -- Parent documents are deduplicated using a map keyed by parent ID. Without deduplication, the same parent could appear multiple times in results, wasting the LLM's context window.
 
-> **Key insight:** Use small chunks (100-300 tokens) for precise retrieval, but return parent documents (500-2000 tokens) for generation context. This gives you both retrieval quality and generation richness. The chunk-to-parent ratio is typically 3-10x.
-
-## Testing
-
-```go
-func TestParentDocumentRetriever_RetrievesParents(t *testing.T) {
-    mockStore := &MockVectorStore{}
-    pdr := NewParentDocumentRetriever(mockStore, 10, 3)
-
-    parentDoc := schema.NewDocument("Parent", nil)
-    chunks := []schema.Document{
-        schema.NewDocument("Chunk 1", nil),
-        schema.NewDocument("Chunk 2", nil),
-    }
-
-    err := pdr.AddDocuments(context.Background(), parentDoc, chunks, nil)
-    require.NoError(t, err)
-
-    docs, err := pdr.GetRelevantDocuments(context.Background(), "query")
-    require.NoError(t, err)
-    require.Contains(t, docs, parentDoc)
-}
-```
+> **Key insight:** Use small chunks (100-300 tokens) for precise retrieval, but return parent documents (500-2000 tokens) for generation context. The chunk-to-parent ratio is typically 3-10x.
 
 ## Variations
 
@@ -228,7 +223,7 @@ Preserve chunk metadata in parent documents:
 type EnhancedParentDoc struct {
     Document schema.Document
     Chunks   []schema.Document
-    Metadata map[string]interface{}
+    Metadata map[string]any
 }
 ```
 
@@ -239,6 +234,7 @@ Handle overlapping chunks in parent documents:
 ```go
 func (pdr *ParentDocumentRetriever) MergeOverlappingChunks(chunks []schema.Document) schema.Document {
     // Merge overlapping chunks into parent
+    return schema.Document{}
 }
 ```
 

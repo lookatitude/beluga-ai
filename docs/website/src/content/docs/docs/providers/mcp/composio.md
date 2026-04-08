@@ -125,10 +125,10 @@ if err != nil {
 }
 
 // Pass Composio tools to an agent
-myAgent, err := agent.New("assistant",
-    agent.WithModel(model),
-    agent.WithTools(tools...),
-    agent.WithInstructions("You are an assistant that can send emails and manage tasks."),
+myAgent := agent.New("assistant",
+    agent.WithLLM(model),
+    agent.WithTools(tools),
+    agent.WithPersona(agent.Persona{Goal: "You are an assistant that can send emails and manage tasks."}),
 )
 ```
 

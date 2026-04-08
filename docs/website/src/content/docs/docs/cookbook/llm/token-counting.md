@@ -33,6 +33,7 @@ import (
     "context"
     "fmt"
     "log"
+    "strings"
     "sync"
 
     "go.opentelemetry.io/otel"
@@ -186,7 +187,8 @@ func FastEstimator(model string) TokenEstimator {
     }
 }
 
-// CountTokensForMessages counts tokens for message arrays
+// CountTokensForMessages counts tokens for a slice of messages.
+// Text is extracted from each message's ContentParts before counting.
 func (tc *TokenCounter) CountTokensForMessages(ctx context.Context, messages []schema.Message, requireExact bool) (int, error) {
     ctx, span := tracer.Start(ctx, "token_counter.count_messages")
     defer span.End()
@@ -194,8 +196,15 @@ func (tc *TokenCounter) CountTokensForMessages(ctx context.Context, messages []s
     total := 0
 
     for i, msg := range messages {
-        content := msg.GetContent()
-        count, err := tc.CountTokens(ctx, content, requireExact)
+        // GetContent() returns []schema.ContentPart, not a string.
+        // Accumulate text from all TextPart values.
+        var sb strings.Builder
+        for _, part := range msg.GetContent() {
+            if tp, ok := part.(schema.TextPart); ok {
+                sb.WriteString(tp.Text)
+            }
+        }
+        count, err := tc.CountTokens(ctx, sb.String(), requireExact)
         if err != nil {
             span.RecordError(err)
             return 0, fmt.Errorf("failed to count tokens for message %d: %w", i, err)

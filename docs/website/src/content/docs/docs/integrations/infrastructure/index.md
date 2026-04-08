@@ -254,7 +254,11 @@ Use Vault for managing API keys and secrets instead of environment variables.
 
 ```go
 import (
+    "github.com/lookatitude/beluga-ai/config"
+    "github.com/lookatitude/beluga-ai/llm"
     vault "github.com/hashicorp/vault/api"
+
+    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
 
 client, err := vault.NewClient(vault.DefaultConfig())

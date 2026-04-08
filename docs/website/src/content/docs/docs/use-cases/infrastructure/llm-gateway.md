@@ -45,6 +45,7 @@ import (
     "sync"
     "time"
 
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/schema"
 
@@ -68,7 +69,7 @@ func NewLLMGateway(ctx context.Context) (*LLMGateway, error) {
     }
 
     // Initialize OpenAI
-    openaiModel, err := llm.New("openai", llm.ProviderConfig{
+    openaiModel, err := llm.New("openai", config.ProviderConfig{
         APIKey: os.Getenv("OPENAI_API_KEY"),
         Model:  "gpt-4o",
     })
@@ -79,7 +80,7 @@ func NewLLMGateway(ctx context.Context) (*LLMGateway, error) {
     }
 
     // Initialize Anthropic
-    anthropicModel, err := llm.New("anthropic", llm.ProviderConfig{
+    anthropicModel, err := llm.New("anthropic", config.ProviderConfig{
         APIKey: os.Getenv("ANTHROPIC_API_KEY"),
         Model:  "claude-3-5-sonnet-20241022",
     })
@@ -90,7 +91,7 @@ func NewLLMGateway(ctx context.Context) (*LLMGateway, error) {
     }
 
     // Initialize Bedrock
-    bedrockModel, err := llm.New("bedrock", llm.ProviderConfig{
+    bedrockModel, err := llm.New("bedrock", config.ProviderConfig{
         Region: "us-east-1",
         Model:  "anthropic.claude-v2",
     })

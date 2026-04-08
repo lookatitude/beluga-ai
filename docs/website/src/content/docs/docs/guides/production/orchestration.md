@@ -94,8 +94,8 @@ improver := agent.New("improver",
 
 loop := workflow.NewLoopAgent("refinement-loop",
 	improver,
-	workflow.WithMaxIterations(3),
-	workflow.WithStopCondition(func(result string) bool {
+	workflow.WithLoopMaxIterations(3),
+	workflow.WithLoopCondition(func(iteration int, result string) bool {
 		return strings.Contains(result, "APPROVED")
 	}),
 )

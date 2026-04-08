@@ -43,15 +43,13 @@ func main() {
 
 	// Build a long conversation.
 	messages := []schema.Message{
-		&schema.SystemMessage{Content: "You are a helpful assistant."},
+		schema.NewSystemMessage("You are a helpful assistant."),
 	}
 	for i := 0; i < 100; i++ {
-		messages = append(messages, &schema.HumanMessage{
-			Content: fmt.Sprintf("User message %d with some content", i),
-		})
-		messages = append(messages, &schema.AIMessage{
-			Content: fmt.Sprintf("Response to message %d", i),
-		})
+		messages = append(messages,
+			schema.NewHumanMessage(fmt.Sprintf("User message %d with some content", i)),
+			schema.NewAIMessage(fmt.Sprintf("Response to message %d", i)),
+		)
 	}
 
 	// Trim to fit within 4096 tokens.
@@ -94,6 +92,9 @@ import (
 	"log/slog"
 	"time"
 
+	"os"
+
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 	_ "github.com/lookatitude/beluga-ai/llm/providers/openai"
@@ -102,8 +103,8 @@ import (
 func main() {
 	ctx := context.Background()
 
-	model, err := llm.New("openai", llm.ProviderConfig{
-		APIKey: "your-api-key",
+	model, err := llm.New("openai", config.ProviderConfig{
+		APIKey: os.Getenv("OPENAI_API_KEY"),
 		Model:  "gpt-4o",
 	})
 	if err != nil {
@@ -112,7 +113,7 @@ func main() {
 	}
 
 	messages := []schema.Message{
-		&schema.HumanMessage{Content: "Explain Go interfaces in one paragraph."},
+		schema.NewHumanMessage("Explain Go interfaces in one paragraph."),
 	}
 
 	start := time.Now()
@@ -169,10 +170,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tool"
+	_ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
 
 // StreamingToolHandler accumulates tool calls from streaming chunks.
@@ -202,13 +206,20 @@ func (h *StreamingToolHandler) HandleChunk(ctx context.Context, chunk schema.Str
 	// When finish_reason is "tool_calls", execute all pending tools.
 	if chunk.FinishReason == "tool_calls" {
 		for id, tc := range h.pending {
-			t, ok := h.registry.Get(tc.Name)
-			if !ok {
+			t, lookupErr := h.registry.Get(tc.Name)
+			if lookupErr != nil {
 				slog.Warn("unknown tool", "name", tc.Name)
 				continue
 			}
 
-			result, err := t.Execute(ctx, tc.Arguments)
+			// tc.Arguments is a JSON string; unmarshal before passing to Execute.
+			var args map[string]any
+			if err := json.Unmarshal([]byte(tc.Arguments), &args); err != nil {
+				results = append(results, tool.ErrorResult(err))
+				delete(h.pending, id)
+				continue
+			}
+			result, err := t.Execute(ctx, args)
 			if err != nil {
 				results = append(results, tool.ErrorResult(err))
 			} else {
@@ -228,16 +239,19 @@ func main() {
 	type CalcInput struct {
 		Expression string `json:"expression" description:"Math expression" required:"true"`
 	}
-	reg.Add(tool.NewFuncTool("calculate", "Evaluate math",
+	if err := reg.Add(tool.NewFuncTool("calculate", "Evaluate math",
 		func(ctx context.Context, input CalcInput) (*tool.Result, error) {
 			return tool.TextResult("42"), nil
 		},
-	))
+	)); err != nil {
+		slog.Error("tool registration failed", "error", err)
+		return
+	}
 
 	handler := NewStreamingToolHandler(reg)
 
-	model, err := llm.New("openai", llm.ProviderConfig{
-		APIKey: "your-api-key",
+	model, err := llm.New("openai", config.ProviderConfig{
+		APIKey: os.Getenv("OPENAI_API_KEY"),
 		Model:  "gpt-4o",
 	})
 	if err != nil {
@@ -252,7 +266,7 @@ func main() {
 	boundModel := model.BindTools(defs)
 
 	msgs := []schema.Message{
-		&schema.HumanMessage{Content: "What is 6 * 7?"},
+		schema.NewHumanMessage("What is 6 * 7?"),
 	}
 
 	for chunk, err := range boundModel.Stream(ctx, msgs) {
@@ -315,17 +329,14 @@ func NewTokenTracker(t llm.Tokenizer) *TokenTracker {
 func (t *TokenTracker) Hooks() llm.Hooks {
 	return llm.Hooks{
 		BeforeGenerate: func(ctx context.Context, msgs []schema.Message) error {
-			count := 0
-			for _, msg := range msgs {
-				count += t.tokenizer.Count(msg.GetContent())
-			}
-			t.inputTokens.Add(int64(count))
+			// SimpleTokenizer.CountMessages handles []schema.Message directly.
+			t.inputTokens.Add(int64(t.tokenizer.CountMessages(msgs)))
 			return nil
 		},
 		AfterGenerate: func(ctx context.Context, resp *schema.AIMessage, err error) {
 			if resp != nil {
-				count := t.tokenizer.Count(resp.Content)
-				t.outputTokens.Add(int64(count))
+				// resp.Text() extracts text from ContentParts.
+				t.outputTokens.Add(int64(t.tokenizer.Count(resp.Text())))
 			}
 		},
 	}
@@ -370,12 +381,15 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/resilience"
 	"github.com/lookatitude/beluga-ai/schema"
+	_ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
 
 func generateWithRetry(ctx context.Context, model llm.ChatModel, msgs []schema.Message) (*schema.AIMessage, error) {
@@ -400,8 +414,8 @@ func generateWithRetry(ctx context.Context, model llm.ChatModel, msgs []schema.M
 func main() {
 	ctx := context.Background()
 
-	model, err := llm.New("openai", llm.ProviderConfig{
-		APIKey: "your-api-key",
+	model, err := llm.New("openai", config.ProviderConfig{
+		APIKey: os.Getenv("OPENAI_API_KEY"),
 		Model:  "gpt-4o",
 	})
 	if err != nil {
@@ -410,7 +424,7 @@ func main() {
 	}
 
 	msgs := []schema.Message{
-		&schema.HumanMessage{Content: "Hello!"},
+		schema.NewHumanMessage("Hello!"),
 	}
 
 	resp, err := generateWithRetry(ctx, model, msgs)
@@ -419,7 +433,7 @@ func main() {
 		return
 	}
 
-	fmt.Println(resp.Content)
+	fmt.Println(resp.Text())
 }
 ```
 
@@ -440,7 +454,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 	_ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
@@ -451,8 +467,8 @@ func main() {
 	ctx := context.Background()
 
 	// Create primary and fallback models.
-	primary, err := llm.New("openai", llm.ProviderConfig{
-		APIKey: "openai-key",
+	primary, err := llm.New("openai", config.ProviderConfig{
+		APIKey: os.Getenv("OPENAI_API_KEY"),
 		Model:  "gpt-4o",
 	})
 	if err != nil {
@@ -460,8 +476,8 @@ func main() {
 		return
 	}
 
-	fallback, err := llm.New("anthropic", llm.ProviderConfig{
-		APIKey: "anthropic-key",
+	fallback, err := llm.New("anthropic", config.ProviderConfig{
+		APIKey: os.Getenv("ANTHROPIC_API_KEY"),
 		Model:  "claude-sonnet-4-5-20250929",
 	})
 	if err != nil {
@@ -476,7 +492,7 @@ func main() {
 	)
 
 	msgs := []schema.Message{
-		&schema.HumanMessage{Content: "Hello!"},
+		schema.NewHumanMessage("Hello!"),
 	}
 
 	resp, err := router.Generate(ctx, msgs)
@@ -485,7 +501,7 @@ func main() {
 		return
 	}
 
-	fmt.Println(resp.Content)
+	fmt.Println(resp.Text())
 }
 ```
 
@@ -506,7 +522,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 	_ "github.com/lookatitude/beluga-ai/llm/providers/openai"
@@ -515,10 +533,15 @@ import (
 func main() {
 	ctx := context.Background()
 
-	// Create multiple model instances with different API keys.
-	models := make([]llm.ChatModel, 0)
-	for _, key := range []string{"key-1", "key-2", "key-3"} {
-		m, err := llm.New("openai", llm.ProviderConfig{
+	// Create multiple model instances with different API keys loaded from env.
+	apiKeys := []string{
+		os.Getenv("OPENAI_API_KEY_1"),
+		os.Getenv("OPENAI_API_KEY_2"),
+		os.Getenv("OPENAI_API_KEY_3"),
+	}
+	models := make([]llm.ChatModel, 0, len(apiKeys))
+	for _, key := range apiKeys {
+		m, err := llm.New("openai", config.ProviderConfig{
 			APIKey: key,
 			Model:  "gpt-4o",
 		})
@@ -533,7 +556,7 @@ func main() {
 	router := llm.NewRouter(llm.WithModels(models...))
 
 	msgs := []schema.Message{
-		&schema.HumanMessage{Content: "Hello!"},
+		schema.NewHumanMessage("Hello!"),
 	}
 
 	// Each call goes to the next model in rotation.
@@ -543,7 +566,7 @@ func main() {
 			slog.Error("generate failed", "error", err)
 			continue
 		}
-		fmt.Printf("Request %d (model: %s): %s\n", i, resp.Model, resp.Content)
+		fmt.Printf("Request %d (model: %s): %s\n", i, resp.ModelID, resp.Text())
 	}
 }
 ```
@@ -566,17 +589,23 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
+	_ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
-	model, _ := llm.New("openai", llm.ProviderConfig{
-		APIKey: "your-key",
+	model, err := llm.New("openai", config.ProviderConfig{
+		APIKey: os.Getenv("OPENAI_API_KEY"),
 		Model:  "gpt-4o",
 	})
+	if err != nil {
+		slog.Error("model creation failed", "error", err)
+		return
+	}
 
 	// Stack middleware: logging wraps the hooks which wrap the model.
 	// ApplyMiddleware applies in order so the first middleware is outermost.
@@ -595,11 +624,15 @@ func main() {
 	)
 
 	// Use the wrapped model as normal -- middleware is transparent.
-	resp, _ := model.Generate(context.Background(), []schema.Message{
-		&schema.HumanMessage{Content: "Hello!"},
+	resp, err := model.Generate(context.Background(), []schema.Message{
+		schema.NewHumanMessage("Hello!"),
 	})
+	if err != nil {
+		slog.Error("generate failed", "error", err)
+		return
+	}
 	if resp != nil {
-		slog.Info("response", "content", resp.Content)
+		slog.Info("response", "content", resp.Text())
 	}
 }
 ```
@@ -626,24 +659,27 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
+	_ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
 
 type MovieReview struct {
-	Title     string  `json:"title" description:"Movie title"`
-	Rating    float64 `json:"rating" description:"Rating from 1.0 to 10.0"`
+	Title     string   `json:"title" description:"Movie title"`
+	Rating    float64  `json:"rating" description:"Rating from 1.0 to 10.0"`
 	Pros      []string `json:"pros" description:"Positive aspects"`
 	Cons      []string `json:"cons" description:"Negative aspects"`
-	Recommend bool    `json:"recommend" description:"Would you recommend this movie?"`
+	Recommend bool     `json:"recommend" description:"Would you recommend this movie?"`
 }
 
 func main() {
 	ctx := context.Background()
 
-	model, err := llm.New("openai", llm.ProviderConfig{
-		APIKey: "your-key",
+	model, err := llm.New("openai", config.ProviderConfig{
+		APIKey: os.Getenv("OPENAI_API_KEY"),
 		Model:  "gpt-4o",
 	})
 	if err != nil {
@@ -653,7 +689,7 @@ func main() {
 
 	// Parse the response into a typed struct.
 	review, err := llm.StructuredOutput[MovieReview](ctx, model, []schema.Message{
-		&schema.HumanMessage{Content: "Review the movie 'Interstellar' (2014)"},
+		schema.NewHumanMessage("Review the movie 'Interstellar' (2014)"),
 	})
 	if err != nil {
 		slog.Error("structured output failed", "error", err)

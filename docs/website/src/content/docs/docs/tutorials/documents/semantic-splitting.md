@@ -55,6 +55,7 @@ import (
     "os"
     "strings"
 
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/rag/embedding"
 
     _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/openai"
@@ -63,11 +64,9 @@ import (
 func main() {
     ctx := context.Background()
 
-    embedder, err := embedding.New("openai", embedding.ProviderConfig{
-        Options: map[string]any{
-            "api_key": os.Getenv("OPENAI_API_KEY"),
-            "model":   "text-embedding-3-small",
-        },
+    embedder, err := embedding.New("openai", config.ProviderConfig{
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+        Model:  "text-embedding-3-small",
     })
     if err != nil {
         fmt.Printf("embedder creation failed: %v\n", err)

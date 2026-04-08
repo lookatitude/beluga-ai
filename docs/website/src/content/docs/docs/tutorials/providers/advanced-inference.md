@@ -54,8 +54,8 @@ func main() {
     ctx := context.Background()
 
     model, err := llm.New("openai", config.ProviderConfig{
-        "model":   "gpt-4o",
-        "api_key": os.Getenv("OPENAI_API_KEY"),
+        Model:  "gpt-4o",
+        APIKey: os.Getenv("OPENAI_API_KEY"),
     })
     if err != nil {
         fmt.Printf("Error: %v\n", err)

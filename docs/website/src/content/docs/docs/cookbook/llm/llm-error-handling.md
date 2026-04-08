@@ -33,12 +33,15 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
+	_ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
 
 // RetryConfig configures retry behavior for LLM calls.
@@ -143,8 +146,9 @@ func isRetryable(err error) bool {
 func main() {
 	ctx := context.Background()
 
-	model, err := llm.New("openai", llm.ProviderConfig{
-		APIKey: "your-api-key",
+	model, err := llm.New("openai", config.ProviderConfig{
+		APIKey: os.Getenv("OPENAI_API_KEY"),
+		Model:  "gpt-4o",
 	})
 	if err != nil {
 		log.Fatalf("Failed to create LLM: %v", err)
@@ -161,7 +165,9 @@ func main() {
 		log.Fatalf("LLM call failed: %v", err)
 	}
 
-	fmt.Printf("Response: %s\n", response.GetContent())
+	if ai, ok := response.(*schema.AIMessage); ok {
+		fmt.Printf("Response: %s\n", ai.Text())
+	}
 }
 ```
 
@@ -211,7 +217,10 @@ func (c *LLMClient) GenerateWithFallback(ctx context.Context, messages []schema.
 		log.Printf("LLM failed, using fallback: %v", err)
 		return fallback
 	}
-	return response.GetContent()
+	if ai, ok := response.(*schema.AIMessage); ok {
+		return ai.Text()
+	}
+	return fallback
 }
 ```
 

@@ -92,7 +92,7 @@ func (t *ToolInstructionInjector) InjectToolInstructions(
     taskContext map[string]string,
 ) (string, error) {
     // Select relevant tools based on task context
-    allTools := t.toolRegistry.List()
+    allTools := t.toolRegistry.All()
     relevantTools := t.selectRelevantTools(ctx, allTools, taskContext)
 
     // Filter by user permissions
@@ -150,8 +150,8 @@ import (
     "fmt"
 
     "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/llm"
-    "github.com/lookatitude/beluga-ai/schema"
 
     _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
@@ -164,20 +164,16 @@ type ContextAwareAgent struct {
 }
 
 func NewContextAwareAgent(ctx context.Context, userID string) (*ContextAwareAgent, error) {
-    model, err := llm.New("openai", nil)
+    model, err := llm.New("openai", config.ProviderConfig{Model: "gpt-4o"})
     if err != nil {
         return nil, fmt.Errorf("create model: %w", err)
     }
 
-    ag, err := agent.New("base", agent.Config{
-        Model: model,
-        Name:  "context-aware-agent",
-    })
-    if err != nil {
-        return nil, fmt.Errorf("create agent: %w", err)
-    }
+    ag := agent.New("context-aware-agent",
+        agent.WithLLM(model),
+    )
 
-    injector, err := NewToolInjectio nInjector(ctx)
+    injector, err := NewToolInstructionInjector(ctx)
     if err != nil {
         return nil, fmt.Errorf("create injector: %w", err)
     }
@@ -203,22 +199,16 @@ func (a *ContextAwareAgent) Execute(ctx context.Context, taskContext map[string]
         return "", fmt.Errorf("inject tools: %w", err)
     }
 
-    // Execute agent with enhanced prompt
-    msgs := []schema.Message{
-        &schema.SystemMessage{Parts: []schema.ContentPart{
-            schema.TextPart{Text: enhancedPrompt},
-        }},
-        &schema.HumanMessage{Parts: []schema.ContentPart{
-            schema.TextPart{Text: taskContext["task"]},
-        }},
-    }
-
-    resp, err := a.agent.Run(ctx, msgs)
+    // Invoke the agent with the enhanced system instructions as context.
+    // Input guards must validate taskContext["task"] before it reaches this point.
+    result, err := a.agent.Invoke(ctx, enhancedPrompt,
+        agent.WithMetadata(map[string]any{"task_context": taskContext}),
+    )
     if err != nil {
         return "", fmt.Errorf("agent execution: %w", err)
     }
 
-    return resp.Parts[0].(schema.TextPart).Text, nil
+    return result, nil
 }
 ```
 
@@ -281,7 +271,7 @@ import (
     "go.opentelemetry.io/otel/attribute"
 )
 
-func (t *ToolInjectio nInjector) InjectWithMonitoring(
+func (t *ToolInstructionInjector) InjectWithMonitoring(
     ctx context.Context,
     basePrompt string,
     userID string,

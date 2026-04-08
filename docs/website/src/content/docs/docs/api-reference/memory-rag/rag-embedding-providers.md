@@ -23,7 +23,10 @@ via the internal httpclient.
 The provider registers as "cohere" in the embedding registry:
 
 ```go
-import _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/cohere"
+import (
+    "github.com/lookatitude/beluga-ai/config"
+    _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/cohere"
+)
 
 emb, err := embedding.New("cohere", config.ProviderConfig{
     APIKey: "...",

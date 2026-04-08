@@ -8,31 +8,19 @@ head:
       content: "Beluga AI, parallel graph nodes, Go orchestration, dependency resolution, concurrency control, DAG execution, graph parallelism"
 ---
 
-# Parallel Node Execution in Graphs
-
 ## Problem
 
-Orchestration graphs often contain nodes that are independent of each other. For example, a research agent might need to query three different data sources, generate embeddings for a document, and validate user permissions. These operations have no dependencies and can execute simultaneously, yet sequential execution forces them to run one after another.
+Orchestration graphs often contain nodes that are independent of each other. If you have five independent nodes that each take one second, sequential execution takes five seconds. Parallel execution takes one second. The challenge is identifying which nodes can run simultaneously while respecting dependencies between others.
 
-The cost of sequential execution grows linearly with the number of independent nodes. If you have five independent nodes that each take one second, sequential execution takes five seconds. Parallel execution takes one second. In production systems with dozens of nodes, this difference becomes critical for user experience and system throughput.
-
-The challenge is identifying which nodes can run in parallel while respecting dependencies. If node C depends on outputs from nodes A and B, C must wait for both to complete. But if nodes A and B are independent, they can run concurrently. You need dependency resolution that determines execution order while maximizing parallelism.
-
-Additionally, unbounded parallelism can overwhelm resources. Running 100 nodes simultaneously might exceed connection pool limits, exhaust memory, or trigger rate limits. You need concurrency control that limits simultaneous execution while still achieving significant speedup.
+Additionally, unbounded parallelism can overwhelm resources — running 100 nodes simultaneously might exhaust connection pool limits or trigger rate limits. You need concurrency control that limits simultaneous execution while still achieving significant speedup.
 
 ## Solution
 
-Parallel graph execution solves this through topological execution with dependency tracking. The executor builds a dependency graph that maps each node to its prerequisites. It then repeatedly identifies nodes that are ready to execute (all dependencies satisfied) and runs them concurrently.
+Build an explicit dependency map and execute ready nodes (all dependencies satisfied) in concurrent waves, using a semaphore to cap parallelism. Each wave launches all currently-ready nodes concurrently, waits for completion, then identifies the next wave.
 
-The ready node identification algorithm is key to this design. On each iteration, scan all nodes to find those whose dependencies are all marked as executed. These nodes form a wave of parallel execution. Launch them concurrently, wait for all to complete, then repeat. This pattern continues until all nodes have executed or a failure occurs.
+## Why This Matters
 
-Semaphore-based concurrency control limits simultaneous execution without forcing sequential processing. The semaphore acts as a token pool. Before executing a node, acquire a token; after execution, release it. If all tokens are in use, the goroutine blocks until one becomes available. This provides backpressure without complicated scheduling logic.
-
-Per-node result storage enables dependent nodes to access parent outputs. As each node completes, its result is stored in a map keyed by node ID. When a dependent node executes, it can retrieve inputs from this map. This design decouples result passing from execution order, simplifying the implementation.
-
-The critical insight is that even with dependencies, most graphs have significant parallelizable sections. Identifying and exploiting this parallelism dramatically reduces total execution time without changing graph semantics.
-
-Error handling is fail-fast by design. If any node in a wave fails, the entire execution terminates immediately. This prevents wasted work executing nodes whose outputs will be discarded due to the earlier failure.
+Even in graphs with dependencies, most structures have significant parallelizable sections. Identifying and exploiting this parallelism dramatically reduces total execution time. Error handling is fail-fast by design: if any node in a wave fails, the entire execution terminates immediately, preventing wasted work on nodes whose outputs will be discarded.
 
 ## Code Example
 
@@ -40,229 +28,211 @@ Error handling is fail-fast by design. If any node in a wave fails, the entire e
 package main
 
 import (
-    "context"
-    "fmt"
-    "log"
-    "sync"
+	"context"
+	"fmt"
+	"iter"
+	"log/slog"
+	"sync"
 
-    "go.opentelemetry.io/otel"
-    "go.opentelemetry.io/otel/attribute"
-    "go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
-    "github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 var tracer = otel.Tracer("beluga.orchestration.parallel")
 
-// GraphNode represents a node in the execution graph
+// GraphNode represents a node in the execution graph.
 type GraphNode struct {
-    ID        string
-    Runnable  core.Runnable
-    DependsOn []string
+	ID        string
+	Runnable  core.Runnable
+	DependsOn []string // IDs of nodes that must complete before this one runs.
 }
 
-// ParallelGraphExecutor executes graph nodes in parallel
+// ParallelGraphExecutor executes graph nodes in topological order with parallelism.
 type ParallelGraphExecutor struct {
-    nodes         map[string]*GraphNode
-    results       map[string]interface{}
-    mu            sync.RWMutex
-    maxConcurrent int
+	nodes         map[string]*GraphNode
+	mu            sync.RWMutex
+	maxConcurrent int
 }
 
-// NewParallelGraphExecutor creates a new parallel executor
+// NewParallelGraphExecutor creates a new executor limited to maxConcurrent goroutines.
 func NewParallelGraphExecutor(maxConcurrent int) *ParallelGraphExecutor {
-    return &ParallelGraphExecutor{
-        nodes:         make(map[string]*GraphNode),
-        results:       make(map[string]interface{}),
-        maxConcurrent: maxConcurrent,
-    }
+	return &ParallelGraphExecutor{
+		nodes:         make(map[string]*GraphNode),
+		maxConcurrent: maxConcurrent,
+	}
 }
 
-// AddNode adds a node to the graph
+// AddNode registers a node in the graph.
 func (pge *ParallelGraphExecutor) AddNode(node *GraphNode) {
-    pge.mu.Lock()
-    defer pge.mu.Unlock()
-    pge.nodes[node.ID] = node
+	pge.mu.Lock()
+	defer pge.mu.Unlock()
+	pge.nodes[node.ID] = node
 }
 
-// Execute executes the graph with parallel node execution
-func (pge *ParallelGraphExecutor) Execute(ctx context.Context) (map[string]interface{}, error) {
-    ctx, span := tracer.Start(ctx, "parallel_executor.execute")
-    defer span.End()
+// Execute runs all nodes respecting dependencies, returning results keyed by node ID.
+func (pge *ParallelGraphExecutor) Execute(ctx context.Context) (map[string]any, error) {
+	ctx, span := tracer.Start(ctx, "parallel_executor.execute")
+	defer span.End()
 
-    span.SetAttributes(
-        attribute.Int("node_count", len(pge.nodes)),
-        attribute.Int("max_concurrent", pge.maxConcurrent),
-    )
+	span.SetAttributes(
+		attribute.Int("node_count", len(pge.nodes)),
+		attribute.Int("max_concurrent", pge.maxConcurrent),
+	)
 
-    // Build dependency graph
-    dependencyGraph := pge.buildDependencyGraph()
+	results := make(map[string]any)
+	executed := make(map[string]bool)
+	sem := make(chan struct{}, pge.maxConcurrent)
 
-    // Execute nodes respecting dependencies
-    executed := make(map[string]bool)
-    semaphore := make(chan struct{}, pge.maxConcurrent)
+	for len(executed) < len(pge.nodes) {
+		ready := pge.readyNodes(executed)
+		if len(ready) == 0 {
+			return nil, fmt.Errorf("circular dependency or missing node detected")
+		}
 
-    for len(executed) < len(pge.nodes) {
-        // Find nodes ready to execute (all dependencies satisfied)
-        ready := pge.findReadyNodes(dependencyGraph, executed)
+		var (
+			wg    sync.WaitGroup
+			mu    sync.Mutex
+			errCh = make(chan error, len(ready))
+		)
 
-        if len(ready) == 0 && len(executed) < len(pge.nodes) {
-            return nil, fmt.Errorf("circular dependency or deadlock detected")
-        }
+		for _, nodeID := range ready {
+			wg.Add(1)
+			go func(id string) {
+				defer wg.Done()
 
-        // Execute ready nodes in parallel
-        var wg sync.WaitGroup
-        errCh := make(chan error, len(ready))
+				sem <- struct{}{}
+				defer func() { <-sem }()
 
-        for _, nodeID := range ready {
-            wg.Add(1)
-            go func(id string) {
-                defer wg.Done()
+				node := pge.nodes[id]
+				result, err := node.Runnable.Invoke(ctx, nil)
+				if err != nil {
+					errCh <- fmt.Errorf("node %s: %w", id, err)
+					return
+				}
 
-                // Acquire semaphore
-                semaphore <- struct{}{}
-                defer func() { <-semaphore }()
+				mu.Lock()
+				results[id] = result
+				executed[id] = true
+				mu.Unlock()
 
-                // Execute node
-                node := pge.nodes[id]
-                result, err := node.Runnable.Invoke(ctx, nil)
-                if err != nil {
-                    errCh <- fmt.Errorf("node %s failed: %w", id, err)
-                    return
-                }
+				span.SetAttributes(attribute.String("node.completed", id))
+			}(nodeID)
+		}
 
-                // Store result
-                pge.mu.Lock()
-                pge.results[id] = result
-                executed[id] = true
-                pge.mu.Unlock()
+		wg.Wait()
+		close(errCh)
 
-                span.SetAttributes(attribute.String("node.completed", id))
-            }(nodeID)
-        }
+		if err := <-errCh; err != nil {
+			span.RecordError(err)
+			span.SetStatus(trace.StatusError, err.Error())
+			return nil, err
+		}
+	}
 
-        wg.Wait()
-        close(errCh)
-
-        // Check for errors
-        if len(errCh) > 0 {
-            err := <-errCh
-            span.RecordError(err)
-            span.SetStatus(trace.StatusError, err.Error())
-            return nil, err
-        }
-    }
-
-    span.SetStatus(trace.StatusOK, "all nodes executed")
-    return pge.results, nil
+	span.SetStatus(trace.StatusOK, "all nodes executed")
+	return results, nil
 }
 
-// buildDependencyGraph builds the dependency graph
-func (pge *ParallelGraphExecutor) buildDependencyGraph() map[string][]string {
-    graph := make(map[string][]string)
-    for id, node := range pge.nodes {
-        graph[id] = node.DependsOn
-    }
-    return graph
+// readyNodes returns IDs of nodes whose dependencies are all in executed.
+func (pge *ParallelGraphExecutor) readyNodes(executed map[string]bool) []string {
+	var ready []string
+	for id, node := range pge.nodes {
+		if executed[id] {
+			continue
+		}
+		allDone := true
+		for _, dep := range node.DependsOn {
+			if !executed[dep] {
+				allDone = false
+				break
+			}
+		}
+		if allDone {
+			ready = append(ready, id)
+		}
+	}
+	return ready
 }
 
-// findReadyNodes finds nodes whose dependencies are all satisfied
-func (pge *ParallelGraphExecutor) findReadyNodes(dependencyGraph map[string][]string, executed map[string]bool) []string {
-    ready := []string{}
+// --- Example node implementation ---
 
-    for nodeID, deps := range dependencyGraph {
-        if executed[nodeID] {
-            continue
-        }
+// echoRunnable returns its input unchanged.
+type echoRunnable struct {
+	label string
+}
 
-        // Check if all dependencies are satisfied
-        allSatisfied := true
-        for _, dep := range deps {
-            if !executed[dep] {
-                allSatisfied = false
-                break
-            }
-        }
+func (r *echoRunnable) Invoke(ctx context.Context, input any, opts ...core.Option) (any, error) {
+	slog.Info("node executed", "label", r.label)
+	return r.label + ":done", nil
+}
 
-        if allSatisfied {
-            ready = append(ready, nodeID)
-        }
-    }
-
-    return ready
+func (r *echoRunnable) Stream(ctx context.Context, input any, opts ...core.Option) iter.Seq2[any, error] {
+	return func(yield func(any, error) bool) {
+		result, err := r.Invoke(ctx, input, opts...)
+		yield(result, err)
+	}
 }
 
 func main() {
-    ctx := context.Background()
+	ctx := context.Background()
+	executor := NewParallelGraphExecutor(5)
 
-    // Create executor
-    executor := NewParallelGraphExecutor(5)
+	executor.AddNode(&GraphNode{ID: "node1", Runnable: &echoRunnable{label: "node1"}, DependsOn: []string{}})
+	executor.AddNode(&GraphNode{ID: "node2", Runnable: &echoRunnable{label: "node2"}, DependsOn: []string{}})
+	executor.AddNode(&GraphNode{ID: "node3", Runnable: &echoRunnable{label: "node3"}, DependsOn: []string{"node1", "node2"}})
 
-    // Add nodes
-    executor.AddNode(&GraphNode{
-        ID:        "node1",
-        Runnable:  &MockRunnable{},
-        DependsOn: []string{},
-    })
-
-    executor.AddNode(&GraphNode{
-        ID:        "node2",
-        Runnable:  &MockRunnable{},
-        DependsOn: []string{},
-    })
-
-    executor.AddNode(&GraphNode{
-        ID:        "node3",
-        Runnable:  &MockRunnable{},
-        DependsOn: []string{"node1", "node2"},
-    })
-
-    // Execute
-    results, err := executor.Execute(ctx)
-    if err != nil {
-        log.Fatalf("Execution failed: %v", err)
-    }
-
-    fmt.Printf("Executed %d nodes\n", len(results))
-}
-
-type MockRunnable struct{}
-
-func (m *MockRunnable) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
-    return "result", nil
-}
-
-func (m *MockRunnable) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
-    return nil, nil
-}
-
-func (m *MockRunnable) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
-    return nil, nil
+	results, err := executor.Execute(ctx)
+	if err != nil {
+		slog.Error("execution failed", "error", err)
+		return
+	}
+	fmt.Printf("Executed %d nodes\n", len(results))
+	for id, result := range results {
+		fmt.Printf("  %s -> %v\n", id, result)
+	}
 }
 ```
 
 ## Explanation
 
-1. **Dependency resolution enables safe parallelism** — Building an explicit dependency graph and checking which nodes are ready to execute ensures correctness while maximizing parallelism. The algorithm naturally handles complex dependency patterns: chains, diamonds, independent subgraphs. You don't need special cases for different graph shapes. The same ready-node identification works for all structures.
+1. **Wave-based execution** — On each iteration, `readyNodes` scans all nodes and returns those whose dependencies are all marked complete. All ready nodes launch concurrently in a wave. This naturally handles chains, diamonds, and independent subgraphs without special cases.
 
-2. **Semaphore-based concurrency control prevents resource exhaustion** — The semaphore limits concurrent goroutines to a configured maximum, providing backpressure without blocking all parallelism. This is essential when nodes use limited resources like database connections or external API calls. Without this limit, launching hundreds of nodes simultaneously could exhaust connection pools or trigger rate limits, causing failures unrelated to business logic.
+2. **Semaphore-based concurrency control** — The `sem` channel limits concurrent goroutines to `maxConcurrent`. A goroutine blocks on `sem <- struct{}{}` until a slot is available. This provides backpressure without forcing fully sequential processing.
 
-3. **Topological execution with parallelism** — Nodes execute in topological order (dependencies before dependents), but the algorithm identifies and exploits opportunities for parallelism within that ordering. When multiple nodes become ready simultaneously, they execute concurrently rather than arbitrarily sequentially. This provides the speedup benefits of parallelism while maintaining the correctness guarantees of topological sorting.
+3. **Fail-fast error handling** — `errCh` collects the first error from any node in the wave. After `wg.Wait()`, one error is drained and returned immediately. Subsequent waves are never started after a failure.
 
-4. **Wave-based execution simplifies coordination** — Rather than continuously launching nodes as dependencies complete, the executor processes ready nodes in waves. Each wave executes all currently-ready nodes concurrently, waits for completion, then identifies the next wave. This simplification makes the code easier to reason about and naturally handles synchronization. You don't need complex coordination logic because wave boundaries provide natural synchronization points.
+4. **Cycle detection** — If `readyNodes` returns empty but nodes remain unexecuted, a circular dependency exists. The executor returns an error rather than looping forever.
 
 ## Testing
 
 ```go
 func TestParallelGraphExecutor_ExecutesInParallel(t *testing.T) {
-    executor := NewParallelGraphExecutor(5)
+	executor := NewParallelGraphExecutor(5)
+	executor.AddNode(&GraphNode{ID: "n1", Runnable: &echoRunnable{label: "n1"}, DependsOn: []string{}})
+	executor.AddNode(&GraphNode{ID: "n2", Runnable: &echoRunnable{label: "n2"}, DependsOn: []string{}})
+	executor.AddNode(&GraphNode{ID: "n3", Runnable: &echoRunnable{label: "n3"}, DependsOn: []string{"n1", "n2"}})
 
-    executor.AddNode(&GraphNode{ID: "node1", Runnable: &MockRunnable{}, DependsOn: []string{}})
-    executor.AddNode(&GraphNode{ID: "node2", Runnable: &MockRunnable{}, DependsOn: []string{}})
+	results, err := executor.Execute(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(results) != 3 {
+		t.Errorf("expected 3 results, got %d", len(results))
+	}
+}
 
-    results, err := executor.Execute(context.Background())
-    require.NoError(t, err)
-    require.Len(t, results, 2)
+func TestParallelGraphExecutor_DetectsCycle(t *testing.T) {
+	executor := NewParallelGraphExecutor(2)
+	executor.AddNode(&GraphNode{ID: "a", Runnable: &echoRunnable{label: "a"}, DependsOn: []string{"b"}})
+	executor.AddNode(&GraphNode{ID: "b", Runnable: &echoRunnable{label: "b"}, DependsOn: []string{"a"}})
+
+	_, err := executor.Execute(context.Background())
+	if err == nil {
+		t.Fatal("expected circular dependency error, got nil")
+	}
 }
 ```
 
@@ -270,26 +240,16 @@ func TestParallelGraphExecutor_ExecutesInParallel(t *testing.T) {
 
 ### Dynamic Concurrency
 
-Adjust concurrency based on node characteristics:
+Adjust the semaphore size based on node characteristics (e.g., CPU-bound vs. IO-bound nodes use different limits):
 
 ```go
-func (pge *ParallelGraphExecutor) ExecuteWithDynamicConcurrency(ctx context.Context) (map[string]interface{}, error) {
-    // Adjust concurrency per node type
-}
-```
-
-### Node Prioritization
-
-Execute high-priority nodes first:
-
-```go
-type GraphNode struct {
-    Priority int
-    // ... other fields
+type WeightedNode struct {
+	GraphNode
+	ConcurrencyWeight int // Tokens this node consumes from the semaphore.
 }
 ```
 
 ## Related Recipes
 
-- [Agents Parallel Step Execution](/docs/cookbook/agents-parallel-execution) — Parallel agent steps
-- [Workflow Checkpointing](/docs/cookbook/workflow-checkpoints) — Save and resume workflows
+- **[Agents Parallel Step Execution](/docs/cookbook/agents/agents-parallel-execution)** — Parallel agent steps using `core.Parallel`
+- **[Workflow Checkpointing](./workflow-checkpoints)** — Save and resume workflows

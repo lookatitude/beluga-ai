@@ -60,7 +60,10 @@ Connect to OpenAI, Anthropic, Google, Ollama, AWS Bedrock, Groq, Mistral, DeepSe
 Providers use the same registration mechanism as Go's `database/sql` and `image` packages: a blank import triggers `init()`, which registers a factory function. Your application code calls `llm.New("openai", cfg)` without importing the provider package directly, making it trivial to swap providers in tests or across environments.
 
 ```go
-import _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+import (
+    "github.com/lookatitude/beluga-ai/config"
+    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+)
 
 model, err := llm.New("openai", config.ProviderConfig{
     APIKey: os.Getenv("OPENAI_API_KEY"),

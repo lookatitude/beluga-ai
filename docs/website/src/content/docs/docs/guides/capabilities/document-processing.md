@@ -53,31 +53,33 @@ import (
     "context"
     "fmt"
     "log"
-    "os"
+    "path/filepath"
 
-    "github.com/lookatitude/beluga-ai/pkg/documentloaders"
-    "github.com/lookatitude/beluga-ai/pkg/schema"
+    "github.com/lookatitude/beluga-ai/config"
+    "github.com/lookatitude/beluga-ai/rag/loader"
+    "github.com/lookatitude/beluga-ai/schema"
 )
 
 func LoadDirectory(dirPath string) ([]schema.Document, error) {
     ctx := context.Background()
 
-    // Create filesystem
-    fsys := os.DirFS(dirPath)
+    // Clean the path to remove any traversal components.
+    cleanPath := filepath.Clean(dirPath)
 
-    // Configure directory loader
-    loader, err := documentloaders.NewDirectoryLoader(fsys,
-        documentloaders.WithMaxDepth(10),
-        documentloaders.WithExtensions(".md", ".txt", ".pdf", ".html"),
-        documentloaders.WithExclusions("**/node_modules/**", "**/.git/**", "**/.DS_Store"),
-        documentloaders.WithConcurrency(4), // Parallel loading
-    )
+    // Create a directory loader via the registry
+    l, err := loader.New("directory", config.ProviderConfig{
+        Options: map[string]any{
+            "path":        cleanPath,
+            "extensions":  []string{".md", ".txt", ".pdf", ".html"},
+            "concurrency": 4,
+        },
+    })
     if err != nil {
         return nil, fmt.Errorf("create loader: %w", err)
     }
 
     // Load all documents
-    docs, err := loader.Load(ctx)
+    docs, err := l.Load(ctx, cleanPath)
     if err != nil {
         return nil, fmt.Errorf("load documents: %w", err)
     }
@@ -107,19 +109,26 @@ PDF is one of the most common document formats in enterprise environments, but e
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/pkg/documentloaders/providers/pdf"
+    "github.com/lookatitude/beluga-ai/config"
+    "github.com/lookatitude/beluga-ai/rag/loader"
+    _ "github.com/lookatitude/beluga-ai/rag/loader/providers/pdf"
 )
 
 func LoadPDF(filePath string) ([]schema.Document, error) {
     ctx := context.Background()
 
-    loader := pdf.NewLoader(filePath,
-        pdf.WithExtractImages(false), // Skip images
-        pdf.WithPreserveFormatting(true),
-        pdf.WithPageSeparator("\n---\n"),
-    )
+    l, err := loader.New("pdf", config.ProviderConfig{
+        Options: map[string]any{
+            "extract_images":      false,
+            "preserve_formatting": true,
+            "page_separator":      "\n---\n",
+        },
+    })
+    if err != nil {
+        return nil, fmt.Errorf("create pdf loader: %w", err)
+    }
 
-    docs, err := loader.Load(ctx)
+    docs, err := l.Load(ctx, filePath)
     if err != nil {
         return nil, fmt.Errorf("load PDF: %w", err)
     }
@@ -134,20 +143,27 @@ Web pages contain significant noise — scripts, stylesheets, navigation element
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/pkg/documentloaders/providers/html"
+    "github.com/lookatitude/beluga-ai/config"
+    "github.com/lookatitude/beluga-ai/rag/loader"
+    _ "github.com/lookatitude/beluga-ai/rag/loader/providers/html"
 )
 
-func LoadHTML(url string) ([]schema.Document, error) {
+func LoadHTML(pageURL string) ([]schema.Document, error) {
     ctx := context.Background()
 
-    loader := html.NewLoader(url,
-        html.WithRemoveScripts(true),
-        html.WithRemoveStyles(true),
-        html.WithExtractMetadata(true), // Extract title, description, etc.
-        html.WithFollowLinks(false),
-    )
+    l, err := loader.New("html", config.ProviderConfig{
+        Options: map[string]any{
+            "remove_scripts":   true,
+            "remove_styles":    true,
+            "extract_metadata": true,
+            "follow_links":     false,
+        },
+    })
+    if err != nil {
+        return nil, fmt.Errorf("create html loader: %w", err)
+    }
 
-    docs, err := loader.Load(ctx)
+    docs, err := l.Load(ctx, pageURL)
     if err != nil {
         return nil, fmt.Errorf("load HTML: %w", err)
     }
@@ -162,25 +178,27 @@ For cloud-native applications, documents often reside in object storage rather t
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/pkg/documentloaders/providers/s3"
-    "github.com/aws/aws-sdk-go/aws/session"
+    "github.com/lookatitude/beluga-ai/config"
+    "github.com/lookatitude/beluga-ai/rag/loader"
+    _ "github.com/lookatitude/beluga-ai/rag/loader/providers/s3"
 )
 
 func LoadFromS3(bucket, prefix string) ([]schema.Document, error) {
     ctx := context.Background()
 
-    sess, err := session.NewSession()
+    l, err := loader.New("s3", config.ProviderConfig{
+        Options: map[string]any{
+            "bucket":     bucket,
+            "prefix":     prefix,
+            "recursive":  true,
+            "extensions": []string{".txt", ".md", ".pdf"},
+        },
+    })
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("create s3 loader: %w", err)
     }
 
-    loader := s3.NewLoader(sess, bucket,
-        s3.WithPrefix(prefix),
-        s3.WithRecursive(true),
-        s3.WithIncludeExtensions(".txt", ".md", ".pdf"),
-    )
-
-    docs, err := loader.Load(ctx)
+    docs, err := l.Load(ctx, bucket)
     if err != nil {
         return nil, fmt.Errorf("load from S3: %w", err)
     }
@@ -197,14 +215,15 @@ Loading millions of documents into memory at once is not feasible — it would e
 func ProcessLargeDataset(dirPath string) error {
     ctx := context.Background()
 
-    fsys := os.DirFS(dirPath)
-    loader, err := documentloaders.NewDirectoryLoader(fsys)
+    l, err := loader.New("directory", config.ProviderConfig{
+        Options: map[string]any{"path": filepath.Clean(dirPath)},
+    })
     if err != nil {
         return err
     }
 
     // LazyLoad returns an iterator
-    docIterator, err := loader.LazyLoad(ctx)
+    docIterator, err := l.LazyLoad(ctx)
     if err != nil {
         return err
     }
@@ -250,17 +269,22 @@ The recursive character splitter is the recommended default for general-purpose 
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/pkg/textsplitters"
+    "github.com/lookatitude/beluga-ai/config"
+    "github.com/lookatitude/beluga-ai/rag/splitter"
 )
 
-func SplitRecursive(doc schema.Document) ([]schema.Document, error) {
-    splitter := textsplitters.NewRecursiveCharacterSplitter(
-        textsplitters.WithChunkSize(1000),
-        textsplitters.WithChunkOverlap(200), // Preserve context between chunks
-        textsplitters.WithSeparators([]string{"\n\n", "\n", " ", ""}),
-    )
+func SplitRecursive(ctx context.Context, doc schema.Document) ([]schema.Document, error) {
+    s, err := splitter.New("recursive", config.ProviderConfig{
+        Options: map[string]any{
+            "chunk_size":    1000,
+            "chunk_overlap": 200,
+        },
+    })
+    if err != nil {
+        return nil, fmt.Errorf("create splitter: %w", err)
+    }
 
-    chunks, err := splitter.SplitDocuments([]schema.Document{doc})
+    chunks, err := s.SplitDocuments(ctx, []schema.Document{doc})
     if err != nil {
         return nil, fmt.Errorf("split document: %w", err)
     }
@@ -275,17 +299,24 @@ Markdown documents have explicit structure through headings. The markdown splitt
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/pkg/textsplitters/providers/markdown"
+    "github.com/lookatitude/beluga-ai/config"
+    "github.com/lookatitude/beluga-ai/rag/splitter"
+    _ "github.com/lookatitude/beluga-ai/rag/splitter/providers/markdown"
 )
 
-func SplitMarkdown(doc schema.Document) ([]schema.Document, error) {
-    splitter := markdown.NewSplitter(
-        markdown.WithHeadersToSplitOn([]string{"#", "##", "###"}),
-        markdown.WithIncludeHeaders(true), // Keep headers in chunks
-        markdown.WithMaxChunkSize(1500),
-    )
+func SplitMarkdown(ctx context.Context, doc schema.Document) ([]schema.Document, error) {
+    s, err := splitter.New("markdown", config.ProviderConfig{
+        Options: map[string]any{
+            "headers_to_split_on": []string{"#", "##", "###"},
+            "include_headers":     true,
+            "chunk_size":          1500,
+        },
+    })
+    if err != nil {
+        return nil, fmt.Errorf("create splitter: %w", err)
+    }
 
-    chunks, err := splitter.SplitDocuments([]schema.Document{doc})
+    chunks, err := s.SplitDocuments(ctx, []schema.Document{doc})
     if err != nil {
         return nil, fmt.Errorf("split markdown: %w", err)
     }
@@ -300,18 +331,26 @@ Splitting code at arbitrary character boundaries breaks function definitions, cl
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/pkg/textsplitters/providers/code"
+    "github.com/lookatitude/beluga-ai/config"
+    "github.com/lookatitude/beluga-ai/rag/splitter"
+    _ "github.com/lookatitude/beluga-ai/rag/splitter/providers/code"
 )
 
-func SplitCode(doc schema.Document, language string) ([]schema.Document, error) {
-    splitter := code.NewSplitter(language,
-        code.WithChunkSize(1000),
-        code.WithOverlap(100),
-        code.WithPreserveFunctions(true), // Keep functions together
-        code.WithPreserveClasses(true),   // Keep classes together
-    )
+func SplitCode(ctx context.Context, doc schema.Document, language string) ([]schema.Document, error) {
+    s, err := splitter.New("code", config.ProviderConfig{
+        Options: map[string]any{
+            "language":          language,
+            "chunk_size":        1000,
+            "chunk_overlap":     100,
+            "preserve_functions": true,
+            "preserve_classes":  true,
+        },
+    })
+    if err != nil {
+        return nil, fmt.Errorf("create splitter: %w", err)
+    }
 
-    chunks, err := splitter.SplitDocuments([]schema.Document{doc})
+    chunks, err := s.SplitDocuments(ctx, []schema.Document{doc})
     if err != nil {
         return nil, fmt.Errorf("split code: %w", err)
     }
@@ -326,18 +365,26 @@ Character-based splitting ignores the actual meaning of the text. Two adjacent p
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/pkg/textsplitters/providers/semantic"
-    "github.com/lookatitude/beluga-ai/pkg/embeddings"
+    "github.com/lookatitude/beluga-ai/config"
+    "github.com/lookatitude/beluga-ai/rag/embedding"
+    "github.com/lookatitude/beluga-ai/rag/splitter"
+    _ "github.com/lookatitude/beluga-ai/rag/splitter/providers/semantic"
 )
 
-func SplitSemantic(ctx context.Context, doc schema.Document, embedder embeddings.Embedder) ([]schema.Document, error) {
-    splitter := semantic.NewSplitter(embedder,
-        semantic.WithBreakpointThreshold(0.75), // Similarity threshold
-        semantic.WithMinChunkSize(200),
-        semantic.WithMaxChunkSize(1500),
-    )
+func SplitSemantic(ctx context.Context, doc schema.Document, emb embedding.Embedder) ([]schema.Document, error) {
+    s, err := splitter.New("semantic", config.ProviderConfig{
+        Options: map[string]any{
+            "embedder":            emb,
+            "breakpoint_threshold": 0.75,
+            "min_chunk_size":      200,
+            "chunk_size":          1500,
+        },
+    })
+    if err != nil {
+        return nil, fmt.Errorf("create splitter: %w", err)
+    }
 
-    chunks, err := splitter.SplitDocuments(ctx, []schema.Document{doc})
+    chunks, err := s.SplitDocuments(ctx, []schema.Document{doc})
     if err != nil {
         return nil, fmt.Errorf("split semantically: %w", err)
     }
@@ -398,23 +445,23 @@ Production document ingestion requires batching for efficiency, error handling f
 
 ```go
 type DocumentProcessor struct {
-    loader    documentloaders.Loader
-    splitter  textsplitters.TextSplitter
-    embedder  embeddings.Embedder
+    loader    loader.Loader
+    splitter  splitter.TextSplitter
+    embedder  embedding.Embedder
     vectorDB  vectorstore.VectorStore
     batchSize int
 }
 
 func NewDocumentProcessor(
-    loader documentloaders.Loader,
-    splitter textsplitters.TextSplitter,
-    embedder embeddings.Embedder,
+    l loader.Loader,
+    s splitter.TextSplitter,
+    emb embedding.Embedder,
     vectorDB vectorstore.VectorStore,
 ) *DocumentProcessor {
     return &DocumentProcessor{
-        loader:    loader,
-        splitter:  splitter,
-        embedder:  embedder,
+        loader:    l,
+        splitter:  s,
+        embedder:  emb,
         vectorDB:  vectorDB,
         batchSize: 10,
     }
@@ -487,18 +534,18 @@ func (dp *DocumentProcessor) processBatch(
 
     stats.ChunksCreated += len(allChunks)
 
-    // Embed chunks
-    var embeddings [][]float32
-    for _, chunk := range allChunks {
-        embedding, err := dp.embedder.EmbedText(ctx, chunk.PageContent)
-        if err != nil {
-            return fmt.Errorf("embed chunk: %w", err)
-        }
-        embeddings = append(embeddings, embedding)
+    // Embed chunks in a single batch call
+    texts := make([]string, len(allChunks))
+    for i, chunk := range allChunks {
+        texts[i] = chunk.PageContent
+    }
+    vecs, err := dp.embedder.Embed(ctx, texts)
+    if err != nil {
+        return fmt.Errorf("embed chunks: %w", err)
     }
 
     // Store in vector database
-    if err := dp.vectorDB.AddDocuments(ctx, allChunks, embeddings); err != nil {
+    if err := dp.vectorDB.Add(ctx, allChunks, vecs); err != nil {
         return fmt.Errorf("store in vector DB: %w", err)
     }
 

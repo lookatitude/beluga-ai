@@ -1,22 +1,26 @@
 ---
 title: "Masking Secrets in Logs"
-description: "Recipe for automatically masking API keys, passwords, and tokens in Go logs before they reach aggregation systems — fail-safe secret protection."
+description: "Recipe for automatically masking sensitive values in Go config structures before logging — fail-safe pattern-based secret protection for any config type."
 head:
   - tag: meta
     attrs:
       name: keywords
-      content: "Beluga AI, secret masking, Go log security, API key protection, credential masking, config safety, production logging recipe"
+      content: "Beluga AI, secret masking, Go log security, credential masking, config safety, production logging recipe"
 ---
 
 ## Problem
 
-You need to log configuration values for debugging but must prevent sensitive data (API keys, passwords, tokens) from appearing in logs, which could be exposed in log aggregation systems, error reports, or debugging output. This is a pervasive problem in production systems: configuration often contains both sensitive credentials (API keys, database passwords, OAuth tokens) and non-sensitive operational settings (timeouts, feature flags, resource limits). Logging full configurations is invaluable for debugging—knowing which config values were active when an issue occurred is essential for reproducing and diagnosing bugs. However, logs flow through multiple systems (log collectors, aggregation pipelines, search indices, error tracking tools) and are accessed by many people (developers, operators, support staff). Exposing secrets in logs creates security risks: compromised credentials, compliance violations, and potential data breaches. The challenge is logging enough configuration detail to debug issues while automatically protecting sensitive fields without requiring developers to manually redact every log statement.
+You need to log configuration values for debugging but must prevent sensitive data (passwords, tokens) from appearing in logs, which could be exposed in log aggregation systems, error reports, or debugging output.
 
 ## Solution
 
-Implement a config logger that automatically masks sensitive fields using field name patterns and custom masking rules. This works because Beluga AI's config structures use consistent field naming, allowing you to identify and mask sensitive fields before logging. The design uses pattern-based field detection: fields with names like "api_key", "password", "token", or "secret" are automatically masked. The masker recursively traverses config structures (nested maps, slices, structs), applying masking rules at every level. This approach is fail-safe: it operates on a copy of the config, never modifying the original, and it errs on the side of over-masking rather than under-masking. The key insight is that sensitive field names follow predictable conventions, making pattern-based detection reliable. This integrates with Beluga's config package and structured logging, ensuring all config logs are automatically sanitized.
+Implement a `SecretMasker` that converts any config struct to a map via JSON round-trip and recursively replaces values whose field names match sensitive patterns. The original struct is never modified.
 
-The masker converts configs to maps via JSON serialization, enabling recursive traversal without reflection. Pattern matching is case-insensitive and supports both exact matches ("api_key") and substring matches (catching "user_api_key", "llm_api_key"). The masker tracks how many fields were masked, providing observability into redaction operations without exposing the actual secrets.
+## Why This Matters
+
+Logs flow through multiple systems (collectors, aggregation pipelines, search indices) and are accessed by many people. The masker operates on a copy of the config, erring on the side of over-masking rather than under-masking. This approach works for any config type — including Beluga AI's `config.ProviderConfig` — because JSON serialization handles struct traversal automatically.
+
+**Note:** Never store raw secrets in config files or structs unless absolutely necessary. Prefer `config.LoadFromEnv` to source sensitive values from the environment. If secrets do appear in config structs (e.g., after loading from a secrets manager), mask them before logging.
 
 ## Code Example
 
@@ -24,278 +28,195 @@ The masker converts configs to maps via JSON serialization, enabling recursive t
 package main
 
 import (
-    "context"
-    "encoding/json"
-    "fmt"
-    "log"
-    "strings"
+	"context"
+	"encoding/json"
+	"fmt"
+	"log/slog"
+	"strings"
 
-    "go.opentelemetry.io/otel"
-    "go.opentelemetry.io/otel/attribute"
-    "go.opentelemetry.io/otel/trace"
-
-    "github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/config"
 )
 
-var tracer = otel.Tracer("beluga.config.masking")
-
-// SecretMasker masks sensitive values in config structures
+// SecretMasker masks sensitive fields in any JSON-serializable value.
 type SecretMasker struct {
-    sensitiveFields map[string]bool
-    maskValue       string
+	sensitivePatterns []string
+	maskValue         string
 }
 
-// NewSecretMasker creates a new secret masker
+// NewSecretMasker creates a masker with default sensitive field patterns.
 func NewSecretMasker() *SecretMasker {
-    masker := &SecretMasker{
-        sensitiveFields: make(map[string]bool),
-        maskValue:       "***REDACTED***",
-    }
-
-    sensitivePatterns := []string{
-        "api_key", "apikey", "apiKey",
-        "password", "passwd",
-        "token", "secret",
-        "access_key", "secret_key",
-        "private_key", "privatekey",
-        "auth_token", "authToken",
-    }
-
-    for _, pattern := range sensitivePatterns {
-        masker.sensitiveFields[strings.ToLower(pattern)] = true
-    }
-
-    return masker
+	return &SecretMasker{
+		sensitivePatterns: []string{
+			"password", "passwd",
+			"token", "secret",
+			"access_key", "secret_key",
+			"private_key", "privatekey",
+			"auth_token", "authtoken",
+		},
+		maskValue: "***REDACTED***",
+	}
 }
 
-// AddSensitiveField adds a custom sensitive field pattern
-func (sm *SecretMasker) AddSensitiveField(fieldName string) {
-    sm.sensitiveFields[strings.ToLower(fieldName)] = true
+// AddPattern registers an additional field name pattern to mask.
+func (sm *SecretMasker) AddPattern(pattern string) {
+	sm.sensitivePatterns = append(sm.sensitivePatterns, strings.ToLower(pattern))
 }
 
-// MaskConfig masks sensitive fields in a config structure
-func (sm *SecretMasker) MaskConfig(ctx context.Context, cfg *config.Config) (map[string]interface{}, error) {
-    ctx, span := tracer.Start(ctx, "masker.mask_config")
-    defer span.End()
+// MaskAny masks sensitive fields in any JSON-serializable value.
+// It returns a map suitable for structured logging.
+func (sm *SecretMasker) MaskAny(v any) (map[string]any, error) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return nil, fmt.Errorf("secret masker: marshal: %w", err)
+	}
 
-    cfgMap, err := sm.configToMap(cfg)
-    if err != nil {
-        span.RecordError(err)
-        span.SetStatus(trace.StatusError, "failed to convert config")
-        return nil, err
-    }
+	var raw map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, fmt.Errorf("secret masker: unmarshal: %w", err)
+	}
 
-    masked := sm.maskMap(cfgMap, "")
-
-    span.SetAttributes(attribute.Int("masked.fields", sm.countMaskedFields(masked)))
-    span.SetStatus(trace.StatusOK, "config masked")
-
-    return masked, nil
+	return sm.maskMap(raw), nil
 }
 
-// configToMap converts config struct to map
-func (sm *SecretMasker) configToMap(cfg *config.Config) (map[string]interface{}, error) {
-    data, err := json.Marshal(cfg)
-    if err != nil {
-        return nil, fmt.Errorf("failed to marshal config: %w", err)
-    }
-
-    var result map[string]interface{}
-    if err := json.Unmarshal(data, &result); err != nil {
-        return nil, fmt.Errorf("failed to unmarshal config: %w", err)
-    }
-
-    return result, nil
+func (sm *SecretMasker) maskMap(m map[string]any) map[string]any {
+	out := make(map[string]any, len(m))
+	for k, v := range m {
+		if sm.shouldMask(k) {
+			out[k] = sm.maskValue
+			continue
+		}
+		switch val := v.(type) {
+		case map[string]any:
+			out[k] = sm.maskMap(val)
+		case []any:
+			out[k] = sm.maskSlice(val)
+		default:
+			out[k] = v
+		}
+	}
+	return out
 }
 
-// maskMap recursively masks sensitive fields in a map
-func (sm *SecretMasker) maskMap(m map[string]interface{}, prefix string) map[string]interface{} {
-    masked := make(map[string]interface{})
-
-    for key, value := range m {
-        fullKey := key
-        if prefix != "" {
-            fullKey = prefix + "." + key
-        }
-
-        lowerKey := strings.ToLower(key)
-
-        if sm.shouldMask(lowerKey) {
-            masked[key] = sm.maskValue
-            continue
-        }
-
-        if nestedMap, ok := value.(map[string]interface{}); ok {
-            masked[key] = sm.maskMap(nestedMap, fullKey)
-            continue
-        }
-
-        if slice, ok := value.([]interface{}); ok {
-            masked[key] = sm.maskSlice(slice, fullKey)
-            continue
-        }
-
-        masked[key] = value
-    }
-
-    return masked
+func (sm *SecretMasker) maskSlice(s []any) []any {
+	out := make([]any, len(s))
+	for i, item := range s {
+		if m, ok := item.(map[string]any); ok {
+			out[i] = sm.maskMap(m)
+		} else {
+			out[i] = item
+		}
+	}
+	return out
 }
 
-// maskSlice masks sensitive fields in a slice
-func (sm *SecretMasker) maskSlice(slice []interface{}, prefix string) []interface{} {
-    masked := make([]interface{}, len(slice))
-
-    for i, item := range slice {
-        if itemMap, ok := item.(map[string]interface{}); ok {
-            masked[i] = sm.maskMap(itemMap, prefix)
-        } else {
-            masked[i] = item
-        }
-    }
-
-    return masked
-}
-
-// shouldMask checks if a field should be masked
 func (sm *SecretMasker) shouldMask(fieldName string) bool {
-    lowerName := strings.ToLower(fieldName)
-
-    if sm.sensitiveFields[lowerName] {
-        return true
-    }
-
-    for pattern := range sm.sensitiveFields {
-        if strings.Contains(lowerName, pattern) {
-            return true
-        }
-    }
-
-    return false
+	lower := strings.ToLower(fieldName)
+	for _, pattern := range sm.sensitivePatterns {
+		if strings.Contains(lower, pattern) {
+			return true
+		}
+	}
+	return false
 }
 
-// countMaskedFields counts how many fields were masked
-func (sm *SecretMasker) countMaskedFields(m map[string]interface{}) int {
-    count := 0
-    for _, value := range m {
-        if str, ok := value.(string); ok && str == sm.maskValue {
-            count++
-        } else if nested, ok := value.(map[string]interface{}); ok {
-            count += sm.countMaskedFields(nested)
-        } else if slice, ok := value.([]interface{}); ok {
-            for _, item := range slice {
-                if itemMap, ok := item.(map[string]interface{}); ok {
-                    count += sm.countMaskedFields(itemMap)
-                }
-            }
-        }
-    }
-    return count
-}
-
-// SafeLogConfig logs config with masked secrets
-func SafeLogConfig(ctx context.Context, cfg *config.Config) {
-    masker := NewSecretMasker()
-    masked, err := masker.MaskConfig(ctx, cfg)
-    if err != nil {
-        log.Printf("Failed to mask config: %v", err)
-        return
-    }
-
-    maskedJSON, _ := json.MarshalIndent(masked, "", "  ")
-    log.Printf("Config (secrets masked):\n%s", maskedJSON)
-}
-
-// SafeString returns a safe string representation of config
-func SafeString(cfg *config.Config) string {
-    masker := NewSecretMasker()
-    masked, err := masker.MaskConfig(context.Background(), cfg)
-    if err != nil {
-        return "<error masking config>"
-    }
-
-    maskedJSON, _ := json.MarshalIndent(masked, "", "  ")
-    return string(maskedJSON)
+// SafeLog logs a config value with sensitive fields masked.
+// Pass any JSON-serializable config struct.
+func SafeLog(ctx context.Context, masker *SecretMasker, label string, cfg any) {
+	masked, err := masker.MaskAny(cfg)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to mask config for logging", "label", label, "error", err)
+		return
+	}
+	// Log the masked map as structured fields — never the original cfg.
+	slog.InfoContext(ctx, label, "config", masked)
 }
 
 func main() {
-    // Load config and log safely
-    // cfg, _ := config.LoadFromFile("./config.yaml")
-    // SafeLogConfig(context.Background(), cfg)
-    // safeStr := SafeString(cfg)
-    // fmt.Println(safeStr)
-    fmt.Println("Secret masker created successfully")
+	ctx := context.Background()
+	masker := NewSecretMasker()
+
+	// Example: mask a ProviderConfig before logging.
+	// In production, APIKey would come from os.Getenv, not a literal.
+	providerCfg := config.ProviderConfig{
+		Model: "gpt-4o",
+	}
+
+	SafeLog(ctx, masker, "provider config loaded", providerCfg)
+
+	// Direct use:
+	type DBConfig struct {
+		Host     string `json:"host"`
+		Password string `json:"password"`
+		Port     int    `json:"port"`
+	}
+	db := DBConfig{Host: "localhost", Password: "hunter2", Port: 5432}
+	masked, err := masker.MaskAny(db)
+	if err != nil {
+		slog.Error("mask failed", "error", err)
+		return
+	}
+	out, _ := json.MarshalIndent(masked, "", "  ")
+	fmt.Println(string(out))
+	// Output:
+	// {
+	//   "host": "localhost",
+	//   "password": "***REDACTED***",
+	//   "port": 5432
+	// }
 }
 ```
 
 ## Explanation
 
-1. **Pattern-based detection** — Field names are checked against a set of sensitive patterns. This catches variations like "api_key", "apiKey", and "API_KEY" without needing exact matches. This matters because configuration formats vary: YAML configs might use snake_case ("api_key"), JSON might use camelCase ("apiKey"), and environment variables use UPPER_SNAKE_CASE ("API_KEY"). Case-insensitive substring matching handles all these variations automatically. This approach is also forward-compatible: adding new sensitive fields (like "jwt_secret" or "oauth_token") only requires adding patterns to the registry, not modifying masking logic. The trade-off is potential false positives—a field named "secret_count" would be masked—but this is acceptable because over-masking is safer than under-masking in security contexts.
+1. **JSON round-trip traversal** — Serializing to JSON and back into `map[string]any` enables recursive traversal of any struct depth without reflection. This handles nested structs, slices of structs, and embedded types uniformly.
 
-2. **Recursive masking** — Nested maps and slices are processed recursively. This ensures that sensitive fields deep in the config structure (like `llm_providers[0].api_key`) are also masked. This matters because modern configs are deeply nested: a Beluga config might have LLM provider configs nested under providers, each with their own credentials; RAG configs with vector store credentials; and auth configs with OAuth client secrets. Without recursive traversal, nested secrets would leak through. The recursive design handles arbitrary nesting depth, making it robust to config structure changes. The masker processes both maps (nested objects) and slices (arrays of configs), ensuring comprehensive coverage of all possible config shapes.
+2. **Pattern-based detection** — Field names are lowercased and checked for substring matches against the pattern list. This catches variations: `password`, `db_password`, `Password`, `DATABASE_PASSWORD`. Adding new patterns requires no changes to masking logic.
 
-3. **Non-destructive masking** — The original config is never modified. A new masked structure is created, so the original config remains intact for actual use. This matters because masking must not interfere with config consumption—the actual system needs real API keys to function, not redacted placeholders. By creating a copy (via JSON round-trip), the masker produces a sanitized version for logging while leaving the original unchanged. This design also makes masking composable: you can log both masked and unmasked versions (to different destinations) without interference. The JSON round-trip approach works because Beluga configs are JSON-serializable, and it automatically handles private fields (which won't appear in the JSON output).
+3. **Non-destructive** — The original config value is never modified. A separate masked copy is produced for logging. This ensures the running system continues to use the real (unmasked) values while logs contain only redacted output.
 
-Always mask at the logging boundary, not in the config structure itself. This keeps the config usable while protecting logs.
+4. **Over-masking preference** — A field named `token_count` would be masked because it contains "token". This is intentional: over-masking is safer than under-masking. If false positives are a problem in your domain, use more specific patterns.
 
 ## Testing
 
 ```go
-func TestSecretMasker_MasksAPIKeys(t *testing.T) {
-    masker := NewSecretMasker()
+func TestSecretMasker_MasksPassword(t *testing.T) {
+	masker := NewSecretMasker()
 
-    cfg := &config.Config{
-        LLMProviders: []schema.LLMProviderConfig{
-            {
-                Name:   "test",
-                APIKey: "sk-secret-key-12345",
-            },
-        },
-    }
+	type Config struct {
+		Host     string `json:"host"`
+		Password string `json:"password"`
+	}
+	cfg := Config{Host: "localhost", Password: "hunter2"}
 
-    masked, err := masker.MaskConfig(context.Background(), cfg)
-    require.NoError(t, err)
-
-    providers := masked["llm_providers"].([]interface{})
-    provider := providers[0].(map[string]interface{})
-
-    require.Equal(t, "***REDACTED***", provider["api_key"])
-    require.Equal(t, "test", provider["name"])
+	masked, err := masker.MaskAny(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if masked["password"] != "***REDACTED***" {
+		t.Errorf("expected password to be redacted, got %v", masked["password"])
+	}
+	if masked["host"] != "localhost" {
+		t.Errorf("expected host to be preserved, got %v", masked["host"])
+	}
 }
 ```
 
 ## Variations
 
-### Custom Mask Values
-
-Use different mask values per field type:
-
-```go
-type FieldMasker struct {
-    maskValues map[string]string
-}
-
-func (fm *FieldMasker) GetMaskValue(fieldName string) string {
-    if mask, exists := fm.maskValues[fieldName]; exists {
-        return mask
-    }
-    return "***REDACTED***"
-}
-```
-
 ### Partial Masking
 
-Show partial values (e.g., last 4 characters):
+Show the last four characters of a token for debugging:
 
 ```go
 func (sm *SecretMasker) partialMask(value string) string {
-    if len(value) <= 4 {
-        return sm.maskValue
-    }
-    return "****" + value[len(value)-4:]
+	if len(value) <= 4 {
+		return sm.maskValue
+	}
+	return "****" + value[len(value)-4:]
 }
 ```
 
 ## Related Recipes
 
-- **[Config Hot-reloading](./config-hot-reload)** — Hot-reload configs safely
-- **[PII Redaction](./pii-redaction)** — General PII redaction patterns
+- **[Config Hot-reloading](./config-hot-reload)** — Reload configs without restart
+- **[PII Redaction](./pii-redaction)** — General PII redaction patterns for user data

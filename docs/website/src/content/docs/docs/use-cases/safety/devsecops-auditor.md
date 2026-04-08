@@ -46,7 +46,8 @@ import (
     "time"
 
     "github.com/lookatitude/beluga-ai/agent"
-    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/schema"
     "github.com/lookatitude/beluga-ai/tool"
 
@@ -60,7 +61,7 @@ type PolicyAuditorAgent struct {
 }
 
 func NewPolicyAuditorAgent(ctx context.Context) (*PolicyAuditorAgent, error) {
-    model, err := llm.New("openai", llm.ProviderConfig{
+    model, err := llm.New("openai", config.ProviderConfig{
         APIKey: os.Getenv("OPENAI_API_KEY"),
         Model:  "gpt-4o",
     })

@@ -30,9 +30,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/lookatitude/beluga-ai/rag/retriever"
 	"github.com/lookatitude/beluga-ai/rag/splitter"
-	"github.com/lookatitude/beluga-ai/rag/vectorstore"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -40,12 +38,12 @@ func main() {
 	ctx := context.Background()
 
 	// Split documents into small child chunks and large parent chunks.
-	childSplitter := splitter.NewRecursiveCharacter(
+	childSplitter := splitter.NewRecursiveSplitter(
 		splitter.WithChunkSize(200),
 		splitter.WithChunkOverlap(20),
 	)
 
-	parentSplitter := splitter.NewRecursiveCharacter(
+	parentSplitter := splitter.NewRecursiveSplitter(
 		splitter.WithChunkSize(1000),
 		splitter.WithChunkOverlap(100),
 	)
@@ -58,7 +56,7 @@ func main() {
 	}
 
 	// Split into parent chunks.
-	parents, err := parentSplitter.Split(ctx, []schema.Document{doc})
+	parents, err := parentSplitter.SplitDocuments(ctx, []schema.Document{doc})
 	if err != nil {
 		slog.Error("parent split failed", "error", err)
 		return
@@ -70,7 +68,7 @@ func main() {
 		parentID := fmt.Sprintf("parent_%d", i)
 		parent.Metadata["chunk_id"] = parentID
 
-		childDocs, err := childSplitter.Split(ctx, []schema.Document{parent})
+		childDocs, err := childSplitter.SplitDocuments(ctx, []schema.Document{parent})
 		if err != nil {
 			slog.Error("child split failed", "error", err)
 			continue
@@ -91,22 +89,7 @@ func main() {
 }
 ```
 
-The manual approach above shows the underlying mechanics. In practice, Beluga AI provides a built-in `ParentDocumentRetriever` that handles the parent-child relationship management, deduplication, and score propagation automatically:
-
-**With the built-in `ParentDocumentRetriever`:**
-
-```go
-// Configure parent document retrieval.
-ret := retriever.NewParentDocument(
-	retriever.WithChildStore(childVectorStore),
-	retriever.WithParentStore(parentStore),
-	retriever.WithChildSplitter(childSplitter),
-	retriever.WithParentSplitter(parentSplitter),
-)
-
-// Retrieve returns parent documents, not child chunks.
-docs, err := ret.Retrieve(ctx, "query about architecture", 5)
-```
+The example above shows the underlying mechanics: split a document into parent chunks and smaller child chunks, store the parent relationship in metadata, index the children in the vector store, and use the `parent_id` metadata at retrieval time to fetch the larger parent context for generation.
 
 ---
 
@@ -125,6 +108,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"sort"
 
 	"github.com/lookatitude/beluga-ai/schema"
@@ -174,7 +158,7 @@ func (r *CohereReranker) Rerank(ctx context.Context, query string, docs []schema
 func main() {
 	ctx := context.Background()
 
-	reranker := NewCohereReranker("cohere-api-key", "rerank-v3.5")
+	reranker := NewCohereReranker(os.Getenv("COHERE_API_KEY"), "rerank-v3.5")
 
 	// Assume initial retrieval returned 20 candidates.
 	candidates := make([]schema.Document, 20)
@@ -271,7 +255,7 @@ func main() {
 	ctx := context.Background()
 
 	// Load up to 10 files simultaneously.
-	pl := NewParallelLoader(loader.NewText(), 10)
+	pl := NewParallelLoader(loader.NewTextLoader(), 10)
 
 	paths := []string{
 		"/data/docs/readme.md",
@@ -346,7 +330,7 @@ func (r *ResilientLoader) Load(ctx context.Context, source string) ([]schema.Doc
 func main() {
 	ctx := context.Background()
 
-	resilient := NewResilientLoader(loader.NewText())
+	resilient := NewResilientLoader(loader.NewTextLoader())
 
 	paths := []string{
 		"/data/good-file.md",
@@ -384,13 +368,15 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/rag/embedding"
 )
 
 // BatchEmbed processes texts in batches for optimal throughput.
-func BatchEmbed(ctx context.Context, embedder embedding.Embedder, texts []string, batchSize int) ([][]float64, error) {
-	var allEmbeddings [][]float64
+func BatchEmbed(ctx context.Context, embedder embedding.Embedder, texts []string, batchSize int) ([][]float32, error) {
+	var allEmbeddings [][]float32
 
 	for i := 0; i < len(texts); i += batchSize {
 		end := i + batchSize
@@ -399,7 +385,7 @@ func BatchEmbed(ctx context.Context, embedder embedding.Embedder, texts []string
 		}
 
 		batch := texts[i:end]
-		embeddings, err := embedder.EmbedDocuments(ctx, batch)
+		embeddings, err := embedder.Embed(ctx, batch)
 		if err != nil {
 			return nil, fmt.Errorf("batch %d-%d failed: %w", i, end, err)
 		}
@@ -419,9 +405,10 @@ func BatchEmbed(ctx context.Context, embedder embedding.Embedder, texts []string
 func main() {
 	ctx := context.Background()
 
-	embedder, err := embedding.New("openai", embedding.ProviderConfig{
-		APIKey: "your-api-key",
-		Model:  "text-embedding-3-small",
+	embedder, err := embedding.New("openai", config.ProviderConfig{
+		Provider: "openai",
+		APIKey:   os.Getenv("OPENAI_API_KEY"),
+		Model:    "text-embedding-3-small",
 	})
 	if err != nil {
 		slog.Error("embedder creation failed", "error", err)
@@ -462,7 +449,10 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 
+	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/rag/embedding"
 	"github.com/lookatitude/beluga-ai/rag/vectorstore"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -470,8 +460,21 @@ import (
 func main() {
 	ctx := context.Background()
 
-	store, err := vectorstore.New("pgvector", vectorstore.ProviderConfig{
-		ConnectionString: "postgres://user:pass@localhost:5432/vectors",
+	embedder, err := embedding.New("openai", config.ProviderConfig{
+		Provider: "openai",
+		APIKey:   os.Getenv("OPENAI_API_KEY"),
+		Model:    "text-embedding-3-small",
+	})
+	if err != nil {
+		slog.Error("embedder creation failed", "error", err)
+		return
+	}
+
+	store, err := vectorstore.New("pgvector", config.ProviderConfig{
+		Provider: "pgvector",
+		Options: map[string]any{
+			"connection_string": os.Getenv("PGVECTOR_DSN"),
+		},
 	})
 	if err != nil {
 		slog.Error("store creation failed", "error", err)
@@ -498,14 +501,30 @@ func main() {
 		},
 	}
 
-	err = store.AddDocuments(ctx, docs)
+	// Embed documents before adding to the vector store.
+	texts := make([]string, len(docs))
+	for i, d := range docs {
+		texts[i] = d.Content
+	}
+	docEmbeds, err := embedder.Embed(ctx, texts)
 	if err != nil {
+		slog.Error("embed failed", "error", err)
+		return
+	}
+
+	if err := store.Add(ctx, docs, docEmbeds); err != nil {
 		slog.Error("add failed", "error", err)
 		return
 	}
 
-	// Search with metadata filters — only public infrastructure docs.
-	results, err := store.SimilaritySearch(ctx, "deployment patterns", 10,
+	// Embed the query, then search with metadata filters — only public infrastructure docs.
+	queryVec, err := embedder.EmbedSingle(ctx, "deployment patterns")
+	if err != nil {
+		slog.Error("embed query failed", "error", err)
+		return
+	}
+
+	results, err := store.Search(ctx, queryVec, 10,
 		vectorstore.WithFilter(map[string]any{
 			"category": "infrastructure",
 			"access":   "public",
@@ -530,7 +549,7 @@ func main() {
 
 When indexing code for RAG, the default character-based splitting produces chunks that start or end mid-function, making them nearly useless for retrieval. An embedding of half a function captures incomplete semantics. Code-aware splitting uses language-specific boundaries (function declarations, class definitions, method signatures) as split points, producing chunks that represent complete logical units.
 
-**Solution:** Use `splitter.NewCode` which understands language-specific boundaries. It respects function and class definitions, keeping related code together within each chunk.
+**Solution:** Use `splitter.NewRecursiveSplitter` with Go-specific separators ordered from most to least significant structural boundaries. This keeps functions and type declarations together within chunks rather than splitting at arbitrary character positions.
 
 ```go
 package main
@@ -547,11 +566,12 @@ import (
 func main() {
 	ctx := context.Background()
 
-	// Code-aware splitter respects function and class boundaries.
-	codeSplitter := splitter.NewCode(
-		splitter.WithLanguage("go"),
+	// Recursive splitter with Go-specific separators: function/type boundaries first,
+	// then block boundaries, then statements, then character-level fallback.
+	codeSplitter := splitter.NewRecursiveSplitter(
 		splitter.WithChunkSize(500),
 		splitter.WithChunkOverlap(50),
+		splitter.WithSeparators([]string{"\nfunc ", "\ntype ", "\n\n", "\n", " ", ""}),
 	)
 
 	goCode := schema.Document{
@@ -582,7 +602,7 @@ func (s *Server) Start() error {
 		},
 	}
 
-	chunks, err := codeSplitter.Split(ctx, []schema.Document{goCode})
+	chunks, err := codeSplitter.SplitDocuments(ctx, []schema.Document{goCode})
 	if err != nil {
 		slog.Error("split failed", "error", err)
 		return
@@ -603,7 +623,7 @@ func (s *Server) Start() error {
 
 Each chunk in a RAG system becomes an independent unit for embedding and retrieval. When a chunk starts or ends mid-sentence, the embedding captures incomplete thoughts, and the retrieved context presented to the LLM is harder to interpret. Sentence-aware splitting ensures each chunk contains complete sentences, producing more coherent embeddings and more useful retrieval results.
 
-**Solution:** Use sentence-aware splitting that respects natural boundaries. Sentences are grouped together until the chunk size limit is reached, then a new chunk begins at the next sentence boundary.
+**Solution:** Use `splitter.NewRecursiveSplitter` with sentence-boundary separators. Sentences are grouped together until the chunk size limit is reached, then a new chunk begins at the next sentence boundary.
 
 ```go
 package main
@@ -620,10 +640,12 @@ import (
 func main() {
 	ctx := context.Background()
 
-	// Sentence-boundary-aware splitting.
-	sentenceSplitter := splitter.NewSentence(
+	// Sentence-boundary-aware splitting: split at sentence boundaries first,
+	// then clause boundaries, then whitespace, then character-level fallback.
+	sentenceSplitter := splitter.NewRecursiveSplitter(
 		splitter.WithChunkSize(300),
 		splitter.WithChunkOverlap(30),
+		splitter.WithSeparators([]string{". ", "! ", "? ", "\n", " ", ""}),
 	)
 
 	doc := schema.Document{
@@ -634,7 +656,7 @@ func main() {
 			"are written in Go, including Docker and Kubernetes.",
 	}
 
-	chunks, err := sentenceSplitter.Split(ctx, []schema.Document{doc})
+	chunks, err := sentenceSplitter.SplitDocuments(ctx, []schema.Document{doc})
 	if err != nil {
 		slog.Error("split failed", "error", err)
 		return
@@ -663,9 +685,12 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"sync"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/rag/embedding"
 	"github.com/lookatitude/beluga-ai/rag/vectorstore"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -703,7 +728,8 @@ func (s *IndexStatus) Progress() string {
 }
 
 // Reindex processes all documents with status tracking and failure recovery.
-func Reindex(ctx context.Context, store vectorstore.VectorStore, docs []schema.Document, batchSize int) *IndexStatus {
+// Each batch is embedded and then added to the vector store.
+func Reindex(ctx context.Context, embedder embedding.Embedder, store vectorstore.VectorStore, docs []schema.Document, batchSize int) *IndexStatus {
 	status := &IndexStatus{
 		Total:     len(docs),
 		StartTime: time.Now(),
@@ -716,14 +742,28 @@ func Reindex(ctx context.Context, store vectorstore.VectorStore, docs []schema.D
 		}
 
 		batch := docs[i:end]
-		err := store.AddDocuments(ctx, batch)
+
+		texts := make([]string, len(batch))
+		for j, d := range batch {
+			texts[j] = d.Content
+		}
+		embeddings, err := embedder.Embed(ctx, texts)
 		if err != nil {
+			for _, doc := range batch {
+				id, _ := doc.Metadata["id"].(string)
+				status.RecordFailure(id)
+			}
+			slog.Error("embed batch failed", "start", i, "end", end, "error", err)
+			continue
+		}
+
+		if err := store.Add(ctx, batch, embeddings); err != nil {
 			// Record individual failures.
 			for _, doc := range batch {
 				id, _ := doc.Metadata["id"].(string)
 				status.RecordFailure(id)
 			}
-			slog.Error("batch failed", "start", i, "end", end, "error", err)
+			slog.Error("add batch failed", "start", i, "end", end, "error", err)
 			continue
 		}
 
@@ -740,8 +780,21 @@ func Reindex(ctx context.Context, store vectorstore.VectorStore, docs []schema.D
 func main() {
 	ctx := context.Background()
 
-	store, err := vectorstore.New("pgvector", vectorstore.ProviderConfig{
-		ConnectionString: "postgres://user:pass@localhost:5432/vectors",
+	embedder, err := embedding.New("openai", config.ProviderConfig{
+		Provider: "openai",
+		APIKey:   os.Getenv("OPENAI_API_KEY"),
+		Model:    "text-embedding-3-small",
+	})
+	if err != nil {
+		slog.Error("embedder creation failed", "error", err)
+		return
+	}
+
+	store, err := vectorstore.New("pgvector", config.ProviderConfig{
+		Provider: "pgvector",
+		Options: map[string]any{
+			"connection_string": os.Getenv("PGVECTOR_DSN"),
+		},
 	})
 	if err != nil {
 		slog.Error("store creation failed", "error", err)
@@ -757,12 +810,12 @@ func main() {
 		}
 	}
 
-	status := Reindex(ctx, store, docs, 50)
+	status := Reindex(ctx, embedder, store, docs, 50)
 	fmt.Printf("Final: %s\n", status.Progress())
 
 	if len(status.FailedIDs) > 0 {
 		fmt.Printf("Failed documents: %v\n", status.FailedIDs)
-		fmt.Println("Retry failed documents with: Reindex(ctx, store, failedDocs, 10)")
+		fmt.Println("Retry failed documents with: Reindex(ctx, embedder, store, failedDocs, 10)")
 	}
 }
 ```
@@ -785,20 +838,33 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/lookatitude/beluga-ai/rag/embedding"
 	"github.com/lookatitude/beluga-ai/rag/retriever"
+	"github.com/lookatitude/beluga-ai/rag/vectorstore"
+	"github.com/lookatitude/beluga-ai/schema"
 )
+
+// bm25Impl is a stub BM25Searcher — replace with a real implementation (Elasticsearch, Typesense, etc.).
+type bm25Impl struct{}
+
+func (b *bm25Impl) Search(_ context.Context, _ string, _ int) ([]schema.Document, error) {
+	return nil, nil
+}
 
 func main() {
 	ctx := context.Background()
 
-	// Hybrid retriever combines vector and keyword search.
-	hybrid := retriever.NewHybrid(
-		retriever.WithVectorRetriever(vectorRetriever),
-		retriever.WithKeywordRetriever(bm25Retriever),
-		retriever.WithFusionK(60), // RRF constant (default 60).
+	// vStore and embedder are initialized via vectorstore.New / embedding.New.
+	// See the Batch Embedding Optimization and Metadata Filtering recipes.
+	var vStore vectorstore.VectorStore
+	var emb embedding.Embedder
+
+	// Hybrid retriever combines vector and BM25 keyword search with RRF fusion.
+	hybrid := retriever.NewHybridRetriever(vStore, emb, &bm25Impl{},
+		retriever.WithHybridRRFK(60), // RRF constant (default 60).
 	)
 
-	docs, err := hybrid.Retrieve(ctx, "Go error handling best practices", 10)
+	docs, err := hybrid.Retrieve(ctx, "Go error handling best practices", retriever.WithTopK(10))
 	if err != nil {
 		slog.Error("hybrid search failed", "error", err)
 		return

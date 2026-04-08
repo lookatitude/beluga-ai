@@ -48,7 +48,8 @@ import (
     "log"
     "strings"
 
-    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/schema"
 
     _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
@@ -74,7 +75,7 @@ func NewCostOptimizedRouter(ctx context.Context) (*CostOptimizedRouter, error) {
     models := make(map[string]llm.ChatModel)
 
     // Simple model (low cost, good for straightforward queries)
-    simpleModel, err := llm.New("openai", llm.ProviderConfig{
+    simpleModel, err := llm.New("openai", config.ProviderConfig{
         APIKey: os.Getenv("OPENAI_API_KEY"),
         Model:  "gpt-3.5-turbo",
     })
@@ -84,7 +85,7 @@ func NewCostOptimizedRouter(ctx context.Context) (*CostOptimizedRouter, error) {
     models["simple"] = simpleModel
 
     // Medium model (balanced cost/quality)
-    mediumModel, err := llm.New("openai", llm.ProviderConfig{
+    mediumModel, err := llm.New("openai", config.ProviderConfig{
         APIKey: os.Getenv("OPENAI_API_KEY"),
         Model:  "gpt-4o-mini",
     })
@@ -94,7 +95,7 @@ func NewCostOptimizedRouter(ctx context.Context) (*CostOptimizedRouter, error) {
     models["medium"] = mediumModel
 
     // Complex model (high quality for complex reasoning)
-    complexModel, err := llm.New("anthropic", llm.ProviderConfig{
+    complexModel, err := llm.New("anthropic", config.ProviderConfig{
         APIKey: os.Getenv("ANTHROPIC_API_KEY"),
         Model:  "claude-3-5-sonnet-20241022",
     })

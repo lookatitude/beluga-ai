@@ -22,7 +22,10 @@ with ChromaDB via its HTTP REST API.
 The provider registers as "chroma" in the vectorstore registry:
 
 ```go
-import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/chroma"
+import (
+    "github.com/lookatitude/beluga-ai/config"
+    _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/chroma"
+)
 
 store, err := vectorstore.New("chroma", config.ProviderConfig{
     BaseURL: "http://localhost:8000",

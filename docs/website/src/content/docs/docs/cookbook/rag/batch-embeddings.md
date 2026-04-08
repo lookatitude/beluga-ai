@@ -111,7 +111,7 @@ func (be *BatchEmbedder) EmbedDocumentsBatch(ctx context.Context, documents []sc
     // Extract texts
     texts := make([]string, len(documents))
     for i, doc := range documents {
-        texts[i] = doc.GetContent()
+        texts[i] = doc.Content
     }
 
     // Create batches
@@ -183,7 +183,7 @@ func (be *BatchEmbedder) embedBatch(ctx context.Context, texts []string) ([][]fl
 
     span.SetAttributes(attribute.Int("batch_text_count", len(texts)))
 
-    embeddings, err := be.embedder.EmbedDocuments(ctx, texts)
+    embeddings, err := be.embedder.Embed(ctx, texts)
     if err != nil {
         span.RecordError(err)
         span.SetStatus(trace.StatusError, err.Error())
@@ -197,12 +197,13 @@ func (be *BatchEmbedder) embedBatch(ctx context.Context, texts []string) ([][]fl
 func main() {
     ctx := context.Background()
 
-    // embedder := your embedding.Embedder instance
+    // embedder is your embedding.Embedder instance — obtained via embedding.New().
+    var embedder embedding.Embedder // replace with embedding.New("openai", cfg)
     batchEmbedder := NewBatchEmbedder(embedder, 100, 5)
 
     documents := []schema.Document{
-        schema.NewDocument("Document 1", nil),
-        schema.NewDocument("Document 2", nil),
+        {Content: "Document 1"},
+        {Content: "Document 2"},
         // ... more documents
     }
 

@@ -64,10 +64,13 @@ import (
     "context"
     "fmt"
 
+    "github.com/lookatitude/beluga-ai/config"
+    "github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/memory"
     "github.com/lookatitude/beluga-ai/rag/embedding"
     "github.com/lookatitude/beluga-ai/rag/vectorstore"
 
+    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
     _ "github.com/lookatitude/beluga-ai/memory/stores/inmemory"
     _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/openai"
     _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/pgvector"
@@ -116,7 +119,7 @@ func NewConversationAssistant(ctx context.Context) (*ConversationAssistant, erro
         return nil, fmt.Errorf("create archival memory: %w", err)
     }
 
-    model, err := llm.New("openai", nil)
+    model, err := llm.New("openai", config.ProviderConfig{Model: "gpt-4o"})
     if err != nil {
         return nil, fmt.Errorf("create model: %w", err)
     }
@@ -140,9 +143,7 @@ func (ca *ConversationAssistant) Chat(ctx context.Context, userMessage string) (
     msgs := ca.buildContext(ctx, userMessage)
 
     // 2. Add the current user message
-    humanMsg := &schema.HumanMessage{Parts: []schema.ContentPart{
-        schema.TextPart{Text: userMessage},
-    }}
+    humanMsg := schema.NewHumanMessage(userMessage)
     msgs = append(msgs, humanMsg)
 
     // 3. Generate response
@@ -151,7 +152,7 @@ func (ca *ConversationAssistant) Chat(ctx context.Context, userMessage string) (
         return "", fmt.Errorf("generate: %w", err)
     }
 
-    responseText := resp.Parts[0].(schema.TextPart).Text
+    responseText := resp.Text()
 
     // 4. Save to recall memory
     if err := ca.recall.Save(ctx, humanMsg, resp); err != nil {
@@ -183,9 +184,7 @@ func (ca *ConversationAssistant) buildContext(ctx context.Context, query string)
         for _, doc := range archived {
             archiveContext += "- " + doc.Content + "\n"
         }
-        msgs = append(msgs, &schema.SystemMessage{Parts: []schema.ContentPart{
-            schema.TextPart{Text: "Relevant facts from past conversations:\n" + archiveContext},
-        }})
+        msgs = append(msgs, schema.NewSystemMessage("Relevant facts from past conversations:\n"+archiveContext))
     }
 
     return msgs
@@ -200,13 +199,9 @@ The assistant can update its core memory as it learns about the user. This self-
 func (ca *ConversationAssistant) archiveIfRelevant(ctx context.Context, userMsg, response string) {
     // Use the LLM to decide if this exchange contains important facts
     msgs := []schema.Message{
-        &schema.SystemMessage{Parts: []schema.ContentPart{
-            schema.TextPart{Text: "Extract any new facts about the user from this exchange. " +
-                "Return a JSON array of facts, or an empty array if none."},
-        }},
-        &schema.HumanMessage{Parts: []schema.ContentPart{
-            schema.TextPart{Text: fmt.Sprintf("User: %s\nAssistant: %s", userMsg, response)},
-        }},
+        schema.NewSystemMessage("Extract any new facts about the user from this exchange. " +
+            "Return a JSON array of facts, or an empty array if none."),
+        schema.NewHumanMessage(fmt.Sprintf("User: %s\nAssistant: %s", userMsg, response)),
     }
 
     type Facts struct {
@@ -249,9 +244,7 @@ Stream responses token by token for a natural conversational feel:
 ```go
 func (ca *ConversationAssistant) StreamChat(ctx context.Context, userMessage string) iter.Seq2[schema.StreamChunk, error] {
     msgs := ca.buildContext(ctx, userMessage)
-    msgs = append(msgs, &schema.HumanMessage{Parts: []schema.ContentPart{
-        schema.TextPart{Text: userMessage},
-    }})
+    msgs = append(msgs, schema.NewHumanMessage(userMessage))
 
     return ca.model.Stream(ctx, msgs)
 }

@@ -40,8 +40,10 @@ func main() {
     ctx := context.Background()
 
     store, err := vectorstore.New("pgvector", config.ProviderConfig{
-        "connection_string": os.Getenv("DATABASE_URL"),
-        "table_name":        "documents",
+        Options: map[string]any{
+            "connection_string": os.Getenv("DATABASE_URL"),
+            "table_name":        "documents",
+        },
     })
     if err != nil {
         fmt.Printf("Error: %v\n", err)
@@ -142,8 +144,10 @@ In Beluga AI, route queries to specific partitions using dynamic table names or 
 ```go
 // Per-tenant store
 tenantStore, err := vectorstore.New("pgvector", config.ProviderConfig{
-    "connection_string": os.Getenv("DATABASE_URL"),
-    "table_name":        fmt.Sprintf("documents_tenant_%d", tenantID),
+    Options: map[string]any{
+        "connection_string": os.Getenv("DATABASE_URL"),
+        "table_name":        fmt.Sprintf("documents_tenant_%d", tenantID),
+    },
 })
 ```
 

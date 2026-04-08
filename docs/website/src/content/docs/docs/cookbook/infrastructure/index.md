@@ -673,28 +673,38 @@ package main
 import (
 	"context"
 	"fmt"
+	"iter"
 	"log/slog"
 
 	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/orchestration"
 )
 
+// labeledNode is a local core.Runnable implementation for illustration.
+type labeledNode struct{ label string }
+
+func (n *labeledNode) Invoke(ctx context.Context, input any, opts ...core.Option) (any, error) {
+	return fmt.Sprintf("%s processed: %v", n.label, input), nil
+}
+func (n *labeledNode) Stream(ctx context.Context, input any, opts ...core.Option) iter.Seq2[any, error] {
+	return func(yield func(any, error) bool) {
+		result, err := n.Invoke(ctx, input, opts...)
+		yield(result, err)
+	}
+}
+
 func main() {
 	ctx := context.Background()
 
-	// Create independent processing nodes.
-	nodeA := core.RunnableFunc(func(ctx context.Context, input any, opts ...core.Option) (any, error) {
-		return fmt.Sprintf("A processed: %v", input), nil
-	})
-	nodeB := core.RunnableFunc(func(ctx context.Context, input any, opts ...core.Option) (any, error) {
-		return fmt.Sprintf("B processed: %v", input), nil
-	})
-	nodeC := core.RunnableFunc(func(ctx context.Context, input any, opts ...core.Option) (any, error) {
-		return fmt.Sprintf("C processed: %v", input), nil
-	})
+	nodeA := &labeledNode{label: "A"}
+	nodeB := &labeledNode{label: "B"}
+	nodeC := &labeledNode{label: "C"}
 
-	// Scatter runs all nodes in parallel and collects results.
-	scatter := orchestration.NewScatter(nodeA, nodeB, nodeC)
+	// ScatterGather fans out to all nodes in parallel and aggregates results.
+	scatter := orchestration.NewScatterGather(
+		func(results []any) (any, error) { return results, nil },
+		nodeA, nodeB, nodeC,
+	)
 
 	result, err := scatter.Invoke(ctx, "hello")
 	if err != nil {
@@ -702,7 +712,7 @@ func main() {
 		return
 	}
 
-	// Result is a slice of individual outputs.
+	// Result is a []any slice of individual node outputs.
 	results, _ := result.([]any)
 	for i, r := range results {
 		fmt.Printf("Node %d: %v\n", i, r)
@@ -724,6 +734,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"iter"
 	"log/slog"
 	"strings"
 
@@ -731,50 +742,79 @@ import (
 	"github.com/lookatitude/beluga-ai/orchestration"
 )
 
+// graphNode is a local core.Runnable implementation for illustration.
+type graphNode struct {
+	fn func(ctx context.Context, input any) (any, error)
+}
+
+func (n *graphNode) Invoke(ctx context.Context, input any, opts ...core.Option) (any, error) {
+	return n.fn(ctx, input)
+}
+func (n *graphNode) Stream(ctx context.Context, input any, opts ...core.Option) iter.Seq2[any, error] {
+	return func(yield func(any, error) bool) {
+		result, err := n.Invoke(ctx, input, opts...)
+		yield(result, err)
+	}
+}
+
 func main() {
 	ctx := context.Background()
 
 	g := orchestration.NewGraph()
 
 	// Classifier node.
-	classifier := core.RunnableFunc(func(ctx context.Context, input any, opts ...core.Option) (any, error) {
+	classifier := &graphNode{fn: func(ctx context.Context, input any) (any, error) {
 		text, _ := input.(string)
 		if strings.Contains(text, "billing") {
 			return "billing", nil
 		}
 		return "technical", nil
-	})
+	}}
 
 	// Handler nodes.
-	billingHandler := core.RunnableFunc(func(ctx context.Context, input any, opts ...core.Option) (any, error) {
+	billingHandler := &graphNode{fn: func(ctx context.Context, input any) (any, error) {
 		return "Billing team will handle your request.", nil
-	})
-	techHandler := core.RunnableFunc(func(ctx context.Context, input any, opts ...core.Option) (any, error) {
+	}}
+	techHandler := &graphNode{fn: func(ctx context.Context, input any) (any, error) {
 		return "Technical support is looking into this.", nil
-	})
+	}}
 
-	// Build graph.
-	g.AddNode("classify", classifier)
-	g.AddNode("billing", billingHandler)
-	g.AddNode("technical", techHandler)
+	// Build graph. AddNode, AddEdge, and SetEntry all return errors.
+	if err := g.AddNode("classify", classifier); err != nil {
+		slog.Error("add node failed", "error", err)
+		return
+	}
+	if err := g.AddNode("billing", billingHandler); err != nil {
+		slog.Error("add node failed", "error", err)
+		return
+	}
+	if err := g.AddNode("technical", techHandler); err != nil {
+		slog.Error("add node failed", "error", err)
+		return
+	}
 
 	// Conditional edges based on classifier output.
-	g.AddEdge(orchestration.Edge{
-		From: "classify",
-		To:   "billing",
-		Condition: func(output any) bool {
-			return output == "billing"
-		},
-	})
-	g.AddEdge(orchestration.Edge{
-		From: "classify",
-		To:   "technical",
-		Condition: func(output any) bool {
-			return output == "technical"
-		},
-	})
+	if err := g.AddEdge(orchestration.Edge{
+		From:      "classify",
+		To:        "billing",
+		Condition: func(output any) bool { return output == "billing" },
+	}); err != nil {
+		slog.Error("add edge failed", "error", err)
+		return
+	}
+	if err := g.AddEdge(orchestration.Edge{
+		From:      "classify",
+		To:        "technical",
+		Condition: func(output any) bool { return output == "technical" },
+	}); err != nil {
+		slog.Error("add edge failed", "error", err)
+		return
+	}
 
-	g.SetEntry("classify")
+	if err := g.SetEntry("classify"); err != nil {
+		slog.Error("set entry failed", "error", err)
+		return
+	}
 
 	// Execute the graph — routes to the correct handler.
 	result, err := g.Invoke(ctx, "I have a billing issue with my invoice")
@@ -799,6 +839,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/lookatitude/beluga-ai/prompt"
 	"github.com/lookatitude/beluga-ai/schema"
@@ -815,26 +856,31 @@ func main() {
 		}),
 		prompt.WithCacheBreakpoint(),
 		prompt.WithDynamicContext([]schema.Message{
-			&schema.HumanMessage{Content: "I'm working on the tool package."},
-			&schema.AIMessage{Content: "I see, what would you like to do?"},
+			schema.NewHumanMessage("I'm working on the tool package."),
+			schema.NewAIMessage("I see, what would you like to do?"),
 		}),
-		prompt.WithUserInput(&schema.HumanMessage{
-			Content: "How do I add middleware to a tool?",
-		}),
+		prompt.WithUserInput(schema.NewHumanMessage("How do I add middleware to a tool?")),
 	)
 
 	messages := builder.Build()
 	fmt.Printf("Built %d messages in cache-optimal order\n", len(messages))
 	for i, msg := range messages {
-		fmt.Printf("  %d: [%s] %s\n", i, msg.GetRole(), truncate(msg.GetContent(), 60))
+		fmt.Printf("  %d: [%s] %s\n", i, msg.GetRole(), extractText(msg))
 	}
 }
 
-func truncate(s string, max int) string {
-	if len(s) <= max {
-		return s
+func extractText(msg schema.Message) string {
+	var sb strings.Builder
+	for _, part := range msg.GetContent() {
+		if tp, ok := part.(schema.TextPart); ok {
+			sb.WriteString(tp.Text)
+		}
 	}
-	return s[:max] + "..."
+	s := sb.String()
+	if len(s) > 60 {
+		return s[:60] + "..."
+	}
+	return s
 }
 ```
 
@@ -853,16 +899,19 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
+	_ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
 
 func main() {
 	ctx := context.Background()
 
-	model, err := llm.New("openai", llm.ProviderConfig{
-		APIKey: "your-key",
+	model, err := llm.New("openai", config.ProviderConfig{
+		APIKey: os.Getenv("OPENAI_API_KEY"),
 		Model:  "gpt-4o",
 	})
 	if err != nil {
@@ -893,7 +942,7 @@ func main() {
 		return
 	}
 
-	fmt.Println("Analysis:", resp.Content)
+	fmt.Println("Analysis:", resp.Text())
 }
 ```
 

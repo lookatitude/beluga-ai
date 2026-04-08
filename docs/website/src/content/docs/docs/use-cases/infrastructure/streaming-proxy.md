@@ -47,6 +47,7 @@ package main
 import (
     "context"
     "fmt"
+    "iter"
     "sync"
     "time"
 
@@ -245,11 +246,7 @@ func (hm *HealthMonitor) monitorHealth(ctx context.Context) {
 func (hm *HealthMonitor) checkHealth(ctx context.Context) {
     // Simple health check with minimal prompt
     testMsg := []schema.Message{
-        &schema.HumanMessage{
-            Parts: []schema.ContentPart{
-                schema.TextPart{Text: "ping"},
-            },
-        },
+        schema.NewHumanMessage("ping"),
     }
 
     // Check primary

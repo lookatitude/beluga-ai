@@ -75,12 +75,12 @@ func main() {
 
     // 3. Use the unified ChatModel interface
     resp, err := model.Generate(ctx, []schema.Message{
-        schema.NewUserMessage(schema.Text("What is Go?")),
+        schema.NewHumanMessage("What is Go?"),
     })
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Println(resp.Content())
+    fmt.Println(resp.Text())
 }
 ```
 

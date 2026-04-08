@@ -43,7 +43,8 @@ import (
     "context"
     "fmt"
 
-    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/prompt"
     "github.com/lookatitude/beluga-ai/schema"
 
@@ -64,7 +65,7 @@ type CodePattern struct {
 }
 
 func NewCodeGenerator(ctx context.Context) (*CodeGenerator, error) {
-    model, err := llm.New("openai", llm.ProviderConfig{
+    model, err := llm.New("openai", config.ProviderConfig{
         Model: "gpt-4o",
     })
     if err != nil {

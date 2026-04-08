@@ -45,15 +45,15 @@ import (
     "context"
     "fmt"
     "log"
+    "os"
     "time"
 
     "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/memory"
-    "github.com/lookatitude/beluga-ai/schema"
     "github.com/lookatitude/beluga-ai/tool"
 
-    _ "github.com/lookatitude/beluga-ai/agent/providers/react"
     _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
 
@@ -65,7 +65,7 @@ type AutonomousSupportAgent struct {
 
 func NewAutonomousSupportAgent(ctx context.Context) (*AutonomousSupportAgent, error) {
     // Create LLM
-    model, err := llm.New("openai", llm.ProviderConfig{
+    model, err := llm.New("openai", config.ProviderConfig{
         APIKey: os.Getenv("OPENAI_API_KEY"),
         Model:  "gpt-4o",
     })
@@ -86,17 +86,17 @@ func NewAutonomousSupportAgent(ctx context.Context) (*AutonomousSupportAgent, er
     )
 
     // Create ReAct agent
-    ag, err := agent.New("react", agent.Config{
-        Name:        "autonomous-support",
-        Description: "Autonomous customer support agent that resolves inquiries without human intervention",
-        Model:       model,
-        Tools:       tools,
-        Memory:      mem,
-        MaxIterations: 10,
-    })
-    if err != nil {
-        return nil, fmt.Errorf("create agent: %w", err)
-    }
+    ag := agent.New("autonomous-support",
+        agent.WithPersona(agent.Persona{
+            Role:      "Customer Support Specialist",
+            Goal:      "Resolve customer inquiries without human intervention",
+            Backstory: "You are an autonomous support agent. Use available tools to resolve inquiries efficiently.",
+        }),
+        agent.WithLLM(model),
+        agent.WithTools(tools),
+        agent.WithMemory(mem),
+        agent.WithMaxIterations(10),
+    )
 
     return &AutonomousSupportAgent{
         agent:             ag,
@@ -105,52 +105,61 @@ func NewAutonomousSupportAgent(ctx context.Context) (*AutonomousSupportAgent, er
     }, nil
 }
 
+// KBInput is the input struct for the knowledge base search tool.
+type KBInput struct {
+    Query string `json:"query" description:"Search query" required:"true"`
+}
+
+// AccountInput is the input struct for the account action tool.
+type AccountInput struct {
+    Action     string `json:"action" description:"Action to perform (password_reset, email_update, subscription_info)" required:"true"`
+    CustomerID string `json:"customer_id" description:"Customer ID" required:"true"`
+}
+
+// DocInput is the input struct for the documentation search tool.
+type DocInput struct {
+    Query string `json:"query" description:"Documentation search query" required:"true"`
+}
+
 // Knowledge base search tool
 func createKnowledgeBaseTool() tool.Tool {
-    return tool.NewFuncTool(
-        "search_knowledge_base",
+    return tool.NewFuncTool("search_knowledge_base",
         "Search the knowledge base for answers to customer questions",
-        func(ctx context.Context, query string) (string, error) {
+        func(ctx context.Context, input KBInput) (*tool.Result, error) {
             // In production, integrate with your knowledge base API
-            results := searchKnowledgeBase(query)
+            results := searchKnowledgeBase(input.Query)
             if len(results) == 0 {
-                return "No relevant articles found", nil
+                return tool.TextResult("No relevant articles found"), nil
             }
-            return fmt.Sprintf("Found %d articles:\n%s", len(results), formatResults(results)), nil
+            return tool.TextResult(fmt.Sprintf("Found %d articles:\n%s", len(results), formatResults(results))), nil
         },
     )
 }
 
 // Account action tool
 func createAccountActionTool() tool.Tool {
-    return tool.NewFuncTool(
-        "perform_account_action",
+    return tool.NewFuncTool("perform_account_action",
         "Perform account operations like password reset, email update, subscription changes",
-        func(ctx context.Context, action string, customerID string) (string, error) {
-            // Validate action is allowed
-            if !isAllowedAction(action) {
-                return "", fmt.Errorf("action not allowed: %s", action)
+        func(ctx context.Context, input AccountInput) (*tool.Result, error) {
+            if !isAllowedAction(input.Action) {
+                return tool.ErrorResult(fmt.Errorf("action not allowed: %s", input.Action)), nil
             }
-
-            // Perform action
-            result, err := performAccountAction(action, customerID)
+            result, err := performAccountAction(input.Action, input.CustomerID)
             if err != nil {
-                return "", err
+                return tool.ErrorResult(err), nil
             }
-
-            return fmt.Sprintf("Action completed: %s", result), nil
+            return tool.TextResult(fmt.Sprintf("Action completed: %s", result)), nil
         },
     )
 }
 
 // Documentation lookup tool
 func createDocumentationTool() tool.Tool {
-    return tool.NewFuncTool(
-        "search_documentation",
+    return tool.NewFuncTool("search_documentation",
         "Search product documentation for technical help",
-        func(ctx context.Context, query string) (string, error) {
-            docs := searchDocumentation(query)
-            return formatDocumentation(docs), nil
+        func(ctx context.Context, input DocInput) (*tool.Result, error) {
+            docs := searchDocumentation(input.Query)
+            return tool.TextResult(formatDocumentation(docs)), nil
         },
     )
 }
@@ -192,7 +201,7 @@ If you cannot resolve the inquiry with available tools, respond with "ESCALATE:"
     )
 
     // Execute agent
-    result, err := a.agent.Execute(ctx, prompt)
+    result, err := a.agent.Invoke(ctx, prompt)
     if err != nil {
         return nil, fmt.Errorf("agent execution: %w", err)
     }
@@ -311,22 +320,21 @@ func (a *AutonomousSupportAgent) HandleInquiryStream(ctx context.Context, custom
                 return
             }
 
-            switch e := event.(type) {
-            case *agent.ThoughtEvent:
-                // Stream agent reasoning
-                if !yield(fmt.Sprintf("[Thinking] %s\n", e.Thought), nil) {
+            switch event.Type {
+            case agent.EventText:
+                // Stream response text chunks
+                if !yield(event.Text, nil) {
                     return
                 }
-            case *agent.ToolCallEvent:
-                // Stream tool execution
-                if !yield(fmt.Sprintf("[Using tool: %s]\n", e.ToolName), nil) {
-                    return
+            case agent.EventToolCall:
+                // Stream tool execution notice
+                if event.ToolCall != nil {
+                    if !yield(fmt.Sprintf("[Using tool: %s]\n", event.ToolCall.Name), nil) {
+                        return
+                    }
                 }
-            case *agent.ResponseEvent:
-                // Stream final response
-                if !yield(e.Content, nil) {
-                    return
-                }
+            case agent.EventDone:
+                return
             }
         }
     }
@@ -384,10 +392,9 @@ import "github.com/lookatitude/beluga-ai/resilience"
 func createRobustKnowledgeBaseTool() tool.Tool {
     baseTool := createKnowledgeBaseTool()
 
-    return tool.NewFuncTool(
-        baseTool.Name(),
+    return tool.NewFuncTool("search_knowledge_base_robust",
         baseTool.Description(),
-        func(ctx context.Context, args ...any) (string, error) {
+        func(ctx context.Context, input KBInput) (*tool.Result, error) {
             policy := resilience.RetryPolicy{
                 MaxAttempts:    3,
                 InitialBackoff: 500 * time.Millisecond,
@@ -395,8 +402,8 @@ func createRobustKnowledgeBaseTool() tool.Tool {
                 BackoffFactor:  2.0,
             }
 
-            return resilience.Retry(ctx, policy, func(ctx context.Context) (string, error) {
-                return baseTool.Execute(ctx, args...)
+            return resilience.Retry(ctx, policy, func(ctx context.Context) (*tool.Result, error) {
+                return baseTool.Execute(ctx, map[string]any{"query": input.Query})
             })
         },
     )

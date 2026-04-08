@@ -83,10 +83,10 @@ func (mac *MetadataAwareClusterer) ClusterDocuments(ctx context.Context, documen
     // Generate embeddings
     texts := make([]string, len(documents))
     for i, doc := range documents {
-        texts[i] = doc.GetContent()
+        texts[i] = doc.Content
     }
 
-    embeddings, err := mac.embedder.EmbedDocuments(ctx, texts)
+    embeddings, err := mac.embedder.Embed(ctx, texts)
     if err != nil {
         span.RecordError(err)
         span.SetStatus(trace.StatusError, err.Error())
@@ -306,7 +306,7 @@ func main() {
     clusterer := NewMetadataAwareClusterer(embedder, 0.3, 5)
 
     documents := []schema.Document{
-        schema.NewDocument("Document 1", map[string]string{"category": "tech"}),
+        {Content: "Document 1", Metadata: map[string]any{"category": "tech"}},
         // ... more documents
     }
 

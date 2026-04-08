@@ -1,6 +1,6 @@
 ---
 title: "Document Ingestion Recipes"
-description: "Go recipes for RAG document ingestion: load from directories, split into chunks, process metadata, and build complete ingestion pipelines with Beluga AI."
+description: "Go recipes for RAG document ingestion: load from files, split into chunks, process metadata, and build complete ingestion pipelines with Beluga AI."
 head:
   - tag: meta
     attrs:
@@ -12,332 +12,299 @@ Document ingestion is the first stage of any RAG pipeline: getting documents fro
 
 ## Problem
 
-You need to load documents from various sources, split them into chunks, and prepare them for embedding and storage in a RAG pipeline. Different file types, directory structures, and processing strategies require flexible ingestion patterns.
+You need to load documents from various sources, split them into chunks, and prepare them for embedding and storage in a RAG pipeline.
 
 ## Solution
 
-Use Beluga AI's document loaders and text splitters to build composable ingestion pipelines. The framework provides `DocumentLoader` and `TextSplitter` interfaces with multiple implementations, each configurable via the `WithX()` functional options pattern. Combine directory loading, extension filtering, concurrency, and type-aware splitting to handle diverse document sources efficiently.
+Use Beluga AI's document loaders and text splitters to build composable ingestion pipelines. The framework provides the `DocumentLoader` and `TextSplitter` interfaces with multiple implementations. Combine loaders, splitters, and a pipeline to handle diverse document sources efficiently.
 
 ## Code Example
 
-### Basic Directory Loading
-
-Load all text files from a directory. The `WithExtensions` option filters by file type, avoiding binary files that would produce garbage chunks:
+### Loading a Text File
 
 ```go
-loader, err := documentloaders.NewDirectoryLoader(
-    os.DirFS("./data"),
-    documentloaders.WithExtensions(".txt", ".md"),
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    "github.com/lookatitude/beluga-ai/rag/loader"
 )
-if err != nil {
-    log.Fatalf("Failed to create loader: %v", err)
-}
-docs, err := loader.Load(ctx)
-if err != nil {
-    log.Fatalf("Failed to load: %v", err)
-}
-```
 
-### Recursive Loading with Depth Limit
+func main() {
+    ctx := context.Background()
 
-Limit directory traversal depth to avoid accidentally traversing deep dependency trees (e.g., `node_modules` or `.git` directories):
+    l := loader.NewTextLoader()
 
-```go
-loader, err := documentloaders.NewDirectoryLoader(
-    os.DirFS("./docs"),
-    documentloaders.WithMaxDepth(3),
-    documentloaders.WithExtensions(".md"),
-)
-if err != nil {
-    log.Fatalf("Failed to create loader: %v", err)
-}
-docs, err := loader.Load(ctx)
-if err != nil {
-    log.Fatalf("Failed to load: %v", err)
-}
-```
-
-### Filtering by File Size
-
-Skip files larger than a threshold. Very large files (logs, data dumps) can overwhelm the splitter and produce too many chunks. Setting a size limit keeps ingestion predictable:
-
-```go
-loader, err := documentloaders.NewDirectoryLoader(
-    os.DirFS("./data"),
-    documentloaders.WithMaxFileSize(10*1024*1024), // 10MB limit
-)
-if err != nil {
-    log.Fatalf("Failed to create loader: %v", err)
-}
-docs, err := loader.Load(ctx)
-if err != nil {
-    log.Fatalf("Failed to load: %v", err)
-}
-```
-
-### Concurrent Loading
-
-Use multiple workers for faster loading. Document loading is I/O-bound, so concurrency significantly improves throughput on large directories by overlapping disk reads:
-
-```go
-loader, err := documentloaders.NewDirectoryLoader(
-    os.DirFS("./large_dataset"),
-    documentloaders.WithConcurrency(8),
-)
-if err != nil {
-    log.Fatalf("Failed to create loader: %v", err)
-}
-docs, err := loader.Load(ctx)
-if err != nil {
-    log.Fatalf("Failed to load: %v", err)
-}
-```
-
-### Lazy Loading for Large Datasets
-
-Stream documents one at a time to avoid loading the entire collection into memory at once. This is important when the total document size exceeds available RAM:
-
-```go
-ch, err := loader.LazyLoad(ctx)
-if err != nil {
-    log.Fatalf("Failed to lazy load: %v", err)
-}
-
-var docs []schema.Document
-for item := range ch {
-    switch v := item.(type) {
-    case schema.Document:
-        docs = append(docs, v)
-    case error:
-        log.Printf("Error: %v", v)
+    docs, err := l.Load(ctx, "./data/architecture.md")
+    if err != nil {
+        log.Fatalf("load failed: %v", err)
     }
+
+    fmt.Printf("Loaded %d document(s)\n", len(docs))
 }
 ```
 
-### Basic Text Splitting
+### Loading Multiple File Types
 
-Split documents into chunks. The `RecursiveCharacterTextSplitter` tries increasingly fine-grained separators (paragraphs, then sentences, then words) to find the best split point near the target size:
+Each loader handles a specific format. Use `NewTextLoader` for plain text and Markdown,
+`NewCSVLoader` for tabular data, `NewJSONLoader` for JSON, and `NewMarkdownLoader` for
+Markdown with header-based section splitting:
 
 ```go
-splitter, err := textsplitters.NewRecursiveCharacterTextSplitter(
-    textsplitters.WithRecursiveChunkSize(1000),
-    textsplitters.WithRecursiveChunkOverlap(200),
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    "github.com/lookatitude/beluga-ai/rag/loader"
+    "github.com/lookatitude/beluga-ai/schema"
 )
-if err != nil {
-    log.Fatalf("Failed to create splitter: %v", err)
+
+func loadSources(ctx context.Context, sources map[string]loader.DocumentLoader) ([]schema.Document, error) {
+    var all []schema.Document
+    for path, l := range sources {
+        docs, err := l.Load(ctx, path)
+        if err != nil {
+            return nil, fmt.Errorf("load %s: %w", path, err)
+        }
+        all = append(all, docs...)
+    }
+    return all, nil
 }
-chunks, err := splitter.SplitDocuments(ctx, docs)
-if err != nil {
-    log.Fatalf("Failed to split: %v", err)
+
+func main() {
+    ctx := context.Background()
+
+    sources := map[string]loader.DocumentLoader{
+        "./docs/readme.md":     loader.NewMarkdownLoader(),
+        "./data/records.csv":   loader.NewCSVLoader(),
+        "./config/schema.json": loader.NewJSONLoader(),
+    }
+
+    docs, err := loadSources(ctx, sources)
+    if err != nil {
+        log.Fatalf("load failed: %v", err)
+    }
+
+    fmt.Printf("Loaded %d document(s)\n", len(docs))
+}
+```
+
+### Splitting Documents into Chunks
+
+Use `splitter.NewRecursiveSplitter` to divide documents into chunks. The splitter tries
+separators from most significant (paragraph break) to least significant (character-level),
+keeping chunks near the target size:
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    "github.com/lookatitude/beluga-ai/rag/loader"
+    "github.com/lookatitude/beluga-ai/rag/splitter"
+)
+
+func main() {
+    ctx := context.Background()
+
+    l := loader.NewTextLoader()
+    docs, err := l.Load(ctx, "./data/architecture.md")
+    if err != nil {
+        log.Fatalf("load failed: %v", err)
+    }
+
+    s := splitter.NewRecursiveSplitter(
+        splitter.WithChunkSize(1000),
+        splitter.WithChunkOverlap(200),
+    )
+
+    chunks, err := s.SplitDocuments(ctx, docs)
+    if err != nil {
+        log.Fatalf("split failed: %v", err)
+    }
+
+    fmt.Printf("Split into %d chunk(s)\n", len(chunks))
+    for i, c := range chunks {
+        fmt.Printf("  Chunk %d: %d chars\n", i, len(c.Content))
+    }
 }
 ```
 
 ### Markdown-Aware Splitting
 
-Preserve markdown structure by splitting at heading boundaries. This ensures each chunk corresponds to a logical section, making retrieval results more coherent and preserving the document's organizational hierarchy in the chunk metadata:
+`NewMarkdownSplitter` understands Markdown heading structure and splits at heading
+boundaries first, preserving each section as a coherent chunk:
 
 ```go
-splitter, err := textsplitters.NewMarkdownTextSplitter(
-    textsplitters.WithMarkdownChunkSize(500),
-    textsplitters.WithHeadersToSplitOn("#", "##", "###"),
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    "github.com/lookatitude/beluga-ai/rag/loader"
+    "github.com/lookatitude/beluga-ai/rag/splitter"
 )
-if err != nil {
-    log.Fatalf("Failed to create splitter: %v", err)
-}
-chunks, err := splitter.SplitDocuments(ctx, markdownDocs)
-if err != nil {
-    log.Fatalf("Failed to split: %v", err)
-}
-```
 
-### Token-Based Splitting
+func main() {
+    ctx := context.Background()
 
-Use token counting for accurate chunk sizing. Character counts are a poor proxy for tokens because different words have different tokenization lengths. When your embedding model has a strict token limit, counting tokens directly prevents truncation errors:
+    l := loader.NewMarkdownLoader()
+    docs, err := l.Load(ctx, "./docs/guide.md")
+    if err != nil {
+        log.Fatalf("load failed: %v", err)
+    }
 
-```go
-tokenizer := func(text string) int {
-    return len(strings.Fields(text)) // Simple word count
-}
+    s := splitter.NewMarkdownSplitter(
+        splitter.WithMarkdownChunkSize(500),
+        splitter.WithMarkdownChunkOverlap(50),
+    )
 
-splitter, err := textsplitters.NewRecursiveCharacterTextSplitter(
-    textsplitters.WithRecursiveLengthFunction(tokenizer),
-    textsplitters.WithRecursiveChunkSize(100),
-    textsplitters.WithRecursiveChunkOverlap(20),
-)
-if err != nil {
-    log.Fatalf("Failed to create splitter: %v", err)
-}
-chunks, err := splitter.SplitDocuments(ctx, docs)
-if err != nil {
-    log.Fatalf("Failed to split: %v", err)
+    chunks, err := s.SplitDocuments(ctx, docs)
+    if err != nil {
+        log.Fatalf("split failed: %v", err)
+    }
+
+    for _, c := range chunks {
+        fmt.Printf("Section: %v — %d chars\n", c.Metadata["heading"], len(c.Content))
+    }
 }
 ```
 
 ### Complete Ingestion Pipeline
 
-Load, split, and prepare for RAG. This three-stage pipeline (load, split, embed/store) is the standard pattern for document ingestion:
+Load, split, embed, and store in a three-stage pipeline:
 
 ```go
-// 1. Load
-loader, err := documentloaders.NewDirectoryLoader(
-    os.DirFS("./data"),
-    documentloaders.WithExtensions(".txt", ".md"),
-    documentloaders.WithMaxDepth(2),
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "os"
+
+    "github.com/lookatitude/beluga-ai/config"
+    "github.com/lookatitude/beluga-ai/rag/embedding"
+    "github.com/lookatitude/beluga-ai/rag/loader"
+    "github.com/lookatitude/beluga-ai/rag/splitter"
+    "github.com/lookatitude/beluga-ai/rag/vectorstore"
+    "github.com/lookatitude/beluga-ai/schema"
 )
-if err != nil {
-    log.Fatalf("Failed to create loader: %v", err)
-}
-docs, err := loader.Load(ctx)
-if err != nil {
-    log.Fatalf("Failed to load: %v", err)
+
+func ingest(ctx context.Context, paths []string) error {
+    // 1. Load
+    l := loader.NewTextLoader()
+    var all []schema.Document
+    for _, p := range paths {
+        docs, err := l.Load(ctx, p)
+        if err != nil {
+            return fmt.Errorf("load %s: %w", p, err)
+        }
+        all = append(all, docs...)
+    }
+
+    // 2. Split
+    s := splitter.NewRecursiveSplitter(
+        splitter.WithChunkSize(1000),
+        splitter.WithChunkOverlap(200),
+    )
+    chunks, err := s.SplitDocuments(ctx, all)
+    if err != nil {
+        return fmt.Errorf("split: %w", err)
+    }
+
+    // 3. Embed
+    emb, err := embedding.New("openai", config.ProviderConfig{
+        Provider: "openai",
+        APIKey:   os.Getenv("OPENAI_API_KEY"),
+        Model:    "text-embedding-3-small",
+    })
+    if err != nil {
+        return fmt.Errorf("embedder: %w", err)
+    }
+
+    texts := make([]string, len(chunks))
+    for i, c := range chunks {
+        texts[i] = c.Content
+    }
+    embeddings, err := emb.Embed(ctx, texts)
+    if err != nil {
+        return fmt.Errorf("embed: %w", err)
+    }
+
+    // 4. Store
+    store, err := vectorstore.New("pgvector", config.ProviderConfig{
+        Provider: "pgvector",
+        Options:  map[string]any{"connection_string": os.Getenv("PGVECTOR_DSN")},
+    })
+    if err != nil {
+        return fmt.Errorf("vectorstore: %w", err)
+    }
+
+    if err := store.Add(ctx, chunks, embeddings); err != nil {
+        return fmt.Errorf("add: %w", err)
+    }
+
+    fmt.Printf("Ingested %d chunks from %d document(s)\n", len(chunks), len(all))
+    return nil
 }
 
-// 2. Split
-splitter, err := textsplitters.NewRecursiveCharacterTextSplitter(
-    textsplitters.WithRecursiveChunkSize(1000),
-    textsplitters.WithRecursiveChunkOverlap(200),
-)
-if err != nil {
-    log.Fatalf("Failed to create splitter: %v", err)
-}
-chunks, err := splitter.SplitDocuments(ctx, docs)
-if err != nil {
-    log.Fatalf("Failed to split: %v", err)
-}
-
-// 3. Ready for embedding and storage
-```
-
-### Loading Multiple Sources
-
-Combine documents from different sources into a single collection for uniform splitting and embedding. This is common when your knowledge base spans multiple directories, individual files, or external sources:
-
-```go
-var allDocs []schema.Document
-
-// Load from directory
-dirLoader, err := documentloaders.NewDirectoryLoader(os.DirFS("./docs"))
-if err != nil {
-    log.Fatalf("Failed to create dir loader: %v", err)
-}
-dirDocs, err := dirLoader.Load(ctx)
-if err != nil {
-    log.Fatalf("Failed to load dir: %v", err)
-}
-allDocs = append(allDocs, dirDocs...)
-
-// Load single file
-fileLoader, err := documentloaders.NewTextLoader("./important.txt")
-if err != nil {
-    log.Fatalf("Failed to create file loader: %v", err)
-}
-fileDocs, err := fileLoader.Load(ctx)
-if err != nil {
-    log.Fatalf("Failed to load file: %v", err)
-}
-allDocs = append(allDocs, fileDocs...)
-
-// Process all together
-splitter, err := textsplitters.NewRecursiveCharacterTextSplitter()
-if err != nil {
-    log.Fatalf("Failed to create splitter: %v", err)
-}
-chunks, err := splitter.SplitDocuments(ctx, allDocs)
-if err != nil {
-    log.Fatalf("Failed to split: %v", err)
+func main() {
+    if err := ingest(context.Background(), []string{
+        "./docs/readme.md",
+        "./docs/architecture.md",
+    }); err != nil {
+        log.Fatalf("ingestion failed: %v", err)
+    }
 }
 ```
 
 ## Explanation
 
-These recipes demonstrate the core document ingestion patterns in Beluga AI:
+1. **Loaders by format** -- Each loader implementation handles a specific source format. `NewTextLoader` reads raw text, `NewMarkdownLoader` parses Markdown structure, `NewCSVLoader` converts rows to documents (one per row), and `NewJSONLoader` extracts JSON fields as document content. Use the loader that matches your source format.
 
-1. **Directory loading with functional options** -- Use `NewDirectoryLoader` with `WithX()` options to control file discovery. Options like `WithExtensions`, `WithMaxDepth`, and `WithMaxFileSize` allow fine-grained control over which files are loaded. This follows Beluga AI's standard functional options pattern for configuration.
+2. **Splitter choice** -- `NewRecursiveSplitter` is the general-purpose choice: it tries paragraph breaks, line breaks, then whitespace, ensuring splits happen at natural boundaries. `NewMarkdownSplitter` understands Markdown heading hierarchy and preserves section structure in chunk metadata. `NewTokenSplitter` counts tokens rather than characters, which is more accurate for embedding models with strict token limits.
 
-2. **Concurrent loading** -- For large datasets, `WithConcurrency` distributes file loading across multiple goroutines. This significantly improves throughput for I/O-bound loading because Go's goroutine scheduler efficiently multiplexes concurrent reads.
+3. **Embedder and store** -- Both `embedding.New` and `vectorstore.New` use the registry pattern with `config.ProviderConfig`. Provider credentials come from environment variables, never hardcoded.
 
-3. **Type-aware splitting** -- Different document types benefit from different splitting strategies. Markdown documents should use `MarkdownTextSplitter` to preserve heading structure (which becomes metadata), while plain text uses `RecursiveCharacterTextSplitter`. Code files benefit from the language-aware `CodeSplitter`. Choosing the right splitter for each content type is one of the highest-leverage decisions in a RAG pipeline.
-
-4. **Token-based sizing** -- When embedding models have token limits (most do), use a length function that counts tokens rather than characters for accurate chunk sizing. This prevents silent truncation where the embedding model only sees part of each chunk, degrading embedding quality without any error signal.
+4. **Pipeline composition** -- Load, split, embed, and store are independent stages. You can replace any stage (e.g., swap the vector store provider) without changing the others. This composability is the primary benefit of the registry pattern.
 
 ## Variations
 
-### Error Handling Pattern
-
-Handle errors gracefully during loading:
+### Processing Different File Types Separately
 
 ```go
-docs, err := loader.Load(ctx)
-if err != nil {
-    if loaderErr, ok := err.(*documentloaders.LoaderError); ok {
-        switch loaderErr.Code {
-        case documentloaders.ErrCodeFileTooLarge:
-            log.Printf("Skipped large file: %s", loaderErr.Path)
-        case documentloaders.ErrCodeBinaryFile:
-            log.Printf("Skipped binary file: %s", loaderErr.Path)
-        default:
-            log.Printf("Error loading: %v", loaderErr)
-        }
-    }
-    return err
-}
-```
-
-### Processing Different File Types
-
-Handle different document types with appropriate splitters:
-
-```go
-var textDocs, markdownDocs []schema.Document
-for _, doc := range docs {
-    if strings.HasSuffix(doc.Metadata["source"], ".md") {
-        markdownDocs = append(markdownDocs, doc)
+var textDocs, mdDocs []schema.Document
+for _, doc := range allDocs {
+    if src, _ := doc.Metadata["source"].(string); strings.HasSuffix(src, ".md") {
+        mdDocs = append(mdDocs, doc)
     } else {
         textDocs = append(textDocs, doc)
     }
 }
 
-textSplitter, err := textsplitters.NewRecursiveCharacterTextSplitter()
+textChunks, err := splitter.NewRecursiveSplitter().SplitDocuments(ctx, textDocs)
 if err != nil {
-    log.Fatalf("Failed to create text splitter: %v", err)
+    log.Fatalf("text split: %v", err)
 }
-textChunks, err := textSplitter.SplitDocuments(ctx, textDocs)
+mdChunks, err := splitter.NewMarkdownSplitter().SplitDocuments(ctx, mdDocs)
 if err != nil {
-    log.Fatalf("Failed to split text docs: %v", err)
-}
-
-markdownSplitter, err := textsplitters.NewMarkdownTextSplitter()
-if err != nil {
-    log.Fatalf("Failed to create markdown splitter: %v", err)
-}
-markdownChunks, err := markdownSplitter.SplitDocuments(ctx, markdownDocs)
-if err != nil {
-    log.Fatalf("Failed to split markdown docs: %v", err)
+    log.Fatalf("markdown split: %v", err)
 }
 ```
 
-### Chunk Metadata Preservation
-
-Access chunk metadata after splitting:
-
-```go
-chunks, err := splitter.SplitDocuments(ctx, docs)
-if err != nil {
-    log.Fatalf("Failed to split: %v", err)
-}
-
-for _, chunk := range chunks {
-    source := chunk.Metadata["source"]
-    index := chunk.Metadata["chunk_index"]
-    total := chunk.Metadata["chunk_total"]
-
-    fmt.Printf("Chunk %s/%s from %s\n", index, total, source)
-}
-```
-
-### Batch Processing
-
-Process documents in batches to control memory usage:
+### Batch Processing for Memory Control
 
 ```go
 const batchSize = 100
@@ -346,42 +313,19 @@ for i := 0; i < len(docs); i += batchSize {
     if end > len(docs) {
         end = len(docs)
     }
-
     batch := docs[i:end]
-    chunks, err := splitter.SplitDocuments(ctx, batch)
+    chunks, err := s.SplitDocuments(ctx, batch)
     if err != nil {
-        log.Printf("Failed to split batch %d: %v", i/batchSize, err)
+        log.Printf("batch %d split failed: %v", i/batchSize, err)
         continue
     }
-
     processBatch(chunks)
-}
-```
-
-### Registry Pattern
-
-Create loaders dynamically using the registry, which allows selecting the loader type from configuration without hardcoding the implementation:
-
-```go
-registry := documentloaders.GetRegistry()
-
-loader, err := registry.Create("directory", map[string]any{
-    "max_depth":   2,
-    "extensions":  []string{".txt", ".md"},
-    "concurrency": 4,
-})
-if err != nil {
-    log.Fatalf("Failed to create loader: %v", err)
-}
-docs, err := loader.Load(ctx)
-if err != nil {
-    log.Fatalf("Failed to load: %v", err)
 }
 ```
 
 ## Related Recipes
 
-- [Parallel File Loading](/docs/cookbook/parallel-file-loading) -- Parallel directory traversal with worker pools
-- [Corrupt Document Handling](/docs/cookbook/corrupt-doc-handling) -- Graceful error handling for corrupt documents
-- [Sentence-Aware Splitting](/docs/cookbook/sentence-splitting) -- Sentence-boundary-aware text splitting
-- [Code Splitting](/docs/cookbook/code-splitting) -- Tree-sitter-based code splitting
+- [Parallel File Loading](/docs/cookbook/rag/parallel-file-loading) -- Concurrent file loading with bounded parallelism
+- [Corrupt Document Handling](/docs/cookbook/rag/corrupt-doc-handling) -- Graceful error handling for corrupt documents
+- [Sentence-Aware Splitting](/docs/cookbook/rag/sentence-splitting) -- Sentence-boundary-aware text splitting
+- [Code Splitting](/docs/cookbook/rag/code-splitting) -- Language-aware code splitting

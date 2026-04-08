@@ -189,8 +189,15 @@ The built-in `InMemorySessionService` is created automatically when no
 ```go
 svc := runtime.NewInMemorySessionService(
     runtime.WithSessionTTL(1 * time.Hour),
+    runtime.WithSessionTenantID("tenant-abc"),
+    runtime.WithMaxSessions(500),
 )
 ```
+
+`WithSessionTenantID` sets the default tenant ID applied to all newly
+created sessions. `WithMaxSessions` caps the number of concurrent sessions
+stored; `Create` returns an error when the limit is reached. A value of 0
+(the default) means unlimited.
 
 ## Team
 

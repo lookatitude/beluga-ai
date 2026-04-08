@@ -32,10 +32,15 @@ import (
     "context"
     "encoding/json"
     "fmt"
+    "os"
     "strings"
     "time"
 
+    "github.com/lookatitude/beluga-ai/config"
+    "github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/schema"
+
+    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
 
 // Tool combines a definition with an execution function.
@@ -236,8 +241,8 @@ func main() {
 
     // Create model and run
     model, err := llm.New("openai", config.ProviderConfig{
-        "api_key": os.Getenv("OPENAI_API_KEY"),
-        "model":   "gpt-4o",
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+        Model:  "gpt-4o",
     })
     if err != nil {
         fmt.Printf("Error: %v\n", err)

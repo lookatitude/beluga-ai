@@ -195,12 +195,13 @@ The most common use case is wiring memory into an agent so that conversations ar
 ```go
 import (
 	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/memory"
 	_ "github.com/lookatitude/beluga-ai/memory/stores/redis"
 )
 
 // Create Redis-backed memory
-mem, err := memory.New("redis", memory.ProviderConfig{
+mem, err := memory.New("redis", config.ProviderConfig{
 	Options: map[string]any{
 		"addr": "localhost:6379",
 	},
@@ -233,12 +234,11 @@ Production deployments require durable storage, connection pooling, and data lif
 ### Redis with TTL
 
 ```go
-mem, err := memory.New("redis", memory.ProviderConfig{
+mem, err := memory.New("redis", config.ProviderConfig{
 	Options: map[string]any{
-		"addr":     "redis-cluster:6379",
-		"password": os.Getenv("REDIS_PASSWORD"),
-		"db":       0,
-		"ttl":      "720h", // 30 days
+		"addr": "redis-cluster:6379",
+		"db":   0,
+		"ttl":  "720h", // 30 days
 	},
 })
 ```
@@ -246,7 +246,7 @@ mem, err := memory.New("redis", memory.ProviderConfig{
 ### PostgreSQL with Connection Pool
 
 ```go
-mem, err := memory.New("postgres", memory.ProviderConfig{
+mem, err := memory.New("postgres", config.ProviderConfig{
 	Options: map[string]any{
 		"connection_string": os.Getenv("DATABASE_URL"),
 		"max_connections":   20,

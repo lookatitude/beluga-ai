@@ -133,11 +133,13 @@ Convert text to vector representations:
 
 ```go
 import (
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/rag/embedding"
 	_ "github.com/lookatitude/beluga-ai/rag/embedding/providers/openai"
 )
 
-embedder, err := embedding.New("openai", embedding.ProviderConfig{
+embedder, err := embedding.New("openai", config.ProviderConfig{
+	// API key read from environment — never hardcode credentials.
 	APIKey: os.Getenv("OPENAI_API_KEY"),
 	Model:  "text-embedding-3-small",
 })
@@ -177,12 +179,15 @@ Store and search embeddings:
 
 ```go
 import (
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/rag/vectorstore"
 	_ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/pgvector"
 )
 
-store, err := vectorstore.New("pgvector", vectorstore.ProviderConfig{
-	ConnectionString: os.Getenv("DATABASE_URL"),
+store, err := vectorstore.New("pgvector", config.ProviderConfig{
+	Options: map[string]any{
+		"connection_string": os.Getenv("DATABASE_URL"),
+	},
 })
 if err != nil {
 	log.Fatal(err)
@@ -255,11 +260,11 @@ docs, err := r.Retrieve(ctx, "What is quantum computing?",
 Pure vector search excels at finding semantically similar content but can miss documents that contain the exact keywords a user is looking for. Conversely, BM25 keyword matching finds exact term matches but misses paraphrases and synonyms. Hybrid search combines both signals using Reciprocal Rank Fusion (RRF), which merges the ranked results from each method into a single list. This is the recommended default because it handles both precise keyword queries ("error code 404") and conceptual queries ("how to handle missing pages") effectively.
 
 ```go
-hybridRetriever, err := retriever.New("hybrid", retriever.ProviderConfig{
+hybridRetriever, err := retriever.New("hybrid", config.ProviderConfig{
 	Options: map[string]any{
-		"vector_store": store,
-		"embedder":     embedder,
-		"bm25_weight":  0.3,
+		"vector_store":  store,
+		"embedder":      embedder,
+		"bm25_weight":   0.3,
 		"vector_weight": 0.7,
 	},
 })
@@ -274,7 +279,7 @@ docs, err := hybridRetriever.Retrieve(ctx, "Go concurrency patterns",
 A fundamental problem with naive RAG is that retrieved documents may be irrelevant to the query. When an LLM receives irrelevant context, it often generates plausible-sounding but incorrect answers — a form of hallucination. Corrective RAG addresses this by using an LLM to grade each retrieved document for relevance before passing it to the generation step. Documents below the confidence threshold are discarded, and if too few relevant documents remain, CRAG can trigger a web search as a fallback. This quality-gating step significantly reduces hallucination in production systems.
 
 ```go
-cragRetriever, err := retriever.New("crag", retriever.ProviderConfig{
+cragRetriever, err := retriever.New("crag", config.ProviderConfig{
 	Options: map[string]any{
 		"base_retriever": baseRetriever,
 		"grader_llm":     model,
@@ -288,7 +293,7 @@ cragRetriever, err := retriever.New("crag", retriever.ProviderConfig{
 Short or vague user queries often produce poor embeddings because there is not enough semantic content to capture the user's intent. For example, the query "auth" generates a very different embedding than a paragraph explaining authentication flows. HyDE solves this by first asking an LLM to generate a hypothetical document that would answer the query, then embedding that hypothetical answer instead of the raw query. The hypothetical document's embedding is much closer in vector space to the actual relevant documents, dramatically improving recall for sparse-data domains and terse queries.
 
 ```go
-hydeRetriever, err := retriever.New("hyde", retriever.ProviderConfig{
+hydeRetriever, err := retriever.New("hyde", config.ProviderConfig{
 	Options: map[string]any{
 		"base_retriever": baseRetriever,
 		"llm":            model,
@@ -310,14 +315,13 @@ import (
 	"log"
 	"os"
 
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/rag/embedding"
 	"github.com/lookatitude/beluga-ai/rag/loader"
-	"github.com/lookatitude/beluga-ai/rag/retriever"
 	"github.com/lookatitude/beluga-ai/rag/splitter"
 	"github.com/lookatitude/beluga-ai/rag/vectorstore"
 	"github.com/lookatitude/beluga-ai/schema"
-	"github.com/lookatitude/beluga-ai/config"
 
 	_ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 	_ "github.com/lookatitude/beluga-ai/rag/embedding/providers/openai"
@@ -350,7 +354,8 @@ func main() {
 	}
 
 	// 3. Embed chunks
-	emb, err := embedding.New("openai", embedding.ProviderConfig{
+	emb, err := embedding.New("openai", config.ProviderConfig{
+		// API key read from environment — never hardcode credentials.
 		APIKey: os.Getenv("OPENAI_API_KEY"),
 		Model:  "text-embedding-3-small",
 	})
@@ -367,7 +372,7 @@ func main() {
 	}
 
 	// 4. Store in vector database
-	store, err := vectorstore.New("inmemory", vectorstore.ProviderConfig{})
+	store, err := vectorstore.New("inmemory", config.ProviderConfig{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -388,7 +393,7 @@ func main() {
 	}
 
 	// 6. Generate answer with context
-	model, err := llm.New("openai", llm.ProviderConfig{
+	model, err := llm.New("openai", config.ProviderConfig{
 		APIKey: os.Getenv("OPENAI_API_KEY"),
 		Model:  "gpt-4o",
 	})

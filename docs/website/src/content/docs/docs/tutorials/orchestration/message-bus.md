@@ -23,40 +23,57 @@ An event-driven system where a main agent publishes events and multiple subscrib
 
 ### Publish-Subscribe Pattern
 
-The EventBus allows agents to communicate through named topics without direct dependencies. Producers publish events to topics; subscribers registered on those topics receive them asynchronously. This is the same decoupling principle behind message queues like NATS and Kafka, but implemented in-process for agent coordination. The key benefit is that publishers do not need to know who is listening -- you can add or remove subscribers without modifying the publisher code.
+The `EventBus` interface allows agents to communicate through named topics without direct dependencies. Producers publish events to topics; subscribers registered on those topics receive them synchronously in the order they subscribed. This is the same decoupling principle behind message queues like NATS and Kafka, but implemented in-process for agent coordination. The key benefit is that publishers do not need to know who is listening -- you can add or remove subscribers without modifying the publisher code.
 
 ```go
-import "github.com/lookatitude/beluga-ai/agent"
+import (
+    "context"
+    "fmt"
 
-bus := agent.NewEventBus()
+    "github.com/lookatitude/beluga-ai/agent"
+)
+
+bus := agent.NewInMemoryBus()
+ctx := context.Background()
 
 // Subscribe to a topic.
-bus.Subscribe("user.query", func(ctx context.Context, event agent.Event) {
-    fmt.Printf("Received: %v\n", event.Payload)
+sub, err := bus.Subscribe(ctx, "user.query", func(event agent.AgentEvent) {
+    fmt.Printf("Received type=%s payload=%v\n", event.Type, event.Payload)
 })
+if err != nil {
+    // handle error
+}
+defer sub.Unsubscribe()
 
 // Publish an event.
-bus.Publish(ctx, agent.Event{
-    Topic:   "user.query",
-    Payload: "How do I use the message bus?",
+err = bus.Publish(ctx, "user.query", agent.AgentEvent{
+    Type:     "user.query",
+    SourceID: "main-agent",
+    Payload:  "How do I use the message bus?",
 })
-```
-
-### Event Types
-
-Events carry a topic name (used for routing to subscribers), a payload (the actual data), and optional metadata (for cross-cutting concerns like user IDs and session tracking):
-
-```go
-type Event struct {
-    Topic    string
-    Payload  any
-    Metadata map[string]any
+if err != nil {
+    // handle error
 }
 ```
 
+### AgentEvent
+
+Events carry a type (used for identification), a source ID (which agent published it), and a payload (the actual data):
+
+```go
+type AgentEvent struct {
+    Type      string
+    SourceID  string
+    Payload   any
+    Timestamp time.Time
+}
+```
+
+The `Timestamp` is set automatically by `InMemoryBus.Publish` when zero.
+
 ## Step 1: Initialize the Event Bus
 
-The event bus is created once and shared across all agents. Subscribers must be registered before events are published, since the bus does not buffer events for late subscribers. The `sync.WaitGroup` ensures the main goroutine waits for all subscribers to finish processing before exiting -- in a long-running server, you would typically not need this since the process stays alive.
+The event bus is created once and shared across all agents. Subscribers must be registered before events are published, since the built-in bus does not buffer events for late subscribers.
 
 ```go
 package main
@@ -64,7 +81,6 @@ package main
 import (
     "context"
     "fmt"
-    "sync"
     "time"
 
     "github.com/lookatitude/beluga-ai/agent"
@@ -72,27 +88,35 @@ import (
 
 func main() {
     ctx := context.Background()
-    bus := agent.NewEventBus()
-
-    var wg sync.WaitGroup
+    bus := agent.NewInMemoryBus()
 
     // Register subscribers before publishing.
-    registerAuditLogger(bus, &wg)
-    registerNotifier(bus, &wg)
+    auditSub, err := registerAuditLogger(ctx, bus)
+    if err != nil {
+        fmt.Printf("subscribe error: %v\n", err)
+        return
+    }
+    defer auditSub.Unsubscribe()
 
-    // Publish events.
-    wg.Add(2) // Expect 2 subscribers to handle the event.
-    bus.Publish(ctx, agent.Event{
-        Topic:   "user.query",
-        Payload: "What is the company revenue?",
-        Metadata: map[string]any{
-            "user_id":    "user-123",
-            "session_id": "sess-456",
-        },
-    })
+    notifySub, err := registerNotifier(ctx, bus)
+    if err != nil {
+        fmt.Printf("subscribe error: %v\n", err)
+        return
+    }
+    defer notifySub.Unsubscribe()
 
-    // Wait for all subscribers to process.
-    wg.Wait()
+    // Publish an event.
+    if err := bus.Publish(ctx, "user.query", agent.AgentEvent{
+        Type:     "user.query",
+        SourceID: "gateway",
+        Payload:  "What is the company revenue?",
+    }); err != nil {
+        fmt.Printf("publish error: %v\n", err)
+        return
+    }
+
+    // Give async handlers time to complete (in production use sync patterns or wait groups).
+    time.Sleep(50 * time.Millisecond)
     fmt.Println("All events processed.")
 }
 ```
@@ -102,25 +126,22 @@ func main() {
 Audit logging is a classic use case for the pub-sub pattern. Every user query needs to be logged for compliance, but the logging logic should not be mixed into the main agent's processing path. By subscribing to the `user.query` topic, the audit logger receives every query without the main agent needing to know about it.
 
 ```go
-func registerAuditLogger(bus *agent.EventBus, wg *sync.WaitGroup) {
-    bus.Subscribe("user.query", func(ctx context.Context, event agent.Event) {
-        defer wg.Done()
-        userID := event.Metadata["user_id"]
-        fmt.Printf("[AUDIT] User %v asked: %v\n", userID, event.Payload)
+func registerAuditLogger(ctx context.Context, bus agent.EventBus) (agent.Subscription, error) {
+    return bus.Subscribe(ctx, "user.query", func(event agent.AgentEvent) {
+        fmt.Printf("[AUDIT] source=%s type=%s payload=%v\n",
+            event.SourceID, event.Type, event.Payload)
     })
 }
 ```
 
 ## Step 3: Build a Notification Subscriber
 
-Multiple subscribers can listen to the same topic. Each subscriber runs independently -- if the audit logger is slow, it does not block the notification subscriber. This isolation is a key advantage over synchronous middleware chains where a slow handler delays the entire pipeline.
+Multiple subscribers can listen to the same topic. Each subscriber runs in the order it was registered. Handlers are called synchronously, so slow handlers do delay subsequent handlers -- wrap expensive work in a goroutine if isolation is required.
 
 ```go
-func registerNotifier(bus *agent.EventBus, wg *sync.WaitGroup) {
-    bus.Subscribe("user.query", func(ctx context.Context, event agent.Event) {
-        defer wg.Done()
-        fmt.Printf("[NOTIFY] Processing query from session %v\n",
-            event.Metadata["session_id"])
+func registerNotifier(ctx context.Context, bus agent.EventBus) (agent.Subscription, error) {
+    return bus.Subscribe(ctx, "user.query", func(event agent.AgentEvent) {
+        fmt.Printf("[NOTIFY] Processing query from source %s\n", event.SourceID)
     })
 }
 ```
@@ -130,27 +151,25 @@ func registerNotifier(bus *agent.EventBus, wg *sync.WaitGroup) {
 Agents can publish their own events after completing work, creating event chains where one agent's output triggers another agent's input. This enables reactive pipelines: the research agent completes its work and publishes a `research.complete` event, which the email agent picks up to send a summary. Neither agent needs to know about the other -- they are connected only through the topic namespace.
 
 ```go
-func registerResearchAgent(bus *agent.EventBus) {
-    bus.Subscribe("user.query", func(ctx context.Context, event agent.Event) {
-        query := event.Payload.(string)
+func registerResearchAgent(ctx context.Context, bus agent.EventBus) (agent.Subscription, error) {
+    return bus.Subscribe(ctx, "user.query", func(event agent.AgentEvent) {
+        query, _ := event.Payload.(string)
 
         // Simulate research work.
         result := fmt.Sprintf("Research result for: %s", query)
 
         // Publish a completion event for downstream agents.
-        bus.Publish(ctx, agent.Event{
-            Topic:   "research.complete",
-            Payload: result,
-            Metadata: map[string]any{
-                "original_query": query,
-            },
+        _ = bus.Publish(ctx, "research.complete", agent.AgentEvent{
+            Type:     "research.complete",
+            SourceID: "research-agent",
+            Payload:  result,
         })
     })
 }
 
-func registerEmailAgent(bus *agent.EventBus) {
-    bus.Subscribe("research.complete", func(ctx context.Context, event agent.Event) {
-        result := event.Payload.(string)
+func registerEmailAgent(ctx context.Context, bus agent.EventBus) (agent.Subscription, error) {
+    return bus.Subscribe(ctx, "research.complete", func(event agent.AgentEvent) {
+        result, _ := event.Payload.(string)
         fmt.Printf("[EMAIL] Sending summary: %s\n", result)
     })
 }
@@ -158,15 +177,28 @@ func registerEmailAgent(bus *agent.EventBus) {
 
 ## Step 5: Error Handling and Resilience
 
-In a multi-subscriber system, one failing subscriber should not bring down the others. Wrapping subscriber logic with error handling ensures that failures are logged and contained rather than propagated. In production, you would also add metrics (count of failed handlers per topic) and potentially dead-letter queues for events that consistently fail processing.
+In a multi-subscriber system, one failing subscriber should not prevent others from being called. The `InMemoryBus` calls handlers synchronously in registration order; wrap subscriber logic with error handling to prevent panics from escaping the handler.
 
 ```go
-func safeSubscribe(bus *agent.EventBus, topic string, handler func(context.Context, agent.Event) error) {
-    bus.Subscribe(topic, func(ctx context.Context, event agent.Event) {
-        if err := handler(ctx, event); err != nil {
+func safeSubscribe(ctx context.Context, bus agent.EventBus, topic string, handler func(agent.AgentEvent) error) (agent.Subscription, error) {
+    return bus.Subscribe(ctx, topic, func(event agent.AgentEvent) {
+        if err := handler(event); err != nil {
             fmt.Printf("[ERROR] Subscriber on %q failed: %v\n", topic, err)
         }
     })
+}
+```
+
+To unsubscribe when a subscriber is no longer needed:
+
+```go
+sub, err := safeSubscribe(ctx, bus, "user.query", myHandler)
+if err != nil {
+    return err
+}
+// Later:
+if err := sub.Unsubscribe(); err != nil {
+    // handle error
 }
 ```
 
@@ -178,7 +210,7 @@ The event-driven pattern enables a clean separation of concerns:
 User Input
     |
     v
-[Main Agent] --publish("user.query")--> EventBus
+[Main Agent] --publish("user.query")--> InMemoryBus
                                            |
                            +---------------+---------------+
                            |               |               |
@@ -193,10 +225,11 @@ User Input
 
 ## Verification
 
-1. Start the application with multiple subscribers.
-2. Publish test events.
-3. Verify each subscriber handles events independently without blocking others.
-4. Verify cross-agent communication by checking that downstream agents receive completion events.
+1. Start the application with multiple subscribers registered before publishing.
+2. Publish a test event.
+3. Verify each subscriber handler is called in registration order.
+4. Register a downstream subscriber on `research.complete` and verify it receives the chained event.
+5. Call `Unsubscribe()` on one subscription and verify it no longer receives events.
 
 ## Next Steps
 

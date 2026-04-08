@@ -49,6 +49,7 @@ import (
     "encoding/json"
     "fmt"
 
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/prompt"
     "github.com/lookatitude/beluga-ai/schema"
@@ -73,7 +74,7 @@ type SQLGenerator struct {
 }
 
 func NewSQLGenerator(ctx context.Context) (*SQLGenerator, error) {
-    model, err := llm.New("openai", nil)
+    model, err := llm.New("openai", config.ProviderConfig{Model: "gpt-4o"})
     if err != nil {
         return nil, fmt.Errorf("create model: %w", err)
     }
@@ -130,12 +131,8 @@ func (s *SQLGenerator) GenerateSQL(ctx context.Context, query string, dialect st
 
     // Generate SQL using LLM
     msgs := []schema.Message{
-        &schema.SystemMessage{Parts: []schema.ContentPart{
-            schema.TextPart{Text: "You are an expert SQL generator. Generate accurate, syntactically correct SQL queries."},
-        }},
-        &schema.HumanMessage{Parts: []schema.ContentPart{
-            schema.TextPart{Text: promptText},
-        }},
+        schema.NewSystemMessage("You are an expert SQL generator. Generate accurate, syntactically correct SQL queries."),
+        schema.NewHumanMessage(promptText),
     }
 
     resp, err := s.model.Generate(ctx, msgs)
@@ -143,7 +140,7 @@ func (s *SQLGenerator) GenerateSQL(ctx context.Context, query string, dialect st
         return "", fmt.Errorf("generate SQL: %w", err)
     }
 
-    sqlQuery := extractSQL(resp.Parts[0].(schema.TextPart).Text)
+    sqlQuery := extractSQL(resp.Text())
 
     // Validate SQL syntax
     if err := s.validateSQL(ctx, sqlQuery, dialect); err != nil {
@@ -258,12 +255,8 @@ Generate explanations for the SQL query to build user trust:
 ```go
 func (s *SQLGenerator) ExplainSQL(ctx context.Context, sqlQuery string) (string, error) {
     msgs := []schema.Message{
-        &schema.SystemMessage{Parts: []schema.ContentPart{
-            schema.TextPart{Text: "Explain SQL queries in plain language."},
-        }},
-        &schema.HumanMessage{Parts: []schema.ContentPart{
-            schema.TextPart{Text: fmt.Sprintf("Explain this SQL query:\n%s", sqlQuery)},
-        }},
+        schema.NewSystemMessage("Explain SQL queries in plain language."),
+        schema.NewHumanMessage(fmt.Sprintf("Explain this SQL query:\n%s", sqlQuery)),
     }
 
     resp, err := s.model.Generate(ctx, msgs)
@@ -271,7 +264,7 @@ func (s *SQLGenerator) ExplainSQL(ctx context.Context, sqlQuery string) (string,
         return "", fmt.Errorf("generate explanation: %w", err)
     }
 
-    return resp.Parts[0].(schema.TextPart).Text, nil
+    return resp.Text(), nil
 }
 ```
 

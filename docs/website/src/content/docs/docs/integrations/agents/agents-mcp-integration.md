@@ -121,6 +121,7 @@ import (
     "log"
 
     "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/tool"
 
@@ -150,7 +151,7 @@ func main() {
     fmt.Printf("Discovered %d remote tools\n", len(remoteTools))
 
     // Use remote tools in an agent
-    model, err := llm.New("openai", llm.ProviderConfig{
+    model, err := llm.New("openai", config.ProviderConfig{
         APIKey: "your-api-key",
         Model:  "gpt-4o",
     })
@@ -238,11 +239,13 @@ client := tool.NewMCPClient("http://localhost:8081",
 
 ### Stream Resumability
 
-Use `Last-Event-ID` to resume interrupted server-sent event streams.
+The MCP Streamable HTTP transport supports `Last-Event-ID` for resuming interrupted SSE streams. Pass the header via `tool.WithMCPHeaders` when connecting to a server that supports resumable streams.
 
 ```go
 client := tool.NewMCPClient("http://localhost:8081",
-    tool.WithLastEventID("evt-42"),
+    tool.WithMCPHeaders(map[string]string{
+        "Last-Event-ID": "evt-42",
+    }),
 )
 ```
 

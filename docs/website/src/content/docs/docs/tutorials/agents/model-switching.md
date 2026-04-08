@@ -44,8 +44,8 @@ func main() {
     ctx := context.Background()
 
     primary, err := llm.New("openai", config.ProviderConfig{
-        "api_key": os.Getenv("OPENAI_API_KEY"),
-        "model":   "gpt-4o",
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+        Model:  "gpt-4o",
     })
     if err != nil {
         fmt.Printf("Primary error: %v\n", err)
@@ -53,8 +53,8 @@ func main() {
     }
 
     backup, err := llm.New("anthropic", config.ProviderConfig{
-        "api_key": os.Getenv("ANTHROPIC_API_KEY"),
-        "model":   "claude-sonnet-4-5-20250929",
+        APIKey: os.Getenv("ANTHROPIC_API_KEY"),
+        Model:  "claude-sonnet-4-5-20250929",
     })
     if err != nil {
         fmt.Printf("Backup error: %v\n", err)
@@ -88,18 +88,18 @@ func main() {
     ctx := context.Background()
 
     gpt4, _ := llm.New("openai", config.ProviderConfig{
-        "api_key": os.Getenv("OPENAI_API_KEY"),
-        "model":   "gpt-4o",
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+        Model:  "gpt-4o",
     })
 
     claude, _ := llm.New("anthropic", config.ProviderConfig{
-        "api_key": os.Getenv("ANTHROPIC_API_KEY"),
-        "model":   "claude-sonnet-4-5-20250929",
+        APIKey: os.Getenv("ANTHROPIC_API_KEY"),
+        Model:  "claude-sonnet-4-5-20250929",
     })
 
     gpt35, _ := llm.New("openai", config.ProviderConfig{
-        "api_key": os.Getenv("OPENAI_API_KEY"),
-        "model":   "gpt-4o-mini",
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+        Model:  "gpt-4o-mini",
     })
 
     // Try models in order: gpt-4o -> claude -> gpt-4o-mini
@@ -172,8 +172,8 @@ Usage:
 
 ```go
 classifier, _ := llm.New("openai", config.ProviderConfig{
-    "api_key": os.Getenv("OPENAI_API_KEY"),
-    "model":   "gpt-4o-mini", // Cheap classifier
+    APIKey: os.Getenv("OPENAI_API_KEY"),
+    Model:  "gpt-4o-mini", // Cheap classifier
 })
 
 router := llm.NewRouter(
