@@ -76,7 +76,7 @@ graph TB
     rag --> schema & config
     agent --> llm & tool & memory & schema
     voice --> llm & schema
-    orch --> agent & llm
+    orch --> agent & core
     workflow --> core & schema
     guard --> schema
     resilience --> core
@@ -88,7 +88,7 @@ graph TB
     prompt --> schema
     cost --> core
     audit --> core
-    runtime --> agent & guard & cost & audit & orch
+    runtime --> agent & cost & audit & orch
     protocol --> agent & tool & schema
     server --> protocol
 ```
@@ -115,8 +115,8 @@ beluga-ai/
 │   └── splitter/          # TextSplitter (recursive, markdown, token)
 ├── agent/                 # Agent, BaseAgent, Planner, Executor, Handoffs, Bus
 │   └── workflow/          # SequentialAgent, ParallelAgent, LoopAgent
-├── runtime/               # Runner, Team, Plugin, Session, WorkerPool
-│   └── plugins/           # RateLimit, AuditPlugin, CostTracking
+├── runtime/               # Runner, Team, OrchestrationPattern, Plugin, Session, WorkerPool
+│   └── plugins/           # RateLimit, AuditPlugin, CostTracking, RetryAndReflect
 ├── voice/
 │   ├── stt/providers/     # whisper, deepgram, assemblyai, gladia, groq, elevenlabs
 │   ├── tts/providers/     # elevenlabs, cartesia, openai, playht, lmnt, fish, smallest
@@ -455,45 +455,159 @@ Agent lifecycle management: Runner, Team composition, Plugin system, Session man
 |------|---------|
 | `Runner` | Lifecycle manager for a single agent; handles sessions, plugins, and graceful shutdown |
 | `Team` | Groups agents and coordinates them via an `OrchestrationPattern`; implements `agent.Agent` for recursive composition |
-| `Plugin` | Cross-cutting concern interface: `BeforeTurn`, `AfterTurn`, `OnError` |
-| `PluginChain` | Executes plugins in registration order |
-| `Session` | Conversation state for one agent interaction |
+| `OrchestrationPattern` | Interface with a single `Execute(ctx, agents, input)` method; the extension point for coordination strategies |
+| `Plugin` | Cross-cutting concern interface: `Name`, `BeforeTurn`, `AfterTurn`, `OnError` |
+| `PluginChain` | Executes plugins in registration order; output of each plugin feeds the next |
+| `Session` | Conversation state: ID, AgentID, TenantID, State, Turns, timestamps |
 | `SessionService` | Manages session lifecycle; default is `InMemorySessionService` |
+| `RunnerConfig` | Configuration struct: SessionTTL, WorkerPoolSize, GracefulShutdownTimeout, StreamingMode |
 | `WorkerPool` | Bounded concurrency; limits concurrent agent tasks to prevent resource exhaustion |
 
-**Orchestration patterns** (built-in, passed to `WithPattern`):
+**Runner functional options**:
 
-| Pattern | Behavior |
-|---------|----------|
-| `PipelinePattern` | Sequential — text output of each agent feeds the next |
-| `SupervisorPattern` | Coordinator LLM delegates to member agents |
-| `ScatterGatherPattern` | All agents run in parallel; aggregator synthesizes results |
+| Option | Purpose |
+|--------|---------|
+| `WithPlugins(plugins ...Plugin)` | Add plugins to the execution chain |
+| `WithSessionService(s SessionService)` | Override the default in-memory session service |
+| `WithRunnerConfig(cfg RunnerConfig)` | Set all configuration fields at once |
+| `WithWorkerPoolSize(size int)` | Set concurrent worker limit (default: 10) |
 
-**Built-in plugins** (`runtime/plugins/`): `RateLimit`, `AuditPlugin`, `CostTracking`.
+**Runner constructor and methods**:
 
-**Dependencies**: `agent`, `guard`, `cost`, `audit`, `orchestration`.
+```go
+// NewRunner creates a Runner hosting the given agent.
+func NewRunner(a agent.Agent, opts ...RunnerOption) *Runner
+
+// Run executes the agent for a session, returning an event stream.
+func (r *Runner) Run(ctx context.Context, sessionID string, input schema.Message) iter.Seq2[agent.Event, error]
+
+// Shutdown drains in-flight sessions and prevents new submissions.
+func (r *Runner) Shutdown(ctx context.Context) error
+```
+
+**Team functional options**:
+
+| Option | Purpose |
+|--------|---------|
+| `WithAgents(agents ...agent.Agent)` | Set member agents |
+| `WithPattern(p OrchestrationPattern)` | Set coordination strategy (default: PipelinePattern) |
+| `WithTeamID(id string)` | Set team identifier (default: "team") |
+| `WithTeamPersona(p agent.Persona)` | Set team persona |
+| `WithTeamTools(tools ...tool.Tool)` | Add tools to the team |
+
+**Built-in orchestration patterns** (passed to `WithPattern`):
+
+| Constructor | Behavior |
+|-------------|----------|
+| `PipelinePattern()` | Sequential — text output of each agent feeds the next |
+| `SupervisorPattern(coordinator agent.Agent)` | Coordinator agent receives the input plus agent descriptions and delegates |
+| `ScatterGatherPattern(aggregator agent.Agent)` | All agents run in parallel; outputs concatenated and passed to aggregator |
+
+The `OrchestrationPattern` interface is defined in `runtime/pattern.go`:
+
+```go
+type OrchestrationPattern interface {
+    Execute(ctx context.Context, agents []agent.Agent, input string) iter.Seq2[agent.Event, error]
+}
+```
+
+**Session types**:
+
+```go
+type Session struct {
+    ID        string
+    AgentID   string
+    TenantID  string
+    State     map[string]any
+    Turns     []schema.Turn
+    CreatedAt time.Time
+    UpdatedAt time.Time
+    ExpiresAt time.Time
+}
+
+type SessionService interface {
+    Create(ctx context.Context, agentID string) (*Session, error)
+    Get(ctx context.Context, sessionID string) (*Session, error)
+    Update(ctx context.Context, session *Session) error
+    Delete(ctx context.Context, sessionID string) error
+}
+```
+
+Session options for `NewInMemorySessionService`:
+
+| Option | Purpose |
+|--------|---------|
+| `WithSessionTTL(d time.Duration)` | Expire sessions after d; zero = no expiry |
+| `WithSessionTenantID(tenantID string)` | Default tenant ID for new sessions |
+| `WithMaxSessions(n int)` | Maximum concurrent sessions; 0 = unlimited |
+
+**WorkerPool methods**:
+
+```go
+func NewWorkerPool(size int) *WorkerPool
+func (p *WorkerPool) Submit(ctx context.Context, fn func(context.Context)) error
+func (p *WorkerPool) Wait()
+func (p *WorkerPool) Drain(ctx context.Context) error
+```
+
+**Plugin interface**:
+
+```go
+type Plugin interface {
+    Name() string
+    BeforeTurn(ctx context.Context, session *Session, input schema.Message) (schema.Message, error)
+    AfterTurn(ctx context.Context, session *Session, events []agent.Event) ([]agent.Event, error)
+    OnError(ctx context.Context, err error) error
+}
+```
+
+**Built-in plugins** (`runtime/plugins/`):
+
+| Constructor | Purpose |
+|-------------|---------|
+| `plugins.NewRateLimit(requestsPerMinute int)` | Token-bucket rate limiting; returns `core.ErrRateLimit` when exhausted |
+| `plugins.NewAuditPlugin(store audit.Store)` | Logs turn start, turn end, and error entries to an `audit.Store` |
+| `plugins.NewCostTracking(tracker cost.Tracker, budget cost.Budget)` | Records a `cost.Usage` entry after every completed turn |
+| `plugins.NewRetryAndReflect(maxRetries int)` | Suppresses retryable errors up to maxRetries, allowing the runner to retry the turn |
+
+**Dependencies**: `agent`, `cost`, `audit`, `orchestration`.
+
+**Complete Runner example**:
 
 ```go
 import (
     "context"
     "fmt"
+    "time"
 
+    "github.com/lookatitude/beluga-ai/audit"
+    "github.com/lookatitude/beluga-ai/cost"
     "github.com/lookatitude/beluga-ai/runtime"
     "github.com/lookatitude/beluga-ai/runtime/plugins"
+    "github.com/lookatitude/beluga-ai/schema"
 )
+
+auditStore, err := audit.New("inmemory", audit.Config{})
+if err != nil {
+    return err
+}
+tracker, err := cost.New("inmemory", cost.Config{})
+if err != nil {
+    return err
+}
 
 runner := runtime.NewRunner(myAgent,
     runtime.WithWorkerPoolSize(20),
     runtime.WithPlugins(
         plugins.NewRateLimit(60),
         plugins.NewAuditPlugin(auditStore),
-        plugins.NewCostTracking(tracker, budget),
+        plugins.NewCostTracking(tracker, cost.Budget{}),
     ),
 )
 defer func() {
-    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
     defer cancel()
-    if err := runner.Shutdown(ctx); err != nil {
+    if err := runner.Shutdown(shutdownCtx); err != nil {
         fmt.Println("shutdown error:", err)
     }
 }()
@@ -505,6 +619,193 @@ for evt, err := range runner.Run(ctx, "session-1", schema.NewHumanMessage("hello
     fmt.Print(evt.Text)
 }
 ```
+
+**Team example with all three patterns**:
+
+```go
+import (
+    "github.com/lookatitude/beluga-ai/runtime"
+)
+
+// Pipeline: drafter → editor → reviewer
+pipeline := runtime.NewTeam(
+    runtime.WithTeamID("writing-pipeline"),
+    runtime.WithAgents(drafterAgent, editorAgent, reviewerAgent),
+    runtime.WithPattern(runtime.PipelinePattern()),
+)
+
+// Supervisor: coordinator delegates to specialists
+supervised := runtime.NewTeam(
+    runtime.WithTeamID("specialist-team"),
+    runtime.WithAgents(codeAgent, docsAgent, testAgent),
+    runtime.WithPattern(runtime.SupervisorPattern(coordinatorAgent)),
+)
+
+// ScatterGather: parallel analysis with synthesis
+parallel := runtime.NewTeam(
+    runtime.WithTeamID("analysis-team"),
+    runtime.WithAgents(legalAgent, technicalAgent, financialAgent),
+    runtime.WithPattern(runtime.ScatterGatherPattern(synthesizerAgent)),
+)
+
+// Teams implement agent.Agent — host with Runner or nest inside another Team.
+runner := runtime.NewRunner(pipeline, runtime.WithWorkerPoolSize(5))
+```
+
+### orchestration/
+
+The `orchestration/` package provides composable building blocks for multi-runnable workflows. All types satisfy `core.Runnable` (or the `OrchestrationPattern` interface which embeds it), so any orchestration primitive can be composed with any other or used inside a middleware chain.
+
+**OrchestrationPattern interface**:
+
+```go
+type OrchestrationPattern interface {
+    core.Runnable  // Invoke + Stream
+    Name() string
+}
+```
+
+**Types**:
+
+| Type | Constructor | Purpose |
+|------|-------------|---------|
+| `Chain` | `Chain(steps ...core.Runnable) core.Runnable` | Sequential composition of any `core.Runnable`; last step is streamed |
+| `Pipeline` | `NewPipeline(stages ...agent.Agent) *Pipeline` | Sequential agent pipeline; leading stages invoked, last stage streamed |
+| `HandoffOrchestrator` | `NewHandoffOrchestrator(agents ...agent.Agent) *HandoffOrchestrator` | Peer-to-peer agent transfers following `EventHandoff` events |
+| `Graph` | `NewGraph() *Graph` | Directed graph traversal with conditional edges |
+| `Router` | `NewRouter(classifier ClassifierFunc) *Router` | Dispatch input to a named route via a classifier function |
+| `ScatterGather` | `NewScatterGather(aggregator AggregatorFunc, workers ...core.Runnable) *ScatterGather` | Parallel fan-out with aggregator function |
+| `Supervisor` | `NewSupervisor(strategy StrategyFunc, agents ...agent.Agent) *Supervisor` | Multi-round delegation using a strategy function |
+| `Blackboard` | `NewBlackboard(termination TerminationFunc, agents ...agent.Agent) *Blackboard` | Shared-board collaboration: agents read and write a common state map |
+
+**Chain example** — compose any `core.Runnable` steps:
+
+```go
+import "github.com/lookatitude/beluga-ai/orchestration"
+
+chain := orchestration.Chain(retriever, reranker, responder)
+result, err := chain.Invoke(ctx, query)
+if err != nil {
+    return err
+}
+```
+
+**HandoffOrchestrator** — agent-to-agent transfers:
+
+```go
+import "github.com/lookatitude/beluga-ai/orchestration"
+
+h := orchestration.NewHandoffOrchestrator(triageAgent, billingAgent, techAgent).
+    WithMaxHops(5).
+    WithEntry(triageAgent.ID())
+
+for val, err := range h.Stream(ctx, userQuery) {
+    if err != nil {
+        break
+    }
+    fmt.Print(val)
+}
+```
+
+`HandoffOrchestrator` methods:
+
+```go
+func NewHandoffOrchestrator(agents ...agent.Agent) *HandoffOrchestrator
+func (h *HandoffOrchestrator) WithMaxHops(n int) *HandoffOrchestrator
+func (h *HandoffOrchestrator) WithEntry(id string) *HandoffOrchestrator
+func (h *HandoffOrchestrator) Name() string
+func (h *HandoffOrchestrator) Invoke(ctx context.Context, input any, opts ...core.Option) (any, error)
+func (h *HandoffOrchestrator) Stream(ctx context.Context, input any, opts ...core.Option) iter.Seq2[any, error]
+```
+
+**Pipeline** — sequential agent pipeline with streaming final stage:
+
+```go
+import "github.com/lookatitude/beluga-ai/orchestration"
+
+p := orchestration.NewPipeline(classifierAgent, extractorAgent, formatterAgent)
+result, err := p.Invoke(ctx, rawDocument)
+if err != nil {
+    return err
+}
+```
+
+**Graph** — conditional directed graph:
+
+```go
+import "github.com/lookatitude/beluga-ai/orchestration"
+
+g := orchestration.NewGraph()
+if err := g.AddNode("extract", extractor); err != nil {
+    return err
+}
+if err := g.AddNode("enrich", enricher); err != nil {
+    return err
+}
+if err := g.AddNode("format", formatter); err != nil {
+    return err
+}
+if err := g.AddEdge(orchestration.Edge{From: "extract", To: "enrich"}); err != nil {
+    return err
+}
+if err := g.AddEdge(orchestration.Edge{From: "enrich", To: "format"}); err != nil {
+    return err
+}
+if err := g.SetEntry("extract"); err != nil {
+    return err
+}
+result, err := g.Invoke(ctx, input)
+if err != nil {
+    return err
+}
+```
+
+**Router** — classifier-based dispatch:
+
+```go
+import "github.com/lookatitude/beluga-ai/orchestration"
+
+r := orchestration.NewRouter(func(ctx context.Context, input any) (string, error) {
+    if strings.Contains(fmt.Sprint(input), "code") {
+        return "code", nil
+    }
+    return "general", nil
+}).AddRoute("code", codeAgent).AddRoute("general", generalAgent)
+
+result, err := r.Invoke(ctx, userMessage)
+if err != nil {
+    return err
+}
+```
+
+**Supervisor built-in strategies**:
+
+| Function | Behavior |
+|----------|---------|
+| `DelegateBySkill()` | Keyword overlap between input and agent persona goals |
+| `RoundRobin()` | Cycles through agents in order |
+| `LoadBalanced()` | Picks the agent with the fewest invocations |
+
+**Middleware and Hooks**:
+
+```go
+// Middleware wraps any core.Runnable.
+type Middleware func(core.Runnable) core.Runnable
+
+func ApplyMiddleware(r core.Runnable, mws ...Middleware) core.Runnable
+
+// Hooks — all fields optional, nil = skip.
+type Hooks struct {
+    BeforeStep func(ctx context.Context, stepName string, input any) error
+    AfterStep  func(ctx context.Context, stepName string, output any, err error)
+    OnBranch   func(ctx context.Context, from, to string) error
+    OnError    func(ctx context.Context, err error) error
+}
+
+func ComposeHooks(hooks ...Hooks) Hooks
+```
+
+**Dependencies**: `agent`, `core`.
 
 ## Infrastructure Layer
 

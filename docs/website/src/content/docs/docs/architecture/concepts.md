@@ -38,7 +38,7 @@ Every public function takes `context.Context` as its first parameter. Cancellati
 
 ### 6. Typed Errors with Retry Semantics
 
-All errors are `core.Error` with an operation name, error code, human-readable message, and wrapped cause. Error codes (`rate_limit`, `timeout`, `provider_unavailable`) carry retry semantics via `IsRetryable()`. Provider-specific errors are mapped to framework error codes at the boundary.
+All errors are `*core.Error` with an operation name, error code, human-readable message, and wrapped cause. Error codes (`rate_limit`, `timeout`, `provider_unavailable`) carry retry semantics via `core.IsRetryable()`. Provider-specific errors are mapped to framework error codes at the boundary.
 
 ### 7. Zero External Dependencies in Foundation
 
@@ -88,6 +88,7 @@ graph TB
         evalP["eval/<br/>Metrics, Runner, Datasets"]
         stateP["state/<br/>Shared State, Watch"]
         promptP["prompt/<br/>Templates, Builder, Versioning"]
+        runtimeP["runtime/<br/>Runner, Team, Plugin, Session"]
     end
 
     subgraph protocol [Protocol Layer]
@@ -250,30 +251,443 @@ graph LR
 - Both are composable: `ApplyMiddleware()` and `ComposeHooks()`
 - 6 packages implement middleware, 11 packages implement hooks
 
+## Core Abstractions
+
+These are the fundamental types every Beluga application interacts with. Understanding how they relate to each other is the prerequisite for all other framework knowledge.
+
+### Agent
+
+An `Agent` is the atomic unit of reasoning. It encapsulates a language model, a set of tools, memory, and a planner strategy. The `agent.Agent` interface is small by design:
+
+```go
+type Agent interface {
+    ID() string
+    Persona() Persona
+    Tools() []tool.Tool
+    Children() []Agent
+    Invoke(ctx context.Context, input string, opts ...Option) (string, error)
+    Stream(ctx context.Context, input string, opts ...Option) iter.Seq2[Event, error]
+}
+```
+
+`Invoke` collects the full response before returning. `Stream` yields typed `Event` values as they arrive. Both methods respect `context.Context` cancellation.
+
+Every event has a `Type` field: `EventText` for content chunks, `EventToolCall` and `EventToolResult` for tool interactions, `EventHandoff` for agent-to-agent transfers, `EventDone` for completion signals, and `EventError` for recoverable errors.
+
+`Children()` returns nested agents for orchestration — a `Team` returns its member agents here.
+
+**See**: `agent/` package.
+
+### Team
+
+A `Team` is a group of agents coordinated by an `OrchestrationPattern`. Teams implement `agent.Agent`, so a Team can be hosted by a `Runner` or nested inside another Team. This recursive composition is the mechanism for building multi-agent hierarchies.
+
+```go
+import (
+    "github.com/lookatitude/beluga-ai/runtime"
+)
+
+team := runtime.NewTeam(
+    runtime.WithTeamID("research-team"),
+    runtime.WithAgents(analyst, summarizer, factChecker),
+    runtime.WithPattern(runtime.ScatterGatherPattern(aggregatorAgent)),
+)
+
+// A Team is an Agent — use a Runner to host it.
+runner := runtime.NewRunner(team, runtime.WithWorkerPoolSize(5))
+```
+
+Three orchestration patterns are built in:
+
+**PipelinePattern**: Agents execute sequentially. The text output of each agent becomes the input for the next. Use this when each stage refines or extends the previous stage's work.
+
+```go
+pipeline := runtime.NewTeam(
+    runtime.WithAgents(drafterAgent, editorAgent, reviewerAgent),
+    runtime.WithPattern(runtime.PipelinePattern()),
+)
+```
+
+**SupervisorPattern**: A coordinator agent receives the original input along with a description of available agents. The coordinator decides how to respond. Use this for dynamic task delegation where the routing logic is itself language-model-driven.
+
+```go
+supervised := runtime.NewTeam(
+    runtime.WithAgents(codeAgent, docsAgent, testAgent),
+    runtime.WithPattern(runtime.SupervisorPattern(coordinatorAgent)),
+)
+```
+
+**ScatterGatherPattern**: All agents run in parallel on the same input. Their outputs are concatenated and passed to an aggregator agent. Use this for tasks where multiple independent analyses should be synthesized.
+
+```go
+parallel := runtime.NewTeam(
+    runtime.WithAgents(legalAgent, technicalAgent, financialAgent),
+    runtime.WithPattern(runtime.ScatterGatherPattern(synthesizerAgent)),
+)
+```
+
+Custom patterns implement the `OrchestrationPattern` interface:
+
+```go
+type OrchestrationPattern interface {
+    Execute(ctx context.Context, agents []agent.Agent, input string) iter.Seq2[agent.Event, error]
+}
+```
+
+**See**: `runtime/` package.
+
+### Runner
+
+A `Runner` is the lifecycle manager for a single agent or team. It handles session management, plugin execution, concurrency bounding via a worker pool, and graceful shutdown. The Runner contains no business logic — the agent does the reasoning, the Runner handles everything around it.
+
+```go
+import (
+    "context"
+    "fmt"
+    "time"
+
+    "github.com/lookatitude/beluga-ai/runtime"
+    "github.com/lookatitude/beluga-ai/runtime/plugins"
+    "github.com/lookatitude/beluga-ai/schema"
+)
+
+runner := runtime.NewRunner(myAgent,
+    runtime.WithWorkerPoolSize(10),
+    runtime.WithPlugins(
+        plugins.NewRateLimit(60),
+        plugins.NewAuditPlugin(auditStore),
+    ),
+)
+defer func() {
+    shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+    if err := runner.Shutdown(shutdownCtx); err != nil {
+        fmt.Println("shutdown error:", err)
+    }
+}()
+
+for evt, err := range runner.Run(ctx, "session-1", schema.NewHumanMessage("summarize this")) {
+    if err != nil {
+        return err
+    }
+    fmt.Print(evt.Text)
+}
+```
+
+The Runner's execution flow for each turn is:
+
+1. Load or create the session identified by `sessionID`. An empty `sessionID` creates a new session.
+2. Run the `Plugin` chain's `BeforeTurn` hooks — each plugin may modify the input message.
+3. Submit the agent invocation to the `WorkerPool`.
+4. Stream agent events and collect them.
+5. Run the `Plugin` chain's `AfterTurn` hooks — each plugin may modify the event slice.
+6. Persist the updated session.
+7. Yield the events to the caller.
+
+`Runner.Shutdown` sets a shutdown flag (new calls to `Run` return an error immediately) and drains the worker pool, waiting for all in-flight turns to finish.
+
+**See**: `runtime/` package, `runtime/plugins/`.
+
+### Plugin
+
+A `Plugin` intercepts agent execution at the Runner level. Every turn calls three methods: `BeforeTurn`, `AfterTurn`, and — if an error occurs — `OnError`.
+
+```go
+type Plugin interface {
+    Name() string
+    BeforeTurn(ctx context.Context, session *Session, input schema.Message) (schema.Message, error)
+    AfterTurn(ctx context.Context, session *Session, events []agent.Event) ([]agent.Event, error)
+    OnError(ctx context.Context, err error) error
+}
+```
+
+Plugins are stateful, composable, and ordered. The `PluginChain` executes them in registration order for `BeforeTurn` and `AfterTurn`, passing the (potentially modified) message or event slice from one plugin to the next. `OnError` also chains — a plugin may return `nil` to suppress the error.
+
+Built-in plugins cover the most common cross-cutting concerns:
+
+- `plugins.NewRateLimit(rpm)` — rejects turns that exceed a requests-per-minute threshold.
+- `plugins.NewAuditPlugin(store)` — writes structured log entries to an `audit.Store` at turn start, turn end, and on error.
+- `plugins.NewCostTracking(tracker, budget)` — records a `cost.Usage` entry after every successful turn.
+
+To implement a custom plugin:
+
+```go
+import (
+    "context"
+    "log/slog"
+
+    "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/runtime"
+    "github.com/lookatitude/beluga-ai/schema"
+)
+
+type loggingPlugin struct{}
+
+func (p *loggingPlugin) Name() string { return "logging" }
+
+func (p *loggingPlugin) BeforeTurn(ctx context.Context, session *runtime.Session, input schema.Message) (schema.Message, error) {
+    slog.InfoContext(ctx, "turn start", "session", session.ID)
+    return input, nil
+}
+
+func (p *loggingPlugin) AfterTurn(ctx context.Context, session *runtime.Session, events []agent.Event) ([]agent.Event, error) {
+    slog.InfoContext(ctx, "turn end", "session", session.ID, "events", len(events))
+    return events, nil
+}
+
+func (p *loggingPlugin) OnError(ctx context.Context, err error) error {
+    slog.ErrorContext(ctx, "turn error", "error", err)
+    return err // return nil to suppress the error
+}
+```
+
+**See**: `runtime/plugins/`, `audit/`, `cost/`.
+
+### Session
+
+A `Session` holds the full conversation state for one agent interaction: ordered turn history, arbitrary key-value state, and lifecycle timestamps.
+
+```go
+type Session struct {
+    ID        string
+    AgentID   string
+    TenantID  string
+    State     map[string]any
+    Turns     []schema.Turn
+    CreatedAt time.Time
+    UpdatedAt time.Time
+    ExpiresAt time.Time
+}
+```
+
+Sessions are created and managed by a `SessionService`. The Runner automatically creates a new session when `sessionID` is empty, or loads an existing one when a known ID is provided. Sessions are updated after every turn.
+
+The built-in `InMemorySessionService` is suitable for development and single-instance deployments. Configure it with functional options:
+
+```go
+svc := runtime.NewInMemorySessionService(
+    runtime.WithSessionTTL(24 * time.Hour),
+    runtime.WithSessionTenantID("tenant-abc"),
+    runtime.WithMaxSessions(1000),
+)
+runner := runtime.NewRunner(myAgent, runtime.WithSessionService(svc))
+```
+
+Implement `SessionService` for distributed or persistent session storage:
+
+```go
+type SessionService interface {
+    Create(ctx context.Context, agentID string) (*Session, error)
+    Get(ctx context.Context, sessionID string) (*Session, error)
+    Update(ctx context.Context, session *Session) error
+    Delete(ctx context.Context, sessionID string) error
+}
+```
+
+### ChatModel
+
+`ChatModel` is the primary interface for interacting with language models. All LLM providers implement it:
+
+```go
+type ChatModel interface {
+    Generate(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) (*schema.AIMessage, error)
+    Stream(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) iter.Seq2[schema.StreamChunk, error]
+    BindTools(tools []schema.ToolDefinition) ChatModel
+    ModelID() string
+}
+```
+
+`BindTools` returns a new `ChatModel` with the given tool definitions included in every subsequent request. The original model is not modified. This design allows the same base model to be specialized for different tool sets without duplication.
+
+**See**: `llm/` package, `docs/providers.md`.
+
+### Tool
+
+A `Tool` is a typed, executable capability exposed to agents and LLMs:
+
+```go
+type Tool interface {
+    Name() string
+    Description() string
+    InputSchema() map[string]any
+    Execute(ctx context.Context, input map[string]any) (*Result, error)
+}
+```
+
+`FuncTool` wraps a typed Go function as a `Tool`, automatically generating the JSON Schema from the input struct:
+
+```go
+import "github.com/lookatitude/beluga-ai/tool"
+
+type SearchInput struct {
+    Query string `json:"query" description:"Search query" required:"true"`
+    Limit int    `json:"limit" description:"Max results" default:"10"`
+}
+
+search := tool.NewFuncTool("search", "Search the web",
+    func(ctx context.Context, input SearchInput) (*tool.Result, error) {
+        // perform search
+        return tool.TextResult("results for: " + input.Query), nil
+    },
+)
+```
+
+`tool.Registry` is a thread-safe collection of tools with `Add`, `Get`, `List`, `All`, `Remove`, and `Definitions` methods:
+
+```go
+reg := tool.NewRegistry()
+if err := reg.Add(search); err != nil {
+    return err
+}
+```
+
+**See**: `tool/` package.
+
+### Orchestration
+
+The `orchestration/` package provides `core.Runnable`-based orchestrators for composing agents outside of the `runtime.Team` abstraction. Use these when you need fine-grained control over handoff routing or pipeline construction.
+
+`HandoffOrchestrator` manages peer-to-peer agent transfers driven by `transfer_to_{id}` tool calls:
+
+```go
+import "github.com/lookatitude/beluga-ai/orchestration"
+
+h := orchestration.NewHandoffOrchestrator(routerAgent, salesAgent, supportAgent).
+    WithMaxHops(5).
+    WithEntry("router")
+
+result, err := h.Invoke(ctx, "I need help with billing", nil)
+if err != nil {
+    return err
+}
+```
+
+`Pipeline` executes agents sequentially, streaming the final stage:
+
+```go
+p := orchestration.NewPipeline(drafterAgent, editorAgent, reviewerAgent)
+
+for val, err := range p.Stream(ctx, "Write a blog post about Go generics", nil) {
+    if err != nil {
+        return err
+    }
+    // val is agent.Event from the final stage
+}
+```
+
+Both `HandoffOrchestrator` and `Pipeline` implement `core.Runnable` and can be composed with `core.Pipe` and `core.Parallel`.
+
+**See**: `orchestration/` package, `core/` package.
+
+### Streaming
+
+All streaming APIs in the framework use `iter.Seq2[T, error]` from the Go standard library. The convention is:
+
+```go
+for value, err := range stream {
+    if err != nil {
+        // handle error and stop
+        break
+    }
+    // use value
+}
+```
+
+Producers respect `context.Context` cancellation: if the context is done, the stream yields the context error and stops. Consumers should not call `break` unless they intend to stop consuming — doing so signals the producer to stop as well via the `yield` bool return.
+
+Channels are never used in public streaming APIs.
+
+**See**: `core/` for stream type definitions.
+
+### Registry Pattern
+
+Every extensible package uses the same registry pattern. This enables provider plug-ins without modifying core code.
+
+```go
+// 1. Register a factory in init():
+func init() {
+    cost.Register("postgres", func(cfg cost.Config) (cost.Tracker, error) {
+        return newPostgresTracker(cfg)
+    })
+}
+
+// 2. Import for side-effects:
+import _ "myorg/beluga-plugins/cost/postgres"
+
+// 3. Construct by name:
+tracker, err := cost.New("postgres", cost.Config{})
+if err != nil {
+    return err
+}
+```
+
+`List()` returns all registered names, sorted, for discovery and debugging.
+
+### Errors
+
+Errors in the framework are typed `*core.Error` values with an `ErrorCode` field:
+
+```go
+type Error struct {
+    Op      string    // operation that failed, e.g. "runtime.runner.run"
+    Code    ErrorCode // machine-readable code, e.g. ErrNotFound
+    Message string    // human-readable description
+    Err     error     // underlying cause, if any
+}
+```
+
+Use `errors.As` to inspect error codes:
+
+```go
+import (
+    "errors"
+
+    "github.com/lookatitude/beluga-ai/core"
+)
+
+var coreErr *core.Error
+if errors.As(err, &coreErr) && coreErr.Code == core.ErrNotFound {
+    // handle not found
+}
+```
+
+Use `core.IsRetryable(err)` before retrying:
+
+```go
+if core.IsRetryable(err) {
+    // safe to retry with backoff
+}
+```
+
+Retryable codes are `rate_limit`, `timeout`, and `provider_unavailable`. Never expose `*core.Error.Err` (the underlying cause) in responses to external callers — it may contain internal details.
+
 ## Data Flow Examples
 
-These diagrams show how packages collaborate at runtime. Each example traces a request from user input through the framework layers and back, illustrating how the abstract interfaces connect in practice.
+These diagrams show how packages collaborate at runtime. Each example traces a request from user input through the framework layers and back.
 
 ### Text Chat
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant Server as REST/SSE Server
+    participant Runner
+    participant Plugin as Plugin Chain
     participant Agent
     participant Planner
     participant LLM as ChatModel
     participant Tools as Tool Registry
     participant Memory
 
-    User->>Server: POST /chat
-    Server->>Agent: Stream(ctx, input)
+    User->>Runner: Run(ctx, sessionID, HumanMessage)
+    Runner->>Plugin: BeforeTurn(session, msg)
+    Plugin-->>Runner: (modified msg)
+    Runner->>Agent: Stream(ctx, input)
     Agent->>Memory: Load(ctx, input)
     Memory-->>Agent: history messages
     Agent->>Planner: Plan(ctx, state)
     Planner->>LLM: Generate(ctx, msgs)
     LLM-->>Planner: AIMessage with ToolCalls
-    Planner-->>Agent: [Action{Tool}, Action{Tool}]
+    Planner-->>Agent: [Action{Tool}, ...]
     Agent->>Tools: Execute(ctx, input)
     Tools-->>Agent: Result
     Agent->>Planner: Replan(ctx, state + observations)
@@ -281,8 +695,10 @@ sequenceDiagram
     LLM-->>Planner: AIMessage{finish}
     Planner-->>Agent: [Action{Finish}]
     Agent->>Memory: Save(ctx, input, output)
-    Agent-->>Server: iter.Seq2[Event, error]
-    Server-->>User: SSE stream
+    Agent-->>Runner: iter.Seq2[Event, error]
+    Runner->>Plugin: AfterTurn(session, events)
+    Plugin-->>Runner: (modified events)
+    Runner-->>User: iter.Seq2[Event, error]
 ```
 
 ### Multi-Agent with Handoffs
@@ -290,19 +706,52 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant User
+    participant Runner
+    participant Orchestrator as HandoffOrchestrator
     participant Router as Router Agent
-    participant Sales as Sales Agent
     participant Support as Support Agent
     participant LLM
 
-    User->>Router: "I need help with billing"
-    Router->>LLM: Generate(msgs + [transfer_to_sales, transfer_to_support])
+    User->>Runner: Run(ctx, sessionID, HumanMessage)
+    Runner->>Orchestrator: Invoke(ctx, "I need help with billing")
+    Orchestrator->>Router: Stream(ctx, input)
+    Router->>LLM: Generate(msgs + [transfer_to_support, ...])
     LLM-->>Router: ToolCall: transfer_to_support("billing issue")
-    Router->>Support: Invoke("billing issue")
+    Router-->>Orchestrator: EventHandoff{target_id: "support"}
+    Orchestrator->>Support: Stream(ctx, "billing issue")
     Support->>LLM: Generate(msgs + support_tools)
     LLM-->>Support: "Let me look up your account..."
-    Support-->>Router: result
-    Router-->>User: "Let me look up your account..."
+    Support-->>Orchestrator: EventText + EventDone
+    Orchestrator-->>Runner: final result
+    Runner-->>User: iter.Seq2[Event, error]
+```
+
+### Team with ScatterGather
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Runner
+    participant Team as Team (ScatterGather)
+    participant Legal as Legal Agent
+    participant Technical as Technical Agent
+    participant Financial as Financial Agent
+    participant Aggregator as Aggregator Agent
+
+    User->>Runner: Run(ctx, sessionID, HumanMessage)
+    Runner->>Team: Stream(ctx, input)
+    par scatter
+        Team->>Legal: Invoke(ctx, input)
+        Team->>Technical: Invoke(ctx, input)
+        Team->>Financial: Invoke(ctx, input)
+    end
+    Legal-->>Team: legal analysis
+    Technical-->>Team: technical analysis
+    Financial-->>Team: financial analysis
+    Team->>Aggregator: Stream(ctx, combined outputs)
+    Aggregator-->>Team: synthesis
+    Team-->>Runner: iter.Seq2[Event, error]
+    Runner-->>User: iter.Seq2[Event, error]
 ```
 
 ### Voice Pipeline
@@ -328,7 +777,99 @@ This comparison highlights where Beluga differs from other agentic frameworks. T
 | Reasoning | Pluggable Planner | Built-in | Built-in | Custom nodes | Built-in |
 | Voice | Frame-based pipeline | No | No | No | No |
 | Protocols | MCP + A2A | MCP | MCP | No | No |
-| Orchestration | Chain/Graph/Workflow | Sequential/Parallel/Loop | Sequential | StateGraph | Chain/Graph/Workflow |
+| Orchestration | Team/HandoffOrchestrator/Pipeline | Sequential/Parallel/Loop | Sequential | StateGraph | Chain/Graph/Workflow |
 | Guardrails | 3-stage pipeline | Built-in | 3-stage | Custom | Aspects |
 | Memory | 3-tier (MemGPT) | Session/State | No | Checkpoints | No |
 | Durability | Own engine + providers | No | No | Checkpoints | No |
+
+## Deployment Modes
+
+The same agent code runs in four deployment modes. The framework code does not change — only the hosting wrapper changes.
+
+### Library
+
+Import Beluga into a Go program. Construct agents and runners in code. Invoke directly or expose via an HTTP server.
+
+```go
+import (
+    "github.com/lookatitude/beluga-ai/runtime"
+    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+)
+
+func main() {
+    runner := runtime.NewRunner(myAgent)
+    // use runner directly or attach to http.ServeMux
+}
+```
+
+Best for: scripts, CLI tools, single-agent services, development.
+
+### Docker
+
+Generate a multi-stage Dockerfile with `deploy.GenerateDockerfile()`. Each agent runs as a separate container. Wire them with `deploy.GenerateCompose()`.
+
+```go
+import "github.com/lookatitude/beluga-ai/deploy"
+
+dockerfile, err := deploy.GenerateDockerfile(deploy.DockerfileConfig{
+    AgentConfig: "config/agent.yaml",
+    Port:        8080,
+})
+if err != nil {
+    return err
+}
+```
+
+Best for: teams of agents with independent scaling, local orchestration, CI/CD pipelines.
+
+### Kubernetes
+
+Define agents and teams as CRDs (`beluga.ai/v1 Agent` and `beluga.ai/v1 Team`). The operator in `k8s/operator/` reconciles CRDs into Deployments, Services, and HPAs. Validation and mutation webhooks (`k8s/webhooks/`) run before resources are persisted.
+
+```yaml
+apiVersion: beluga.ai/v1
+kind: Agent
+metadata:
+  name: planner
+  namespace: agents
+spec:
+  persona:
+    role: Planner
+  planner: react
+  maxIterations: 10
+  modelRef: gpt4o-secret
+  replicas: 2
+  scaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 10
+    targetCPUUtilization: 70
+```
+
+Best for: production multi-agent systems, autoscaling, GitOps workflows.
+
+### Temporal
+
+Wrap agent execution in a durable workflow via the `workflow/` package. Handles retries, checkpointing, and resumption across process restarts. Temporal is the cloud provider option; the framework includes a built-in durable engine as well.
+
+Best for: long-running tasks, multi-step pipelines that must survive failures, tasks requiring human-in-the-loop approvals.
+
+## Multi-Tenancy
+
+All public functions accept `context.Context` as the first parameter. Tenant identity travels through the context:
+
+```go
+import "github.com/lookatitude/beluga-ai/core"
+
+ctx = core.WithTenant(ctx, "tenant-abc")
+```
+
+Every data type that stores user data (`Session`, `cost.Usage`, `audit.Entry`) has a `TenantID` field. Implementations that query or store data must scope by tenant. The `guard/` pipeline validates tenant identity before any agent execution.
+
+## Observability
+
+The framework emits OpenTelemetry spans and metrics using the `gen_ai.*` semantic conventions. The `o11y/` package provides adapters that translate framework events into OTel signals.
+
+No observability code is in `core/` or `schema/` — those packages have zero external dependencies.
+
+Structured logging uses `slog` from the Go standard library. Log entries are contextual: they include span IDs, tenant IDs, agent IDs, and session IDs where available.

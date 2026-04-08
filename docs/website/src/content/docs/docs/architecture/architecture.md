@@ -403,6 +403,39 @@ stateDiagram-v2
     Finish --> [*]
 ```
 
+### Agent Interface
+
+Every agent — including `runtime.Team` — satisfies the `agent.Agent` interface:
+
+```go
+// agent/agent.go
+type Agent interface {
+    // ID returns the unique identifier for this agent.
+    ID() string
+    // Persona returns the agent's persona (role, goal, backstory).
+    Persona() Persona
+    // Tools returns the tools available to this agent.
+    Tools() []tool.Tool
+    // Children returns child agents for orchestration (non-nil for Teams).
+    Children() []Agent
+    // Invoke executes the agent synchronously and returns a text result.
+    Invoke(ctx context.Context, input string, opts ...Option) (string, error)
+    // Stream executes the agent and returns an iterator of typed events.
+    Stream(ctx context.Context, input string, opts ...Option) iter.Seq2[Event, error]
+}
+```
+
+Event types emitted during execution:
+
+| EventType | When |
+|-----------|------|
+| `EventText` | Text chunk from the agent's response |
+| `EventToolCall` | Agent is requesting a tool invocation |
+| `EventToolResult` | Result of a tool invocation |
+| `EventHandoff` | Agent-to-agent transfer initiated |
+| `EventDone` | Agent finished execution |
+| `EventError` | Recoverable error during execution |
+
 ### Planner Interface
 
 ```go
@@ -436,6 +469,176 @@ tools := agent.HandoffsToTools([]agent.Handoff{handoff})
 ```
 
 The LLM decides when to hand off. The executor handles the tool call by invoking the target agent. `InputFilter` controls what context passes. `IsEnabled` can disable handoffs dynamically.
+
+### Teams and Multi-Agent Orchestration
+
+The `runtime` package provides two composable abstractions for multi-agent coordination: `Team` and `Runner`.
+
+**Team** groups agents under an `OrchestrationPattern` and itself implements `agent.Agent`, enabling recursive composition. A Team can be hosted by a Runner or nested inside another Team.
+
+```go
+import (
+    "github.com/lookatitude/beluga-ai/runtime"
+    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+)
+
+team := runtime.NewTeam(
+    runtime.WithTeamID("research-team"),
+    runtime.WithAgents(analyst, summarizer, factChecker),
+    runtime.WithPattern(runtime.ScatterGatherPattern(aggregatorAgent)),
+)
+
+// Team implements agent.Agent — host it with a Runner.
+runner := runtime.NewRunner(team, runtime.WithWorkerPoolSize(5))
+```
+
+The `runtime.OrchestrationPattern` interface controls how a Team coordinates its members:
+
+```go
+// runtime/pattern.go
+type OrchestrationPattern interface {
+    Execute(ctx context.Context, agents []agent.Agent, input string) iter.Seq2[agent.Event, error]
+}
+```
+
+Three built-in patterns cover the most common coordination strategies:
+
+| Pattern | Execution | Use case |
+|---------|-----------|----------|
+| `PipelinePattern()` | Sequential — output of agent N feeds agent N+1 | Refine, edit, review |
+| `SupervisorPattern(coordinator)` | LLM coordinator decides delegation | Dynamic task routing |
+| `ScatterGatherPattern(aggregator)` | All agents in parallel, then aggregator | Independent analyses |
+
+```go
+// Sequential: drafter → editor → reviewer
+pipeline := runtime.NewTeam(
+    runtime.WithAgents(drafterAgent, editorAgent, reviewerAgent),
+    runtime.WithPattern(runtime.PipelinePattern()),
+)
+
+// Supervisor: coordinator delegates to code/docs/test agents
+supervised := runtime.NewTeam(
+    runtime.WithAgents(codeAgent, docsAgent, testAgent),
+    runtime.WithPattern(runtime.SupervisorPattern(coordinatorAgent)),
+)
+
+// ScatterGather: parallel legal/technical/financial analysis, then synthesis
+parallel := runtime.NewTeam(
+    runtime.WithAgents(legalAgent, technicalAgent, financialAgent),
+    runtime.WithPattern(runtime.ScatterGatherPattern(synthesizerAgent)),
+)
+```
+
+Custom patterns implement the `OrchestrationPattern` interface and can be passed directly to `WithPattern`.
+
+### Orchestration Package — Runnable Primitives
+
+The `orchestration` package provides lower-level composition primitives that implement `core.Runnable` directly (not `agent.Agent`). Use these when you want to compose arbitrary `core.Runnable` stages, or when you need peer-to-peer handoff routing independent of the Team/Runner lifecycle.
+
+`core.Runnable` is the universal execution interface. Every component that processes input — LLMs, agents, pipelines, chains — implements it:
+
+```go
+// core/runnable.go
+type Runnable interface {
+    Invoke(ctx context.Context, input any, opts ...Option) (any, error)
+    Stream(ctx context.Context, input any, opts ...Option) iter.Seq2[any, error]
+}
+
+// Pipe composes two Runnables: output of a becomes input of b.
+func Pipe(a, b Runnable) Runnable
+
+// Parallel fans out to multiple Runnables concurrently, returns []any results.
+func Parallel(runnables ...Runnable) Runnable
+```
+
+**`orchestration.OrchestrationPattern`** extends `core.Runnable` with a `Name()` method, making every named pattern composable with the rest of the Runnable ecosystem:
+
+```go
+// orchestration/pattern.go
+type OrchestrationPattern interface {
+    core.Runnable // Invoke + Stream
+    Name() string
+}
+```
+
+**`orchestration.Pipeline`** sequences agents where each stage's text output becomes the next stage's input. Leading stages run synchronously; the final stage is streamed:
+
+```go
+import (
+    "context"
+    "fmt"
+
+    "github.com/lookatitude/beluga-ai/orchestration"
+)
+
+pipe := orchestration.NewPipeline(extractAgent, transformAgent, loadAgent)
+
+// Invoke — returns final agent's text output
+result, err := pipe.Invoke(context.Background(), "raw input")
+if err != nil {
+    return fmt.Errorf("pipeline: %w", err)
+}
+
+// Stream — leading stages run synchronously; last stage streams
+for val, err := range pipe.Stream(context.Background(), "raw input") {
+    if err != nil {
+        return fmt.Errorf("pipeline stream: %w", err)
+    }
+    fmt.Print(val)
+}
+```
+
+**`orchestration.HandoffOrchestrator`** manages peer-to-peer agent transfers. When an agent emits an `EventHandoff` event (triggered by a `transfer_to_{id}` tool call), the orchestrator routes control to the target agent and continues execution until no further handoff is emitted or the hop limit is reached:
+
+```go
+import (
+    "context"
+    "fmt"
+
+    "github.com/lookatitude/beluga-ai/orchestration"
+)
+
+h := orchestration.NewHandoffOrchestrator(triageAgent, billingAgent, technicalAgent).
+    WithMaxHops(5).
+    WithEntry("triage")
+
+// Invoke — follows handoffs, returns final agent's text output
+result, err := h.Invoke(context.Background(), "I need help with my invoice")
+if err != nil {
+    return fmt.Errorf("handoff: %w", err)
+}
+
+// Stream — yields events from every agent in the handoff chain
+for val, err := range h.Stream(context.Background(), "I need help with my invoice") {
+    if err != nil {
+        return fmt.Errorf("handoff stream: %w", err)
+    }
+    fmt.Print(val)
+}
+```
+
+**`orchestration.Chain`** composes arbitrary `core.Runnable` stages (not just agents) sequentially. It is the lower-level equivalent of `Pipeline` for non-agent runnables:
+
+```go
+import (
+    "fmt"
+
+    "github.com/lookatitude/beluga-ai/orchestration"
+)
+
+chain := orchestration.Chain(runnableA, runnableB, runnableC)
+result, err := chain.Invoke(ctx, input)
+if err != nil {
+    return fmt.Errorf("chain: %w", err)
+}
+```
+
+**Two packages, two levels of abstraction**:
+
+| Package | Abstraction | Implements | Use when |
+|---------|-------------|------------|----------|
+| `runtime` | `Team` + `Runner` | `agent.Agent` | Hosting agents with sessions, plugins, worker pools |
+| `orchestration` | `Pipeline`, `HandoffOrchestrator`, `Chain` | `core.Runnable` | Composing Runnables without agent lifecycle overhead |
 
 ### Workflow Agents
 

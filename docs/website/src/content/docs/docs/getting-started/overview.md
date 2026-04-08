@@ -42,7 +42,7 @@ Every component produces typed event streams using Go 1.23+ `iter.Seq2[T, error]
 This design choice means that the synchronous `Invoke()` method is implemented by collecting a stream — not the other way around. When you need to show users real-time progress during a multi-step agent execution, the streaming path is already there. The `yield` function's boolean return value provides natural backpressure: if a consumer stops reading, the producer stops producing, with no goroutine leaks or channel cleanup required.
 
 ```go
-for event, err := range agent.Stream(ctx, "Research GPU pricing") {
+for event, err := range a.Stream(ctx, "Research GPU pricing") {
     if err != nil { break }
     switch event.Type {
     case agent.EventText:

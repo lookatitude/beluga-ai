@@ -21,8 +21,8 @@ build upon.
 
 ## Runnable Interface
 
-Runnable is the universal execution interface. Every component that processes
-input — LLMs, tools, agents, pipelines — implements Runnable. It supports
+`Runnable` is the universal execution interface. Every component that processes
+input — LLMs, tools, agents, pipelines — implements `Runnable`. It supports
 both synchronous invocation and streaming:
 
 ```go
@@ -35,54 +35,114 @@ type Runnable interface {
 Runnables compose via `Pipe` (sequential) and `Parallel` (concurrent):
 
 ```go
-pipeline := core.Pipe(tokenizer, llm)
-result, err := pipeline.Invoke(ctx, "Hello, world!")
+package main
 
-parallel := core.Parallel(agent1, agent2, agent3)
-results, err := parallel.Invoke(ctx, input)
+import (
+    "context"
+    "fmt"
+    "log"
+
+    "github.com/lookatitude/beluga-ai/core"
+)
+
+func main() {
+    ctx := context.Background()
+
+    pipeline := core.Pipe(tokenizer, llmRunnable)
+    result, err := pipeline.Invoke(ctx, "Hello, world!")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(result)
+
+    fanOut := core.Parallel(agent1, agent2, agent3)
+    results, err := fanOut.Invoke(ctx, input)
+    if err != nil {
+        log.Fatal(err)
+    }
+    // results is []any with one entry per Runnable
+    fmt.Println(results)
+}
 ```
 
-## Event Streaming
+`Pipe` invokes `a` synchronously, then passes its output as input to `b`.
+`Parallel` fans out to all Runnables concurrently and returns all results as
+`[]any`. If any Runnable returns an error, the first error is returned and
+remaining results may be incomplete.
 
-`Stream` is a pull-based event iterator built on Go 1.23+ [iter.Seq2].
-Events are generic via `Event`, carrying a typed payload, event type,
-optional error, and metadata:
+## Streaming
+
+`Stream` is a pull-based iterator built on Go 1.23+ `iter.Seq2`. Consumers
+range over the returned sequence:
 
 ```go
-for event, err := range stream {
-    if err != nil { break }
-    switch event.Type {
-    case core.EventData:
-        fmt.Print(event.Payload)
-    case core.EventToolCall:
-        // handle tool invocation
+stream := r.Stream(ctx, input)
+for val, err := range stream {
+    if err != nil {
+        break
+    }
+    fmt.Println(val)
+}
+```
+
+## Batch Processing
+
+`BatchInvoke` executes a function over multiple inputs concurrently. It is
+generic over the input type `I` and output type `O`, and returns a
+`[]BatchResult[O]` with one entry per input at the corresponding index:
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/lookatitude/beluga-ai/core"
+)
+
+func embed(ctx context.Context, text string) ([]float32, error) {
+    // call embedding model
+    return nil, nil
+}
+
+func main() {
+    ctx := context.Background()
+    docs := []string{"doc one", "doc two", "doc three"}
+
+    results := core.BatchInvoke(ctx, embed, docs, core.BatchOptions{
+        MaxConcurrency: 10,
+        Timeout:        5 * time.Second,
+    })
+
+    for i, r := range results {
+        if r.Err != nil {
+            log.Printf("item %d failed: %v", i, r.Err)
+            continue
+        }
+        fmt.Printf("item %d: %d dimensions\n", i, len(r.Value))
     }
 }
 ```
 
-Stream utilities include `CollectStream`, `MapStream`, `FilterStream`,
-`MergeStreams`, and `FanOut` for transforming and combining streams.
-`BufferedStream` adds backpressure control between fast producers and
-slow consumers, and `FlowController` provides semaphore-based
-concurrency limiting.
+`BatchOptions` fields:
 
-## Batch Processing
+| Field | Type | Description |
+|---|---|---|
+| `MaxConcurrency` | `int` | Max concurrent executions. 0 = unlimited. |
+| `BatchSize` | `int` | Informational; BatchInvoke calls fn once per item. |
+| `Timeout` | `time.Duration` | Per-item timeout. 0 = no per-item timeout. |
+| `RetryPolicy` | `*RetryPolicy` | Optional retry configuration per item. |
 
-`BatchInvoke` executes a function over multiple inputs concurrently with
-configurable concurrency limits, per-item timeouts, and retry policies:
-
-```go
-results := core.BatchInvoke(ctx, embedFn, documents, core.BatchOptions{
-    MaxConcurrency: 10,
-    Timeout:        5 * time.Second,
-})
-```
+`BatchResult[O]` carries `Value O` and `Err error` for each input.
 
 ## Lifecycle Management
 
-The `Lifecycle` interface provides Start/Stop/Health semantics for
+The `Lifecycle` interface provides `Start`/`Stop`/`Health` semantics for
 components that require explicit initialization and graceful shutdown.
-`App` manages a set of Lifecycle components, starting them in registration
+`App` manages a set of `Lifecycle` components, starting them in registration
 order and stopping them in reverse:
 
 ```go
@@ -98,18 +158,74 @@ defer app.Shutdown(ctx)
 
 `WithTenant` and `GetTenant` store and retrieve a `TenantID` from context,
 enabling tenant-scoped data isolation across all framework operations.
+`TenantID` is a named string type:
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+
+    "github.com/lookatitude/beluga-ai/core"
+)
+
+func main() {
+    ctx := core.WithTenant(context.Background(), core.TenantID("acme-corp"))
+    tenantID := core.GetTenant(ctx)
+    fmt.Println(tenantID) // "acme-corp"
+}
+```
 
 ## Context Helpers
 
 `WithSessionID`, `GetSessionID`, `WithRequestID`, and `GetRequestID`
 propagate session and request identifiers through context for correlation
-across distributed traces and logs.
+across distributed traces and logs:
+
+```go
+ctx = core.WithSessionID(ctx, "session-abc")
+ctx = core.WithRequestID(ctx, "req-xyz")
+
+sessionID := core.GetSessionID(ctx) // "session-abc"
+requestID := core.GetRequestID(ctx) // "req-xyz"
+```
 
 ## Structured Errors
 
 `Error` carries an operation name, `ErrorCode`, human-readable message,
-and optional wrapped cause. Error codes like `ErrRateLimit`, `ErrTimeout`,
-and `ErrProviderDown` enable programmatic retry decisions via `IsRetryable`:
+and optional wrapped cause:
+
+```go
+type Error struct {
+    Op      string
+    Code    ErrorCode
+    Message string
+    Err     error
+}
+```
+
+Create errors with `NewError`:
+
+```go
+err := core.NewError("llm.generate", core.ErrRateLimit, "quota exceeded", cause)
+```
+
+Error codes and their retryability:
+
+| Code | Constant | Retryable |
+|---|---|---|
+| `rate_limit` | `ErrRateLimit` | yes |
+| `timeout` | `ErrTimeout` | yes |
+| `provider_unavailable` | `ErrProviderDown` | yes |
+| `auth_error` | `ErrAuth` | no |
+| `invalid_input` | `ErrInvalidInput` | no |
+| `tool_failed` | `ErrToolFailed` | no |
+| `guard_blocked` | `ErrGuardBlocked` | no |
+| `budget_exhausted` | `ErrBudgetExhausted` | no |
+| `not_found` | `ErrNotFound` | no |
+
+Use `IsRetryable` to decide whether to retry:
 
 ```go
 if core.IsRetryable(err) {
@@ -117,7 +233,17 @@ if core.IsRetryable(err) {
 }
 ```
 
+`Error` implements `errors.Is` by matching on `Code`, and `errors.As` via
+`Unwrap`, so standard Go error chain traversal works as expected.
+
 ## Functional Options
 
 The `Option` interface and `OptionFunc` adapter implement the functional
 options pattern used throughout the framework for configuration.
+
+## Related
+
+- `docs/concepts.md` — Design decisions
+- `docs/packages.md` — Package layout
+- [`llm`](/docs/api-reference/llm-agents/llm) — ChatModel built on Runnable
+- [`agent`](/docs/api-reference/llm-agents/agent) — Agent built on Runnable
