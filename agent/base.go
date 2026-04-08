@@ -162,5 +162,9 @@ func (a *BaseAgent) buildInitialMessages(input string, cfg agentConfig) []schema
 	return messages
 }
 
+// Contract returns the agent's semantic contract, or nil if none is set.
+// This implements the contract.ContractProvider interface.
+func (a *BaseAgent) Contract() *schema.Contract { return a.config.contract }
+
 // Config returns the agent's configuration (for testing and extension).
 func (a *BaseAgent) Config() agentConfig { return a.config }
