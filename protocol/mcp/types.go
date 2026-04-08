@@ -10,9 +10,9 @@ type Request struct {
 
 // Response is a JSON-RPC 2.0 response message.
 type Response struct {
-	JSONRPC string   `json:"jsonrpc"`
-	ID      any      `json:"id,omitempty"`
-	Result  any      `json:"result,omitempty"`
+	JSONRPC string    `json:"jsonrpc"`
+	ID      any       `json:"id,omitempty"`
+	Result  any       `json:"result,omitempty"`
 	Error   *RPCError `json:"error,omitempty"`
 }
 
@@ -25,9 +25,37 @@ type RPCError struct {
 
 // ServerCapabilities describes the capabilities of an MCP server.
 type ServerCapabilities struct {
-	Tools     *ToolCapability     `json:"tools,omitempty"`
-	Resources *ResourceCapability `json:"resources,omitempty"`
-	Prompts   *PromptCapability   `json:"prompts,omitempty"`
+	Tools       *ToolCapability        `json:"tools,omitempty"`
+	Resources   *ResourceCapability    `json:"resources,omitempty"`
+	Prompts     *PromptCapability      `json:"prompts,omitempty"`
+	Async       *AsyncCapability       `json:"async,omitempty"`
+	Elicitation *ElicitationCapability `json:"elicitation,omitempty"`
+	OAuth       *OAuthCapability       `json:"oauth,omitempty"`
+	Identity    *ServerIdentity        `json:"identity,omitempty"`
+}
+
+// AsyncCapability indicates that the server supports asynchronous operations.
+type AsyncCapability struct {
+	// Supported indicates whether async operations are available.
+	Supported bool `json:"supported,omitempty"`
+}
+
+// ElicitationCapability indicates that the server supports user elicitation.
+type ElicitationCapability struct {
+	// Supported indicates whether elicitation is available.
+	Supported bool `json:"supported,omitempty"`
+	// Types lists the supported elicitation types.
+	Types []ElicitationType `json:"types,omitempty"`
+}
+
+// OAuthCapability indicates that the server supports OAuth 2.0 authentication.
+type OAuthCapability struct {
+	// AuthURL is the authorization endpoint.
+	AuthURL string `json:"authUrl,omitempty"`
+	// TokenURL is the token endpoint.
+	TokenURL string `json:"tokenUrl,omitempty"`
+	// PKCE indicates whether PKCE is supported.
+	PKCE bool `json:"pkce,omitempty"`
 }
 
 // ToolCapability describes tool-related server capabilities.
@@ -70,9 +98,10 @@ type PromptArgument struct {
 
 // ToolInfo describes a tool as presented in MCP tool listings.
 type ToolInfo struct {
-	Name        string         `json:"name"`
-	Description string         `json:"description,omitempty"`
-	InputSchema map[string]any `json:"inputSchema"`
+	Name         string         `json:"name"`
+	Description  string         `json:"description,omitempty"`
+	InputSchema  map[string]any `json:"inputSchema"`
+	OutputSchema map[string]any `json:"outputSchema,omitempty"`
 }
 
 // InitializeResult is returned by the "initialize" method.
