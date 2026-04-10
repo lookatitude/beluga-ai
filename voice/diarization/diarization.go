@@ -8,6 +8,12 @@ import (
 	"time"
 )
 
+// speakerSilence is the sentinel SpeakerID used internally by the
+// EnergyDiarizer to mark low-energy (silence) windows. It is never
+// emitted as part of a returned SpeakerSegment — callers only see
+// real speaker IDs.
+const speakerSilence = "silence"
+
 // Diarizer identifies different speakers within audio data.
 type Diarizer interface {
 	// Diarize processes audio data and returns speaker segments.
@@ -166,19 +172,23 @@ func (d *EnergyDiarizer) Diarize(ctx context.Context, audio []byte, opts ...Diar
 
 	// Simple energy-based segmentation: split audio into fixed-size windows
 	// and assign speakers based on energy level patterns.
-	bytesPerSample := 2 // 16-bit PCM
+	bytesPerSample := 2                   // 16-bit PCM
 	samplesPerWindow := o.sampleRate / 10 // 100ms windows
 	windowBytes := samplesPerWindow * bytesPerSample
 
-	if windowBytes <= 0 {
-		windowBytes = 3200 // fallback
+	// Guard against zero/negative sample rate to prevent divide-by-zero
+	// panics in the window offset calculation below. Reset both the
+	// window size and sample rate to sensible defaults.
+	if windowBytes <= 0 || o.sampleRate <= 0 {
+		if o.sampleRate <= 0 {
+			o.sampleRate = 16000
+		}
+		windowBytes = 3200 // fallback (100ms @ 16kHz, 16-bit PCM)
 	}
 
 	var segments []SpeakerSegment
 	var currentSpeaker string
 	var segStart time.Duration
-
-	windowDuration := time.Duration(float64(samplesPerWindow) / float64(o.sampleRate) * float64(time.Second))
 
 	for i := 0; i < len(audio); i += windowBytes {
 		if err := ctx.Err(); err != nil {
@@ -197,7 +207,7 @@ func (d *EnergyDiarizer) Diarize(ctx context.Context, audio []byte, opts ...Diar
 		windowStart := time.Duration(i/bytesPerSample) * time.Second / time.Duration(o.sampleRate)
 
 		if speaker != currentSpeaker {
-			if currentSpeaker != "" {
+			if currentSpeaker != "" && currentSpeaker != speakerSilence {
 				seg := SpeakerSegment{
 					SpeakerID:  currentSpeaker,
 					Start:      segStart,
@@ -211,12 +221,10 @@ func (d *EnergyDiarizer) Diarize(ctx context.Context, audio []byte, opts ...Diar
 			currentSpeaker = speaker
 			segStart = windowStart
 		}
-
-		_ = windowDuration // used for calculation
 	}
 
-	// Close final segment.
-	if currentSpeaker != "" {
+	// Close final segment. Skip silence — it is not a real speaker.
+	if currentSpeaker != "" && currentSpeaker != speakerSilence {
 		totalDuration := time.Duration(len(audio)/bytesPerSample) * time.Second / time.Duration(o.sampleRate)
 		seg := SpeakerSegment{
 			SpeakerID:  currentSpeaker,
@@ -249,9 +257,11 @@ func assignSpeaker(energy float64, maxSpeakers int) string {
 	if maxSpeakers <= 0 {
 		maxSpeakers = 2
 	}
-	// Simple threshold-based assignment.
+	// Simple threshold-based assignment. Low-energy windows are tagged
+	// with the silence sentinel so the caller can filter them out rather
+	// than emit them as real speaker segments.
 	if energy < 100 {
-		return "silence"
+		return speakerSilence
 	}
 	// Use energy level to assign speakers.
 	speakerIdx := int(energy/10000) % maxSpeakers

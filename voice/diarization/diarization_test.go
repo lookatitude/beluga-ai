@@ -92,6 +92,51 @@ func TestEnergyDiarizer_WithOptions(t *testing.T) {
 	}
 }
 
+func TestEnergyDiarizer_ZeroSampleRateDoesNotPanic(t *testing.T) {
+	// Regression: previously, passing WithSampleRate(0) would leave
+	// o.sampleRate at 0 and cause a divide-by-zero panic in the
+	// per-window offset calculation. It must now fall back safely.
+	d := NewEnergyDiarizer(Config{SampleRate: 16000})
+	audio := make([]byte, 32000)
+	for i := 0; i < len(audio); i += 2 {
+		audio[i] = byte((i / 4000) * 40)
+		audio[i+1] = 0
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("Diarize panicked with WithSampleRate(0): %v", r)
+		}
+	}()
+
+	if _, err := d.Diarize(context.Background(), audio, WithSampleRate(0)); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestEnergyDiarizer_SilenceNotEmittedAsSpeaker(t *testing.T) {
+	// All-zero audio should be treated as silence and produce no
+	// speaker segments — silence is not a speaker.
+	d := NewEnergyDiarizer(Config{
+		MaxSpeakers:        2,
+		MinSegmentDuration: 10 * time.Millisecond,
+		SampleRate:         16000,
+	})
+
+	audio := make([]byte, 32000) // 1s of pure silence
+
+	segments, err := d.Diarize(context.Background(), audio)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	for _, seg := range segments {
+		if seg.SpeakerID == speakerSilence {
+			t.Errorf("silence should not be emitted as a SpeakerSegment, got %+v", seg)
+		}
+	}
+}
+
 func TestSpeakerSegment_Duration(t *testing.T) {
 	seg := SpeakerSegment{
 		Start: 1 * time.Second,
