@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/lookatitude/beluga-ai/llm"
@@ -161,8 +162,13 @@ func (g *ToolGenerator) buildPrompt(req GenerateRequest) string {
 
 	if len(req.InputFields) > 0 {
 		b.WriteString("Input fields:\n")
-		for name, desc := range req.InputFields {
-			b.WriteString(fmt.Sprintf("  - %s: %s\n", name, desc))
+		keys := make([]string, 0, len(req.InputFields))
+		for k := range req.InputFields {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, name := range keys {
+			b.WriteString(fmt.Sprintf("  - %s: %s\n", name, req.InputFields[name]))
 		}
 		b.WriteString("\n")
 	}

@@ -78,14 +78,25 @@ func (vr *VersionedRegistry) Upsert(t tool.Tool) (int, error) {
 			versions: nil,
 			current:  0,
 		}
-		vr.entries[name] = entry
 	}
 
-	// Deactivate current version.
+	// Update inner registry FIRST, before mutating in-memory entry state.
+	// This ensures we can cleanly return an error without leaving the
+	// in-memory view ahead of the inner registry.
+	if exists {
+		_ = vr.inner.Remove(name)
+	}
+	if err := vr.inner.Add(t); err != nil {
+		return 0, fmt.Errorf("versioned registry: failed to add tool %q: %w", name, err)
+	}
+
+	// Inner registry succeeded — now mutate in-memory state.
+	if !exists {
+		vr.entries[name] = entry
+	}
 	if len(entry.versions) > 0 {
 		entry.versions[entry.current].Active = false
 	}
-
 	version := len(entry.versions) + 1
 	record := VersionRecord{
 		Version:   version,
@@ -95,14 +106,6 @@ func (vr *VersionedRegistry) Upsert(t tool.Tool) (int, error) {
 	}
 	entry.versions = append(entry.versions, record)
 	entry.current = len(entry.versions) - 1
-
-	// Update inner registry. Remove first if exists, then add.
-	if exists {
-		_ = vr.inner.Remove(name)
-	}
-	if err := vr.inner.Add(t); err != nil {
-		return 0, fmt.Errorf("versioned registry: failed to add tool %q: %w", name, err)
-	}
 
 	// Fire hook.
 	if vr.hooks.OnVersionActivated != nil {
@@ -128,16 +131,17 @@ func (vr *VersionedRegistry) Activate(name string, version int) error {
 		return fmt.Errorf("versioned registry: version %d not found for tool %q", version, name)
 	}
 
-	// Deactivate current, activate target.
-	entry.versions[entry.current].Active = false
-	entry.versions[idx].Active = true
-	entry.current = idx
-
-	// Update inner registry.
+	// Update inner registry FIRST, before mutating in-memory state, so a
+	// failure leaves the registry consistent.
 	_ = vr.inner.Remove(name)
 	if err := vr.inner.Add(entry.versions[idx].Tool); err != nil {
 		return fmt.Errorf("versioned registry: failed to activate tool %q v%d: %w", name, version, err)
 	}
+
+	// Deactivate current, activate target.
+	entry.versions[entry.current].Active = false
+	entry.versions[idx].Active = true
+	entry.current = idx
 
 	if vr.hooks.OnVersionActivated != nil {
 		vr.hooks.OnVersionActivated(name, version)
@@ -150,26 +154,33 @@ func (vr *VersionedRegistry) Activate(name string, version int) error {
 // if there is no previous version or the tool does not exist.
 func (vr *VersionedRegistry) Rollback(name string) (int, error) {
 	vr.mu.Lock()
+	defer vr.mu.Unlock()
 
 	entry, exists := vr.entries[name]
 	if !exists {
-		vr.mu.Unlock()
 		return 0, fmt.Errorf("versioned registry: tool %q not found", name)
 	}
-
 	if entry.current == 0 {
-		vr.mu.Unlock()
 		return 0, fmt.Errorf("versioned registry: no previous version for tool %q", name)
 	}
 
-	prevVersion := entry.versions[entry.current-1].Version
-	vr.mu.Unlock()
+	idx := entry.current - 1
+	prevVersion := entry.versions[idx].Version
 
-	// Use Activate which acquires the lock.
-	if err := vr.Activate(name, prevVersion); err != nil {
-		return 0, err
+	// Update inner registry FIRST, before mutating in-memory state, so a
+	// failure leaves the registry consistent.
+	_ = vr.inner.Remove(name)
+	if err := vr.inner.Add(entry.versions[idx].Tool); err != nil {
+		return 0, fmt.Errorf("versioned registry: failed to rollback tool %q: %w", name, err)
 	}
 
+	entry.versions[entry.current].Active = false
+	entry.versions[idx].Active = true
+	entry.current = idx
+
+	if vr.hooks.OnVersionActivated != nil {
+		vr.hooks.OnVersionActivated(name, prevVersion)
+	}
 	return prevVersion, nil
 }
 
