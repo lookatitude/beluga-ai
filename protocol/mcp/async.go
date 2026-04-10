@@ -134,7 +134,10 @@ func (h *InMemoryAsyncHandler) Start(ctx context.Context, fn func(ctx context.Co
 		return "", fmt.Errorf("mcp/async: maximum operations (%d) exceeded", h.maxOps)
 	}
 
-	opCtx, cancel := context.WithTimeout(ctx, h.timeout)
+	// The cancel function is stored on the asyncEntry and invoked via run()
+	// when the operation completes (deferred) or via Cancel(). Static analysis
+	// (gosec G307) cannot follow the closure into the struct field.
+	opCtx, cancel := context.WithTimeout(ctx, h.timeout) //#nosec G307 -- cancel is stored in entry and always invoked
 	now := time.Now()
 
 	entry := &asyncEntry{
