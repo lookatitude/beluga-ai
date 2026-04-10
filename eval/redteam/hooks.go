@@ -4,6 +4,12 @@ import "context"
 
 // Hooks provides optional callback functions invoked during a red team exercise.
 // All fields are optional; nil hooks are skipped.
+//
+// Concurrency: when the runner is configured with WithParallel(n) where n > 1,
+// hook functions may be invoked concurrently from multiple goroutines. Any
+// shared state touched by a hook must be protected with appropriate
+// synchronisation (sync.Mutex, atomic, etc.). The runner itself holds no
+// locks while dispatching hooks.
 type Hooks struct {
 	// BeforeAttack is called before each attack prompt is sent to the target agent.
 	BeforeAttack func(ctx context.Context, category AttackCategory, prompt string) error

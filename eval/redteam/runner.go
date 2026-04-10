@@ -201,7 +201,22 @@ func (r *RedTeamRunner) executeAttacks(ctx context.Context, attacks []attackItem
 		}
 
 		wg.Add(1)
-		sem <- struct{}{}
+		select {
+		case sem <- struct{}{}:
+		case <-ctx.Done():
+			wg.Done()
+			for j := i; j < len(attacks); j++ {
+				results[j] = AttackResult{
+					Category: attacks[j].category,
+					Prompt:   attacks[j].prompt,
+					Success:  false,
+					Severity: SeverityLow,
+					Details:  "skipped: context cancelled",
+				}
+			}
+			wg.Wait()
+			return results
+		}
 
 		go func(idx int, item attackItem) {
 			defer wg.Done()
