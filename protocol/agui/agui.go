@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"iter"
+	"log/slog"
 	"net/http"
 	"sort"
 	"strings"
@@ -110,8 +111,16 @@ func (h *DefaultHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	switch {
 	case path == h.opts.basePath+"/agents" || path == h.opts.basePath+"/agents/":
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
 		h.handleAgents(w, r)
 	case path == h.opts.basePath+"/manifest" || path == h.opts.basePath+"/manifest/":
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
 		h.handleManifest(w, r)
 	case strings.HasPrefix(path, h.opts.basePath+"/chat/"):
 		h.handleChat(w, r)
@@ -123,16 +132,27 @@ func (h *DefaultHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *DefaultHandler) handleAgents(w http.ResponseWriter, _ *http.Request) {
 	manifest := h.buildManifest()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(manifest.Agents)
+	if err := json.NewEncoder(w).Encode(manifest.Agents); err != nil {
+		slog.Error("agui: encode agents", "err", err)
+	}
 }
 
 func (h *DefaultHandler) handleManifest(w http.ResponseWriter, _ *http.Request) {
 	manifest := h.buildManifest()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(manifest)
+	if err := json.NewEncoder(w).Encode(manifest); err != nil {
+		slog.Error("agui: encode manifest", "err", err)
+	}
 }
 
 func (h *DefaultHandler) handleChat(w http.ResponseWriter, r *http.Request) {
+	// Method check before agent lookup: avoids leaking whether an agent
+	// exists via the 405 vs 404 response difference.
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	// Extract agent ID from path: /agui/chat/{agentID}
 	parts := strings.Split(strings.TrimPrefix(r.URL.Path, h.opts.basePath+"/chat/"), "/")
 	if len(parts) == 0 || parts[0] == "" {
@@ -150,11 +170,6 @@ func (h *DefaultHandler) handleChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var req struct {
 		Input string `json:"input"`
 	}
@@ -168,20 +183,28 @@ func (h *DefaultHandler) handleChat(w http.ResponseWriter, r *http.Request) {
 		// Fall back to non-streaming.
 		result, err := a.Invoke(r.Context(), req.Input)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			// Do not leak provider error details to clients; log server-side.
+			slog.Error("agui: agent invoke failed", "agent_id", agentID, "err", err)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"result": result})
+		if err := json.NewEncoder(w).Encode(map[string]string{"result": result}); err != nil {
+			slog.Error("agui: encode chat response", "agent_id", agentID, "err", err)
+		}
 		return
 	}
 
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
 
 	for evt, err := range a.Stream(r.Context(), req.Input) {
 		if err != nil {
-			data, _ := json.Marshal(UIEvent{Type: "error", AgentID: agentID, Data: err.Error(), Timestamp: time.Now()})
+			// Log detailed error server-side; send sanitized message to client.
+			slog.Error("agui: agent stream failed", "agent_id", agentID, "err", err)
+			data, _ := json.Marshal(UIEvent{Type: "error", AgentID: agentID, Data: "internal server error", Timestamp: time.Now()})
 			fmt.Fprintf(w, "data: %s\n\n", data)
 			flusher.Flush()
 			return
