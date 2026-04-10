@@ -24,6 +24,7 @@ type PrivilegeEscalationGuard struct {
 	agentPerms    map[string]map[string]bool // agent -> set of permissions
 	blockedAgents map[string]bool
 	requireSubset bool // enforce permission intersection on delegation
+	strictMode    bool // reject handoffs involving agents with no registered permissions
 }
 
 // EscalationOption configures a PrivilegeEscalationGuard.
@@ -65,6 +66,16 @@ func WithBlockedAgents(agents ...string) EscalationOption {
 func WithPermissionSubsetEnforcement(enabled bool) EscalationOption {
 	return func(g *PrivilegeEscalationGuard) {
 		g.requireSubset = enabled
+	}
+}
+
+// WithStrictMode causes permission-subset enforcement to reject handoffs when
+// either the source or target agent has no registered permission set. Without
+// strict mode, the guard fails open when permission metadata is missing, which
+// can silently disable protection for newly introduced agents.
+func WithStrictMode(enabled bool) EscalationOption {
+	return func(g *PrivilegeEscalationGuard) {
+		g.strictMode = enabled
 	}
 }
 
@@ -146,12 +157,27 @@ func (g *PrivilegeEscalationGuard) Validate(ctx context.Context, input guard.Gua
 
 // checkPermissionSubset verifies that the target agent's permissions are a
 // subset of the source agent's permissions. If either agent has no registered
-// permissions, the check passes (no restriction).
+// permissions and strict mode is disabled, the check passes (no restriction).
+// In strict mode, missing permission metadata causes the handoff to be
+// rejected so newly introduced agents cannot silently bypass protection.
 func (g *PrivilegeEscalationGuard) checkPermissionSubset(source, target string) (bool, string) {
 	sourcePerms, sourceOK := g.agentPerms[source]
 	targetPerms, targetOK := g.agentPerms[target]
 
 	if !sourceOK || !targetOK {
+		if g.strictMode {
+			missing := make([]string, 0, 2)
+			if !sourceOK {
+				missing = append(missing, source)
+			}
+			if !targetOK {
+				missing = append(missing, target)
+			}
+			return true, fmt.Sprintf(
+				"strict mode: no registered permissions for agent(s) [%s]",
+				strings.Join(missing, ", "),
+			)
+		}
 		// Cannot validate without permission data -- allow by default.
 		return false, ""
 	}

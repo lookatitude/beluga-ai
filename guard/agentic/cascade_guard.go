@@ -26,6 +26,10 @@ type CascadeGuard struct {
 	maxDepth      int
 	maxIterations int
 	maxTokens     int64
+	// accumulateTokens, when true, adds per-call token counts to the running
+	// total for a chain rather than replacing the stored value. Defaults to
+	// false, in which case callers are expected to pass the running total.
+	accumulateTokens bool
 
 	mu         sync.Mutex
 	depths     map[string]int   // chain_id -> current depth
@@ -71,6 +75,16 @@ func WithMaxTokenBudget(tokens int64) CascadeOption {
 	}
 }
 
+// WithTokenAccumulation enables automatic accumulation of per-call token
+// counts into the chain running total. When disabled (the default), the
+// caller is responsible for passing the running total in each call and the
+// stored value is replaced each time.
+func WithTokenAccumulation(enabled bool) CascadeOption {
+	return func(g *CascadeGuard) {
+		g.accumulateTokens = enabled
+	}
+}
+
 // WithFailureThreshold sets the number of consecutive limit violations
 // before the circuit breaker opens for a chain. Default is 3.
 func WithFailureThreshold(n int) CascadeOption {
@@ -111,7 +125,8 @@ func (g *CascadeGuard) Name() string {
 //   - "chain_id": string    -- unique identifier for the agent chain
 //   - "depth": int          -- current recursion depth
 //   - "iteration": int      -- current iteration count
-//   - "tokens_used": int64  -- tokens consumed so far in this chain
+//   - "tokens_used": int64  -- tokens consumed (see WithTokenAccumulation for
+//     whether this is treated as a running total or a per-call delta)
 func (g *CascadeGuard) Validate(ctx context.Context, input guard.GuardInput) (guard.GuardResult, error) {
 	select {
 	case <-ctx.Done():
@@ -172,7 +187,11 @@ func (g *CascadeGuard) Validate(ctx context.Context, input guard.GuardInput) (gu
 	// Track token budget.
 	tokensUsed := toInt64(input.Metadata["tokens_used"])
 	if tokensUsed > 0 {
-		g.tokens[chainID] = tokensUsed
+		if g.accumulateTokens {
+			g.tokens[chainID] += tokensUsed
+		} else {
+			g.tokens[chainID] = tokensUsed
+		}
 	}
 	currentTokens := g.tokens[chainID]
 	if currentTokens > g.maxTokens {
