@@ -1,5 +1,10 @@
 package degradation
 
+import (
+	"log/slog"
+	"sort"
+)
+
 // DegradationPolicy evaluates a severity score and determines the
 // appropriate autonomy level for agent operation.
 type DegradationPolicy interface {
@@ -18,6 +23,12 @@ var DefaultThresholds = LevelThresholds{
 // LevelThresholds maps each degraded autonomy level to the minimum severity
 // score that triggers it. The Full level is implicit when severity is below
 // the Restricted threshold.
+//
+// Thresholds must be monotonically non-decreasing:
+//
+//	0 <= Restricted <= ReadOnly <= Sequestered <= 1
+//
+// NewThresholdPolicy validates this invariant at construction time.
 type LevelThresholds struct {
 	// Restricted is the minimum severity to enter restricted mode.
 	Restricted float64
@@ -50,6 +61,13 @@ func WithLevelThresholds(t LevelThresholds) PolicyOption {
 
 // NewThresholdPolicy creates a ThresholdPolicy with the given options.
 // Without options, DefaultThresholds are used.
+//
+// Thresholds are normalised at construction time: values outside [0,1] are
+// clamped, and non-monotonic configurations (e.g. Restricted=0.8,
+// ReadOnly=0.3) are sorted into ascending order so that Evaluate always
+// tests thresholds in a well-defined sequence. A warning is logged when
+// normalisation adjusts the provided values so misconfiguration is visible
+// without breaking callers.
 func NewThresholdPolicy(opts ...PolicyOption) *ThresholdPolicy {
 	p := &ThresholdPolicy{
 		thresholds: DefaultThresholds,
@@ -57,7 +75,38 @@ func NewThresholdPolicy(opts ...PolicyOption) *ThresholdPolicy {
 	for _, opt := range opts {
 		opt(p)
 	}
+	p.thresholds = normalizeThresholds(p.thresholds)
 	return p
+}
+
+// normalizeThresholds clamps values to [0,1] and sorts them into ascending
+// order so that the invariant Restricted <= ReadOnly <= Sequestered holds
+// regardless of how the LevelThresholds struct was populated.
+func normalizeThresholds(t LevelThresholds) LevelThresholds {
+	orig := t
+	clamp := func(v float64) float64 {
+		if v < 0 {
+			return 0
+		}
+		if v > 1 {
+			return 1
+		}
+		return v
+	}
+	values := []float64{clamp(t.Restricted), clamp(t.ReadOnly), clamp(t.Sequestered)}
+	sort.Float64s(values)
+	normalized := LevelThresholds{
+		Restricted:  values[0],
+		ReadOnly:    values[1],
+		Sequestered: values[2],
+	}
+	if normalized != orig {
+		slog.Default().Warn("degradation: threshold configuration normalized",
+			"original", orig,
+			"normalized", normalized,
+		)
+	}
+	return normalized
 }
 
 // Evaluate returns the autonomy level corresponding to the given severity

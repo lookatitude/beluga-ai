@@ -128,6 +128,10 @@ func (m *SecurityMonitor) RecordEvent(_ context.Context, event SecurityEvent) {
 // with newer events weighted more heavily via linear decay. The result is
 // clamped to [0.0, 1.0].
 func (m *SecurityMonitor) CurrentSeverity() float64 {
+	m.mu.Lock()
+	m.pruneExpiredLocked()
+	m.mu.Unlock()
+
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -154,20 +158,14 @@ func (m *SecurityMonitor) CurrentSeverity() float64 {
 	return total
 }
 
-// EventCount returns the number of events currently in the window.
+// EventCount returns the number of events currently in the window. Expired
+// events are pruned on read so a burst of events followed by a quiet period
+// does not retain unbounded memory.
 func (m *SecurityMonitor) EventCount() int {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	now := m.nowFunc()
-	cutoff := now.Add(-m.windowSize)
-	count := 0
-	for _, e := range m.events {
-		if !e.Timestamp.Before(cutoff) {
-			count++
-		}
-	}
-	return count
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.pruneExpiredLocked()
+	return len(m.events)
 }
 
 // Reset clears all recorded events.

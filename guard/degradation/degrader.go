@@ -90,6 +90,17 @@ func (d *RuntimeDegrader) CurrentLevel() AutonomyLevel {
 	return d.level
 }
 
+// RecordEvent forwards a security event to the underlying monitor and fires
+// the OnAnomalyDetected hook so SIEM and alerting integrations can observe
+// the event in real time. Callers that previously talked directly to the
+// monitor should prefer this wrapper so hooks are consistently delivered.
+func (d *RuntimeDegrader) RecordEvent(ctx context.Context, event SecurityEvent) {
+	d.monitor.RecordEvent(ctx, event)
+	if d.hooks.OnAnomalyDetected != nil {
+		d.hooks.OnAnomalyDetected(ctx, event)
+	}
+}
+
 // Evaluate queries the monitor and policy, updates the current level, and
 // fires hooks if the level changed. It returns the new level.
 func (d *RuntimeDegrader) Evaluate(ctx context.Context) AutonomyLevel {
@@ -146,6 +157,13 @@ func (a *degradedAgent) ID() string { return a.inner.ID() }
 func (a *degradedAgent) Persona() agent.Persona { return a.inner.Persona() }
 
 // Tools returns the tools available under the current autonomy level.
+//
+// agent.Agent.Tools() has no context parameter, so Evaluate is called with
+// context.Background() here. This means any OnLevelChanged / OnRecovery hooks
+// that fire inside Tools() receive an empty context: no tracing span, no
+// tenant ID, and no cancellation. Callers that need hooks with a populated
+// context should invoke RuntimeDegrader.Evaluate(ctx) directly with their
+// request context before calling Tools().
 func (a *degradedAgent) Tools() []tool.Tool {
 	level := a.degrader.Evaluate(context.Background())
 	caps := LevelCapabilities(level)
