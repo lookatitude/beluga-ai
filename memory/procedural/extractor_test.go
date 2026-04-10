@@ -44,7 +44,8 @@ func TestLLMExtractor_Extract(t *testing.T) {
 		model := &mockLLM{
 			response: `{"name":"deploy-service","description":"Deploy a microservice","steps":["build image","push to registry","apply manifests"],"triggers":["deploy","release"],"tags":["devops"],"confidence":0.85}`,
 		}
-		ext := NewLLMExtractor(model)
+		ext, err := NewLLMExtractor(model)
+		require.NoError(t, err)
 
 		skill, err := ext.Extract(ctx, "deploy the user service", "deployed successfully", nil)
 		require.NoError(t, err)
@@ -59,7 +60,8 @@ func TestLLMExtractor_Extract(t *testing.T) {
 
 	t.Run("returns nil for empty response", func(t *testing.T) {
 		model := &mockLLM{response: ""}
-		ext := NewLLMExtractor(model)
+		ext, err := NewLLMExtractor(model)
+		require.NoError(t, err)
 
 		skill, err := ext.Extract(ctx, "input", "output", nil)
 		require.NoError(t, err)
@@ -68,7 +70,8 @@ func TestLLMExtractor_Extract(t *testing.T) {
 
 	t.Run("returns nil for empty skill name", func(t *testing.T) {
 		model := &mockLLM{response: `{"name":"","description":"something"}`}
-		ext := NewLLMExtractor(model)
+		ext, err := NewLLMExtractor(model)
+		require.NoError(t, err)
 
 		skill, err := ext.Extract(ctx, "input", "output", nil)
 		require.NoError(t, err)
@@ -77,7 +80,8 @@ func TestLLMExtractor_Extract(t *testing.T) {
 
 	t.Run("returns error on LLM failure", func(t *testing.T) {
 		model := &mockLLM{err: errors.New("api error")}
-		ext := NewLLMExtractor(model)
+		ext, err := NewLLMExtractor(model)
+		require.NoError(t, err)
 
 		skill, err := ext.Extract(ctx, "input", "output", nil)
 		require.Error(t, err)
@@ -87,7 +91,8 @@ func TestLLMExtractor_Extract(t *testing.T) {
 
 	t.Run("returns error on invalid JSON", func(t *testing.T) {
 		model := &mockLLM{response: "not valid json"}
-		ext := NewLLMExtractor(model)
+		ext, err := NewLLMExtractor(model)
+		require.NoError(t, err)
 
 		skill, err := ext.Extract(ctx, "input", "output", nil)
 		require.Error(t, err)
@@ -99,7 +104,8 @@ func TestLLMExtractor_Extract(t *testing.T) {
 		model := &mockLLM{
 			response: `{"name":"test","description":"test","steps":["step1"],"triggers":["trigger"],"confidence":0.9}`,
 		}
-		ext := NewLLMExtractor(model)
+		ext, err := NewLLMExtractor(model)
+		require.NoError(t, err)
 
 		meta := map[string]any{"task_type": "deployment", "success": true}
 		skill, err := ext.Extract(ctx, "input", "output", meta)
@@ -110,7 +116,8 @@ func TestLLMExtractor_Extract(t *testing.T) {
 
 	t.Run("returns empty object as nil", func(t *testing.T) {
 		model := &mockLLM{response: `{}`}
-		ext := NewLLMExtractor(model)
+		ext, err := NewLLMExtractor(model)
+		require.NoError(t, err)
 
 		skill, err := ext.Extract(ctx, "input", "output", nil)
 		require.NoError(t, err)
@@ -118,10 +125,11 @@ func TestLLMExtractor_Extract(t *testing.T) {
 	})
 }
 
-func TestNewLLMExtractor_PanicOnNil(t *testing.T) {
-	assert.Panics(t, func() {
-		NewLLMExtractor(nil)
-	})
+func TestNewLLMExtractor_NilModel(t *testing.T) {
+	ext, err := NewLLMExtractor(nil)
+	require.Error(t, err)
+	assert.Nil(t, ext)
+	assert.Contains(t, err.Error(), "must not be nil")
 }
 
 func TestBuildExtractionPrompt(t *testing.T) {
