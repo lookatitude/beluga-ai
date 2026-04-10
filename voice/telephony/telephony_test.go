@@ -43,46 +43,6 @@ func TestPrefixRouter(t *testing.T) {
 	}
 }
 
-func TestInMemoryEndpoint(t *testing.T) {
-	ctx := context.Background()
-	ep := NewInMemoryEndpoint()
-
-	// Initially disconnected.
-	status, err := ep.Status(ctx)
-	if err != nil {
-		t.Fatalf("Status: %v", err)
-	}
-	if status.Connected {
-		t.Error("expected disconnected initially")
-	}
-
-	// Connect.
-	if err := ep.Connect(ctx); err != nil {
-		t.Fatalf("Connect: %v", err)
-	}
-
-	status, err = ep.Status(ctx)
-	if err != nil {
-		t.Fatalf("Status: %v", err)
-	}
-	if !status.Connected {
-		t.Error("expected connected after Connect")
-	}
-
-	// Disconnect.
-	if err := ep.Disconnect(ctx); err != nil {
-		t.Fatalf("Disconnect: %v", err)
-	}
-
-	status, err = ep.Status(ctx)
-	if err != nil {
-		t.Fatalf("Status: %v", err)
-	}
-	if status.Connected {
-		t.Error("expected disconnected after Disconnect")
-	}
-}
-
 func TestCallTypes(t *testing.T) {
 	call := Call{
 		ID:        "call-1",
@@ -108,26 +68,67 @@ func TestCallTypes(t *testing.T) {
 	}
 }
 
+// stubProvider is a minimal TelephonyProvider used to observe Config values
+// passed into factories during registry tests.
+type stubProvider struct {
+	cfg Config
+}
+
+func (s *stubProvider) PlaceCall(_ context.Context, _ CallRequest) (*Call, error) {
+	return &Call{ID: "stub"}, nil
+}
+func (s *stubProvider) HangUp(_ context.Context, _ string) error { return nil }
+
+// registerForTest inserts a factory into the registry without going through
+// Register, so tests can manipulate the registry after FreezeRegistry may have
+// been called elsewhere in the test run.
+func registerForTest(name string, f Factory) {
+	registryMu.Lock()
+	defer registryMu.Unlock()
+	registry[name] = f
+}
+
 func TestRegistry(t *testing.T) {
-	// Register a test provider.
-	Register("test", func(cfg Config) (TelephonyProvider, error) {
-		return nil, nil
+	registerForTest("test-registry", func(cfg Config) (TelephonyProvider, error) {
+		return &stubProvider{cfg: cfg}, nil
 	})
 
 	names := List()
 	found := false
 	for _, n := range names {
-		if n == "test" {
+		if n == "test-registry" {
 			found = true
 		}
 	}
 	if !found {
-		t.Error("expected 'test' in registry")
+		t.Error("expected 'test-registry' in registry")
 	}
 
 	_, err := New("nonexistent", Config{})
 	if err == nil {
 		t.Error("expected error for unknown provider")
+	}
+}
+
+func TestNewAppliesOptions(t *testing.T) {
+	var captured Config
+	registerForTest("test-opts", func(cfg Config) (TelephonyProvider, error) {
+		captured = cfg
+		return &stubProvider{cfg: cfg}, nil
+	})
+
+	_, err := New("test-opts", Config{MaxConcurrentCalls: 1, DefaultTimeout: time.Second},
+		WithMaxConcurrentCalls(10),
+		WithDefaultTimeout(45*time.Second),
+	)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if captured.MaxConcurrentCalls != 10 {
+		t.Errorf("MaxConcurrentCalls = %d, want 10", captured.MaxConcurrentCalls)
+	}
+	if captured.DefaultTimeout != 45*time.Second {
+		t.Errorf("DefaultTimeout = %v, want 45s", captured.DefaultTimeout)
 	}
 }
 
@@ -142,4 +143,40 @@ func TestOptions(t *testing.T) {
 	if opts.defaultTimeout != 30*time.Second {
 		t.Errorf("defaultTimeout = %v, want 30s", opts.defaultTimeout)
 	}
+}
+
+func TestRegisterValidation(t *testing.T) {
+	// Empty name panics.
+	func() {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Error("expected panic for empty name")
+			}
+		}()
+		Register("", func(Config) (TelephonyProvider, error) { return nil, nil })
+	}()
+
+	// Nil factory panics.
+	func() {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Error("expected panic for nil factory")
+			}
+		}()
+		Register("nil-factory", nil)
+	}()
+}
+
+func TestFreezeRegistryBlocksRegister(t *testing.T) {
+	// Save and restore global state so this test doesn't affect others.
+	prev := registryHot.Load()
+	defer registryHot.Store(prev)
+
+	FreezeRegistry()
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected panic after FreezeRegistry")
+		}
+	}()
+	Register("after-freeze", func(Config) (TelephonyProvider, error) { return nil, nil })
 }

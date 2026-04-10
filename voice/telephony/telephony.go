@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -131,26 +132,61 @@ type Config struct {
 	DefaultTimeout time.Duration
 }
 
+// applyOptions applies functional options to the Config, overriding any
+// previously set values. Options take precedence over fields already present
+// in the Config struct.
+func (c *Config) applyOptions(opts ...Option) {
+	po := providerOptions{
+		maxConcurrentCalls: c.MaxConcurrentCalls,
+		defaultTimeout:     c.DefaultTimeout,
+	}
+	for _, opt := range opts {
+		opt(&po)
+	}
+	c.MaxConcurrentCalls = po.maxConcurrentCalls
+	c.DefaultTimeout = po.defaultTimeout
+}
+
 var (
-	registryMu sync.RWMutex
-	registry   = make(map[string]Factory)
+	registryMu  sync.RWMutex
+	registry    = make(map[string]Factory)
+	registryHot atomic.Bool // set true after init phase; guards runtime mutation.
 )
 
-// Register adds a telephony provider factory to the global registry.
+// FreezeRegistry marks the registry as frozen, rejecting any further Register
+// calls. Intended to be called once after all init() blocks have run (for
+// example, from main()). This enforces the "registration only in init()" rule
+// at runtime for long-running processes.
+func FreezeRegistry() { registryHot.Store(true) }
+
+// Register adds a telephony provider factory to the global registry. It must
+// only be called from package init() functions. Calling Register after
+// FreezeRegistry will panic.
 func Register(name string, f Factory) {
+	if registryHot.Load() {
+		panic(fmt.Sprintf("telephony: Register(%q) called after registry was frozen; registration must happen in init()", name))
+	}
+	if name == "" {
+		panic("telephony: Register called with empty name")
+	}
+	if f == nil {
+		panic(fmt.Sprintf("telephony: Register(%q) called with nil factory", name))
+	}
 	registryMu.Lock()
 	defer registryMu.Unlock()
 	registry[name] = f
 }
 
-// New creates a TelephonyProvider by name from the registry.
-func New(name string, cfg Config) (TelephonyProvider, error) {
+// New creates a TelephonyProvider by name from the registry. Optional functional
+// options are applied on top of the provided Config before the factory runs.
+func New(name string, cfg Config, opts ...Option) (TelephonyProvider, error) {
 	registryMu.RLock()
 	f, ok := registry[name]
 	registryMu.RUnlock()
 	if !ok {
 		return nil, fmt.Errorf("telephony: unknown provider %q (registered: %v)", name, List())
 	}
+	cfg.applyOptions(opts...)
 	return f(cfg)
 }
 
@@ -212,44 +248,4 @@ func (r *PrefixRouter) Route(_ context.Context, call IncomingCall) (CallAction, 
 		return bestMatch.action, nil
 	}
 	return r.defAct, nil
-}
-
-// InMemoryEndpoint is a test implementation of SIPEndpoint.
-type InMemoryEndpoint struct {
-	mu        sync.Mutex
-	connected bool
-	calls     int
-}
-
-var _ SIPEndpoint = (*InMemoryEndpoint)(nil)
-
-// NewInMemoryEndpoint creates an in-memory SIP endpoint for testing.
-func NewInMemoryEndpoint() *InMemoryEndpoint {
-	return &InMemoryEndpoint{}
-}
-
-// Connect marks the endpoint as connected.
-func (e *InMemoryEndpoint) Connect(_ context.Context) error {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	e.connected = true
-	return nil
-}
-
-// Disconnect marks the endpoint as disconnected.
-func (e *InMemoryEndpoint) Disconnect(_ context.Context) error {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	e.connected = false
-	return nil
-}
-
-// Status returns the endpoint status.
-func (e *InMemoryEndpoint) Status(_ context.Context) (EndpointStatus, error) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	return EndpointStatus{
-		Connected:   e.connected,
-		ActiveCalls: e.calls,
-	}, nil
 }
