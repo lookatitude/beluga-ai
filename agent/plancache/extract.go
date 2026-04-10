@@ -24,6 +24,7 @@ func ExtractTemplate(agentID, input string, actions []agent.Action, keywordExtra
 		}
 		if a.ToolCall != nil {
 			ta.ToolName = a.ToolCall.Name
+			ta.Arguments = a.ToolCall.Arguments
 		}
 		if a.Type == agent.ActionRespond || a.Type == agent.ActionFinish {
 			ta.Description = truncateDescription(a.Message, 100)

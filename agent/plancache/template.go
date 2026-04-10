@@ -44,14 +44,19 @@ type Template struct {
 }
 
 // TemplateAction describes a single step in a cached plan. It records the
-// action type and tool name but discards argument values to allow reuse
-// across similar inputs.
+// action type, tool name and the original argument payload. Arguments are
+// preserved so executors can directly run cached plans without needing to
+// re-derive tool inputs.
 type TemplateAction struct {
 	// Type is the kind of action (tool, respond, finish, handoff).
 	Type agent.ActionType
 
 	// ToolName is the name of the tool for tool actions. Empty for non-tool actions.
 	ToolName string
+
+	// Arguments is the JSON-encoded tool arguments captured when the template
+	// was extracted. Empty for non-tool actions.
+	Arguments string
 
 	// Description is an optional human-readable description of the action.
 	Description string
