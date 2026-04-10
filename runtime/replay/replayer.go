@@ -145,14 +145,19 @@ func (r *Replayer) Replay(ctx context.Context, cp *Checkpoint, responses Respons
 				fmt.Sprintf("no response for turn %d", turnIdx), err)
 		}
 
-		turnCtx := ctx
-		if r.opts.turnTimeout > 0 {
-			var cancel context.CancelFunc
-			turnCtx, cancel = context.WithTimeout(ctx, r.opts.turnTimeout)
-			defer cancel()
-		}
-
-		events, err := r.opts.processor(turnCtx, state, cp.Turns[turnIdx].Input, response)
+		// Run the processor in a closure so any per-turn context is cancelled
+		// eagerly at the end of each iteration (avoiding resource accumulation
+		// that would occur if defer cancel() were used inside the loop) while
+		// still guaranteeing cancellation on panic via defer.
+		events, err := func() ([]schema.AgentEvent, error) {
+			turnCtx := ctx
+			if r.opts.turnTimeout > 0 {
+				var cancel context.CancelFunc
+				turnCtx, cancel = context.WithTimeout(ctx, r.opts.turnTimeout)
+				defer cancel()
+			}
+			return r.opts.processor(turnCtx, state, cp.Turns[turnIdx].Input, response)
+		}()
 		if err != nil {
 			return nil, core.NewError("replay.replay", core.ErrToolFailed,
 				fmt.Sprintf("turn processor failed at turn %d", turnIdx), err)
