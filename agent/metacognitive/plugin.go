@@ -18,6 +18,11 @@ const DefaultMaxHeuristics = 5
 // capability score updates. Higher values weight recent observations more.
 const DefaultEMAAlpha = 0.3
 
+// DefaultMaxStoredHeuristics is the default upper bound on the total
+// heuristics persisted per self-model. When exceeded, the lowest-utility
+// heuristics are pruned. Set via WithMaxStoredHeuristics.
+const DefaultMaxStoredHeuristics = 200
+
 // Compile-time check.
 var _ runtime.Plugin = (*Plugin)(nil)
 
@@ -25,11 +30,12 @@ var _ runtime.Plugin = (*Plugin)(nil)
 // learning. It loads relevant heuristics before each turn, injects them as
 // system context, and extracts new heuristics after each turn.
 type Plugin struct {
-	store         SelfModelStore
-	extractor     HeuristicExtractor
-	maxHeuristics int
-	emaAlpha      float64
-	hooks         Hooks
+	store               SelfModelStore
+	extractor           HeuristicExtractor
+	maxHeuristics       int
+	maxStoredHeuristics int
+	emaAlpha            float64
+	hooks               Hooks
 
 	// monitor collects signals from agent hooks during execution.
 	monitor *Monitor
@@ -74,14 +80,26 @@ func WithHooks(h Hooks) PluginOption {
 	}
 }
 
+// WithMaxStoredHeuristics caps the number of heuristics persisted per
+// self-model. When AfterTurn causes the total to exceed this value, the
+// lowest-utility heuristics are pruned. Defaults to DefaultMaxStoredHeuristics.
+func WithMaxStoredHeuristics(n int) PluginOption {
+	return func(p *Plugin) {
+		if n > 0 {
+			p.maxStoredHeuristics = n
+		}
+	}
+}
+
 // NewPlugin creates a MetacognitivePlugin with the given store and options.
 func NewPlugin(store SelfModelStore, opts ...PluginOption) *Plugin {
 	p := &Plugin{
-		store:         store,
-		extractor:     NewSimpleExtractor(),
-		maxHeuristics: DefaultMaxHeuristics,
-		emaAlpha:      DefaultEMAAlpha,
-		monitor:       NewMonitor(),
+		store:               store,
+		extractor:           NewSimpleExtractor(),
+		maxHeuristics:       DefaultMaxHeuristics,
+		maxStoredHeuristics: DefaultMaxStoredHeuristics,
+		emaAlpha:            DefaultEMAAlpha,
+		monitor:             NewMonitor(),
 	}
 	for _, opt := range opts {
 		opt(p)
@@ -134,7 +152,7 @@ func (p *Plugin) BeforeTurn(ctx context.Context, session *runtime.Session, input
 	}
 
 	// Build metacognitive context message.
-	context := buildHeuristicContext(heuristics)
+	heuristicCtx := buildHeuristicContext(heuristics)
 
 	// Store the context in session state so AfterTurn can read it.
 	if session.State == nil {
@@ -142,17 +160,14 @@ func (p *Plugin) BeforeTurn(ctx context.Context, session *runtime.Session, input
 	}
 	session.State["metacognitive.input"] = query
 	session.State["metacognitive.model_loaded"] = true
+	session.State["metacognitive.context"] = heuristicCtx
 
-	// Prepend system message with heuristics. We return the original input
-	// unchanged and store context in session state. The actual injection
-	// would happen at the agent level if the plugin had message-list access.
-	// Since Plugin.BeforeTurn receives a single message, we augment the
-	// session state for the agent to read. For systems that support it, we
-	// wrap the message with a system prefix.
-	_ = context // Store in session for agent retrieval.
-	session.State["metacognitive.context"] = context
-
-	return input, nil
+	// Prepend the heuristic context to the user message so the LLM actually
+	// sees the learned heuristics. Preserves the original user text verbatim
+	// after a newline separator.
+	originalText := extractTextFromMessage(input)
+	augmented := schema.NewHumanMessage(heuristicCtx + "\n" + originalText)
+	return augmented, nil
 }
 
 // AfterTurn collects monitoring signals, extracts new heuristics, updates
@@ -198,6 +213,12 @@ func (p *Plugin) AfterTurn(ctx context.Context, session *runtime.Session, events
 		if p.hooks.OnHeuristicExtracted != nil {
 			p.hooks.OnHeuristicExtracted(h)
 		}
+	}
+
+	// Prune stored heuristics to stay within the configured cap. Keeping the
+	// highest-utility entries bounds SearchHeuristics scan cost and memory.
+	if p.maxStoredHeuristics > 0 && len(model.Heuristics) > p.maxStoredHeuristics {
+		pruneHeuristicsByUtility(model, p.maxStoredHeuristics)
 	}
 
 	// Update capability scores.
@@ -275,6 +296,27 @@ func extractTextFromMessage(msg schema.Message) string {
 		}
 	}
 	return strings.Join(texts, " ")
+}
+
+// pruneHeuristicsByUtility trims the model's heuristics slice to the top
+// maxStored entries by Utility (descending).
+func pruneHeuristicsByUtility(model *SelfModel, maxStored int) {
+	// Use a simple in-place selection to avoid importing sort here; caller
+	// invokes this only on the pruning boundary.
+	hs := model.Heuristics
+	// Partial sort: bubble the top maxStored by utility to the front.
+	for i := 0; i < maxStored && i < len(hs); i++ {
+		best := i
+		for j := i + 1; j < len(hs); j++ {
+			if hs[j].Utility > hs[best].Utility {
+				best = j
+			}
+		}
+		if best != i {
+			hs[i], hs[best] = hs[best], hs[i]
+		}
+	}
+	model.Heuristics = hs[:maxStored]
 }
 
 // buildHeuristicContext formats heuristics as a system context string.

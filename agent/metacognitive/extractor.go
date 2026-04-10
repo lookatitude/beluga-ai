@@ -157,13 +157,62 @@ func normalizeError(errMsg string) string {
 	return lower
 }
 
-// summarizeError truncates an error message to a reasonable length.
+// summarizeError sanitizes and truncates an error message. Errors may
+// originate from LLM output, remote tool calls, or network peers — any of
+// which could plant crafted text that later becomes part of an injected
+// heuristic. We strip control characters, collapse whitespace, and drop
+// obvious instruction-like markers before truncation to limit stored prompt
+// injection risk.
 func summarizeError(errMsg string) string {
 	const maxLen = 200
-	if len(errMsg) <= maxLen {
-		return errMsg
+	cleaned := sanitizeUntrustedText(errMsg)
+	if len(cleaned) <= maxLen {
+		return cleaned
 	}
-	return errMsg[:maxLen] + "..."
+	return cleaned[:maxLen] + "..."
+}
+
+// sanitizeUntrustedText removes control characters, collapses whitespace,
+// and neutralizes obvious instruction markers. It is a defensive filter, not
+// a complete prompt-injection defense.
+func sanitizeUntrustedText(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	prevSpace := false
+	for _, r := range s {
+		// Drop control characters except basic spaces and tabs (which we
+		// normalize to a single space).
+		if r == '\n' || r == '\r' || r == '\t' {
+			if !prevSpace {
+				b.WriteByte(' ')
+				prevSpace = true
+			}
+			continue
+		}
+		if r < 0x20 || r == 0x7f {
+			continue
+		}
+		if r == ' ' {
+			if !prevSpace {
+				b.WriteRune(r)
+				prevSpace = true
+			}
+			continue
+		}
+		b.WriteRune(r)
+		prevSpace = false
+	}
+	out := strings.TrimSpace(b.String())
+	// Neutralize common instruction-like phrases to blunt the most obvious
+	// stored-injection payloads. Substring replacement is intentionally
+	// conservative.
+	replacer := strings.NewReplacer(
+		"ignore previous", "[redacted]",
+		"ignore the above", "[redacted]",
+		"system:", "system",
+		"assistant:", "assistant",
+	)
+	return replacer.Replace(out)
 }
 
 // generateID creates a short random hex ID for heuristics.

@@ -95,10 +95,11 @@ func (s *InMemoryStore) SearchHeuristics(ctx context.Context, agentID, query str
 		return nil, nil
 	}
 
-	s.mu.RLock()
-	m, ok := s.models[agentID]
-	s.mu.RUnlock()
+	// Use a full Lock so we can safely bump UsageCount on matched heuristics.
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
+	m, ok := s.models[agentID]
 	if !ok || len(m.Heuristics) == 0 {
 		return nil, nil
 	}
@@ -107,16 +108,19 @@ func (s *InMemoryStore) SearchHeuristics(ctx context.Context, agentID, query str
 	terms := strings.Fields(queryLower)
 	if len(terms) == 0 {
 		// No query terms; return most useful heuristics.
-		return s.topByUtility(m.Heuristics, k), nil
+		top := s.topByUtility(m.Heuristics, k)
+		bumpUsageCountLocked(m, top)
+		return top, nil
 	}
 
 	type scored struct {
+		idx   int
 		h     Heuristic
 		score float64
 	}
 
 	var results []scored
-	for _, h := range m.Heuristics {
+	for i, h := range m.Heuristics {
 		contentLower := strings.ToLower(h.Content)
 		taskLower := strings.ToLower(h.TaskType)
 		matches := 0
@@ -130,7 +134,7 @@ func (s *InMemoryStore) SearchHeuristics(ctx context.Context, agentID, query str
 			if utility <= 0 {
 				utility = 0.1
 			}
-			results = append(results, scored{h: h, score: float64(matches) * utility})
+			results = append(results, scored{idx: i, h: h, score: float64(matches) * utility})
 		}
 	}
 
@@ -140,9 +144,28 @@ func (s *InMemoryStore) SearchHeuristics(ctx context.Context, agentID, query str
 
 	out := make([]Heuristic, 0, k)
 	for i := 0; i < len(results) && i < k; i++ {
-		out = append(out, results[i].h)
+		// Increment usage count on the stored heuristic so retrieval
+		// statistics remain accurate across Search calls.
+		m.Heuristics[results[i].idx].UsageCount++
+		// Return a copy that reflects the updated UsageCount.
+		h := m.Heuristics[results[i].idx]
+		out = append(out, h)
 	}
 	return out, nil
+}
+
+// bumpUsageCountLocked increments UsageCount for every heuristic present in
+// selected. Caller must hold s.mu in write mode.
+func bumpUsageCountLocked(m *SelfModel, selected []Heuristic) {
+	byID := make(map[string]struct{}, len(selected))
+	for _, h := range selected {
+		byID[h.ID] = struct{}{}
+	}
+	for i := range m.Heuristics {
+		if _, ok := byID[m.Heuristics[i].ID]; ok {
+			m.Heuristics[i].UsageCount++
+		}
+	}
 }
 
 // topByUtility returns the top k heuristics sorted by utility descending.
