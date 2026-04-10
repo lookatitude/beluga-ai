@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"iter"
-	"strings"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/agent"
@@ -130,8 +129,10 @@ func (a *DualProcessAgent) Invoke(ctx context.Context, input string, opts ...age
 		return "", fmt.Errorf("cognitive: scoring failed: %w", err)
 	}
 
-	// If clearly complex, go directly to S2
-	if score.Level == Complex && score.Confidence >= a.threshold {
+	// If clearly complex, go directly to S2. This matches the Stream path,
+	// which routes any Complex-level input directly to S2 regardless of
+	// confidence, keeping both execution modes symmetric.
+	if score.Level == Complex {
 		a.fireOnRouted(ctx, input, score.Level, "s2")
 		result, err := a.s2.Invoke(ctx, input, opts...)
 		latency := time.Since(start)
@@ -146,7 +147,9 @@ func (a *DualProcessAgent) Invoke(ctx context.Context, input string, opts ...age
 	s1Latency := time.Since(start)
 
 	if s1Err != nil {
-		// S1 failed - escalate to S2
+		// S1 failed - escalate to S2. Still record S1 latency so
+		// metrics reflect the true cost of both calls.
+		a.metrics.RecordS1(s1Latency, 0)
 		a.metrics.RecordEscalation()
 		a.fireOnEscalated(ctx, input, "", fmt.Sprintf("s1 error: %v", s1Err))
 
@@ -162,6 +165,8 @@ func (a *DualProcessAgent) Invoke(ctx context.Context, input string, opts ...age
 	// Evaluate whether S1 output is sufficient
 	// For moderate inputs with lower confidence, escalate
 	if score.Level >= Moderate && score.Confidence < a.threshold {
+		// Record S1 latency before escalating so S1 cost is not lost.
+		a.metrics.RecordS1(s1Latency, 0)
 		a.metrics.RecordEscalation()
 		a.fireOnEscalated(ctx, input, s1Result, fmt.Sprintf(
 			"confidence %.2f below threshold %.2f for %s input",
@@ -226,14 +231,10 @@ func (a *DualProcessAgent) Stream(ctx context.Context, input string, opts ...age
 		}
 
 		// Stream from selected agent
-		var result strings.Builder
 		for event, err := range target.Stream(ctx, input, opts...) {
 			if err != nil {
 				yield(event, err)
 				return
-			}
-			if event.Type == agent.EventText {
-				result.WriteString(event.Text)
 			}
 			if !yield(event, nil) {
 				return
