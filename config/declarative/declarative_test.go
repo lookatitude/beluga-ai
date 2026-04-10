@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -154,9 +155,83 @@ func TestLoadSpec(t *testing.T) {
 }
 
 func TestLoadSpec_PathTraversal(t *testing.T) {
-	_, err := LoadSpec(context.Background(), "/tmp/../etc/passwd")
+	cases := []string{
+		"/tmp/../etc/passwd",
+		"../secret.json",
+		"a/../../etc/passwd",
+	}
+	for _, p := range cases {
+		t.Run(p, func(t *testing.T) {
+			_, err := LoadSpec(context.Background(), p)
+			if err == nil {
+				t.Fatalf("expected error for path traversal input %q", p)
+			}
+			if !strings.Contains(err.Error(), "path traversal") {
+				t.Errorf("expected path traversal error, got %v", err)
+			}
+		})
+	}
+}
+
+func TestLoadSpec_MaxSize(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "big.json")
+	// Write a file larger than the 1 MB default limit.
+	big := make([]byte, (1<<20)+16)
+	for i := range big {
+		big[i] = 'a'
+	}
+	if err := os.WriteFile(path, big, 0600); err != nil {
+		t.Fatal(err)
+	}
+	_, err := LoadSpec(context.Background(), path)
 	if err == nil {
-		t.Error("expected error for path traversal")
+		t.Fatal("expected error for oversized file")
+	}
+	if !strings.Contains(err.Error(), "exceeds maximum size") {
+		t.Errorf("expected size-limit error, got %v", err)
+	}
+}
+
+func TestModelSpec_TemperaturePointer(t *testing.T) {
+	// Explicit zero must round-trip and remain distinguishable from unset.
+	zero := 0.0
+	spec := &AgentSpec{
+		ID:      "t",
+		Persona: PersonaSpec{Role: "R"},
+		Model:   ModelSpec{Provider: "p", Model: "m", Temperature: &zero},
+	}
+	data, err := MarshalSpec(spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsed, err := NewJSONParser().Parse(context.Background(), data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if parsed.Model.Temperature == nil {
+		t.Fatal("expected Temperature to round-trip as non-nil")
+	}
+	if *parsed.Model.Temperature != 0 {
+		t.Errorf("Temperature = %v, want 0", *parsed.Model.Temperature)
+	}
+
+	// Unset temperature must remain nil.
+	spec2 := &AgentSpec{
+		ID:      "t",
+		Persona: PersonaSpec{Role: "R"},
+		Model:   ModelSpec{Provider: "p", Model: "m"},
+	}
+	data2, err := MarshalSpec(spec2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsed2, err := NewJSONParser().Parse(context.Background(), data2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if parsed2.Model.Temperature != nil {
+		t.Errorf("Temperature = %v, want nil", *parsed2.Model.Temperature)
 	}
 }
 
