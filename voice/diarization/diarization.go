@@ -151,8 +151,14 @@ func NewEnergyDiarizer(cfg Config) *EnergyDiarizer {
 	}
 }
 
-// Diarize segments audio based on energy levels.
-func (d *EnergyDiarizer) Diarize(ctx context.Context, audio []byte, opts ...DiarizeOption) ([]SpeakerSegment, error) {
+// bytesPerSample is the PCM sample width used by the energy diarizer
+// (16-bit little-endian).
+const bytesPerSample = 2
+
+// resolveOptions applies the variadic options on top of the diarizer's
+// defaults and normalises any zero/negative values so the window-offset
+// math below cannot divide by zero.
+func (d *EnergyDiarizer) resolveOptions(opts []DiarizeOption) *diarizeOptions {
 	o := &diarizeOptions{
 		maxSpeakers: d.maxSpeakers,
 		minSegment:  d.minSegment,
@@ -161,34 +167,61 @@ func (d *EnergyDiarizer) Diarize(ctx context.Context, audio []byte, opts ...Diar
 	for _, opt := range opts {
 		opt(o)
 	}
+	if o.sampleRate <= 0 {
+		o.sampleRate = 16000
+	}
+	if o.maxSpeakers <= 0 {
+		o.maxSpeakers = 2
+	}
+	return o
+}
 
+// windowBytesFor returns the byte size of a 100ms window for the given
+// sample rate, with a safe fallback.
+func windowBytesFor(sampleRate int) int {
+	wb := (sampleRate / 10) * bytesPerSample
+	if wb <= 0 {
+		return 3200 // fallback: 100ms @ 16kHz, 16-bit PCM
+	}
+	return wb
+}
+
+// offsetDuration converts a byte offset in the PCM stream to a duration
+// relative to the start of the audio.
+func offsetDuration(byteOffset, sampleRate int) time.Duration {
+	return time.Duration(byteOffset/bytesPerSample) * time.Second / time.Duration(sampleRate)
+}
+
+// emitSegment appends seg to segments when it corresponds to a real
+// speaker (not silence) and meets the minimum duration. It returns the
+// possibly-updated segment slice.
+func emitSegment(segments []SpeakerSegment, seg SpeakerSegment, minSegment time.Duration) []SpeakerSegment {
+	if seg.SpeakerID == "" || seg.SpeakerID == speakerSilence {
+		return segments
+	}
+	if seg.Duration() < minSegment {
+		return segments
+	}
+	return append(segments, seg)
+}
+
+// Diarize segments audio based on energy levels.
+func (d *EnergyDiarizer) Diarize(ctx context.Context, audio []byte, opts ...DiarizeOption) ([]SpeakerSegment, error) {
 	if len(audio) == 0 {
 		return nil, nil
 	}
-
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 
-	// Simple energy-based segmentation: split audio into fixed-size windows
-	// and assign speakers based on energy level patterns.
-	bytesPerSample := 2                   // 16-bit PCM
-	samplesPerWindow := o.sampleRate / 10 // 100ms windows
-	windowBytes := samplesPerWindow * bytesPerSample
+	o := d.resolveOptions(opts)
+	windowBytes := windowBytesFor(o.sampleRate)
 
-	// Guard against zero/negative sample rate to prevent divide-by-zero
-	// panics in the window offset calculation below. Reset both the
-	// window size and sample rate to sensible defaults.
-	if windowBytes <= 0 || o.sampleRate <= 0 {
-		if o.sampleRate <= 0 {
-			o.sampleRate = 16000
-		}
-		windowBytes = 3200 // fallback (100ms @ 16kHz, 16-bit PCM)
-	}
-
-	var segments []SpeakerSegment
-	var currentSpeaker string
-	var segStart time.Duration
+	var (
+		segments       []SpeakerSegment
+		currentSpeaker string
+		segStart       time.Duration
+	)
 
 	for i := 0; i < len(audio); i += windowBytes {
 		if err := ctx.Err(); err != nil {
@@ -199,43 +232,30 @@ func (d *EnergyDiarizer) Diarize(ctx context.Context, audio []byte, opts ...Diar
 		if end > len(audio) {
 			end = len(audio)
 		}
-		window := audio[i:end]
 
-		energy := computeEnergy(window)
-		speaker := assignSpeaker(energy, o.maxSpeakers)
+		speaker := assignSpeaker(computeEnergy(audio[i:end]), o.maxSpeakers)
+		windowStart := offsetDuration(i, o.sampleRate)
 
-		windowStart := time.Duration(i/bytesPerSample) * time.Second / time.Duration(o.sampleRate)
-
-		if speaker != currentSpeaker {
-			if currentSpeaker != "" && currentSpeaker != speakerSilence {
-				seg := SpeakerSegment{
-					SpeakerID:  currentSpeaker,
-					Start:      segStart,
-					End:        windowStart,
-					Confidence: 0.7,
-				}
-				if seg.Duration() >= o.minSegment {
-					segments = append(segments, seg)
-				}
-			}
-			currentSpeaker = speaker
-			segStart = windowStart
+		if speaker == currentSpeaker {
+			continue
 		}
-	}
-
-	// Close final segment. Skip silence — it is not a real speaker.
-	if currentSpeaker != "" && currentSpeaker != speakerSilence {
-		totalDuration := time.Duration(len(audio)/bytesPerSample) * time.Second / time.Duration(o.sampleRate)
-		seg := SpeakerSegment{
+		segments = emitSegment(segments, SpeakerSegment{
 			SpeakerID:  currentSpeaker,
 			Start:      segStart,
-			End:        totalDuration,
+			End:        windowStart,
 			Confidence: 0.7,
-		}
-		if seg.Duration() >= o.minSegment {
-			segments = append(segments, seg)
-		}
+		}, o.minSegment)
+		currentSpeaker = speaker
+		segStart = windowStart
 	}
+
+	// Close final segment.
+	segments = emitSegment(segments, SpeakerSegment{
+		SpeakerID:  currentSpeaker,
+		Start:      segStart,
+		End:        offsetDuration(len(audio), o.sampleRate),
+		Confidence: 0.7,
+	}, o.minSegment)
 
 	return segments, nil
 }
