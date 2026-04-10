@@ -217,3 +217,147 @@ func TestModelTierConstants(t *testing.T) {
 		}
 	}
 }
+
+// stubClassifier returns a fixed tier, used to exercise WithClassifier
+// and classifier error paths.
+type stubClassifier struct {
+	tier ModelTier
+	err  error
+}
+
+func (s *stubClassifier) Classify(_ context.Context, _ []schema.Message) (ModelTier, error) {
+	return s.tier, s.err
+}
+
+func TestHeuristicClassifier_LargeAndSystem(t *testing.T) {
+	classifier := &HeuristicClassifier{}
+	ctx := context.Background()
+
+	// Many messages → TierLarge.
+	many := make([]schema.Message, 12)
+	for i := range many {
+		many[i] = schema.NewHumanMessage("msg")
+	}
+	tier, err := classifier.Classify(ctx, many)
+	if err != nil {
+		t.Fatalf("Classify: %v", err)
+	}
+	if tier != TierLarge {
+		t.Errorf("many msgs tier = %q, want %q", tier, TierLarge)
+	}
+
+	// System prompt with long content → TierLarge.
+	longSys := make([]byte, 2100)
+	for i := range longSys {
+		longSys[i] = 'a'
+	}
+	sysMsgs := []schema.Message{
+		schema.NewSystemMessage(string(longSys)),
+		schema.NewHumanMessage("hi"),
+	}
+	tier, err = classifier.Classify(ctx, sysMsgs)
+	if err != nil {
+		t.Fatalf("Classify: %v", err)
+	}
+	if tier != TierLarge {
+		t.Errorf("system+long tier = %q, want %q", tier, TierLarge)
+	}
+}
+
+func TestWithClassifier_AndFallbackOnError(t *testing.T) {
+	models := []ModelConfig{
+		{ID: "m-small", Tier: TierSmall, CostPerInputToken: 0.00001, CostPerOutputToken: 0.00002, Priority: 1},
+		{ID: "m-medium", Tier: TierMedium, CostPerInputToken: 0.00005, CostPerOutputToken: 0.0001, Priority: 1},
+	}
+
+	// WithClassifier stub returning an error — router must fall back.
+	router := NewCostRouter(
+		WithModels(models...),
+		WithClassifier(&stubClassifier{tier: TierSmall, err: context.Canceled}),
+		WithFallbackTier(TierMedium),
+	)
+	sel, err := router.SelectModel(context.Background(), []schema.Message{schema.NewHumanMessage("x")})
+	if err != nil {
+		t.Fatalf("SelectModel: %v", err)
+	}
+	if sel.Tier != TierMedium {
+		t.Errorf("fallback Tier = %q, want %q", sel.Tier, TierMedium)
+	}
+}
+
+func TestDefaultCostRouter_TierDowngrade(t *testing.T) {
+	// Only a small model is configured; requesting a Large tier forces the
+	// downgrade path via allModelsSorted.
+	models := []ModelConfig{
+		{ID: "only-small", Tier: TierSmall, CostPerInputToken: 0.00001, CostPerOutputToken: 0.00002, Priority: 1},
+	}
+	router := NewCostRouter(
+		WithModels(models...),
+		WithClassifier(&stubClassifier{tier: TierLarge}),
+	)
+	sel, err := router.SelectModel(context.Background(), []schema.Message{schema.NewHumanMessage("hello")})
+	if err != nil {
+		t.Fatalf("SelectModel: %v", err)
+	}
+	if sel.ModelID != "only-small" {
+		t.Errorf("ModelID = %q, want only-small", sel.ModelID)
+	}
+	if !contains(sel.Reason, "downgraded") {
+		t.Errorf("expected downgrade note in reason, got %q", sel.Reason)
+	}
+}
+
+func contains(s, sub string) bool {
+	return len(s) >= len(sub) && (func() bool {
+		for i := 0; i+len(sub) <= len(s); i++ {
+			if s[i:i+len(sub)] == sub {
+				return true
+			}
+		}
+		return false
+	})()
+}
+
+func TestEstimateTokens_EmptyMinimum(t *testing.T) {
+	// Messages with no text content should fall to the minimum of 100.
+	got := estimateTokens(nil)
+	if got != 100 {
+		t.Errorf("estimateTokens(nil) = %d, want 100", got)
+	}
+}
+
+func TestRegistry_ListAndUnknown(t *testing.T) {
+	if len(ListClassifiers()) == 0 {
+		t.Error("expected at least one classifier registered")
+	}
+	if len(ListEnforcers()) == 0 {
+		t.Error("expected at least one enforcer registered")
+	}
+	if _, err := NewClassifier("bogus", ClassifierConfig{}); err == nil {
+		t.Error("expected error for unknown classifier")
+	}
+	if _, err := NewEnforcer("bogus", EnforcerConfig{}); err == nil {
+		t.Error("expected error for unknown enforcer")
+	}
+}
+
+func TestRegistry_DefaultRouterWithOptionalFields(t *testing.T) {
+	// Exercise the default router factory branches where classifier,
+	// enforcer, and fallback tier are all provided.
+	r, err := NewRouter("default", RouterConfig{
+		Models:       []ModelConfig{{ID: "m", Tier: TierSmall, CostPerInputToken: 0.1, CostPerOutputToken: 0.1}},
+		Classifier:   &HeuristicClassifier{},
+		Enforcer:     NewBudgetEnforcer(1000.0),
+		FallbackTier: TierSmall,
+	})
+	if err != nil {
+		t.Fatalf("NewRouter: %v", err)
+	}
+	sel, err := r.SelectModel(context.Background(), []schema.Message{schema.NewHumanMessage("hi")})
+	if err != nil {
+		t.Fatalf("SelectModel: %v", err)
+	}
+	if sel.ModelID != "m" {
+		t.Errorf("ModelID = %q, want m", sel.ModelID)
+	}
+}
