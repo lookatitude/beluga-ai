@@ -2,7 +2,6 @@ package state
 
 import (
 	"context"
-	"sync"
 )
 
 // ReducerFunc merges an old value with a new value. The old value may be nil
@@ -36,9 +35,10 @@ func WithDefaultReducer(fn ReducerFunc) ReducerOption {
 
 // ReducerStore wraps a VersionedStore and applies per-key reducer functions
 // on Set. Reducers merge old and new values atomically using CompareAndSwap.
+// opts is set once at construction and treated as immutable thereafter, so
+// no lock is required around reducer lookups.
 type ReducerStore struct {
 	inner VersionedStore
-	mu    sync.RWMutex
 	opts  reducerOptions
 }
 
@@ -72,8 +72,10 @@ func (rs *ReducerStore) Set(ctx context.Context, key string, value any) error {
 		return rs.inner.Set(ctx, key, value)
 	}
 
-	// Retry loop for CAS contention.
-	const maxRetries = 10
+	// Retry loop for CAS contention. Bounded but generous: under heavy
+	// multi-writer contention we need enough headroom to avoid spurious
+	// ErrVersionMismatch failures on well-behaved workloads.
+	const maxRetries = 100
 	for i := 0; i < maxRetries; i++ {
 		old, version, err := rs.inner.GetVersioned(ctx, key)
 		if err != nil {
@@ -115,10 +117,9 @@ func (rs *ReducerStore) Close() error {
 }
 
 // reducerFor returns the reducer for key, falling back to the default reducer.
+// opts is constructed once in NewReducerStore and never mutated afterwards,
+// so no synchronization is needed.
 func (rs *ReducerStore) reducerFor(key string) ReducerFunc {
-	rs.mu.RLock()
-	defer rs.mu.RUnlock()
-
 	if fn, ok := rs.opts.reducers[key]; ok {
 		return fn
 	}

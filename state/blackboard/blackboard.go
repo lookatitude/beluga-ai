@@ -74,18 +74,26 @@ type Blackboard struct {
 	closed    bool
 }
 
-// New creates a Blackboard backed by the given VersionedStore.
+// New creates a Blackboard backed by the given VersionedStore. When hooks
+// are provided via WithBlackboardHooks they are wrapped around the
+// underlying VersionedStore so that Get/Set/Delete/Watch fire the callbacks.
 func New(store state.VersionedStore, opts ...Option) *Blackboard {
 	o := options{}
 	for _, opt := range opts {
 		opt(&o)
 	}
 
-	// Build the reducer store on top of the versioned store.
-	reducer := state.NewReducerStore(store, o.reducerOpts...)
+	// Apply hook middleware to the underlying versioned store when configured.
+	versioned := store
+	if o.hasHooks {
+		versioned = state.WrapVersionedWithHooks(store, o.hooks)
+	}
+
+	// Build the reducer store on top of the (possibly hooked) versioned store.
+	reducer := state.NewReducerStore(versioned, o.reducerOpts...)
 
 	return &Blackboard{
-		store:     store,
+		store:     versioned,
 		reducer:   reducer,
 		ownership: state.NewOwnershipManager(),
 		opts:      o,
@@ -160,7 +168,18 @@ func (b *Blackboard) Delete(ctx context.Context, agentID, key string) error {
 // Watch returns an iter.Seq2 stream of state changes for the specified keys.
 // If no keys are provided, this returns immediately with no events.
 // The stream ends when the context is cancelled or the blackboard is closed.
+// If the blackboard is already closed, the stream yields a single errClosed
+// and returns, matching the behavior of Set/Get/Delete.
 func (b *Blackboard) Watch(ctx context.Context, keys ...string) iter.Seq2[state.StateChange, error] {
+	b.mu.RLock()
+	closed := b.closed
+	b.mu.RUnlock()
+	if closed {
+		return func(yield func(state.StateChange, error) bool) {
+			yield(state.StateChange{}, errClosed)
+		}
+	}
+
 	if len(keys) == 0 {
 		return func(yield func(state.StateChange, error) bool) {}
 	}
