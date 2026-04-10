@@ -31,11 +31,16 @@ func WithWarmup(warmup bool) PoolOption {
 // SandboxPool manages a bounded pool of reusable Sandbox instances. It supports
 // checkout/checkin for fast reuse, avoiding the overhead of creating a new
 // sandbox for each execution.
+//
+// The pool size bounds the maximum number of concurrently-live sandboxes:
+// callers that request a sandbox when all slots are checked out will block
+// until one is returned or the context is cancelled.
 type SandboxPool struct {
 	mu       sync.Mutex
 	provider string
 	opts     poolOptions
 	pool     chan Sandbox
+	sem      chan struct{} // capacity-bounded semaphore
 	closed   bool
 }
 
@@ -55,6 +60,7 @@ func NewSandboxPool(provider string, opts ...PoolOption) (*SandboxPool, error) {
 		provider: provider,
 		opts:     o,
 		pool:     make(chan Sandbox, o.size),
+		sem:      make(chan struct{}, o.size),
 	}
 
 	if o.warmup {
@@ -72,10 +78,10 @@ func NewSandboxPool(provider string, opts ...PoolOption) (*SandboxPool, error) {
 	return p, nil
 }
 
-// Checkout retrieves a sandbox from the pool. If the pool is empty and has not
-// reached capacity, a new instance is created. If the pool is empty and at
-// capacity, Checkout blocks until a sandbox is returned via Checkin or the
-// context is cancelled.
+// Checkout retrieves a sandbox from the pool. The total number of
+// concurrently live sandboxes is bounded by the pool size: if all slots are
+// checked out, Checkout blocks until a sandbox is returned via Checkin or
+// the context is cancelled.
 func (p *SandboxPool) Checkout(ctx context.Context) (Sandbox, error) {
 	p.mu.Lock()
 	if p.closed {
@@ -84,31 +90,37 @@ func (p *SandboxPool) Checkout(ctx context.Context) (Sandbox, error) {
 	}
 	p.mu.Unlock()
 
-	// Try non-blocking first.
+	// Acquire a slot from the semaphore first. This enforces the hard
+	// concurrency cap — at most opts.size sandboxes are ever live.
+	select {
+	case p.sem <- struct{}{}:
+	case <-ctx.Done():
+		return nil, core.NewError("sandbox.pool", core.ErrTimeout, "checkout timed out", ctx.Err())
+	}
+
+	// Try to reuse an idle sandbox.
 	select {
 	case sb := <-p.pool:
 		return sb, nil
 	default:
 	}
 
-	// Try to create a new one (best-effort — we don't track total created
-	// since sandboxes may be discarded on error).
+	// No idle sandbox — create a new one. If creation fails, release the
+	// slot so that another caller can make progress.
 	sb, err := NewSandbox(p.provider)
-	if err == nil {
-		return sb, nil
+	if err != nil {
+		<-p.sem
+		return nil, fmt.Errorf("sandbox.pool: create sandbox: %w", err)
 	}
-
-	// Fall back to blocking wait.
-	select {
-	case sb := <-p.pool:
-		return sb, nil
-	case <-ctx.Done():
-		return nil, core.NewError("sandbox.pool", core.ErrTimeout, "checkout timed out", ctx.Err())
-	}
+	return sb, nil
 }
 
-// Checkin returns a sandbox to the pool. If the pool buffer is full, the
-// sandbox is closed and discarded.
+// Checkin returns a sandbox to the pool and releases the semaphore slot
+// previously acquired by Checkout. If the pool has been closed
+// concurrently, the sandbox is closed and dropped. The deposit into the
+// channel is performed while holding the pool mutex so that Close/closeAll
+// and Checkin are mutually exclusive, eliminating the window where a
+// sandbox could be leaked after Close has already drained the pool.
 func (p *SandboxPool) Checkin(sb Sandbox) {
 	if sb == nil {
 		return
@@ -118,15 +130,25 @@ func (p *SandboxPool) Checkin(sb Sandbox) {
 	if p.closed {
 		p.mu.Unlock()
 		_ = sb.Close(context.Background())
+		p.releaseSlot()
 		return
 	}
-	p.mu.Unlock()
-
 	select {
 	case p.pool <- sb:
+		p.mu.Unlock()
+		p.releaseSlot()
 	default:
-		// Pool full — discard.
+		p.mu.Unlock()
 		_ = sb.Close(context.Background())
+		p.releaseSlot()
+	}
+}
+
+// releaseSlot frees one semaphore slot, if one is held.
+func (p *SandboxPool) releaseSlot() {
+	select {
+	case <-p.sem:
+	default:
 	}
 }
 
