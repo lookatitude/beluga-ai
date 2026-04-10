@@ -2,6 +2,7 @@ package plancache
 
 import (
 	"context"
+	"sync"
 
 	"github.com/lookatitude/beluga-ai/agent"
 	"github.com/lookatitude/beluga-ai/schema"
@@ -17,6 +18,11 @@ type CachedPlanner struct {
 	store   Store
 	matcher Matcher
 	opts    options
+
+	// updateMu serializes read-modify-write updates to template counters to
+	// prevent lost updates under concurrent Plan/Replan calls on the same
+	// template.
+	updateMu sync.Mutex
 }
 
 var _ agent.Planner = (*CachedPlanner)(nil)
@@ -60,8 +66,16 @@ func (cp *CachedPlanner) Plan(ctx context.Context, state agent.PlannerState) ([]
 			cp.opts.hooks.OnCacheHit(ctx, tmpl, score)
 		}
 
-		tmpl.SuccessCount++
-		_ = cp.store.Save(ctx, tmpl) // best-effort update
+		// Serialize counter updates to avoid lost updates under concurrency.
+		cp.updateMu.Lock()
+		if fresh, err := cp.store.Get(ctx, tmpl.ID); err == nil && fresh != nil {
+			fresh.SuccessCount++
+			_ = cp.store.Save(ctx, fresh) // best-effort update
+		} else {
+			tmpl.SuccessCount++
+			_ = cp.store.Save(ctx, tmpl)
+		}
+		cp.updateMu.Unlock()
 
 		return templateToActions(tmpl), nil
 	}
@@ -87,13 +101,22 @@ func (cp *CachedPlanner) Replan(ctx context.Context, state agent.PlannerState) (
 	// Track deviation on existing template if one matched.
 	tmpl, _, _ := cp.findBestMatch(ctx, agentID, state.Input)
 	if tmpl != nil {
-		tmpl.DeviationCount++
-		_ = cp.store.Save(ctx, tmpl)
+		// Serialize read-modify-write updates to avoid lost deviations under
+		// concurrent Replan calls on the same template.
+		cp.updateMu.Lock()
+		fresh, err := cp.store.Get(ctx, tmpl.ID)
+		if err != nil || fresh == nil {
+			fresh = tmpl
+		}
+		fresh.DeviationCount++
+		_ = cp.store.Save(ctx, fresh)
+		evict := fresh.DeviationRatio() > cp.opts.evictionThreshold
+		cp.updateMu.Unlock()
 
-		if tmpl.DeviationRatio() > cp.opts.evictionThreshold {
-			_ = cp.store.Delete(ctx, tmpl.ID)
+		if evict {
+			_ = cp.store.Delete(ctx, fresh.ID)
 			if cp.opts.hooks.OnTemplateEvicted != nil {
-				cp.opts.hooks.OnTemplateEvicted(ctx, tmpl)
+				cp.opts.hooks.OnTemplateEvicted(ctx, fresh)
 			}
 		}
 	}
@@ -149,22 +172,24 @@ func (cp *CachedPlanner) planAndCache(ctx context.Context, state agent.PlannerSt
 	return actions, nil
 }
 
-// enforceMaxTemplates checks the template count for the agent and returns an
-// error if at capacity. The store's LRU eviction handles the actual removal.
+// enforceMaxTemplates checks the per-agent template count and returns a
+// cache error when the configured cap has been reached. Callers use the
+// returned error as a signal to skip saving new templates, keeping the
+// per-agent limit independent of the store's own global capacity.
 func (cp *CachedPlanner) enforceMaxTemplates(ctx context.Context, agentID string) error {
 	templates, err := cp.store.List(ctx, agentID)
 	if err != nil {
 		return err
 	}
 	if len(templates) >= cp.opts.maxTemplates {
-		// Store's LRU eviction will handle this, but we signal awareness.
-		return nil
+		return newCacheError("plancache.enforceMaxTemplates", "per-agent template limit reached", nil)
 	}
 	return nil
 }
 
-// templateToActions converts a template's actions back to agent actions.
-// Since templates discard argument values, tool actions have empty arguments.
+// templateToActions converts a template's actions back to agent actions. Tool
+// actions preserve the original captured Arguments payload so executors can
+// invoke the plan directly.
 func templateToActions(tmpl *Template) []agent.Action {
 	actions := make([]agent.Action, len(tmpl.Actions))
 	for i, ta := range tmpl.Actions {
@@ -173,17 +198,32 @@ func templateToActions(tmpl *Template) []agent.Action {
 			Message: ta.Description,
 		}
 		if ta.Type == agent.ActionTool && ta.ToolName != "" {
-			a.ToolCall = &schema.ToolCall{Name: ta.ToolName}
+			a.ToolCall = &schema.ToolCall{
+				Name:      ta.ToolName,
+				Arguments: ta.Arguments,
+			}
 		}
 		actions[i] = a
 	}
 	return actions
 }
 
+// defaultAgentID is the fallback namespace used when planner state does not
+// carry an explicit "agent_id" metadata entry. Callers sharing the same
+// fallback namespace will share a template pool — always set
+// state.Metadata["agent_id"] explicitly to isolate unrelated planners.
+const defaultAgentID = "default"
+
 // agentIDFromState extracts or derives an agent ID from planner state.
+//
+// NOTE: when state.Metadata lacks "agent_id", every planner — regardless of
+// its toolset or purpose — falls into the same defaultAgentID namespace.
+// Templates extracted for one agent can therefore match queries from another
+// agent in that pool. Set state.Metadata["agent_id"] explicitly to isolate
+// unrelated planners.
 func agentIDFromState(state agent.PlannerState) string {
 	if id, ok := state.Metadata["agent_id"].(string); ok && id != "" {
 		return id
 	}
-	return "default"
+	return defaultAgentID
 }
