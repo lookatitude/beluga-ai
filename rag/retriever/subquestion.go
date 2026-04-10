@@ -2,7 +2,10 @@ package retriever
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/lookatitude/beluga-ai/llm"
@@ -190,6 +193,9 @@ func (r *SubQuestionRetriever) Retrieve(ctx context.Context, query string, opts 
 	for name := range r.retrievers {
 		available = append(available, name)
 	}
+	// Map iteration order is randomized; sort for deterministic prompts
+	// and reproducible routing decisions.
+	sort.Strings(available)
 
 	subQuestions, err := r.decomposer.Decompose(ctx, query, available)
 	if err != nil {
@@ -225,7 +231,10 @@ func (r *SubQuestionRetriever) Retrieve(ctx context.Context, query string, opts 
 		for _, doc := range docs {
 			key := doc.ID
 			if key == "" {
-				key = doc.Content
+				// Use a bounded content hash as the dedup key so that very
+				// large documents do not allocate oversized map keys.
+				sum := sha256.Sum256([]byte(doc.Content))
+				key = hex.EncodeToString(sum[:])
 			}
 			if _, exists := seen[key]; !exists {
 				seen[key] = struct{}{}

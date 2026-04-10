@@ -146,6 +146,8 @@ func (r *CRAGRetriever) Retrieve(ctx context.Context, query string, opts ...Opti
 		return r.fallbackSearch(ctx, currentQuery, cfg)
 	}
 
+	// Unreachable under normal operation: every iteration of the loop
+	// either returns or continues. Left as a defensive safety net.
 	return r.fallbackSearch(ctx, currentQuery, cfg)
 }
 

@@ -10,10 +10,18 @@ import (
 )
 
 // QueryRewriter wraps an inner Retriever with LLM-driven query rewriting.
-// After the initial retrieval, it evaluates the relevance of returned documents.
-// If the average relevance score falls below a configurable threshold, the LLM
-// reformulates the query and retries retrieval, up to a maximum number of
-// rewrites.
+//
+// It reads the pre-populated Score field on each returned document and
+// computes an average. If the average falls below the configured threshold
+// the LLM reformulates the query and retries, up to maxRewrites times.
+//
+// IMPORTANT: QueryRewriter relies on the inner retriever populating
+// Document.Score. Retrievers that do not emit scores (for example the
+// SubQuestionRetriever, or any retriever without explicit scoring) will
+// always yield an average of 0.0, which triggers rewrites on every call.
+// When wrapping an unscored retriever, set the relevance threshold to
+// 0.0 via WithRelevanceThreshold or use a different strategy such as
+// CRAGRetriever which performs active LLM-based relevance evaluation.
 type QueryRewriter struct {
 	inner              Retriever
 	llm                llm.ChatModel
