@@ -59,6 +59,12 @@ func estimateConfidence(text string) float64 {
 
 	// Heuristic: shorter responses tend to be more confident/decisive.
 	// Scale from 1.0 (very short) down to 0.3 (very long).
+	//
+	// NOTE: This is intentionally biased toward brevity because
+	// LightModelPredictor is designed around cheap models used as a cache-like
+	// fast path. Verbose-but-accurate models will be systematically bypassed
+	// by this heuristic; if precise confidence is needed, implement Predictor
+	// directly using the model's own logprobs instead of this heuristic.
 	words := len(strings.Fields(text))
 	switch {
 	case words <= 5:

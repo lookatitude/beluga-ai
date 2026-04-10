@@ -3,7 +3,6 @@ package speculative
 import (
 	"context"
 	"iter"
-	"sync"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/agent"
@@ -154,20 +153,14 @@ func (e *SpeculativeExecutor) Invoke(ctx context.Context, input string, opts ...
 	gtCtx, gtCancel := context.WithCancel(ctx)
 	defer gtCancel()
 
-	start := time.Now()
-
-	// Run predictor and ground-truth in parallel.
-	var wg sync.WaitGroup
-	wg.Add(2)
-
+	// Run predictor and ground-truth in parallel. Synchronization is done via
+	// the buffered channels below — no WaitGroup is needed.
 	go func() {
-		defer wg.Done()
 		prediction, confidence, err := e.config.predictor.Predict(ctx, input)
 		predCh <- predResult{text: prediction, confidence: confidence, err: err}
 	}()
 
 	go func() {
-		defer wg.Done()
 		text, err := e.groundTruth.Invoke(gtCtx, input, opts...)
 		gtCh <- gtResult{text: text, err: err}
 	}()
@@ -175,6 +168,12 @@ func (e *SpeculativeExecutor) Invoke(ctx context.Context, input string, opts ...
 	// Wait for predictor result first.
 	pred := <-predCh
 	predDone := time.Now()
+
+	// Fire OnPrediction immediately (regardless of branch) so that hook
+	// consumers observing predictor latency get consistent timing.
+	if pred.err == nil && e.config.hooks.OnPrediction != nil {
+		e.config.hooks.OnPrediction(ctx, pred.text, pred.confidence)
+	}
 
 	if pred.err != nil || pred.confidence < e.config.confidenceThreshold {
 		// Prediction failed or low confidence — use ground truth.
@@ -188,9 +187,6 @@ func (e *SpeculativeExecutor) Invoke(ctx context.Context, input string, opts ...
 		if pred.err == nil {
 			// We got a prediction but confidence was too low.
 			e.config.metrics.RecordMiss(estimateTokens(pred.text))
-			if e.config.hooks.OnPrediction != nil {
-				e.config.hooks.OnPrediction(ctx, pred.text, pred.confidence)
-			}
 			if e.config.hooks.OnMisprediction != nil {
 				e.config.hooks.OnMisprediction(ctx, Result{
 					Prediction:  pred.text,
@@ -202,11 +198,6 @@ func (e *SpeculativeExecutor) Invoke(ctx context.Context, input string, opts ...
 			}
 		}
 		return gt.text, nil
-	}
-
-	// Good prediction — fire hook.
-	if e.config.hooks.OnPrediction != nil {
-		e.config.hooks.OnPrediction(ctx, pred.text, pred.confidence)
 	}
 
 	// Wait for ground truth to validate.
@@ -245,7 +236,6 @@ func (e *SpeculativeExecutor) Invoke(ctx context.Context, input string, opts ...
 		if e.config.hooks.OnValidation != nil {
 			e.config.hooks.OnValidation(ctx, result)
 		}
-		_ = start // used for timing
 		return pred.text, nil
 	}
 
@@ -298,8 +288,10 @@ func (e *SpeculativeExecutor) Stream(ctx context.Context, input string, opts ...
 		}
 
 		if confidence >= e.config.confidenceThreshold {
-			// High confidence — use fast agent.
-			e.config.metrics.RecordHit(0)
+			// High confidence — route to fast agent. This is an unvalidated
+			// pre-classification decision; we use a distinct metric so that
+			// validated HitRate() is not polluted.
+			e.config.metrics.RecordStreamFastRoute()
 			for event, err := range e.config.fastAgent.Stream(ctx, input, opts...) {
 				if !yield(event, err) {
 					return
@@ -312,7 +304,7 @@ func (e *SpeculativeExecutor) Stream(ctx context.Context, input string, opts ...
 		}
 
 		// Low confidence — use ground truth.
-		e.config.metrics.RecordMiss(estimateTokens(prediction))
+		e.config.metrics.RecordStreamGroundRoute()
 		for event, err := range e.groundTruth.Stream(ctx, input, opts...) {
 			if !yield(event, err) {
 				return

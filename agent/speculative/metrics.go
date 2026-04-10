@@ -13,6 +13,12 @@ type Metrics struct {
 	misses       atomic.Int64
 	totalSpeedup atomic.Int64 // stored as nanoseconds
 	wastedTokens atomic.Int64
+	// Stream-only pre-classification counters. These track unvalidated
+	// confidence-based routing decisions in Stream and are kept separate
+	// from the validated hit/miss counters used by Invoke so that HitRate()
+	// always reflects validated accuracy.
+	streamFast   atomic.Int64
+	streamGround atomic.Int64
 }
 
 // NewMetrics creates a new Metrics instance.
@@ -57,6 +63,31 @@ func (m *Metrics) TotalSpeedup() time.Duration {
 // WastedTokens returns the total tokens wasted on failed predictions.
 func (m *Metrics) WastedTokens() int64 {
 	return m.wastedTokens.Load()
+}
+
+// RecordStreamFastRoute records that Stream pre-classified a request as
+// high-confidence and routed it to the fast agent. This is an unvalidated
+// decision and intentionally does NOT update the validated hit/miss counters.
+func (m *Metrics) RecordStreamFastRoute() {
+	m.streamFast.Add(1)
+}
+
+// RecordStreamGroundRoute records that Stream routed a request to the
+// ground-truth agent (either due to low confidence or a predictor error).
+// This is an unvalidated decision and intentionally does NOT update the
+// validated hit/miss counters.
+func (m *Metrics) RecordStreamGroundRoute() {
+	m.streamGround.Add(1)
+}
+
+// StreamFastRoutes returns the number of Stream requests routed to the fast agent.
+func (m *Metrics) StreamFastRoutes() int64 {
+	return m.streamFast.Load()
+}
+
+// StreamGroundRoutes returns the number of Stream requests routed to ground truth.
+func (m *Metrics) StreamGroundRoutes() int64 {
+	return m.streamGround.Load()
 }
 
 // HitRate returns the ratio of successful predictions to total predictions.
