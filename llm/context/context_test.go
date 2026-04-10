@@ -73,9 +73,9 @@ func TestRelevanceRanker(t *testing.T) {
 func TestTokenBudgetFilter(t *testing.T) {
 	filter := NewTokenBudgetFilter(10) // Very small budget.
 	items := []ContextItem{
-		{ID: "1", Content: "short"},                                    // ~1 token
+		{ID: "1", Content: "short"},                                  // ~1 token
 		{ID: "2", Content: "this is a much longer piece of content"}, // ~8 tokens
-		{ID: "3", Content: "another longer content here"},              // ~6 tokens
+		{ID: "3", Content: "another longer content here"},            // ~6 tokens
 	}
 
 	result, err := filter.Process(gocontext.Background(), items)
@@ -160,22 +160,89 @@ func TestPipelineBuilder(t *testing.T) {
 
 func TestStepRegistry(t *testing.T) {
 	names := ListSteps()
-	if len(names) < 3 {
-		t.Errorf("expected at least 3 registered steps, got %d", len(names))
+	wantAll := []string{"relevance_rank", "token_budget_filter", "duplicate_filter", "recency_boost"}
+	if len(names) < len(wantAll) {
+		t.Errorf("expected at least %d registered steps, got %d: %v", len(wantAll), len(names), names)
+	}
+	present := make(map[string]bool, len(names))
+	for _, n := range names {
+		present[n] = true
+	}
+	for _, want := range wantAll {
+		if !present[want] {
+			t.Errorf("expected step %q to be registered, got %v", want, names)
+		}
 	}
 
-	step, err := NewStep("relevance_rank")
-	if err != nil {
-		t.Fatalf("NewStep: %v", err)
-	}
-	if step.Name() != "relevance_rank" {
-		t.Errorf("Name = %q, want relevance_rank", step.Name())
+	for _, want := range wantAll {
+		step, err := NewStep(want)
+		if err != nil {
+			t.Fatalf("NewStep(%q): %v", want, err)
+		}
+		if step.Name() != want {
+			t.Errorf("Name = %q, want %q", step.Name(), want)
+		}
 	}
 
-	_, err = NewStep("nonexistent")
+	_, err := NewStep("nonexistent")
 	if err == nil {
 		t.Error("expected error for unknown step")
 	}
+}
+
+func TestPipelineOutput_MessagesReflectFiltering(t *testing.T) {
+	// Drop the first message via a custom step; ensure output.Messages
+	// no longer includes it.
+	dropFirst := stepFunc{name: "drop_first", fn: func(items []ContextItem) []ContextItem {
+		if len(items) == 0 {
+			return items
+		}
+		return items[1:]
+	}}
+
+	pipeline := NewPipeline(WithStep(dropFirst))
+	input := PipelineInput{
+		Messages: []schema.Message{
+			schema.NewHumanMessage("first"),
+			schema.NewAIMessage("second"),
+			schema.NewHumanMessage("third"),
+		},
+		MaxTokens: 1000,
+	}
+
+	output, err := pipeline.Execute(gocontext.Background(), input)
+	if err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if len(output.Messages) != 2 {
+		t.Fatalf("output.Messages = %d, want 2 (first dropped)", len(output.Messages))
+	}
+	if got := textOf(output.Messages[0]); got != "second" {
+		t.Errorf("output.Messages[0] = %q, want %q", got, "second")
+	}
+	if got := textOf(output.Messages[1]); got != "third" {
+		t.Errorf("output.Messages[1] = %q, want %q", got, "third")
+	}
+}
+
+type stepFunc struct {
+	name string
+	fn   func([]ContextItem) []ContextItem
+}
+
+func (s stepFunc) Name() string { return s.name }
+func (s stepFunc) Process(_ gocontext.Context, items []ContextItem) ([]ContextItem, error) {
+	return s.fn(items), nil
+}
+
+func textOf(m schema.Message) string {
+	out := ""
+	for _, p := range m.GetContent() {
+		if tp, ok := p.(schema.TextPart); ok {
+			out += tp.Text
+		}
+	}
+	return out
 }
 
 func TestStepNames(t *testing.T) {

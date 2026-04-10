@@ -56,7 +56,10 @@ type PipelineInput struct {
 type PipelineOutput struct {
 	// Items are the selected and ordered context items.
 	Items []ContextItem
-	// Messages are the final prepared messages for the LLM.
+	// Messages are the final prepared messages for the LLM, reconstructed
+	// from Items whose "source" metadata key is "message". Items added by
+	// pipeline steps that do not originate from a schema.Message are not
+	// included here and must be consumed via Items directly.
 	Messages []schema.Message
 	// TokenEstimate is the estimated token count.
 	TokenEstimate int
@@ -126,10 +129,34 @@ func (p *DefaultPipeline) Execute(ctx gocontext.Context, input PipelineInput) (P
 
 	return PipelineOutput{
 		Items:         items,
-		Messages:      input.Messages,
+		Messages:      itemsToMessages(items, input.Messages),
 		TokenEstimate: tokenEstimate,
 		StepsExecuted: stepsExecuted,
 	}, nil
+}
+
+// itemsToMessages rebuilds the ordered message slice from the pipeline's
+// remaining items. Only items that originated from the input messages
+// (identified by the "source"="message" and "index" metadata set in
+// messagesToItems) are included, preserving the order in which the pipeline
+// left them.
+func itemsToMessages(items []ContextItem, original []schema.Message) []schema.Message {
+	result := make([]schema.Message, 0, len(items))
+	for _, it := range items {
+		if it.Metadata == nil {
+			continue
+		}
+		src, _ := it.Metadata["source"].(string)
+		if src != "message" {
+			continue
+		}
+		idx, ok := it.Metadata["index"].(int)
+		if !ok || idx < 0 || idx >= len(original) {
+			continue
+		}
+		result = append(result, original[idx])
+	}
+	return result
 }
 
 func messagesToItems(msgs []schema.Message) []ContextItem {
@@ -147,8 +174,9 @@ func messagesToItems(msgs []schema.Message) []ContextItem {
 			Content: content,
 			Score:   1.0,
 			Metadata: map[string]any{
-				"role":  string(m.GetRole()),
-				"index": i,
+				"source": "message",
+				"role":   string(m.GetRole()),
+				"index":  i,
 			},
 		})
 	}
@@ -242,7 +270,9 @@ func NewTokenBudgetFilter(maxTokens int) *TokenBudgetFilter {
 // Name returns the step name.
 func (f *TokenBudgetFilter) Name() string { return "token_budget_filter" }
 
-// Process removes items from the end until within budget.
+// Process keeps items in their original order until the token budget is
+// exhausted. Items that individually exceed the remaining budget are
+// skipped; subsequent smaller items may still be included (greedy packing).
 func (f *TokenBudgetFilter) Process(_ gocontext.Context, items []ContextItem) ([]ContextItem, error) {
 	var result []ContextItem
 	used := 0
@@ -321,6 +351,10 @@ var (
 )
 
 // Register adds a step factory to the global registry.
+//
+// Register MUST only be called from package init() functions. Calling it
+// after program start is unsupported and may race with concurrent NewStep
+// lookups. Third-party steps should self-register via their own init().
 func Register(name string, f Factory) {
 	registryMu.Lock()
 	defer registryMu.Unlock()
@@ -352,6 +386,7 @@ func ListSteps() []string {
 
 func init() {
 	Register("relevance_rank", func() (ContextStep, error) { return &RelevanceRanker{}, nil })
+	Register("token_budget_filter", func() (ContextStep, error) { return NewTokenBudgetFilter(4096), nil })
 	Register("duplicate_filter", func() (ContextStep, error) { return &DuplicateFilter{}, nil })
 	Register("recency_boost", func() (ContextStep, error) { return NewRecencyBooster(0.2), nil })
 }
