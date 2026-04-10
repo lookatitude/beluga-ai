@@ -208,6 +208,31 @@ func (d *RateDetector) Detect(ctx context.Context, _ string) (AnomalyResult, err
 	pruned = append(pruned, now)
 	d.writers[writer] = pruned
 	count := len(pruned)
+
+	// Opportunistically sweep stale writers to prevent unbounded growth from
+	// transient agent identities. Only touches a small bounded number of keys
+	// per call to keep worst-case latency stable.
+	swept := 0
+	for k, ts := range d.writers {
+		if swept >= 8 {
+			break
+		}
+		swept++
+		if k == writer {
+			continue
+		}
+		alive := ts[:0]
+		for _, t := range ts {
+			if t.After(cutoff) {
+				alive = append(alive, t)
+			}
+		}
+		if len(alive) == 0 {
+			delete(d.writers, k)
+		} else {
+			d.writers[k] = alive
+		}
+	}
 	d.mu.Unlock()
 
 	if count > maxWrites {

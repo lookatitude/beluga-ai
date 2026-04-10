@@ -69,9 +69,12 @@ func NewInterAgentCircuitBreaker(opts ...CircuitBreakerOption) *InterAgentCircui
 	return cb
 }
 
-// pairKey returns a deterministic key for a writer-reader agent pair.
+// pairKey returns a deterministic, collision-free key for a writer-reader
+// agent pair. The encoding is length-prefixed ("<len(writer)>:<writer>|<reader>")
+// so that distinct writer-reader pairs can never produce the same key even if
+// their identifiers contain the delimiter characters.
 func pairKey(writer, reader string) string {
-	return writer + "->" + reader
+	return fmt.Sprintf("%d:%s|%s", len(writer), writer, reader)
 }
 
 // getOrCreateBreaker returns the circuit breaker for the given agent pair,
@@ -123,6 +126,15 @@ func (iacb *InterAgentCircuitBreaker) RecordPoisoning(ctx context.Context, write
 	cb := iacb.getOrCreateBreaker(writer, reader)
 
 	prevState := cb.State()
+
+	// If the circuit is already open, Execute would short-circuit with
+	// ErrCircuitOpen and never record the failure, letting the reset timer
+	// expire despite ongoing poisoning. Trip() bumps the last-failure
+	// timestamp and keeps the breaker open.
+	if prevState == resilience.StateOpen {
+		cb.Trip()
+		return
+	}
 
 	// Record failure by executing a function that always fails.
 	_, _ = cb.Execute(ctx, func(_ context.Context) (any, error) {
