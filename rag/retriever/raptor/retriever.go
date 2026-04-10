@@ -13,10 +13,11 @@ import (
 )
 
 func init() {
+	// RAPTOR requires a pre-built *Tree and an Embedder, neither of which can
+	// be sourced from a generic ProviderConfig. Register a factory that
+	// returns a descriptive error directing callers to NewRAPTORRetriever.
 	retriever.Register("raptor", func(cfg config.ProviderConfig) (retriever.Retriever, error) {
-		return &RAPTORRetriever{
-			topK: 10,
-		}, nil
+		return nil, fmt.Errorf("raptor: use NewRAPTORRetriever directly; tree and embedder cannot be provided via ProviderConfig")
 	})
 }
 

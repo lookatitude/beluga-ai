@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"math/rand/v2"
+	"math/rand/v2" //#nosec G404 -- non-crypto randomness for K-means++ initialization; seed is a reproducibility feature
+	"sort"
 )
 
 // Clusterer groups embedding vectors into clusters. Each returned cluster is a
@@ -62,16 +63,21 @@ func (c *KMeansClusterer) Cluster(ctx context.Context, embeddings [][]float32) (
 
 	var rng *rand.Rand
 	if c.Seed != 0 {
-		rng = rand.New(rand.NewPCG(c.Seed, 0))
+		rng = rand.New(rand.NewPCG(c.Seed, 0)) //#nosec G404 -- non-crypto PRNG for K-means++ initialization
 	} else {
-		rng = rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
+		rng = rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64())) //#nosec G404 -- non-crypto PRNG for K-means++ initialization
 	}
 
 	dim := len(embeddings[0])
+	for i, e := range embeddings[1:] {
+		if len(e) != dim {
+			return nil, fmt.Errorf("raptor: cluster: embedding %d has dimension %d, want %d", i+1, len(e), dim)
+		}
+	}
 
 	// K-means++ initialization.
 	centroids := make([][]float32, k)
-	centroids[0] = copyVec(embeddings[rng.IntN(n)])
+	centroids[0] = copyVec(embeddings[rng.IntN(n)]) //#nosec G404 -- non-crypto PRNG
 
 	dist := make([]float64, n)
 	for i := 1; i < k; i++ {
@@ -96,7 +102,7 @@ func (c *KMeansClusterer) Cluster(ctx context.Context, embeddings [][]float32) (
 			continue
 		}
 
-		r := rng.Float64() * totalDist
+		r := rng.Float64() * totalDist //#nosec G404 -- non-crypto PRNG
 		var cumulative float64
 		chosen := n - 1
 		for j := 0; j < n; j++ {
@@ -172,9 +178,14 @@ func (c *KMeansClusterer) Cluster(ctx context.Context, embeddings [][]float32) (
 		clusters[ci] = append(clusters[ci], j)
 	}
 
+	keys := make([]int, 0, len(clusters))
+	for ci := range clusters {
+		keys = append(keys, ci)
+	}
+	sort.Ints(keys)
 	result := make([][]int, 0, len(clusters))
-	for _, indices := range clusters {
-		result = append(result, indices)
+	for _, ci := range keys {
+		result = append(result, clusters[ci])
 	}
 
 	return result, nil
