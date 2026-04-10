@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"iter"
+	"log/slog"
 	"sort"
 	"sync"
 	"time"
@@ -72,10 +73,11 @@ type Suggestion struct {
 type Option func(*evolvingOptions)
 
 type evolvingOptions struct {
-	optimizer    MetaOptimizer
-	distiller    ExperienceDistiller
-	maxMemory    int
-	learnEveryN  int
+	optimizer   MetaOptimizer
+	distiller   ExperienceDistiller
+	logger      *slog.Logger
+	maxMemory   int
+	learnEveryN int
 }
 
 // WithOptimizer sets the meta-optimizer.
@@ -89,13 +91,33 @@ func WithDistiller(d ExperienceDistiller) Option {
 }
 
 // WithMaxMemory sets the maximum number of interactions to retain.
+//
+// n must be greater than 0. Values <= 0 are ignored, and the default
+// (1000) is preserved.
 func WithMaxMemory(n int) Option {
-	return func(opts *evolvingOptions) { opts.maxMemory = n }
+	return func(opts *evolvingOptions) {
+		if n > 0 {
+			opts.maxMemory = n
+		}
+	}
 }
 
 // WithLearnEveryN triggers learning every N interactions.
+//
+// n must be greater than 0. Values <= 0 are ignored, and the default
+// (10) is preserved.
 func WithLearnEveryN(n int) Option {
-	return func(opts *evolvingOptions) { opts.learnEveryN = n }
+	return func(opts *evolvingOptions) {
+		if n > 0 {
+			opts.learnEveryN = n
+		}
+	}
+}
+
+// WithLogger sets the logger used to report background learning errors.
+// If nil or unset, slog.Default() is used.
+func WithLogger(l *slog.Logger) Option {
+	return func(opts *evolvingOptions) { opts.logger = l }
 }
 
 // EvolvingAgent wraps a BaseAgent and adds self-improvement capabilities.
@@ -112,6 +134,10 @@ type EvolvingAgent struct {
 var _ agent.Agent = (*EvolvingAgent)(nil)
 
 // New creates an EvolvingAgent wrapping the given agent.
+//
+// Defaults: learnEveryN=10, maxMemory=1000. Invalid option values (<=0)
+// are ignored and replaced with defaults, so the agent is always safe
+// to use after construction.
 func New(inner agent.Agent, opts ...Option) *EvolvingAgent {
 	o := evolvingOptions{
 		optimizer:   &FrequencyOptimizer{},
@@ -121,6 +147,9 @@ func New(inner agent.Agent, opts ...Option) *EvolvingAgent {
 	}
 	for _, opt := range opts {
 		opt(&o)
+	}
+	if o.logger == nil {
+		o.logger = slog.Default()
 	}
 	return &EvolvingAgent{inner: inner, opts: o}
 }
@@ -199,9 +228,11 @@ func (e *EvolvingAgent) recordInteraction(ctx context.Context, interaction Inter
 		e.interactions = e.interactions[len(e.interactions)-e.opts.maxMemory:]
 	}
 
-	// Trigger learning periodically.
+	// Trigger learning periodically. Decouple the background context
+	// from the request context so the goroutine outlives the caller
+	// while preserving trace spans, tenant ID, and other values.
 	if e.counter%e.opts.learnEveryN == 0 {
-		go e.learn(ctx)
+		go e.learn(context.WithoutCancel(ctx))
 	}
 }
 
@@ -213,11 +244,21 @@ func (e *EvolvingAgent) learn(ctx context.Context) {
 
 	experiences, err := e.opts.distiller.Distill(ctx, interactions)
 	if err != nil {
+		e.opts.logger.LogAttrs(ctx, slog.LevelWarn,
+			"evolving: distiller failed",
+			slog.String("agent_id", e.inner.ID()),
+			slog.String("error", err.Error()),
+		)
 		return
 	}
 
 	suggestions, err := e.opts.optimizer.Optimize(ctx, experiences)
 	if err != nil {
+		e.opts.logger.LogAttrs(ctx, slog.LevelWarn,
+			"evolving: optimizer failed",
+			slog.String("agent_id", e.inner.ID()),
+			slog.String("error", err.Error()),
+		)
 		return
 	}
 
@@ -276,10 +317,14 @@ func (d *SimpleDistiller) Distill(_ context.Context, interactions []Interaction)
 	}
 
 	successRate := float64(successes) / float64(len(interactions))
+	// Confidence reflects the observed success rate so downstream
+	// optimizers can act on poor reliability. A low success rate
+	// produces a low-confidence reliability experience, which
+	// FrequencyOptimizer will flag as needing improvement.
 	experiences = append(experiences, Experience{
 		Category:   "reliability",
 		Pattern:    fmt.Sprintf("Success rate: %.1f%% (%d/%d)", successRate*100, successes, len(interactions)),
-		Confidence: 0.9,
+		Confidence: successRate,
 		LearnedAt:  time.Now(),
 	})
 
