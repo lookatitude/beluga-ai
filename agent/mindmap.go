@@ -187,7 +187,7 @@ func (p *MindMapPlanner) parseAndAddNodes(text string) error {
 	lines := strings.Split(text, "\n")
 
 	// Track IDs for relating back.
-	var addedIDs []string
+		addedIDs = append(addedIDs, id)
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
