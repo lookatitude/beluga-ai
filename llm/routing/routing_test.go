@@ -149,6 +149,66 @@ func TestInMemoryBudgetEnforcer(t *testing.T) {
 	}
 }
 
+func TestCheckAndReserve_Concurrent(t *testing.T) {
+	enforcer := NewBudgetEnforcer(10.0)
+	ctx := context.Background()
+
+	// 100 concurrent reservations of 1.0 each against a budget of 10.0.
+	// Exactly 10 must succeed.
+	const n = 100
+	results := make(chan bool, n)
+	for i := 0; i < n; i++ {
+		go func() {
+			ok, _ := enforcer.CheckAndReserve(ctx, 1.0)
+			results <- ok
+		}()
+	}
+	successes := 0
+	for i := 0; i < n; i++ {
+		if <-results {
+			successes++
+		}
+	}
+	if successes != 10 {
+		t.Errorf("CheckAndReserve successes = %d, want 10", successes)
+	}
+}
+
+func TestDefaultCostRouter_Enforcer(t *testing.T) {
+	enforcer := NewBudgetEnforcer(100.0)
+	router := NewCostRouter(
+		WithModels(ModelConfig{ID: "m", Tier: TierSmall, CostPerInputToken: 0.1, CostPerOutputToken: 0.1}),
+		WithBudgetEnforcer(enforcer),
+	)
+	if router.Enforcer() == nil {
+		t.Fatal("Enforcer() returned nil")
+	}
+}
+
+func TestRegistry(t *testing.T) {
+	r, err := NewRouter("default", RouterConfig{
+		Models: []ModelConfig{{ID: "m", Tier: TierSmall, CostPerInputToken: 0.1, CostPerOutputToken: 0.1}},
+	})
+	if err != nil {
+		t.Fatalf("NewRouter: %v", err)
+	}
+	if r == nil {
+		t.Fatal("expected non-nil router")
+	}
+	if _, err := NewRouter("bogus", RouterConfig{}); err == nil {
+		t.Error("expected error for unknown router")
+	}
+	if len(ListRouters()) == 0 {
+		t.Error("expected registered routers")
+	}
+	if _, err := NewClassifier("heuristic", ClassifierConfig{}); err != nil {
+		t.Errorf("NewClassifier: %v", err)
+	}
+	if _, err := NewEnforcer("inmemory", EnforcerConfig{DailyLimit: 5.0}); err != nil {
+		t.Errorf("NewEnforcer: %v", err)
+	}
+}
+
 func TestModelTierConstants(t *testing.T) {
 	tiers := []ModelTier{TierSmall, TierMedium, TierLarge}
 	for _, tier := range tiers {

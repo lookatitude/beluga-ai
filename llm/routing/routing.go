@@ -33,6 +33,12 @@ type ComplexityClassifier interface {
 type BudgetEnforcer interface {
 	// Check returns whether the estimated cost is within budget.
 	Check(ctx context.Context, estimatedCost float64) (bool, error)
+	// CheckAndReserve atomically verifies that estimatedCost fits within the
+	// remaining budget and reserves it. Returns (true, nil) when reserved.
+	// Callers should later call Record with the actual cost; the difference
+	// between reserved and actual spend can be reconciled by callers if
+	// needed. This prevents TOCTOU races across concurrent callers.
+	CheckAndReserve(ctx context.Context, estimatedCost float64) (bool, error)
 	// Record records an actual cost expenditure.
 	Record(ctx context.Context, cost float64) error
 }
@@ -141,11 +147,12 @@ func (r *DefaultCostRouter) SelectModel(ctx context.Context, msgs []schema.Messa
 
 	// Estimate cost and check budget.
 	inputTokens := estimateTokens(msgs)
+	tierDowngraded := len(r.modelsForTier(tier)) == 0
 	for _, m := range candidates {
-		estimated := float64(inputTokens)*m.CostPerInputToken + float64(inputTokens/2)*m.CostPerOutputToken
+		estimated := float64(inputTokens)*m.CostPerInputToken + (float64(inputTokens)/2.0)*m.CostPerOutputToken
 
 		if r.opts.enforcer != nil {
-			allowed, err := r.opts.enforcer.Check(ctx, estimated)
+			allowed, err := r.opts.enforcer.CheckAndReserve(ctx, estimated)
 			if err != nil {
 				return ModelSelection{}, fmt.Errorf("routing: budget check: %w", err)
 			}
@@ -154,15 +161,26 @@ func (r *DefaultCostRouter) SelectModel(ctx context.Context, msgs []schema.Messa
 			}
 		}
 
+		reason := fmt.Sprintf("selected %s (tier=%s) for complexity=%s (requested=%s)", m.ID, m.Tier, tier, tier)
+		if tierDowngraded {
+			reason = fmt.Sprintf("selected %s (tier=%s) for complexity=%s (requested=%s, downgraded: no models available for requested tier)", m.ID, m.Tier, tier, tier)
+		}
 		return ModelSelection{
 			ModelID:       m.ID,
 			Tier:          m.Tier,
 			EstimatedCost: estimated,
-			Reason:        fmt.Sprintf("selected %s (tier=%s) for complexity=%s", m.ID, m.Tier, tier),
+			Reason:        reason,
 		}, nil
 	}
 
 	return ModelSelection{}, fmt.Errorf("routing: no model within budget for tier %s", tier)
+}
+
+// Enforcer returns the configured budget enforcer, if any. Callers should
+// call Record on the enforcer after the actual LLM call completes to
+// reconcile reservations with actual spend.
+func (r *DefaultCostRouter) Enforcer() BudgetEnforcer {
+	return r.opts.enforcer
 }
 
 func (r *DefaultCostRouter) modelsForTier(tier ModelTier) []ModelConfig {
@@ -189,7 +207,9 @@ func estimateTokens(msgs []schema.Message) int {
 	total := 0
 	for _, m := range msgs {
 		for _, p := range m.GetContent() {
-			if tp, ok := p.(schema.TextPart); ok { total += len(tp.Text) / 4 } // Rough estimate: 4 chars per token.
+			if tp, ok := p.(schema.TextPart); ok {
+				total += len(tp.Text) / 4
+			} // Rough estimate: 4 chars per token.
 		}
 	}
 	if total == 0 {
@@ -215,7 +235,9 @@ func (c *HeuristicClassifier) Classify(_ context.Context, msgs []schema.Message)
 			hasSystem = true
 		}
 		for _, p := range m.GetContent() {
-			if tp, ok := p.(schema.TextPart); ok { totalChars += len(tp.Text) }
+			if tp, ok := p.(schema.TextPart); ok {
+				totalChars += len(tp.Text)
+			}
 		}
 	}
 
@@ -251,11 +273,26 @@ func NewBudgetEnforcer(dailyLimit float64) *InMemoryBudgetEnforcer {
 }
 
 // Check returns whether the estimated cost fits within the remaining budget.
+// Note: Check is non-reserving and therefore races with concurrent callers.
+// Prefer CheckAndReserve for routing decisions.
 func (e *InMemoryBudgetEnforcer) Check(_ context.Context, estimatedCost float64) (bool, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.maybeReset()
 	return e.spent+estimatedCost <= e.dailyLimit, nil
+}
+
+// CheckAndReserve atomically verifies that estimatedCost fits within the
+// remaining budget and reserves it against current spend.
+func (e *InMemoryBudgetEnforcer) CheckAndReserve(_ context.Context, estimatedCost float64) (bool, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.maybeReset()
+	if e.spent+estimatedCost > e.dailyLimit {
+		return false, nil
+	}
+	e.spent += estimatedCost
+	return true, nil
 }
 
 // Record adds the actual cost to the daily spend.
