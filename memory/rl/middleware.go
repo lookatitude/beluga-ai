@@ -3,6 +3,7 @@ package rl
 import (
 	"context"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/memory"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -14,6 +15,23 @@ type FeatureExtractor interface {
 	// Extract derives observation features from the memory state and the
 	// input/output messages being saved.
 	Extract(ctx context.Context, mem memory.Memory, input, output schema.Message) (PolicyFeatures, error)
+}
+
+// SizedMemory is an optional capability interface: memories that can
+// report their current total entry count. The DefaultFeatureExtractor
+// uses Size() when available so that HeuristicPolicy can make informed
+// ActionDelete decisions based on MaxStoreSize.
+type SizedMemory interface {
+	Size(ctx context.Context) (int, error)
+}
+
+// DeletableMemory is an optional capability interface: memories that
+// support granular entry deletion by ID. PolicyMemory routes ActionDelete
+// through this interface when available. Memories that do not implement
+// it cause ActionDelete to return an error explaining the missing
+// capability.
+type DeletableMemory interface {
+	Delete(ctx context.Context, id string) error
 }
 
 // Option configures a PolicyMemory.
@@ -107,19 +125,65 @@ func (m *PolicyMemory) Save(ctx context.Context, input, output schema.Message) e
 	case ActionAdd:
 		return m.inner.Save(ctx, input, output)
 	case ActionUpdate:
-		// Update = clear most similar + re-save.
-		// For now, delegate to Save which overwrites in most implementations.
-		return m.inner.Save(ctx, input, output)
+		// Update semantics: delete the closest existing entry (when the
+		// backing store supports deletion) and save the new pair in its
+		// place. If the backing store is not DeletableMemory, we fall
+		// back to Save — which will create a duplicate — and return an
+		// error so callers can detect the semantic gap.
+		if del, ok := m.inner.(DeletableMemory); ok {
+			if id, lookupErr := m.closestEntryID(ctx, output); lookupErr == nil && id != "" {
+				if derr := del.Delete(ctx, id); derr != nil {
+					return derr
+				}
+			}
+			return m.inner.Save(ctx, input, output)
+		}
+		return core.NewError(
+			"rl.policy_memory.update",
+			core.ErrInvalidInput,
+			"ActionUpdate requires inner memory to implement DeletableMemory",
+			nil,
+		)
 	case ActionDelete:
-		// Delete the most similar entry by clearing and re-saving without the
-		// current input. In practice, implementations with granular delete
-		// should override this behavior.
-		return nil
+		if del, ok := m.inner.(DeletableMemory); ok {
+			id, lookupErr := m.closestEntryID(ctx, output)
+			if lookupErr != nil {
+				return lookupErr
+			}
+			if id == "" {
+				return nil
+			}
+			return del.Delete(ctx, id)
+		}
+		return core.NewError(
+			"rl.policy_memory.delete",
+			core.ErrInvalidInput,
+			"ActionDelete requires inner memory to implement DeletableMemory",
+			nil,
+		)
 	case ActionNoop:
 		return nil
 	default:
 		return nil
 	}
+}
+
+// closestEntryID looks up the single most-similar entry to the output
+// message and returns its ID from the document metadata. Returns an empty
+// string if no candidate is found.
+func (m *PolicyMemory) closestEntryID(ctx context.Context, output schema.Message) (string, error) {
+	query := messageText(output)
+	docs, err := m.inner.Search(ctx, query, 1)
+	if err != nil {
+		return "", err
+	}
+	if len(docs) == 0 {
+		return "", nil
+	}
+	if id, ok := docs[0].Metadata["id"].(string); ok {
+		return id, nil
+	}
+	return docs[0].ID, nil
 }
 
 // Load passes through to the underlying memory.

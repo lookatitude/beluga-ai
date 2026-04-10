@@ -16,9 +16,23 @@ type mockMemory struct {
 	loadCount   atomic.Int64
 	searchCount atomic.Int64
 	clearCount  atomic.Int64
+	deleteCount atomic.Int64
+	lastDelete  string
 	saveErr     error
 	loadMsgs    []schema.Message
 	searchDocs  []schema.Document
+	deletable   bool
+}
+
+// deletableMemory wraps mockMemory and implements DeletableMemory. It is
+// used to exercise PolicyMemory action routing that depends on optional
+// delete capability.
+type deletableMemory struct{ *mockMemory }
+
+func (d deletableMemory) Delete(_ context.Context, id string) error {
+	d.mockMemory.deleteCount.Add(1)
+	d.mockMemory.lastDelete = id
+	return nil
 }
 
 func (m *mockMemory) Save(_ context.Context, _, _ schema.Message) error {
@@ -96,7 +110,8 @@ func TestPolicyMemory_Save_ActionNoop(t *testing.T) {
 }
 
 func TestPolicyMemory_Save_ActionDelete(t *testing.T) {
-	mem := &mockMemory{}
+	base := &mockMemory{searchDocs: []schema.Document{{ID: "doc-1"}}}
+	mem := deletableMemory{base}
 	policy := &mockPolicy{action: ActionDelete, confidence: 0.7}
 
 	pm := New(mem, WithPolicy(policy))
@@ -105,13 +120,31 @@ func TestPolicyMemory_Save_ActionDelete(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if mem.saveCount.Load() != 0 {
-		t.Errorf("save count = %d, want 0 (delete does not save)", mem.saveCount.Load())
+	if base.saveCount.Load() != 0 {
+		t.Errorf("save count = %d, want 0 (delete does not save)", base.saveCount.Load())
+	}
+	if base.deleteCount.Load() != 1 {
+		t.Errorf("delete count = %d, want 1", base.deleteCount.Load())
+	}
+	if base.lastDelete != "doc-1" {
+		t.Errorf("deleted id = %q, want %q", base.lastDelete, "doc-1")
+	}
+}
+
+func TestPolicyMemory_Save_ActionDelete_NotDeletable(t *testing.T) {
+	mem := &mockMemory{}
+	policy := &mockPolicy{action: ActionDelete, confidence: 0.7}
+
+	pm := New(mem, WithPolicy(policy))
+	err := pm.Save(context.Background(), newInput(), newOutput())
+	if err == nil {
+		t.Fatal("expected error when memory does not implement DeletableMemory")
 	}
 }
 
 func TestPolicyMemory_Save_ActionUpdate(t *testing.T) {
-	mem := &mockMemory{}
+	base := &mockMemory{searchDocs: []schema.Document{{ID: "doc-1"}}}
+	mem := deletableMemory{base}
 	policy := &mockPolicy{action: ActionUpdate, confidence: 0.8}
 
 	pm := New(mem, WithPolicy(policy))
@@ -120,9 +153,23 @@ func TestPolicyMemory_Save_ActionUpdate(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Update delegates to Save.
-	if mem.saveCount.Load() != 1 {
-		t.Errorf("save count = %d, want 1", mem.saveCount.Load())
+	// Update deletes the closest entry then saves the new one.
+	if base.deleteCount.Load() != 1 {
+		t.Errorf("delete count = %d, want 1", base.deleteCount.Load())
+	}
+	if base.saveCount.Load() != 1 {
+		t.Errorf("save count = %d, want 1", base.saveCount.Load())
+	}
+}
+
+func TestPolicyMemory_Save_ActionUpdate_NotDeletable(t *testing.T) {
+	mem := &mockMemory{}
+	policy := &mockPolicy{action: ActionUpdate, confidence: 0.8}
+
+	pm := New(mem, WithPolicy(policy))
+	err := pm.Save(context.Background(), newInput(), newOutput())
+	if err == nil {
+		t.Fatal("expected error when memory does not implement DeletableMemory")
 	}
 }
 
