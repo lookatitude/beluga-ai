@@ -3,6 +3,7 @@ package learning
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -110,7 +111,7 @@ func (tt *ToolTester) Validate(ctx context.Context, t *DynamicTool, cases []Test
 	}
 
 	if len(failures) > 0 {
-		return fmt.Errorf("tool %q validation failed: %s", t.Name(), joinStrings(failures, "; "))
+		return fmt.Errorf("tool %q validation failed: %s", t.Name(), strings.Join(failures, "; "))
 	}
 	return nil
 }
@@ -152,16 +153,4 @@ func (tt *ToolTester) runCase(ctx context.Context, t *DynamicTool, tc TestCase) 
 	}
 
 	return TestResult{Name: tc.Name, Passed: true, GotOutput: gotOutput}
-}
-
-// joinStrings joins strings with a separator.
-func joinStrings(strs []string, sep string) string {
-	if len(strs) == 0 {
-		return ""
-	}
-	result := strs[0]
-	for _, s := range strs[1:] {
-		result += sep + s
-	}
-	return result
 }
