@@ -110,6 +110,10 @@ func (b *TreeBuilder) Build(ctx context.Context, docs []schema.Document) (*Tree,
 			}
 		}
 
+		if _, exists := tree.Nodes[id]; exists {
+			return nil, fmt.Errorf("raptor: build: duplicate document ID %q at index %d", id, i)
+		}
+
 		node := &TreeNode{
 			ID:        id,
 			Level:     0,
