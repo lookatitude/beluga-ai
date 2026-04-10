@@ -47,7 +47,7 @@ func WithMaxConcurrentTasks(n int) Option {
 }
 
 // WithPollInterval sets how frequently the scheduler checks the idle
-// detector. The minimum is 500ms.
+// detector. The minimum is 10ms.
 func WithPollInterval(d time.Duration) Option {
 	return func(o *schedulerOptions) {
 		if d < minPollInterval {
@@ -242,23 +242,24 @@ func (s *Scheduler) runTasks(ctx context.Context) {
 	sem := make(chan struct{}, s.opts.maxConcurrentTasks)
 	var wg sync.WaitGroup
 
+loop:
 	for _, task := range eligible {
 		// Check if still idle before starting each task.
 		if !s.detector.IsIdle() {
 			taskCancel()
-			break
+			break loop
 		}
 
 		// Check context cancellation.
 		if ctx.Err() != nil {
-			break
+			break loop
 		}
 
 		// Acquire semaphore slot.
 		select {
 		case sem <- struct{}{}:
 		case <-ctx.Done():
-			break
+			break loop
 		}
 
 		wg.Add(1)

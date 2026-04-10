@@ -61,9 +61,17 @@ func (t *ContradictionResolverTask) Priority() sleeptime.Priority {
 }
 
 // ShouldRun reports whether the session has enough turns to warrant
-// contradiction checking.
+// contradiction checking and has been idle for at least maxAge.
 func (t *ContradictionResolverTask) ShouldRun(_ context.Context, state sleeptime.SessionState) bool {
-	return state.TurnCount >= t.minTurns
+	if state.TurnCount < t.minTurns {
+		return false
+	}
+	if t.maxAge > 0 && !state.LastActivity.IsZero() {
+		if time.Since(state.LastActivity) < t.maxAge {
+			return false
+		}
+	}
+	return true
 }
 
 // Run performs heuristic-based contradiction detection and resolution. It

@@ -61,9 +61,18 @@ func (t *MemoryReorgTask) Priority() sleeptime.Priority {
 }
 
 // ShouldRun reports whether the session has enough turns to warrant
-// reorganization.
+// reorganization and has been idle for at least maxAge since its last
+// activity.
 func (t *MemoryReorgTask) ShouldRun(_ context.Context, state sleeptime.SessionState) bool {
-	return state.TurnCount >= t.minTurns
+	if state.TurnCount < t.minTurns {
+		return false
+	}
+	if t.maxAge > 0 && !state.LastActivity.IsZero() {
+		if time.Since(state.LastActivity) < t.maxAge {
+			return false
+		}
+	}
+	return true
 }
 
 // Run performs memory reorganization by consolidating old turns. It respects
