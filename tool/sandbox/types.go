@@ -41,6 +41,13 @@ type SandboxConfig struct {
 
 	// NetworkPolicy controls network access for this execution.
 	// Zero value defaults to NetworkIsolated.
+	//
+	// IMPORTANT: Enforcement of NetworkPolicy depends on the sandbox
+	// provider. Container-based providers (Docker, gVisor, Firecracker,
+	// E2B) enforce this via network namespaces or egress policies.
+	// ProcessSandbox CANNOT enforce network policies and always runs
+	// with the parent process's network access — it rejects any
+	// non-unrestricted policy at Execute() time.
 	NetworkPolicy NetworkPolicy
 
 	// Resources sets compute resource limits for this execution.

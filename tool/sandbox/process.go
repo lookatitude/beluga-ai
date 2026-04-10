@@ -19,6 +19,7 @@ var _ Sandbox = (*ProcessSandbox)(nil)
 type processOptions struct {
 	workDir string
 	env     []string
+	hooks   Hooks
 }
 
 // ProcessOption configures a ProcessSandbox.
@@ -36,6 +37,13 @@ func WithWorkDir(dir string) ProcessOption {
 // a minimal environment.
 func WithEnv(env []string) ProcessOption {
 	return func(o *processOptions) { o.env = env }
+}
+
+// WithProcessHooks sets lifecycle hooks on the ProcessSandbox. Hooks fire
+// around each Execute call — BeforeExecute, AfterExecute, OnTimeout and
+// OnError — and are composable via ComposeHooks.
+func WithProcessHooks(h Hooks) ProcessOption {
+	return func(o *processOptions) { o.hooks = h }
 }
 
 // ProcessSandbox executes code as a child process in a temporary directory.
@@ -66,8 +74,31 @@ func (s *ProcessSandbox) Execute(ctx context.Context, code string, cfg SandboxCo
 		return ExecutionResult{}, core.NewError("sandbox.execute", core.ErrInvalidInput, "code must not be empty", nil)
 	}
 
+	// ProcessSandbox cannot enforce network isolation. Reject any non-
+	// unrestricted network policy to prevent silent misconfiguration.
+	if cfg.NetworkPolicy != "" && cfg.NetworkPolicy != NetworkUnrestricted {
+		return ExecutionResult{}, core.NewError(
+			"sandbox.execute",
+			core.ErrInvalidInput,
+			fmt.Sprintf("ProcessSandbox cannot enforce NetworkPolicy %q; use a container-based provider", cfg.NetworkPolicy),
+			nil,
+		)
+	}
+
+	if h := s.opts.hooks.BeforeExecute; h != nil {
+		if err := h(ctx, code, cfg); err != nil {
+			if oh := s.opts.hooks.OnError; oh != nil {
+				err = oh(ctx, err)
+			}
+			return ExecutionResult{}, err
+		}
+	}
+
 	lang, err := resolveLanguage(cfg.Language)
 	if err != nil {
+		if oh := s.opts.hooks.OnError; oh != nil {
+			err = oh(ctx, err)
+		}
 		return ExecutionResult{}, err
 	}
 
@@ -103,7 +134,11 @@ func (s *ProcessSandbox) Execute(ctx context.Context, code string, cfg SandboxCo
 	defer cancel()
 
 	args := append(lang.args, filename)
-	cmd := exec.CommandContext(execCtx, lang.interpreter, args...)
+	// The interpreter is selected from a fixed allowlist (supportedLanguages),
+	// args are fixed per language, and filename is a server-generated path
+	// inside a freshly created temp directory. The user-supplied code is
+	// written to the file and never passed as a command argument.
+	cmd := exec.CommandContext(execCtx, lang.interpreter, args...) //#nosec G204 -- interpreter from static allowlist, filename is server-generated
 	cmd.Dir = tmpDir
 
 	if len(s.opts.env) > 0 {
@@ -129,12 +164,29 @@ func (s *ProcessSandbox) Execute(ctx context.Context, code string, cfg SandboxCo
 	if runErr != nil {
 		if execCtx.Err() == context.DeadlineExceeded {
 			result.ExitCode = -1
-			return result, core.NewError("sandbox.execute", core.ErrTimeout,
+			if th := s.opts.hooks.OnTimeout; th != nil {
+				th(ctx, code, cfg)
+			}
+			var timeoutErr error = core.NewError("sandbox.execute", core.ErrTimeout,
 				fmt.Sprintf("execution timed out after %s", timeout), execCtx.Err())
+			if oh := s.opts.hooks.OnError; oh != nil {
+				timeoutErr = oh(ctx, timeoutErr)
+			}
+			if ah := s.opts.hooks.AfterExecute; ah != nil {
+				ah(ctx, result, timeoutErr)
+			}
+			return result, timeoutErr
 		}
 		if ctx.Err() != nil {
 			result.ExitCode = -1
-			return result, core.NewError("sandbox.execute", core.ErrTimeout, "execution cancelled", ctx.Err())
+			var cancelErr error = core.NewError("sandbox.execute", core.ErrTimeout, "execution cancelled", ctx.Err())
+			if oh := s.opts.hooks.OnError; oh != nil {
+				cancelErr = oh(ctx, cancelErr)
+			}
+			if ah := s.opts.hooks.AfterExecute; ah != nil {
+				ah(ctx, result, cancelErr)
+			}
+			return result, cancelErr
 		}
 		// Extract exit code if available.
 		if exitErr, ok := runErr.(*exec.ExitError); ok {
@@ -143,9 +195,15 @@ func (s *ProcessSandbox) Execute(ctx context.Context, code string, cfg SandboxCo
 			result.ExitCode = -1
 		}
 		// Non-zero exit is not a Go error — it means the code ran but failed.
+		if ah := s.opts.hooks.AfterExecute; ah != nil {
+			ah(ctx, result, nil)
+		}
 		return result, nil
 	}
 
+	if ah := s.opts.hooks.AfterExecute; ah != nil {
+		ah(ctx, result, nil)
+	}
 	return result, nil
 }
 
