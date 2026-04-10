@@ -146,6 +146,9 @@ func (p *MindMapPlanner) populateGraph(ctx context.Context, state PlannerState) 
 	if len(state.Observations) > 0 {
 		prompt += "Recent observations:\n"
 		for _, obs := range state.Observations {
+	if len(state.Observations) > 0 {
+		prompt += "Recent observations:\n"
+		for _, obs := range state.Observations {
 			if obs.Result != nil {
 				text := extractContentText(obs.Result.Content)
 				if text != "" {
@@ -154,6 +157,7 @@ func (p *MindMapPlanner) populateGraph(ctx context.Context, state PlannerState) 
 			}
 		}
 		prompt += "\n"
+	}
 	}
 
 	prompt += `For each element, output exactly one line in this format:
