@@ -57,10 +57,15 @@ func (r *Rubric) Validate() error {
 	if len(r.Criteria) == 0 {
 		return fmt.Errorf("rubric %q must have at least one criterion", r.Name)
 	}
+	seen := make(map[string]bool, len(r.Criteria))
 	for _, c := range r.Criteria {
 		if c.Name == "" {
 			return fmt.Errorf("rubric %q: criterion name must not be empty", r.Name)
 		}
+		if seen[c.Name] {
+			return fmt.Errorf("rubric %q: duplicate criterion name %q", r.Name, c.Name)
+		}
+		seen[c.Name] = true
 		if c.Weight <= 0 {
 			return fmt.Errorf("rubric %q: criterion %q weight must be positive, got %f", r.Name, c.Name, c.Weight)
 		}
