@@ -33,7 +33,7 @@ var defaultPIIPatterns = []piiPattern{
 }
 
 // suspiciousURLPattern matches URLs that may indicate data exfiltration
-// through outbound requests. Covers http, https, and ftp schemes.
+// through outbound requests. Covers http and https schemes.
 var suspiciousURLPattern = regexp.MustCompile(`(?i)https?://[^\s"'\x60]+`)
 
 // DataExfiltrationGuard scans tool arguments and content for PII patterns,
@@ -50,12 +50,18 @@ type DataExfiltrationGuard struct {
 // ExfiltrationOption configures a DataExfiltrationGuard.
 type ExfiltrationOption func(*DataExfiltrationGuard)
 
-// WithPIIPattern adds a custom PII detection pattern.
+// WithPIIPattern adds a custom PII detection pattern. If the provided regex
+// fails to compile, the option is silently a no-op rather than panicking;
+// callers should validate patterns before passing them.
 func WithPIIPattern(category, pattern string) ExfiltrationOption {
+	compiled, err := regexp.Compile(pattern)
+	if err != nil {
+		return func(*DataExfiltrationGuard) {}
+	}
 	return func(g *DataExfiltrationGuard) {
 		g.piiPatterns = append(g.piiPatterns, piiPattern{
 			category: category,
-			pattern:  regexp.MustCompile(pattern),
+			pattern:  compiled,
 		})
 	}
 }
