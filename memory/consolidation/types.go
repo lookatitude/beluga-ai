@@ -70,11 +70,11 @@ const (
 	// ActionKeep means the record should be retained as-is.
 	ActionKeep Action = iota
 
-	// ActionPrune means the record should be deleted.
-	ActionPrune
-
 	// ActionCompress means the record should be summarised/compressed.
 	ActionCompress
+
+	// ActionPrune means the record should be deleted.
+	ActionPrune
 )
 
 // Decision pairs a record with the action the policy chose for it.

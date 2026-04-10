@@ -50,10 +50,13 @@ func (c *SummaryCompressor) Compress(ctx context.Context, records []Record) ([]R
 
 		out := r
 		out.Content = summary
-		if out.Metadata == nil {
-			out.Metadata = make(map[string]any)
+		// Deep-copy Metadata to avoid mutating the caller's map.
+		newMeta := make(map[string]any, len(r.Metadata)+1)
+		for k, v := range r.Metadata {
+			newMeta[k] = v
 		}
-		out.Metadata["compressed"] = true
+		newMeta["compressed"] = true
+		out.Metadata = newMeta
 		compressed[i] = out
 	}
 	return compressed, nil

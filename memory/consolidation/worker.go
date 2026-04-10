@@ -117,7 +117,12 @@ func (w *Worker) Start(ctx context.Context) error {
 		return fmt.Errorf("consolidation: worker already running")
 	}
 
-	loopCtx, cancel := context.WithCancel(ctx)
+	// The worker daemon runs until Stop() is explicitly called. The ctx
+	// parameter is only valid for Start initialisation; we derive the loop
+	// context from context.Background() so request-scoped or timed
+	// contexts cannot prematurely terminate the background loop.
+	_ = ctx
+	loopCtx, cancel := context.WithCancel(context.Background())
 	w.cancel = cancel
 	w.done = make(chan struct{})
 	w.running = true
@@ -181,10 +186,12 @@ func (w *Worker) loop(ctx context.Context) {
 		case <-ticker.C:
 			// Add jitter: up to 10% of interval.
 			jitter := w.jitter(w.opts.interval / 10)
+			jitterTimer := time.NewTimer(jitter)
 			select {
 			case <-ctx.Done():
+				jitterTimer.Stop()
 				return
-			case <-time.After(jitter):
+			case <-jitterTimer.C:
 			}
 
 			metrics := w.runCycle(ctx)
