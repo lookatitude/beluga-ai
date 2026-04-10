@@ -113,17 +113,25 @@ func (sm *SharedMemory) Write(ctx context.Context, frag *Fragment) error {
 	}
 	frag.UpdatedAt = now
 
-	// Compute provenance if enabled.
+	if err := sm.store.WriteFragment(ctx, frag); err != nil {
+		return err
+	}
+
+	// Compute provenance AFTER WriteFragment so that frag.Content
+	// reflects the final stored value (the AppendOnly conflict policy
+	// mutates Content to the accumulated string). Without this ordering,
+	// Provenance.Verify(frag.Content) would fail on every subsequent
+	// version. We then patch only the Provenance field on the stored
+	// fragment via UpdateProvenance so the version is not bumped again.
 	if sm.opts.provenanceEnabled {
 		var parentHash [32]byte
 		if existing != nil && existing.Provenance != nil {
 			parentHash = existing.Provenance.ContentHash
 		}
 		frag.Provenance = ComputeProvenance(frag.Content, frag.AuthorID, parentHash)
-	}
-
-	if err := sm.store.WriteFragment(ctx, frag); err != nil {
-		return err
+		if err := sm.store.UpdateProvenance(ctx, frag.Key, frag.Provenance); err != nil {
+			return err
+		}
 	}
 
 	if sm.opts.hooks.OnWrite != nil {
@@ -144,6 +152,9 @@ func (sm *SharedMemory) Write(ctx context.Context, frag *Fragment) error {
 func (sm *SharedMemory) Read(ctx context.Context, key string, agentID string) (*Fragment, error) {
 	if key == "" {
 		return nil, core.NewError("shared.read", core.ErrInvalidInput, "key must not be empty", nil)
+	}
+	if agentID == "" {
+		return nil, core.NewError("shared.read", core.ErrInvalidInput, "agent ID must not be empty", nil)
 	}
 
 	frag, err := sm.store.ReadFragment(ctx, key)
@@ -170,11 +181,24 @@ func (sm *SharedMemory) Read(ctx context.Context, key string, agentID string) (*
 	return frag, nil
 }
 
-// List returns all fragments matching the given scope. If scope is empty,
-// all fragments are returned. No ACL filtering is applied; callers should
-// filter results based on the agent's permissions if needed.
-func (sm *SharedMemory) List(ctx context.Context, scope Scope) ([]*Fragment, error) {
-	return sm.store.ListFragments(ctx, scope)
+// List returns fragments matching the given scope that agentID is
+// authorised to read. Fragments whose Readers ACL does not include
+// agentID are filtered out. An empty agentID is rejected.
+func (sm *SharedMemory) List(ctx context.Context, scope Scope, agentID string) ([]*Fragment, error) {
+	if agentID == "" {
+		return nil, core.NewError("shared.list", core.ErrInvalidInput, "agent ID must not be empty", nil)
+	}
+	all, err := sm.store.ListFragments(ctx, scope)
+	if err != nil {
+		return nil, err
+	}
+	filtered := make([]*Fragment, 0, len(all))
+	for _, frag := range all {
+		if isAllowed(frag.Readers, agentID) {
+			filtered = append(filtered, frag)
+		}
+	}
+	return filtered, nil
 }
 
 // Delete removes a fragment by key after checking that the caller has write

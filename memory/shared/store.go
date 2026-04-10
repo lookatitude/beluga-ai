@@ -26,6 +26,14 @@ type SharedStore interface {
 	// DeleteFragment removes the fragment with the given key. Deleting a
 	// non-existent key is a no-op.
 	DeleteFragment(ctx context.Context, key string) error
+
+	// UpdateProvenance updates only the provenance field of the fragment
+	// identified by key, without bumping the version or applying conflict
+	// policy. This is used internally after a write to attach a provenance
+	// hash that reflects the final stored content (for AppendOnly the
+	// post-write content is the accumulated string, not the delta).
+	// Returns core.ErrNotFound if the key does not exist.
+	UpdateProvenance(ctx context.Context, key string, prov *Provenance) error
 }
 
 // Compile-time check.
@@ -141,6 +149,32 @@ func (s *InMemorySharedStore) ListFragments(ctx context.Context, scope Scope) ([
 		}
 	}
 	return result, nil
+}
+
+// UpdateProvenance updates only the provenance field of an existing
+// fragment without touching version, content, or conflict policy.
+func (s *InMemorySharedStore) UpdateProvenance(ctx context.Context, key string, prov *Provenance) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	existing, ok := s.fragments[key]
+	if !ok {
+		return core.NewError(
+			"shared.store.update_provenance",
+			core.ErrNotFound,
+			fmt.Sprintf("fragment %q not found", key),
+			nil,
+		)
+	}
+	if prov != nil {
+		p := *prov
+		existing.Provenance = &p
+	} else {
+		existing.Provenance = nil
+	}
+	return nil
 }
 
 // DeleteFragment removes the fragment with the given key. If the key does
