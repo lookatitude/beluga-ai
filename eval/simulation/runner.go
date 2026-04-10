@@ -171,24 +171,26 @@ func (r *SimRunner) RunEpisode(ctx context.Context) (*EpisodeResult, error) {
 			return nil, fmt.Errorf("simulation: user respond at turn %d: %w", turn, err)
 		}
 
-		sample := eval.EvalSample{
-			Input:    userResp.Message,
-			Output:   agentResp,
-			Metadata: map[string]any{"turn": turn},
-		}
-		result.Turns = append(result.Turns, sample)
-		result.TurnCount = turn + 1
-
-		if r.opts.onTurn != nil {
-			r.opts.onTurn(turn, userResp.Message, agentResp)
-		}
-
-		if userResp.GoalComplete {
-			result.GoalComplete = true
-			break
-		}
-		if userResp.GoalFailed {
-			result.GoalFailed = true
+		// If the user has reached a terminal state, record the final
+		// (user_message -> previous_agent_message) pair for completeness and
+		// stop. No further agent turn is required.
+		if userResp.GoalComplete || userResp.GoalFailed {
+			sample := eval.EvalSample{
+				Input:    userResp.Message,
+				Output:   "",
+				Metadata: map[string]any{"turn": turn, "terminal": true},
+			}
+			r.scoreSample(ctx, &sample)
+			result.Turns = append(result.Turns, sample)
+			result.TurnCount = turn + 1
+			if r.opts.onTurn != nil {
+				r.opts.onTurn(turn, userResp.Message, "")
+			}
+			if userResp.GoalComplete {
+				result.GoalComplete = true
+			} else {
+				result.GoalFailed = true
+			}
 			break
 		}
 
@@ -199,15 +201,53 @@ func (r *SimRunner) RunEpisode(ctx context.Context) (*EpisodeResult, error) {
 			}
 		}
 
-		// Agent processes user message.
-		agentResp, err = r.opts.agent(ctx, userResp.Message)
+		// Agent processes user message — this is the output that should be
+		// paired with the user message in the EvalSample so metrics see the
+		// actual (input, output) pair rather than the agent's prior turn.
+		nextAgentResp, err := r.opts.agent(ctx, userResp.Message)
 		if err != nil {
 			return nil, fmt.Errorf("simulation: agent at turn %d: %w", turn, err)
 		}
+
+		sample := eval.EvalSample{
+			Input:    userResp.Message,
+			Output:   nextAgentResp,
+			Metadata: map[string]any{"turn": turn},
+		}
+		r.scoreSample(ctx, &sample)
+		result.Turns = append(result.Turns, sample)
+		result.TurnCount = turn + 1
+
+		if r.opts.onTurn != nil {
+			r.opts.onTurn(turn, userResp.Message, nextAgentResp)
+		}
+
+		agentResp = nextAgentResp
 	}
 
 	result.Duration = time.Since(start)
 	return result, nil
+}
+
+// scoreSample applies the configured metrics to the given sample, storing
+// each score in sample.Metadata keyed by metric name. Metric errors are
+// recorded under "<name>_error" so callers can detect scoring failures
+// without aborting the episode.
+func (r *SimRunner) scoreSample(ctx context.Context, sample *eval.EvalSample) {
+	if len(r.opts.metrics) == 0 {
+		return
+	}
+	if sample.Metadata == nil {
+		sample.Metadata = make(map[string]any)
+	}
+	for _, m := range r.opts.metrics {
+		score, err := m.Score(ctx, *sample)
+		if err != nil {
+			sample.Metadata[m.Name()+"_error"] = err.Error()
+			continue
+		}
+		sample.Metadata[m.Name()] = score
+	}
 }
 
 // Run executes multiple episodes and returns an aggregated report.
