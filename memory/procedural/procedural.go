@@ -46,6 +46,11 @@ func New(emb embedding.Embedder, vs vectorstore.VectorStore, opts ...Option) (*P
 // and triggers are embedded for later semantic retrieval. The skill is
 // serialized as JSON in the document content, and its metadata includes
 // the skill ID, agent ID, confidence, and version for filtering.
+//
+// SaveSkill is intended for first-time persistence of a skill. Calling
+// SaveSkill repeatedly with the same skill.ID may produce duplicate
+// entries depending on the backing vector store's document-ID semantics;
+// callers MUST use UpdateSkill when updating an existing skill.
 func (p *ProceduralMemory) SaveSkill(ctx context.Context, skill *schema.Skill) error {
 	if skill == nil {
 		return fmt.Errorf("procedural: skill must not be nil")
@@ -132,8 +137,12 @@ func (p *ProceduralMemory) SearchSkills(ctx context.Context, query string, k int
 	return skills, nil
 }
 
-// UpdateSkill updates an existing skill by deleting the old version and
-// saving the new one. The version is incremented automatically.
+// UpdateSkill updates an existing skill. The version is incremented
+// automatically. To avoid destroying the skill on transient failures,
+// the new version is fully prepared (serialized and embedded) before
+// any mutation of the vector store; only then does UpdateSkill delete
+// the old document and add the new one. On any error the in-memory
+// skill's mutated Version/UpdatedAt are rolled back.
 func (p *ProceduralMemory) UpdateSkill(ctx context.Context, skill *schema.Skill) error {
 	if skill == nil {
 		return fmt.Errorf("procedural: skill must not be nil")
@@ -152,24 +161,34 @@ func (p *ProceduralMemory) UpdateSkill(ctx context.Context, skill *schema.Skill)
 		}
 	}
 
-	// Delete old version from vector store.
-	if err := p.vs.Delete(ctx, []string{skillDocID(skill.ID)}); err != nil {
-		return fmt.Errorf("procedural: delete old skill: %w", err)
-	}
-
-	// Increment version.
+	// 1. Prepare the new version without touching the store.
+	origVersion := skill.Version
+	origUpdatedAt := skill.UpdatedAt
 	skill.Version++
 	skill.UpdatedAt = time.Now()
 
 	doc, err := p.skillToDocument(skill)
 	if err != nil {
+		skill.Version = origVersion
+		skill.UpdatedAt = origUpdatedAt
 		return fmt.Errorf("procedural: serialize skill: %w", err)
 	}
 
 	text := p.skillSearchText(skill)
 	vec, err := p.emb.EmbedSingle(ctx, text)
 	if err != nil {
+		skill.Version = origVersion
+		skill.UpdatedAt = origUpdatedAt
 		return fmt.Errorf("procedural: embed updated skill: %w", err)
+	}
+
+	// 2. Now mutate the store: delete the old, then add the new.
+	// The delete-add window is inherently non-transactional without
+	// backend transaction support; this is the minimum-risk ordering.
+	if err := p.vs.Delete(ctx, []string{skillDocID(skill.ID)}); err != nil {
+		skill.Version = origVersion
+		skill.UpdatedAt = origUpdatedAt
+		return fmt.Errorf("procedural: delete old skill: %w", err)
 	}
 
 	if err := p.vs.Add(ctx, []schema.Document{doc}, [][]float32{vec}); err != nil {
@@ -192,6 +211,19 @@ func (p *ProceduralMemory) DeleteSkill(ctx context.Context, id string) error {
 
 // GetSkill retrieves a single skill by ID. Returns nil and no error if the
 // skill is not found.
+//
+// NOTE: The underlying VectorStore does not expose a get-by-ID primitive,
+// so GetSkill uses a filtered Search with a zero vector. Two caveats apply:
+//  1. vectorstore.WithFilter is a hint, not a guarantee — if the backend
+//     ignores the filter and holds more than 100 total documents, the
+//     target skill may be pushed beyond the result window and GetSkill
+//     will return nil for an existing skill.
+//  2. Some backends compute cosine similarity over normalised vectors;
+//     searching with a zero vector has undefined ordering semantics.
+//
+// For production workloads that require reliable ID lookup, pair this
+// package with a backend that honours metadata filters, or maintain an
+// auxiliary key-value index.
 func (p *ProceduralMemory) GetSkill(ctx context.Context, id string) (*schema.Skill, error) {
 	if id == "" {
 		return nil, fmt.Errorf("procedural: skill ID is required")

@@ -29,11 +29,12 @@ type LLMExtractor struct {
 var _ SkillExtractor = (*LLMExtractor)(nil)
 
 // NewLLMExtractor creates a new LLMExtractor with the given ChatModel.
-func NewLLMExtractor(model llm.ChatModel) *LLMExtractor {
+// Returns an error if the model is nil.
+func NewLLMExtractor(model llm.ChatModel) (*LLMExtractor, error) {
 	if model == nil {
-		panic("procedural: ChatModel must not be nil for LLMExtractor")
+		return nil, fmt.Errorf("procedural: ChatModel must not be nil for LLMExtractor")
 	}
-	return &LLMExtractor{model: model}
+	return &LLMExtractor{model: model}, nil
 }
 
 // Extract uses the ChatModel to analyze an input/output pair and produce a
