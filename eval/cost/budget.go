@@ -26,7 +26,9 @@ func WithThreshold(threshold float64) BudgetAlertOption {
 }
 
 // WithOnAlert sets the callback invoked when the threshold is exceeded.
-// The callback receives the current total and the threshold.
+// The callback receives the current total and the threshold. The callback is
+// invoked without holding the internal BudgetAlert mutex, so it is safe to
+// re-enter other BudgetAlert methods (Total, Exceeded, Reset) from within it.
 func WithOnAlert(fn func(total float64, threshold float64)) BudgetAlertOption {
 	return func(b *BudgetAlert) {
 		b.onAlert = fn
@@ -48,20 +50,29 @@ func NewBudgetAlert(opts ...BudgetAlertOption) (*BudgetAlert, error) {
 // Add accumulates cost and fires the alert callback if the threshold is
 // exceeded. The alert fires at most once. Returns true if the threshold
 // has been exceeded (including prior calls).
+//
+// The onAlert callback is invoked after releasing the internal mutex so that
+// the callback may safely call other BudgetAlert methods (Total, Exceeded,
+// Reset) without deadlocking, and so that a slow callback does not block
+// concurrent Add callers.
 func (b *BudgetAlert) Add(amount float64) bool {
 	b.mu.Lock()
-	defer b.mu.Unlock()
-
 	b.total += amount
-
-	if b.total >= b.threshold && !b.fired {
+	total := b.total
+	threshold := b.threshold
+	shouldFire := total >= threshold && !b.fired
+	if shouldFire {
 		b.fired = true
-		if b.onAlert != nil {
-			b.onAlert(b.total, b.threshold)
-		}
+	}
+	callback := b.onAlert
+	exceeded := total >= threshold
+	b.mu.Unlock()
+
+	if shouldFire && callback != nil {
+		callback(total, threshold)
 	}
 
-	return b.total >= b.threshold
+	return exceeded
 }
 
 // Total returns the current cumulative cost.

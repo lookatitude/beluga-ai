@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/eval"
 	"github.com/stretchr/testify/assert"
@@ -53,9 +54,19 @@ func TestCostMetric_Score(t *testing.T) {
 		tolerance float64
 	}{
 		{
-			name:      "raw cost no quality metric",
+			name: "cost-only normalized score (no quality metric)",
+			// cost = (1000*5 + 500*15) / 1e6 = 0.0125 dollars;
+			// with default cost reference 1.0, score = 1 - 0.0125 = 0.9875.
 			sample:    sampleWithMeta("gpt-4o", 1000, 500),
-			wantScore: (1000*5.0 + 500*15.0) / 1_000_000, // 0.0125
+			wantScore: 0.9875,
+			tolerance: 0.0001,
+		},
+		{
+			name: "cost-only score clamps to zero above reference",
+			// cost = 12.5 dollars, well above the default 1.0 reference, so
+			// the normalized score is clamped to 0 and must stay in [0, 1].
+			sample:    sampleWithMeta("gpt-4o", 1_000_000, 500_000),
+			wantScore: 0.0,
 			tolerance: 0.0001,
 		},
 		{
@@ -224,6 +235,46 @@ func TestBudgetAlert(t *testing.T) {
 	t.Run("invalid threshold", func(t *testing.T) {
 		_, err := NewBudgetAlert(WithThreshold(0))
 		require.Error(t, err)
+	})
+
+	t.Run("callback may re-enter other methods without deadlock", func(t *testing.T) {
+		// Regression test: onAlert must not be invoked while the internal
+		// mutex is held, otherwise re-entrant calls to Total/Exceeded/Reset
+		// from within the callback would deadlock. We gate the test on a
+		// timeout so a regression surfaces as a failure rather than a hung
+		// suite.
+		var alert *BudgetAlert
+		var observedTotal float64
+		var observedExceeded bool
+		var err error
+		alert, err = NewBudgetAlert(
+			WithThreshold(1.0),
+			WithOnAlert(func(_, _ float64) {
+				// These re-entrant calls would deadlock if Add still held
+				// the mutex when invoking the callback.
+				observedTotal = alert.Total()
+				observedExceeded = alert.Exceeded()
+				alert.Reset()
+			}),
+		)
+		require.NoError(t, err)
+
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			alert.Add(2.0)
+		}()
+
+		select {
+		case <-done:
+		case <-time.After(2 * time.Second):
+			t.Fatal("Add deadlocked: callback was invoked while mutex was held")
+		}
+
+		assert.InDelta(t, 2.0, observedTotal, 0.001)
+		assert.True(t, observedExceeded)
+		// Reset ran from within the callback.
+		assert.InDelta(t, 0.0, alert.Total(), 0.001)
 	})
 }
 
