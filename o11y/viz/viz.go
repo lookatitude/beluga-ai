@@ -131,6 +131,11 @@ func (c *DefaultCollector) Record(_ context.Context, event ExecutionEvent) error
 }
 
 // Build constructs an ExecutionGraph from the collected events.
+//
+// Only a single root event (one with an empty ParentID) is supported; the first
+// such event becomes the graph's RootNodeID. Subsequent parentless events still
+// produce nodes, but they will be structurally disconnected from the root and
+// Build returns an error to alert the caller of the inconsistency.
 func (c *DefaultCollector) Build(_ context.Context) (*ExecutionGraph, error) {
 	c.mu.Lock()
 	events := make([]ExecutionEvent, len(c.events))
@@ -141,12 +146,24 @@ func (c *DefaultCollector) Build(_ context.Context) (*ExecutionGraph, error) {
 		return &ExecutionGraph{ID: c.opts.graphID}, nil
 	}
 
-	graph := &ExecutionGraph{
-		ID:        c.opts.graphID,
-		StartTime: events[0].Timestamp,
-		EndTime:   events[len(events)-1].Timestamp,
+	startTime := events[0].Timestamp
+	endTime := events[0].Timestamp.Add(events[0].Duration)
+	for _, e := range events[1:] {
+		if e.Timestamp.Before(startTime) {
+			startTime = e.Timestamp
+		}
+		if end := e.Timestamp.Add(e.Duration); end.After(endTime) {
+			endTime = end
+		}
 	}
 
+	graph := &ExecutionGraph{
+		ID:        c.opts.graphID,
+		StartTime: startTime,
+		EndTime:   endTime,
+	}
+
+	var extraRoots int
 	for _, e := range events {
 		node := Node{
 			ID:        e.ID,
@@ -167,9 +184,14 @@ func (c *DefaultCollector) Build(_ context.Context) (*ExecutionGraph, error) {
 			})
 		} else if graph.RootNodeID == "" {
 			graph.RootNodeID = e.ID
+		} else {
+			extraRoots++
 		}
 	}
 
+	if extraRoots > 0 {
+		return graph, fmt.Errorf("viz: %d additional parentless events found; only one root event is supported", extraRoots)
+	}
 	return graph, nil
 }
 
@@ -203,7 +225,7 @@ func (r *DOTRenderer) Render(_ context.Context, graph *ExecutionGraph) ([]byte, 
 	for _, n := range nodes {
 		color := nodeColor(n.Status)
 		label := fmt.Sprintf("%s\\n[%s] %s", n.Label, n.Type, n.Duration.Round(time.Millisecond))
-		b.WriteString(fmt.Sprintf("  %q [label=%q, color=%q];\n", n.ID, label, color))
+		b.WriteString(fmt.Sprintf("  %q [label=%q, style=\"rounded,filled\", fillcolor=%q];\n", n.ID, label, color))
 	}
 
 	b.WriteString("\n")
