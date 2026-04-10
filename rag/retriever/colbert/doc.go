@@ -33,10 +33,13 @@
 //	_ = idx.Add(ctx, "doc1", doc1TokenVecs)
 //	_ = idx.Add(ctx, "doc2", doc2TokenVecs)
 //
-//	r := colbert.NewColBERTRetriever(
+//	r, err := colbert.NewColBERTRetriever(
 //	    colbert.WithEmbedder(multiVecEmbedder),
 //	    colbert.WithIndex(idx),
 //	    colbert.WithTopK(5),
 //	)
+//	if err != nil {
+//	    // handle error
+//	}
 //	docs, err := r.Retrieve(ctx, "what is late interaction?")
 package colbert
