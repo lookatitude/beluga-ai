@@ -75,17 +75,6 @@ func WithDefaultTimeout(d time.Duration) ProcessExecutorOption {
 // NewProcessExecutor creates a new ProcessExecutor with the given options.
 // Default interpreters: python -> python3, javascript -> node.
 func NewProcessExecutor(opts ...ProcessExecutorOption) *ProcessExecutor {
-	e := &ProcessExecutor{
-		interpreters: map[string]string{
-			"python":     "python3",
-			"javascript": "node",
-		},
-		defaultTimeout: 30 * time.Second,
-	}
-	for _, opt := range opts {
-		opt(e)
-	}
-	return e
 }
 
 // Execute runs code by writing it to stdin of the appropriate interpreter.
