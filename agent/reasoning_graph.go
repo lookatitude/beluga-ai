@@ -84,7 +84,9 @@ func NewReasoningGraph() *ReasoningGraph {
 // AddNode adds a node to the graph and returns its assigned ID.
 // The provided node's ID field is overwritten with a generated unique ID.
 func (g *ReasoningGraph) AddNode(nodeType NodeType, content string, score float64, metadata map[string]any) string {
-	id := fmt.Sprintf("rg_%d", g.nextID.Add(1))
+	// Zero-pad the ID so that lexicographic ordering in Nodes(), ExportJSON(),
+	// and ExportDOT() matches insertion order even with 10+ nodes.
+	id := fmt.Sprintf("rg_%012d", g.nextID.Add(1))
 
 	node := &GraphNode{
 		ID:       id,

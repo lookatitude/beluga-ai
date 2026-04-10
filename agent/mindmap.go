@@ -133,9 +133,11 @@ func (p *MindMapPlanner) Replan(ctx context.Context, state PlannerState) ([]Acti
 func (p *MindMapPlanner) populateGraph(ctx context.Context, state PlannerState) error {
 	graphSummary := p.graphSummary()
 
+	// Spotlight user-supplied input using XML-style delimiters to guard
+	// against prompt injection. See .claude/rules/security.md.
 	prompt := fmt.Sprintf(
 		"Analyze the following problem and produce structured reasoning elements.\n\n"+
-			"Problem: %s\n\n", state.Input)
+			"Problem: <user_input>%s</user_input>\n\n", state.Input)
 
 	if graphSummary != "" {
 		prompt += fmt.Sprintf("Existing reasoning context:\n%s\n\n", graphSummary)
@@ -145,7 +147,10 @@ func (p *MindMapPlanner) populateGraph(ctx context.Context, state PlannerState) 
 		prompt += "Recent observations:\n"
 		for _, obs := range state.Observations {
 			if obs.Result != nil {
-				prompt += fmt.Sprintf("- %s\n", obs.Result.Content)
+				text := extractContentText(obs.Result.Content)
+				if text != "" {
+					prompt += fmt.Sprintf("- %s\n", text)
+				}
 			}
 		}
 		prompt += "\n"
@@ -179,7 +184,6 @@ func (p *MindMapPlanner) parseAndAddNodes(text string) error {
 
 	// Track IDs for relating back.
 	var addedIDs []string
-	added := 0
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -206,7 +210,6 @@ func (p *MindMapPlanner) parseAndAddNodes(text string) error {
 
 		id := p.graph.AddNode(nodeType, content, score, nil)
 		addedIDs = append(addedIDs, id)
-		added++
 
 		// Parse relationship if present.
 		if len(parts) >= 5 {
@@ -243,7 +246,7 @@ func (p *MindMapPlanner) resolveContradictions(ctx context.Context, state Planne
 	}
 
 	prompt := fmt.Sprintf(
-		"Problem: %s\n\n%s\n"+
+		"Problem: <user_input>%s</user_input>\n\n%s\n"+
 			"For each contradiction, provide a resolution as a conclusion. "+
 			"Output one conclusion per line:\nCONCLUSION|content|score\n",
 		state.Input, desc.String())
