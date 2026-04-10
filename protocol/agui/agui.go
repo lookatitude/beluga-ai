@@ -178,19 +178,23 @@ func (h *DefaultHandler) handleChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Sanitize the agent ID before placing it in log fields to prevent
+	// log injection via attacker-controlled path segments.
+	safeAgentID := sanitizeLogValue(agentID)
+
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		// Fall back to non-streaming.
 		result, err := a.Invoke(r.Context(), req.Input)
 		if err != nil {
 			// Do not leak provider error details to clients; log server-side.
-			slog.Error("agui: agent invoke failed", "agent_id", agentID, "err", err)
+			slog.Error("agui: agent invoke failed", "agent_id", safeAgentID, "err", sanitizeLogValue(err.Error()))
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(map[string]string{"result": result}); err != nil {
-			slog.Error("agui: encode chat response", "agent_id", agentID, "err", err)
+			slog.Error("agui: encode chat response", "agent_id", safeAgentID, "err", sanitizeLogValue(err.Error()))
 		}
 		return
 	}
@@ -203,9 +207,12 @@ func (h *DefaultHandler) handleChat(w http.ResponseWriter, r *http.Request) {
 	for evt, err := range a.Stream(r.Context(), req.Input) {
 		if err != nil {
 			// Log detailed error server-side; send sanitized message to client.
-			slog.Error("agui: agent stream failed", "agent_id", agentID, "err", err)
+			slog.Error("agui: agent stream failed", "agent_id", safeAgentID, "err", sanitizeLogValue(err.Error()))
 			data, _ := json.Marshal(UIEvent{Type: "error", AgentID: agentID, Data: "internal server error", Timestamp: time.Now()})
-			fmt.Fprintf(w, "data: %s\n\n", data)
+			if _, werr := fmt.Fprintf(w, "data: %s\n\n", data); werr != nil {
+				slog.Error("agui: sse write failed", "agent_id", safeAgentID, "err", sanitizeLogValue(werr.Error()))
+				return
+			}
 			flusher.Flush()
 			return
 		}
@@ -215,9 +222,36 @@ func (h *DefaultHandler) handleChat(w http.ResponseWriter, r *http.Request) {
 			Data:      evt.Text,
 			Timestamp: time.Now(),
 		})
-		fmt.Fprintf(w, "data: %s\n\n", data)
+		if _, werr := fmt.Fprintf(w, "data: %s\n\n", data); werr != nil {
+			slog.Error("agui: sse write failed", "agent_id", safeAgentID, "err", sanitizeLogValue(werr.Error()))
+			return
+		}
 		flusher.Flush()
 	}
+}
+
+// sanitizeLogValue removes CR/LF and other control characters from a string
+// before inserting it into a structured log field. This prevents log injection
+// when attacker-controlled data (URL path segments, provider errors) flows
+// into log records.
+func sanitizeLogValue(s string) string {
+	if len(s) > 256 {
+		s = s[:256]
+	}
+	var b strings.Builder
+	b.Grow(len(s))
+	for _, r := range s {
+		if r == '\n' || r == '\r' || r == '\t' {
+			b.WriteByte(' ')
+			continue
+		}
+		if r < 0x20 || r == 0x7f {
+			b.WriteByte('?')
+			continue
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
 }
 
 func (h *DefaultHandler) buildManifest() *AgentsManifest {
