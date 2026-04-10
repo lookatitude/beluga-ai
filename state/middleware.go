@@ -108,3 +108,35 @@ func (s *hookedStore) Close() error {
 
 // Ensure hookedStore implements Store at compile time.
 var _ Store = (*hookedStore)(nil)
+
+// WrapVersionedWithHooks returns a VersionedStore that invokes the given
+// Hooks around Get/Set/Delete/Watch and delegates the versioned operations
+// (GetVersioned, CompareAndSwap) to the underlying store without hooks.
+// This is the VersionedStore counterpart of WithHooks.
+func WrapVersionedWithHooks(inner VersionedStore, hooks Hooks) VersionedStore {
+	return &hookedVersionedStore{
+		hookedStore: hookedStore{next: inner, hooks: hooks},
+		inner:       inner,
+	}
+}
+
+// hookedVersionedStore extends hookedStore with the VersionedStore methods,
+// delegating them directly to the inner versioned store.
+type hookedVersionedStore struct {
+	hookedStore
+	inner VersionedStore
+}
+
+// GetVersioned delegates to the inner versioned store. Hooks do not fire
+// on versioned reads because they are conceptually a read variant.
+func (s *hookedVersionedStore) GetVersioned(ctx context.Context, key string) (any, uint64, error) {
+	return s.inner.GetVersioned(ctx, key)
+}
+
+// CompareAndSwap delegates to the inner versioned store. Hooks do not fire
+// on CAS because callers typically use CAS as an explicit conflict path.
+func (s *hookedVersionedStore) CompareAndSwap(ctx context.Context, key string, expectedVersion uint64, value any) (uint64, error) {
+	return s.inner.CompareAndSwap(ctx, key, expectedVersion, value)
+}
+
+var _ VersionedStore = (*hookedVersionedStore)(nil)
