@@ -109,7 +109,7 @@ func TestColBERTRetriever_Retrieve(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	docs, err := r.Retrieve(ctx, "what is Go?")
+	docs, err := r.Retrieve(ctx, "what is Go?", retriever.WithTopK(2))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -247,6 +247,79 @@ func TestColBERTRetriever_Hooks(t *testing.T) {
 	}
 	if !afterCalled {
 		t.Error("AfterRetrieve hook was not called")
+	}
+}
+
+func TestColBERTRetriever_PerCallTopKOverride(t *testing.T) {
+	ctx := context.Background()
+
+	idx := NewInMemoryIndex()
+	for i, id := range []string{"a", "b", "c", "d", "e"} {
+		_ = idx.Add(ctx, id, [][]float32{{float32(i + 1), 0, 0}})
+	}
+
+	emb := &mockMultiVectorEmbedder{
+		tokenDimensions: 3,
+		embedMultiFn: func(_ context.Context, _ []string) ([][][]float32, error) {
+			return [][][]float32{{{1, 0, 0}}}, nil
+		},
+	}
+
+	// Retriever configured with TopK=2 but caller requests 4.
+	r, err := NewColBERTRetriever(
+		WithEmbedder(emb),
+		WithIndex(idx),
+		WithTopK(2),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	docs, err := r.Retrieve(ctx, "query", retriever.WithTopK(4))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(docs) != 4 {
+		t.Fatalf("per-call topK override: got %d docs, want 4", len(docs))
+	}
+}
+
+func TestColBERTRetriever_AfterHookOnErrorPaths(t *testing.T) {
+	ctx := context.Background()
+	idx := NewInMemoryIndex()
+
+	embErr := &mockMultiVectorEmbedder{
+		tokenDimensions: 3,
+		embedMultiFn: func(_ context.Context, _ []string) ([][][]float32, error) {
+			return nil, fmt.Errorf("embed boom")
+		},
+	}
+
+	var afterErr error
+	var afterCalled bool
+	r, err := NewColBERTRetriever(
+		WithEmbedder(embErr),
+		WithIndex(idx),
+		WithHooks(retriever.Hooks{
+			AfterRetrieve: func(_ context.Context, _ []schema.Document, e error) {
+				afterCalled = true
+				afterErr = e
+			},
+		}),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = r.Retrieve(ctx, "q")
+	if err == nil {
+		t.Fatal("expected error from embedder failure")
+	}
+	if !afterCalled {
+		t.Error("AfterRetrieve must be called on embed error path")
+	}
+	if afterErr == nil {
+		t.Error("AfterRetrieve must receive the error")
 	}
 }
 
