@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strings"
 	"sync"
 )
 
@@ -121,10 +122,10 @@ func List() []string {
 type Option func(*options)
 
 type options struct {
-	metric       SimilarityMetric
-	threshold    float64
-	maxClusters  int
-	minSize      int
+	metric      SimilarityMetric
+	threshold   float64
+	maxClusters int
+	minSize     int
 }
 
 // WithMetric sets the similarity metric for clustering.
@@ -185,7 +186,7 @@ func (c *AgglomerativeClusterer) Cluster(ctx context.Context, convs []Conversati
 		}
 	}
 
-	for len(clusters) > c.opts.maxClusters {
+	for len(clusters) > 1 {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
@@ -195,7 +196,10 @@ func (c *AgglomerativeClusterer) Cluster(ctx context.Context, convs []Conversati
 			return nil, err
 		}
 
-		if bestSim < c.opts.threshold {
+		// Stop when similarity drops below threshold, unless we still exceed the cap.
+		belowThreshold := bestSim < c.opts.threshold
+		atOrUnderCap := c.opts.maxClusters <= 0 || len(clusters) <= c.opts.maxClusters
+		if belowThreshold && atOrUnderCap {
 			break
 		}
 
@@ -426,16 +430,11 @@ func (d *TurnPatternDetector) Detect(_ context.Context, convs []Conversation) ([
 }
 
 func roleSequence(c Conversation) string {
-	var seq []byte
+	parts := make([]string, len(c.Turns))
 	for i, t := range c.Turns {
-		if i > 0 {
-			seq = append(seq, '-')
-		}
-		if len(t.Role) > 0 {
-			seq = append(seq, t.Role[0])
-		}
+		parts[i] = t.Role
 	}
-	return string(seq)
+	return strings.Join(parts, "-")
 }
 
 func init() {
