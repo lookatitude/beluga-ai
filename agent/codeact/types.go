@@ -27,9 +27,12 @@ type CodeResult struct {
 	Duration time.Duration
 }
 
-// Success reports whether the code executed without errors.
+// Success reports whether the code executed successfully, defined by the
+// POSIX convention of a zero exit code. Stderr output is ignored because
+// well-behaved programs (including Python deprecation warnings) routinely
+// write to stderr while exiting with code 0.
 func (r CodeResult) Success() bool {
-	return r.ExitCode == 0 && r.Error == ""
+	return r.ExitCode == 0
 }
 
 // CodeActHooks provides optional callback functions for code execution lifecycle.

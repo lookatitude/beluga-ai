@@ -73,7 +73,7 @@ func WithDefaultTimeout(d time.Duration) ProcessExecutorOption {
 }
 
 // NewProcessExecutor creates a new ProcessExecutor with the given options.
-// Default interpreters: python -> python3, javascript -> node, go -> go run.
+// Default interpreters: python -> python3, javascript -> node.
 func NewProcessExecutor(opts ...ProcessExecutorOption) *ProcessExecutor {
 	e := &ProcessExecutor{
 		interpreters: map[string]string{
@@ -140,10 +140,9 @@ func (e *ProcessExecutor) Execute(ctx context.Context, action CodeAction) (CodeR
 	}
 
 	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			result.ExitCode = exitErr.ExitCode()
-			return result, nil
-		}
+		// Check context first: when exec.CommandContext kills a process due
+		// to a deadline, cmd.Run() returns *exec.ExitError rather than the
+		// context error, so we must branch on ctx state before the type check.
 		if execCtx.Err() != nil {
 			return result, core.NewError(
 				"codeact.execute",
@@ -151,6 +150,10 @@ func (e *ProcessExecutor) Execute(ctx context.Context, action CodeAction) (CodeR
 				fmt.Sprintf("code execution timed out after %v", timeout),
 				execCtx.Err(),
 			)
+		}
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			result.ExitCode = exitErr.ExitCode()
+			return result, nil
 		}
 		return result, core.NewError(
 			"codeact.execute",

@@ -174,9 +174,10 @@ func TestCodeResult_Success(t *testing.T) {
 			want:   false,
 		},
 		{
-			name:   "has error text",
+			// Stderr output alone must not imply failure (POSIX exit-code semantics).
+			name:   "stderr with zero exit is success",
 			result: CodeResult{Output: "ok", Error: "warning", ExitCode: 0},
-			want:   false,
+			want:   true,
 		},
 	}
 	for _, tt := range tests {
@@ -510,6 +511,87 @@ func TestCodeActAgent_ExecuteCode_BeforeHookCancels(t *testing.T) {
 	_, err := a.ExecuteCode(ctx, CodeAction{Language: "python", Code: "pass"})
 	if !errors.Is(err, errDenied) {
 		t.Errorf("error = %v, want %v", err, errDenied)
+	}
+}
+
+// stubPlanner returns a canned sequence of action lists across iterations.
+type stubPlanner struct {
+	iterations [][]agent.Action
+	calls      int
+}
+
+func (p *stubPlanner) Plan(_ context.Context, _ agent.PlannerState) ([]agent.Action, error) {
+	if p.calls >= len(p.iterations) {
+		return []agent.Action{{Type: agent.ActionFinish, Message: "done"}}, nil
+	}
+	actions := p.iterations[p.calls]
+	p.calls++
+	return actions, nil
+}
+
+func (p *stubPlanner) Replan(ctx context.Context, state agent.PlannerState) ([]agent.Action, error) {
+	return p.Plan(ctx, state)
+}
+
+func TestCodeActAgent_Stream_ExecutesCodeAction(t *testing.T) {
+	planner := &stubPlanner{
+		iterations: [][]agent.Action{
+			{{
+				Type: ActionCode,
+				Metadata: map[string]any{
+					"language": "python",
+					"code":     "print('hi')",
+				},
+			}},
+			{{Type: agent.ActionFinish, Message: "final-answer"}},
+		},
+	}
+
+	a := NewCodeActAgent("codeact-test",
+		WithPlanner(planner),
+		WithExecutor(NewNoopExecutor()),
+		WithMaxIterations(5),
+	)
+
+	var (
+		sawExec, sawResult, sawDone bool
+		finalText                   string
+	)
+	for event, err := range a.Stream(context.Background(), "hello") {
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		switch event.Type {
+		case EventCodeExec:
+			sawExec = true
+			if event.Text != "print('hi')" {
+				t.Errorf("EventCodeExec Text = %q, want print('hi')", event.Text)
+			}
+		case EventCodeResult:
+			sawResult = true
+			if event.ToolResult == nil {
+				t.Error("EventCodeResult ToolResult is nil")
+			}
+		case agent.EventDone:
+			sawDone = true
+			finalText = event.Text
+		}
+	}
+
+	if !sawExec {
+		t.Error("expected EventCodeExec event")
+	}
+	if !sawResult {
+		t.Error("expected EventCodeResult event")
+	}
+	if !sawDone {
+		t.Error("expected EventDone event")
+	}
+	if finalText != "final-answer" {
+		t.Errorf("finalText = %q, want final-answer", finalText)
+	}
+	if planner.calls < 2 {
+		t.Errorf("planner.calls = %d, want >= 2 (code observation fed back)", planner.calls)
 	}
 }
 
