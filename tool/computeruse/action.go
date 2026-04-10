@@ -14,8 +14,8 @@ const (
 	// ActionClick performs a mouse click at coordinates.
 	ActionClick ActionType = "click"
 
-	// ActionType_ performs keyboard text input.
-	ActionType_ ActionType = "type"
+	// ActionTypeText performs keyboard text input.
+	ActionTypeText ActionType = "type"
 
 	// ActionScroll performs a scroll action.
 	ActionScroll ActionType = "scroll"

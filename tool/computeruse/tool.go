@@ -80,14 +80,25 @@ func (t *ComputerUseTool) Description() string {
 	return "Interact with a computer screen: take screenshots, click, type, scroll, navigate web pages, and execute browser actions."
 }
 
-// InputSchema returns the JSON Schema for the tool's input.
+// InputSchema returns the JSON Schema for the tool's input. The set of
+// advertised actions is narrowed to those the configured backends can
+// actually execute — for example, key_press is excluded when only a
+// browser backend is wired up, because key_press dispatches exclusively
+// through a ComputerAction backend.
 func (t *ComputerUseTool) InputSchema() map[string]any {
+	actions := []string{"screenshot", "click", "type", "scroll"}
+	if t.opts.action != nil {
+		actions = append(actions, "key_press")
+	}
+	if t.opts.browser != nil {
+		actions = append(actions, "navigate")
+	}
 	return map[string]any{
 		"type": "object",
 		"properties": map[string]any{
 			"action": map[string]any{
 				"type":        "string",
-				"enum":        []string{"screenshot", "click", "type", "scroll", "key_press", "navigate"},
+				"enum":        actions,
 				"description": "The action to perform",
 			},
 			"x":            map[string]any{"type": "integer", "description": "X coordinate for click/scroll"},
@@ -217,11 +228,13 @@ func (t *ComputerUseTool) handleType(ctx context.Context, input map[string]any) 
 		if err := t.opts.browser.Type(ctx, text); err != nil {
 			return tool.ErrorResult(fmt.Errorf("type failed: %w", err)), nil
 		}
-		return tool.TextResult(fmt.Sprintf("Typed: %s", text)), nil
+		// Do not echo typed text back to the LLM — it may contain
+		// passwords, tokens, or other credentials.
+		return tool.TextResult(fmt.Sprintf("Typed %d character(s)", len(text))), nil
 	}
 
 	if t.opts.action != nil {
-		result, err := t.opts.action.Execute(ctx, ActionRequest{Type: ActionType_, Text: text})
+		result, err := t.opts.action.Execute(ctx, ActionRequest{Type: ActionTypeText, Text: text})
 		if err != nil {
 			return tool.ErrorResult(fmt.Errorf("type failed: %w", err)), nil
 		}

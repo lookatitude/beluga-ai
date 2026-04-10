@@ -22,10 +22,20 @@ type GuardOption func(*guardOptions)
 
 // WithAllowedHosts sets the URL hosts that the browser is allowed to navigate to.
 // An empty set means all hosts are allowed (not recommended for production).
+// Any port suffix on a host entry (for example "example.com:8080") is
+// stripped at registration so that the comparison against url.Hostname()
+// — which also strips the port — is consistent.
 func WithAllowedHosts(hosts ...string) GuardOption {
 	return func(o *guardOptions) {
 		for _, h := range hosts {
-			o.allowedHosts[h] = true
+			normalized := strings.ToLower(h)
+			if i := strings.LastIndex(normalized, ":"); i >= 0 {
+				// Strip ":port" suffix but not IPv6 brackets.
+				if !strings.Contains(normalized[:i], ":") {
+					normalized = normalized[:i]
+				}
+			}
+			o.allowedHosts[normalized] = true
 		}
 	}
 }
@@ -79,6 +89,18 @@ func (g *SafetyGuard) CheckURL(rawURL string) error {
 			fmt.Sprintf("invalid URL: %s", rawURL), err)
 	}
 
+	// Only allow http and https schemes. Schemes such as file://,
+	// javascript:, data: and others have either no hostname or an
+	// irrelevant one and must never bypass the allowlist.
+	scheme := strings.ToLower(parsed.Scheme)
+	switch scheme {
+	case "http", "https":
+		// allowed
+	default:
+		return core.NewError("computeruse.guard.check_url", core.ErrInvalidInput,
+			fmt.Sprintf("URL scheme %q is not allowed", scheme), nil)
+	}
+
 	// Check block patterns.
 	for _, pattern := range g.opts.blockPatterns {
 		if strings.Contains(rawURL, pattern) {
@@ -89,7 +111,7 @@ func (g *SafetyGuard) CheckURL(rawURL string) error {
 
 	// Check allowed hosts (empty set = all allowed).
 	if len(g.opts.allowedHosts) > 0 {
-		host := parsed.Hostname()
+		host := strings.ToLower(parsed.Hostname())
 		if !g.opts.allowedHosts[host] {
 			return core.NewError("computeruse.guard.check_url", core.ErrGuardBlocked,
 				fmt.Sprintf("host %q is not in the allowed list", host), nil)
