@@ -1,17 +1,17 @@
 package agentfile
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 )
 
 func TestJSONSerializer_Serialize(t *testing.T) {
 	af := NewAgentFile("test-agent", "Assistant", "openai", "gpt-4o")
 	s := &JSONSerializer{}
 
-	data, err := s.Serialize(af)
+	data, err := s.Serialize(context.Background(), af)
 	if err != nil {
 		t.Fatalf("Serialize: %v", err)
 	}
@@ -22,7 +22,7 @@ func TestJSONSerializer_Serialize(t *testing.T) {
 
 func TestJSONSerializer_NilInput(t *testing.T) {
 	s := &JSONSerializer{}
-	_, err := s.Serialize(nil)
+	_, err := s.Serialize(context.Background(), nil)
 	if err == nil {
 		t.Error("expected error for nil input")
 	}
@@ -67,7 +67,7 @@ func TestJSONDeserializer_Deserialize(t *testing.T) {
 	d := NewDeserializer()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			af, err := d.Deserialize([]byte(tt.json))
+			af, err := d.Deserialize(context.Background(), []byte(tt.json))
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error")
@@ -86,7 +86,7 @@ func TestJSONDeserializer_Deserialize(t *testing.T) {
 
 func TestJSONDeserializer_MaxSize(t *testing.T) {
 	d := NewDeserializer(WithMaxSize(10))
-	_, err := d.Deserialize(make([]byte, 100))
+	_, err := d.Deserialize(context.Background(), make([]byte, 100))
 	if err == nil {
 		t.Error("expected error for oversized input")
 	}
@@ -95,16 +95,16 @@ func TestJSONDeserializer_MaxSize(t *testing.T) {
 func TestRoundTrip(t *testing.T) {
 	af := NewAgentFile("round-trip", "Tester", "anthropic", "claude-3")
 	af.Agent.Description = "Test agent"
-	af.Agent.Tools = []ToolDef{{Name: "search", Config: map[string]any{"api_key_env": "SEARCH_KEY"}}}
+	af.Agent.Tools = []ToolDef{{Name: "search", Config: map[string]any{"api_key_env": "SEARCH_KEY"}}} //nolint:gosec // G101: false positive - env var name, not a credential
 
 	s := &JSONSerializer{}
-	data, err := s.Serialize(af)
+	data, err := s.Serialize(context.Background(), af)
 	if err != nil {
 		t.Fatalf("Serialize: %v", err)
 	}
 
 	d := NewDeserializer()
-	af2, err := d.Deserialize(data)
+	af2, err := d.Deserialize(context.Background(), data)
 	if err != nil {
 		t.Fatalf("Deserialize: %v", err)
 	}
@@ -122,6 +122,7 @@ func TestRoundTrip(t *testing.T) {
 
 func TestDefaultMigrator(t *testing.T) {
 	migrator := NewMigrator()
+	ctx := context.Background()
 
 	af := &AgentFile{
 		Version: "0.1",
@@ -132,7 +133,7 @@ func TestDefaultMigrator(t *testing.T) {
 		},
 	}
 
-	migrated, err := migrator.Migrate(af, "1.0")
+	migrated, err := migrator.Migrate(ctx, af, "1.0")
 	if err != nil {
 		t.Fatalf("Migrate: %v", err)
 	}
@@ -141,7 +142,7 @@ func TestDefaultMigrator(t *testing.T) {
 	}
 
 	// Same version should be no-op.
-	same, err := migrator.Migrate(af, "0.1")
+	same, err := migrator.Migrate(ctx, af, "0.1")
 	if err != nil {
 		t.Fatalf("Migrate same: %v", err)
 	}
@@ -157,22 +158,66 @@ func TestDefaultMigrator(t *testing.T) {
 
 func TestDefaultMigrator_NilInput(t *testing.T) {
 	migrator := NewMigrator()
-	_, err := migrator.Migrate(nil, "1.0")
+	_, err := migrator.Migrate(context.Background(), nil, "1.0")
 	if err == nil {
 		t.Error("expected error for nil input")
+	}
+}
+
+func TestDefaultMigrator_UnsupportedVersion(t *testing.T) {
+	migrator := NewMigrator()
+	af := NewAgentFile("test", "R", "x", "y")
+	_, err := migrator.Migrate(context.Background(), af, "99.9")
+	if err == nil {
+		t.Error("expected error for unsupported target version")
+	}
+}
+
+func TestDefaultMigrator_DeepCopy(t *testing.T) {
+	migrator := NewMigrator()
+	af := &AgentFile{
+		Version: "0.1",
+		Agent: AgentDef{
+			ID:       "test",
+			Persona:  PersonaDef{Role: "Helper"},
+			Model:    ModelDef{Provider: "openai", Model: "gpt-4o"},
+			Settings: map[string]any{"k": "v"},
+			Tools:    []ToolDef{{Name: "t1", Config: map[string]any{"a": 1}}},
+		},
+	}
+
+	migrated, err := migrator.Migrate(context.Background(), af, "1.0")
+	if err != nil {
+		t.Fatalf("Migrate: %v", err)
+	}
+
+	// Mutating the migrated copy must not affect the original.
+	migrated.Agent.Settings["k"] = "other"
+	migrated.Agent.Tools[0].Config["a"] = 999
+	migrated.Agent.Tools = append(migrated.Agent.Tools, ToolDef{Name: "t2"})
+
+	if af.Agent.Settings["k"] != "v" {
+		t.Errorf("original Settings mutated: %v", af.Agent.Settings)
+	}
+	if af.Agent.Tools[0].Config["a"] != 1 {
+		t.Errorf("original Tool config mutated: %v", af.Agent.Tools[0].Config)
+	}
+	if len(af.Agent.Tools) != 1 {
+		t.Errorf("original Tools slice mutated: len=%d", len(af.Agent.Tools))
 	}
 }
 
 func TestSaveAndLoad(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "test.af")
+	ctx := context.Background()
 
 	af := NewAgentFile("save-test", "Helper", "openai", "gpt-4o")
-	if err := Save(path, af); err != nil {
+	if err := Save(ctx, path, af); err != nil {
 		t.Fatalf("Save: %v", err)
 	}
 
-	loaded, err := Load(path)
+	loaded, err := Load(ctx, path)
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
@@ -183,23 +228,40 @@ func TestSaveAndLoad(t *testing.T) {
 
 func TestSave_PathTraversal(t *testing.T) {
 	af := NewAgentFile("test", "R", "x", "y")
-	err := Save("/tmp/../etc/test.af", af)
+	err := Save(context.Background(), "/tmp/../etc/test.af", af)
 	if err == nil {
 		t.Error("expected error for path traversal")
 	}
 }
 
 func TestLoad_PathTraversal(t *testing.T) {
-	_, err := Load("/tmp/../etc/test.af")
+	_, err := Load(context.Background(), "/tmp/../etc/test.af")
 	if err == nil {
 		t.Error("expected error for path traversal")
 	}
 }
 
 func TestLoad_NotFound(t *testing.T) {
-	_, err := Load("/nonexistent/path/file.af")
+	_, err := Load(context.Background(), "/nonexistent/path/file.af")
 	if err == nil {
 		t.Error("expected error for missing file")
+	}
+}
+
+func TestLoad_ExceedsMaxSize(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "big.af")
+
+	// Write a file larger than 1 MB to ensure the stat-based size guard fires
+	// before ReadFile allocates memory.
+	big := make([]byte, (1<<20)+1)
+	if err := os.WriteFile(path, big, 0600); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+
+	_, err := Load(context.Background(), path)
+	if err == nil {
+		t.Error("expected error for oversized file")
 	}
 }
 
@@ -214,7 +276,4 @@ func TestNewAgentFile(t *testing.T) {
 	if af.CreatedAt.IsZero() {
 		t.Error("CreatedAt should be set")
 	}
-
-	_ = time.Now() // ensure no unused import
-	_ = os.TempDir()
 }
