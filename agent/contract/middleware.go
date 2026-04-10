@@ -3,6 +3,7 @@ package contract
 import (
 	"context"
 	"iter"
+	"strings"
 
 	"github.com/lookatitude/beluga-ai/agent"
 	"github.com/lookatitude/beluga-ai/schema"
@@ -63,7 +64,7 @@ func (v *validatingAgent) Invoke(ctx context.Context, input string, opts ...agen
 	}
 
 	if err := ValidateOutput(ctx, v.contract, result); err != nil {
-		return result, err
+		return "", err
 	}
 
 	return result, nil
@@ -79,6 +80,7 @@ func (v *validatingAgent) Stream(ctx context.Context, input string, opts ...agen
 			return
 		}
 
+		var buf strings.Builder
 		for event, err := range v.Agent.Stream(ctx, input, opts...) {
 			if !yield(event, err) {
 				return
@@ -86,6 +88,13 @@ func (v *validatingAgent) Stream(ctx context.Context, input string, opts ...agen
 			if err != nil {
 				return
 			}
+			if event.Type == agent.EventText {
+				buf.WriteString(event.Text)
+			}
+		}
+
+		if err := ValidateOutput(ctx, v.contract, buf.String()); err != nil {
+			yield(agent.Event{Type: agent.EventError, AgentID: v.Agent.ID()}, err)
 		}
 	}
 }
