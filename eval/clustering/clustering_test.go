@@ -45,7 +45,7 @@ func TestJaccardSimilarity(t *testing.T) {
 	metric := &JaccardSimilarity{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sim, err := metric.Similarity(context.Background(), tt.a, tt.b)
+			sim, err := metric.Score(context.Background(), tt.a, tt.b)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}

@@ -9,11 +9,11 @@ import (
 	"sync"
 )
 
-// SimilarityMetric computes the similarity between two conversations.
+// SimilarityScorer computes the similarity between two conversations.
 // The result must be in [0.0, 1.0] where 1.0 means identical.
-type SimilarityMetric interface {
-	// Similarity returns a score in [0.0, 1.0] between two conversations.
-	Similarity(ctx context.Context, a, b Conversation) (float64, error)
+type SimilarityScorer interface {
+	// Score returns a similarity score in [0.0, 1.0] between two conversations.
+	Score(ctx context.Context, a, b Conversation) (float64, error)
 }
 
 // PatternDetector identifies recurring patterns across conversations.
@@ -122,14 +122,14 @@ func List() []string {
 type Option func(*options)
 
 type options struct {
-	metric      SimilarityMetric
+	metric      SimilarityScorer
 	threshold   float64
 	maxClusters int
 	minSize     int
 }
 
-// WithMetric sets the similarity metric for clustering.
-func WithMetric(m SimilarityMetric) Option {
+// WithMetric sets the similarity scorer for clustering.
+func WithMetric(m SimilarityScorer) Option {
 	return func(o *options) { o.metric = m }
 }
 
@@ -250,7 +250,7 @@ func (c *AgglomerativeClusterer) clusterSimilarity(ctx context.Context, a, b Clu
 	var count int
 	for _, ca := range a.Conversations {
 		for _, cb := range b.Conversations {
-			sim, err := c.opts.metric.Similarity(ctx, ca, cb)
+			sim, err := c.opts.metric.Score(ctx, ca, cb)
 			if err != nil {
 				return 0, err
 			}
@@ -279,10 +279,10 @@ func mergeClusters(a, b Cluster) Cluster {
 // JaccardSimilarity computes similarity based on shared vocabulary between conversations.
 type JaccardSimilarity struct{}
 
-var _ SimilarityMetric = (*JaccardSimilarity)(nil)
+var _ SimilarityScorer = (*JaccardSimilarity)(nil)
 
-// Similarity returns the Jaccard similarity of the word sets of two conversations.
-func (j *JaccardSimilarity) Similarity(_ context.Context, a, b Conversation) (float64, error) {
+// Score returns the Jaccard similarity of the word sets of two conversations.
+func (j *JaccardSimilarity) Score(_ context.Context, a, b Conversation) (float64, error) {
 	wordsA := extractWords(a)
 	wordsB := extractWords(b)
 
@@ -348,60 +348,67 @@ func (d *TurnPatternDetector) Detect(_ context.Context, convs []Conversation) ([
 	}
 
 	patterns := make(map[string]*Pattern)
+	addTurnCountPatterns(convs, patterns)
+	addRoleSequencePatterns(convs, patterns)
+	addLengthOutlierPatterns(convs, patterns)
 
-	// Detect turn count distribution patterns.
+	result := make([]Pattern, 0, len(patterns))
+	for _, p := range patterns {
+		result = append(result, *p)
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Name < result[j].Name
+	})
+	return result, nil
+}
+
+// addTurnCountPatterns groups conversations by turn count and records
+// patterns where at least two conversations share the same count.
+func addTurnCountPatterns(convs []Conversation, patterns map[string]*Pattern) {
 	turnCounts := make(map[int][]string)
 	for _, c := range convs {
 		turnCounts[len(c.Turns)] = append(turnCounts[len(c.Turns)], c.ID)
 	}
-
 	for count, ids := range turnCounts {
-		if len(ids) >= 2 {
-			name := fmt.Sprintf("%d-turn-conversation", count)
-			patterns[name] = &Pattern{
-				Name:        name,
-				Description: fmt.Sprintf("Conversations with exactly %d turns", count),
-				Frequency:   len(ids),
-				Examples:    ids,
-			}
+		if len(ids) < 2 {
+			continue
+		}
+		name := fmt.Sprintf("%d-turn-conversation", count)
+		patterns[name] = &Pattern{
+			Name:        name,
+			Description: fmt.Sprintf("Conversations with exactly %d turns", count),
+			Frequency:   len(ids),
+			Examples:    ids,
 		}
 	}
+}
 
-	// Detect role sequence patterns.
+// addRoleSequencePatterns groups conversations by role sequence and
+// records patterns where the same sequence appears twice or more.
+func addRoleSequencePatterns(convs []Conversation, patterns map[string]*Pattern) {
 	roleSeqs := make(map[string][]string)
 	for _, c := range convs {
 		seq := roleSequence(c)
 		roleSeqs[seq] = append(roleSeqs[seq], c.ID)
 	}
-
 	for seq, ids := range roleSeqs {
-		if len(ids) >= 2 {
-			name := "role-pattern-" + seq
-			patterns[name] = &Pattern{
-				Name:        name,
-				Description: fmt.Sprintf("Conversations with role sequence: %s", seq),
-				Frequency:   len(ids),
-				Examples:    ids,
-			}
+		if len(ids) < 2 {
+			continue
+		}
+		name := "role-pattern-" + seq
+		patterns[name] = &Pattern{
+			Name:        name,
+			Description: fmt.Sprintf("Conversations with role sequence: %s", seq),
+			Frequency:   len(ids),
+			Examples:    ids,
 		}
 	}
+}
 
-	// Detect short vs long conversations.
-	var totalTurns int
-	for _, c := range convs {
-		totalTurns += len(c.Turns)
-	}
-	avgTurns := float64(totalTurns) / float64(len(convs))
-
-	var shortIDs, longIDs []string
-	for _, c := range convs {
-		if float64(len(c.Turns)) < avgTurns-math.Sqrt(avgTurns) {
-			shortIDs = append(shortIDs, c.ID)
-		} else if float64(len(c.Turns)) > avgTurns+math.Sqrt(avgTurns) {
-			longIDs = append(longIDs, c.ID)
-		}
-	}
-
+// addLengthOutlierPatterns records "short" and "long" conversation
+// patterns based on deviation from the mean turn count.
+func addLengthOutlierPatterns(convs []Conversation, patterns map[string]*Pattern) {
+	shortIDs, longIDs := classifyByLength(convs)
 	if len(shortIDs) >= 2 {
 		patterns["short-conversation"] = &Pattern{
 			Name:        "short-conversation",
@@ -418,15 +425,27 @@ func (d *TurnPatternDetector) Detect(_ context.Context, convs []Conversation) ([
 			Examples:    longIDs,
 		}
 	}
+}
 
-	result := make([]Pattern, 0, len(patterns))
-	for _, p := range patterns {
-		result = append(result, *p)
+// classifyByLength partitions conversations into short and long outliers
+// relative to the mean turn count, using a sqrt(mean) threshold.
+func classifyByLength(convs []Conversation) (shortIDs, longIDs []string) {
+	var totalTurns int
+	for _, c := range convs {
+		totalTurns += len(c.Turns)
 	}
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].Name < result[j].Name
-	})
-	return result, nil
+	avgTurns := float64(totalTurns) / float64(len(convs))
+	deviation := math.Sqrt(avgTurns)
+	for _, c := range convs {
+		turns := float64(len(c.Turns))
+		switch {
+		case turns < avgTurns-deviation:
+			shortIDs = append(shortIDs, c.ID)
+		case turns > avgTurns+deviation:
+			longIDs = append(longIDs, c.ID)
+		}
+	}
+	return shortIDs, longIDs
 }
 
 func roleSequence(c Conversation) string {
