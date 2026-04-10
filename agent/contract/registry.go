@@ -17,7 +17,11 @@ var (
 )
 
 // Register adds a contract template factory to the global registry.
-// Registration should occur in init() functions.
+//
+// Register MUST be called only from init() functions. Calling Register
+// after program startup is unsupported and may result in race conditions
+// or unexpected behavior; the mutex is present solely to guard against
+// concurrent init() ordering issues across packages.
 func Register(templateName string, f Factory) {
 	mu.Lock()
 	defer mu.Unlock()

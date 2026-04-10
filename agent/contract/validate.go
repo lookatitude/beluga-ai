@@ -92,9 +92,12 @@ func validateValue(value any, sch map[string]any, strict bool, path string) []st
 func normalizeValue(value any) any {
 	switch v := value.(type) {
 	case string:
-		var parsed any
-		if err := json.Unmarshal([]byte(v), &parsed); err == nil {
-			return parsed
+		trimmed := strings.TrimSpace(v)
+		if len(trimmed) > 0 && (trimmed[0] == '{' || trimmed[0] == '[') {
+			var parsed any
+			if err := json.Unmarshal([]byte(v), &parsed); err == nil {
+				return parsed
+			}
 		}
 		return v
 	case json.RawMessage:
