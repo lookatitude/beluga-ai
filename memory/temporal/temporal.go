@@ -220,16 +220,23 @@ func (tm *TemporalMemory) ResolveConflicts(ctx context.Context, newRelation *mem
 		return nil, fmt.Errorf("temporal: resolve_conflicts: %w", err)
 	}
 
-	// Apply invalidations to the store.
+	// Apply invalidations to the store. Silently skipping a candidate here
+	// would desync the in-memory invalidated slice from the underlying store,
+	// so missing or malformed identifiers must surface as errors.
 	for _, inv := range invalidated {
-		if id, ok := inv.Properties["id"]; ok {
-			if relID, ok := id.(string); ok {
-				if inv.InvalidAt != nil {
-					if err := tm.store.InvalidateRelation(ctx, relID, *inv.InvalidAt); err != nil {
-						return nil, fmt.Errorf("temporal: apply invalidation: %w", err)
-					}
-				}
-			}
+		id, ok := inv.Properties["id"]
+		if !ok {
+			return nil, core.NewError("temporal.resolve_conflicts", core.ErrInvalidInput, "invalidated relation missing Properties[\"id\"]", nil)
+		}
+		relID, ok := id.(string)
+		if !ok {
+			return nil, core.NewError("temporal.resolve_conflicts", core.ErrInvalidInput, "invalidated relation Properties[\"id\"] is not a string", nil)
+		}
+		if inv.InvalidAt == nil {
+			continue
+		}
+		if err := tm.store.InvalidateRelation(ctx, relID, *inv.InvalidAt); err != nil {
+			return nil, fmt.Errorf("temporal: apply invalidation: %w", err)
 		}
 	}
 
