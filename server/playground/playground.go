@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html"
 	"net/http"
 	"sort"
 	"sync"
@@ -31,8 +32,9 @@ type StreamAdapter interface {
 type Option func(*options)
 
 type options struct {
-	title string
-	path  string
+	title   string
+	path    string
+	adapter StreamAdapter
 }
 
 // WithTitle sets the page title.
@@ -45,36 +47,45 @@ func WithBasePath(p string) Option {
 	return func(o *options) { o.path = p }
 }
 
+// WithAdapter sets a custom StreamAdapter implementation.
+func WithAdapter(sa StreamAdapter) Option {
+	return func(o *options) { o.adapter = sa }
+}
+
 // PlaygroundHandler serves the chat UI and handles API requests.
 type PlaygroundHandler struct {
 	selector AgentSelector
 	adapter  StreamAdapter
 	opts     options
+	mux      *http.ServeMux
 }
 
 // NewHandler creates a PlaygroundHandler serving a chat UI for the given agents.
 func NewHandler(selector AgentSelector, opts ...Option) *PlaygroundHandler {
 	o := options{
-		title: "Beluga AI Playground",
-		path:  "/playground",
+		title:   "Beluga AI Playground",
+		path:    "/playground",
+		adapter: &defaultStreamAdapter{},
 	}
 	for _, opt := range opts {
 		opt(&o)
 	}
-	return &PlaygroundHandler{
+	h := &PlaygroundHandler{
 		selector: selector,
-		adapter:  &defaultStreamAdapter{},
+		adapter:  o.adapter,
 		opts:     o,
 	}
-}
-
-// ServeHTTP implements http.Handler.
-func (h *PlaygroundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", h.handleUI)
 	mux.HandleFunc("GET /agents", h.handleListAgents)
 	mux.HandleFunc("POST /chat", h.handleChat)
-	mux.ServeHTTP(w, r)
+	h.mux = mux
+	return h
+}
+
+// ServeHTTP implements http.Handler.
+func (h *PlaygroundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.mux.ServeHTTP(w, r)
 }
 
 // Handler returns an http.Handler mounted at the configured base path.
@@ -88,13 +99,17 @@ func (h *PlaygroundHandler) Handler() http.Handler {
 
 func (h *PlaygroundHandler) handleUI(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprintf(w, playgroundHTML, h.opts.title, h.opts.path)
+	escapedTitle := html.EscapeString(h.opts.title)
+	escapedPath := html.EscapeString(h.opts.path)
+	fmt.Fprintf(w, playgroundHTML, escapedTitle, escapedTitle, escapedPath)
 }
 
 func (h *PlaygroundHandler) handleListAgents(w http.ResponseWriter, r *http.Request) {
 	agents := h.selector.List(r.Context())
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"agents": agents})
+	if err := json.NewEncoder(w).Encode(map[string]any{"agents": agents}); err != nil {
+		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+	}
 }
 
 type chatRequest struct {
@@ -226,7 +241,8 @@ const playgroundHTML = `<!DOCTYPE html>
 </style>
 </head>
 <body>
-<header><h1>Beluga AI Playground</h1></header>
+<header><h1>%s</h1></header>
+<!-- header title is HTML-escaped via html.EscapeString in handleUI -->
 <div class="container">
   <div class="agent-select"><select id="agent"></select></div>
   <div class="messages" id="messages"></div>
