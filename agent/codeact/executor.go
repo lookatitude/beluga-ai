@@ -75,6 +75,17 @@ func WithDefaultTimeout(d time.Duration) ProcessExecutorOption {
 // NewProcessExecutor creates a new ProcessExecutor with the given options.
 // Default interpreters: python -> python3, javascript -> node.
 func NewProcessExecutor(opts ...ProcessExecutorOption) *ProcessExecutor {
+	e := &ProcessExecutor{
+		interpreters: map[string]string{
+			"python":     "python3",
+			"javascript": "node",
+		},
+		defaultTimeout: 30 * time.Second,
+	}
+	for _, opt := range opts {
+		opt(e)
+	}
+	return e
 }
 
 // Execute runs code by writing it to stdin of the appropriate interpreter.
@@ -112,6 +123,8 @@ func (e *ProcessExecutor) Execute(ctx context.Context, action CodeAction) (CodeR
 	// Run through interpreter with code on stdin.
 	// Security: code comes from the LLM, not directly from user input.
 	// The ProcessExecutor should only be used in sandboxed environments.
+	// #nosec G204 -- interpreter is from a whitelisted map controlled by the
+	// application, not user input. ProcessExecutor is meant for sandboxed use.
 	cmd := exec.CommandContext(execCtx, interpreter) //nolint:gosec // sandboxed execution
 	cmd.Stdin = bytes.NewReader([]byte(action.Code))
 
