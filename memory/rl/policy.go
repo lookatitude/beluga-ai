@@ -61,7 +61,14 @@ func (p *HeuristicPolicy) Decide(_ context.Context, f PolicyFeatures) (MemoryAct
 
 	// Highly similar existing entry: update it.
 	if f.MaxSimilarity >= p.UpdateThreshold && f.HasMatchingEntry {
-		confidence := (f.MaxSimilarity - p.UpdateThreshold) / (1.0 - p.UpdateThreshold)
+		confidence := 0.0
+		if denom := 1.0 - p.UpdateThreshold; denom > 0 {
+			confidence = (f.MaxSimilarity - p.UpdateThreshold) / denom
+		} else {
+			// UpdateThreshold is 1.0 (or higher); f.MaxSimilarity must equal it
+			// to reach this branch, so confidence is maximum.
+			confidence = 1.0
+		}
 		return ActionUpdate, clampConfidence(confidence), nil
 	}
 

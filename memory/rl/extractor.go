@@ -45,8 +45,20 @@ func (e *DefaultFeatureExtractor) Extract(ctx context.Context, mem memory.Memory
 		}, nil
 	}
 
+	// StoreSize should reflect the total number of entries in the backing
+	// memory, not just the search result count. If the memory implements
+	// SizedMemory, use that; otherwise fall back to len(docs) as a lower
+	// bound (this means MaxStoreSize-based delete decisions will be
+	// disabled for non-sized memories).
+	storeSize := float64(len(docs))
+	if sized, ok := mem.(SizedMemory); ok {
+		if n, serr := sized.Size(ctx); serr == nil {
+			storeSize = float64(n)
+		}
+	}
+
 	features := PolicyFeatures{
-		StoreSize:       float64(len(docs)),
+		StoreSize:       storeSize,
 		QueryTokenCount: approximateTokenCount(query),
 	}
 

@@ -3,7 +3,9 @@ package rl
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/core"
@@ -13,6 +15,7 @@ import (
 // training. It is safe for concurrent use.
 type TrajectoryCollector struct {
 	mu       sync.Mutex
+	counter  atomic.Int64
 	episodes []Episode
 	current  *Episode
 	hooks    Hooks
@@ -35,7 +38,7 @@ func (c *TrajectoryCollector) RecordStep(features PolicyFeatures, action MemoryA
 
 	if c.current == nil {
 		c.current = &Episode{
-			ID:        generateEpisodeID(),
+			ID:        c.generateID(),
 			StartTime: time.Now(),
 		}
 	}
@@ -102,33 +105,9 @@ func (c *TrajectoryCollector) Export() ([]byte, error) {
 	return json.Marshal(c.episodes)
 }
 
-// episodeCounter is a simple monotonic counter for generating episode IDs.
-var (
-	episodeCounterMu sync.Mutex
-	episodeCounter   int64
-)
-
-// generateEpisodeID returns a unique episode ID based on timestamp and counter.
-func generateEpisodeID() string {
-	episodeCounterMu.Lock()
-	episodeCounter++
-	n := episodeCounter
-	episodeCounterMu.Unlock()
-
-	return time.Now().Format("20060102T150405") + "-" + formatInt64(n)
-}
-
-// formatInt64 converts an int64 to a string without importing strconv.
-func formatInt64(n int64) string {
-	if n == 0 {
-		return "0"
-	}
-	var buf [20]byte
-	i := len(buf)
-	for n > 0 {
-		i--
-		buf[i] = byte('0' + n%10)
-		n /= 10
-	}
-	return string(buf[i:])
+// generateID returns a unique episode ID based on timestamp and a
+// collector-scoped atomic counter.
+func (c *TrajectoryCollector) generateID() string {
+	n := c.counter.Add(1)
+	return time.Now().Format("20060102T150405") + "-" + strconv.FormatInt(n, 10)
 }
