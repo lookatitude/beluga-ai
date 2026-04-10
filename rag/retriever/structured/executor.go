@@ -29,6 +29,11 @@ var writeKeywords = []string{
 	"SET",
 	"REMOVE",
 	"DETACH",
+	// Additional write / DCL keywords that mutate data or access control.
+	"REPLACE", // MySQL REPLACE INTO = DELETE + INSERT
+	"UPSERT",  // CockroachDB, SQLite
+	"GRANT",   // DCL: mutates permissions
+	"REVOKE",  // DCL: mutates permissions
 }
 
 // ReadOnlyExecutor wraps a QueryExecutor and rejects any query containing

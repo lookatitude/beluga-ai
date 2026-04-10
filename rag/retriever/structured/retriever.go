@@ -129,6 +129,8 @@ func (r *StructuredRetriever) Retrieve(ctx context.Context, query string, opts .
 	var (
 		bestResult QueryResult
 		bestScore  float64
+		lastErr    error
+		haveResult bool
 	)
 
 	attempts := r.opts.maxRetries + 1 // first attempt + retries
@@ -150,7 +152,9 @@ func (r *StructuredRetriever) Retrieve(ctx context.Context, query string, opts .
 				"attempt", attempt+1,
 				"error", err,
 			)
-			bestResult = QueryResult{Query: generated, Error: err}
+			// Preserve any previously successful bestResult; only track last error
+			// so we can report it if no successful attempt ever happens.
+			lastErr = err
 			continue
 		}
 
@@ -160,6 +164,7 @@ func (r *StructuredRetriever) Retrieve(ctx context.Context, query string, opts .
 		if r.opts.evaluator == nil {
 			bestResult = result
 			bestScore = 1.0
+			haveResult = true
 			break
 		}
 
@@ -171,12 +176,14 @@ func (r *StructuredRetriever) Retrieve(ctx context.Context, query string, opts .
 			)
 			bestResult = result
 			bestScore = 0.5 // assume moderate relevance on evaluation failure
+			haveResult = true
 			break
 		}
 
-		if score > bestScore {
+		if !haveResult || score > bestScore {
 			bestResult = result
 			bestScore = score
+			haveResult = true
 		}
 
 		if score >= r.opts.minScore {
@@ -190,8 +197,16 @@ func (r *StructuredRetriever) Retrieve(ctx context.Context, query string, opts .
 		)
 	}
 
-	if bestResult.Error != nil && len(bestResult.Results) == 0 {
-		return nil, fmt.Errorf("structured.retrieve: all attempts failed: %w", bestResult.Error)
+	if !haveResult {
+		if lastErr != nil {
+			return nil, fmt.Errorf("structured.retrieve: all attempts failed: %w", lastErr)
+		}
+		return nil, core.NewError(
+			"structured.retrieve",
+			core.ErrInvalidInput,
+			"no results produced after retries",
+			nil,
+		)
 	}
 
 	docs := resultsToDocs(bestResult, bestScore, cfg.TopK)
