@@ -3,6 +3,7 @@ package associative
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -197,7 +198,11 @@ func (am *AssociativeMemory) AddNote(ctx context.Context, content string) (*sche
 		refinedIDs, err := am.updater.Update(ctx, note, linkedIDs)
 		if err != nil {
 			// Refinement errors are non-fatal; the note was already stored and linked.
-			_ = err
+			// Log so operators can observe partial failures in retroactive refinement.
+			slog.WarnContext(ctx, "associative: retroactive refinement failed",
+				slog.String("note_id", note.ID),
+				slog.Any("error", err),
+			)
 		}
 		if len(refinedIDs) > 0 && am.opts.hooks.OnNoteRefined != nil {
 			am.opts.hooks.OnNoteRefined(ctx, note, refinedIDs)
@@ -240,7 +245,14 @@ func (am *AssociativeMemory) DeleteNote(ctx context.Context, id string) error {
 			continue // Neighbor may already be deleted.
 		}
 		neighbor.Links = removeString(neighbor.Links, id)
-		_ = am.store.Update(ctx, neighbor)
+		if err := am.store.Update(ctx, neighbor); err != nil {
+			// Log but continue: cleanup is best-effort to avoid dangling backlinks.
+			slog.WarnContext(ctx, "associative: backlink cleanup failed",
+				slog.String("note_id", id),
+				slog.String("neighbor_id", linkedID),
+				slog.Any("error", err),
+			)
+		}
 	}
 
 	return am.store.Delete(ctx, id)

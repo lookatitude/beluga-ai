@@ -3,6 +3,7 @@ package associative
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -252,11 +253,13 @@ func TestInMemoryNoteStore_Concurrent(t *testing.T) {
 		go func(idx int) {
 			defer func() { done <- struct{}{} }()
 			n := newTestNote(
-				time.Now().Format(time.RFC3339Nano)+"-"+string(rune('a'+idx%26)),
+				fmt.Sprintf("concurrent-%d", idx),
 				"content",
 				[]float32{float32(idx), 0, 0},
 			)
-			_ = store.Add(ctx, n)
+			if err := store.Add(ctx, n); err != nil {
+				t.Errorf("Add failed: %v", err)
+			}
 		}(i)
 	}
 	for i := 0; i < 50; i++ {
