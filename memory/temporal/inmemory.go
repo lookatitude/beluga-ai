@@ -213,6 +213,7 @@ func (s *InMemoryStore) Neighbors(ctx context.Context, entityID string, depth in
 	}
 
 	visited := map[string]bool{entityID: true}
+	relSeen := map[string]bool{}
 	frontier := []string{entityID}
 	var resultEntities []memory.Entity
 	var resultRelations []memory.Relation
@@ -232,7 +233,17 @@ func (s *InMemoryStore) Neighbors(ctx context.Context, entityID string, depth in
 				} else {
 					continue
 				}
-				resultRelations = append(resultRelations, rel)
+				// Dedup relations across frontier levels using Properties["id"].
+				if relID, ok := rel.Properties["id"].(string); ok && relID != "" {
+					if relSeen[relID] {
+						// already recorded this relation
+					} else {
+						relSeen[relID] = true
+						resultRelations = append(resultRelations, rel)
+					}
+				} else {
+					resultRelations = append(resultRelations, rel)
+				}
 				if !visited[neighborID] {
 					visited[neighborID] = true
 					if e, ok := s.entities[neighborID]; ok {
@@ -273,6 +284,9 @@ func (s *InMemoryStore) QueryAsOf(ctx context.Context, query string, validTime t
 	var relations []memory.Relation
 
 	for _, e := range s.entities {
+		if !e.CreatedAt.IsZero() && e.CreatedAt.After(validTime) {
+			continue // entity did not exist at validTime
+		}
 		if q == "" || strings.Contains(strings.ToLower(e.Type), q) ||
 			strings.Contains(strings.ToLower(e.ID), q) ||
 			strings.Contains(strings.ToLower(e.Summary), q) {
@@ -316,6 +330,11 @@ func (s *InMemoryStore) InvalidateRelation(ctx context.Context, relationID strin
 
 	for i := range s.relations {
 		if id, ok := s.relations[i].Properties["id"]; ok && id == relationID {
+			// Idempotent: if the relation is already invalidated, preserve the
+			// original InvalidAt/ExpiredAt timestamps rather than overwriting.
+			if s.relations[i].ExpiredAt != nil {
+				return nil
+			}
 			now := time.Now()
 			s.relations[i].InvalidAt = &invalidAt
 			s.relations[i].ExpiredAt = &now
