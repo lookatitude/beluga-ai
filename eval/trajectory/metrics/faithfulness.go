@@ -32,6 +32,16 @@ Respond with ONLY a single decimal number between 0.0 and 1.0.`
 // Compile-time interface check.
 var _ trajectory.TrajectoryMetric = (*TrajectoryFaithfulness)(nil)
 
+func init() {
+	// Register a factory that returns an informative error: the faithfulness
+	// metric requires a ChatModel, which cannot be supplied via the generic
+	// map-based config. Callers must construct it directly with
+	// NewTrajectoryFaithfulness(WithModel(...)).
+	trajectory.Register("trajectory_faithfulness", func(_ map[string]any) (trajectory.TrajectoryMetric, error) {
+		return nil, fmt.Errorf("trajectory_faithfulness: must be constructed directly with NewTrajectoryFaithfulness(WithModel(...))")
+	})
+}
+
 // TrajectoryFaithfulnessOption configures a TrajectoryFaithfulness metric.
 type TrajectoryFaithfulnessOption func(*TrajectoryFaithfulness)
 
@@ -123,17 +133,27 @@ func formatTrajectorySteps(steps []trajectory.Step) string {
 }
 
 // parseScoreResponse extracts a float64 score from an LLM response string.
+// LLMs frequently emit auxiliary text even when instructed otherwise (e.g.
+// "Score: 0.8" or "0.8\n\nReasoning: ..."), so scan token-by-token for the
+// first parseable float rather than requiring a bare float.
 func parseScoreResponse(text string) (float64, error) {
-	text = strings.TrimSpace(text)
-	score, err := strconv.ParseFloat(text, 64)
-	if err != nil {
-		return 0, fmt.Errorf("failed to parse score from response %q: %w", text, err)
+	for _, f := range strings.Fields(strings.TrimSpace(text)) {
+		// Strip common punctuation like trailing periods or commas.
+		trimmed := strings.Trim(f, ".,;:()[]{}\"'")
+		if trimmed == "" {
+			continue
+		}
+		if s, err := strconv.ParseFloat(trimmed, 64); err == nil {
+			if s < 0 {
+				s = 0
+			}
+			if s > 1 {
+				s = 1
+			}
+			return s, nil
+		}
 	}
-	if score < 0 {
-		score = 0
-	}
-	if score > 1 {
-		score = 1
-	}
-	return score, nil
+	// Avoid echoing the full LLM response into the error: it may contain
+	// user-supplied content that should not surface to external callers.
+	return 0, fmt.Errorf("failed to parse score from LLM response")
 }

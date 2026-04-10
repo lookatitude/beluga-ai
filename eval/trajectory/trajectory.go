@@ -136,5 +136,5 @@ func SaveTrajectories(path string, trajectories []Trajectory) error {
 		return fmt.Errorf("trajectory: marshal: %w", err)
 	}
 
-	return os.WriteFile(clean, data, 0o644)
+	return os.WriteFile(clean, data, 0o600)
 }

@@ -106,8 +106,8 @@ func TestRunner_ContextCancellation(t *testing.T) {
 	)
 
 	report, err := runner.Run(ctx)
-	// Should complete without panic.
-	require.NoError(t, err)
+	// Should surface the cancellation as an error and still return the report.
+	require.ErrorIs(t, err, context.Canceled)
 	require.NotNil(t, report)
 }
 

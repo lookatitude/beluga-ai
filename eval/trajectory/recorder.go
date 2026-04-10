@@ -38,6 +38,7 @@ type Recorder struct {
 	output       string
 	steps        []Step
 	startTime    time.Time
+	endTime      time.Time
 	lastStepTime time.Time
 }
 
@@ -67,6 +68,7 @@ func (r *Recorder) Hooks() agent.Hooks {
 			defer r.mu.Unlock()
 			r.output = result
 			now := time.Now()
+			r.endTime = now
 			r.addStepLocked(StepFinish, StepAction{Message: result}, StepResult{Output: result}, now)
 		},
 		AfterPlan: func(_ context.Context, actions []agent.Action) error {
@@ -133,13 +135,23 @@ func (r *Recorder) Trajectory() *Trajectory {
 	steps := make([]Step, len(r.steps))
 	copy(steps, r.steps)
 
+	// TotalLatency is measured from OnStart to OnEnd. If OnEnd has not yet
+	// fired (still running), fall back to time.Since(startTime) so callers
+	// still see a monotonically increasing latency while the agent runs.
+	var totalLatency time.Duration
+	if !r.endTime.IsZero() {
+		totalLatency = r.endTime.Sub(r.startTime)
+	} else {
+		totalLatency = time.Since(r.startTime)
+	}
+
 	return &Trajectory{
 		ID:           r.trajectoryID,
 		AgentID:      r.agentID,
 		Input:        r.input,
 		Output:       r.output,
 		Steps:        steps,
-		TotalLatency: time.Since(r.startTime),
+		TotalLatency: totalLatency,
 		Timestamp:    r.startTime,
 	}
 }
@@ -152,6 +164,7 @@ func (r *Recorder) Reset() {
 	r.output = ""
 	r.steps = nil
 	r.startTime = time.Time{}
+	r.endTime = time.Time{}
 	r.lastStepTime = time.Time{}
 }
 

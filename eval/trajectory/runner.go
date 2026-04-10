@@ -125,6 +125,12 @@ func (r *Runner) Run(ctx context.Context) (*Report, error) {
 					if firstErr == nil {
 						firstErr = err
 					}
+					// Write a sentinel result so buildReport does not
+					// include a zero-value TrajectoryResult.
+					results[idx] = TrajectoryResult{
+						TrajectoryID: t.ID,
+						Scores:       map[string]*TrajectoryScore{},
+					}
 					mu.Unlock()
 					return
 				}
@@ -150,7 +156,7 @@ func (r *Runner) Run(ctx context.Context) (*Report, error) {
 		r.hooks.AfterRun(ctx, report)
 	}
 
-	if firstErr != nil && len(r.trajectories) == 0 {
+	if firstErr != nil {
 		return report, firstErr
 	}
 
