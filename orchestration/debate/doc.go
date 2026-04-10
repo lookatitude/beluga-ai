@@ -31,7 +31,7 @@
 //
 //	ge := debate.NewGeneratorEvaluator(generator,
 //	    []debate.EvaluatorFunc{qualityCheck, safetyCheck},
-//	    debate.WithMaxIterations(3),
+//	    debate.WithGEMaxIterations(3),
 //	)
 //	result, err := ge.Invoke(ctx, "Write a product description")
 //

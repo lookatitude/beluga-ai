@@ -82,23 +82,6 @@ func defaultGEOptions() geOptions {
 	}
 }
 
-// WithMaxIterations sets the maximum number of generate-evaluate iterations.
-func WithMaxIterations(n int) Option {
-	return func(o *debateOptions) {
-		if n > 0 {
-			o.maxRounds = n // Reuse maxRounds field for iterations.
-		}
-	}
-}
-
-// WithApprovalStrategy sets the approval aggregation strategy.
-func WithApprovalStrategy(s ApprovalStrategy) Option {
-	return func(o *debateOptions) {
-		// Store in a way accessible to GE. We piggyback on the options.
-		// This is resolved during GE construction.
-	}
-}
-
 // GeneratorEvaluator implements the generate-evaluate-refine loop.
 // A generator agent produces responses that are scored by evaluator functions.
 // The loop continues until all evaluators approve or max iterations is reached.
@@ -335,9 +318,12 @@ func (ge *GeneratorEvaluator) evaluate(ctx context.Context, input, response stri
 }
 
 // isApproved checks whether the critiques meet the approval strategy.
+// An empty critique list means no evaluators ran and cannot count as
+// approval — returning false forces the loop to exit on max iterations
+// rather than silently rubber-stamping the first generation.
 func (ge *GeneratorEvaluator) isApproved(critiques []Critique) bool {
 	if len(critiques) == 0 {
-		return true
+		return false
 	}
 
 	approvedCount := 0

@@ -88,8 +88,12 @@ func (d *AgreementDetector) Check(_ context.Context, state DebateState) (Converg
 	}, nil
 }
 
-// groupBySimilarity clusters contributions into groups based on bigram
-// similarity to the first contribution in each group.
+// groupBySimilarity clusters contributions into groups using average-linkage
+// bigram similarity. Each candidate is placed into the first group whose
+// mean similarity to all existing members meets simThreshold. This avoids
+// the leader-only comparison footgun where a contribution close to later
+// group members but distant from the leader would be split into a fresh
+// group, under-counting agreement.
 func groupBySimilarity(contributions []Contribution, simThreshold float64) [][]Contribution {
 	var groups [][]Contribution
 
@@ -97,8 +101,13 @@ func groupBySimilarity(contributions []Contribution, simThreshold float64) [][]C
 		placed := false
 		content := strings.ToLower(strings.TrimSpace(c.Content))
 		for i, g := range groups {
-			leader := strings.ToLower(strings.TrimSpace(g[0].Content))
-			if bigramSimilarity(content, leader) >= simThreshold {
+			var sum float64
+			for _, member := range g {
+				member := strings.ToLower(strings.TrimSpace(member.Content))
+				sum += bigramSimilarity(content, member)
+			}
+			avg := sum / float64(len(g))
+			if avg >= simThreshold {
 				groups[i] = append(groups[i], c)
 				placed = true
 				break
