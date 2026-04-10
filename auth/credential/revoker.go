@@ -83,7 +83,10 @@ func NewAutoRevoker(issuer *InMemoryIssuer, opts ...RevokerOption) *AutoRevoker 
 	}
 }
 
-// Start begins the background scan loop. It blocks until the revoker is ready.
+// Start begins the background scan loop. It returns once the loop has been
+// launched. The caller's context is propagated to the background loop so
+// tracing, tenant IDs, and deadlines survive; a locally-derived cancellation
+// is still used so Stop() can terminate the loop independently.
 func (r *AutoRevoker) Start(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -91,8 +94,11 @@ func (r *AutoRevoker) Start(ctx context.Context) error {
 	if r.running {
 		return core.NewError("credential.revoker.start", core.ErrInvalidInput, "already running", nil)
 	}
+	if err := ctx.Err(); err != nil {
+		return core.NewError("credential.revoker.start", core.ErrInvalidInput, "caller context already cancelled", err)
+	}
 
-	scanCtx, cancel := context.WithCancel(context.Background())
+	scanCtx, cancel := context.WithCancel(ctx)
 	r.cancel = cancel
 	r.done = make(chan struct{})
 	r.running = true
@@ -102,18 +108,22 @@ func (r *AutoRevoker) Start(ctx context.Context) error {
 	return nil
 }
 
-// Stop gracefully shuts down the background scan loop.
+// Stop gracefully shuts down the background scan loop. The mutex is released
+// before blocking on the loop's done channel to avoid deadlocking with hooks
+// that call back into the revoker (e.g. Health()).
 func (r *AutoRevoker) Stop(_ context.Context) error {
 	r.mu.Lock()
-	defer r.mu.Unlock()
-
 	if !r.running {
+		r.mu.Unlock()
 		return nil
 	}
-
-	r.cancel()
-	<-r.done
+	cancel := r.cancel
+	done := r.done
 	r.running = false
+	r.mu.Unlock()
+
+	cancel()
+	<-done
 	return nil
 }
 
@@ -175,6 +185,10 @@ func (r *AutoRevoker) scan(ctx context.Context) {
 			r.opts.hooks.OnRevoke(ctx, cred)
 		}
 	}
+
+	// Purge fully-handled (revoked + expired) credentials so the issuer
+	// does not exhaust its bounded capacity.
+	r.issuer.Cleanup(ctx)
 
 	if r.opts.hooks.OnScanComplete != nil {
 		r.opts.hooks.OnScanComplete(ctx, revoked)

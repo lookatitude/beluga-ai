@@ -114,7 +114,27 @@ func (iss *InMemoryIssuer) Issue(_ context.Context, agentID string, permissions 
 	}
 
 	iss.store[id] = cred
-	return cred, nil
+	return cloneCredential(cred), nil
+}
+
+// cloneCredential returns a deep copy of a credential so that callers cannot
+// mutate the issuer's internal state (and so concurrent reads on the returned
+// value do not race with the issuer's own writes under its mutex).
+func cloneCredential(c *AgentCredential) *AgentCredential {
+	if c == nil {
+		return nil
+	}
+	cp := *c
+	if len(c.Permissions) > 0 {
+		cp.Permissions = append([]string{}, c.Permissions...)
+	}
+	if len(c.Metadata) > 0 {
+		cp.Metadata = make(map[string]string, len(c.Metadata))
+		for k, v := range c.Metadata {
+			cp.Metadata[k] = v
+		}
+	}
+	return &cp
 }
 
 // Revoke marks a credential as revoked. Returns an error if the credential
@@ -141,11 +161,12 @@ func (iss *InMemoryIssuer) Get(_ context.Context, credentialID string) (*AgentCr
 	if !ok {
 		return nil, core.NewError("credential.get", core.ErrNotFound, "credential not found", nil)
 	}
-	return cred, nil
+	return cloneCredential(cred), nil
 }
 
-// Expired returns all expired or revoked credentials. This is used by
-// AutoRevoker to find credentials that need cleanup.
+// Expired returns credentials that have passed their expiry time but have not
+// yet been revoked. This is used by AutoRevoker to find credentials that need
+// automatic revocation. Returned credentials are deep copies.
 func (iss *InMemoryIssuer) Expired() []*AgentCredential {
 	iss.mu.RLock()
 	defer iss.mu.RUnlock()
@@ -153,10 +174,28 @@ func (iss *InMemoryIssuer) Expired() []*AgentCredential {
 	var result []*AgentCredential
 	for _, cred := range iss.store {
 		if cred.IsExpired() && !cred.Revoked {
-			result = append(result, cred)
+			result = append(result, cloneCredential(cred))
 		}
 	}
 	return result
+}
+
+// Cleanup removes credentials that are both expired and revoked from the
+// store. This prevents unbounded growth that would otherwise cause the
+// capacity check in Issue() to fail permanently. Returns the number of
+// credentials removed.
+func (iss *InMemoryIssuer) Cleanup(_ context.Context) int {
+	iss.mu.Lock()
+	defer iss.mu.Unlock()
+
+	removed := 0
+	for id, cred := range iss.store {
+		if cred.Revoked && cred.IsExpired() {
+			delete(iss.store, id)
+			removed++
+		}
+	}
+	return removed
 }
 
 // generateID produces a cryptographically random credential ID.

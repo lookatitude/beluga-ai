@@ -385,9 +385,18 @@ func TestAutoRevoker_RevokesExpired(t *testing.T) {
 	iss.mu.Unlock()
 
 	var revoked int
+	var revokedIDs []string
+	var hookMu sync.Mutex
 	hooks := RevokerHooks{
 		OnScanComplete: func(_ context.Context, n int) {
+			hookMu.Lock()
 			revoked += n
+			hookMu.Unlock()
+		},
+		OnRevoke: func(_ context.Context, c *AgentCredential) {
+			hookMu.Lock()
+			revokedIDs = append(revokedIDs, c.ID)
+			hookMu.Unlock()
 		},
 	}
 
@@ -407,15 +416,15 @@ func TestAutoRevoker_RevokesExpired(t *testing.T) {
 		t.Fatalf("Stop() error = %v", err)
 	}
 
-	got, err := iss.Get(ctx, cred.ID)
-	if err != nil {
-		t.Fatalf("Get() error = %v", err)
+	hookMu.Lock()
+	sawID := len(revokedIDs) > 0 && revokedIDs[0] == cred.ID
+	gotRevoked := revoked
+	hookMu.Unlock()
+	if !sawID {
+		t.Errorf("expired credential should have been revoked by AutoRevoker, got IDs = %v", revokedIDs)
 	}
-	if !got.Revoked {
-		t.Error("expired credential should have been revoked by AutoRevoker")
-	}
-	if revoked < 1 {
-		t.Errorf("OnScanComplete reported %d revocations, want >= 1", revoked)
+	if gotRevoked < 1 {
+		t.Errorf("OnScanComplete reported %d revocations, want >= 1", gotRevoked)
 	}
 }
 
@@ -652,6 +661,15 @@ func TestFullLifecycle(t *testing.T) {
 	if err := iss.Revoke(ctx, cred.ID); err != nil {
 		t.Fatalf("Revoke() error = %v", err)
 	}
+
+	// Re-fetch the credential snapshot: issuer now returns deep copies so the
+	// previously-held pointer represents a point-in-time view, not a live
+	// reference. Callers that need the current state must query the issuer.
+	refreshed, err := iss.Get(ctx, cred.ID)
+	if err != nil {
+		t.Fatalf("Get() after revoke error = %v", err)
+	}
+	credCtx = WithCredential(ctx, refreshed)
 
 	// Should now fail.
 	_, err = policy.Authorize(credCtx, "agent-alpha", auth.PermToolExec, "calculator")
