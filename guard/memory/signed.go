@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 
 	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/memory"
@@ -74,9 +75,12 @@ func (m *signedMemory) Save(ctx context.Context, input, output schema.Message) e
 	sig := computeHMAC(m.key, content)
 
 	// Attach signature to output metadata.
-	output = withSignature(output, sig)
+	signed, err := withSignature(output, sig)
+	if err != nil {
+		return err
+	}
 
-	return m.next.Save(ctx, input, output)
+	return m.next.Save(ctx, input, signed)
 }
 
 // Load retrieves messages from the wrapped Memory and verifies signatures.
@@ -150,8 +154,11 @@ func extractMessageText(msg schema.Message) string {
 }
 
 // withSignature returns a new message with the signature added to metadata.
-// It creates a shallow copy of the message with updated metadata.
-func withSignature(msg schema.Message, sig string) schema.Message {
+// It creates a shallow copy of the message with updated metadata. An error is
+// returned for unknown message implementations so the caller can fail fast
+// rather than silently producing an unsigned round-trip that will later be
+// dropped by Load.
+func withSignature(msg schema.Message, sig string) (schema.Message, error) {
 	meta := msg.GetMetadata()
 	newMeta := make(map[string]any, len(meta)+1)
 	for k, v := range meta {
@@ -161,7 +168,7 @@ func withSignature(msg schema.Message, sig string) schema.Message {
 
 	switch m := msg.(type) {
 	case *schema.HumanMessage:
-		return &schema.HumanMessage{Parts: m.Parts, Metadata: newMeta}
+		return &schema.HumanMessage{Parts: m.Parts, Metadata: newMeta}, nil
 	case *schema.AIMessage:
 		return &schema.AIMessage{
 			Parts:     m.Parts,
@@ -169,19 +176,22 @@ func withSignature(msg schema.Message, sig string) schema.Message {
 			Usage:     m.Usage,
 			ModelID:   m.ModelID,
 			Metadata:  newMeta,
-		}
+		}, nil
 	case *schema.SystemMessage:
-		return &schema.SystemMessage{Parts: m.Parts, Metadata: newMeta}
+		return &schema.SystemMessage{Parts: m.Parts, Metadata: newMeta}, nil
 	case *schema.ToolMessage:
 		return &schema.ToolMessage{
 			ToolCallID: m.ToolCallID,
 			Parts:      m.Parts,
 			Metadata:   newMeta,
-		}
+		}, nil
 	default:
-		// For unknown message types, return as-is. This is a defensive path
-		// that should not be reached with standard schema types.
-		return msg
+		return nil, core.NewError(
+			"guard/memory.withSignature",
+			core.ErrInvalidInput,
+			fmt.Sprintf("unsupported schema.Message implementation %T; cannot attach signature", msg),
+			nil,
+		)
 	}
 }
 

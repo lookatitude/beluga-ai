@@ -82,6 +82,19 @@ func (cb *CircuitBreaker) stateLocked() State {
 	return cb.state
 }
 
+// Trip forces the circuit breaker into the open state and refreshes the
+// last-failure timestamp to now. This is intended for callers that need to
+// record a failure even when the breaker is already open, so that the reset
+// timer is extended instead of silently expiring while failures continue.
+func (cb *CircuitBreaker) Trip() {
+	cb.mu.Lock()
+	defer cb.mu.Unlock()
+	cb.failures++
+	cb.lastFailure = time.Now()
+	cb.successes = 0
+	cb.state = StateOpen
+}
+
 // Reset manually resets the circuit breaker to the closed state, clearing
 // all failure counters.
 func (cb *CircuitBreaker) Reset() {

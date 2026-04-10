@@ -224,7 +224,8 @@ func TestWithSignature_AllMessageTypes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := withSignature(tt.msg, sig)
+			result, err := withSignature(tt.msg, sig)
+			require.NoError(t, err)
 			meta := result.GetMetadata()
 			assert.Equal(t, sig, meta[MetaKeySignature])
 		})

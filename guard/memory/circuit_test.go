@@ -123,8 +123,8 @@ func TestInterAgentCircuitBreaker_ListTripped(t *testing.T) {
 
 	tripped := cb.ListTripped()
 	assert.Len(t, tripped, 2)
-	assert.Contains(t, tripped, "a->b")
-	assert.Contains(t, tripped, "c->d")
+	assert.Contains(t, tripped, pairKey("a", "b"))
+	assert.Contains(t, tripped, pairKey("c", "d"))
 }
 
 func TestInterAgentCircuitBreaker_StateNonExistent(t *testing.T) {
