@@ -12,19 +12,32 @@ func cmdInit(args []string) error {
 	fs := flag.NewFlagSet("init", flag.ExitOnError)
 	name := fs.String("name", "", "project name (default: current directory name)")
 	dir := fs.String("dir", ".", "project directory")
-	fs.Parse(args)
+	if err := fs.Parse(args); err != nil {
+		return fmt.Errorf("parse flags: %w", err)
+	}
 
-	cleanDir := filepath.Clean(*dir)
-	if strings.Contains(cleanDir, "..") {
+	// Resolve to an absolute, cleaned path and require it to be rooted under
+	// the current working directory. This defeats both relative (`../..`) and
+	// absolute (`/tmp/../etc/passwd`) traversal attempts.
+	cleanDir, err := filepath.Abs(filepath.Clean(*dir))
+	if err != nil {
+		return fmt.Errorf("resolve directory: %w", err)
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("resolve working directory: %w", err)
+	}
+	base, err := filepath.Abs(cwd)
+	if err != nil {
+		return fmt.Errorf("resolve working directory: %w", err)
+	}
+	rel, err := filepath.Rel(base, cleanDir)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
 		return fmt.Errorf("path traversal not allowed: %q", *dir)
 	}
 
 	if *name == "" {
-		absDir, err := filepath.Abs(cleanDir)
-		if err != nil {
-			return fmt.Errorf("resolve directory: %w", err)
-		}
-		*name = filepath.Base(absDir)
+		*name = filepath.Base(cleanDir)
 	}
 
 	// Create project structure.
@@ -89,10 +102,10 @@ func main() {
 	}
 
 	fmt.Printf("Initialized Beluga AI project %q in %s\n", *name, cleanDir)
-	fmt.Println("  agents/       — agent definitions")
-	fmt.Println("  tools/        — custom tools")
-	fmt.Println("  config/       — configuration files")
-	fmt.Println("  main.go       — entry point")
+	fmt.Println("  agents/       - agent definitions")
+	fmt.Println("  tools/        - custom tools")
+	fmt.Println("  config/       - configuration files")
+	fmt.Println("  main.go       - entry point")
 
 	return nil
 }

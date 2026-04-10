@@ -8,6 +8,7 @@ import (
 
 func TestCmdInit(t *testing.T) {
 	dir := t.TempDir()
+	t.Chdir(dir)
 	projDir := filepath.Join(dir, "myproject")
 
 	err := cmdInit([]string{"-name", "test-project", "-dir", projDir})

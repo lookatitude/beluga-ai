@@ -9,10 +9,12 @@ func cmdDev(args []string) error {
 	fs := flag.NewFlagSet("dev", flag.ExitOnError)
 	port := fs.Int("port", 8080, "development server port")
 	config := fs.String("config", "config/agent.json", "agent config file")
-	fs.Parse(args)
+	if err := fs.Parse(args); err != nil {
+		return fmt.Errorf("parse flags: %w", err)
+	}
 
 	fmt.Printf("Starting development server on :%d with config %s\n", *port, *config)
-	fmt.Println("Playground available at http://localhost:", *port, "/playground")
+	fmt.Printf("Playground available at http://localhost:%d/playground\n", *port)
 	fmt.Println("Press Ctrl+C to stop.")
 
 	// In a full implementation, this would start an HTTP server with the
