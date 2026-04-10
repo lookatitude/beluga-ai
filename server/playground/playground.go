@@ -12,6 +12,8 @@ import (
 	"github.com/lookatitude/beluga-ai/agent"
 )
 
+const contentTypeHeader = "Content-Type"
+
 // AgentSelector provides a list of available agents and retrieves them by ID.
 type AgentSelector interface {
 	// List returns the IDs of all available agents.
@@ -98,7 +100,7 @@ func (h *PlaygroundHandler) Handler() http.Handler {
 }
 
 func (h *PlaygroundHandler) handleUI(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set(contentTypeHeader, "text/html; charset=utf-8")
 	escapedTitle := html.EscapeString(h.opts.title)
 	escapedPath := html.EscapeString(h.opts.path)
 	fmt.Fprintf(w, playgroundHTML, escapedTitle, escapedTitle, escapedPath)
@@ -106,7 +108,7 @@ func (h *PlaygroundHandler) handleUI(w http.ResponseWriter, _ *http.Request) {
 
 func (h *PlaygroundHandler) handleListAgents(w http.ResponseWriter, r *http.Request) {
 	agents := h.selector.List(r.Context())
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentTypeHeader, "application/json")
 	if err := json.NewEncoder(w).Encode(map[string]any{"agents": agents}); err != nil {
 		http.Error(w, "failed to encode response", http.StatusInternalServerError)
 	}
@@ -154,7 +156,7 @@ func (a *defaultStreamAdapter) WriteEvents(ctx context.Context, w http.ResponseW
 		return fmt.Errorf("response writer does not support flushing")
 	}
 
-	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set(contentTypeHeader, "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 
