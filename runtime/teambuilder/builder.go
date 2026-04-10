@@ -124,9 +124,15 @@ func (tb *TeamBuilder) Build(ctx context.Context, task string) (*runtime.Team, e
 	}
 
 	// Fire OnAgentSelected hooks.
+	//
+	// NOTE: the score passed here is a positional approximation derived from
+	// rank — not the concrete relevance score the selector computed. The
+	// Selector interface currently only returns []PoolEntry, so the real
+	// score is not available at this layer. Hook consumers should treat this
+	// value as ordinal signal, not absolute relevance. A future API revision
+	// could extend Selector to return scored entries.
 	if tb.hooks.OnAgentSelected != nil {
 		for i, entry := range selected {
-			// Score is approximated by position (1.0 for first, decreasing).
 			score := 1.0 - float64(i)*0.1
 			if score < 0.1 {
 				score = 0.1
@@ -161,10 +167,13 @@ func (tb *TeamBuilder) Build(ctx context.Context, task string) (*runtime.Team, e
 	return team, nil
 }
 
-// truncate shortens a string to maxLen, appending "..." if truncated.
+// truncate shortens a string to maxLen runes (not bytes), appending "..." if
+// truncated. Rune-based truncation preserves valid UTF-8 for multi-byte
+// characters (e.g. CJK or emoji) that would otherwise be cut mid-sequence.
 func truncate(s string, maxLen int) string {
-	if len(s) <= maxLen {
+	runes := []rune(s)
+	if len(runes) <= maxLen {
 		return s
 	}
-	return s[:maxLen] + "..."
+	return string(runes[:maxLen]) + "..."
 }
