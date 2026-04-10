@@ -40,7 +40,7 @@ type Usage struct {
 	// ReasoningTokens is the number of tokens used for reasoning/thinking
 	// by models that expose chain-of-thought (e.g. OpenAI o-series, Claude
 	// with extended thinking). Zero means no reasoning tokens were reported.
-	ReasoningTokens int `json:"reasoning_tokens,omitempty"`
+	ReasoningTokens int
 }
 
 // SystemMessage represents a system-level instruction message that sets

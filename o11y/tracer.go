@@ -39,7 +39,7 @@ const (
 	AttrSystem = "gen_ai.system"
 
 	// AttrReasoningTokens is the number of reasoning/thinking tokens consumed.
-	AttrReasoningTokens = "gen_ai.usage.reasoning_tokens"
+	AttrReasoningTokens = "gen_ai.usage.reasoning_tokens" //nolint:gosec // G101: false positive - OTel attribute name, not a credential
 
 	// AttrReasoningEffort is the requested reasoning effort level.
 	AttrReasoningEffort = "gen_ai.request.reasoning_effort"

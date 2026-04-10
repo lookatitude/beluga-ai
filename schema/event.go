@@ -17,7 +17,7 @@ type StreamChunk struct {
 	Usage *Usage
 	// ReasoningDelta is the incremental reasoning/thinking content in this chunk.
 	// Non-empty only for models that stream their chain-of-thought.
-	ReasoningDelta string `json:"reasoning_delta,omitempty"`
+	ReasoningDelta string
 	// ModelID identifies the model that produced this chunk.
 	ModelID string
 }

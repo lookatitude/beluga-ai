@@ -103,6 +103,10 @@ var _ ContentPart = ThinkingPart{}
 type ThinkingPart struct {
 	// Text is the reasoning content produced by the model.
 	Text string
+	// Signature is the opaque signature required by Anthropic's API when
+	// sending a thinking block back in a subsequent turn. Empty for providers
+	// that do not use signed thinking blocks.
+	Signature string
 }
 
 // PartType returns ContentThinking.
