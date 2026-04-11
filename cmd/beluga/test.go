@@ -18,8 +18,10 @@ var validPkgPattern = regexp.MustCompile(`^[A-Za-z0-9_./\-]+(\.\.\.)?$`)
 // execution does not rely on PATH lookup at Run time) and wires stdout/stderr
 // through to the caller.
 var execCommand = func(stdout, stderr io.Writer, name string, args ...string) *exec.Cmd {
-	//nolint:gosec // G204: name is always an absolute path from exec.LookPath("go"); args are validated.
-	c := exec.Command(name, args...)
+	// #nosec G204 -- name is always an absolute path resolved via exec.LookPath("go")
+	// in cmdTest, and args are validated (verbose/race are bool flags, pkg is
+	// checked against validPkgPattern). No shell is involved.
+	c := exec.Command(name, args...) //nolint:gosec // G204: see nosec justification above
 	c.Stdout = stdout
 	c.Stderr = stderr
 	return c
