@@ -1,38 +1,49 @@
-# Pattern: Provider Registration
+# Provider Registration Pattern
 
-**Status:** stub — populate with `/wiki-learn`
+Registry-based global provider discovery with sync.RWMutex protection.
 
-## Contract
+## Canonical Example
 
-Every extensible package exposes three functions and a registry:
+**File:** `llm/registry.go:19-27`
 
 ```go
-var registry = make(map[string]Factory)
-
-func Register(name string, f Factory) { registry[name] = f } // init()-only
-func New(name string, cfg Config) (Interface, error)          // factory lookup
-func List() []string                                           // discovery
+func Register(name string, factory Factory) error {
+	mu.Lock()
+	defer mu.Unlock()
+	
+	if _, exists := providers[name]; exists {
+		return fmt.Errorf("provider %q already registered", name)
+	}
+	providers[name] = factory
+	return nil
+}
 ```
-
-Providers call `Register()` from `init()`. No runtime mutation. `New()` returns a typed error if the name is unknown.
-
-## Canonical example
-
-(populate via `/wiki-learn` — scan for `func Register` in registry-pattern packages)
 
 ## Variations
 
-(populated by /wiki-learn)
+1. **Registration via init()** — `llm/providers/anthropic/anthropic.go:19-23`
+   ```go
+   func init() {
+   	if err := llm.Register("anthropic", newFactory()); err != nil {
+   		panic(err)
+   	}
+   }
+   ```
 
-## Anti-patterns
+2. **Instance-based registry with Add/Get** — `tool/registry.go:17-35`
+   - Not global; passed explicitly to callers
+   - Same sync.RWMutex protection
+   - Error on duplicate registration
 
-- Registering outside `init()` (introduces race conditions).
-- Mutating the registry map without the registry's own mutex.
-- Silent overwrite on duplicate Register calls — use an error or panic in init.
-- Global state that isn't the registry map itself.
+## Anti-Patterns
 
-## Related
+- **Missing duplicate check**: Silently overwrites existing provider
+- **Unprotected map access**: Race conditions on concurrent Register + Get
+- **panic() in init()**: Prevents graceful degradation; use error return instead
+- **No cleanup function**: Registered providers persist for application lifetime
 
-- `patterns/hooks.md`
-- `patterns/middleware.md`
-- `architecture/invariants.md#7-registry-pattern-everywhere`
+## Invariants
+
+- All providers registered before main() executes via init()
+- Registry lookup is O(1) map access
+- Zero providers can be registered (valid empty state)

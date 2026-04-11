@@ -1,40 +1,48 @@
-# Pattern: Streaming with iter.Seq2
+# Streaming Pattern
 
-**Status:** stub — populate with `/wiki-learn`
+Go 1.23 iter.Seq2 range-over-func producers for chunk-based streaming with internal channels.
 
-## Contract
+## Canonical Example
 
-Public streaming APIs return `iter.Seq2[T, error]`. Consumers use `for event, err := range stream { if err != nil { break } }`. Producers respect `context.Context` cancellation.
+**File:** `core/stream.go:49-56`
 
 ```go
-func (c *Client) Stream(ctx context.Context, req Request) iter.Seq2[Event, error] {
-    return func(yield func(Event, error) bool) {
-        for {
-            select {
-            case <-ctx.Done():
-                yield(Event{}, ctx.Err())
-                return
-            default:
-            }
-            ev, err := c.next()
-            if !yield(ev, err) { return }
-            if err != nil { return }
-        }
-    }
+type Stream[T any] struct {
+	name   string
+	chunks iter.Seq2[int, T]
+}
+
+func (s *Stream[T]) Range(yield func(int, T) bool) {
+	for idx, chunk := range s.chunks {
+		if !yield(idx, chunk) {
+			break
+		}
+	}
 }
 ```
 
-## Canonical example
+## Variations
 
-(populate via `/wiki-learn` — scan for `iter.Seq2` in `core/stream.go`)
+1. **MapStream producer** — `core/stream.go:73-90`
+   - Takes input Stream and transformation func
+   - Yields transformed chunks
+   - Breaks early on context cancellation
 
-## Anti-patterns
+2. **LLMStream with token chunks** — `llm/stream.go` (hypothetical)
+   - Wraps provider-specific streaming response
+   - Exposes iter.Seq2[int, Token] interface
+   - Handles channel closure gracefully
 
-- Channels in public APIs.
-- Producers that ignore `ctx.Done()`.
-- Yielding zero values without paired errors on termination.
+## Anti-Patterns
 
-## Related
+- **Buffered channels**: Unbuffered recommended to respect backpressure
+- **Leaked goroutines**: Not closing channel on early break; caller waits forever
+- **Ignoring yield() return**: Continuing iteration after yield returns false wastes work
+- **Range not exposed as public iter.Seq2**: Forces internal iteration logic on callers
 
-- `architecture/invariants.md#1-streaming-uses-iterseq2ttypeerror--never-channels`
-- `patterns/testing.md` (stream testing)
+## Invariants
+
+- All public Stream types expose iter.Seq2[int, T] or iter.Seq[T] interface
+- Range never blocks indefinitely; respects yield() return value
+- Internal channels always closed by producer goroutine
+- Chunk index (first return value) starts at 0, increments sequentially

@@ -1,33 +1,44 @@
-# Pattern: Middleware
+# Middleware Pattern
 
-**Status:** stub — populate with `/wiki-learn`
+Function-based middleware composition applied outside-in (outermost middleware executes first).
 
-## Contract
+## Canonical Example
 
-Middleware signature: `func(T) T` where T is the interface being wrapped. Applied outside-in: the last middleware added runs first.
+**File:** `tool/middleware.go:11-22`
 
 ```go
-type Middleware func(Chat) Chat
-
-func Chain(base Chat, mws ...Middleware) Chat {
-    for i := len(mws) - 1; i >= 0; i-- {
-        base = mws[i](base)
-    }
-    return base
+func ApplyMiddleware(tool Tool, mws ...Middleware) Tool {
+	result := tool
+	for i := len(mws) - 1; i >= 0; i-- {
+		result = mws[i](result)
+	}
+	return result
 }
+
+type Middleware func(Tool) Tool
 ```
 
-## Canonical example
+## Variations
 
-(populate via `/wiki-learn`)
+1. **WithTimeout concrete middleware** — `tool/middleware.go:27-56`
+   - Wraps Tool.Execute with context.WithTimeout
+   - Propagates metadata (Name, Description, InputSchema)
 
-## Anti-patterns
+2. **WithRetry middleware** — `tool/middleware.go:58-85`
+   - Inspects core.IsRetryable to decide retry
+   - Respects context cancellation
+   - Exponential backoff with jitter
 
-- Middleware that breaks the interface contract (e.g., swallows errors silently).
-- Middleware that captures context in a closure and outlives the request.
-- Stateful middleware without documented concurrency guarantees.
+## Anti-Patterns
 
-## Related
+- **Inside-out application**: Reversing middleware order breaks intended semantics
+- **Metadata loss**: Not delegating Name/Description/InputSchema to wrapped tool
+- **Non-idempotent operations**: Retrying side-effecting tools without guards
+- **Unbounded retries**: No max attempt limit; infinite loop on transient errors
 
-- `patterns/hooks.md` (hooks observe; middleware transforms)
-- `patterns/provider-registration.md`
+## Invariants
+
+- Middleware applied via reverse iteration: mws[n-1](mws[n-2](...(tool)))
+- Outermost middleware (first in slice) executes first
+- Metadata always read from underlying tool, not wrapped version
+- Context cancellation short-circuits retry loops

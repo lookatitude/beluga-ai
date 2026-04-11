@@ -1,30 +1,53 @@
-# Pattern: Hooks
+# Hooks Pattern
 
-Status: stub. Populate with /wiki-learn.
+Optional func field hooks with nil-safe composition via ComposeHooks.
 
-## Contract
+## Canonical Example
 
-Hooks are optional function fields on a Hooks struct. A nil field means skip. Hooks are composable via ComposeHooks(). Hooks observe and augment — they never replace core logic.
+**File:** `tool/hooks.go:9-44`
 
-Example sketch:
+```go
+type Hooks struct {
+	OnStart func(ctx context.Context, name string, input map[string]any) error
+	OnEnd   func(ctx context.Context, name string) error
+	OnError func(ctx context.Context, name string, err error) error
+}
 
-    type Hooks struct {
-        OnStart  func(context.Context, Input) error
-        OnFinish func(context.Context, Output, error)
-    }
+func ComposeHooks(hks ...Hooks) Hooks {
+	return Hooks{
+		OnStart: func(ctx context.Context, name string, input map[string]any) error {
+			for _, h := range hks {
+				if h.OnStart != nil {
+					if err := h.OnStart(ctx, name, input); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		},
+		// ... OnEnd, OnError similarly
+	}
+}
+```
 
-    func ComposeHooks(hs ...Hooks) Hooks { /* ... */ }
+## Variations
 
-## Canonical example
+1. **Single hook invocation** — `llm/client.go:line` (hypothetical)
+   - Direct nil check: `if c.hooks.OnStart != nil { ... }`
 
-Populate via /wiki-learn.
+2. **Guard hooks pipeline** — `guard/guard.go` (hypothetical)
+   - Structured hooks for Input/Output/Tool guard stages
 
-## Anti-patterns
+## Anti-Patterns
 
-- Non-optional hook fields break the "nil equals skip" contract.
-- Swallowing hook errors instead of propagating them.
-- Hooks that replace core logic — that is middleware territory.
+- **Nil pointer dereference**: Calling hook without checking `!= nil`
+- **Silent error swallowing**: Returning error from hook but ignoring it
+- **Unbounded hook chains**: No limit on ComposedHooks depth; O(n) invocations per operation
+- **Hook side effects**: Modifying context/input within hooks; breaks idempotence
 
-## Related
+## Invariants
 
-- patterns/middleware.md
+- All OnStart/OnEnd/OnError hook fields are optional (nil = no-op)
+- ComposeHooks returns nil-safe composed hook struct; all callbacks check nil before invoke
+- Hooks execute sequentially; first error stops chain
+- Hooks never modify caller's context or input parameters

@@ -1,29 +1,59 @@
-# Pattern: Error Handling
+# Error Handling Pattern
 
-**Status:** stub — populate with `/wiki-learn`
+Structured errors with ErrorCode enums and IsRetryable classification for programmatic retry decisions.
 
-## Contract
+## Canonical Example
 
-- Return `(T, error)`. Never panic for recoverable errors.
-- Typed errors via `core.Error` with `ErrorCode`.
-- Wrap with `%w` to preserve the chain.
-- Check `IsRetryable()` before retrying LLM or tool errors.
-- Never expose internal details to external callers.
+**File:** `core/errors.go:8-110`
 
 ```go
-return core.Errorf(core.ErrCodeRateLimit, "provider %s rate limited: %w", name, err)
+type ErrorCode string
+
+const (
+	ErrRateLimit ErrorCode = "rate_limit"
+	ErrAuth ErrorCode = "auth_error"
+	ErrTimeout ErrorCode = "timeout"
+	ErrInvalidInput ErrorCode = "invalid_input"
+	ErrToolFailed ErrorCode = "tool_failed"
+	ErrProviderDown ErrorCode = "provider_unavailable"
+	ErrGuardBlocked ErrorCode = "guard_blocked"
+	ErrBudgetExhausted ErrorCode = "budget_exhausted"
+	ErrNotFound ErrorCode = "not_found"
+)
+
+var retryableCodes = map[ErrorCode]bool{
+	ErrRateLimit: true,
+	ErrTimeout: true,
+	ErrProviderDown: true,
+}
+
+func IsRetryable(err error) bool {
+	var e *Error
+	if errors.As(err, &e) {
+		return retryableCodes[e.Code]
+	}
+	return false
+}
 ```
 
-## Canonical example
+## Variations
 
-(populate via `/wiki-learn` — scan for `core.Errorf` in `core/errors.go`)
+1. **NewError with operation + code** — `core/errors.go:66-73`
+   - Creates structured error with Op, Code, Message, Err fields
 
-## Anti-patterns
+2. **Error method with chain printing** — `core/errors.go:77-82`
+   - Formats: "op [code]: message: cause"
 
-- Raw `errors.New("...")` for conditions that need a code.
-- Swallowing errors silently (`_ = doThing()`).
-- Exposing stack traces, SQL, or file paths in user-facing errors.
+## Anti-Patterns
 
-## Related
+- **Unclassified errors**: Generic error{} without ErrorCode; breaks retry logic
+- **No operation context**: Losing caller information; hard to debug
+- **Silent swallowing**: Catching error but not checking IsRetryable before deciding action
+- **Non-deterministic retry decisions**: Checking error string instead of ErrorCode enum
 
-- `patterns/security.md#error-handling-information-disclosure`
+## Invariants
+
+- All provider/tool errors wrap in core.Error with ErrorCode
+- IsRetryable checks only: ErrRateLimit, ErrTimeout, ErrProviderDown
+- Error.Unwrap() always returns Err field for proper error chain traversal
+- Error.Is() compares codes only; two errors match iff Code matches
