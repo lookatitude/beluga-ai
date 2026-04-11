@@ -3,6 +3,7 @@ package neo4j
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/memory"
 	driver "github.com/neo4j/neo4j-go-driver/v5/neo4j"
@@ -145,13 +146,21 @@ func (g *GraphStore) Close(ctx context.Context) error {
 
 // AddEntity adds or updates an entity in the graph. Entities are stored as
 // Neo4j nodes with a label matching the entity type and properties set from
-// the entity's Properties map.
+// the entity's Properties map. Temporal fields (CreatedAt, Summary) are
+// stored as native Neo4j properties.
 func (g *GraphStore) AddEntity(ctx context.Context, entity memory.Entity) error {
 	cypher := "MERGE (e:Entity {id: $id}) SET e.type = $type, e += $props"
+	props := sanitizeProps(entity.Properties)
+	if !entity.CreatedAt.IsZero() {
+		props["created_at"] = entity.CreatedAt
+	}
+	if entity.Summary != "" {
+		props["summary"] = entity.Summary
+	}
 	params := map[string]any{
 		"id":    entity.ID,
 		"type":  entity.Type,
-		"props": sanitizeProps(entity.Properties),
+		"props": props,
 	}
 	if err := g.runner.executeWrite(ctx, cypher, params); err != nil {
 		return fmt.Errorf("neo4j/add_entity: %w", err)
@@ -159,7 +168,9 @@ func (g *GraphStore) AddEntity(ctx context.Context, entity memory.Entity) error 
 	return nil
 }
 
-// AddRelation creates a directed relationship between two entities.
+// AddRelation creates a directed relationship between two entities. Temporal
+// properties (created_at, expired_at, valid_at, invalid_at) in the props map
+// are passed through as native Neo4j datetime values.
 func (g *GraphStore) AddRelation(ctx context.Context, from, to, relation string, props map[string]any) error {
 	cypher := `MATCH (a:Entity {id: $from})
 MATCH (b:Entity {id: $to})
@@ -173,6 +184,25 @@ SET r += $props`
 	}
 	if err := g.runner.executeWrite(ctx, cypher, params); err != nil {
 		return fmt.Errorf("neo4j/add_relation: %w", err)
+	}
+	return nil
+}
+
+// SetupSchema creates indexes on temporal fields for efficient querying.
+// This should be called once during initialization.
+func (g *GraphStore) SetupSchema(ctx context.Context) error {
+	indexes := []string{
+		"CREATE INDEX entity_id IF NOT EXISTS FOR (e:Entity) ON (e.id)",
+		"CREATE INDEX entity_type IF NOT EXISTS FOR (e:Entity) ON (e.type)",
+		"CREATE INDEX entity_created_at IF NOT EXISTS FOR (e:Entity) ON (e.created_at)",
+		"CREATE INDEX rel_valid_at IF NOT EXISTS FOR ()-[r:RELATION]-() ON (r.valid_at)",
+		"CREATE INDEX rel_invalid_at IF NOT EXISTS FOR ()-[r:RELATION]-() ON (r.invalid_at)",
+		"CREATE INDEX rel_expired_at IF NOT EXISTS FOR ()-[r:RELATION]-() ON (r.expired_at)",
+	}
+	for _, cypher := range indexes {
+		if err := g.runner.executeWrite(ctx, cypher, nil); err != nil {
+			return fmt.Errorf("neo4j/setup_schema: %w", err)
+		}
 	}
 	return nil
 }
@@ -310,8 +340,9 @@ func getString(props map[string]any, key string) string {
 }
 
 // sanitizeProps returns a copy of the properties map that only contains
-// Neo4j-compatible values (strings, numbers, booleans). Nil maps are
-// returned as empty maps to avoid Cypher SET errors.
+// Neo4j-compatible values (strings, numbers, booleans, time.Time). Nil maps
+// are returned as empty maps to avoid Cypher SET errors. time.Time values
+// are passed through as native Neo4j datetime values.
 func sanitizeProps(props map[string]any) map[string]any {
 	if props == nil {
 		return map[string]any{}
@@ -319,7 +350,7 @@ func sanitizeProps(props map[string]any) map[string]any {
 	result := make(map[string]any, len(props))
 	for k, v := range props {
 		switch v.(type) {
-		case string, int, int64, float64, bool:
+		case string, int, int64, float64, bool, time.Time:
 			result[k] = v
 		default:
 			result[k] = fmt.Sprintf("%v", v)
