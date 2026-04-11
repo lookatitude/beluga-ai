@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -13,6 +14,11 @@ import (
 	"github.com/lookatitude/beluga-ai/memory/stores/internal/storeutil"
 	"github.com/lookatitude/beluga-ai/schema"
 )
+
+// validTableName matches SQL identifiers: letter/underscore followed by
+// letters, digits, or underscores. Rejects everything else so interpolation
+// into DDL/DML via fmt.Sprintf below is safe.
+var validTableName = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
 // Config holds configuration for the SQLite MessageStore.
 type Config struct {
@@ -37,6 +43,9 @@ func New(cfg Config) (*MessageStore, error) {
 	if table == "" {
 		table = "messages"
 	}
+	if !validTableName.MatchString(table) {
+		return nil, core.Errorf(core.ErrInvalidInput, "sqlite: invalid table name %q (must match ^[a-zA-Z_][a-zA-Z0-9_]*$)", table)
+	}
 	return &MessageStore{
 		db:    cfg.DB,
 		table: table,
@@ -45,6 +54,7 @@ func New(cfg Config) (*MessageStore, error) {
 
 // EnsureTable creates the messages table if it does not exist.
 func (s *MessageStore) EnsureTable(ctx context.Context) error {
+	// #nosec G201 -- table name validated in New() against ^[a-zA-Z_][a-zA-Z0-9_]*$
 	query := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		role TEXT NOT NULL,
@@ -69,6 +79,7 @@ func (s *MessageStore) Append(ctx context.Context, msg schema.Message) error {
 		return core.Errorf(core.ErrInvalidInput, "sqlite: marshal metadata: %w", err)
 	}
 
+	// #nosec G201 -- table name validated in New() against ^[a-zA-Z_][a-zA-Z0-9_]*$
 	query := fmt.Sprintf(
 		"INSERT INTO %s (role, content, metadata, created_at) VALUES (?, ?, ?, ?)",
 		s.table,
@@ -83,6 +94,7 @@ func (s *MessageStore) Append(ctx context.Context, msg schema.Message) error {
 // Search finds messages whose text content contains the query as a
 // case-insensitive substring, returning at most k results.
 func (s *MessageStore) Search(ctx context.Context, query string, k int) ([]schema.Message, error) {
+	// #nosec G201 -- table name validated in New() against ^[a-zA-Z_][a-zA-Z0-9_]*$
 	sqlQuery := fmt.Sprintf(
 		"SELECT role, content, metadata FROM %s WHERE content LIKE ? ORDER BY created_at ASC LIMIT ?",
 		s.table,
@@ -99,6 +111,7 @@ func (s *MessageStore) Search(ctx context.Context, query string, k int) ([]schem
 
 // All returns all stored messages in chronological order.
 func (s *MessageStore) All(ctx context.Context) ([]schema.Message, error) {
+	// #nosec G201 -- table name validated in New() against ^[a-zA-Z_][a-zA-Z0-9_]*$
 	query := fmt.Sprintf(
 		"SELECT role, content, metadata FROM %s ORDER BY created_at ASC, id ASC",
 		s.table,
@@ -113,6 +126,7 @@ func (s *MessageStore) All(ctx context.Context) ([]schema.Message, error) {
 
 // Clear removes all messages from the store.
 func (s *MessageStore) Clear(ctx context.Context) error {
+	// #nosec G201 -- table name validated in New() against ^[a-zA-Z_][a-zA-Z0-9_]*$
 	query := fmt.Sprintf("DELETE FROM %s", s.table)
 	_, err := s.db.ExecContext(ctx, query)
 	if err != nil {

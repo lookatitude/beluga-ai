@@ -81,7 +81,7 @@ func (e *Engine) Start(ctx context.Context, opts ...s2s.Option) (s2s.Session, er
 
 	// Send setup message.
 	if err := sess.sendSetup(ctx); err != nil {
-		conn.Close(websocket.StatusNormalClosure, "")
+		_ = conn.Close(websocket.StatusNormalClosure, "")
 		return nil, fmt.Errorf("gemini live: setup: %w", err)
 	}
 

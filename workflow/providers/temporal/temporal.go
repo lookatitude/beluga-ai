@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"iter"
+	"math"
 	"sync"
 	"time"
 
@@ -277,8 +278,16 @@ func toTemporalRetryPolicy(p *workflow.RetryPolicy) *temporal.RetryPolicy {
 		return nil
 	}
 
+	maxAttempts := p.MaxAttempts
+	if maxAttempts < 0 {
+		maxAttempts = 0
+	}
+	if maxAttempts > math.MaxInt32 {
+		maxAttempts = math.MaxInt32
+	}
 	return &temporal.RetryPolicy{
-		MaximumAttempts:    int32(p.MaxAttempts),
+		// #nosec G115 -- clamped to [0, math.MaxInt32] immediately above
+		MaximumAttempts:    int32(maxAttempts),
 		InitialInterval:    p.InitialInterval,
 		BackoffCoefficient: p.BackoffCoefficient,
 		MaximumInterval:    p.MaxInterval,

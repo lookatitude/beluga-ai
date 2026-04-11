@@ -175,6 +175,7 @@ func computeRMS(audio []byte) float64 {
 
 	var sumSquares float64
 	for i := 0; i < numSamples; i++ {
+		// #nosec G115 -- intentional reinterpretation of PCM s16le bit pattern
 		sample := int16(binary.LittleEndian.Uint16(audio[i*2 : i*2+2]))
 		sumSquares += float64(sample) * float64(sample)
 	}

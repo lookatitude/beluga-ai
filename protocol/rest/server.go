@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/agent"
 	"github.com/lookatitude/beluga-ai/core"
@@ -51,8 +52,9 @@ func (s *RESTServer) Handler() http.Handler {
 // is canceled or an error occurs.
 func (s *RESTServer) Serve(ctx context.Context, addr string) error {
 	srv := &http.Server{
-		Addr:    addr,
-		Handler: s.Handler(),
+		Addr:              addr,
+		Handler:           s.Handler(),
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	ln, err := net.Listen("tcp", addr)

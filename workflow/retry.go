@@ -77,6 +77,7 @@ func normalizeRetryPolicy(p *RetryPolicy) {
 
 // sleepWithJitter waits for interval with jitter applied, respecting ctx and maxInterval.
 func sleepWithJitter(ctx context.Context, interval, maxInterval time.Duration) error {
+	// #nosec G404 -- retry jitter is not security-sensitive
 	jitter := time.Duration(float64(interval) * (0.5 + rand.Float64()))
 	if maxInterval > 0 && jitter > maxInterval {
 		jitter = maxInterval

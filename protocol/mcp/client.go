@@ -74,17 +74,19 @@ func (c *MCPClient) call(ctx context.Context, method string, params any, result 
 		return core.Errorf(core.ErrInvalidInput, "marshal request: %w", err)
 	}
 
+	// #nosec G107 -- c.serverURL is set at client construction from trusted config
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.serverURL, bytes.NewReader(body))
 	if err != nil {
 		return core.Errorf(core.ErrInvalidInput, "create request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
+	// #nosec G107 -- request URL is c.serverURL, trusted client config
 	httpResp, err := c.httpClient.Do(httpReq)
 	if err != nil {
 		return core.Errorf(core.ErrProviderDown, "send request: %w", err)
 	}
-	defer httpResp.Body.Close()
+	defer func() { _ = httpResp.Body.Close() }()
 
 	var resp Response
 	if err := json.NewDecoder(httpResp.Body).Decode(&resp); err != nil {

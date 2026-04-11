@@ -28,7 +28,12 @@ func NewMarkdownLoader() *MarkdownLoader {
 // Load reads the Markdown file at the given path and returns a single-element
 // Document slice.
 func (l *MarkdownLoader) Load(ctx context.Context, source string) ([]schema.Document, error) {
-	data, err := os.ReadFile(source)
+	cleaned, err := cleanPath(source)
+	if err != nil {
+		return nil, err
+	}
+	// #nosec G304 -- path validated by cleanPath
+	data, err := os.ReadFile(cleaned)
 	if err != nil {
 		return nil, core.Errorf(core.ErrProviderDown, "loader: markdown read %q: %w", source, err)
 	}

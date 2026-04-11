@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
@@ -71,8 +72,9 @@ func (s *MCPServer) Handler() http.Handler {
 // is canceled or an error occurs.
 func (s *MCPServer) Serve(ctx context.Context, addr string) error {
 	srv := &http.Server{
-		Addr:    addr,
-		Handler: s.Handler(),
+		Addr:              addr,
+		Handler:           s.Handler(),
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	ln, err := net.Listen("tcp", addr)
@@ -239,7 +241,7 @@ func writeResult(w http.ResponseWriter, id any, result any) {
 		Result:  result,
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 func writeError(w http.ResponseWriter, id any, code int, message string) {
@@ -249,5 +251,5 @@ func writeError(w http.ResponseWriter, id any, code int, message string) {
 		Error:   &RPCError{Code: code, Message: message},
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	_ = json.NewEncoder(w).Encode(resp)
 }

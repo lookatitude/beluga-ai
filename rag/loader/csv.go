@@ -54,11 +54,16 @@ func NewCSVLoader(opts ...CSVLoaderOption) *CSVLoader {
 // treated as headers. Each row's values are stored in metadata, and the
 // content is either all columns or only the configured content columns.
 func (l *CSVLoader) Load(ctx context.Context, source string) ([]schema.Document, error) {
-	f, err := os.Open(source)
+	cleaned, err := cleanPath(source)
+	if err != nil {
+		return nil, err
+	}
+	// #nosec G304 -- path validated by cleanPath
+	f, err := os.Open(cleaned)
 	if err != nil {
 		return nil, core.Errorf(core.ErrProviderDown, "loader: csv open %q: %w", source, err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	reader := csv.NewReader(f)
 	records, err := reader.ReadAll()

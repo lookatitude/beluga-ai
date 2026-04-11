@@ -88,7 +88,7 @@ func (e *Engine) Start(ctx context.Context, opts ...s2s.Option) (s2s.Session, er
 
 	// Send session configuration.
 	if err := sess.sendSessionUpdate(ctx); err != nil {
-		conn.Close(websocket.StatusNormalClosure, "")
+		_ = conn.Close(websocket.StatusNormalClosure, "")
 		return nil, fmt.Errorf("openai realtime: session update: %w", err)
 	}
 

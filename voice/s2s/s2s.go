@@ -259,9 +259,14 @@ func AsFrameProcessor(engine S2S, opts ...Option) voice.FrameProcessor {
 				yield(voice.Frame{}, core.Errorf(core.ErrProviderDown, "s2s: start session: %w", err))
 				return
 			}
-			defer session.Close()
+			defer func() { _ = session.Close() }()
 
 			pumpCtx, cancelPump := context.WithCancel(ctx)
+			// Ensure cancel is always invoked on function exit. The deferred
+			// cleanup block below also calls cancelPump explicitly before
+			// waiting on the goroutines; CancelFunc is idempotent so the
+			// extra call is safe and keeps gosec happy.
+			defer cancelPump()
 			var wg sync.WaitGroup
 
 			// Session output stream → outFrames / outErr. Exactly one writer

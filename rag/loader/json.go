@@ -68,7 +68,12 @@ func NewJSONLoader(opts ...JSONLoaderOption) *JSONLoader {
 // set, the path is traversed to find the array. Otherwise a single document
 // is returned.
 func (l *JSONLoader) Load(ctx context.Context, source string) ([]schema.Document, error) {
-	data, err := os.ReadFile(source)
+	cleaned, err := cleanPath(source)
+	if err != nil {
+		return nil, err
+	}
+	// #nosec G304 -- path validated by cleanPath
+	data, err := os.ReadFile(cleaned)
 	if err != nil {
 		return nil, core.Errorf(core.ErrProviderDown, "loader: json read %q: %w", source, err)
 	}

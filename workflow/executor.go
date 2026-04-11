@@ -77,9 +77,12 @@ func (e *DefaultExecutor) Execute(ctx context.Context, fn WorkflowFunc, opts Wor
 		done:   make(chan struct{}),
 	}
 
-	wfCtx, cancel := context.WithCancel(ctx)
+	var wfCtx context.Context
+	var cancel context.CancelFunc
 	if opts.Timeout > 0 {
 		wfCtx, cancel = context.WithTimeout(ctx, opts.Timeout)
+	} else {
+		wfCtx, cancel = context.WithCancel(ctx)
 	}
 
 	rw := &runningWorkflow{
@@ -105,7 +108,7 @@ func (e *DefaultExecutor) Execute(ctx context.Context, fn WorkflowFunc, opts Wor
 		},
 	}
 	if e.store != nil {
-		e.store.Save(ctx, state)
+		_ = e.store.Save(ctx, state)
 	}
 
 	if e.hooks.OnWorkflowStart != nil {
@@ -197,7 +200,7 @@ func (e *DefaultExecutor) persistFinalState(ctx context.Context, wfID, runID str
 	if err != nil {
 		finalState.Error = err.Error()
 	}
-	e.store.Save(ctx, finalState)
+	_ = e.store.Save(ctx, finalState)
 }
 
 // Signal sends a signal to a running workflow.

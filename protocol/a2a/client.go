@@ -82,7 +82,7 @@ func (c *A2AClient) CreateTask(ctx context.Context, req TaskRequest) (*Task, err
 
 	if resp.StatusCode != http.StatusCreated {
 		var errResp ErrorResponse
-		json.NewDecoder(resp.Body).Decode(&errResp)
+		_ = json.NewDecoder(resp.Body).Decode(&errResp)
 		return nil, core.Errorf(core.ErrProviderDown, opCreateTask+"%s", errResp.Error)
 	}
 
