@@ -310,9 +310,9 @@ func (h *defaultHandle) Status() WorkflowStatus {
 // caller when the workflow finishes or is cancelled.
 func newWorkflowContext(parent context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
 	if timeout > 0 {
-		return context.WithTimeout(parent, timeout)
+		return context.WithTimeout(parent, timeout) // #nosec G118 -- cancel returned to caller, stored in rw.cancel
 	}
-	return context.WithCancel(parent)
+	return context.WithCancel(parent) // #nosec G118 -- cancel returned to caller, stored in rw.cancel
 }
 
 func (h *defaultHandle) Result(ctx context.Context) (any, error) {
