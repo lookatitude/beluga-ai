@@ -3,6 +3,7 @@ package workflow
 import (
 	"context"
 	"fmt"
+	"iter"
 	"testing"
 	"time"
 )
@@ -134,13 +135,16 @@ func TestExecutor_Signal(t *testing.T) {
 	exec := NewExecutor()
 
 	handle, err := exec.Execute(context.Background(), func(ctx WorkflowContext, _ any) (any, error) {
-		sigCh := ctx.ReceiveSignal("approval")
-		select {
-		case payload := <-sigCh:
-			return fmt.Sprintf("approved: %v", payload), nil
-		case <-ctx.Done():
+		next, stop := iter.Pull2(ctx.ReceiveSignal("approval"))
+		defer stop()
+		payload, err, ok := next()
+		if !ok {
 			return nil, ctx.Err()
 		}
+		if err != nil {
+			return nil, err
+		}
+		return fmt.Sprintf("approved: %v", payload), nil
 	}, WorkflowOptions{ID: "wf-signal"})
 	if err != nil {
 		t.Fatalf("Execute: %v", err)
@@ -241,7 +245,7 @@ func TestExecutor_ActivityWithRetry(t *testing.T) {
 			return "success", nil
 		}, nil, WithActivityRetry(RetryPolicy{
 			MaxAttempts:        5,
-			InitialInterval:   1 * time.Millisecond,
+			InitialInterval:    1 * time.Millisecond,
 			BackoffCoefficient: 1.5,
 		}))
 	}, WorkflowOptions{ID: "wf-retry"})

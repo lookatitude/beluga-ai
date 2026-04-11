@@ -3,6 +3,7 @@ package s2s
 import (
 	"context"
 	"errors"
+	"iter"
 	"testing"
 	"time"
 
@@ -54,8 +55,22 @@ func (m *mockSession) SendToolResult(ctx context.Context, result schema.ToolResu
 	return nil
 }
 
-func (m *mockSession) Recv() <-chan SessionEvent {
-	return m.recvChan
+func (m *mockSession) Recv(ctx context.Context) iter.Seq2[SessionEvent, error] {
+	return func(yield func(SessionEvent, error) bool) {
+		for {
+			select {
+			case event, ok := <-m.recvChan:
+				if !ok {
+					return
+				}
+				if !yield(event, nil) {
+					return
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
 }
 
 func (m *mockSession) Interrupt(ctx context.Context) error {
@@ -252,13 +267,23 @@ func TestMockSession_SendToolResult(t *testing.T) {
 func TestMockSession_Recv(t *testing.T) {
 	session := newMockSession()
 
-	// Send some events.
+	// Subscribe before producing events, then send some events.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	next, stop := iter.Pull2(session.Recv(ctx))
+	defer stop()
+
 	session.recvChan <- SessionEvent{Type: EventTextOutput, Text: "hello"}
 	session.recvChan <- SessionEvent{Type: EventAudioOutput, Audio: []byte{0x01}}
 	close(session.recvChan)
 
 	var events []SessionEvent
-	for event := range session.Recv() {
+	for {
+		event, err, ok := next()
+		if !ok {
+			break
+		}
+		require.NoError(t, err)
 		events = append(events, event)
 	}
 

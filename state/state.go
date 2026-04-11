@@ -3,6 +3,7 @@ package state
 import (
 	"context"
 	"errors"
+	"iter"
 	"sort"
 	"sync"
 
@@ -22,11 +23,17 @@ type Store interface {
 	// Delete removes the given key. Deleting a non-existent key is a no-op.
 	Delete(ctx context.Context, key string) error
 
-	// Watch returns a channel that receives StateChange notifications
-	// whenever the given key is modified or deleted. The caller must read
-	// from the channel to avoid blocking writers. The channel is closed
-	// when the store is closed.
-	Watch(ctx context.Context, key string) (<-chan StateChange, error)
+	// Watch returns an iter.Seq2 stream of StateChange notifications for
+	// the given key. The subscription is established eagerly before Watch
+	// returns, so events produced after this call but before the caller
+	// starts iterating are buffered (implementation-defined capacity) and
+	// will be delivered on the first iteration.
+	//
+	// The iterator ends when ctx is cancelled, the store is closed, or
+	// the caller breaks out of the loop. Errors (including initial
+	// subscription errors such as a closed store) are reported by yielding
+	// a zero-value StateChange together with a non-nil error.
+	Watch(ctx context.Context, key string) iter.Seq2[StateChange, error]
 
 	// Close releases resources held by the store and closes all watcher
 	// channels.

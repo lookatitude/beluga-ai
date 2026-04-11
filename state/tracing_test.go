@@ -3,6 +3,7 @@ package state
 import (
 	"context"
 	"errors"
+	"iter"
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/core"
@@ -32,13 +33,12 @@ func (s *tracingTestStore) Delete(ctx context.Context, key string) error {
 	return s.deleteErr
 }
 
-func (s *tracingTestStore) Watch(ctx context.Context, key string) (<-chan StateChange, error) {
-	if s.watchErr != nil {
-		return nil, s.watchErr
+func (s *tracingTestStore) Watch(ctx context.Context, key string) iter.Seq2[StateChange, error] {
+	return func(yield func(StateChange, error) bool) {
+		if s.watchErr != nil {
+			yield(StateChange{}, s.watchErr)
+		}
 	}
-	ch := make(chan StateChange, 1)
-	close(ch)
-	return ch, nil
 }
 
 func (s *tracingTestStore) Close() error {
@@ -90,8 +90,8 @@ func TestWithTracing_EmitsSpansForEveryOperation(t *testing.T) {
 		{
 			name: "watch",
 			run: func() error {
-				_, err := s.Watch(ctx, "k")
-				return err
+				_ = s.Watch(ctx, "k")
+				return nil
 			},
 			spanOp: "state.watch",
 		},

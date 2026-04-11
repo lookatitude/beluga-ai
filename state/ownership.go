@@ -3,6 +3,7 @@ package state
 import (
 	"context"
 	"errors"
+	"iter"
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/core"
@@ -136,7 +137,7 @@ func (s *ownedStore) Delete(ctx context.Context, key string) error {
 	return s.next.Delete(ctx, key)
 }
 
-func (s *ownedStore) Watch(ctx context.Context, key string) (<-chan StateChange, error) {
+func (s *ownedStore) Watch(ctx context.Context, key string) iter.Seq2[StateChange, error] {
 	return s.next.Watch(ctx, key)
 }
 

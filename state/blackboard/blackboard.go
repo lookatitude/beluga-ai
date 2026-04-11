@@ -188,36 +188,31 @@ func (b *Blackboard) Watch(ctx context.Context, keys ...string) iter.Seq2[state.
 		return state.WatchSeq(ctx, b.store, keys[0])
 	}
 
-	// For multiple keys, merge watch channels into a single stream.
+	// For multiple keys, fan in per-key iter.Seq2 streams into a single stream.
 	return func(yield func(state.StateChange, error) bool) {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		merged := make(chan state.StateChange, 16*len(keys))
+		type item struct {
+			change state.StateChange
+			err    error
+		}
+		merged := make(chan item, 16*len(keys))
 		var wg sync.WaitGroup
 
 		for _, key := range keys {
-			ch, err := b.store.Watch(ctx, key)
-			if err != nil {
-				yield(state.StateChange{}, err)
-				return
-			}
+			seq := b.store.Watch(ctx, key)
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				for {
+				for change, err := range seq {
 					select {
+					case merged <- item{change: change, err: err}:
 					case <-ctx.Done():
 						return
-					case change, ok := <-ch:
-						if !ok {
-							return
-						}
-						select {
-						case merged <- change:
-						case <-ctx.Done():
-							return
-						}
+					}
+					if err != nil {
+						return
 					}
 				}
 			}()
@@ -232,13 +227,15 @@ func (b *Blackboard) Watch(ctx context.Context, keys ...string) iter.Seq2[state.
 		for {
 			select {
 			case <-ctx.Done():
-				yield(state.StateChange{}, ctx.Err())
 				return
-			case change, ok := <-merged:
+			case it, ok := <-merged:
 				if !ok {
 					return
 				}
-				if !yield(change, nil) {
+				if !yield(it.change, it.err) {
+					return
+				}
+				if it.err != nil {
 					return
 				}
 			}

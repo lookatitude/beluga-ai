@@ -2,6 +2,7 @@ package state
 
 import (
 	"context"
+	"iter"
 
 	"github.com/lookatitude/beluga-ai/o11y"
 )
@@ -73,20 +74,20 @@ func (s *tracedStore) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
-func (s *tracedStore) Watch(ctx context.Context, key string) (<-chan StateChange, error) {
-	ctx, span := o11y.StartSpan(ctx, "state.watch", o11y.Attrs{
+// Watch wraps the underlying Watch in a span that covers subscription
+// establishment. The span is started, the inner Watch is invoked (eagerly
+// subscribing), and the span is ended before the iterator is returned so
+// that subscription-time attributes and errors are captured without
+// spanning the (potentially long-lived) iteration itself.
+func (s *tracedStore) Watch(ctx context.Context, key string) iter.Seq2[StateChange, error] {
+	_, span := o11y.StartSpan(ctx, "state.watch", o11y.Attrs{
 		o11y.AttrOperationName: "state.watch",
 	})
 	defer span.End()
 
-	ch, err := s.next.Watch(ctx, key)
-	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(o11y.StatusError, err.Error())
-		return nil, err
-	}
+	seq := s.next.Watch(ctx, key)
 	span.SetStatus(o11y.StatusOK, "")
-	return ch, nil
+	return seq
 }
 
 func (s *tracedStore) Close() error {

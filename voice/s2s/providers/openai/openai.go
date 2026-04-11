@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"iter"
 	"net/http"
 	"sync"
 
@@ -108,17 +109,17 @@ type realtimeSession struct {
 
 // serverEvent represents a server-sent event from the Realtime API.
 type serverEvent struct {
-	Type     string          `json:"type"`
-	Delta    string          `json:"delta,omitempty"`
-	Audio    string          `json:"audio,omitempty"`
-	Text     string          `json:"text,omitempty"`
-	Transcript string        `json:"transcript,omitempty"`
-	Name     string          `json:"name,omitempty"`
-	CallID   string          `json:"call_id,omitempty"`
-	Arguments string         `json:"arguments,omitempty"`
-	Error    *serverError    `json:"error,omitempty"`
-	Item     json.RawMessage `json:"item,omitempty"`
-	Response json.RawMessage `json:"response,omitempty"`
+	Type       string          `json:"type"`
+	Delta      string          `json:"delta,omitempty"`
+	Audio      string          `json:"audio,omitempty"`
+	Text       string          `json:"text,omitempty"`
+	Transcript string          `json:"transcript,omitempty"`
+	Name       string          `json:"name,omitempty"`
+	CallID     string          `json:"call_id,omitempty"`
+	Arguments  string          `json:"arguments,omitempty"`
+	Error      *serverError    `json:"error,omitempty"`
+	Item       json.RawMessage `json:"item,omitempty"`
+	Response   json.RawMessage `json:"response,omitempty"`
 }
 
 type serverError struct {
@@ -130,11 +131,11 @@ func (s *realtimeSession) sendSessionUpdate(ctx context.Context) error {
 	msg := map[string]any{
 		"type": "session.update",
 		"session": map[string]any{
-			"modalities":            []string{"audio", "text"},
-			"voice":                 s.cfg.Voice,
-			"input_audio_format":    "pcm16",
-			"output_audio_format":   "pcm16",
-			"turn_detection":        map[string]any{"type": "server_vad"},
+			"modalities":          []string{"audio", "text"},
+			"voice":               s.cfg.Voice,
+			"input_audio_format":  "pcm16",
+			"output_audio_format": "pcm16",
+			"turn_detection":      map[string]any{"type": "server_vad"},
 		},
 	}
 
@@ -322,9 +323,24 @@ func (s *realtimeSession) sendResponseCreate(ctx context.Context) error {
 	return s.conn.Write(ctx, websocket.MessageText, data)
 }
 
-// Recv returns the channel of session events.
-func (s *realtimeSession) Recv() <-chan s2s.SessionEvent {
-	return s.events
+// Recv returns an iterator over session events. The iterator ends when the
+// session's internal event channel closes or ctx is cancelled.
+func (s *realtimeSession) Recv(ctx context.Context) iter.Seq2[s2s.SessionEvent, error] {
+	return func(yield func(s2s.SessionEvent, error) bool) {
+		for {
+			select {
+			case event, ok := <-s.events:
+				if !ok {
+					return
+				}
+				if !yield(event, nil) {
+					return
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
 }
 
 // Interrupt signals that the user has interrupted the model's output.

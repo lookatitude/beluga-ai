@@ -1,6 +1,9 @@
 package state
 
-import "context"
+import (
+	"context"
+	"iter"
+)
 
 // Middleware wraps a Store to add cross-cutting behavior.
 // Middlewares are composed via ApplyMiddleware and applied outside-in
@@ -86,20 +89,35 @@ func (s *hookedStore) Delete(ctx context.Context, key string) error {
 	return err
 }
 
-func (s *hookedStore) Watch(ctx context.Context, key string) (<-chan StateChange, error) {
+func (s *hookedStore) Watch(ctx context.Context, key string) iter.Seq2[StateChange, error] {
 	if s.hooks.OnWatch != nil {
 		if err := s.hooks.OnWatch(ctx, key); err != nil {
-			return nil, err
+			return func(yield func(StateChange, error) bool) {
+				yield(StateChange{}, err)
+			}
 		}
 	}
 
-	ch, err := s.next.Watch(ctx, key)
+	inner := s.next.Watch(ctx, key)
 
-	if err != nil && s.hooks.OnError != nil {
-		err = s.hooks.OnError(ctx, err)
+	// If OnError is configured, intercept errors yielded by the inner stream.
+	if s.hooks.OnError == nil {
+		return inner
 	}
 
-	return ch, err
+	return func(yield func(StateChange, error) bool) {
+		for change, err := range inner {
+			if err != nil {
+				err = s.hooks.OnError(ctx, err)
+				if err == nil {
+					continue
+				}
+			}
+			if !yield(change, err) {
+				return
+			}
+		}
+	}
 }
 
 func (s *hookedStore) Close() error {

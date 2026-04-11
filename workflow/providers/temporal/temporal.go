@@ -3,6 +3,7 @@ package temporal
 import (
 	"context"
 	"fmt"
+	"iter"
 	"sync"
 	"time"
 
@@ -226,21 +227,44 @@ func (c *temporalContext) ExecuteActivity(fn workflow.ActivityFunc, input any, o
 	return result, nil
 }
 
-func (c *temporalContext) ReceiveSignal(name string) <-chan any {
+func (c *temporalContext) ReceiveSignal(name string) iter.Seq2[any, error] {
+	// Eagerly bridge the Temporal signal channel onto a Go channel via a
+	// Temporal coroutine so that payloads delivered before iteration begins
+	// are buffered and not lost. The coroutine exits when the caller stops
+	// iterating (closing done) or when the Temporal workflow context is
+	// canceled.
 	ch := make(chan any, 10)
+	done := make(chan struct{})
+	var closeOnce sync.Once
+	closeDone := func() { closeOnce.Do(func() { close(done) }) }
 
-	// Note: In a real Temporal workflow, this must be done using a Temporal
-	// coroutine (workflow.Go). This is a bridge for the Beluga interface.
 	temporalworkflow.Go(c.tCtx, func(ctx temporalworkflow.Context) {
 		signalCh := temporalworkflow.GetSignalChannel(ctx, name)
 		for {
+			if ctx.Err() != nil {
+				return
+			}
 			var payload any
 			signalCh.Receive(ctx, &payload)
-			ch <- payload
+			select {
+			case ch <- payload:
+			case <-done:
+				return
+			}
 		}
 	})
 
-	return ch
+	return func(yield func(any, error) bool) {
+		defer closeDone()
+		// Temporal's workflow.Context.Done() is not a Go channel, so we
+		// cannot select on it here. Iteration terminates when the caller
+		// stops pulling (yield returns false) or when ch is closed.
+		for payload := range ch {
+			if !yield(payload, nil) {
+				return
+			}
+		}
+	}
 }
 
 func (c *temporalContext) Sleep(d time.Duration) error {
@@ -255,7 +279,7 @@ func toTemporalRetryPolicy(p *workflow.RetryPolicy) *temporal.RetryPolicy {
 
 	return &temporal.RetryPolicy{
 		MaximumAttempts:    int32(p.MaxAttempts),
-		InitialInterval:   p.InitialInterval,
+		InitialInterval:    p.InitialInterval,
 		BackoffCoefficient: p.BackoffCoefficient,
 		MaximumInterval:    p.MaxInterval,
 	}

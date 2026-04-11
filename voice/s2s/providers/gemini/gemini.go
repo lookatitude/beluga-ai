@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"iter"
 	"net/http"
 	"sync"
 
@@ -100,15 +101,15 @@ type geminiSession struct {
 
 // geminiServerMsg represents a server message from the Gemini Live API.
 type geminiServerMsg struct {
-	SetupComplete  json.RawMessage  `json:"setupComplete,omitempty"`
-	ServerContent  *geminiContent   `json:"serverContent,omitempty"`
-	ToolCall       *geminiToolCall  `json:"toolCall,omitempty"`
-	ToolCallCancel json.RawMessage  `json:"toolCallCancellation,omitempty"`
+	SetupComplete  json.RawMessage `json:"setupComplete,omitempty"`
+	ServerContent  *geminiContent  `json:"serverContent,omitempty"`
+	ToolCall       *geminiToolCall `json:"toolCall,omitempty"`
+	ToolCallCancel json.RawMessage `json:"toolCallCancellation,omitempty"`
 }
 
 type geminiContent struct {
-	ModelTurn  *geminiTurn `json:"modelTurn,omitempty"`
-	TurnComplete bool     `json:"turnComplete,omitempty"`
+	ModelTurn    *geminiTurn `json:"modelTurn,omitempty"`
+	TurnComplete bool        `json:"turnComplete,omitempty"`
 }
 
 type geminiTurn struct {
@@ -116,8 +117,8 @@ type geminiTurn struct {
 }
 
 type geminiPart struct {
-	Text       string          `json:"text,omitempty"`
-	InlineData *geminiBlob     `json:"inlineData,omitempty"`
+	Text       string      `json:"text,omitempty"`
+	InlineData *geminiBlob `json:"inlineData,omitempty"`
 }
 
 type geminiBlob struct {
@@ -336,9 +337,24 @@ func (s *geminiSession) SendToolResult(ctx context.Context, result schema.ToolRe
 	return s.conn.Write(ctx, websocket.MessageText, data)
 }
 
-// Recv returns the channel of session events.
-func (s *geminiSession) Recv() <-chan s2s.SessionEvent {
-	return s.events
+// Recv returns an iterator over session events. The iterator ends when the
+// session's internal event channel closes or ctx is cancelled.
+func (s *geminiSession) Recv(ctx context.Context) iter.Seq2[s2s.SessionEvent, error] {
+	return func(yield func(s2s.SessionEvent, error) bool) {
+		for {
+			select {
+			case event, ok := <-s.events:
+				if !ok {
+					return
+				}
+				if !yield(event, nil) {
+					return
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
 }
 
 // Interrupt signals user interruption to the Gemini Live session.

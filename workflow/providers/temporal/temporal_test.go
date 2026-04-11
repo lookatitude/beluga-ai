@@ -95,7 +95,7 @@ func TestToTemporalRetryPolicy(t *testing.T) {
 	t.Run("valid policy", func(t *testing.T) {
 		p := &workflow.RetryPolicy{
 			MaxAttempts:        3,
-			InitialInterval:   100 * time.Millisecond,
+			InitialInterval:    100 * time.Millisecond,
 			BackoffCoefficient: 2.0,
 			MaxInterval:        10 * time.Second,
 		}
@@ -214,7 +214,7 @@ func TestWorkflowWithSignal(t *testing.T) {
 	env := suite.NewTestWorkflowEnvironment()
 
 	fn := func(ctx workflow.WorkflowContext, input any) (any, error) {
-		ch := ctx.ReceiveSignal("my-signal")
+		seq := ctx.ReceiveSignal("my-signal")
 		// In Temporal test env, we need to use the Temporal workflow channel
 		// but our bridge creates a Go channel. For the test environment,
 		// the signal is delivered synchronously.
@@ -225,8 +225,8 @@ func TestWorkflowWithSignal(t *testing.T) {
 		var payload string
 		signalCh.Receive(tCtx.tCtx, &payload)
 
-		// Just verify the Go channel was created.
-		_ = ch
+		// Just verify the iterator was created.
+		_ = seq
 
 		return payload, nil
 	}

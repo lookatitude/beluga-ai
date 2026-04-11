@@ -3,6 +3,7 @@ package state
 import (
 	"context"
 	"errors"
+	"iter"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -38,9 +39,8 @@ func (m *mockStore) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
-func (m *mockStore) Watch(ctx context.Context, key string) (<-chan StateChange, error) {
-	ch := make(chan StateChange, 1)
-	return ch, nil
+func (m *mockStore) Watch(ctx context.Context, key string) iter.Seq2[StateChange, error] {
+	return func(yield func(StateChange, error) bool) {}
 }
 
 func (m *mockStore) Close() error { return nil }
@@ -83,7 +83,7 @@ func (w *orderWrapper) Set(ctx context.Context, key string, value any) error {
 func (w *orderWrapper) Delete(ctx context.Context, key string) error {
 	return w.next.Delete(ctx, key)
 }
-func (w *orderWrapper) Watch(ctx context.Context, key string) (<-chan StateChange, error) {
+func (w *orderWrapper) Watch(ctx context.Context, key string) iter.Seq2[StateChange, error] {
 	return w.next.Watch(ctx, key)
 }
 func (w *orderWrapper) Close() error { return w.next.Close() }
@@ -147,9 +147,13 @@ func TestWithHooks_OnWatchAborts(t *testing.T) {
 	base := newMockStore()
 	wrapped := ApplyMiddleware(base, WithHooks(hooks))
 
-	ch, err := wrapped.Watch(context.Background(), "k")
+	seq := wrapped.Watch(context.Background(), "k")
+	next, stop := iter.Pull2(seq)
+	defer stop()
+	change, err, ok := next()
+	require.True(t, ok, "expected at least one yield")
 	require.ErrorIs(t, err, errAbort)
-	assert.Nil(t, ch)
+	assert.Equal(t, StateChange{}, change)
 }
 
 func TestWithHooks_AfterGetCalled(t *testing.T) {
@@ -255,9 +259,14 @@ func TestWithHooks_OnError_WatchError(t *testing.T) {
 	errStore := &errorStore{err: originalErr}
 	wrapped := ApplyMiddleware(errStore, WithHooks(hooks))
 
-	ch, err := wrapped.Watch(context.Background(), "k")
-	assert.NoError(t, err, "OnError returning nil should suppress Watch error")
-	assert.Nil(t, ch, "channel should remain nil when Watch fails")
+	// Iterator should yield no events because OnError suppresses the stream's
+	// only event (the initial error from errorStore).
+	seq := wrapped.Watch(context.Background(), "k")
+	events := 0
+	for range seq {
+		events++
+	}
+	assert.Equal(t, 0, events, "OnError returning nil should suppress the error event")
 	assert.ErrorIs(t, capturedErr, originalErr, "OnError should receive the original error")
 }
 
@@ -284,7 +293,9 @@ func (e *errorStore) Set(ctx context.Context, key string, value any) error {
 func (e *errorStore) Delete(ctx context.Context, key string) error {
 	return e.err
 }
-func (e *errorStore) Watch(ctx context.Context, key string) (<-chan StateChange, error) {
-	return nil, e.err
+func (e *errorStore) Watch(ctx context.Context, key string) iter.Seq2[StateChange, error] {
+	return func(yield func(StateChange, error) bool) {
+		yield(StateChange{}, e.err)
+	}
 }
 func (e *errorStore) Close() error { return nil }

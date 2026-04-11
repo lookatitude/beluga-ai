@@ -2,6 +2,7 @@ package inmemory
 
 import (
 	"context"
+	"iter"
 	"sync"
 	"testing"
 	"time"
@@ -11,6 +12,36 @@ import (
 
 	"github.com/lookatitude/beluga-ai/state"
 )
+
+// pullWatch is a helper that subscribes via Watch and returns a pull-based
+// iterator plus a stop function. Subscribe is eager (the goroutine started
+// by iter.Pull2 runs before Pull2 returns for the first next() call, but the
+// Watch implementation establishes the watcher slot at call time so the test
+// can safely write to the store after this helper returns and still observe
+// the change).
+func pullWatch(t *testing.T, s *Store, ctx context.Context, key string) (func() (state.StateChange, error, bool), func()) {
+	t.Helper()
+	seq := s.Watch(ctx, key)
+	next, stop := iter.Pull2(seq)
+	return next, stop
+}
+
+// recvOne pulls one event. It blocks until next() returns. Because the
+// inmemory Watch eager-subscribes, events produced before this call are
+// buffered on the store's watcher channel and returned on the next pull.
+// This function is intended for use only when the test has already caused
+// an event to be produced (so next() is guaranteed to return quickly).
+func recvOne(t *testing.T, next func() (state.StateChange, error, bool)) state.StateChange {
+	t.Helper()
+	change, err, ok := next()
+	if !ok {
+		t.Fatal("iterator ended before yielding")
+	}
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	return change
+}
 
 func TestGetSetDelete(t *testing.T) {
 	s := New()
@@ -49,21 +80,17 @@ func TestWatch_SetNotification(t *testing.T) {
 	defer s.Close()
 	ctx := context.Background()
 
-	ch, err := s.Watch(ctx, "watched")
-	require.NoError(t, err)
+	next, stop := pullWatch(t, s, ctx, "watched")
+	defer stop()
 
 	// Set triggers a notification.
 	require.NoError(t, s.Set(ctx, "watched", "v1"))
 
-	select {
-	case change := <-ch:
-		assert.Equal(t, "watched", change.Key)
-		assert.Nil(t, change.OldValue)
-		assert.Equal(t, "v1", change.Value)
-		assert.Equal(t, state.OpSet, change.Op)
-	case <-time.After(time.Second):
-		t.Fatal("timeout waiting for watch notification")
-	}
+	change := recvOne(t, next)
+	assert.Equal(t, "watched", change.Key)
+	assert.Nil(t, change.OldValue)
+	assert.Equal(t, "v1", change.Value)
+	assert.Equal(t, state.OpSet, change.Op)
 }
 
 func TestWatch_DeleteNotification(t *testing.T) {
@@ -73,20 +100,16 @@ func TestWatch_DeleteNotification(t *testing.T) {
 
 	require.NoError(t, s.Set(ctx, "key", "old"))
 
-	ch, err := s.Watch(ctx, "key")
-	require.NoError(t, err)
+	next, stop := pullWatch(t, s, ctx, "key")
+	defer stop()
 
 	require.NoError(t, s.Delete(ctx, "key"))
 
-	select {
-	case change := <-ch:
-		assert.Equal(t, "key", change.Key)
-		assert.Equal(t, "old", change.OldValue)
-		assert.Nil(t, change.Value)
-		assert.Equal(t, state.OpDelete, change.Op)
-	case <-time.After(time.Second):
-		t.Fatal("timeout waiting for delete notification")
-	}
+	change := recvOne(t, next)
+	assert.Equal(t, "key", change.Key)
+	assert.Equal(t, "old", change.OldValue)
+	assert.Nil(t, change.Value)
+	assert.Equal(t, state.OpDelete, change.Op)
 }
 
 func TestWatch_UpdateOldValue(t *testing.T) {
@@ -96,19 +119,15 @@ func TestWatch_UpdateOldValue(t *testing.T) {
 
 	require.NoError(t, s.Set(ctx, "key", "v1"))
 
-	ch, err := s.Watch(ctx, "key")
-	require.NoError(t, err)
+	next, stop := pullWatch(t, s, ctx, "key")
+	defer stop()
 
 	require.NoError(t, s.Set(ctx, "key", "v2"))
 
-	select {
-	case change := <-ch:
-		assert.Equal(t, "v1", change.OldValue)
-		assert.Equal(t, "v2", change.Value)
-		assert.Equal(t, state.OpSet, change.Op)
-	case <-time.After(time.Second):
-		t.Fatal("timeout")
-	}
+	change := recvOne(t, next)
+	assert.Equal(t, "v1", change.OldValue)
+	assert.Equal(t, "v2", change.Value)
+	assert.Equal(t, state.OpSet, change.Op)
 }
 
 func TestWatch_MultipleWatchers(t *testing.T) {
@@ -116,40 +135,40 @@ func TestWatch_MultipleWatchers(t *testing.T) {
 	defer s.Close()
 	ctx := context.Background()
 
-	ch1, err := s.Watch(ctx, "k")
-	require.NoError(t, err)
-	ch2, err := s.Watch(ctx, "k")
-	require.NoError(t, err)
+	next1, stop1 := pullWatch(t, s, ctx, "k")
+	defer stop1()
+	next2, stop2 := pullWatch(t, s, ctx, "k")
+	defer stop2()
 
 	require.NoError(t, s.Set(ctx, "k", "val"))
 
-	for _, ch := range []<-chan state.StateChange{ch1, ch2} {
-		select {
-		case change := <-ch:
-			assert.Equal(t, "val", change.Value)
-		case <-time.After(time.Second):
-			t.Fatal("timeout")
-		}
+	for _, next := range []func() (state.StateChange, error, bool){next1, next2} {
+		change := recvOne(t, next)
+		assert.Equal(t, "val", change.Value)
 	}
 }
 
 func TestWatch_UnrelatedKeyNoNotification(t *testing.T) {
 	s := New()
 	defer s.Close()
-	ctx := context.Background()
 
-	ch, err := s.Watch(ctx, "watched")
-	require.NoError(t, err)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	next, stop := pullWatch(t, s, ctx, "watched")
+	defer stop()
 
 	// Set a different key — should NOT trigger the watcher.
 	require.NoError(t, s.Set(ctx, "other", "v"))
 
-	select {
-	case <-ch:
-		t.Fatal("should not receive notification for unrelated key")
-	case <-time.After(50 * time.Millisecond):
-		// Expected.
-	}
+	// Let the goroutine pipeline settle, then cancel ctx. After ctx is
+	// cancelled the iterator must end without yielding any event for the
+	// unrelated write.
+	time.Sleep(50 * time.Millisecond)
+	cancel()
+
+	_, _, ok := next()
+	assert.False(t, ok, "iterator should end without yielding for unrelated key")
 }
 
 func TestWatch_ContextCancellation(t *testing.T) {
@@ -157,35 +176,26 @@ func TestWatch_ContextCancellation(t *testing.T) {
 	defer s.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	ch, err := s.Watch(ctx, "k")
-	require.NoError(t, err)
+	next, stop := pullWatch(t, s, ctx, "k")
+	defer stop()
 
 	cancel()
 
-	// Give time for goroutine to process cancellation.
-	time.Sleep(50 * time.Millisecond)
-
-	// Channel should be closed.
-	select {
-	case _, ok := <-ch:
-		assert.False(t, ok, "channel should be closed after context cancellation")
-	case <-time.After(time.Second):
-		t.Fatal("timeout waiting for channel close")
-	}
+	_, _, ok := next()
+	assert.False(t, ok, "iterator should end after context cancellation")
 }
 
 func TestClose_ClosesWatchers(t *testing.T) {
 	s := New()
 	ctx := context.Background()
 
-	ch, err := s.Watch(ctx, "k")
-	require.NoError(t, err)
+	next, stop := pullWatch(t, s, ctx, "k")
+	defer stop()
 
 	require.NoError(t, s.Close())
 
-	// Channel should be closed.
-	_, ok := <-ch
-	assert.False(t, ok, "channel should be closed after store.Close()")
+	_, _, ok := next()
+	assert.False(t, ok, "iterator should end after store.Close()")
 }
 
 func TestClose_OperationsAfterClose(t *testing.T) {
@@ -205,9 +215,14 @@ func TestClose_OperationsAfterClose(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "closed")
 
-	_, err = s.Watch(ctx, "k")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "closed")
+	// Watch on closed store yields an error via the iterator.
+	seq := s.Watch(ctx, "k")
+	next, stop := iter.Pull2(seq)
+	defer stop()
+	_, werr, ok := next()
+	assert.True(t, ok, "expected an error yield")
+	assert.Error(t, werr)
+	assert.Contains(t, werr.Error(), "closed")
 }
 
 func TestClose_Idempotent(t *testing.T) {
@@ -232,8 +247,13 @@ func TestCancelledContext(t *testing.T) {
 	err = s.Delete(ctx, "k")
 	assert.Error(t, err)
 
-	_, err = s.Watch(ctx, "k")
-	assert.Error(t, err)
+	// Cancelled ctx: Watch yields an error via the iterator.
+	seq := s.Watch(ctx, "k")
+	next, stop := iter.Pull2(seq)
+	defer stop()
+	_, werr, ok := next()
+	assert.True(t, ok, "expected an error yield")
+	assert.Error(t, werr)
 }
 
 func TestConcurrentAccess(t *testing.T) {
@@ -268,8 +288,7 @@ func TestConcurrentWatchAndSet(t *testing.T) {
 	s := New()
 	ctx := context.Background()
 
-	ch, err := s.Watch(ctx, "counter")
-	require.NoError(t, err)
+	seq := s.Watch(ctx, "counter")
 
 	const n = 10
 	var wg sync.WaitGroup
@@ -278,7 +297,10 @@ func TestConcurrentWatchAndSet(t *testing.T) {
 	received := make([]state.StateChange, 0, n)
 	go func() {
 		defer wg.Done()
-		for change := range ch {
+		for change, err := range seq {
+			if err != nil {
+				return
+			}
 			received = append(received, change)
 		}
 	}()
@@ -287,11 +309,14 @@ func TestConcurrentWatchAndSet(t *testing.T) {
 		require.NoError(t, s.Set(ctx, "counter", i))
 	}
 
+	// Give the reader a moment to drain the buffer before closing.
+	time.Sleep(50 * time.Millisecond)
+
 	// Close the store to signal the reader goroutine to stop.
 	require.NoError(t, s.Close())
 	wg.Wait()
 
-	// We should have received at least some notifications (all fit in buffer of 16).
+	// We should have received all notifications (all fit in buffer of 16).
 	assert.Equal(t, n, len(received), "expected all notifications to be received")
 	for _, change := range received {
 		assert.Equal(t, "counter", change.Key)
@@ -479,26 +504,16 @@ func TestVersionInWatchNotification(t *testing.T) {
 	defer s.Close()
 	ctx := context.Background()
 
-	ch, err := s.Watch(ctx, "k")
-	require.NoError(t, err)
+	next, stop := pullWatch(t, s, ctx, "k")
+	defer stop()
 
 	require.NoError(t, s.Set(ctx, "k", "v1"))
-
-	select {
-	case change := <-ch:
-		assert.Equal(t, uint64(1), change.Version)
-	case <-time.After(time.Second):
-		t.Fatal("timeout")
-	}
+	change := recvOne(t, next)
+	assert.Equal(t, uint64(1), change.Version)
 
 	require.NoError(t, s.Set(ctx, "k", "v2"))
-
-	select {
-	case change := <-ch:
-		assert.Equal(t, uint64(2), change.Version)
-	case <-time.After(time.Second):
-		t.Fatal("timeout")
-	}
+	change = recvOne(t, next)
+	assert.Equal(t, uint64(2), change.Version)
 }
 
 func TestCompareAndSwap_ConcurrentContention(t *testing.T) {
@@ -551,21 +566,17 @@ func TestDeleteIncrementsVersion(t *testing.T) {
 	defer s.Close()
 	ctx := context.Background()
 
-	ch, err := s.Watch(ctx, "k")
-	require.NoError(t, err)
+	next, stop := pullWatch(t, s, ctx, "k")
+	defer stop()
 
 	require.NoError(t, s.Set(ctx, "k", "v1"))
-	<-ch // consume set notification
+	_ = recvOne(t, next) // consume set notification
 
 	require.NoError(t, s.Delete(ctx, "k"))
 
-	select {
-	case change := <-ch:
-		assert.Equal(t, state.OpDelete, change.Op)
-		assert.Equal(t, uint64(2), change.Version) // version 1 from set + 1
-	case <-time.After(time.Second):
-		t.Fatal("timeout")
-	}
+	change := recvOne(t, next)
+	assert.Equal(t, state.OpDelete, change.Op)
+	assert.Equal(t, uint64(2), change.Version) // version 1 from set + 1
 }
 
 // Compile-time check for VersionedStore.

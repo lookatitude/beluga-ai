@@ -3,6 +3,7 @@ package workflow
 import (
 	"context"
 	"fmt"
+	"iter"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -363,16 +364,31 @@ func (c *defaultWorkflowContext) ExecuteActivity(fn ActivityFunc, input any, opt
 	return result, nil
 }
 
-func (c *defaultWorkflowContext) ReceiveSignal(name string) <-chan any {
+func (c *defaultWorkflowContext) ReceiveSignal(name string) iter.Seq2[any, error] {
+	// Eagerly create/lookup the shared channel so that a Signal() delivered
+	// between ReceiveSignal() returning and the caller iterating is still
+	// buffered and not lost.
 	c.workflow.mu.Lock()
-	defer c.workflow.mu.Unlock()
-
 	ch, exists := c.workflow.signals[name]
 	if !exists {
 		ch = make(chan any, 10)
 		c.workflow.signals[name] = ch
 	}
-	return ch
+	c.workflow.mu.Unlock()
+
+	ctx := c.Context
+	return func(yield func(any, error) bool) {
+		for {
+			select {
+			case payload := <-ch:
+				if !yield(payload, nil) {
+					return
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
 }
 
 func (c *defaultWorkflowContext) Sleep(d time.Duration) error {

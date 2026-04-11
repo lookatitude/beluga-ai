@@ -17,7 +17,9 @@ func defaultWatchOptions() watchOptions {
 }
 
 // WithBufferSize sets the internal buffer size for the watch adapter.
-// A value of 0 (the default) uses the channel buffer provided by the store.
+// A value of 0 (the default) passes events through directly. A value > 0
+// relays events through an internal buffered channel so that brief stalls
+// in the consumer do not back-pressure the store's watch stream.
 func WithBufferSize(size int) WatchOption {
 	return func(o *watchOptions) {
 		if size >= 0 {
@@ -26,65 +28,42 @@ func WithBufferSize(size int) WatchOption {
 	}
 }
 
-// WatchSeq wraps Store.Watch as an iter.Seq2[StateChange, error] stream.
-// The returned iterator yields state changes until the context is cancelled,
-// the store is closed, or the consumer breaks out of the range loop.
-//
-// If WithBufferSize(n) is provided with n > 0, events are relayed through
-// an internal n-slot buffer so that brief stalls in the consumer do not
-// back-pressure the store's watch channel. If n == 0 the store channel is
-// consumed directly.
+// WatchSeq is an adapter around Store.Watch that optionally relays events
+// through an internal buffer. With the default (bufSize == 0) it is a thin
+// passthrough to store.Watch(ctx, key). This function is retained for
+// backward compatibility; new code should call store.Watch directly.
 func WatchSeq(ctx context.Context, store Store, key string, opts ...WatchOption) iter.Seq2[StateChange, error] {
 	o := defaultWatchOptions()
 	for _, opt := range opts {
 		opt(&o)
 	}
 
+	inner := store.Watch(ctx, key)
+	if o.bufSize <= 0 {
+		return inner
+	}
+
+	// Relay events through an internal buffer to absorb brief consumer stalls.
 	return func(yield func(StateChange, error) bool) {
-		ch, err := store.Watch(ctx, key)
-		if err != nil {
-			yield(StateChange{}, err)
-			return
-		}
-
-		// Zero buffer: consume the store channel directly.
-		if o.bufSize <= 0 {
-			for {
-				select {
-				case <-ctx.Done():
-					yield(StateChange{}, ctx.Err())
-					return
-				case change, ok := <-ch:
-					if !ok {
-						return
-					}
-					if !yield(change, nil) {
-						return
-					}
-				}
-			}
-		}
-
-		// Relay events through an internal buffer to absorb brief consumer stalls.
 		relayCtx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		relay := make(chan StateChange, o.bufSize)
+		type item struct {
+			change StateChange
+			err    error
+		}
+		relay := make(chan item, o.bufSize)
+
 		go func() {
 			defer close(relay)
-			for {
+			for change, err := range inner {
 				select {
+				case relay <- item{change: change, err: err}:
 				case <-relayCtx.Done():
 					return
-				case change, ok := <-ch:
-					if !ok {
-						return
-					}
-					select {
-					case relay <- change:
-					case <-relayCtx.Done():
-						return
-					}
+				}
+				if err != nil {
+					return
 				}
 			}
 		}()
@@ -92,13 +71,12 @@ func WatchSeq(ctx context.Context, store Store, key string, opts ...WatchOption)
 		for {
 			select {
 			case <-ctx.Done():
-				yield(StateChange{}, ctx.Err())
 				return
-			case change, ok := <-relay:
+			case it, ok := <-relay:
 				if !ok {
 					return
 				}
-				if !yield(change, nil) {
+				if !yield(it.change, it.err) {
 					return
 				}
 			}

@@ -2,6 +2,7 @@ package s2s
 
 import (
 	"context"
+	"iter"
 
 	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/internal/hookutil"
@@ -74,9 +75,11 @@ type SessionSender interface {
 
 // SessionReceiver delivers output events from the provider to the client.
 type SessionReceiver interface {
-	// Recv returns a channel of session events. The channel is closed
-	// when the session ends.
-	Recv() <-chan SessionEvent
+	// Recv returns an iterator of session events. The iterator ends when
+	// the session closes or ctx is cancelled. Transport-level errors are
+	// delivered as the second element of the yielded pair; event-level
+	// errors surface as SessionEvent{Type: EventError} values.
+	Recv(ctx context.Context) iter.Seq2[SessionEvent, error]
 }
 
 // SessionControl governs session lifecycle — interruption and termination.
@@ -203,9 +206,13 @@ func ComposeHooks(hooks ...Hooks) Hooks {
 }
 
 // forwardSessionEvents reads session events and forwards them as voice frames.
-func forwardSessionEvents(session Session, out chan<- voice.Frame, done chan<- error) {
+func forwardSessionEvents(ctx context.Context, session Session, out chan<- voice.Frame, done chan<- error) {
 	defer close(done)
-	for event := range session.Recv() {
+	for event, err := range session.Recv(ctx) {
+		if err != nil {
+			done <- err
+			return
+		}
 		switch event.Type {
 		case EventAudioOutput:
 			sampleRate := 24000 // default S2S sample rate
@@ -257,7 +264,7 @@ func AsFrameProcessor(engine S2S, opts ...Option) voice.FrameProcessor {
 		defer session.Close()
 
 		done := make(chan error, 1)
-		go forwardSessionEvents(session, out, done)
+		go forwardSessionEvents(ctx, session, out, done)
 
 		for {
 			select {

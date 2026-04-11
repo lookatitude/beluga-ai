@@ -10,7 +10,7 @@
 //	    Get(ctx context.Context, key string) (any, error)
 //	    Set(ctx context.Context, key string, value any) error
 //	    Delete(ctx context.Context, key string) error
-//	    Watch(ctx context.Context, key string) (<-chan StateChange, error)
+//	    Watch(ctx context.Context, key string) iter.Seq2[StateChange, error]
 //	    Close() error
 //	}
 //
@@ -44,14 +44,13 @@
 //
 // # Watch for Changes
 //
-// The [Store.Watch] method returns a channel that receives [StateChange]
+// The [Store.Watch] method returns an iter.Seq2 stream of [StateChange]
 // notifications whenever a key is modified or deleted:
 //
-//	ch, err := store.Watch(ctx, "mykey")
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//	for change := range ch {
+//	for change, err := range store.Watch(ctx, "mykey") {
+//	    if err != nil {
+//	        log.Fatal(err)
+//	    }
 //	    fmt.Printf("op=%s old=%v new=%v\n", change.Op, change.OldValue, change.Value)
 //	}
 //

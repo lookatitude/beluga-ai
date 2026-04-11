@@ -19,10 +19,10 @@
 //
 // # Watch Support
 //
-// The in-memory store fully supports [state.Store.Watch]. Watch channels are
-// buffered with capacity 16 to reduce blocking. If a watcher does not keep up,
-// notifications are dropped. Channels are closed when the store is closed or
-// the watch context is cancelled.
+// The in-memory store fully supports [state.Store.Watch], returning an
+// iter.Seq2 stream. Internal watcher buffers have capacity 16 to reduce
+// blocking; notifications that arrive while the buffer is full are dropped.
+// Iterators end when the store is closed or the watch context is cancelled.
 //
 // # Thread Safety
 //
