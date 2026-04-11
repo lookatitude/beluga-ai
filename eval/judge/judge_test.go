@@ -194,6 +194,35 @@ func TestRubric_Validate(t *testing.T) {
 			}},
 			wantErr: true,
 		},
+		{
+			name: "duplicate criterion name",
+			rubric: &Rubric{Name: "test", Criteria: []Criterion{
+				{Name: "a", Weight: 1, Levels: []ScoreLevel{{Label: "x", Score: 0.5}}},
+				{Name: "a", Weight: 1, Levels: []ScoreLevel{{Label: "y", Score: 0.5}}},
+			}},
+			wantErr: true,
+		},
+		{
+			name: "score level above 1",
+			rubric: &Rubric{Name: "test", Criteria: []Criterion{
+				{Name: "a", Weight: 1, Levels: []ScoreLevel{{Label: "x", Score: 1.5}}},
+			}},
+			wantErr: true,
+		},
+		{
+			name: "score level below 0",
+			rubric: &Rubric{Name: "test", Criteria: []Criterion{
+				{Name: "a", Weight: 1, Levels: []ScoreLevel{{Label: "x", Score: -0.1}}},
+			}},
+			wantErr: true,
+		},
+		{
+			name: "empty criterion name",
+			rubric: &Rubric{Name: "test", Criteria: []Criterion{
+				{Name: "", Weight: 1, Levels: []ScoreLevel{{Label: "x", Score: 0.5}}},
+			}},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -259,6 +288,31 @@ func TestBatchJudge_OnResultCallback(t *testing.T) {
 	_, err = batch.Evaluate(context.Background(), []eval.EvalSample{{Input: "q", Output: "a"}})
 	require.NoError(t, err)
 	assert.Equal(t, 1, callbackCount)
+}
+
+func TestBatchJudge_ContextCancellation(t *testing.T) {
+	model := newMock(mockllm.WithResponse(schema.NewAIMessage("accuracy: 0.5\nclarity: 0.5")))
+	jm, err := NewJudgeMetric(WithModel(model), WithRubric(testRubric()))
+	require.NoError(t, err)
+
+	// Use parallelism 1 so the semaphore is contended, exercising the
+	// select-on-ctx.Done() path in the dispatch loop.
+	batch, err := NewBatchJudge(WithJudgeMetric(jm), WithParallel(1))
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately so dispatch sees it.
+
+	samples := []eval.EvalSample{
+		{Input: "q1", Output: "a1"},
+		{Input: "q2", Output: "a2"},
+	}
+
+	// Should complete without blocking or panicking even when context is cancelled.
+	result, err := batch.Evaluate(ctx, samples)
+	require.NoError(t, err) // Evaluate always returns nil error.
+	// At least no samples should fail due to panics; partial results are fine.
+	assert.NotNil(t, result)
 }
 
 func TestConsistencyChecker_Check(t *testing.T) {
