@@ -225,7 +225,9 @@ func convertAIContentParts(m *schema.AIMessage) []anthropicSDK.ContentBlockParam
 	}
 	for _, tc := range m.ToolCalls {
 		var input any
-		json.Unmarshal([]byte(tc.Arguments), &input)
+		// Best-effort decode: if tc.Arguments is not valid JSON, pass the
+		// zero value so the block still references the tool call ID.
+		_ = json.Unmarshal([]byte(tc.Arguments), &input)
 		blocks = append(blocks, anthropicSDK.NewToolUseBlock(tc.ID, input, tc.Name))
 	}
 	return blocks

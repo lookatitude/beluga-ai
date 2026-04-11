@@ -107,11 +107,10 @@ func (s *A2AServer) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Use background context since the task runs asynchronously beyond the
-	// lifetime of the HTTP request.
-	// #nosec G601 -- cancel stored in s.cancel[task.ID] and invoked later
-	// by handleTaskAction when the task is cancelled, or implicitly when
-	// the task completes and is reaped.
-	ctx, cancel := context.WithCancel(context.Background())
+	// lifetime of the HTTP request. The cancel function is stored in
+	// s.cancel[task.ID] and invoked later by handleTaskAction when the task
+	// is cancelled, or implicitly when the task completes and is reaped.
+	ctx, cancel := context.WithCancel(context.Background()) // #nosec G118 -- cancel stored in s.cancel map, invoked later
 
 	// Take a snapshot for the response before the goroutine can modify the task.
 	snapshot := *task

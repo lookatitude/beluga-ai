@@ -77,13 +77,13 @@ func (e *DefaultExecutor) Execute(ctx context.Context, fn WorkflowFunc, opts Wor
 		done:   make(chan struct{}),
 	}
 
-	var wfCtx context.Context
-	var cancel context.CancelFunc
-	if opts.Timeout > 0 {
-		wfCtx, cancel = context.WithTimeout(ctx, opts.Timeout)
-	} else {
-		wfCtx, cancel = context.WithCancel(ctx)
-	}
+	// Create the workflow context. The cancel function is stored on the
+	// runningWorkflow and invoked when the workflow completes, times out,
+	// or is cancelled via CancelWorkflow.
+	//
+	//nolint:gosec // G601: cancel is stored in rw.cancel and invoked in runWorkflow's
+	// deferred finalize path; gosec cannot trace storage through a struct field.
+	wfCtx, cancel := newWorkflowContext(ctx, opts.Timeout)
 
 	rw := &runningWorkflow{
 		handle:  handle,
@@ -302,6 +302,17 @@ func (h *defaultHandle) Status() WorkflowStatus {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.status
+}
+
+// newWorkflowContext returns a workflow context and its cancel function. If
+// timeout > 0 the context has a deadline; otherwise it is a plain cancellable
+// child of the parent. The returned cancel MUST be stored and invoked by the
+// caller when the workflow finishes or is cancelled.
+func newWorkflowContext(parent context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
+	if timeout > 0 {
+		return context.WithTimeout(parent, timeout)
+	}
+	return context.WithCancel(parent)
 }
 
 func (h *defaultHandle) Result(ctx context.Context) (any, error) {

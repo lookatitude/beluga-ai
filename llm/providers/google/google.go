@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"iter"
+	"math"
 	"net/http"
 
 	"github.com/lookatitude/beluga-ai/config"
@@ -123,7 +124,12 @@ func (m *Model) buildRequest(msgs []schema.Message, opts []llm.GenerateOption) (
 		gcConfig.TopP = &p
 	}
 	if genOpts.MaxTokens > 0 {
-		gcConfig.MaxOutputTokens = int32(genOpts.MaxTokens)
+		// Gemini's MaxOutputTokens is int32; clamp to avoid overflow.
+		m := genOpts.MaxTokens
+		if m > math.MaxInt32 {
+			m = math.MaxInt32
+		}
+		gcConfig.MaxOutputTokens = int32(m) // #nosec G115 -- clamped above
 	}
 	if len(genOpts.StopSequences) > 0 {
 		gcConfig.StopSequences = genOpts.StopSequences
@@ -196,7 +202,8 @@ func convertMessages(msgs []schema.Message) ([]*genai.Content, *genai.Content) {
 			})
 		case *schema.ToolMessage:
 			var result map[string]any
-			json.Unmarshal([]byte(m.Text()), &result)
+			// Best-effort decode; fall through to the raw-text fallback below.
+			_ = json.Unmarshal([]byte(m.Text()), &result)
 			if result == nil {
 				result = map[string]any{"result": m.Text()}
 			}
@@ -253,7 +260,9 @@ func convertAIParts(m *schema.AIMessage) []*genai.Part {
 	}
 	for _, tc := range m.ToolCalls {
 		var args map[string]any
-		json.Unmarshal([]byte(tc.Arguments), &args)
+		// Best-effort decode: invalid JSON produces nil args and the
+		// downstream Part still carries the tool call ID + name.
+		_ = json.Unmarshal([]byte(tc.Arguments), &args)
 		parts = append(parts, &genai.Part{
 			FunctionCall: &genai.FunctionCall{
 				Name: tc.Name,

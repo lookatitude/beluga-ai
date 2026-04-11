@@ -19,7 +19,9 @@ import (
 func Load[T any](path string) (T, error) {
 	var cfg T
 
-	data, err := os.ReadFile(path)
+	cleanPath := filepath.Clean(path)
+	// #nosec G304 -- path comes from explicit caller-provided config location, cleaned above
+	data, err := os.ReadFile(cleanPath)
 	if err != nil {
 		return cfg, core.Errorf(core.ErrNotFound, "config: read %s: %w", path, err)
 	}

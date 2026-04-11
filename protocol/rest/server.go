@@ -158,7 +158,8 @@ func (s *RESTServer) handleInvoke(ctx context.Context, w http.ResponseWriter, r 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(InvokeResponse{Result: result})
+	// Encode errors mean the client disconnected; nothing to do.
+	_ = json.NewEncoder(w).Encode(InvokeResponse{Result: result})
 }
 
 func (s *RESTServer) handleStream(ctx context.Context, w http.ResponseWriter, r *http.Request, a agent.Agent) {
@@ -182,7 +183,9 @@ func (s *RESTServer) handleStream(ctx context.Context, w http.ResponseWriter, r 
 	for event, err := range a.Stream(ctx, req.Input) {
 		if err != nil {
 			data, _ := json.Marshal(StreamEvent{Type: "error", Text: err.Error()})
-			sse.WriteEvent(SSEEvent{Event: "error", Data: string(data)})
+			// Ignore the write error: we are already in an error path
+			// and about to return anyway.
+			_ = sse.WriteEvent(SSEEvent{Event: "error", Data: string(data)})
 			return
 		}
 
@@ -196,7 +199,7 @@ func (s *RESTServer) handleStream(ctx context.Context, w http.ResponseWriter, r 
 		}
 	}
 
-	// Send a done event.
+	// Send a done event. Ignore write errors — the stream is ending.
 	data, _ := json.Marshal(StreamEvent{Type: "done"})
-	sse.WriteEvent(SSEEvent{Event: "done", Data: string(data)})
+	_ = sse.WriteEvent(SSEEvent{Event: "done", Data: string(data)})
 }

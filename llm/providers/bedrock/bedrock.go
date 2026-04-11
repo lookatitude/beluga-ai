@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"iter"
+	"math"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -211,7 +212,12 @@ func buildInferenceConfig(opts llm.GenerateOptions) *brtypes.InferenceConfigurat
 		hasValue = true
 	}
 	if opts.MaxTokens > 0 {
-		n := int32(opts.MaxTokens)
+		// Bedrock's max_tokens is int32; clamp to avoid overflow.
+		m := opts.MaxTokens
+		if m > math.MaxInt32 {
+			m = math.MaxInt32
+		}
+		n := int32(m) // #nosec G115 -- clamped above
 		cfg.MaxTokens = &n
 		hasValue = true
 	}
@@ -313,7 +319,9 @@ func convertAIBlocks(m *schema.AIMessage) []brtypes.ContentBlock {
 	}
 	for _, tc := range m.ToolCalls {
 		var input any
-		json.Unmarshal([]byte(tc.Arguments), &input)
+		// Best-effort decode: if tc.Arguments is not valid JSON, pass the
+		// zero value so the block still references the tool call ID.
+		_ = json.Unmarshal([]byte(tc.Arguments), &input)
 		blocks = append(blocks, &brtypes.ContentBlockMemberToolUse{
 			Value: brtypes.ToolUseBlock{
 				ToolUseId: aws.String(tc.ID),

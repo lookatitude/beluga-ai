@@ -246,7 +246,11 @@ func (m *DefaultManager) RequestInteraction(ctx context.Context, req Interaction
 	if m.notifier != nil {
 		if err := m.notifier.Notify(ctx, req); err != nil {
 			if m.hooks.OnError != nil {
-				m.hooks.OnError(ctx, err)
+				// Fire-and-forget: notification failure is not fatal, but
+				// we still let the hook observe it. The returned (possibly
+				// replaced) error is discarded here because the caller's
+				// await path will surface any real failure.
+				_ = m.hooks.OnError(ctx, err)
 			}
 		}
 	}
