@@ -80,14 +80,21 @@ func (b *BatchJudge) Evaluate(ctx context.Context, samples []eval.EvalSample) (*
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 
+dispatch:
 	for i, sample := range samples {
 		if ctx.Err() != nil {
 			break
 		}
 
-		wg.Add(1)
-		sem <- struct{}{}
+		// Acquire a slot, respecting context cancellation so a cancelled
+		// context is noticed even when all parallel slots are in use.
+		select {
+		case sem <- struct{}{}:
+		case <-ctx.Done():
+			break dispatch
+		}
 
+		wg.Add(1)
 		go func(idx int, s eval.EvalSample) {
 			defer wg.Done()
 			defer func() { <-sem }()

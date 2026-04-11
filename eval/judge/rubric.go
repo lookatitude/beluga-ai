@@ -72,6 +72,11 @@ func (r *Rubric) Validate() error {
 		if len(c.Levels) == 0 {
 			return fmt.Errorf("rubric %q: criterion %q must have at least one level", r.Name, c.Name)
 		}
+		for _, l := range c.Levels {
+			if l.Score < 0 || l.Score > 1 {
+				return fmt.Errorf("rubric %q: criterion %q level %q score %f out of [0,1]", r.Name, c.Name, l.Label, l.Score)
+			}
+		}
 	}
 	return nil
 }

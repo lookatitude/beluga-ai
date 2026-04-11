@@ -107,23 +107,38 @@ func (c *ConsistencyChecker) Check(ctx context.Context, sample eval.EvalSample) 
 		err     error
 	}
 
-	results := make(chan scoreEntry, len(c.opts.models)*c.opts.repeats)
-	sem := make(chan struct{}, c.opts.parallel)
-	var wg sync.WaitGroup
-
-	for _, model := range c.opts.models {
-		metric, err := NewJudgeMetric(
+	// Build all JudgeMetric instances eagerly before launching any goroutines
+	// so that a construction failure for a later model does not leave earlier
+	// goroutines running unobserved LLM calls.
+	metrics := make([]*JudgeMetric, len(c.opts.models))
+	for i, model := range c.opts.models {
+		m, err := NewJudgeMetric(
 			WithModel(model),
 			WithRubric(c.opts.rubric),
 		)
 		if err != nil {
 			return nil, err
 		}
+		metrics[i] = m
+	}
 
+	results := make(chan scoreEntry, len(c.opts.models)*c.opts.repeats)
+	sem := make(chan struct{}, c.opts.parallel)
+	var wg sync.WaitGroup
+
+dispatch:
+	for i, model := range c.opts.models {
+		metric := metrics[i]
 		for r := 0; r < c.opts.repeats; r++ {
-			wg.Add(1)
-			sem <- struct{}{}
+			// Acquire a slot, respecting context cancellation so a cancelled
+			// context is noticed even when all parallel slots are in use.
+			select {
+			case sem <- struct{}{}:
+			case <-ctx.Done():
+				break dispatch
+			}
 
+			wg.Add(1)
 			go func(m llm.ChatModel, jm *JudgeMetric) {
 				defer wg.Done()
 				defer func() { <-sem }()

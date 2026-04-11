@@ -122,12 +122,12 @@ func (j *JudgeMetric) Score(ctx context.Context, sample eval.EvalSample) (float6
 
 	resp, err := j.opts.model.Generate(ctx, msgs)
 	if err != nil {
-		return 0, fmt.Errorf("judge: llm generate: %w", err)
+		return 0, core.NewError("judge.score", core.ErrToolFailed, "llm generate failed", err)
 	}
 
 	scores, err := parseJudgeResponse(resp.Text(), j.opts.rubric)
 	if err != nil {
-		return 0, fmt.Errorf("judge: parse response: %w", err)
+		return 0, core.NewError("judge.score", core.ErrInvalidInput, "parse response failed", err)
 	}
 
 	return weightedAverage(scores, j.opts.rubric), nil
