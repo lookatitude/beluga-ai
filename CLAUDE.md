@@ -1,133 +1,69 @@
-# Beluga AI v2 — Go-Native Agentic Framework
+# Beluga AI v2
 
-**Repository**: `github.com/lookatitude/beluga-ai` | **Language**: Go 1.23+ | **Streaming**: `iter.Seq2[T, error]`
+Go-native agentic AI framework. `github.com/lookatitude/beluga-ai`. Go 1.23+. Streaming via `iter.Seq2[T, error]`.
 
-## Architecture References
+## Critical rules
 
-Read these before architectural decisions:
-- `docs/concepts.md` — Design decisions (the "why")
-- `docs/packages.md` — Package layout & interfaces (the "what")
-- `docs/providers.md` — Provider categories & extension guide
-- `docs/architecture.md` — Full architecture with extensibility patterns (the "how")
+1. Streaming uses `iter.Seq2[T, error]` in public APIs — never channels. `Invoke()` = stream + collect.
+2. Every extensible package: Interface → Registry (`Register`/`New`/`List`) → Hooks → Middleware (`func T → T`).
+3. Providers auto-register in `init()` + `Register()`. No config files to edit.
+4. Library never imports `k8s/`. Kubernetes is an optional overlay.
+5. Errors: `core.Error` with typed `ErrorCode`. Check `IsRetryable()` before retry.
+6. OTel GenAI spans (`gen_ai.*`) at every package boundary.
+7. Tests: table-driven, `-race`, `*_test.go` alongside source. Red/Green TDD.
+8. No `interface{}` in public APIs — use generics. No global mutable state outside registries.
+9. Interfaces have ≤4 methods. `context.Context` is the first parameter of every public function.
+10. Zero external deps in `core/` and `schema/` beyond stdlib + otel. No circular imports.
 
-## Team
+## Before writing code
 
-| Agent | Role | When to Use |
-|-------|------|-------------|
-| `architect` | Design, plan, define acceptance criteria | New features, packages, design decisions |
-| `researcher` | Investigate topics, return evidence | When Architect needs research before designing |
-| `developer` | Code + tests for all packages | Any implementation task |
-| `security-reviewer` | Thorough security review | After Developer completes code (2 clean passes required) |
-| `qa-engineer` | Validate against acceptance criteria | After Security Review passes |
-| `doc-writer` | Package docs, tutorials, API reference | After implementation is approved |
+1. File-scoped rules in `.claude/rules/` auto-load for the files you touch.
+2. Run `.claude/hooks/wiki-query.sh <package>` — returns relevant wiki index entries, corrections, and pattern files in one call.
+3. Read `.wiki/index.md` retrieval routing table; read the targeted files for your task type.
+4. Read existing code in the target package — match style exactly.
+5. Write a failing test first, then make it pass (Red/Green TDD).
 
-## Workflows
+## Commands (all independently triggerable)
 
-### Feature / Complex Task (use `/plan-feature` then `/implement`)
+| Command | Purpose |
+|---|---|
+| `/plan $FEATURE` | Architect + Researcher design loop → implementation plan with acceptance criteria |
+| `/develop $TASK` | Developer-go Red/Green TDD → QA review → fix loop |
+| `/security-review $PATH` | 2 consecutive clean passes required |
+| `/qa-review $PATH` | Standalone QA review |
+| `/doc-check $PATH` | Verify examples compile and docs match current API |
+| `/document $TARGET` | Write package docs, tutorials, API reference |
+| `/promote $FEATURE` | Blog + social + release note |
+| `/blog $TOPIC` | Technical blog post |
+| `/dependency-audit` | gosec + govulncheck + update safe deps |
+| `/new-feature $DESC` | Composite pipeline: plan → develop → security-review → document → promote |
+| `/learn $DESCRIPTION` | Capture a correction into `.wiki/corrections.md` |
+| `/wiki-learn [$PATH\|all]` | Extract patterns and architecture from the codebase into `.wiki/` |
+| `/arch-validate $PACKAGE` | Validate code against architecture invariants |
+| `/arch-update $CHANGE` | Update architecture docs + ADRs after significant changes |
+| `/notion-sync` | Mirror docs/ to Notion + update tracking dashboard |
+| `/status` | Package health snapshot |
 
-```
-Architect ──→ defines research topics ──→ Researcher investigates each topic
-    ↑                                            │
-    └──── returns structured findings ───────────┘
-    │
-    ▼
-Architect ──→ designs + plans with acceptance criteria
-    │
-    ▼
-Developer ──→ codes + writes tests ──→ Security Reviewer
-    ↑                                       │
-    │   ┌── if issues found ────────────────┘
-    │   │
-    └───┘ (loop until 2 consecutive clean passes)
-                                            │
-                                            ▼
-                                     QA Engineer validates
-                                     against acceptance criteria
-                                            │
-                                     ┌──────┴──────┐
-                                     │ PASS → Done  │
-                                     │ FAIL → Dev   │
-                                     └─────────────┘
-```
+## Architecture references
 
-### Simple Bug Fix / Small Change
+@docs/concepts.md
+@docs/packages.md
+@docs/architecture.md
+@docs/providers.md
 
-Skip Architect and Researcher. Developer fixes + tests → Security Review (2 clean passes) → QA validates.
+## Agent team
 
-### Documentation Only
+- **coordinator** — orchestrator, breaks down work, captures learnings
+- **architect** — designs interfaces, writes ADRs, validates invariants
+- **researcher** — evidence gathering, never implements
+- **developer-go** — Red/Green TDD Go implementation
+- **developer-web** — Astro/Starlight website
+- **reviewer-qa** — validates acceptance criteria, read-only
+- **reviewer-security** — 2 clean passes required, read-only
+- **docs-writer** — package docs, tutorials, API reference
+- **marketeer** — blog, release notes, social content
+- **notion-syncer** — Notion sync and tracking dashboard
 
-Doc Writer handles directly. No security review needed.
+## Learning pipeline
 
-### Code Review (`/review`)
-
-Security Reviewer runs full checklist. Must get 2 consecutive clean passes.
-
-## Go Conventions (Quick Reference)
-
-- **Module**: `github.com/lookatitude/beluga-ai`
-- **Packages**: lowercase, single-word, at root (no `pkg/` prefix)
-- **Interfaces**: 1-4 methods, define before implementing
-- **Config**: `WithX()` functional options
-- **Errors**: `(T, error)`, typed errors from `core/errors.go` with `ErrorCode`, check `IsRetryable()`
-- **Context**: `context.Context` always first parameter
-- **Streaming**: `iter.Seq2[T, error]` — never channels in public API
-- **Registry**: `Register()` + `New()` + `List()` in every extensible package (called in `init()`)
-- **Middleware**: `func(T) T`, applied outside-in
-- **Hooks**: Optional function fields, nil = skip, composable via `ComposeHooks()`
-- **Tests**: `*_test.go` alongside source, table-driven, integration tests use `//go:build integration`
-- **Deps**: Zero external deps in `core/` and `schema/` beyond stdlib + otel. No circular imports.
-
-## Key Design Decisions
-
-1. `iter.Seq2` for streaming — NOT channels
-2. Handoffs are tools — auto-generate `transfer_to_{name}`
-3. MemGPT 3-tier memory — Core/Recall/Archival + graph
-4. Guard pipeline is 3-stage — Input → Output → Tool
-5. Own durable execution engine — Temporal is a provider option
-6. Frame-based voice — FrameProcessor interface
-7. Registry pattern everywhere
-8. OTel GenAI conventions — `gen_ai.*` namespace
-9. Hybrid search default — Vector + BM25 + RRF fusion
-10. Prompt cache optimization — static content first
-
-## Package Layout
-
-```
-beluga-ai/
-├── core/           # Stream, Runnable, Lifecycle, Errors, Tenant
-├── schema/         # Message, ContentPart, Tool, Document, Event, Session
-├── config/         # Load[T], Validate, hot-reload
-├── o11y/           # OTel GenAI, slog, adapters
-├── llm/            # ChatModel, Router, Structured, Context Manager
-│   └── providers/
-├── tool/           # Tool, FuncTool, MCP client, registry
-├── memory/         # 3-tier + graph (MemGPT model)
-│   └── stores/
-├── rag/            # embedding/, vectorstore/, retriever/, loader/, splitter/
-├── agent/          # BaseAgent, Planner, Executor, Handoffs
-│   └── workflow/   # Sequential, Parallel, Loop agents
-├── voice/          # Frame-based pipeline, STT/TTS/S2S, transport
-├── orchestration/  # Chain, Graph, Router, Parallel, Supervisor
-├── workflow/       # Durable execution engine
-├── protocol/       # MCP server/client, A2A server/client, REST
-├── guard/          # Input→Output→Tool safety pipeline
-├── resilience/     # Circuit breaker, hedge, retry, rate limit
-├── cache/          # Exact + semantic + prompt cache
-├── hitl/           # Human-in-the-loop
-├── auth/           # RBAC, ABAC, capability-based
-├── eval/           # Metrics, runner
-├── state/          # Shared agent state with Watch
-├── prompt/         # Prompt management & versioning
-├── server/         # HTTP adapters (gin, fiber, echo, chi, grpc)
-└── internal/       # syncutil, jsonutil, testutil
-```
-
-## Skills
-
-- `go-framework` — Package structure, registries, lifecycle, functional options
-- `go-interfaces` — Interface design, hooks, middleware, extension contracts
-- `go-testing` — Table-driven tests, stream testing, mocks, benchmarks
-- `provider-implementation` — Provider registration, error mapping, streaming
-- `streaming-patterns` — iter.Seq2, composition, backpressure, context cancellation
-- `doc-writing` — Documentation structure, examples, enterprise standards
-- `website-development` — Astro + React + Tailwind for the docs site
+Per-agent `.claude/agents/<name>/rules/` (automatic, fast) → `.wiki/corrections.md` (curated) → `.claude/rules/<file>.md` (enforced) → `CLAUDE.md` (always-loaded, human-approved).

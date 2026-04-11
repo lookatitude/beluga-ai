@@ -12,10 +12,15 @@
       "Bash(go run:*)",
       "Bash(go generate:*)",
       "Bash(go tool:*)",
+      "Bash(go doc:*)",
+      "Bash(go list:*)",
       "Bash(gofmt:*)",
       "Bash(goimports:*)",
       "Bash(staticcheck:*)",
       "Bash(golangci-lint:*)",
+      "Bash(gosec:*)",
+      "Bash(govulncheck:*)",
+      "Bash(gomarkdoc:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
@@ -36,14 +41,20 @@
       "Bash(echo:*)",
       "Bash(pwd:*)",
       "Bash(mkdir:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(.claude/hooks/wiki-query.sh:*)"
     ],
     "deny": [
       "Bash(rm -rf /:*)",
+      "Bash(rm -rf /*:*)",
+      "Bash(rm -rf ~:*)",
       "Bash(chmod 777:*)",
       "Bash(curl * | bash:*)",
+      "Bash(curl * | sh:*)",
       "Bash(wget * | bash:*)",
-      "Bash(eval:*)"
+      "Bash(wget * | sh:*)",
+      "Bash(eval:*)",
+      "Bash(:(){:|:&};:)"
     ]
   },
   "hooks": {
@@ -64,7 +75,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Check if this bash command is safe for a Go project. Block if it: deletes files outside the project, modifies system files, installs packages globally without user intent, runs curl/wget piped to shell, uses force flags on git destructively (push --force to main, reset --hard without cause), or could leak credentials. Allow standard Go toolchain commands, git read operations, and file inspection. Command: $ARGUMENTS",
+            "prompt": "Check if this bash command is safe for a Go project. Block if it: deletes files outside the project, modifies system files, installs packages globally without user intent, runs curl/wget piped to shell, uses force flags on git destructively (push --force to main, reset --hard without cause), or could leak credentials. Allow standard Go toolchain commands, git read operations, file inspection, and .claude/hooks/ scripts. Command: $ARGUMENTS",
             "model": "claude-haiku-4-5-20251001",
             "timeout": 10
           }
@@ -80,6 +91,30 @@
             "command": "f=$(jq -r '.tool_response.filePath // .tool_input.file_path' 2>/dev/null); if [ -n \"$f\" ] && echo \"$f\" | grep -qE '\\.go$'; then gofmt -l \"$f\" 2>/dev/null | head -1 | { read -r line; if [ -n \"$line\" ]; then gofmt -w \"$f\" 2>/dev/null; echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"Auto-formatted with gofmt\"}}'; fi; }; fi",
             "timeout": 10,
             "statusMessage": "Formatting Go code..."
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "The subagent just finished. Verify: (1) Did it complete ALL assigned tasks from its dispatch prompt? (2) Did it run tests if it wrote code? (3) Did it note any corrections or new patterns discovered? (4) Did it use the 3-step retrieval protocol (index.md, wiki-query.sh, targeted files)? If any item is missing or incomplete, respond with decision:block and list what's missing. Otherwise respond with decision:approve.",
+            "model": "claude-haiku-4-5-20251001",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "changed=$(git diff --name-only 2>/dev/null | grep -E '\\.go$' | head -20); if [ -n \"$changed\" ]; then (go vet ./... 2>&1 | head -20) || true; fi",
+            "timeout": 30,
+            "statusMessage": "Running go vet on modified Go files..."
           }
         ]
       }
