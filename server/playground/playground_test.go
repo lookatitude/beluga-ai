@@ -138,3 +138,168 @@ func TestNewHandler_Options(t *testing.T) {
 		t.Errorf("path = %q, want /custom", h.opts.path)
 	}
 }
+
+// customAdapter records it was called so we can verify WithAdapter injection.
+type customAdapter struct{ called bool }
+
+func (c *customAdapter) WriteEvents(_ context.Context, w http.ResponseWriter, _ agent.Agent, _ string) error {
+	c.called = true
+	w.Header().Set("Content-Type", "text/event-stream")
+	_, _ = w.Write([]byte("data: {\"type\":\"done\"}\n\n"))
+	return nil
+}
+
+func TestWithAdapter(t *testing.T) {
+	ca := &customAdapter{}
+	sel := NewStaticSelector(&mockAgent{id: "a1"})
+	h := NewHandler(sel, WithAdapter(ca))
+	if h.adapter != ca {
+		t.Error("WithAdapter: adapter not injected")
+	}
+
+	req := httptest.NewRequest("POST", "/chat", strings.NewReader(`{"agent_id":"a1","input":"hi"}`))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	if !ca.called {
+		t.Error("custom adapter was not invoked")
+	}
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200", w.Code)
+	}
+}
+
+func TestHandleChat_InvalidBody(t *testing.T) {
+	sel := NewStaticSelector(&mockAgent{id: "a1"})
+	h := NewHandler(sel)
+
+	req := httptest.NewRequest("POST", "/chat", strings.NewReader(`not json`))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want 400", w.Code)
+	}
+}
+
+func TestHandler_MountedAtBasePath(t *testing.T) {
+	sel := NewStaticSelector(&mockAgent{id: "a1"})
+	h := NewHandler(sel, WithBasePath("/pg"))
+	mounted := h.Handler()
+
+	// GET /pg should serve the UI.
+	req := httptest.NewRequest("GET", "/pg", nil)
+	w := httptest.NewRecorder()
+	mounted.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("GET /pg: status = %d, want 200", w.Code)
+	}
+	if ct := w.Header().Get("Content-Type"); !strings.Contains(ct, "text/html") {
+		t.Errorf("Content-Type = %q, want text/html", ct)
+	}
+
+	// GET /pg/agents should list agents.
+	req = httptest.NewRequest("GET", "/pg/agents", nil)
+	w = httptest.NewRecorder()
+	mounted.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("GET /pg/agents: status = %d, want 200", w.Code)
+	}
+
+	// POST /pg/chat should reach the chat handler (agent not found -> 404).
+	req = httptest.NewRequest("POST", "/pg/chat", strings.NewReader(`{"agent_id":"missing","input":"hi"}`))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	mounted.ServeHTTP(w, req)
+	if w.Code != http.StatusNotFound {
+		t.Errorf("POST /pg/chat: status = %d, want 404", w.Code)
+	}
+}
+
+// streamingRecorder adds http.Flusher support on top of httptest.ResponseRecorder.
+type streamingRecorder struct {
+	*httptest.ResponseRecorder
+}
+
+func (s *streamingRecorder) Flush() {}
+
+func TestDefaultStreamAdapter_WriteEvents(t *testing.T) {
+	sel := NewStaticSelector(&mockAgent{id: "a1"})
+	h := NewHandler(sel)
+
+	req := httptest.NewRequest("POST", "/chat", strings.NewReader(`{"agent_id":"a1","input":"hi"}`))
+	req.Header.Set("Content-Type", "application/json")
+	w := &streamingRecorder{httptest.NewRecorder()}
+	h.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200", w.Code)
+	}
+	if ct := w.Header().Get("Content-Type"); !strings.Contains(ct, "text/event-stream") {
+		t.Errorf("Content-Type = %q, want text/event-stream", ct)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "hello from a1") {
+		t.Errorf("body missing event text: %q", body)
+	}
+	if !strings.Contains(body, `"type":"done"`) {
+		t.Errorf("body missing done event: %q", body)
+	}
+}
+
+// erroringAgent emits an error from its stream.
+type erroringAgent struct{ mockAgent }
+
+func (e *erroringAgent) Stream(_ context.Context, _ string, _ ...agent.Option) iter.Seq2[agent.Event, error] {
+	return func(yield func(agent.Event, error) bool) {
+		yield(agent.Event{}, context.DeadlineExceeded)
+	}
+}
+
+func TestDefaultStreamAdapter_StreamError(t *testing.T) {
+	ea := &erroringAgent{mockAgent: mockAgent{id: "err"}}
+	sel := NewStaticSelector(ea)
+	h := NewHandler(sel)
+
+	req := httptest.NewRequest("POST", "/chat", strings.NewReader(`{"agent_id":"err","input":"hi"}`))
+	req.Header.Set("Content-Type", "application/json")
+	w := &streamingRecorder{httptest.NewRecorder()}
+	h.ServeHTTP(w, req)
+
+	body := w.Body.String()
+	if !strings.Contains(body, `"type":"error"`) {
+		t.Errorf("body missing error event: %q", body)
+	}
+}
+
+// nonFlushingWriter wraps an http.ResponseWriter without exposing http.Flusher.
+type nonFlushingWriter struct {
+	header http.Header
+	body   []byte
+	status int
+}
+
+func (n *nonFlushingWriter) Header() http.Header {
+	if n.header == nil {
+		n.header = http.Header{}
+	}
+	return n.header
+}
+func (n *nonFlushingWriter) Write(b []byte) (int, error) {
+	n.body = append(n.body, b...)
+	return len(b), nil
+}
+func (n *nonFlushingWriter) WriteHeader(code int) { n.status = code }
+
+func TestDefaultStreamAdapter_NoFlusher(t *testing.T) {
+	ad := &defaultStreamAdapter{}
+	w := &nonFlushingWriter{}
+	err := ad.WriteEvents(context.Background(), w, &mockAgent{id: "a1"}, "hi")
+	if err == nil {
+		t.Error("expected error when writer does not support flushing")
+	}
+	if w.status != http.StatusInternalServerError {
+		t.Errorf("status = %d, want 500", w.status)
+	}
+}
