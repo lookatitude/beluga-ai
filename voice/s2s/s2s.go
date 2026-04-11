@@ -58,8 +58,10 @@ type S2S interface {
 	Start(ctx context.Context, opts ...Option) (Session, error)
 }
 
-// Session represents an active bidirectional audio session with an S2S provider.
-type Session interface {
+// SessionSender carries input (audio, text, tool results) from the client to
+// the S2S provider. Split from Session so consumers that only send (e.g., a
+// push-to-talk UI controller) can depend on the narrowest surface.
+type SessionSender interface {
 	// SendAudio sends an audio chunk to the provider.
 	SendAudio(ctx context.Context, audio []byte) error
 
@@ -68,16 +70,34 @@ type Session interface {
 
 	// SendToolResult sends a tool execution result back to the model.
 	SendToolResult(ctx context.Context, result schema.ToolResult) error
+}
 
+// SessionReceiver delivers output events from the provider to the client.
+type SessionReceiver interface {
 	// Recv returns a channel of session events. The channel is closed
 	// when the session ends.
 	Recv() <-chan SessionEvent
+}
 
+// SessionControl governs session lifecycle — interruption and termination.
+type SessionControl interface {
 	// Interrupt signals that the user has interrupted the model's output.
 	Interrupt(ctx context.Context) error
 
 	// Close terminates the session and releases resources.
 	Close() error
+}
+
+// Session represents an active bidirectional audio session with an S2S provider.
+//
+// Session is composed from three smaller interfaces (SessionSender,
+// SessionReceiver, SessionControl) so consumers can depend on the narrowest
+// surface they need. Every existing implementation of Session automatically
+// satisfies all three sub-interfaces; no migration is required.
+type Session interface {
+	SessionSender
+	SessionReceiver
+	SessionControl
 }
 
 // Config holds configuration options for S2S sessions.

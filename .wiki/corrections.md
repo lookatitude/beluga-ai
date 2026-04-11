@@ -20,19 +20,23 @@ Entries reach `.claude/rules/` when seen ≥3 times or HIGH confidence.
 
 ---
 
-### C-001 | 2026-04-11 | arch-validate | agent
-**Symptom:** `agent.Agent` interface at `agent/agent.go:32` has 6 methods, exceeding the ≤4-method invariant.
+### C-001 | 2026-04-11 | arch-validate | agent · RESOLVED 2026-04-11
+**Symptom:** `agent.Agent` interface at `agent/agent.go:32` had 6 directly-declared methods, exceeding the ≤4-method invariant.
 **Root cause:** Interface was grown by addition over time without composition refactor.
-**Correction:** Split into smaller interfaces and compose via embedding. Suggested decomposition: `Identifier` (ID, Card), `Introspection` (Persona, Tools, Children), `Executor` (Stream). Existing implementations can embed a `BaseAgent` that satisfies the composed form.
-**Prevention rule:** `.wiki/architecture/invariants.md` already encodes the rule; `/arch-validate` now flags >4-method interfaces. Consider a `golangci-lint` custom linter for enforcement.
-**Confidence:** HIGH — programmatically detected.
+**Correction:** Split into `AgentMetadata` (ID, Persona, Tools, Children — 4 methods) and `AgentExecutor` (Invoke, Stream — 2 methods). `Agent` now embeds both; every existing implementation continues to satisfy it without modification.
+**Commit:** (this commit) — 0 implementation changes, purely additive refactor.
+**Verification:** `go build ./...` PASS, `go vet ./...` PASS, full test suite PASS (207 packages, 0 failures).
+**Prevention rule:** `.wiki/architecture/invariants.md` encodes the ≤4 rule; `/arch-validate` flags violations. Consider a `golangci-lint` custom linter for permanent enforcement.
+**Confidence:** HIGH — programmatically detected, verified by test suite.
 
-### C-002 | 2026-04-11 | arch-validate | voice/s2s
-**Symptom:** `voice/s2s.Session` interface at `voice/s2s/s2s.go:81` has 6 methods.
-**Root cause:** Session lifecycle + I/O combined in one interface.
-**Correction:** Split into `SessionLifecycle` (Start/Stop/Close) and `SessionIO` (send/receive/configure). Consumers can require whichever they need.
+### C-002 | 2026-04-11 | arch-validate | voice/s2s · RESOLVED 2026-04-11
+**Symptom:** `voice/s2s.Session` interface at `voice/s2s/s2s.go:81` had 6 directly-declared methods.
+**Root cause:** Session lifecycle + send + receive combined in one interface.
+**Correction:** Split into `SessionSender` (3 send methods), `SessionReceiver` (1 method), `SessionControl` (Interrupt, Close — 2 methods). `Session` embeds all three.
+**Commit:** (this commit) — 0 implementation changes, purely additive refactor.
+**Verification:** All `voice/s2s/providers/{openai,gemini,nova}` tests pass unchanged. Full suite green.
 **Prevention rule:** Same as C-001.
-**Confidence:** HIGH — programmatically detected.
+**Confidence:** HIGH.
 
 ### C-003 | 2026-04-11 | arch-validate | cross-package
 **Symptom:** 190 `errors.New`/`fmt.Errorf` occurrences across 50+ files, including capability-layer public returns. Invariant 6 requires `core.Error` with `ErrorCode` on public errors.

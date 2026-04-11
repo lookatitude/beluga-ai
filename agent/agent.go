@@ -8,10 +8,10 @@ import (
 	"github.com/lookatitude/beluga-ai/tool"
 )
 
-// Agent is the primary interface for all agents. An agent has an identity,
-// persona, tools, optional children (for orchestration), and can be invoked
-// synchronously or streamed.
-type Agent interface {
+// AgentMetadata exposes an agent's static identity and composition. Consumers
+// that only need to introspect an agent (for routing, telemetry, rendering an
+// AgentCard) can depend on AgentMetadata rather than the full Agent.
+type AgentMetadata interface {
 	// ID returns the unique identifier for this agent.
 	ID() string
 
@@ -23,12 +23,30 @@ type Agent interface {
 
 	// Children returns child agents for orchestration.
 	Children() []Agent
+}
 
+// AgentExecutor is the runtime-behaviour surface of an agent. Consumers that
+// only need to run an agent (middleware, retry wrappers, orchestration
+// patterns) can depend on AgentExecutor rather than the full Agent.
+type AgentExecutor interface {
 	// Invoke executes the agent synchronously and returns a text result.
 	Invoke(ctx context.Context, input string, opts ...Option) (string, error)
 
 	// Stream executes the agent and returns an iterator of events.
 	Stream(ctx context.Context, input string, opts ...Option) iter.Seq2[Event, error]
+}
+
+// Agent is the primary interface for all agents. An agent has an identity,
+// persona, tools, optional children (for orchestration), and can be invoked
+// synchronously or streamed.
+//
+// Agent is composed from two smaller interfaces (AgentMetadata and
+// AgentExecutor) so consumers can depend on the narrowest surface they need.
+// Every existing implementation of Agent automatically satisfies both
+// sub-interfaces; no migration is required.
+type Agent interface {
+	AgentMetadata
+	AgentExecutor
 }
 
 // EventType identifies the kind of event emitted during agent execution.

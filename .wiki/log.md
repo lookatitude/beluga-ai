@@ -66,3 +66,8 @@ See `docs/superpowers/specs/2026-04-11-beluga-agent-system-design.md`.
 
 ## [2026-04-11] arch-validate | all
 /arch-validate all: 7/10 invariants PASS cleanly. FAIL: 2 interfaces with >4 methods (agent.Agent, voice/s2s.Session). SOFT: 190 errors.New/fmt.Errorf sites needing per-package audit. go vet clean; core/schema zero external deps; 22/22 LLM providers auto-register; 155 compile-time interface checks. See corrections C-001, C-002, C-003.
+
+## [2026-04-11] develop | agent + voice/s2s interface splits (C-001, C-002)
+Split agent.Agent into AgentMetadata (4) + AgentExecutor (2), both embedded.
+Split voice/s2s.Session into SessionSender (3) + SessionReceiver (1) + SessionControl (2), all embedded.
+Zero implementation changes — purely additive composition. go build/vet/test all clean (207 packages, 0 failures).
