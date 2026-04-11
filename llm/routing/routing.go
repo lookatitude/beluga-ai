@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -130,7 +131,7 @@ func NewCostRouter(opts ...Option) *DefaultCostRouter {
 // SelectModel chooses the best model based on complexity and budget.
 func (r *DefaultCostRouter) SelectModel(ctx context.Context, msgs []schema.Message) (ModelSelection, error) {
 	if len(r.opts.models) == 0 {
-		return ModelSelection{}, fmt.Errorf("routing: no models configured")
+		return ModelSelection{}, core.Errorf(core.ErrInvalidInput, "routing: no models configured")
 	}
 
 	tier, err := r.opts.classifier.Classify(ctx, msgs)
@@ -154,7 +155,7 @@ func (r *DefaultCostRouter) SelectModel(ctx context.Context, msgs []schema.Messa
 		if r.opts.enforcer != nil {
 			allowed, err := r.opts.enforcer.CheckAndReserve(ctx, estimated)
 			if err != nil {
-				return ModelSelection{}, fmt.Errorf("routing: budget check: %w", err)
+				return ModelSelection{}, core.Errorf(core.ErrBudgetExhausted, "routing: budget check: %w", err)
 			}
 			if !allowed {
 				continue // Try cheaper model.
@@ -173,7 +174,7 @@ func (r *DefaultCostRouter) SelectModel(ctx context.Context, msgs []schema.Messa
 		}, nil
 	}
 
-	return ModelSelection{}, fmt.Errorf("routing: no model within budget for tier %s", tier)
+	return ModelSelection{}, core.Errorf(core.ErrBudgetExhausted, "routing: no model within budget for tier %s", tier)
 }
 
 // Enforcer returns the configured budget enforcer, if any. Callers should

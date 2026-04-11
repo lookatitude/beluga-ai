@@ -21,6 +21,11 @@ type FuncTool[I any] struct {
 	schema      map[string]any
 }
 
+// compile-time interface check — instantiated with struct{} to satisfy the
+// generic constraint. All *FuncTool[I] instances share the same method set,
+// so verifying one satisfies Tool proves the rest do.
+var _ Tool = (*FuncTool[struct{}])(nil)
+
 // NewFuncTool creates a new FuncTool that wraps fn as a Tool. The JSON Schema
 // for the input type I is generated once at construction time.
 //

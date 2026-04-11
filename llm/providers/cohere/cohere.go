@@ -11,6 +11,7 @@ import (
 	cohereclient "github.com/cohere-ai/cohere-go/v2/client"
 	"github.com/cohere-ai/cohere-go/v2/option"
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -36,7 +37,7 @@ var _ llm.ChatModel = (*Model)(nil)
 // New creates a new Cohere ChatModel.
 func New(cfg config.ProviderConfig) (*Model, error) {
 	if cfg.APIKey == "" {
-		return nil, fmt.Errorf("cohere: api_key is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "cohere: api_key is required")
 	}
 	model := cfg.Model
 	if model == "" {
@@ -60,7 +61,7 @@ func (m *Model) Generate(ctx context.Context, msgs []schema.Message, opts ...llm
 	req := m.buildRequest(msgs, opts)
 	resp, err := m.client.Chat(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("cohere: generate failed: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "cohere: generate failed: %w", err)
 	}
 	return convertResponse(resp, m.model), nil
 }
@@ -72,7 +73,7 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 	stream, err := m.client.ChatStream(ctx, streamReq)
 	if err != nil {
 		return func(yield func(schema.StreamChunk, error) bool) {
-			yield(schema.StreamChunk{}, fmt.Errorf("cohere: stream failed: %w", err))
+			yield(schema.StreamChunk{}, core.Errorf(core.ErrProviderDown, "cohere: stream failed: %w", err))
 		}
 	}
 

@@ -1,9 +1,8 @@
 package llama
 
 import (
-	"fmt"
-
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 )
 
@@ -28,7 +27,7 @@ func init() {
 // New creates a new Llama ChatModel by delegating to a hosting provider.
 func New(cfg config.ProviderConfig) (llm.ChatModel, error) {
 	if cfg.Model == "" {
-		return nil, fmt.Errorf("llama: model is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "llama: model is required")
 	}
 
 	backend, _ := config.GetOption[string](cfg, "backend")
@@ -38,7 +37,7 @@ func New(cfg config.ProviderConfig) (llm.ChatModel, error) {
 
 	baseURL, ok := backends[backend]
 	if !ok {
-		return nil, fmt.Errorf("llama: unsupported backend %q, supported: together, fireworks, groq, sambanova, cerebras, ollama", backend)
+		return nil, core.Errorf(core.ErrInvalidInput, "llama: unsupported backend %q, supported: together, fireworks, groq, sambanova, cerebras, ollama", backend)
 	}
 
 	// Only override BaseURL if not explicitly set.

@@ -3,7 +3,6 @@ package bedrock
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"iter"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -13,6 +12,7 @@ import (
 	brdocument "github.com/aws/aws-sdk-go-v2/service/bedrockruntime/document"
 	brtypes "github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
 	cfgpkg "github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -43,7 +43,7 @@ var _ llm.ChatModel = (*Model)(nil)
 // New creates a new Bedrock ChatModel.
 func New(cfg cfgpkg.ProviderConfig) (*Model, error) {
 	if cfg.Model == "" {
-		return nil, fmt.Errorf("bedrock: model is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "bedrock: model is required")
 	}
 
 	region, _ := cfgpkg.GetOption[string](cfg, "region")
@@ -63,7 +63,7 @@ func New(cfg cfgpkg.ProviderConfig) (*Model, error) {
 
 	awsCfg, err := awsconfig.LoadDefaultConfig(context.Background(), awsOpts...)
 	if err != nil {
-		return nil, fmt.Errorf("bedrock: failed to load AWS config: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "bedrock: failed to load AWS config: %w", err)
 	}
 
 	var brOpts []func(*bedrockruntime.Options)
@@ -98,7 +98,7 @@ func (m *Model) Generate(ctx context.Context, msgs []schema.Message, opts ...llm
 	}
 	output, err := m.client.Converse(ctx, input)
 	if err != nil {
-		return nil, fmt.Errorf("bedrock: converse failed: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "bedrock: converse failed: %w", err)
 	}
 	return convertOutput(output, m.modelID), nil
 }
@@ -121,7 +121,7 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 func consumeBedrockStream(ctx context.Context, client ConverseAPI, input *bedrockruntime.ConverseStreamInput, modelID string, yield func(schema.StreamChunk, error) bool) {
 	output, err := client.ConverseStream(ctx, input)
 	if err != nil {
-		yield(schema.StreamChunk{}, fmt.Errorf("bedrock: stream failed: %w", err))
+		yield(schema.StreamChunk{}, core.Errorf(core.ErrProviderDown, "bedrock: stream failed: %w", err))
 		return
 	}
 	stream := output.GetStream()
@@ -140,7 +140,7 @@ func consumeBedrockStream(ctx context.Context, client ConverseAPI, input *bedroc
 		}
 	}
 	if err := stream.Err(); err != nil {
-		yield(schema.StreamChunk{}, fmt.Errorf("bedrock: stream error: %w", err))
+		yield(schema.StreamChunk{}, core.Errorf(core.ErrProviderDown, "bedrock: stream error: %w", err))
 	}
 }
 
@@ -263,7 +263,7 @@ func convertMessages(msgs []schema.Message) ([]brtypes.Message, []brtypes.System
 				},
 			})
 		default:
-			return nil, nil, fmt.Errorf("bedrock: unsupported message type %T", msg)
+			return nil, nil, core.Errorf(core.ErrInvalidInput, "bedrock: unsupported message type %T", msg)
 		}
 	}
 	return out, system, nil

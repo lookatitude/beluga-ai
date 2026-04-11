@@ -3,12 +3,12 @@ package mistral
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"iter"
 	"time"
 
 	"github.com/gage-technologies/mistral-go"
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -37,7 +37,7 @@ var _ llm.ChatModel = (*Model)(nil)
 // New creates a new Mistral ChatModel.
 func New(cfg config.ProviderConfig) (*Model, error) {
 	if cfg.APIKey == "" {
-		return nil, fmt.Errorf("mistral: api_key is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "mistral: api_key is required")
 	}
 	model := cfg.Model
 	if model == "" {
@@ -65,7 +65,7 @@ func (m *Model) Generate(ctx context.Context, msgs []schema.Message, opts ...llm
 
 	resp, err := m.client.Chat(m.model, chatMsgs, params)
 	if err != nil {
-		return nil, fmt.Errorf("mistral: generate failed: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "mistral: generate failed: %w", err)
 	}
 	return convertResponse(resp), nil
 }
@@ -78,7 +78,7 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 	ch, err := m.client.ChatStream(m.model, chatMsgs, params)
 	if err != nil {
 		return func(yield func(schema.StreamChunk, error) bool) {
-			yield(schema.StreamChunk{}, fmt.Errorf("mistral: stream failed: %w", err))
+			yield(schema.StreamChunk{}, core.Errorf(core.ErrProviderDown, "mistral: stream failed: %w", err))
 		}
 	}
 

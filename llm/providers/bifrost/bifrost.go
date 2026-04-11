@@ -1,9 +1,8 @@
 package bifrost
 
 import (
-	"fmt"
-
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/internal/openaicompat"
 	"github.com/lookatitude/beluga-ai/llm"
 )
@@ -17,10 +16,10 @@ func init() {
 // New creates a new Bifrost ChatModel.
 func New(cfg config.ProviderConfig) (llm.ChatModel, error) {
 	if cfg.BaseURL == "" {
-		return nil, fmt.Errorf("bifrost: base_url is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "bifrost: base_url is required")
 	}
 	if cfg.Model == "" {
-		return nil, fmt.Errorf("bifrost: model is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "bifrost: model is required")
 	}
 	return openaicompat.New(cfg)
 }

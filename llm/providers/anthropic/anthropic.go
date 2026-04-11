@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"iter"
 
 	anthropicSDK "github.com/anthropics/anthropic-sdk-go"
 	anthropicOption "github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -35,7 +35,7 @@ var _ llm.ChatModel = (*Model)(nil)
 // New creates a new Anthropic ChatModel.
 func New(cfg config.ProviderConfig) (*Model, error) {
 	if cfg.Model == "" {
-		return nil, fmt.Errorf("anthropic: model is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "anthropic: model is required")
 	}
 	opts := []anthropicOption.RequestOption{}
 	if cfg.APIKey != "" {
@@ -63,7 +63,7 @@ func (m *Model) Generate(ctx context.Context, msgs []schema.Message, opts ...llm
 	}
 	resp, err := m.client.Messages.New(ctx, params)
 	if err != nil {
-		return nil, fmt.Errorf("anthropic: generate failed: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "anthropic: generate failed: %w", err)
 	}
 	return convertResponse(resp), nil
 }
@@ -187,7 +187,7 @@ func convertMessages(msgs []schema.Message) ([]anthropicSDK.MessageParam, []anth
 				anthropicSDK.NewToolResultBlock(m.ToolCallID, m.Text(), false),
 			))
 		default:
-			return nil, nil, fmt.Errorf("anthropic: unsupported message type %T", msg)
+			return nil, nil, core.Errorf(core.ErrInvalidInput, "anthropic: unsupported message type %T", msg)
 		}
 	}
 	return out, system, nil
