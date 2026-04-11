@@ -46,10 +46,11 @@ Go-native agentic AI framework. `github.com/lookatitude/beluga-ai`. Go 1.23+. St
 
 ## Architecture references
 
-@docs/concepts.md
-@docs/packages.md
-@docs/architecture.md
-@docs/providers.md
+@docs/README.md
+@docs/architecture/01-overview.md
+@docs/architecture/03-extensibility-patterns.md
+@docs/architecture/18-package-dependency-map.md
+@docs/reference/providers.md
 
 ## Agent team
 

@@ -34,3 +34,15 @@ To validate findings or add new patterns:
 
 Raw scan output: `raw/research/wiki-scan-2026-04-11.md`
 
+## Project Documentation Cross-Reference
+
+The authoritative human-facing docs now live under `docs/`:
+
+- **`docs/README.md`** — top-level entry point
+- **`docs/architecture/`** — 18 architecture docs (overview, primitives, extensibility, data flow, agent anatomy, reasoning, orchestration, runner, memory, RAG, voice, protocol, security, observability, resilience, workflows, deployment, package map)
+- **`docs/patterns/`** — 8 pattern docs mirroring `.wiki/patterns/` but with full prose and rationale
+- **`docs/guides/`** — 7 how-to guides (first agent, custom provider, custom planner, multi-agent team, deploy k8s/temporal/docker)
+- **`docs/reference/`** — interfaces, configuration, glossary, providers
+
+When answering user questions about architecture, prefer reading `docs/architecture/*` first (prose with rationale) and fall back to `.wiki/` for canonical `file:line` pointers.
+
