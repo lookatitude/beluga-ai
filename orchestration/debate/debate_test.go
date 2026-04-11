@@ -257,8 +257,25 @@ func TestJudgedProtocol(t *testing.T) {
 		}
 		prompts, err := p.NextRound(ctx, state)
 		require.NoError(t, err)
-		assert.Contains(t, prompts["a2"], "JUDGE")
+		// Judge is excluded from the first pass; only participants get prompts.
+		_, judgeInFirstPass := prompts["a2"]
+		assert.False(t, judgeInFirstPass, "judge should not receive a first-pass prompt")
+		assert.Contains(t, prompts["a1"], "test topic")
 		assert.NotContains(t, prompts["a1"], "JUDGE")
+
+		// Judge prompt is produced by FollowUp with current-round contributions.
+		currentRound := Round{
+			Number: 1,
+			Contributions: []Contribution{
+				{AgentID: "a1", Content: "argument one"},
+				{AgentID: "a3", Content: "argument three"},
+			},
+		}
+		followUp, err := p.FollowUp(ctx, state, currentRound)
+		require.NoError(t, err)
+		assert.Contains(t, followUp["a2"], "JUDGE")
+		assert.Contains(t, followUp["a2"], "argument one")
+		assert.Contains(t, followUp["a2"], "argument three")
 	})
 
 	t.Run("default judge is first agent", func(t *testing.T) {
@@ -270,7 +287,13 @@ func TestJudgedProtocol(t *testing.T) {
 		}
 		prompts, err := p.NextRound(ctx, state)
 		require.NoError(t, err)
-		assert.Contains(t, prompts["a1"], "JUDGE")
+		// a1 is the default judge; it must be absent from the first pass.
+		_, judgeInFirstPass := prompts["a1"]
+		assert.False(t, judgeInFirstPass, "default judge should not receive a first-pass prompt")
+
+		followUp, err := p.FollowUp(ctx, state, Round{Number: 1, Contributions: []Contribution{{AgentID: "a2", Content: "x"}}})
+		require.NoError(t, err)
+		assert.Contains(t, followUp["a1"], "JUDGE")
 	})
 
 	t.Run("too few agents", func(t *testing.T) {

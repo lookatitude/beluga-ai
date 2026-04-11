@@ -287,6 +287,10 @@ func (d *DebateOrchestrator) initState(topic string) DebateState {
 }
 
 // executeRound runs one round of the debate using the configured protocol.
+// If the protocol implements TwoPassProtocol, a second pass is run after
+// the first-pass contributions have been gathered so that, for example, a
+// judge can evaluate the current round's arguments rather than only
+// previous rounds' history.
 func (d *DebateOrchestrator) executeRound(ctx context.Context, state DebateState) (Round, error) {
 	prompts, err := d.opts.protocol.NextRound(ctx, state)
 	if err != nil {
@@ -295,10 +299,33 @@ func (d *DebateOrchestrator) executeRound(ctx context.Context, state DebateState
 
 	round := Round{Number: state.CurrentRound + 1}
 
+	if err := d.dispatchPrompts(ctx, prompts, &round, state.CurrentRound); err != nil {
+		return Round{}, err
+	}
+
+	if twoPass, ok := d.opts.protocol.(TwoPassProtocol); ok {
+		followUp, err := twoPass.FollowUp(ctx, state, round)
+		if err != nil {
+			return Round{}, fmt.Errorf("debate: protocol.FollowUp: %w", err)
+		}
+		if len(followUp) > 0 {
+			if err := d.dispatchPrompts(ctx, followUp, &round, state.CurrentRound); err != nil {
+				return Round{}, err
+			}
+		}
+	}
+
+	return round, nil
+}
+
+// dispatchPrompts sends prompts to agents in the configured order and
+// appends their responses to round.Contributions. Agents that do not
+// appear in the prompts map or the agent map are skipped.
+func (d *DebateOrchestrator) dispatchPrompts(ctx context.Context, prompts map[string]string, round *Round, roundIdx int) error {
 	for _, id := range d.ids {
 		select {
 		case <-ctx.Done():
-			return Round{}, ctx.Err()
+			return ctx.Err()
 		default:
 		}
 
@@ -314,7 +341,7 @@ func (d *DebateOrchestrator) executeRound(ctx context.Context, state DebateState
 
 		result, err := a.Invoke(ctx, prompt)
 		if err != nil {
-			return Round{}, fmt.Errorf("debate: agent %q round %d: %w", id, state.CurrentRound+1, err)
+			return fmt.Errorf("debate: agent %q round %d: %w", id, roundIdx+1, err)
 		}
 
 		round.Contributions = append(round.Contributions, Contribution{
@@ -322,8 +349,7 @@ func (d *DebateOrchestrator) executeRound(ctx context.Context, state DebateState
 			Content: result,
 		})
 	}
-
-	return round, nil
+	return nil
 }
 
 // buildResult constructs the final DebateResult.

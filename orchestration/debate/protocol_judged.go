@@ -7,7 +7,10 @@ import (
 )
 
 // Compile-time check.
-var _ DebateProtocol = (*JudgedProtocol)(nil)
+var (
+	_ DebateProtocol  = (*JudgedProtocol)(nil)
+	_ TwoPassProtocol = (*JudgedProtocol)(nil)
+)
 
 func init() {
 	RegisterProtocol("judged", func(cfg map[string]any) (DebateProtocol, error) {
@@ -29,20 +32,10 @@ func NewJudgedProtocol(judgeID string) *JudgedProtocol {
 	return &JudgedProtocol{JudgeID: judgeID}
 }
 
-// NextRound returns prompts: participants get standard prompts and the
-// judge gets an evaluation prompt derived from the state snapshot provided
-// by the orchestrator.
-//
-// IMPORTANT: NextRound is invoked once per round with a single state
-// snapshot, so the judge prompt only contains history from *previous*
-// rounds — not the current round's participant contributions, which have
-// not been generated yet at prompt-build time. In round 1 the judge's
-// prompt therefore has no contributions to evaluate, and in later rounds
-// the judge always evaluates the previous round's arguments. A proper
-// two-pass implementation (run participants first, then rebuild the judge
-// prompt with fresh responses) requires orchestrator-level changes.
-// Callers who need strict current-round judging should either use a
-// different DebateProtocol or wrap the orchestrator to split rounds.
+// NextRound returns prompts for the participants only. The judge is
+// excluded from the first pass because it must evaluate the current
+// round's contributions, which do not yet exist. The judge receives its
+// prompt from FollowUp after the first pass has completed.
 func (p *JudgedProtocol) NextRound(_ context.Context, state DebateState) (map[string]string, error) {
 	if len(state.AgentIDs) < 2 {
 		return nil, fmt.Errorf("debate/judged: requires at least 2 agents, got %d", len(state.AgentIDs))
@@ -54,12 +47,28 @@ func (p *JudgedProtocol) NextRound(_ context.Context, state DebateState) (map[st
 
 	for _, id := range state.AgentIDs {
 		if id == judgeID {
-			prompts[id] = p.buildJudgePrompt(state, history)
-		} else {
-			prompts[id] = p.buildParticipantPrompt(state, history)
+			continue
 		}
+		prompts[id] = p.buildParticipantPrompt(state, history)
 	}
 
+	return prompts, nil
+}
+
+// FollowUp runs after first-pass participant contributions are collected.
+// It constructs the judge prompt with the current round's arguments so
+// the judge can evaluate them directly rather than relying on prior-round
+// history.
+func (p *JudgedProtocol) FollowUp(_ context.Context, state DebateState, currentRound Round) (map[string]string, error) {
+	if len(state.AgentIDs) < 2 {
+		return nil, fmt.Errorf("debate/judged: requires at least 2 agents, got %d", len(state.AgentIDs))
+	}
+
+	judgeID := p.resolveJudge(state.AgentIDs)
+	history := buildHistory(state)
+	prompts := map[string]string{
+		judgeID: p.buildJudgePromptWithCurrent(state, history, currentRound),
+	}
 	return prompts, nil
 }
 
@@ -84,8 +93,10 @@ func (p *JudgedProtocol) buildParticipantPrompt(state DebateState, history strin
 	return sb.String()
 }
 
-// buildJudgePrompt creates the prompt for the judge agent.
-func (p *JudgedProtocol) buildJudgePrompt(state DebateState, history string) string {
+// buildJudgePromptWithCurrent creates the prompt for the judge agent,
+// including the current round's participant contributions so the judge
+// can evaluate them directly.
+func (p *JudgedProtocol) buildJudgePromptWithCurrent(state DebateState, history string, currentRound Round) string {
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("Topic: %s\n\n", state.Topic))
 	sb.WriteString("You are the JUDGE in this debate.\n\n")
@@ -94,6 +105,13 @@ func (p *JudgedProtocol) buildJudgePrompt(state DebateState, history string) str
 		sb.WriteString(history)
 		sb.WriteString("\n")
 	}
-	sb.WriteString(fmt.Sprintf("Round %d: Evaluate the arguments presented. Identify strengths, weaknesses, and which positions are most compelling.", state.CurrentRound+1))
+	if len(currentRound.Contributions) > 0 {
+		sb.WriteString(fmt.Sprintf("Round %d contributions to evaluate:\n", state.CurrentRound+1))
+		for _, c := range currentRound.Contributions {
+			sb.WriteString(fmt.Sprintf("[%s]: %s\n", c.AgentID, c.Content))
+		}
+		sb.WriteString("\n")
+	}
+	sb.WriteString(fmt.Sprintf("Round %d: Evaluate the arguments above. Identify strengths, weaknesses, and which positions are most compelling.", state.CurrentRound+1))
 	return sb.String()
 }

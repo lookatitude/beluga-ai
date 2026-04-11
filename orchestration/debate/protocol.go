@@ -15,6 +15,25 @@ type DebateProtocol interface {
 	NextRound(ctx context.Context, state DebateState) (map[string]string, error)
 }
 
+// TwoPassProtocol is an optional interface implemented by protocols that
+// require a second evaluation pass after participant contributions are
+// collected for the current round. Protocols that do not need to see the
+// current round's contributions should implement only DebateProtocol.
+//
+// The orchestrator runs NextRound first, collects all responses into the
+// partial Round, then calls FollowUp with the in-progress round. Returned
+// prompts are dispatched to the listed agents and their responses are
+// appended to the same Round's Contributions slice.
+type TwoPassProtocol interface {
+	DebateProtocol
+	// FollowUp is called after the first-pass responses for the current
+	// round have been collected. The implementation may inspect
+	// currentRound.Contributions to build prompts for a second pass
+	// (for example, a judge that evaluates the current round's arguments).
+	// Returning an empty map signals no follow-up prompts for this round.
+	FollowUp(ctx context.Context, state DebateState, currentRound Round) (map[string]string, error)
+}
+
 // ProtocolFactory creates a DebateProtocol from a configuration map.
 type ProtocolFactory func(cfg map[string]any) (DebateProtocol, error)
 
