@@ -6,6 +6,9 @@ import (
 	"github.com/lookatitude/beluga-ai/o11y"
 )
 
+// attrWorkflowID is the span attribute key for the workflow instance ID.
+const attrWorkflowID = "workflow.id"
+
 // WithTracing returns a Middleware that wraps a DurableExecutor with OTel
 // spans following the GenAI semantic conventions. Each operation produces a
 // span named "workflow.<op>" carrying a gen_ai.operation.name attribute.
@@ -29,7 +32,7 @@ type tracedExecutor struct {
 func (e *tracedExecutor) Execute(ctx context.Context, fn WorkflowFunc, opts WorkflowOptions) (WorkflowHandle, error) {
 	ctx, span := o11y.StartSpan(ctx, "workflow.execute", o11y.Attrs{
 		o11y.AttrOperationName: "workflow.execute",
-		"workflow.id":          opts.ID,
+		attrWorkflowID:         opts.ID,
 	})
 	defer span.End()
 
@@ -46,7 +49,7 @@ func (e *tracedExecutor) Execute(ctx context.Context, fn WorkflowFunc, opts Work
 func (e *tracedExecutor) Signal(ctx context.Context, workflowID string, signal Signal) error {
 	ctx, span := o11y.StartSpan(ctx, "workflow.signal", o11y.Attrs{
 		o11y.AttrOperationName: "workflow.signal",
-		"workflow.id":          workflowID,
+		attrWorkflowID:         workflowID,
 		"workflow.signal.name": signal.Name,
 	})
 	defer span.End()
@@ -63,7 +66,7 @@ func (e *tracedExecutor) Signal(ctx context.Context, workflowID string, signal S
 func (e *tracedExecutor) Query(ctx context.Context, workflowID string, queryType string) (any, error) {
 	ctx, span := o11y.StartSpan(ctx, "workflow.query", o11y.Attrs{
 		o11y.AttrOperationName: "workflow.query",
-		"workflow.id":          workflowID,
+		attrWorkflowID:         workflowID,
 		"workflow.query.type":  queryType,
 	})
 	defer span.End()
@@ -81,7 +84,7 @@ func (e *tracedExecutor) Query(ctx context.Context, workflowID string, queryType
 func (e *tracedExecutor) Cancel(ctx context.Context, workflowID string) error {
 	ctx, span := o11y.StartSpan(ctx, "workflow.cancel", o11y.Attrs{
 		o11y.AttrOperationName: "workflow.cancel",
-		"workflow.id":          workflowID,
+		attrWorkflowID:         workflowID,
 	})
 	defer span.End()
 

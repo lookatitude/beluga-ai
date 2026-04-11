@@ -97,29 +97,30 @@ func TestWithTracing_EmitsSpansForEveryOperation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			exporter.Reset()
 			if err := tc.run(); err != nil {
-				t.Fatalf("%s: unexpected error: %v", tc.name, err)
+				t.Fatalf("unexpected error: %v", err)
 			}
-
-			spans := exporter.GetSpans()
-			if len(spans) != 1 {
-				t.Fatalf("%s: expected 1 span, got %d", tc.name, len(spans))
-			}
-			if spans[0].Name != tc.spanOp {
-				t.Errorf("%s: expected span name %q, got %q", tc.name, tc.spanOp, spans[0].Name)
-			}
-
-			var opAttrFound bool
-			for _, attr := range spans[0].Attributes {
-				if string(attr.Key) == o11y.AttrOperationName && attr.Value.AsString() == tc.spanOp {
-					opAttrFound = true
-					break
-				}
-			}
-			if !opAttrFound {
-				t.Errorf("%s: expected %s=%q attribute on span", tc.name, o11y.AttrOperationName, tc.spanOp)
-			}
+			assertSingleTracingSpan(t, exporter, tc.spanOp)
 		})
 	}
+}
+
+// assertSingleTracingSpan asserts exactly one span was recorded with the
+// expected name and operation attribute.
+func assertSingleTracingSpan(t *testing.T, exporter *tracetest.InMemoryExporter, spanOp string) {
+	t.Helper()
+	spans := exporter.GetSpans()
+	if len(spans) != 1 {
+		t.Fatalf("expected 1 span, got %d", len(spans))
+	}
+	if spans[0].Name != spanOp {
+		t.Errorf("expected span name %q, got %q", spanOp, spans[0].Name)
+	}
+	for _, attr := range spans[0].Attributes {
+		if string(attr.Key) == o11y.AttrOperationName && attr.Value.AsString() == spanOp {
+			return
+		}
+	}
+	t.Errorf("expected %s=%q attribute on span", o11y.AttrOperationName, spanOp)
 }
 
 func TestWithTracing_RecordsErrorOnFailure(t *testing.T) {

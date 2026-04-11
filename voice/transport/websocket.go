@@ -18,6 +18,10 @@ import (
 // Compile-time interface check.
 var _ AudioTransport = (*WebSocketTransport)(nil)
 
+// errWSClosedMsg is the shared error message for operations on a closed
+// WebSocket transport; extracted to avoid duplicated literals.
+const errWSClosedMsg = "transport: websocket transport is closed"
+
 // WSOption configures a WebSocketTransport.
 type WSOption func(*wsConfig)
 
@@ -234,7 +238,7 @@ func (t *WebSocketTransport) Recv(ctx context.Context) iter.Seq2[voice.Frame, er
 	return func(yield func(voice.Frame, error) bool) {
 		select {
 		case <-t.done:
-			yield(voice.Frame{}, core.Errorf(core.ErrProviderDown, "transport: websocket transport is closed"))
+			yield(voice.Frame{}, core.Errorf(core.ErrProviderDown, errWSClosedMsg))
 			return
 		default:
 		}
@@ -260,7 +264,7 @@ func (t *WebSocketTransport) Recv(ctx context.Context) iter.Seq2[voice.Frame, er
 func (t *WebSocketTransport) Send(ctx context.Context, frame voice.Frame) error {
 	select {
 	case <-t.done:
-		return core.Errorf(core.ErrProviderDown, "transport: websocket transport is closed")
+		return core.Errorf(core.ErrProviderDown, errWSClosedMsg)
 	default:
 	}
 
@@ -302,7 +306,7 @@ type wsAudioWriter struct {
 func (w *wsAudioWriter) Write(p []byte) (int, error) {
 	select {
 	case <-w.t.done:
-		return 0, core.Errorf(core.ErrProviderDown, "transport: websocket transport is closed")
+		return 0, core.Errorf(core.ErrProviderDown, errWSClosedMsg)
 	default:
 	}
 

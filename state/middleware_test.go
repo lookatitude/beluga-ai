@@ -40,7 +40,10 @@ func (m *mockStore) Delete(ctx context.Context, key string) error {
 }
 
 func (m *mockStore) Watch(ctx context.Context, key string) iter.Seq2[StateChange, error] {
-	return func(yield func(StateChange, error) bool) {}
+	return func(yield func(StateChange, error) bool) {
+		// Intentionally empty: mock Watch yields no changes; middleware tests
+		// exercise Get/Set/Delete/Close, not Watch.
+	}
 }
 
 func (m *mockStore) Close() error { return nil }

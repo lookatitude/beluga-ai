@@ -38,7 +38,10 @@ func startRecv(seq iter.Seq2[s2s.SessionEvent, error]) (<-chan recvResult, func(
 			out <- recvResult{event: event, err: err, ok: true}
 		}
 	}()
-	return out, func() {}
+	return out, func() {
+		// Intentionally empty: stop is a no-op retained for API symmetry;
+		// the iterator's ctx (passed to session.Recv) is the real cancellation mechanism.
+	}
 }
 
 func TestNew(t *testing.T) {

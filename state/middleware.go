@@ -92,19 +92,28 @@ func (s *hookedStore) Delete(ctx context.Context, key string) error {
 func (s *hookedStore) Watch(ctx context.Context, key string) iter.Seq2[StateChange, error] {
 	if s.hooks.OnWatch != nil {
 		if err := s.hooks.OnWatch(ctx, key); err != nil {
-			return func(yield func(StateChange, error) bool) {
-				yield(StateChange{}, err)
-			}
+			return errorSeq(err)
 		}
 	}
 
 	inner := s.next.Watch(ctx, key)
-
-	// If OnError is configured, intercept errors yielded by the inner stream.
 	if s.hooks.OnError == nil {
 		return inner
 	}
+	return s.wrapWatchErrors(ctx, inner)
+}
 
+// errorSeq returns a sequence that yields a single error and stops.
+func errorSeq(err error) iter.Seq2[StateChange, error] {
+	return func(yield func(StateChange, error) bool) {
+		yield(StateChange{}, err)
+	}
+}
+
+// wrapWatchErrors intercepts errors yielded by inner and runs them through
+// OnError before forwarding them. An OnError that returns nil suppresses
+// the change.
+func (s *hookedStore) wrapWatchErrors(ctx context.Context, inner iter.Seq2[StateChange, error]) iter.Seq2[StateChange, error] {
 	return func(yield func(StateChange, error) bool) {
 		for change, err := range inner {
 			if err != nil {

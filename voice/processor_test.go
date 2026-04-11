@@ -166,3 +166,55 @@ func TestChainThreeProcessors(t *testing.T) {
 		t.Errorf("frames = %v, want one 'xABC' frame", frames)
 	}
 }
+
+// framesWithError yields the given frames and then terminates with err.
+func framesWithError(err error, frames ...Frame) iter.Seq2[Frame, error] {
+	return func(yield func(Frame, error) bool) {
+		for _, f := range frames {
+			if !yield(f, nil) {
+				return
+			}
+		}
+		yield(Frame{}, err)
+	}
+}
+
+func TestFrameLoop_PropagatesInputError(t *testing.T) {
+	wantErr := errors.New("upstream boom")
+	loop := FrameLoop(func(_ context.Context, f Frame) ([]Frame, error) {
+		return []Frame{f}, nil
+	})
+	out := loop.Process(context.Background(), framesWithError(wantErr, NewTextFrame("a")))
+	frames, err := collectFrames(out)
+	if !errors.Is(err, wantErr) {
+		t.Errorf("err = %v, want %v", err, wantErr)
+	}
+	if len(frames) != 1 {
+		t.Errorf("got %d frames before error, want 1", len(frames))
+	}
+}
+
+func TestFrameLoop_PropagatesHandlerError(t *testing.T) {
+	wantErr := errors.New("handler boom")
+	loop := FrameLoop(func(_ context.Context, _ Frame) ([]Frame, error) {
+		return nil, wantErr
+	})
+	out := loop.Process(context.Background(), framesFromSlice(NewTextFrame("a")))
+	_, err := collectFrames(out)
+	if !errors.Is(err, wantErr) {
+		t.Errorf("err = %v, want %v", err, wantErr)
+	}
+}
+
+func TestFrameLoop_RespectsCtxCancel(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	loop := FrameLoop(func(_ context.Context, f Frame) ([]Frame, error) {
+		return []Frame{f}, nil
+	})
+	out := loop.Process(ctx, framesFromSlice(NewTextFrame("a")))
+	_, err := collectFrames(out)
+	if err == nil {
+		t.Error("expected ctx.Err() to be yielded, got nil")
+	}
+}

@@ -57,27 +57,44 @@ func FrameLoop(handler FrameHandler) FrameProcessor {
 	return FrameProcessorFunc(func(ctx context.Context, in iter.Seq2[Frame, error]) iter.Seq2[Frame, error] {
 		return func(yield func(Frame, error) bool) {
 			for frame, err := range in {
-				if err != nil {
-					yield(Frame{}, err)
+				if !handleOneFrame(ctx, handler, frame, err, yield) {
 					return
-				}
-				if ctx.Err() != nil {
-					yield(Frame{}, ctx.Err())
-					return
-				}
-				outFrames, herr := handler(ctx, frame)
-				if herr != nil {
-					yield(Frame{}, herr)
-					return
-				}
-				for _, f := range outFrames {
-					if !yield(f, nil) {
-						return
-					}
 				}
 			}
 		}
 	})
+}
+
+// handleOneFrame processes a single input frame and returns true if the loop
+// should continue, false if it should terminate. It encapsulates error
+// propagation, context checking, handler invocation, and output yielding so
+// that FrameLoop itself remains trivially simple.
+func handleOneFrame(
+	ctx context.Context,
+	handler FrameHandler,
+	frame Frame,
+	inErr error,
+	yield func(Frame, error) bool,
+) bool {
+	if inErr != nil {
+		yield(Frame{}, inErr)
+		return false
+	}
+	if ctx.Err() != nil {
+		yield(Frame{}, ctx.Err())
+		return false
+	}
+	outFrames, herr := handler(ctx, frame)
+	if herr != nil {
+		yield(Frame{}, herr)
+		return false
+	}
+	for _, f := range outFrames {
+		if !yield(f, nil) {
+			return false
+		}
+	}
+	return true
 }
 
 // Chain connects multiple FrameProcessors in series. Frames flow from the

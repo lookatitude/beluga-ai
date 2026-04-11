@@ -254,158 +254,206 @@ func forwardInputFrame(ctx context.Context, session Session, frame voice.Frame) 
 func AsFrameProcessor(engine S2S, opts ...Option) voice.FrameProcessor {
 	return voice.FrameProcessorFunc(func(ctx context.Context, in iter.Seq2[voice.Frame, error]) iter.Seq2[voice.Frame, error] {
 		return func(yield func(voice.Frame, error) bool) {
-			session, err := engine.Start(ctx, opts...)
-			if err != nil {
-				yield(voice.Frame{}, core.Errorf(core.ErrProviderDown, "s2s: start session: %w", err))
-				return
-			}
-			defer func() { _ = session.Close() }()
-
-			pumpCtx, cancelPump := context.WithCancel(ctx)
-			// Ensure cancel is always invoked on function exit. The deferred
-			// cleanup block below also calls cancelPump explicitly before
-			// waiting on the goroutines; CancelFunc is idempotent so the
-			// extra call is safe and keeps gosec happy.
-			defer cancelPump()
-			var wg sync.WaitGroup
-
-			// Session output stream → outFrames / outErr. Exactly one writer
-			// (the output pump goroutine); close signalled via closing
-			// outFrames and a separate outDone channel for errors.
-			type frameResult struct {
-				frame voice.Frame
-				err   error
-			}
-			outResults := make(chan frameResult, 16)
-
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				defer close(outResults)
-				for event, rerr := range session.Recv(pumpCtx) {
-					if rerr != nil {
-						select {
-						case outResults <- frameResult{err: rerr}:
-						case <-pumpCtx.Done():
-						}
-						return
-					}
-					if event.Type == EventError {
-						if event.Error != nil {
-							select {
-							case outResults <- frameResult{err: event.Error}:
-							case <-pumpCtx.Done():
-							}
-							return
-						}
-						continue
-					}
-					frame, ok := sessionEventToFrame(event)
-					if !ok {
-						continue
-					}
-					select {
-					case outResults <- frameResult{frame: frame}:
-					case <-pumpCtx.Done():
-						return
-					}
-				}
-			}()
-
-			// Input pump: input iterator → session. Input-forwarding errors
-			// flow on inputErr (single writer). inputDone closes when the
-			// input iterator is exhausted or the pump aborted.
-			inputErr := make(chan error, 1)
-			inputDone := make(chan struct{})
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				defer close(inputDone)
-				next, stop := iter.Pull2(in)
-				defer stop()
-				for {
-					// Respect pumpCtx cancellation between iterator pulls.
-					if pumpCtx.Err() != nil {
-						return
-					}
-					frame, ierr, ok := next()
-					if !ok {
-						return
-					}
-					if ierr != nil {
-						select {
-						case inputErr <- ierr:
-						default:
-						}
-						return
-					}
-					if fwdErr := forwardInputFrame(pumpCtx, session, frame); fwdErr != nil {
-						select {
-						case inputErr <- fwdErr:
-						default:
-						}
-						return
-					}
-				}
-			}()
-
-			// Cleanup: cancel pumps and wait for both goroutines to exit.
-			// A draining goroutine ensures the output pump can always send
-			// its final value even after the consumer has bailed.
-			defer func() {
-				cancelPump()
-				go func() {
-					for range outResults {
-					}
-				}()
-				wg.Wait()
-			}()
-
-			outputClosed := false
-			inputClosed := false
-			for {
-				if outputClosed && inputClosed {
-					return
-				}
-				select {
-				case <-ctx.Done():
-					yield(voice.Frame{}, ctx.Err())
-					return
-				case res, open := <-outResults:
-					if !open {
-						outputClosed = true
-						// Nil out the channel so this branch never fires again.
-						outResults = nil
-						continue
-					}
-					if res.err != nil {
-						yield(voice.Frame{}, res.err)
-						return
-					}
-					if !yield(res.frame, nil) {
-						return
-					}
-				case ierr := <-inputErr:
-					if ierr != nil {
-						yield(voice.Frame{}, ierr)
-						return
-					}
-				case <-inputDone:
-					inputClosed = true
-					// Drain any buffered input error delivered just before close.
-					select {
-					case ierr := <-inputErr:
-						if ierr != nil {
-							yield(voice.Frame{}, ierr)
-							return
-						}
-					default:
-					}
-					// Nil out these branches so they don't fire again.
-					inputDone = nil
-					inputErr = nil
-				}
-			}
+			runAsFrameProcessor(ctx, engine, opts, in, yield)
 		}
 	})
+}
+
+// frameResult carries a frame or terminal error from the output pump goroutine.
+type frameResult struct {
+	frame voice.Frame
+	err   error
+}
+
+// runAsFrameProcessor is the body of AsFrameProcessor's returned iterator. It
+// starts the session, spawns input/output pump goroutines, and runs the
+// consumer select-loop that yields frames to the caller.
+func runAsFrameProcessor(
+	ctx context.Context,
+	engine S2S,
+	opts []Option,
+	in iter.Seq2[voice.Frame, error],
+	yield func(voice.Frame, error) bool,
+) {
+	session, err := engine.Start(ctx, opts...)
+	if err != nil {
+		yield(voice.Frame{}, core.Errorf(core.ErrProviderDown, "s2s: start session: %w", err))
+		return
+	}
+	defer func() { _ = session.Close() }()
+
+	pumpCtx, cancelPump := context.WithCancel(ctx)
+	// CancelFunc is idempotent so the extra call below is safe; this defer
+	// guarantees cancel on every exit path and keeps gosec happy.
+	defer cancelPump()
+	var wg sync.WaitGroup
+
+	outResults := make(chan frameResult, 16)
+	wg.Add(1)
+	go runOutputPump(pumpCtx, &wg, session, outResults)
+
+	inputErr := make(chan error, 1)
+	inputDone := make(chan struct{})
+	wg.Add(1)
+	go runInputPump(pumpCtx, &wg, session, in, inputErr, inputDone)
+
+	// Cleanup: cancel pumps and wait for both goroutines to exit.
+	// A draining goroutine ensures the output pump can always send its
+	// final value even after the consumer has bailed.
+	defer func() {
+		cancelPump()
+		go func() {
+			for range outResults {
+				// Drain: the consumer exited before the output pump finished.
+				// We must keep reading so the pump can complete its final send
+				// without blocking, allowing the pump's deferred close to fire.
+			}
+		}()
+		wg.Wait()
+	}()
+
+	consumeLoop(ctx, yield, outResults, inputErr, inputDone)
+}
+
+// runOutputPump forwards session.Recv events to outResults until the session
+// ends, errors, or pumpCtx is cancelled. It is the sole writer to outResults
+// and closes it on exit.
+func runOutputPump(
+	pumpCtx context.Context,
+	wg *sync.WaitGroup,
+	session Session,
+	outResults chan<- frameResult,
+) {
+	defer wg.Done()
+	defer close(outResults)
+	for event, rerr := range session.Recv(pumpCtx) {
+		if rerr != nil {
+			sendResult(pumpCtx, outResults, frameResult{err: rerr})
+			return
+		}
+		if event.Type == EventError {
+			if event.Error != nil {
+				sendResult(pumpCtx, outResults, frameResult{err: event.Error})
+				return
+			}
+			continue
+		}
+		frame, ok := sessionEventToFrame(event)
+		if !ok {
+			continue
+		}
+		if !sendResult(pumpCtx, outResults, frameResult{frame: frame}) {
+			return
+		}
+	}
+}
+
+// sendResult sends a frameResult on outResults, aborting if pumpCtx is
+// cancelled. Returns true if the send succeeded.
+func sendResult(pumpCtx context.Context, outResults chan<- frameResult, res frameResult) bool {
+	select {
+	case outResults <- res:
+		return true
+	case <-pumpCtx.Done():
+		return false
+	}
+}
+
+// runInputPump forwards frames from the input iterator to the session,
+// aborting on context cancellation, iterator exhaustion, or forward errors.
+// It is the sole writer to inputErr and closes inputDone on exit.
+func runInputPump(
+	pumpCtx context.Context,
+	wg *sync.WaitGroup,
+	session Session,
+	in iter.Seq2[voice.Frame, error],
+	inputErr chan<- error,
+	inputDone chan<- struct{},
+) {
+	defer wg.Done()
+	defer close(inputDone)
+	next, stop := iter.Pull2(in)
+	defer stop()
+	for {
+		if pumpCtx.Err() != nil {
+			return
+		}
+		frame, ierr, ok := next()
+		if !ok {
+			return
+		}
+		if ierr != nil {
+			trySendErr(inputErr, ierr)
+			return
+		}
+		if fwdErr := forwardInputFrame(pumpCtx, session, frame); fwdErr != nil {
+			trySendErr(inputErr, fwdErr)
+			return
+		}
+	}
+}
+
+// trySendErr performs a non-blocking send on inputErr. The channel is buffered
+// with capacity 1 and the pump exits immediately after, so we drop duplicates.
+func trySendErr(inputErr chan<- error, err error) {
+	select {
+	case inputErr <- err:
+	default:
+	}
+}
+
+// consumeLoop runs the consumer select-loop that yields frames to the caller
+// until both pumps have closed or the caller's context is cancelled.
+func consumeLoop(
+	ctx context.Context,
+	yield func(voice.Frame, error) bool,
+	outResults <-chan frameResult,
+	inputErr <-chan error,
+	inputDone <-chan struct{},
+) {
+	outputClosed := false
+	inputClosed := false
+	for {
+		if outputClosed && inputClosed {
+			return
+		}
+		select {
+		case <-ctx.Done():
+			yield(voice.Frame{}, ctx.Err())
+			return
+		case res, open := <-outResults:
+			if !open {
+				outputClosed = true
+				// Nil out the channel so this branch never fires again.
+				outResults = nil
+				continue
+			}
+			if res.err != nil {
+				yield(voice.Frame{}, res.err)
+				return
+			}
+			if !yield(res.frame, nil) {
+				return
+			}
+		case ierr := <-inputErr:
+			if ierr != nil {
+				yield(voice.Frame{}, ierr)
+				return
+			}
+		case <-inputDone:
+			inputClosed = true
+			// Drain any buffered input error delivered just before close.
+			select {
+			case ierr := <-inputErr:
+				if ierr != nil {
+					yield(voice.Frame{}, ierr)
+					return
+				}
+			default:
+			}
+			// Nil out these branches so they don't fire again.
+			inputDone = nil
+			inputErr = nil
+		}
+	}
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/o11y"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
@@ -48,43 +49,43 @@ func TestWithTracing_EmitsSpanForAuthorize(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			exporter := setupTracing(t)
-
-			base := &tracingTestPolicy{name: "test", allowed: tc.allowed}
-			pol := ApplyMiddleware(Policy(base), WithTracing())
-
-			allowed, err := pol.Authorize(context.Background(), "alice", PermToolExec, "calc")
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if allowed != tc.allowed {
-				t.Fatalf("expected allowed=%v, got %v", tc.allowed, allowed)
-			}
-
-			spans := exporter.GetSpans()
-			if len(spans) != 1 {
-				t.Fatalf("expected 1 span, got %d", len(spans))
-			}
-			if spans[0].Name != "auth.authorize" {
-				t.Errorf("expected span name %q, got %q", "auth.authorize", spans[0].Name)
-			}
-
-			var opAttrFound, decisionFound bool
-			for _, attr := range spans[0].Attributes {
-				if string(attr.Key) == o11y.AttrOperationName && attr.Value.AsString() == "auth.authorize" {
-					opAttrFound = true
-				}
-				if string(attr.Key) == "auth.decision" && attr.Value.AsString() == tc.decision {
-					decisionFound = true
-				}
-			}
-			if !opAttrFound {
-				t.Errorf("expected %s=%q attribute on span", o11y.AttrOperationName, "auth.authorize")
-			}
-			if !decisionFound {
-				t.Errorf("expected auth.decision=%q attribute on span", tc.decision)
-			}
+			runAuthorizeAndAssert(t, exporter, tc.allowed, tc.decision)
 		})
 	}
+}
+
+func runAuthorizeAndAssert(t *testing.T, exporter *tracetest.InMemoryExporter, allowedIn bool, decision string) {
+	t.Helper()
+	base := &tracingTestPolicy{name: "test", allowed: allowedIn}
+	pol := ApplyMiddleware(Policy(base), WithTracing())
+
+	allowed, err := pol.Authorize(context.Background(), "alice", PermToolExec, "calc")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if allowed != allowedIn {
+		t.Fatalf("expected allowed=%v, got %v", allowedIn, allowed)
+	}
+
+	spans := exporter.GetSpans()
+	if len(spans) != 1 {
+		t.Fatalf("expected 1 span, got %d", len(spans))
+	}
+	if spans[0].Name != "auth.authorize" {
+		t.Errorf("expected span name %q, got %q", "auth.authorize", spans[0].Name)
+	}
+	assertSpanAttr(t, spans[0].Attributes, o11y.AttrOperationName, "auth.authorize")
+	assertSpanAttr(t, spans[0].Attributes, "auth.decision", decision)
+}
+
+func assertSpanAttr(t *testing.T, attrs []attribute.KeyValue, key, want string) {
+	t.Helper()
+	for _, attr := range attrs {
+		if string(attr.Key) == key && attr.Value.AsString() == want {
+			return
+		}
+	}
+	t.Errorf("expected %s=%q attribute on span", key, want)
 }
 
 func TestWithTracing_RecordsErrorOnFailure(t *testing.T) {

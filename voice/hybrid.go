@@ -207,7 +207,10 @@ func (h *HybridPipeline) runS2S(ctx context.Context) error {
 	// own transport. Supply an empty input stream since S2S handles its own
 	// audio I/O, and drain (and ignore) any frames the processor chooses to
 	// emit. Any error yielded through the output iterator is returned.
-	empty := iter.Seq2[Frame, error](func(_ func(Frame, error) bool) {})
+	empty := iter.Seq2[Frame, error](func(_ func(Frame, error) bool) {
+		// Intentionally empty: S2S processors manage their own transport and
+		// never consume input frames, so this iterator yields nothing.
+	})
 	for _, err := range h.config.S2S.Process(ctx, empty) {
 		if err != nil {
 			return err

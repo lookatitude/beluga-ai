@@ -34,7 +34,10 @@ func (m *mockAudioTransport) Recv(ctx context.Context) iter.Seq2[voice.Frame, er
 	if m.recvFunc != nil {
 		return m.recvFunc(ctx)
 	}
-	return func(yield func(voice.Frame, error) bool) {}
+	return func(yield func(voice.Frame, error) bool) {
+		// Intentionally empty: default mock produces no frames.
+		// Tests that need frames override recvFunc.
+	}
 }
 
 // drainFrames collects all frames from an iter.Seq2, stopping at the first error.

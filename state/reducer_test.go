@@ -46,7 +46,9 @@ func (m *mockVersionedStore) Delete(ctx context.Context, key string) error {
 }
 
 func (m *mockVersionedStore) Watch(_ context.Context, _ string) iter.Seq2[StateChange, error] {
-	return func(yield func(StateChange, error) bool) {}
+	return func(yield func(StateChange, error) bool) {
+		// Intentionally empty: reducer tests do not exercise the Watch path.
+	}
 }
 
 func (m *mockVersionedStore) Close() error { return nil }

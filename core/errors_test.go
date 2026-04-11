@@ -232,49 +232,49 @@ func TestIsRetryable(t *testing.T) {
 	}
 }
 
-func TestErrorf(t *testing.T) {
-	t.Run("plain message no wrap", func(t *testing.T) {
-		e := Errorf(ErrInvalidInput, "llm: model %q is required", "openai")
-		if e.Code != ErrInvalidInput {
-			t.Errorf("Code = %q, want %q", e.Code, ErrInvalidInput)
-		}
-		if e.Message != `llm: model "openai" is required` {
-			t.Errorf("Message = %q", e.Message)
-		}
-		if e.Err != nil {
-			t.Errorf("Err = %v, want nil", e.Err)
-		}
-	})
+func checkErrf(t *testing.T, e *Error, wantCode ErrorCode, wantMsg string) {
+	t.Helper()
+	if e.Code != wantCode {
+		t.Errorf("Code = %q, want %q", e.Code, wantCode)
+	}
+	if wantMsg != "" && e.Message != wantMsg {
+		t.Errorf("Message = %q, want %q", e.Message, wantMsg)
+	}
+}
 
-	t.Run("wraps cause via %w", func(t *testing.T) {
-		cause := fmt.Errorf("network unreachable")
-		e := Errorf(ErrProviderDown, "llm: generate failed: %w", cause)
-		if e.Code != ErrProviderDown {
-			t.Errorf("Code = %q", e.Code)
-		}
-		if !errors.Is(e, cause) {
-			t.Errorf("errors.Is should find wrapped cause")
-		}
-		// IsRetryable should still work on the typed error.
-		if !IsRetryable(e) {
-			t.Errorf("IsRetryable should be true for ErrProviderDown")
-		}
-	})
+func TestErrorf_PlainMessageNoWrap(t *testing.T) {
+	e := Errorf(ErrInvalidInput, "llm: model %q is required", "openai")
+	checkErrf(t, e, ErrInvalidInput, `llm: model "openai" is required`)
+	if e.Err != nil {
+		t.Errorf("Err = %v, want nil", e.Err)
+	}
+}
 
-	t.Run("retryability preserved through wrap", func(t *testing.T) {
-		cause := fmt.Errorf("dial tcp: connect timeout")
-		e := Errorf(ErrTimeout, "llm: %w", cause)
-		if !IsRetryable(e) {
-			t.Error("ErrTimeout should be retryable")
-		}
-	})
+func TestErrorf_WrapsCauseViaW(t *testing.T) {
+	cause := fmt.Errorf("network unreachable")
+	e := Errorf(ErrProviderDown, "llm: generate failed: %w", cause)
+	checkErrf(t, e, ErrProviderDown, "")
+	if !errors.Is(e, cause) {
+		t.Errorf("errors.Is should find wrapped cause")
+	}
+	if !IsRetryable(e) {
+		t.Errorf("IsRetryable should be true for ErrProviderDown")
+	}
+}
 
-	t.Run("non-retryable code stays non-retryable", func(t *testing.T) {
-		e := Errorf(ErrAuth, "llm: invalid api key")
-		if IsRetryable(e) {
-			t.Error("ErrAuth should NOT be retryable")
-		}
-	})
+func TestErrorf_RetryabilityPreserved(t *testing.T) {
+	cause := fmt.Errorf("dial tcp: connect timeout")
+	e := Errorf(ErrTimeout, "llm: %w", cause)
+	if !IsRetryable(e) {
+		t.Error("ErrTimeout should be retryable")
+	}
+}
+
+func TestErrorf_NonRetryableStaysNonRetryable(t *testing.T) {
+	e := Errorf(ErrAuth, "llm: invalid api key")
+	if IsRetryable(e) {
+		t.Error("ErrAuth should NOT be retryable")
+	}
 }
 
 func TestErrorCodes_Values(t *testing.T) {
