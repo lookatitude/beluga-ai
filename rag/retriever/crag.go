@@ -19,14 +19,15 @@ type WebSearcher interface {
 
 // CRAGRetriever implements Corrective RAG. After retrieving documents, it
 // evaluates their relevance to the query using an LLM. If documents score
-// below the threshold, it falls back to a web search for more relevant
-// content.
+// below the threshold, it optionally rewrites the query and retries before
+// falling back to a web search for more relevant content.
 type CRAGRetriever struct {
-	inner      Retriever
-	llm        llm.ChatModel
-	web        WebSearcher
-	threshold  float64
-	hooks      Hooks
+	inner       Retriever
+	llm         llm.ChatModel
+	web         WebSearcher
+	threshold   float64
+	maxAttempts int
+	hooks       Hooks
 }
 
 // CRAGOption configures a CRAGRetriever.
@@ -37,6 +38,19 @@ type CRAGOption func(*CRAGRetriever)
 func WithCRAGThreshold(t float64) CRAGOption {
 	return func(r *CRAGRetriever) {
 		r.threshold = t
+	}
+}
+
+// WithCRAGMaxAttempts sets the maximum number of retrieval attempts with
+// query rewriting before falling back to web search. When set to a value
+// greater than 1, the retriever rewrites the query using the LLM on
+// relevance failure and retries with the inner retriever. Defaults to 1
+// (no retries).
+func WithCRAGMaxAttempts(n int) CRAGOption {
+	return func(r *CRAGRetriever) {
+		if n > 0 {
+			r.maxAttempts = n
+		}
 	}
 }
 
@@ -52,10 +66,11 @@ func WithCRAGHooks(h Hooks) CRAGOption {
 // web search if relevance is low. If web is nil, no fallback is performed.
 func NewCRAGRetriever(inner Retriever, model llm.ChatModel, web WebSearcher, opts ...CRAGOption) *CRAGRetriever {
 	r := &CRAGRetriever{
-		inner:     inner,
-		llm:       model,
-		web:       web,
-		threshold: 0,
+		inner:       inner,
+		llm:         model,
+		web:         web,
+		threshold:   0,
+		maxAttempts: 1,
 	}
 	for _, o := range opts {
 		o(r)
@@ -63,8 +78,8 @@ func NewCRAGRetriever(inner Retriever, model llm.ChatModel, web WebSearcher, opt
 	return r
 }
 
-// Retrieve fetches documents, evaluates relevance, and optionally falls back
-// to web search.
+// Retrieve fetches documents, evaluates relevance, optionally rewrites the
+// query and retries, and falls back to web search if relevance remains low.
 func (r *CRAGRetriever) Retrieve(ctx context.Context, query string, opts ...Option) ([]schema.Document, error) {
 	cfg := ApplyOptions(opts...)
 
@@ -74,34 +89,66 @@ func (r *CRAGRetriever) Retrieve(ctx context.Context, query string, opts ...Opti
 		}
 	}
 
-	docs, err := r.inner.Retrieve(ctx, query, opts...)
-	if err != nil {
-		return nil, fmt.Errorf("retriever: crag inner retrieve: %w", err)
-	}
-
-	if len(docs) == 0 {
-		return r.fallbackSearch(ctx, query, cfg)
-	}
-
-	// Evaluate relevance of retrieved documents.
-	relevant, err := r.evaluateRelevance(ctx, query, docs)
-	if err != nil {
-		return nil, fmt.Errorf("retriever: crag evaluate: %w", err)
-	}
-
-	// If enough relevant documents, return them.
-	if len(relevant) > 0 {
-		if cfg.TopK > 0 && len(relevant) > cfg.TopK {
-			relevant = relevant[:cfg.TopK]
+	currentQuery := query
+	for attempt := 0; attempt < r.maxAttempts; attempt++ {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
 		}
-		if r.hooks.AfterRetrieve != nil {
-			r.hooks.AfterRetrieve(ctx, relevant, nil)
+
+		docs, err := r.inner.Retrieve(ctx, currentQuery, opts...)
+		if err != nil {
+			return nil, fmt.Errorf("retriever: crag inner retrieve: %w", err)
 		}
-		return relevant, nil
+
+		if len(docs) == 0 {
+			// No docs — try rewriting before web fallback.
+			if attempt < r.maxAttempts-1 {
+				rewritten, err := r.rewriteQuery(ctx, query, currentQuery)
+				if err != nil {
+					return nil, fmt.Errorf("retriever: crag rewrite: %w", err)
+				}
+				currentQuery = rewritten
+				continue
+			}
+			return r.fallbackSearch(ctx, currentQuery, cfg)
+		}
+
+		// Evaluate relevance of retrieved documents.
+		relevant, err := r.evaluateRelevance(ctx, currentQuery, docs)
+		if err != nil {
+			return nil, fmt.Errorf("retriever: crag evaluate: %w", err)
+		}
+
+		// If enough relevant documents, return them.
+		if len(relevant) > 0 {
+			if cfg.TopK > 0 && len(relevant) > cfg.TopK {
+				relevant = relevant[:cfg.TopK]
+			}
+			if r.hooks.AfterRetrieve != nil {
+				r.hooks.AfterRetrieve(ctx, relevant, nil)
+			}
+			return relevant, nil
+		}
+
+		// Relevance too low — rewrite and retry if attempts remain.
+		if attempt < r.maxAttempts-1 {
+			rewritten, err := r.rewriteQuery(ctx, query, currentQuery)
+			if err != nil {
+				return nil, fmt.Errorf("retriever: crag rewrite: %w", err)
+			}
+			currentQuery = rewritten
+			continue
+		}
+
+		// Final attempt — fall back to web search.
+		return r.fallbackSearch(ctx, currentQuery, cfg)
 	}
 
-	// Fall back to web search.
-	return r.fallbackSearch(ctx, query, cfg)
+	// Unreachable under normal operation: every iteration of the loop
+	// either returns or continues. Left as a defensive safety net.
+	return r.fallbackSearch(ctx, currentQuery, cfg)
 }
 
 // evaluateRelevance uses the LLM to score each document's relevance to the
@@ -158,6 +205,33 @@ func (r *CRAGRetriever) scoreDocument(ctx context.Context, query string, doc sch
 	}
 
 	return score, nil
+}
+
+// rewriteQuery asks the LLM to reformulate the query for better retrieval.
+func (r *CRAGRetriever) rewriteQuery(ctx context.Context, originalQuery, currentQuery string) (string, error) {
+	prompt := fmt.Sprintf(
+		"The following search query did not return relevant documents.\n"+
+			"Original query: %s\n"+
+			"Current query: %s\n\n"+
+			"Reformulate this query to improve search results. "+
+			"Return ONLY the rewritten query, nothing else.",
+		originalQuery, currentQuery,
+	)
+
+	msgs := []schema.Message{
+		schema.NewHumanMessage(prompt),
+	}
+
+	resp, err := r.llm.Generate(ctx, msgs)
+	if err != nil {
+		return "", fmt.Errorf("crag rewrite generate: %w", err)
+	}
+
+	rewritten := strings.TrimSpace(resp.Text())
+	if rewritten == "" {
+		return currentQuery, nil
+	}
+	return rewritten, nil
 }
 
 // fallbackSearch performs web search when document relevance is low.
