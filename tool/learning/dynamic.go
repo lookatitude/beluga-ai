@@ -3,8 +3,8 @@ package learning
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/tool"
 )
 
@@ -78,12 +78,12 @@ func (d *DynamicTool) Version() int { return d.version }
 func (d *DynamicTool) Execute(ctx context.Context, input map[string]any) (*tool.Result, error) {
 	inputJSON, err := json.Marshal(input)
 	if err != nil {
-		return nil, fmt.Errorf("dynamic tool %s: failed to marshal input: %w", d.name, err)
+		return nil, core.Errorf(core.ErrInvalidInput, "dynamic tool %s: failed to marshal input: %w", d.name, err)
 	}
 
 	output, err := d.executor.Execute(ctx, d.code, string(inputJSON))
 	if err != nil {
-		return nil, fmt.Errorf("dynamic tool %s: execution failed: %w", d.name, err)
+		return nil, core.Errorf(core.ErrToolFailed, "dynamic tool %s: execution failed: %w", d.name, err)
 	}
 
 	return tool.TextResult(output), nil

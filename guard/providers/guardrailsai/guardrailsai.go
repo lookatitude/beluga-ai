@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/guard"
 	"github.com/lookatitude/beluga-ai/internal/httpclient"
 )
@@ -57,7 +58,7 @@ func New(opts ...Option) (*Guard, error) {
 	}
 
 	if cfg.guardName == "" {
-		return nil, fmt.Errorf("guardrailsai: guard name is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "guardrailsai: guard name is required")
 	}
 
 	clientOpts := []httpclient.Option{
@@ -83,11 +84,11 @@ type validateRequest struct {
 
 // validateResponse is the Guardrails AI validate response.
 type validateResponse struct {
-	Result       string           `json:"result"`
-	ValidatedOutput string        `json:"validatedOutput,omitempty"`
-	RawOutput    string           `json:"rawLlmOutput,omitempty"`
-	Validations  []validationItem `json:"validationsPassed,omitempty"`
-	Failed       []validationItem `json:"validationsFailed,omitempty"`
+	Result          string           `json:"result"`
+	ValidatedOutput string           `json:"validatedOutput,omitempty"`
+	RawOutput       string           `json:"rawLlmOutput,omitempty"`
+	Validations     []validationItem `json:"validationsPassed,omitempty"`
+	Failed          []validationItem `json:"validationsFailed,omitempty"`
 }
 
 // validationItem represents a single validator result.
@@ -119,7 +120,7 @@ func (g *Guard) Validate(ctx context.Context, input guard.GuardInput) (guard.Gua
 	path := fmt.Sprintf("/guards/%s/validate", g.guardName)
 	resp, err := httpclient.DoJSON[validateResponse](ctx, g.client, "POST", path, req)
 	if err != nil {
-		return guard.GuardResult{}, fmt.Errorf("guardrailsai: validate: %w", err)
+		return guard.GuardResult{}, core.Errorf(core.ErrProviderDown, "guardrailsai: validate: %w", err)
 	}
 
 	allowed := resp.Result == "pass"

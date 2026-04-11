@@ -1,9 +1,10 @@
 package tool
 
 import (
-	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Registry is a thread-safe, name-based collection of tools.
@@ -28,7 +29,7 @@ func (r *Registry) Add(t Tool) error {
 
 	name := t.Name()
 	if _, exists := r.tools[name]; exists {
-		return fmt.Errorf("tool %q already registered", name)
+		return core.Errorf(core.ErrInvalidInput, "tool %q already registered", name)
 	}
 	r.tools[name] = t
 	return nil
@@ -41,7 +42,7 @@ func (r *Registry) Get(name string) (Tool, error) {
 
 	t, ok := r.tools[name]
 	if !ok {
-		return nil, fmt.Errorf("tool %q not found", name)
+		return nil, core.Errorf(core.ErrNotFound, "tool %q not found", name)
 	}
 	return t, nil
 }
@@ -66,7 +67,7 @@ func (r *Registry) Remove(name string) error {
 	defer r.mu.Unlock()
 
 	if _, ok := r.tools[name]; !ok {
-		return fmt.Errorf("tool %q not found", name)
+		return core.Errorf(core.ErrNotFound, "tool %q not found", name)
 	}
 	delete(r.tools, name)
 	return nil

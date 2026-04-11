@@ -3,8 +3,8 @@ package tool
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/internal/jsonutil"
 )
 
@@ -67,12 +67,12 @@ func (f *FuncTool[I]) Execute(ctx context.Context, input map[string]any) (*Resul
 	// Marshal map to JSON, then unmarshal into the typed struct.
 	data, err := json.Marshal(input)
 	if err != nil {
-		return nil, fmt.Errorf("tool %s: failed to marshal input: %w", f.name, err)
+		return nil, core.Errorf(core.ErrInvalidInput, "tool %s: failed to marshal input: %w", f.name, err)
 	}
 
 	var typed I
 	if err := json.Unmarshal(data, &typed); err != nil {
-		return nil, fmt.Errorf("tool %s: failed to unmarshal input: %w", f.name, err)
+		return nil, core.Errorf(core.ErrInvalidInput, "tool %s: failed to unmarshal input: %w", f.name, err)
 	}
 
 	return f.fn(ctx, typed)

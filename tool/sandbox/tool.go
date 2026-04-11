@@ -3,7 +3,6 @@ package sandbox
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/core"
@@ -91,7 +90,7 @@ func (t *SandboxTool) Execute(ctx context.Context, input map[string]any) (*tool.
 
 	result, err := t.sandbox.Execute(ctx, code, cfg)
 	if err != nil {
-		return tool.ErrorResult(fmt.Errorf("sandbox execution failed: %w", err)), nil
+		return tool.ErrorResult(core.Errorf(core.ErrToolFailed, "sandbox execution failed: %w", err)), nil
 	}
 
 	// Marshal the result as JSON for structured output.
@@ -103,7 +102,7 @@ func (t *SandboxTool) Execute(ctx context.Context, input map[string]any) (*tool.
 	}
 	data, marshalErr := json.Marshal(output)
 	if marshalErr != nil {
-		return tool.ErrorResult(fmt.Errorf("failed to marshal result: %w", marshalErr)), nil
+		return tool.ErrorResult(core.Errorf(core.ErrInvalidInput, "failed to marshal result: %w", marshalErr)), nil
 	}
 
 	r := tool.TextResult(string(data))

@@ -2,7 +2,6 @@ package sandbox
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/core"
@@ -69,7 +68,7 @@ func NewSandboxPool(provider string, opts ...PoolOption) (*SandboxPool, error) {
 			if err != nil {
 				// Close any already-created sandboxes.
 				p.closeAll(context.Background())
-				return nil, fmt.Errorf("sandbox.pool: warmup failed at instance %d: %w", i, err)
+				return nil, core.Errorf(core.ErrProviderDown, "sandbox.pool: warmup failed at instance %d: %w", i, err)
 			}
 			p.pool <- sb
 		}
@@ -110,7 +109,7 @@ func (p *SandboxPool) Checkout(ctx context.Context) (Sandbox, error) {
 	sb, err := NewSandbox(p.provider)
 	if err != nil {
 		<-p.sem
-		return nil, fmt.Errorf("sandbox.pool: create sandbox: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "sandbox.pool: create sandbox: %w", err)
 	}
 	return sb, nil
 }

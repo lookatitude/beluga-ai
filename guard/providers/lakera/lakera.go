@@ -2,10 +2,10 @@ package lakera
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/guard"
 	"github.com/lookatitude/beluga-ai/internal/httpclient"
 )
@@ -50,7 +50,7 @@ func New(opts ...Option) (*Guard, error) {
 	}
 
 	if cfg.apiKey == "" {
-		return nil, fmt.Errorf("lakera: API key is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "lakera: API key is required")
 	}
 
 	clientOpts := []httpclient.Option{
@@ -98,7 +98,7 @@ func (g *Guard) Validate(ctx context.Context, input guard.GuardInput) (guard.Gua
 
 	resp, err := httpclient.DoJSON[guardResponse](ctx, g.client, "POST", "/v1/guard", req)
 	if err != nil {
-		return guard.GuardResult{}, fmt.Errorf("lakera: validate: %w", err)
+		return guard.GuardResult{}, core.Errorf(core.ErrProviderDown, "lakera: validate: %w", err)
 	}
 
 	result := guard.GuardResult{

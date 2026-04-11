@@ -138,7 +138,7 @@ func (iacb *InterAgentCircuitBreaker) RecordPoisoning(ctx context.Context, write
 
 	// Record failure by executing a function that always fails.
 	_, _ = cb.Execute(ctx, func(_ context.Context) (any, error) {
-		return nil, fmt.Errorf("poisoning detected")
+		return nil, core.Errorf(core.ErrGuardBlocked, "poisoning detected")
 	})
 
 	newState := cb.State()

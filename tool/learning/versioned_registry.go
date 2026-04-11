@@ -1,11 +1,11 @@
 package learning
 
 import (
-	"fmt"
 	"sort"
 	"sync"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/tool"
 )
 
@@ -87,7 +87,7 @@ func (vr *VersionedRegistry) Upsert(t tool.Tool) (int, error) {
 		_ = vr.inner.Remove(name)
 	}
 	if err := vr.inner.Add(t); err != nil {
-		return 0, fmt.Errorf("versioned registry: failed to add tool %q: %w", name, err)
+		return 0, core.Errorf(core.ErrInvalidInput, "versioned registry: failed to add tool %q: %w", name, err)
 	}
 
 	// Inner registry succeeded — now mutate in-memory state.
@@ -123,19 +123,19 @@ func (vr *VersionedRegistry) Activate(name string, version int) error {
 
 	entry, exists := vr.entries[name]
 	if !exists {
-		return fmt.Errorf("versioned registry: tool %q not found", name)
+		return core.Errorf(core.ErrNotFound, "versioned registry: tool %q not found", name)
 	}
 
 	idx := version - 1
 	if idx < 0 || idx >= len(entry.versions) {
-		return fmt.Errorf("versioned registry: version %d not found for tool %q", version, name)
+		return core.Errorf(core.ErrNotFound, "versioned registry: version %d not found for tool %q", version, name)
 	}
 
 	// Update inner registry FIRST, before mutating in-memory state, so a
 	// failure leaves the registry consistent.
 	_ = vr.inner.Remove(name)
 	if err := vr.inner.Add(entry.versions[idx].Tool); err != nil {
-		return fmt.Errorf("versioned registry: failed to activate tool %q v%d: %w", name, version, err)
+		return core.Errorf(core.ErrInvalidInput, "versioned registry: failed to activate tool %q v%d: %w", name, version, err)
 	}
 
 	// Deactivate current, activate target.
@@ -158,10 +158,10 @@ func (vr *VersionedRegistry) Rollback(name string) (int, error) {
 
 	entry, exists := vr.entries[name]
 	if !exists {
-		return 0, fmt.Errorf("versioned registry: tool %q not found", name)
+		return 0, core.Errorf(core.ErrNotFound, "versioned registry: tool %q not found", name)
 	}
 	if entry.current == 0 {
-		return 0, fmt.Errorf("versioned registry: no previous version for tool %q", name)
+		return 0, core.Errorf(core.ErrNotFound, "versioned registry: no previous version for tool %q", name)
 	}
 
 	idx := entry.current - 1
@@ -171,7 +171,7 @@ func (vr *VersionedRegistry) Rollback(name string) (int, error) {
 	// failure leaves the registry consistent.
 	_ = vr.inner.Remove(name)
 	if err := vr.inner.Add(entry.versions[idx].Tool); err != nil {
-		return 0, fmt.Errorf("versioned registry: failed to rollback tool %q: %w", name, err)
+		return 0, core.Errorf(core.ErrInvalidInput, "versioned registry: failed to rollback tool %q: %w", name, err)
 	}
 
 	entry.versions[entry.current].Active = false
@@ -192,7 +192,7 @@ func (vr *VersionedRegistry) History(name string) ([]VersionRecord, error) {
 
 	entry, exists := vr.entries[name]
 	if !exists {
-		return nil, fmt.Errorf("versioned registry: tool %q not found", name)
+		return nil, core.Errorf(core.ErrNotFound, "versioned registry: tool %q not found", name)
 	}
 
 	// Return a copy to prevent mutation.

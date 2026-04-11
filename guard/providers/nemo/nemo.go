@@ -2,9 +2,9 @@ package nemo
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/guard"
 	"github.com/lookatitude/beluga-ai/internal/httpclient"
 )
@@ -94,8 +94,8 @@ type chatResponse struct {
 
 // guardrailsResult carries the NeMo guardrails evaluation outcome.
 type guardrailsResult struct {
-	Blocked bool   `json:"blocked"`
-	Reason  string `json:"reason,omitempty"`
+	Blocked bool    `json:"blocked"`
+	Reason  string  `json:"reason,omitempty"`
 	Score   float64 `json:"score,omitempty"`
 }
 
@@ -125,7 +125,7 @@ func (g *Guard) Validate(ctx context.Context, input guard.GuardInput) (guard.Gua
 
 	resp, err := httpclient.DoJSON[chatResponse](ctx, g.client, "POST", "/v1/chat/completions", req)
 	if err != nil {
-		return guard.GuardResult{}, fmt.Errorf("nemo: validate: %w", err)
+		return guard.GuardResult{}, core.Errorf(core.ErrProviderDown, "nemo: validate: %w", err)
 	}
 
 	result := guard.GuardResult{
