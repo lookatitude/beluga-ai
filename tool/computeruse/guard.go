@@ -10,6 +10,9 @@ import (
 	"github.com/lookatitude/beluga-ai/core"
 )
 
+// checkURLOp identifies the guard.CheckURL operation in error codes.
+const checkURLOp = "computeruse.guard.check_url"
+
 // guardOptions holds configuration for SafetyGuard.
 type guardOptions struct {
 	allowedHosts        map[string]bool
@@ -85,7 +88,7 @@ func NewSafetyGuard(opts ...GuardOption) *SafetyGuard {
 func (g *SafetyGuard) CheckURL(rawURL string) error {
 	parsed, err := url.Parse(rawURL)
 	if err != nil {
-		return core.NewError("computeruse.guard.check_url", core.ErrInvalidInput,
+		return core.NewError(checkURLOp, core.ErrInvalidInput,
 			fmt.Sprintf("invalid URL: %s", rawURL), err)
 	}
 
@@ -97,14 +100,14 @@ func (g *SafetyGuard) CheckURL(rawURL string) error {
 	case "http", "https":
 		// allowed
 	default:
-		return core.NewError("computeruse.guard.check_url", core.ErrInvalidInput,
+		return core.NewError(checkURLOp, core.ErrInvalidInput,
 			fmt.Sprintf("URL scheme %q is not allowed", scheme), nil)
 	}
 
 	// Check block patterns.
 	for _, pattern := range g.opts.blockPatterns {
 		if strings.Contains(rawURL, pattern) {
-			return core.NewError("computeruse.guard.check_url", core.ErrGuardBlocked,
+			return core.NewError(checkURLOp, core.ErrGuardBlocked,
 				fmt.Sprintf("URL matches block pattern %q", pattern), nil)
 		}
 	}
@@ -113,7 +116,7 @@ func (g *SafetyGuard) CheckURL(rawURL string) error {
 	if len(g.opts.allowedHosts) > 0 {
 		host := strings.ToLower(parsed.Hostname())
 		if !g.opts.allowedHosts[host] {
-			return core.NewError("computeruse.guard.check_url", core.ErrGuardBlocked,
+			return core.NewError(checkURLOp, core.ErrGuardBlocked,
 				fmt.Sprintf("host %q is not in the allowed list", host), nil)
 		}
 	}
