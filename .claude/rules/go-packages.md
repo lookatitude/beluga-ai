@@ -17,6 +17,38 @@ alwaysApply: false
 - [ ] OTel span at every exported method
 - [ ] Errors wrapped with `core.Error` + `ErrorCode`
 
+## Pre-commit verification gate (MANDATORY)
+
+Before ANY `git commit` on a Go change, run and pass:
+
+```bash
+go build ./...                    # compile
+go vet ./...                      # stdlib static analysis
+go test -race ./...               # tests with race detector
+go mod tidy && git diff --exit-code go.mod go.sum
+gofmt -l . | grep -v ".claude/worktrees"
+golangci-lint run ./...           # primary linter
+gosec -quiet ./...                # security scanner
+govulncheck ./...                 # known-CVE scanner
+```
+
+CI runs all of these on every PR (see `.github/workflows/_ci-checks.yml`
+and `_security-checks.yml`). Catching issues locally is faster than
+pushing and waiting for CI to fail.
+
+**gosec focus areas** (these are the most commonly flagged in this repo):
+- `G107` — avoid HTTP requests with tainted variables (sanitize URLs)
+- `G112` — always set `http.Server.ReadHeaderTimeout`
+- `G115` — integer overflow on type conversion (use range checks)
+- `G201/G202` — SQL string formatting → use parameterised queries or
+  validate the table/column name against an allowlist before interpolating
+- `G304` — file inclusion via variable (call `filepath.Clean` and check
+  the result is inside an allowed prefix before `os.ReadFile`)
+- `G404` — use `crypto/rand` not `math/rand` for anything security-sensitive
+- `errcheck` unhandled errors — use `_ = fn()` when intentional,
+  otherwise propagate with `core.Errorf(code, "...: %w", err)`
+- `G601` — context cancellation function must be called (always `defer cancel()`)
+
 ## Anti-rationalization
 
 | Excuse | Counter |

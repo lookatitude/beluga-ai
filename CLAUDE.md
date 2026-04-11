@@ -15,6 +15,31 @@ Go-native agentic AI framework. `github.com/lookatitude/beluga-ai`. Go 1.23+. St
 9. Interfaces have ≤4 methods. `context.Context` is the first parameter of every public function.
 10. Zero external deps in `core/` and `schema/` beyond stdlib + otel. No circular imports.
 
+## Branch + PR discipline (MANDATORY)
+
+1. **Never commit to `main`.** Every change — code, docs, tests — starts with `git checkout -b <type>/<short-desc>` where `<type>` is `fix`, `feat`, `refactor`, `docs`, or `chore`.
+2. Every branch ends with `gh pr create`. CI runs gosec, golangci-lint, govulncheck, SonarCloud, Snyk, Trivy, CodeQL, unit + integration tests. Wait for green before merge.
+3. Verify `git branch --show-current` ≠ `main` before any `git commit`.
+
+## Pre-commit verification gate (MANDATORY)
+
+Before ANY `git commit` on a Go change, run and pass:
+
+```bash
+go build ./...
+go vet ./...
+go test -race ./...
+go mod tidy && git diff --exit-code go.mod go.sum
+gofmt -l . | grep -v ".claude/worktrees"
+golangci-lint run ./...
+gosec -quiet ./...
+govulncheck ./...
+```
+
+Pre-existing findings in files you did NOT change: document in the commit
+message, don't block on them. New findings in files you DID change: fix
+before commit. See `.claude/rules/go-packages.md` for gosec focus areas.
+
 ## Before writing code
 
 1. File-scoped rules in `.claude/rules/` auto-load for the files you touch.
