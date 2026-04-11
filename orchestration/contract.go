@@ -1,11 +1,11 @@
 package orchestration
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/lookatitude/beluga-ai/agent"
 	"github.com/lookatitude/beluga-ai/agent/contract"
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // ValidatePipelineContracts checks that the contracts of agents in a pipeline
@@ -21,5 +21,5 @@ func ValidatePipelineContracts(agents ...agent.Agent) error {
 	for i, e := range errs {
 		msgs[i] = e.Error()
 	}
-	return fmt.Errorf("orchestration/contract: pipeline incompatibilities: %s", strings.Join(msgs, "; "))
+	return core.Errorf(core.ErrInvalidInput, "orchestration/contract: pipeline incompatibilities: %s", strings.Join(msgs, "; "))
 }

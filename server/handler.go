@@ -110,5 +110,6 @@ func handleStream(w http.ResponseWriter, r *http.Request, a agent.Agent) {
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
+	// Encode errors mean the client disconnected; nothing to do.
+	_ = json.NewEncoder(w).Encode(v)
 }

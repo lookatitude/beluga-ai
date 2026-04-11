@@ -6,12 +6,13 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // maxOAuthResponseSize is the maximum size of an OAuth token response body (1 MB).
@@ -117,13 +118,13 @@ func WithOAuthHTTPClient(c *http.Client) OAuthOption {
 // NewOAuthProvider creates a new OAuthProvider with the given configuration.
 func NewOAuthProvider(config OAuthConfig, opts ...OAuthOption) (OAuthProvider, error) {
 	if config.ClientID == "" {
-		return nil, fmt.Errorf("mcp/oauth: client ID is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "mcp/oauth: client ID is required")
 	}
 	if config.AuthURL == "" {
-		return nil, fmt.Errorf("mcp/oauth: auth URL is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "mcp/oauth: auth URL is required")
 	}
 	if config.TokenURL == "" {
-		return nil, fmt.Errorf("mcp/oauth: token URL is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "mcp/oauth: token URL is required")
 	}
 
 	o := &oauthProviderOptions{
@@ -141,7 +142,7 @@ func NewOAuthProvider(config OAuthConfig, opts ...OAuthOption) (OAuthProvider, e
 	if config.PKCE {
 		pkce, err := generatePKCE()
 		if err != nil {
-			return nil, fmt.Errorf("mcp/oauth: generate PKCE: %w", err)
+			return nil, core.Errorf(core.ErrProviderDown, "mcp/oauth: generate PKCE: %w", err)
 		}
 		p.pkce = pkce
 	}
@@ -153,7 +154,7 @@ func NewOAuthProvider(config OAuthConfig, opts ...OAuthOption) (OAuthProvider, e
 func (p *oauthProvider) Authorize(_ context.Context, state string) (string, error) {
 	u, err := url.Parse(p.config.AuthURL)
 	if err != nil {
-		return "", fmt.Errorf("mcp/oauth: parse auth URL: %w", err)
+		return "", core.Errorf(core.ErrInvalidInput, "mcp/oauth: parse auth URL: %w", err)
 	}
 
 	params := u.Query()
@@ -220,23 +221,23 @@ func (p *oauthProvider) Refresh(ctx context.Context, refreshToken string) (*Toke
 func (p *oauthProvider) tokenRequest(ctx context.Context, data url.Values) (*Token, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.config.TokenURL, strings.NewReader(data.Encode()))
 	if err != nil {
-		return nil, fmt.Errorf("mcp/oauth: create token request: %w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, "mcp/oauth: create token request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("mcp/oauth: token request: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "mcp/oauth: token request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxOAuthResponseSize))
 	if err != nil {
-		return nil, fmt.Errorf("mcp/oauth: read token response: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "mcp/oauth: read token response: %w", err)
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("mcp/oauth: token endpoint returned HTTP %d", resp.StatusCode)
+		return nil, core.Errorf(core.ErrProviderDown, "mcp/oauth: token endpoint returned HTTP %d", resp.StatusCode)
 	}
 
 	var tokenResp struct {
@@ -247,11 +248,11 @@ func (p *oauthProvider) tokenRequest(ctx context.Context, data url.Values) (*Tok
 		Scope        string `json:"scope"`
 	}
 	if err := json.Unmarshal(body, &tokenResp); err != nil {
-		return nil, fmt.Errorf("mcp/oauth: decode token response: %w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, "mcp/oauth: decode token response: %w", err)
 	}
 
 	if tokenResp.AccessToken == "" {
-		return nil, fmt.Errorf("mcp/oauth: empty access token in response")
+		return nil, core.Errorf(core.ErrProviderDown, "mcp/oauth: empty access token in response")
 	}
 
 	token := &Token{
@@ -276,7 +277,7 @@ func generatePKCE() (*pkceParams, error) {
 	// Generate 32 bytes of random data for the verifier.
 	verifierBytes := make([]byte, 32)
 	if _, err := rand.Read(verifierBytes); err != nil {
-		return nil, fmt.Errorf("generate verifier: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "generate verifier: %w", err)
 	}
 
 	verifier := base64.RawURLEncoding.EncodeToString(verifierBytes)

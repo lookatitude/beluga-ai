@@ -3,8 +3,8 @@ package tool
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/internal/jsonutil"
 )
 
@@ -20,6 +20,11 @@ type FuncTool[I any] struct {
 	fn          func(ctx context.Context, input I) (*Result, error)
 	schema      map[string]any
 }
+
+// compile-time interface check — instantiated with struct{} to satisfy the
+// generic constraint. All *FuncTool[I] instances share the same method set,
+// so verifying one satisfies Tool proves the rest do.
+var _ Tool = (*FuncTool[struct{}])(nil)
 
 // NewFuncTool creates a new FuncTool that wraps fn as a Tool. The JSON Schema
 // for the input type I is generated once at construction time.
@@ -62,12 +67,12 @@ func (f *FuncTool[I]) Execute(ctx context.Context, input map[string]any) (*Resul
 	// Marshal map to JSON, then unmarshal into the typed struct.
 	data, err := json.Marshal(input)
 	if err != nil {
-		return nil, fmt.Errorf("tool %s: failed to marshal input: %w", f.name, err)
+		return nil, core.Errorf(core.ErrInvalidInput, "tool %s: failed to marshal input: %w", f.name, err)
 	}
 
 	var typed I
 	if err := json.Unmarshal(data, &typed); err != nil {
-		return nil, fmt.Errorf("tool %s: failed to unmarshal input: %w", f.name, err)
+		return nil, core.Errorf(core.ErrInvalidInput, "tool %s: failed to unmarshal input: %w", f.name, err)
 	}
 
 	return f.fn(ctx, typed)

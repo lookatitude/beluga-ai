@@ -2,7 +2,6 @@ package llm
 
 import (
 	"context"
-	"errors"
 	"iter"
 	"sync/atomic"
 
@@ -110,7 +109,7 @@ type RoundRobin struct {
 // Select picks the next model in round-robin order.
 func (rr *RoundRobin) Select(_ context.Context, models []ChatModel, _ []schema.Message) (ChatModel, error) {
 	if len(models) == 0 {
-		return nil, errors.New("llm: round-robin: no models")
+		return nil, core.Errorf(core.ErrInvalidInput, "llm: round-robin: no models")
 	}
 	idx := rr.counter.Add(1) - 1
 	return models[idx%uint64(len(models))], nil
@@ -126,7 +125,7 @@ type FailoverChain struct{}
 // in Generate/Stream via the FailoverRouter wrapper.
 func (fc *FailoverChain) Select(_ context.Context, models []ChatModel, _ []schema.Message) (ChatModel, error) {
 	if len(models) == 0 {
-		return nil, errors.New("llm: failover: no models")
+		return nil, core.Errorf(core.ErrInvalidInput, "llm: failover: no models")
 	}
 	// Return the first model; failover is handled by FailoverRouter.
 	return models[0], nil

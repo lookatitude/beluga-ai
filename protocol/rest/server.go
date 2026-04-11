@@ -8,8 +8,10 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // RESTServer exposes Beluga agents as REST/SSE HTTP endpoints.
@@ -32,10 +34,10 @@ func (s *RESTServer) RegisterAgent(path string, a agent.Agent) error {
 
 	path = strings.Trim(path, "/")
 	if path == "" {
-		return fmt.Errorf("rest/register: path cannot be empty")
+		return core.Errorf(core.ErrInvalidInput, "rest/register: path cannot be empty")
 	}
 	if _, exists := s.agents[path]; exists {
-		return fmt.Errorf("rest/register: path %q already registered", path)
+		return core.Errorf(core.ErrInvalidInput, "rest/register: path %q already registered", path)
 	}
 	s.agents[path] = a
 	return nil
@@ -50,13 +52,14 @@ func (s *RESTServer) Handler() http.Handler {
 // is canceled or an error occurs.
 func (s *RESTServer) Serve(ctx context.Context, addr string) error {
 	srv := &http.Server{
-		Addr:    addr,
-		Handler: s.Handler(),
+		Addr:              addr,
+		Handler:           s.Handler(),
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
-		return fmt.Errorf("rest/serve: %w", err)
+		return core.Errorf(core.ErrProviderDown, "rest/serve: %w", err)
 	}
 
 	errCh := make(chan error, 1)
@@ -67,14 +70,14 @@ func (s *RESTServer) Serve(ctx context.Context, addr string) error {
 	select {
 	case <-ctx.Done():
 		if shutdownErr := srv.Close(); shutdownErr != nil {
-			return fmt.Errorf("rest/serve: shutdown: %w", shutdownErr)
+			return core.Errorf(core.ErrProviderDown, "rest/serve: shutdown: %w", shutdownErr)
 		}
 		return ctx.Err()
 	case err := <-errCh:
 		if err == http.ErrServerClosed {
 			return nil
 		}
-		return fmt.Errorf("rest/serve: %w", err)
+		return core.Errorf(core.ErrProviderDown, "rest/serve: %w", err)
 	}
 }
 
@@ -155,7 +158,8 @@ func (s *RESTServer) handleInvoke(ctx context.Context, w http.ResponseWriter, r 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(InvokeResponse{Result: result})
+	// Encode errors mean the client disconnected; nothing to do.
+	_ = json.NewEncoder(w).Encode(InvokeResponse{Result: result})
 }
 
 func (s *RESTServer) handleStream(ctx context.Context, w http.ResponseWriter, r *http.Request, a agent.Agent) {
@@ -179,7 +183,9 @@ func (s *RESTServer) handleStream(ctx context.Context, w http.ResponseWriter, r 
 	for event, err := range a.Stream(ctx, req.Input) {
 		if err != nil {
 			data, _ := json.Marshal(StreamEvent{Type: "error", Text: err.Error()})
-			sse.WriteEvent(SSEEvent{Event: "error", Data: string(data)})
+			// Ignore the write error: we are already in an error path
+			// and about to return anyway.
+			_ = sse.WriteEvent(SSEEvent{Event: "error", Data: string(data)})
 			return
 		}
 
@@ -193,7 +199,7 @@ func (s *RESTServer) handleStream(ctx context.Context, w http.ResponseWriter, r 
 		}
 	}
 
-	// Send a done event.
+	// Send a done event. Ignore write errors — the stream is ending.
 	data, _ := json.Marshal(StreamEvent{Type: "done"})
-	sse.WriteEvent(SSEEvent{Event: "done", Data: string(data)})
+	_ = sse.WriteEvent(SSEEvent{Event: "done", Data: string(data)})
 }

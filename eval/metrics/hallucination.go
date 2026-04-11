@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/eval"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
@@ -50,7 +51,7 @@ func (h *Hallucination) Score(ctx context.Context, sample eval.EvalSample) (floa
 		schema.NewHumanMessage(prompt),
 	})
 	if err != nil {
-		return 0, fmt.Errorf("hallucination: llm generate: %w", err)
+		return 0, core.Errorf(core.ErrProviderDown, "hallucination: llm generate: %w", err)
 	}
 
 	return parseScore(resp.Text())

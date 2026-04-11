@@ -161,7 +161,8 @@ func NewRemoteAgent(ctx context.Context, url string) (agent.Agent, error) {
 
 	card, err := client.GetAgentCard(ctx)
 	if err != nil {
-		client.Destroy()
+		// Best-effort cleanup; the primary error is returned below.
+		_ = client.Destroy()
 		return nil, fmt.Errorf("a2a/sdk: get agent card: %w", err)
 	}
 
@@ -187,7 +188,7 @@ func (a *remoteAgent) Persona() agent.Persona {
 	}
 }
 
-func (a *remoteAgent) Tools() []tool.Tool    { return nil }
+func (a *remoteAgent) Tools() []tool.Tool      { return nil }
 func (a *remoteAgent) Children() []agent.Agent { return nil }
 
 func (a *remoteAgent) Invoke(ctx context.Context, input string, _ ...agent.Option) (string, error) {
@@ -267,6 +268,6 @@ func extractArtifactText(artifact *a2a.Artifact) string {
 
 // Compile-time interface checks.
 var (
-	_ agent.Agent         = (*remoteAgent)(nil)
+	_ agent.Agent          = (*remoteAgent)(nil)
 	_ a2asrv.AgentExecutor = (*belugaExecutor)(nil)
 )

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -72,7 +73,7 @@ func (r *AdaptiveRetriever) Retrieve(ctx context.Context, query string, opts ...
 
 	complexity, err := r.classifyQuery(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("retriever: adaptive classify: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "retriever: adaptive classify: %w", err)
 	}
 
 	var docs []schema.Document
@@ -82,18 +83,18 @@ func (r *AdaptiveRetriever) Retrieve(ctx context.Context, query string, opts ...
 	case SimpleRetrieval:
 		docs, err = r.simpleRetriever.Retrieve(ctx, query, opts...)
 		if err != nil {
-			return nil, fmt.Errorf("retriever: adaptive simple: %w", err)
+			return nil, core.Errorf(core.ErrProviderDown, "retriever: adaptive simple: %w", err)
 		}
 	case ComplexRetrieval:
 		docs, err = r.complexRetriever.Retrieve(ctx, query, opts...)
 		if err != nil {
-			return nil, fmt.Errorf("retriever: adaptive complex: %w", err)
+			return nil, core.Errorf(core.ErrProviderDown, "retriever: adaptive complex: %w", err)
 		}
 	default:
 		// Default to simple retrieval on unrecognised classification.
 		docs, err = r.simpleRetriever.Retrieve(ctx, query, opts...)
 		if err != nil {
-			return nil, fmt.Errorf("retriever: adaptive default: %w", err)
+			return nil, core.Errorf(core.ErrProviderDown, "retriever: adaptive default: %w", err)
 		}
 	}
 
@@ -122,7 +123,7 @@ func (r *AdaptiveRetriever) classifyQuery(ctx context.Context, query string) (Qu
 
 	resp, err := r.llm.Generate(ctx, msgs)
 	if err != nil {
-		return SimpleRetrieval, fmt.Errorf("classify query: %w", err)
+		return SimpleRetrieval, core.Errorf(core.ErrProviderDown, "classify query: %w", err)
 	}
 
 	text := strings.TrimSpace(strings.ToLower(resp.Text()))

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Compile-time check.
@@ -28,7 +30,7 @@ func NewAdversarialProtocol() *AdversarialProtocol {
 // NextRound returns prompts with pro/con role assignments for all agents.
 func (p *AdversarialProtocol) NextRound(_ context.Context, state DebateState) (map[string]string, error) {
 	if len(state.AgentIDs) < 2 {
-		return nil, fmt.Errorf("debate/adversarial: requires at least 2 agents, got %d", len(state.AgentIDs))
+		return nil, core.Errorf(core.ErrInvalidInput, "debate/adversarial: requires at least 2 agents, got %d", len(state.AgentIDs))
 	}
 
 	history := buildHistory(state)

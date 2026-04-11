@@ -18,14 +18,14 @@
 //	    SendAudio(ctx context.Context, audio []byte) error
 //	    SendText(ctx context.Context, text string) error
 //	    SendToolResult(ctx context.Context, result schema.ToolResult) error
-//	    Recv() <-chan SessionEvent
+//	    Recv(ctx context.Context) iter.Seq2[SessionEvent, error]
 //	    Interrupt(ctx context.Context) error
 //	    Close() error
 //	}
 //
 // # Session Events
 //
-// Events received from the session channel are typed by [SessionEventType]:
+// Events yielded by the Recv iterator are typed by [SessionEventType]:
 //
 //   - [EventAudioOutput] — model-generated audio
 //   - [EventTextOutput] — model-generated text
@@ -46,7 +46,10 @@
 //	defer session.Close()
 //
 //	session.SendAudio(ctx, audioChunk)
-//	for event := range session.Recv() {
+//	for event, err := range session.Recv(ctx) {
+//	    if err != nil {
+//	        return err
+//	    }
 //	    switch event.Type {
 //	    case s2s.EventAudioOutput:
 //	        playAudio(event.Audio)

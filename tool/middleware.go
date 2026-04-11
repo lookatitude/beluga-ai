@@ -35,8 +35,8 @@ type timeoutTool struct {
 	timeout time.Duration
 }
 
-func (t *timeoutTool) Name() string              { return t.tool.Name() }
-func (t *timeoutTool) Description() string        { return t.tool.Description() }
+func (t *timeoutTool) Name() string                { return t.tool.Name() }
+func (t *timeoutTool) Description() string         { return t.tool.Description() }
 func (t *timeoutTool) InputSchema() map[string]any { return t.tool.InputSchema() }
 
 func (t *timeoutTool) Execute(ctx context.Context, input map[string]any) (*Result, error) {
@@ -68,8 +68,8 @@ type retryTool struct {
 	maxAttempts int
 }
 
-func (r *retryTool) Name() string              { return r.tool.Name() }
-func (r *retryTool) Description() string        { return r.tool.Description() }
+func (r *retryTool) Name() string                { return r.tool.Name() }
+func (r *retryTool) Description() string         { return r.tool.Description() }
 func (r *retryTool) InputSchema() map[string]any { return r.tool.InputSchema() }
 
 func (r *retryTool) Execute(ctx context.Context, input map[string]any) (*Result, error) {
@@ -88,5 +88,5 @@ func (r *retryTool) Execute(ctx context.Context, input map[string]any) (*Result,
 			return nil, ctx.Err()
 		}
 	}
-	return nil, fmt.Errorf("tool %s failed after %d attempts: %w", r.tool.Name(), r.maxAttempts, lastErr)
+	return nil, core.Errorf(core.ErrToolFailed, "tool %s failed after %d attempts: %w", r.tool.Name(), r.maxAttempts, lastErr)
 }

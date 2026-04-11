@@ -2,7 +2,6 @@ package orchestration
 
 import (
 	"context"
-	"fmt"
 	"iter"
 
 	"github.com/lookatitude/beluga-ai/core"
@@ -37,10 +36,10 @@ func NewGraph() *Graph {
 // AddNode registers a named node in the graph.
 func (g *Graph) AddNode(name string, r core.Runnable) error {
 	if name == "" {
-		return fmt.Errorf("orchestration/graph: node name must not be empty")
+		return core.Errorf(core.ErrInvalidInput, "orchestration/graph: node name must not be empty")
 	}
 	if _, exists := g.nodes[name]; exists {
-		return fmt.Errorf("orchestration/graph: duplicate node %q", name)
+		return core.Errorf(core.ErrInvalidInput, "orchestration/graph: duplicate node %q", name)
 	}
 	g.nodes[name] = r
 	return nil
@@ -49,10 +48,10 @@ func (g *Graph) AddNode(name string, r core.Runnable) error {
 // AddEdge adds a directed edge to the graph.
 func (g *Graph) AddEdge(edge Edge) error {
 	if _, ok := g.nodes[edge.From]; !ok {
-		return fmt.Errorf("orchestration/graph: unknown source node %q", edge.From)
+		return core.Errorf(core.ErrNotFound, "orchestration/graph: unknown source node %q", edge.From)
 	}
 	if _, ok := g.nodes[edge.To]; !ok {
-		return fmt.Errorf("orchestration/graph: unknown target node %q", edge.To)
+		return core.Errorf(core.ErrNotFound, "orchestration/graph: unknown target node %q", edge.To)
 	}
 	g.edges = append(g.edges, edge)
 	return nil
@@ -61,7 +60,7 @@ func (g *Graph) AddEdge(edge Edge) error {
 // SetEntry sets the entry node for graph traversal.
 func (g *Graph) SetEntry(name string) error {
 	if _, ok := g.nodes[name]; !ok {
-		return fmt.Errorf("orchestration/graph: unknown entry node %q", name)
+		return core.Errorf(core.ErrNotFound, "orchestration/graph: unknown entry node %q", name)
 	}
 	g.entry = name
 	return nil
@@ -73,7 +72,7 @@ const maxTraversalDepth = 100
 // Invoke traverses the graph starting from the entry node.
 func (g *Graph) Invoke(ctx context.Context, input any, opts ...core.Option) (any, error) {
 	if g.entry == "" {
-		return nil, fmt.Errorf("orchestration/graph: no entry node set")
+		return nil, core.Errorf(core.ErrInvalidInput, "orchestration/graph: no entry node set")
 	}
 
 	current := g.entry
@@ -82,12 +81,12 @@ func (g *Graph) Invoke(ctx context.Context, input any, opts ...core.Option) (any
 	for depth := 0; depth < maxTraversalDepth; depth++ {
 		node, ok := g.nodes[current]
 		if !ok {
-			return nil, fmt.Errorf("orchestration/graph: node %q not found", current)
+			return nil, core.Errorf(core.ErrNotFound, "orchestration/graph: node %q not found", current)
 		}
 
 		result, err := node.Invoke(ctx, value, opts...)
 		if err != nil {
-			return nil, fmt.Errorf("orchestration/graph: node %q: %w", current, err)
+			return nil, core.Errorf(core.ErrProviderDown, "orchestration/graph: node %q: %w", current, err)
 		}
 		value = result
 
@@ -100,14 +99,14 @@ func (g *Graph) Invoke(ctx context.Context, input any, opts ...core.Option) (any
 		current = next
 	}
 
-	return nil, fmt.Errorf("orchestration/graph: max traversal depth (%d) exceeded", maxTraversalDepth)
+	return nil, core.Errorf(core.ErrInvalidInput, "orchestration/graph: max traversal depth (%d) exceeded", maxTraversalDepth)
 }
 
 // Stream traverses the graph, streaming the last node's output.
 func (g *Graph) Stream(ctx context.Context, input any, opts ...core.Option) iter.Seq2[any, error] {
 	return func(yield func(any, error) bool) {
 		if g.entry == "" {
-			yield(nil, fmt.Errorf("orchestration/graph: no entry node set"))
+			yield(nil, core.Errorf(core.ErrInvalidInput, "orchestration/graph: no entry node set"))
 			return
 		}
 
@@ -123,7 +122,7 @@ func (g *Graph) streamTraversal(ctx context.Context, input any, yield func(any, 
 	for depth := 0; depth < maxTraversalDepth; depth++ {
 		node, ok := g.nodes[current]
 		if !ok {
-			yield(nil, fmt.Errorf("orchestration/graph: node %q not found", current))
+			yield(nil, core.Errorf(core.ErrNotFound, "orchestration/graph: node %q not found", current))
 			return
 		}
 
@@ -134,7 +133,7 @@ func (g *Graph) streamTraversal(ctx context.Context, input any, yield func(any, 
 
 		result, err := node.Invoke(ctx, value, opts...)
 		if err != nil {
-			yield(nil, fmt.Errorf("orchestration/graph: node %q: %w", current, err))
+			yield(nil, core.Errorf(core.ErrProviderDown, "orchestration/graph: node %q: %w", current, err))
 			return
 		}
 		value = result
@@ -147,7 +146,7 @@ func (g *Graph) streamTraversal(ctx context.Context, input any, yield func(any, 
 		current = next
 	}
 
-	yield(nil, fmt.Errorf("orchestration/graph: max traversal depth (%d) exceeded", maxTraversalDepth))
+	yield(nil, core.Errorf(core.ErrInvalidInput, "orchestration/graph: max traversal depth (%d) exceeded", maxTraversalDepth))
 }
 
 // streamNode streams a runnable node's output through the yield function.

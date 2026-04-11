@@ -160,7 +160,7 @@ func (am *AssociativeMemory) AddNote(ctx context.Context, content string) (*sche
 	// Step 1: Enrich via LLM.
 	enrichment, err := am.enricher.Enrich(ctx, content)
 	if err != nil {
-		return nil, fmt.Errorf("associative.add_note: enrich: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "associative.add_note: enrich: %w", err)
 	}
 	note.Keywords = enrichment.Keywords
 	note.Tags = enrichment.Tags
@@ -169,13 +169,13 @@ func (am *AssociativeMemory) AddNote(ctx context.Context, content string) (*sche
 	// Step 2: Embed.
 	vec, err := am.embedder.EmbedSingle(ctx, content)
 	if err != nil {
-		return nil, fmt.Errorf("associative.add_note: embed: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "associative.add_note: embed: %w", err)
 	}
 	note.Embedding = vec
 
 	// Step 3: Store.
 	if err := am.store.Add(ctx, note); err != nil {
-		return nil, fmt.Errorf("associative.add_note: store: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "associative.add_note: store: %w", err)
 	}
 
 	// Fire OnNoteCreated hook.
@@ -186,7 +186,7 @@ func (am *AssociativeMemory) AddNote(ctx context.Context, content string) (*sche
 	// Step 4: Link to similar notes.
 	linkedIDs, err := am.linker.Link(ctx, note)
 	if err != nil {
-		return note, fmt.Errorf("associative.add_note: link: %w", err)
+		return note, core.Errorf(core.ErrProviderDown, "associative.add_note: link: %w", err)
 	}
 
 	if len(linkedIDs) > 0 && am.opts.hooks.OnNoteLinked != nil {
@@ -224,7 +224,7 @@ func (am *AssociativeMemory) SearchNotes(ctx context.Context, query string, k in
 	}
 	vec, err := am.embedder.EmbedSingle(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("associative.search_notes: embed query: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "associative.search_notes: embed query: %w", err)
 	}
 	return am.store.Search(ctx, vec, k)
 }
@@ -321,11 +321,11 @@ func (am *AssociativeMemory) Search(ctx context.Context, query string, k int) ([
 func (am *AssociativeMemory) Clear(ctx context.Context) error {
 	notes, err := am.store.List(ctx)
 	if err != nil {
-		return fmt.Errorf("associative.clear: list: %w", err)
+		return core.Errorf(core.ErrProviderDown, "associative.clear: list: %w", err)
 	}
 	for _, note := range notes {
 		if err := am.store.Delete(ctx, note.ID); err != nil {
-			return fmt.Errorf("associative.clear: delete %q: %w", note.ID, err)
+			return core.Errorf(core.ErrProviderDown, "associative.clear: delete %q: %w", note.ID, err)
 		}
 	}
 	return nil

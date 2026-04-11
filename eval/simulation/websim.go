@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Page represents a web page in the simulated environment.
@@ -103,18 +105,18 @@ func (w *WebSimulator) Step(_ context.Context, action string) (*Observation, err
 	defer w.mu.Unlock()
 
 	if w.closed {
-		return nil, fmt.Errorf("websim: environment is closed")
+		return nil, core.Errorf(core.ErrProviderDown, "websim: environment is closed")
 	}
 
 	parts := strings.Fields(action)
 	if len(parts) == 0 {
-		return nil, fmt.Errorf("websim: empty action")
+		return nil, core.Errorf(core.ErrInvalidInput, "websim: empty action")
 	}
 
 	switch parts[0] {
 	case "navigate":
 		if len(parts) < 2 {
-			return nil, fmt.Errorf("websim: navigate requires a path")
+			return nil, core.Errorf(core.ErrInvalidInput, "websim: navigate requires a path")
 		}
 		path := parts[1]
 		if _, ok := w.pages[path]; !ok {
@@ -128,7 +130,7 @@ func (w *WebSimulator) Step(_ context.Context, action string) (*Observation, err
 
 	case "fill":
 		if len(parts) < 3 {
-			return nil, fmt.Errorf("websim: fill requires field and value")
+			return nil, core.Errorf(core.ErrInvalidInput, "websim: fill requires field and value")
 		}
 		field := parts[1]
 		value := strings.Join(parts[2:], " ")
@@ -136,12 +138,12 @@ func (w *WebSimulator) Step(_ context.Context, action string) (*Observation, err
 
 	case "submit":
 		if len(parts) < 2 {
-			return nil, fmt.Errorf("websim: submit requires a form name")
+			return nil, core.Errorf(core.ErrInvalidInput, "websim: submit requires a form name")
 		}
 		formName := parts[1]
 		page := w.pages[w.currentPath]
 		if page == nil {
-			return nil, fmt.Errorf("websim: no current page")
+			return nil, core.Errorf(core.ErrNotFound, "websim: no current page")
 		}
 		fields, ok := page.Forms[formName]
 		if !ok {
@@ -171,7 +173,7 @@ func (w *WebSimulator) Step(_ context.Context, action string) (*Observation, err
 		w.formData = make(map[string]string)
 
 	default:
-		return nil, fmt.Errorf("websim: unknown action %q", parts[0])
+		return nil, core.Errorf(core.ErrInvalidInput, "websim: unknown action %q", parts[0])
 	}
 
 	return w.observeLocked()

@@ -2,10 +2,10 @@ package agent
 
 import (
 	"context"
-	"fmt"
 	"iter"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tool"
 )
@@ -73,7 +73,7 @@ func (a *BaseAgent) Invoke(ctx context.Context, input string, opts ...Option) (s
 		case EventText:
 			result.WriteString(event.Text)
 		case EventError:
-			lastErr = fmt.Errorf("agent error: %s", event.Text)
+			lastErr = core.Errorf(core.ErrProviderDown, "agent error: %s", event.Text)
 		}
 	}
 
@@ -138,7 +138,7 @@ func (a *BaseAgent) resolvePlanner(cfg agentConfig) (Planner, error) {
 		return cfg.planner, nil
 	}
 	if cfg.llm == nil {
-		return nil, fmt.Errorf("agent %q: no LLM configured", a.id)
+		return nil, core.Errorf(core.ErrInvalidInput, "agent %q: no LLM configured", a.id)
 	}
 	return NewPlanner(cfg.plannerName, PlannerConfig{
 		LLM: cfg.llm,

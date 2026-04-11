@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -28,9 +29,14 @@ func NewTextLoader() *TextLoader {
 // Load reads the text file at the given path and returns a single-element
 // Document slice with the file content.
 func (l *TextLoader) Load(ctx context.Context, source string) ([]schema.Document, error) {
-	data, err := os.ReadFile(source)
+	cleaned, err := cleanPath(source)
 	if err != nil {
 		return nil, err
+	}
+	// #nosec G304 -- path validated by cleanPath
+	data, err := os.ReadFile(cleaned)
+	if err != nil {
+		return nil, core.Errorf(core.ErrProviderDown, "loader: text read %q: %w", source, err)
 	}
 
 	doc := schema.Document{

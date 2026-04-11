@@ -3,11 +3,11 @@ package dragonfly
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"sync/atomic"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/memory"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/redis/go-redis/v9"
@@ -33,7 +33,7 @@ type MessageStore struct {
 // New creates a new DragonflyDB MessageStore with the given config.
 func New(cfg Config) (*MessageStore, error) {
 	if cfg.Client == nil {
-		return nil, fmt.Errorf("dragonfly: client is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "dragonfly: client is required")
 	}
 	key := cfg.Key
 	if key == "" {
@@ -49,7 +49,7 @@ func New(cfg Config) (*MessageStore, error) {
 func (s *MessageStore) Append(ctx context.Context, msg schema.Message) error {
 	data, err := marshalMessage(msg)
 	if err != nil {
-		return fmt.Errorf("dragonfly: marshal message: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "dragonfly: marshal message: %w", err)
 	}
 	score := float64(s.seq.Add(1))
 	return s.client.ZAdd(ctx, s.key, redis.Z{
@@ -66,7 +66,7 @@ func (s *MessageStore) Search(ctx context.Context, query string, k int) ([]schem
 		Max: "+inf",
 	}).Result()
 	if err != nil {
-		return nil, fmt.Errorf("dragonfly: search: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "dragonfly: search: %w", err)
 	}
 
 	q := strings.ToLower(query)
@@ -93,7 +93,7 @@ func (s *MessageStore) All(ctx context.Context) ([]schema.Message, error) {
 		Max: "+inf",
 	}).Result()
 	if err != nil {
-		return nil, fmt.Errorf("dragonfly: all: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "dragonfly: all: %w", err)
 	}
 
 	msgs := make([]schema.Message, 0, len(members))

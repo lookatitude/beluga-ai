@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"iter"
 	"net/http"
 	"sync"
 
@@ -81,7 +82,7 @@ func (e *Engine) Start(ctx context.Context, opts ...s2s.Option) (s2s.Session, er
 
 	// Send session configuration.
 	if err := sess.sendSetup(ctx); err != nil {
-		conn.Close(websocket.StatusNormalClosure, "")
+		_ = conn.Close(websocket.StatusNormalClosure, "")
 		return nil, fmt.Errorf("nova: setup: %w", err)
 	}
 
@@ -101,12 +102,12 @@ type novaSession struct {
 
 // novaServerEvent represents a server event from Nova.
 type novaServerEvent struct {
-	Type       string          `json:"type"`
-	AudioChunk string          `json:"audioChunk,omitempty"` // base64
-	Text       string          `json:"text,omitempty"`
-	Transcript string          `json:"transcript,omitempty"`
-	ToolUse    *novaToolUse    `json:"toolUse,omitempty"`
-	Error      *novaError      `json:"error,omitempty"`
+	Type       string       `json:"type"`
+	AudioChunk string       `json:"audioChunk,omitempty"` // base64
+	Text       string       `json:"text,omitempty"`
+	Transcript string       `json:"transcript,omitempty"`
+	ToolUse    *novaToolUse `json:"toolUse,omitempty"`
+	Error      *novaError   `json:"error,omitempty"`
 }
 
 type novaToolUse struct {
@@ -306,9 +307,24 @@ func (s *novaSession) SendToolResult(ctx context.Context, result schema.ToolResu
 	return s.conn.Write(ctx, websocket.MessageText, data)
 }
 
-// Recv returns the channel of session events.
-func (s *novaSession) Recv() <-chan s2s.SessionEvent {
-	return s.events
+// Recv returns an iterator over session events. The iterator ends when the
+// session's internal event channel closes or ctx is cancelled.
+func (s *novaSession) Recv(ctx context.Context) iter.Seq2[s2s.SessionEvent, error] {
+	return func(yield func(s2s.SessionEvent, error) bool) {
+		for {
+			select {
+			case event, ok := <-s.events:
+				if !ok {
+					return
+				}
+				if !yield(event, nil) {
+					return
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
 }
 
 // Interrupt signals user interruption.

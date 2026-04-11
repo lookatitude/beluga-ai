@@ -1,6 +1,9 @@
 package state
 
-import "context"
+import (
+	"context"
+	"iter"
+)
 
 // Middleware wraps a Store to add cross-cutting behavior.
 // Middlewares are composed via ApplyMiddleware and applied outside-in
@@ -86,20 +89,44 @@ func (s *hookedStore) Delete(ctx context.Context, key string) error {
 	return err
 }
 
-func (s *hookedStore) Watch(ctx context.Context, key string) (<-chan StateChange, error) {
+func (s *hookedStore) Watch(ctx context.Context, key string) iter.Seq2[StateChange, error] {
 	if s.hooks.OnWatch != nil {
 		if err := s.hooks.OnWatch(ctx, key); err != nil {
-			return nil, err
+			return errorSeq(err)
 		}
 	}
 
-	ch, err := s.next.Watch(ctx, key)
-
-	if err != nil && s.hooks.OnError != nil {
-		err = s.hooks.OnError(ctx, err)
+	inner := s.next.Watch(ctx, key)
+	if s.hooks.OnError == nil {
+		return inner
 	}
+	return s.wrapWatchErrors(ctx, inner)
+}
 
-	return ch, err
+// errorSeq returns a sequence that yields a single error and stops.
+func errorSeq(err error) iter.Seq2[StateChange, error] {
+	return func(yield func(StateChange, error) bool) {
+		yield(StateChange{}, err)
+	}
+}
+
+// wrapWatchErrors intercepts errors yielded by inner and runs them through
+// OnError before forwarding them. An OnError that returns nil suppresses
+// the change.
+func (s *hookedStore) wrapWatchErrors(ctx context.Context, inner iter.Seq2[StateChange, error]) iter.Seq2[StateChange, error] {
+	return func(yield func(StateChange, error) bool) {
+		for change, err := range inner {
+			if err != nil {
+				err = s.hooks.OnError(ctx, err)
+				if err == nil {
+					continue
+				}
+			}
+			if !yield(change, err) {
+				return
+			}
+		}
+	}
 }
 
 func (s *hookedStore) Close() error {

@@ -3,11 +3,12 @@ package mcp
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net"
 	"net/http"
 	"sync"
+	"time"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tool"
 )
@@ -71,13 +72,14 @@ func (s *MCPServer) Handler() http.Handler {
 // is canceled or an error occurs.
 func (s *MCPServer) Serve(ctx context.Context, addr string) error {
 	srv := &http.Server{
-		Addr:    addr,
-		Handler: s.Handler(),
+		Addr:              addr,
+		Handler:           s.Handler(),
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
-		return fmt.Errorf("mcp/serve: %w", err)
+		return core.Errorf(core.ErrProviderDown, "mcp/serve: %w", err)
 	}
 
 	errCh := make(chan error, 1)
@@ -88,14 +90,14 @@ func (s *MCPServer) Serve(ctx context.Context, addr string) error {
 	select {
 	case <-ctx.Done():
 		if shutdownErr := srv.Close(); shutdownErr != nil {
-			return fmt.Errorf("mcp/serve: shutdown: %w", shutdownErr)
+			return core.Errorf(core.ErrProviderDown, "mcp/serve: shutdown: %w", shutdownErr)
 		}
 		return ctx.Err()
 	case err := <-errCh:
 		if err == http.ErrServerClosed {
 			return nil
 		}
-		return fmt.Errorf("mcp/serve: %w", err)
+		return core.Errorf(core.ErrProviderDown, "mcp/serve: %w", err)
 	}
 }
 
@@ -239,7 +241,7 @@ func writeResult(w http.ResponseWriter, id any, result any) {
 		Result:  result,
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 func writeError(w http.ResponseWriter, id any, code int, message string) {
@@ -249,5 +251,5 @@ func writeError(w http.ResponseWriter, id any, code int, message string) {
 		Error:   &RPCError{Code: code, Message: message},
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	_ = json.NewEncoder(w).Encode(resp)
 }

@@ -3,11 +3,12 @@ package google
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"iter"
+	"math"
 	"net/http"
 
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 	"google.golang.org/genai"
@@ -38,7 +39,7 @@ func New(cfg config.ProviderConfig) (*Model, error) {
 // This is useful for testing with httptest.
 func NewWithHTTPClient(cfg config.ProviderConfig, httpClient *http.Client) (*Model, error) {
 	if cfg.Model == "" {
-		return nil, fmt.Errorf("google: model is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "google: model is required")
 	}
 
 	cc := &genai.ClientConfig{
@@ -56,7 +57,7 @@ func NewWithHTTPClient(cfg config.ProviderConfig, httpClient *http.Client) (*Mod
 
 	client, err := genai.NewClient(context.Background(), cc)
 	if err != nil {
-		return nil, fmt.Errorf("google: failed to create client: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "google: failed to create client: %w", err)
 	}
 
 	return &Model{
@@ -70,7 +71,7 @@ func (m *Model) Generate(ctx context.Context, msgs []schema.Message, opts ...llm
 	contents, gcConfig := m.buildRequest(msgs, opts)
 	resp, err := m.client.Models.GenerateContent(ctx, m.model, contents, gcConfig)
 	if err != nil {
-		return nil, fmt.Errorf("google: generate failed: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "google: generate failed: %w", err)
 	}
 	return convertResponse(resp, m.model), nil
 }
@@ -81,7 +82,7 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 	return func(yield func(schema.StreamChunk, error) bool) {
 		for resp, err := range m.client.Models.GenerateContentStream(ctx, m.model, contents, gcConfig) {
 			if err != nil {
-				yield(schema.StreamChunk{}, fmt.Errorf("google: stream error: %w", err))
+				yield(schema.StreamChunk{}, core.Errorf(core.ErrProviderDown, "google: stream error: %w", err))
 				return
 			}
 			chunk := convertStreamResponse(resp, m.model)
@@ -123,7 +124,12 @@ func (m *Model) buildRequest(msgs []schema.Message, opts []llm.GenerateOption) (
 		gcConfig.TopP = &p
 	}
 	if genOpts.MaxTokens > 0 {
-		gcConfig.MaxOutputTokens = int32(genOpts.MaxTokens)
+		// Gemini's MaxOutputTokens is int32; clamp to avoid overflow.
+		m := genOpts.MaxTokens
+		if m > math.MaxInt32 {
+			m = math.MaxInt32
+		}
+		gcConfig.MaxOutputTokens = int32(m) // #nosec G115 -- clamped above
 	}
 	if len(genOpts.StopSequences) > 0 {
 		gcConfig.StopSequences = genOpts.StopSequences
@@ -196,7 +202,8 @@ func convertMessages(msgs []schema.Message) ([]*genai.Content, *genai.Content) {
 			})
 		case *schema.ToolMessage:
 			var result map[string]any
-			json.Unmarshal([]byte(m.Text()), &result)
+			// Best-effort decode; fall through to the raw-text fallback below.
+			_ = json.Unmarshal([]byte(m.Text()), &result)
 			if result == nil {
 				result = map[string]any{"result": m.Text()}
 			}
@@ -253,7 +260,9 @@ func convertAIParts(m *schema.AIMessage) []*genai.Part {
 	}
 	for _, tc := range m.ToolCalls {
 		var args map[string]any
-		json.Unmarshal([]byte(tc.Arguments), &args)
+		// Best-effort decode: invalid JSON produces nil args and the
+		// downstream Part still carries the tool call ID + name.
+		_ = json.Unmarshal([]byte(tc.Arguments), &args)
 		parts = append(parts, &genai.Part{
 			FunctionCall: &genai.FunctionCall{
 				Name: tc.Name,

@@ -65,10 +65,10 @@ func (tm *TemporalMemory) Save(ctx context.Context, input, output schema.Message
 	}
 
 	if err := tm.store.AddEntity(ctx, inputEntity); err != nil {
-		return fmt.Errorf("temporal: save input entity: %w", err)
+		return core.Errorf(core.ErrProviderDown, "temporal: save input entity: %w", err)
 	}
 	if err := tm.store.AddEntity(ctx, outputEntity); err != nil {
-		return fmt.Errorf("temporal: save output entity: %w", err)
+		return core.Errorf(core.ErrProviderDown, "temporal: save output entity: %w", err)
 	}
 
 	// Create a "responds_to" relation between output and input.
@@ -76,7 +76,7 @@ func (tm *TemporalMemory) Save(ctx context.Context, input, output schema.Message
 		"turn_timestamp": now.Format(time.RFC3339Nano),
 	}
 	if err := tm.store.AddRelation(ctx, outputEntity.ID, inputEntity.ID, "responds_to", props); err != nil {
-		return fmt.Errorf("temporal: save relation: %w", err)
+		return core.Errorf(core.ErrProviderDown, "temporal: save relation: %w", err)
 	}
 
 	return nil
@@ -91,7 +91,7 @@ func (tm *TemporalMemory) Load(ctx context.Context, query string) ([]schema.Mess
 
 	results, err := tm.store.Query(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("temporal: load: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "temporal: load: %w", err)
 	}
 
 	var msgs []schema.Message
@@ -122,7 +122,7 @@ func (tm *TemporalMemory) LoadAt(ctx context.Context, query string, validTime ti
 
 	entities, _, err := tm.store.QueryAsOf(ctx, query, validTime)
 	if err != nil {
-		return nil, fmt.Errorf("temporal: load_at: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "temporal: load_at: %w", err)
 	}
 
 	var msgs []schema.Message
@@ -151,7 +151,7 @@ func (tm *TemporalMemory) Search(ctx context.Context, query string, k int) ([]sc
 
 	results, err := tm.store.Query(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("temporal: search: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "temporal: search: %w", err)
 	}
 
 	var docs []schema.Document
@@ -204,7 +204,7 @@ func (tm *TemporalMemory) ResolveConflicts(ctx context.Context, newRelation *mem
 	// Get history of relations between these entities.
 	candidates, err := tm.store.History(ctx, newRelation.From, newRelation.To)
 	if err != nil {
-		return nil, fmt.Errorf("temporal: resolve_conflicts history: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "temporal: resolve_conflicts history: %w", err)
 	}
 
 	// Filter to only same-type relations as candidates.
@@ -217,7 +217,7 @@ func (tm *TemporalMemory) ResolveConflicts(ctx context.Context, newRelation *mem
 
 	invalidated, err := tm.resolver.Resolve(ctx, newRelation, sameType)
 	if err != nil {
-		return nil, fmt.Errorf("temporal: resolve_conflicts: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "temporal: resolve_conflicts: %w", err)
 	}
 
 	// Apply invalidations to the store. Silently skipping a candidate here
@@ -236,7 +236,7 @@ func (tm *TemporalMemory) ResolveConflicts(ctx context.Context, newRelation *mem
 			continue
 		}
 		if err := tm.store.InvalidateRelation(ctx, relID, *inv.InvalidAt); err != nil {
-			return nil, fmt.Errorf("temporal: apply invalidation: %w", err)
+			return nil, core.Errorf(core.ErrProviderDown, "temporal: apply invalidation: %w", err)
 		}
 	}
 

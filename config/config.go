@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Load reads a configuration file at path and unmarshals it into T.
@@ -17,9 +19,11 @@ import (
 func Load[T any](path string) (T, error) {
 	var cfg T
 
-	data, err := os.ReadFile(path)
+	cleanPath := filepath.Clean(path)
+	// #nosec G304 -- path comes from explicit caller-provided config location, cleaned above
+	data, err := os.ReadFile(cleanPath)
 	if err != nil {
-		return cfg, fmt.Errorf("config: read %s: %w", path, err)
+		return cfg, core.Errorf(core.ErrNotFound, "config: read %s: %w", path, err)
 	}
 
 	ext := strings.ToLower(filepath.Ext(path))
@@ -27,12 +31,12 @@ func Load[T any](path string) (T, error) {
 	switch ext {
 	case ".json":
 		if err := json.Unmarshal(data, &cfg); err != nil {
-			return cfg, fmt.Errorf("config: unmarshal json: %w", err)
+			return cfg, core.Errorf(core.ErrInvalidInput, "config: unmarshal json: %w", err)
 		}
 		// Also decode into a map to track which keys were explicitly provided.
 		_ = json.Unmarshal(data, &providedKeys)
 	default:
-		return cfg, fmt.Errorf("config: unsupported file extension %q (supported: .json)", ext)
+		return cfg, core.Errorf(core.ErrInvalidInput, "config: unsupported file extension %q (supported: .json)", ext)
 	}
 
 	// Validate required fields before applying defaults so that missing
@@ -75,7 +79,7 @@ func LoadFromEnv[T any](prefix string) (T, error) {
 func MergeEnv(cfg any, prefix string) error {
 	v := reflect.ValueOf(cfg)
 	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("config: MergeEnv requires a pointer to a struct, got %T", cfg)
+		return core.Errorf(core.ErrInvalidInput, "config: MergeEnv requires a pointer to a struct, got %T", cfg)
 	}
 	return mergeEnvFields(v.Elem(), strings.ToUpper(prefix))
 }
@@ -92,7 +96,7 @@ func Validate(cfg any) error {
 		v = v.Elem()
 	}
 	if v.Kind() != reflect.Struct {
-		return fmt.Errorf("config: Validate requires a struct or pointer to struct, got %s", v.Kind())
+		return core.Errorf(core.ErrInvalidInput, "config: Validate requires a struct or pointer to struct, got %s", v.Kind())
 	}
 	return validateStruct(v)
 }
@@ -322,7 +326,7 @@ func validateNumericBounds(field reflect.Value, sf reflect.StructField, fieldNam
 	if minStr != "" {
 		minVal, err := strconv.ParseFloat(minStr, 64)
 		if err != nil {
-			return fmt.Errorf("config: invalid min tag %q on field %s: %w", minStr, fieldName, err)
+			return core.Errorf(core.ErrInvalidInput, "config: invalid min tag %q on field %s: %w", minStr, fieldName, err)
 		}
 		if val < minVal {
 			return &ValidationError{
@@ -335,7 +339,7 @@ func validateNumericBounds(field reflect.Value, sf reflect.StructField, fieldNam
 	if maxStr != "" {
 		maxVal, err := strconv.ParseFloat(maxStr, 64)
 		if err != nil {
-			return fmt.Errorf("config: invalid max tag %q on field %s: %w", maxStr, fieldName, err)
+			return core.Errorf(core.ErrInvalidInput, "config: invalid max tag %q on field %s: %w", maxStr, fieldName, err)
 		}
 		if val > maxVal {
 			return &ValidationError{
@@ -376,7 +380,7 @@ func mergeEnvFields(v reflect.Value, prefix string) error {
 		}
 
 		if !setFieldFromString(field, envVal) {
-			return fmt.Errorf("config: cannot set field %s (type %s) from env var %s=%q",
+			return core.Errorf(core.ErrInvalidInput, "config: cannot set field %s (type %s) from env var %s=%q",
 				sf.Name, field.Type(), envName, envVal)
 		}
 	}

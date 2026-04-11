@@ -1,9 +1,10 @@
 package stt
 
 import (
-	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Factory creates an STT engine from a Config. Each provider registers a
@@ -42,7 +43,7 @@ func New(name string, cfg Config) (STT, error) {
 	registryMu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("stt: unknown provider %q (registered: %v)", name, List())
+		return nil, core.Errorf(core.ErrNotFound, "stt: unknown provider %q (registered: %v)", name, List())
 	}
 	return f(cfg)
 }

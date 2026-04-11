@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -32,7 +33,7 @@ var _ SkillExtractor = (*LLMExtractor)(nil)
 // Returns an error if the model is nil.
 func NewLLMExtractor(model llm.ChatModel) (*LLMExtractor, error) {
 	if model == nil {
-		return nil, fmt.Errorf("procedural: ChatModel must not be nil for LLMExtractor")
+		return nil, core.Errorf(core.ErrInvalidInput, "procedural: ChatModel must not be nil for LLMExtractor")
 	}
 	return &LLMExtractor{model: model}, nil
 }
@@ -50,7 +51,7 @@ func (e *LLMExtractor) Extract(ctx context.Context, input, output string, metada
 
 	resp, err := e.model.Generate(ctx, msgs)
 	if err != nil {
-		return nil, fmt.Errorf("procedural/extractor: generate: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "procedural/extractor: generate: %w", err)
 	}
 
 	text := resp.Text()
@@ -60,7 +61,7 @@ func (e *LLMExtractor) Extract(ctx context.Context, input, output string, metada
 
 	var skill schema.Skill
 	if err := json.Unmarshal([]byte(text), &skill); err != nil {
-		return nil, fmt.Errorf("procedural/extractor: parse skill JSON: %w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, "procedural/extractor: parse skill JSON: %w", err)
 	}
 
 	if skill.Name == "" {

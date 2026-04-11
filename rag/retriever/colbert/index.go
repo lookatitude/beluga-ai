@@ -2,9 +2,10 @@ package colbert
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // IndexResult represents a document match from a ColBERT index search,
@@ -60,10 +61,10 @@ func (idx *InMemoryIndex) Add(ctx context.Context, id string, tokenVecs [][]floa
 		return err
 	}
 	if id == "" {
-		return fmt.Errorf("colbert: index: document ID must not be empty")
+		return core.Errorf(core.ErrInvalidInput, "colbert: index: document ID must not be empty")
 	}
 	if tokenVecs == nil {
-		return fmt.Errorf("colbert: index: tokenVecs must not be nil for document %q", id)
+		return core.Errorf(core.ErrInvalidInput, "colbert: index: tokenVecs must not be nil for document %q", id)
 	}
 
 	// Deep copy to avoid caller mutations.

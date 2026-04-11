@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -82,7 +83,7 @@ Respond with ONLY the JSON object, no markdown fences or other text.`, e.maxTags
 
 	resp, err := e.model.Generate(ctx, msgs)
 	if err != nil {
-		return nil, fmt.Errorf("associative.enricher: LLM generate: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "associative.enricher: LLM generate: %w", err)
 	}
 
 	text := resp.Text()
@@ -95,7 +96,7 @@ Respond with ONLY the JSON object, no markdown fences or other text.`, e.maxTags
 
 	var enrichment Enrichment
 	if err := json.Unmarshal([]byte(text), &enrichment); err != nil {
-		return nil, fmt.Errorf("associative.enricher: parse LLM response: %w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, "associative.enricher: parse LLM response: %w", err)
 	}
 
 	// Enforce tag limit.

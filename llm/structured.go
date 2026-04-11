@@ -73,7 +73,7 @@ func (s *StructuredOutput[T]) Generate(ctx context.Context, msgs []schema.Messag
 		text := resp.Text()
 		var result T
 		if err := json.Unmarshal([]byte(text), &result); err != nil {
-			lastErr = fmt.Errorf("structured output: parse attempt %d: %w", attempt+1, err)
+			lastErr = core.Errorf(core.ErrInvalidInput, "structured output: parse attempt %d: %w", attempt+1, err)
 			// Add the failed response and parse error to messages for self-correction.
 			msgs = append(msgs,
 				schema.NewAIMessage(text),

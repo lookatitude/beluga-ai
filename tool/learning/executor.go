@@ -2,11 +2,12 @@ package learning
 
 import (
 	"context"
-	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"strings"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // CodeExecutor defines the interface for executing dynamically generated tool code.
@@ -53,14 +54,14 @@ func (v *ASTValidator) Validate(code string) error {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, "tool.go", code, parser.AllErrors)
 	if err != nil {
-		return fmt.Errorf("ast validation: parse error: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "ast validation: parse error: %w", err)
 	}
 
 	// Check imports.
 	for _, imp := range f.Imports {
 		path := strings.Trim(imp.Path.Value, `"`)
 		if !v.allowedImports[path] {
-			return fmt.Errorf("ast validation: disallowed import %q", path)
+			return core.Errorf(core.ErrGuardBlocked, "ast validation: disallowed import %q", path)
 		}
 	}
 
@@ -72,14 +73,14 @@ func (v *ASTValidator) Validate(code string) error {
 		}
 		switch n.(type) {
 		case *ast.GoStmt:
-			walkErr = fmt.Errorf("ast validation: goroutine spawning (go statement) is not allowed")
+			walkErr = core.Errorf(core.ErrGuardBlocked, "ast validation: goroutine spawning (go statement) is not allowed")
 			return false
 		}
 		// Check for unsafe package usage in selector expressions.
 		if sel, ok := n.(*ast.SelectorExpr); ok {
 			if ident, ok := sel.X.(*ast.Ident); ok {
 				if ident.Name == "unsafe" {
-					walkErr = fmt.Errorf("ast validation: unsafe package usage is not allowed")
+					walkErr = core.Errorf(core.ErrGuardBlocked, "ast validation: unsafe package usage is not allowed")
 					return false
 				}
 			}

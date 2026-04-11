@@ -2,8 +2,10 @@ package voice
 
 import (
 	"context"
-	"fmt"
+	"iter"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // PipelineMode identifies the active mode in a hybrid pipeline.
@@ -144,7 +146,7 @@ func NewHybridPipeline(opts ...HybridPipelineOption) *HybridPipeline {
 // cascade mode when the switch policy indicates.
 func (h *HybridPipeline) Run(ctx context.Context) error {
 	if h.config.S2S == nil && h.config.Cascade == nil {
-		return fmt.Errorf("voice: hybrid pipeline requires at least one of S2S or cascade")
+		return core.Errorf(core.ErrInvalidInput, "voice: hybrid pipeline requires at least one of S2S or cascade")
 	}
 
 	// Snapshot state under read lock for the switch policy decision.
@@ -173,7 +175,7 @@ func (h *HybridPipeline) Run(ctx context.Context) error {
 	case ModeCascade:
 		return h.runCascade(ctx)
 	default:
-		return fmt.Errorf("voice: unknown pipeline mode %q", state.CurrentMode)
+		return core.Errorf(core.ErrInvalidInput, "voice: unknown pipeline mode %q", state.CurrentMode)
 	}
 }
 
@@ -198,34 +200,29 @@ func (h *HybridPipeline) UpdateState(toolCalls, turnCount int) {
 // cascade transport system.
 func (h *HybridPipeline) runS2S(ctx context.Context) error {
 	if h.config.Session == nil {
-		return fmt.Errorf("voice: S2S pipeline requires a session")
+		return core.Errorf(core.ErrInvalidInput, "voice: S2S pipeline requires a session")
 	}
 
 	// S2S processors are self-contained FrameProcessors that manage their
-	// own transport. Create dummy channels since S2S doesn't use the
-	// cascade transport pattern.
-	in := make(chan Frame)
-	out := make(chan Frame)
-
-	// Close input immediately - S2S manages its own audio I/O.
-	close(in)
-
-	// Drain output in case the processor produces any frames.
-	go func() {
-		for range out {
-			// Discard - S2S handles its own output transport
+	// own transport. Supply an empty input stream since S2S handles its own
+	// audio I/O, and drain (and ignore) any frames the processor chooses to
+	// emit. Any error yielded through the output iterator is returned.
+	empty := iter.Seq2[Frame, error](func(_ func(Frame, error) bool) {
+		// Intentionally empty: S2S processors manage their own transport and
+		// never consume input frames, so this iterator yields nothing.
+	})
+	for _, err := range h.config.S2S.Process(ctx, empty) {
+		if err != nil {
+			return err
 		}
-	}()
-
-	// Run the S2S processor. It will manage its own WebSocket/WebRTC
-	// connection internally and handle audio I/O.
-	return h.config.S2S.Process(ctx, in, out)
+	}
+	return nil
 }
 
 // runCascade delegates to the cascade pipeline.
 func (h *HybridPipeline) runCascade(ctx context.Context) error {
 	if h.config.Cascade == nil {
-		return fmt.Errorf("voice: cascade pipeline not configured")
+		return core.Errorf(core.ErrInvalidInput, "voice: cascade pipeline not configured")
 	}
 	return h.config.Cascade.Run(ctx)
 }

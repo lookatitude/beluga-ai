@@ -4,13 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"iter"
 	"net/http"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/tool"
 )
 
@@ -42,22 +41,22 @@ func NewClient(baseURL string) *A2AClient {
 func (c *A2AClient) GetCard(ctx context.Context) (*AgentCard, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/.well-known/agent.json", nil)
 	if err != nil {
-		return nil, fmt.Errorf(opGetCard+"%w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, opGetCard+"%w", err)
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf(opGetCard+"%w", err)
+		return nil, core.Errorf(core.ErrProviderDown, opGetCard+"%w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(opGetCard+unexpectedStatusFmt, resp.StatusCode)
+		return nil, core.Errorf(core.ErrProviderDown, opGetCard+unexpectedStatusFmt, resp.StatusCode)
 	}
 
 	var card AgentCard
 	if err := json.NewDecoder(resp.Body).Decode(&card); err != nil {
-		return nil, fmt.Errorf(opGetCard+"%w", err)
+		return nil, core.Errorf(core.ErrProviderDown, opGetCard+"%w", err)
 	}
 	return &card, nil
 }
@@ -66,30 +65,30 @@ func (c *A2AClient) GetCard(ctx context.Context) (*AgentCard, error) {
 func (c *A2AClient) CreateTask(ctx context.Context, req TaskRequest) (*Task, error) {
 	body, err := json.Marshal(req)
 	if err != nil {
-		return nil, fmt.Errorf(opCreateTask+"%w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, opCreateTask+"%w", err)
 	}
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/tasks", bytes.NewReader(body))
 	if err != nil {
-		return nil, fmt.Errorf(opCreateTask+"%w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, opCreateTask+"%w", err)
 	}
 	httpReq.Header.Set(contentTypeHeader, contentTypeJSON)
 
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf(opCreateTask+"%w", err)
+		return nil, core.Errorf(core.ErrProviderDown, opCreateTask+"%w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
 		var errResp ErrorResponse
-		json.NewDecoder(resp.Body).Decode(&errResp)
-		return nil, fmt.Errorf(opCreateTask+"%s", errResp.Error)
+		_ = json.NewDecoder(resp.Body).Decode(&errResp)
+		return nil, core.Errorf(core.ErrProviderDown, opCreateTask+"%s", errResp.Error)
 	}
 
 	var taskResp TaskResponse
 	if err := json.NewDecoder(resp.Body).Decode(&taskResp); err != nil {
-		return nil, fmt.Errorf(opCreateTask+"%w", err)
+		return nil, core.Errorf(core.ErrProviderDown, opCreateTask+"%w", err)
 	}
 	return &taskResp.Task, nil
 }
@@ -98,25 +97,25 @@ func (c *A2AClient) CreateTask(ctx context.Context, req TaskRequest) (*Task, err
 func (c *A2AClient) GetTask(ctx context.Context, taskID string) (*Task, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/tasks/"+taskID, nil)
 	if err != nil {
-		return nil, fmt.Errorf(opGetTask+"%w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, opGetTask+"%w", err)
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf(opGetTask+"%w", err)
+		return nil, core.Errorf(core.ErrProviderDown, opGetTask+"%w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, errors.New(opGetTask + "task not found")
+		return nil, core.Errorf(core.ErrNotFound, opGetTask+"task not found")
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(opGetTask+unexpectedStatusFmt, resp.StatusCode)
+		return nil, core.Errorf(core.ErrProviderDown, opGetTask+unexpectedStatusFmt, resp.StatusCode)
 	}
 
 	var taskResp TaskResponse
 	if err := json.NewDecoder(resp.Body).Decode(&taskResp); err != nil {
-		return nil, fmt.Errorf(opGetTask+"%w", err)
+		return nil, core.Errorf(core.ErrProviderDown, opGetTask+"%w", err)
 	}
 	return &taskResp.Task, nil
 }
@@ -125,20 +124,20 @@ func (c *A2AClient) GetTask(ctx context.Context, taskID string) (*Task, error) {
 func (c *A2AClient) CancelTask(ctx context.Context, taskID string) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/tasks/"+taskID+"/cancel", nil)
 	if err != nil {
-		return fmt.Errorf(opCancelTask+"%w", err)
+		return core.Errorf(core.ErrInvalidInput, opCancelTask+"%w", err)
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf(opCancelTask+"%w", err)
+		return core.Errorf(core.ErrProviderDown, opCancelTask+"%w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return errors.New(opCancelTask + "task not found")
+		return core.Errorf(core.ErrNotFound, opCancelTask+"task not found")
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf(opCancelTask+unexpectedStatusFmt, resp.StatusCode)
+		return core.Errorf(core.ErrProviderDown, opCancelTask+unexpectedStatusFmt, resp.StatusCode)
 	}
 
 	return nil
@@ -152,7 +151,7 @@ func NewRemoteAgent(baseURL string) (agent.Agent, error) {
 
 	card, err := client.GetCard(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("a2a/remote_agent: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "a2a/remote_agent: %w", err)
 	}
 
 	return &remoteAgent{
@@ -176,13 +175,13 @@ func (a *remoteAgent) Persona() agent.Persona {
 	}
 }
 
-func (a *remoteAgent) Tools() []tool.Tool    { return nil }
+func (a *remoteAgent) Tools() []tool.Tool      { return nil }
 func (a *remoteAgent) Children() []agent.Agent { return nil }
 
 func (a *remoteAgent) Invoke(ctx context.Context, input string, _ ...agent.Option) (string, error) {
 	task, err := a.client.CreateTask(ctx, TaskRequest{Input: input})
 	if err != nil {
-		return "", fmt.Errorf(opInvoke+"%w", err)
+		return "", core.Errorf(core.ErrProviderDown, opInvoke+"%w", err)
 	}
 
 	// Poll until terminal state with exponential backoff.
@@ -198,16 +197,16 @@ func (a *remoteAgent) Invoke(ctx context.Context, input string, _ ...agent.Optio
 
 		task, err = a.client.GetTask(ctx, task.ID)
 		if err != nil {
-			return "", fmt.Errorf(opInvoke+"%w", err)
+			return "", core.Errorf(core.ErrProviderDown, opInvoke+"%w", err)
 		}
 
 		switch task.Status {
 		case StatusCompleted:
 			return task.Output, nil
 		case StatusFailed:
-			return "", fmt.Errorf(opInvoke+"task failed: %s", task.Error)
+			return "", core.Errorf(core.ErrProviderDown, opInvoke+"task failed: %s", task.Error)
 		case StatusCanceled:
-			return "", errors.New(opInvoke + "task canceled")
+			return "", core.Errorf(core.ErrTimeout, opInvoke+"task canceled")
 		}
 
 		// Exponential backoff, capped at maxDelay.

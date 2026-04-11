@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -64,7 +65,7 @@ func (r *MultiQueryRetriever) Retrieve(ctx context.Context, query string, opts .
 
 	queries, err := r.generateQueries(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("retriever: generate queries: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "retriever: generate queries: %w", err)
 	}
 
 	// Always include the original query.
@@ -76,7 +77,7 @@ func (r *MultiQueryRetriever) Retrieve(ctx context.Context, query string, opts .
 	for _, q := range allQueries {
 		docs, err := r.inner.Retrieve(ctx, q, opts...)
 		if err != nil {
-			return nil, fmt.Errorf("retriever: multiquery retrieve %q: %w", q, err)
+			return nil, core.Errorf(core.ErrProviderDown, "retriever: multiquery retrieve %q: %w", q, err)
 		}
 		for _, doc := range docs {
 			if _, ok := seen[doc.ID]; !ok {

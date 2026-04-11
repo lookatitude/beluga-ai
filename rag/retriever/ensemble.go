@@ -2,9 +2,9 @@ package retriever
 
 import (
 	"context"
-	"fmt"
 	"sort"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -79,7 +79,7 @@ func NewWeightedStrategy(weights []float64) *WeightedStrategy {
 // fused score.
 func (s *WeightedStrategy) Fuse(_ context.Context, results [][]schema.Document) ([]schema.Document, error) {
 	if len(s.Weights) != len(results) {
-		return nil, fmt.Errorf("retriever: weighted fusion: %d weights for %d result sets", len(s.Weights), len(results))
+		return nil, core.Errorf(core.ErrInvalidInput, "retriever: weighted fusion: %d weights for %d result sets", len(s.Weights), len(results))
 	}
 
 	// Normalise weights.
@@ -88,7 +88,7 @@ func (s *WeightedStrategy) Fuse(_ context.Context, results [][]schema.Document) 
 		total += w
 	}
 	if total == 0 {
-		return nil, fmt.Errorf("retriever: weighted fusion: weights sum to zero")
+		return nil, core.Errorf(core.ErrInvalidInput, "retriever: weighted fusion: weights sum to zero")
 	}
 
 	scores := make(map[string]float64)
@@ -165,7 +165,7 @@ func (r *EnsembleRetriever) Retrieve(ctx context.Context, query string, opts ...
 	for i, ret := range r.retrievers {
 		docs, err := ret.Retrieve(ctx, query, opts...)
 		if err != nil {
-			return nil, fmt.Errorf("retriever: ensemble retriever %d: %w", i, err)
+			return nil, core.Errorf(core.ErrProviderDown, "retriever: ensemble retriever %d: %w", i, err)
 		}
 		results[i] = docs
 	}
@@ -173,7 +173,7 @@ func (r *EnsembleRetriever) Retrieve(ctx context.Context, query string, opts ...
 	cfg := ApplyOptions(opts...)
 	fused, err := r.strategy.Fuse(ctx, results)
 	if err != nil {
-		return nil, fmt.Errorf("retriever: ensemble fuse: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "retriever: ensemble fuse: %w", err)
 	}
 
 	if cfg.TopK > 0 && len(fused) > cfg.TopK {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tool"
 )
@@ -74,21 +75,21 @@ func (t *retrieverTool) InputSchema() map[string]any {
 func (t *retrieverTool) Execute(ctx context.Context, input map[string]any) (*tool.Result, error) {
 	queryRaw, ok := input["query"]
 	if !ok {
-		return nil, fmt.Errorf("retriever tool %s: missing required field \"query\"", t.name)
+		return nil, core.Errorf(core.ErrInvalidInput, "retriever tool %s: missing required field \"query\"", t.name)
 	}
 
 	query, ok := queryRaw.(string)
 	if !ok {
-		return nil, fmt.Errorf("retriever tool %s: \"query\" must be a string", t.name)
+		return nil, core.Errorf(core.ErrInvalidInput, "retriever tool %s: \"query\" must be a string", t.name)
 	}
 
 	if query == "" {
-		return nil, fmt.Errorf("retriever tool %s: \"query\" must not be empty", t.name)
+		return nil, core.Errorf(core.ErrInvalidInput, "retriever tool %s: \"query\" must not be empty", t.name)
 	}
 
 	docs, err := t.retriever.Retrieve(ctx, query, WithTopK(t.topK))
 	if err != nil {
-		return tool.ErrorResult(fmt.Errorf("retriever tool %s: %w", t.name, err)), nil
+		return tool.ErrorResult(core.Errorf(core.ErrProviderDown, "retriever tool %s: %w", t.name, err)), nil
 	}
 
 	if len(docs) == 0 {

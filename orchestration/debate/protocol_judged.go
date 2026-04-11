@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Compile-time check.
@@ -38,7 +40,7 @@ func NewJudgedProtocol(judgeID string) *JudgedProtocol {
 // prompt from FollowUp after the first pass has completed.
 func (p *JudgedProtocol) NextRound(_ context.Context, state DebateState) (map[string]string, error) {
 	if len(state.AgentIDs) < 2 {
-		return nil, fmt.Errorf("debate/judged: requires at least 2 agents, got %d", len(state.AgentIDs))
+		return nil, core.Errorf(core.ErrInvalidInput, "debate/judged: requires at least 2 agents, got %d", len(state.AgentIDs))
 	}
 
 	judgeID := p.resolveJudge(state.AgentIDs)
@@ -61,7 +63,7 @@ func (p *JudgedProtocol) NextRound(_ context.Context, state DebateState) (map[st
 // history.
 func (p *JudgedProtocol) FollowUp(_ context.Context, state DebateState, currentRound Round) (map[string]string, error) {
 	if len(state.AgentIDs) < 2 {
-		return nil, fmt.Errorf("debate/judged: requires at least 2 agents, got %d", len(state.AgentIDs))
+		return nil, core.Errorf(core.ErrInvalidInput, "debate/judged: requires at least 2 agents, got %d", len(state.AgentIDs))
 	}
 
 	judgeID := p.resolveJudge(state.AgentIDs)

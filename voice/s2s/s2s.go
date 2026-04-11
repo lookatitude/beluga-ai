@@ -2,8 +2,10 @@ package s2s
 
 import (
 	"context"
-	"fmt"
+	"iter"
+	"sync"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/internal/hookutil"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/voice"
@@ -58,8 +60,10 @@ type S2S interface {
 	Start(ctx context.Context, opts ...Option) (Session, error)
 }
 
-// Session represents an active bidirectional audio session with an S2S provider.
-type Session interface {
+// SessionSender carries input (audio, text, tool results) from the client to
+// the S2S provider. Split from Session so consumers that only send (e.g., a
+// push-to-talk UI controller) can depend on the narrowest surface.
+type SessionSender interface {
 	// SendAudio sends an audio chunk to the provider.
 	SendAudio(ctx context.Context, audio []byte) error
 
@@ -68,16 +72,36 @@ type Session interface {
 
 	// SendToolResult sends a tool execution result back to the model.
 	SendToolResult(ctx context.Context, result schema.ToolResult) error
+}
 
-	// Recv returns a channel of session events. The channel is closed
-	// when the session ends.
-	Recv() <-chan SessionEvent
+// SessionReceiver delivers output events from the provider to the client.
+type SessionReceiver interface {
+	// Recv returns an iterator of session events. The iterator ends when
+	// the session closes or ctx is cancelled. Transport-level errors are
+	// delivered as the second element of the yielded pair; event-level
+	// errors surface as SessionEvent{Type: EventError} values.
+	Recv(ctx context.Context) iter.Seq2[SessionEvent, error]
+}
 
+// SessionControl governs session lifecycle — interruption and termination.
+type SessionControl interface {
 	// Interrupt signals that the user has interrupted the model's output.
 	Interrupt(ctx context.Context) error
 
 	// Close terminates the session and releases resources.
 	Close() error
+}
+
+// Session represents an active bidirectional audio session with an S2S provider.
+//
+// Session is composed from three smaller interfaces (SessionSender,
+// SessionReceiver, SessionControl) so consumers can depend on the narrowest
+// surface they need. Every existing implementation of Session automatically
+// satisfies all three sub-interfaces; no migration is required.
+type Session interface {
+	SessionSender
+	SessionReceiver
+	SessionControl
 }
 
 // Config holds configuration options for S2S sessions.
@@ -182,25 +206,18 @@ func ComposeHooks(hooks ...Hooks) Hooks {
 	}
 }
 
-// forwardSessionEvents reads session events and forwards them as voice frames.
-func forwardSessionEvents(session Session, out chan<- voice.Frame, done chan<- error) {
-	defer close(done)
-	for event := range session.Recv() {
-		switch event.Type {
-		case EventAudioOutput:
-			sampleRate := 24000 // default S2S sample rate
-			out <- voice.NewAudioFrame(event.Audio, sampleRate)
-		case EventTextOutput:
-			out <- voice.NewTextFrame(event.Text)
-		case EventTurnEnd:
-			out <- voice.NewControlFrame(voice.SignalEndOfUtterance)
-		case EventError:
-			if event.Error != nil {
-				done <- event.Error
-				return
-			}
-		}
+// sessionEventToFrame converts an S2S SessionEvent to a voice.Frame, returning
+// ok=false if the event should be dropped (e.g. EventError with nil Error).
+func sessionEventToFrame(event SessionEvent) (voice.Frame, bool) {
+	switch event.Type {
+	case EventAudioOutput:
+		return voice.NewAudioFrame(event.Audio, 24000), true
+	case EventTextOutput:
+		return voice.NewTextFrame(event.Text), true
+	case EventTurnEnd:
+		return voice.NewControlFrame(voice.SignalEndOfUtterance), true
 	}
+	return voice.Frame{}, false
 }
 
 // forwardInputFrame sends a single input frame to the session.
@@ -208,16 +225,16 @@ func forwardInputFrame(ctx context.Context, session Session, frame voice.Frame) 
 	switch frame.Type {
 	case voice.FrameAudio:
 		if sendErr := session.SendAudio(ctx, frame.Data); sendErr != nil {
-			return fmt.Errorf("s2s: send audio: %w", sendErr)
+			return core.Errorf(core.ErrProviderDown, "s2s: send audio: %w", sendErr)
 		}
 	case voice.FrameText:
 		if sendErr := session.SendText(ctx, frame.Text()); sendErr != nil {
-			return fmt.Errorf("s2s: send text: %w", sendErr)
+			return core.Errorf(core.ErrProviderDown, "s2s: send text: %w", sendErr)
 		}
 	case voice.FrameControl:
 		if frame.Signal() == voice.SignalInterrupt {
 			if intErr := session.Interrupt(ctx); intErr != nil {
-				return fmt.Errorf("s2s: interrupt: %w", intErr)
+				return core.Errorf(core.ErrProviderDown, "s2s: interrupt: %w", intErr)
 			}
 		}
 	}
@@ -225,32 +242,218 @@ func forwardInputFrame(ctx context.Context, session Session, frame voice.Frame) 
 }
 
 // AsFrameProcessor wraps an S2S engine as a voice.FrameProcessor.
-// It creates a session, forwards audio frames, and emits output audio frames.
+// It creates a session, forwards input audio/text/control frames to the
+// session, and yields output frames produced by the session. Any
+// transport-level error from the session or from input forwarding terminates
+// the output iterator.
+//
+// The implementation uses two separate channels (session output events and
+// input-forwarding errors) so each has exactly one writer — avoiding the
+// classic "send on closed channel" race that arises when two goroutines fan
+// into a single channel with shared ownership of the close.
 func AsFrameProcessor(engine S2S, opts ...Option) voice.FrameProcessor {
-	return voice.FrameProcessorFunc(func(ctx context.Context, in <-chan voice.Frame, out chan<- voice.Frame) error {
-		defer close(out)
-
-		session, err := engine.Start(ctx, opts...)
-		if err != nil {
-			return fmt.Errorf("s2s: start session: %w", err)
-		}
-		defer session.Close()
-
-		done := make(chan error, 1)
-		go forwardSessionEvents(session, out, done)
-
-		for {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case frame, ok := <-in:
-				if !ok {
-					return <-done
-				}
-				if fwdErr := forwardInputFrame(ctx, session, frame); fwdErr != nil {
-					return fwdErr
-				}
-			}
+	return voice.FrameProcessorFunc(func(ctx context.Context, in iter.Seq2[voice.Frame, error]) iter.Seq2[voice.Frame, error] {
+		return func(yield func(voice.Frame, error) bool) {
+			runAsFrameProcessor(ctx, engine, opts, in, yield)
 		}
 	})
+}
+
+// frameResult carries a frame or terminal error from the output pump goroutine.
+type frameResult struct {
+	frame voice.Frame
+	err   error
+}
+
+// runAsFrameProcessor is the body of AsFrameProcessor's returned iterator. It
+// starts the session, spawns input/output pump goroutines, and runs the
+// consumer select-loop that yields frames to the caller.
+func runAsFrameProcessor(
+	ctx context.Context,
+	engine S2S,
+	opts []Option,
+	in iter.Seq2[voice.Frame, error],
+	yield func(voice.Frame, error) bool,
+) {
+	session, err := engine.Start(ctx, opts...)
+	if err != nil {
+		yield(voice.Frame{}, core.Errorf(core.ErrProviderDown, "s2s: start session: %w", err))
+		return
+	}
+	defer func() { _ = session.Close() }()
+
+	pumpCtx, cancelPump := context.WithCancel(ctx)
+	// CancelFunc is idempotent so the extra call below is safe; this defer
+	// guarantees cancel on every exit path and keeps gosec happy.
+	defer cancelPump()
+	var wg sync.WaitGroup
+
+	outResults := make(chan frameResult, 16)
+	wg.Add(1)
+	go runOutputPump(pumpCtx, &wg, session, outResults)
+
+	inputErr := make(chan error, 1)
+	inputDone := make(chan struct{})
+	wg.Add(1)
+	go runInputPump(pumpCtx, &wg, session, in, inputErr, inputDone)
+
+	// Cleanup: cancel pumps and wait for both goroutines to exit.
+	// A draining goroutine ensures the output pump can always send its
+	// final value even after the consumer has bailed.
+	defer func() {
+		cancelPump()
+		go func() {
+			for range outResults {
+				// Drain: the consumer exited before the output pump finished.
+				// We must keep reading so the pump can complete its final send
+				// without blocking, allowing the pump's deferred close to fire.
+			}
+		}()
+		wg.Wait()
+	}()
+
+	consumeLoop(ctx, yield, outResults, inputErr, inputDone)
+}
+
+// runOutputPump forwards session.Recv events to outResults until the session
+// ends, errors, or pumpCtx is cancelled. It is the sole writer to outResults
+// and closes it on exit.
+func runOutputPump(
+	pumpCtx context.Context,
+	wg *sync.WaitGroup,
+	session Session,
+	outResults chan<- frameResult,
+) {
+	defer wg.Done()
+	defer close(outResults)
+	for event, rerr := range session.Recv(pumpCtx) {
+		if rerr != nil {
+			sendResult(pumpCtx, outResults, frameResult{err: rerr})
+			return
+		}
+		if event.Type == EventError {
+			if event.Error != nil {
+				sendResult(pumpCtx, outResults, frameResult{err: event.Error})
+				return
+			}
+			continue
+		}
+		frame, ok := sessionEventToFrame(event)
+		if !ok {
+			continue
+		}
+		if !sendResult(pumpCtx, outResults, frameResult{frame: frame}) {
+			return
+		}
+	}
+}
+
+// sendResult sends a frameResult on outResults, aborting if pumpCtx is
+// cancelled. Returns true if the send succeeded.
+func sendResult(pumpCtx context.Context, outResults chan<- frameResult, res frameResult) bool {
+	select {
+	case outResults <- res:
+		return true
+	case <-pumpCtx.Done():
+		return false
+	}
+}
+
+// runInputPump forwards frames from the input iterator to the session,
+// aborting on context cancellation, iterator exhaustion, or forward errors.
+// It is the sole writer to inputErr and closes inputDone on exit.
+func runInputPump(
+	pumpCtx context.Context,
+	wg *sync.WaitGroup,
+	session Session,
+	in iter.Seq2[voice.Frame, error],
+	inputErr chan<- error,
+	inputDone chan<- struct{},
+) {
+	defer wg.Done()
+	defer close(inputDone)
+	next, stop := iter.Pull2(in)
+	defer stop()
+	for {
+		if pumpCtx.Err() != nil {
+			return
+		}
+		frame, ierr, ok := next()
+		if !ok {
+			return
+		}
+		if ierr != nil {
+			trySendErr(inputErr, ierr)
+			return
+		}
+		if fwdErr := forwardInputFrame(pumpCtx, session, frame); fwdErr != nil {
+			trySendErr(inputErr, fwdErr)
+			return
+		}
+	}
+}
+
+// trySendErr performs a non-blocking send on inputErr. The channel is buffered
+// with capacity 1 and the pump exits immediately after, so we drop duplicates.
+func trySendErr(inputErr chan<- error, err error) {
+	select {
+	case inputErr <- err:
+	default:
+	}
+}
+
+// consumeLoop runs the consumer select-loop that yields frames to the caller
+// until both pumps have closed or the caller's context is cancelled.
+func consumeLoop(
+	ctx context.Context,
+	yield func(voice.Frame, error) bool,
+	outResults <-chan frameResult,
+	inputErr <-chan error,
+	inputDone <-chan struct{},
+) {
+	outputClosed := false
+	inputClosed := false
+	for {
+		if outputClosed && inputClosed {
+			return
+		}
+		select {
+		case <-ctx.Done():
+			yield(voice.Frame{}, ctx.Err())
+			return
+		case res, open := <-outResults:
+			if !open {
+				outputClosed = true
+				// Nil out the channel so this branch never fires again.
+				outResults = nil
+				continue
+			}
+			if res.err != nil {
+				yield(voice.Frame{}, res.err)
+				return
+			}
+			if !yield(res.frame, nil) {
+				return
+			}
+		case ierr := <-inputErr:
+			if ierr != nil {
+				yield(voice.Frame{}, ierr)
+				return
+			}
+		case <-inputDone:
+			inputClosed = true
+			// Drain any buffered input error delivered just before close.
+			select {
+			case ierr := <-inputErr:
+				if ierr != nil {
+					yield(voice.Frame{}, ierr)
+					return
+				}
+			default:
+			}
+			// Nil out these branches so they don't fire again.
+			inputDone = nil
+			inputErr = nil
+		}
+	}
 }

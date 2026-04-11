@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -68,7 +69,7 @@ func NewLLMSummarizer(model llm.ChatModel, opts ...LLMSummarizerOption) *LLMSumm
 // Summarize concatenates the texts and asks the LLM to produce a summary.
 func (s *LLMSummarizer) Summarize(ctx context.Context, texts []string) (string, error) {
 	if len(texts) == 0 {
-		return "", fmt.Errorf("raptor: summarize: no texts provided")
+		return "", core.Errorf(core.ErrInvalidInput, "raptor: summarize: no texts provided")
 	}
 
 	combined := strings.Join(texts, "\n\n---\n\n")
@@ -80,7 +81,7 @@ func (s *LLMSummarizer) Summarize(ctx context.Context, texts []string) (string, 
 
 	resp, err := s.model.Generate(ctx, msgs)
 	if err != nil {
-		return "", fmt.Errorf("raptor: summarize: %w", err)
+		return "", core.Errorf(core.ErrProviderDown, "raptor: summarize: %w", err)
 	}
 
 	return resp.Text(), nil

@@ -7,9 +7,14 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
-const errFmtRequest = "hitl/request: %w"
+// errHitlRequest is the common prefix for wrapped errors returned by the
+// request-interaction code path. Extracted as a constant so the literal is
+// not duplicated across multiple error sites.
+const errHitlRequest = "hitl/request: %w"
 
 // seq is a package-level counter for generating unique request IDs.
 var seq atomic.Int64
@@ -71,11 +76,11 @@ func NewManager(opts ...ManagerOption) *DefaultManager {
 // pattern is empty or invalid.
 func (m *DefaultManager) AddPolicy(policy ApprovalPolicy) error {
 	if policy.ToolPattern == "" {
-		return fmt.Errorf("hitl/add_policy: tool pattern is required")
+		return core.Errorf(core.ErrInvalidInput, "hitl/add_policy: tool pattern is required")
 	}
 	// Validate the glob pattern using path.Match.
 	if _, err := path.Match(policy.ToolPattern, ""); err != nil {
-		return fmt.Errorf("hitl/add_policy: invalid pattern %q: %w", policy.ToolPattern, err)
+		return core.Errorf(core.ErrInvalidInput, "hitl/add_policy: invalid pattern %q: %w", policy.ToolPattern, err)
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -100,7 +105,7 @@ func (m *DefaultManager) ShouldApprove(_ context.Context, toolName string, confi
 	for _, p := range m.policies {
 		matched, err := path.Match(p.ToolPattern, toolName)
 		if err != nil {
-			return false, fmt.Errorf("hitl/should_approve: %w", err)
+			return false, core.Errorf(core.ErrInvalidInput, "hitl/should_approve: %w", err)
 		}
 		if !matched {
 			continue
@@ -145,10 +150,10 @@ func (m *DefaultManager) checkAutoApproval(ctx context.Context, req InteractionR
 	if err != nil {
 		if m.hooks.OnError != nil {
 			if e := m.hooks.OnError(ctx, err); e != nil {
-				return nil, fmt.Errorf(errFmtRequest, e)
+				return nil, core.Errorf(core.ErrInvalidInput, errHitlRequest, e)
 			}
 		}
-		return nil, fmt.Errorf(errFmtRequest, err)
+		return nil, core.Errorf(core.ErrInvalidInput, errHitlRequest, err)
 	}
 	if !autoApprove {
 		return nil, nil
@@ -203,7 +208,7 @@ func (m *DefaultManager) awaitResponse(ctx context.Context, req InteractionReque
 		if m.hooks.OnTimeout != nil {
 			m.hooks.OnTimeout(ctx, req)
 		}
-		return nil, fmt.Errorf(errFmtRequest, timeoutCtx.Err())
+		return nil, core.Errorf(core.ErrTimeout, errHitlRequest, timeoutCtx.Err())
 	}
 }
 
@@ -227,7 +232,7 @@ func (m *DefaultManager) RequestInteraction(ctx context.Context, req Interaction
 
 	if m.hooks.OnRequest != nil {
 		if err := m.hooks.OnRequest(ctx, req); err != nil {
-			return nil, fmt.Errorf("hitl/request: on_request hook: %w", err)
+			return nil, core.Errorf(core.ErrInvalidInput, "hitl/request: on_request hook: %w", err)
 		}
 	}
 
@@ -246,7 +251,11 @@ func (m *DefaultManager) RequestInteraction(ctx context.Context, req Interaction
 	if m.notifier != nil {
 		if err := m.notifier.Notify(ctx, req); err != nil {
 			if m.hooks.OnError != nil {
-				m.hooks.OnError(ctx, err)
+				// Fire-and-forget: notification failure is not fatal, but
+				// we still let the hook observe it. The returned (possibly
+				// replaced) error is discarded here because the caller's
+				// await path will surface any real failure.
+				_ = m.hooks.OnError(ctx, err)
 			}
 		}
 	}
@@ -261,7 +270,7 @@ func (m *DefaultManager) Respond(_ context.Context, requestID string, resp Inter
 	m.mu.RUnlock()
 
 	if !ok {
-		return fmt.Errorf("hitl/respond: request %q not found", requestID)
+		return core.Errorf(core.ErrNotFound, "hitl/respond: request %q not found", requestID)
 	}
 
 	resp.RequestID = requestID

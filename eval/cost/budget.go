@@ -1,8 +1,9 @@
 package cost
 
 import (
-	"fmt"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // BudgetAlert monitors cumulative evaluation cost and fires a callback when
@@ -42,7 +43,7 @@ func NewBudgetAlert(opts ...BudgetAlertOption) (*BudgetAlert, error) {
 		opt(b)
 	}
 	if b.threshold <= 0 {
-		return nil, fmt.Errorf("budget: threshold must be positive, got %f", b.threshold)
+		return nil, core.Errorf(core.ErrInvalidInput, "budget: threshold must be positive, got %f", b.threshold)
 	}
 	return b, nil
 }

@@ -3,14 +3,15 @@ package a2a
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net"
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 const (
@@ -52,13 +53,14 @@ func (s *A2AServer) Handler() http.Handler {
 // is canceled or an error occurs.
 func (s *A2AServer) Serve(ctx context.Context, addr string) error {
 	srv := &http.Server{
-		Addr:    addr,
-		Handler: s.Handler(),
+		Addr:              addr,
+		Handler:           s.Handler(),
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
-		return fmt.Errorf("a2a/serve: %w", err)
+		return core.Errorf(core.ErrProviderDown, "a2a/serve: %w", err)
 	}
 
 	errCh := make(chan error, 1)
@@ -69,20 +71,20 @@ func (s *A2AServer) Serve(ctx context.Context, addr string) error {
 	select {
 	case <-ctx.Done():
 		if shutdownErr := srv.Close(); shutdownErr != nil {
-			return fmt.Errorf("a2a/serve: shutdown: %w", shutdownErr)
+			return core.Errorf(core.ErrProviderDown, "a2a/serve: shutdown: %w", shutdownErr)
 		}
 		return ctx.Err()
 	case err := <-errCh:
 		if err == http.ErrServerClosed {
 			return nil
 		}
-		return fmt.Errorf("a2a/serve: %w", err)
+		return core.Errorf(core.ErrProviderDown, "a2a/serve: %w", err)
 	}
 }
 
 func (s *A2AServer) handleCard(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set(contentTypeHeader, contentTypeJSON)
-	json.NewEncoder(w).Encode(s.card)
+	_ = json.NewEncoder(w).Encode(s.card)
 }
 
 func (s *A2AServer) handleCreateTask(w http.ResponseWriter, r *http.Request) {
@@ -105,8 +107,10 @@ func (s *A2AServer) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Use background context since the task runs asynchronously beyond the
-	// lifetime of the HTTP request.
-	ctx, cancel := context.WithCancel(context.Background())
+	// lifetime of the HTTP request. The cancel function is stored in
+	// s.cancel[task.ID] and invoked later by handleTaskAction when the task
+	// is cancelled, or implicitly when the task completes and is reaped.
+	ctx, cancel := context.WithCancel(context.Background()) // #nosec G118 -- cancel stored in s.cancel map, invoked later
 
 	// Take a snapshot for the response before the goroutine can modify the task.
 	snapshot := *task
@@ -121,7 +125,7 @@ func (s *A2AServer) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(contentTypeHeader, contentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(TaskResponse{Task: snapshot})
+	_ = json.NewEncoder(w).Encode(TaskResponse{Task: snapshot})
 }
 
 func (s *A2AServer) runTask(ctx context.Context, task *Task) {
@@ -178,7 +182,7 @@ func (s *A2AServer) handleGetTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set(contentTypeHeader, contentTypeJSON)
-	json.NewEncoder(w).Encode(TaskResponse{Task: snapshot})
+	_ = json.NewEncoder(w).Encode(TaskResponse{Task: snapshot})
 }
 
 func (s *A2AServer) handleTaskAction(w http.ResponseWriter, r *http.Request) {
@@ -211,7 +215,7 @@ func (s *A2AServer) handleTaskAction(w http.ResponseWriter, r *http.Request) {
 	s.mu.Unlock()
 
 	w.Header().Set(contentTypeHeader, contentTypeJSON)
-	json.NewEncoder(w).Encode(TaskResponse{Task: snapshot})
+	_ = json.NewEncoder(w).Encode(TaskResponse{Task: snapshot})
 }
 
 func extractTaskID(path string) string {
@@ -223,5 +227,5 @@ func extractTaskID(path string) string {
 func writeJSONError(w http.ResponseWriter, statusCode int, message string) {
 	w.Header().Set(contentTypeHeader, contentTypeJSON)
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(ErrorResponse{Error: message})
+	_ = json.NewEncoder(w).Encode(ErrorResponse{Error: message})
 }

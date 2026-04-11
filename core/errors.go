@@ -72,6 +72,23 @@ func NewError(op string, code ErrorCode, msg string, cause error) *Error {
 	}
 }
 
+// Errorf returns a new Error with the given code and a formatted message. It is
+// the typed-error analogue of fmt.Errorf: if the format string contains %w
+// and a wrapped error is supplied, that error is preserved as the cause and
+// participates in errors.Is / errors.As / IsRetryable traversal.
+//
+// This is the primary entry point for capability-layer code that needs to
+// return a typed error without constructing an Error literal.
+func Errorf(code ErrorCode, format string, args ...any) *Error {
+	// Delegate formatting to fmt.Errorf so we inherit its %w handling.
+	inner := fmt.Errorf(format, args...)
+	return &Error{
+		Code:    code,
+		Message: inner.Error(),
+		Err:     errors.Unwrap(inner),
+	}
+}
+
 // Error returns a string representation of the error including op, code,
 // message, and the wrapped cause if present.
 func (e *Error) Error() string {

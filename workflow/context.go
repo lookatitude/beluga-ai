@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"context"
+	"iter"
 	"time"
 )
 
@@ -15,9 +16,12 @@ type WorkflowContext interface {
 	// recorded for replay during recovery.
 	ExecuteActivity(fn ActivityFunc, input any, opts ...ActivityOption) (any, error)
 
-	// ReceiveSignal returns a channel that delivers payloads for the named
-	// signal. Multiple calls with the same name return the same channel.
-	ReceiveSignal(name string) <-chan any
+	// ReceiveSignal returns an iterator that yields payloads delivered to
+	// the named signal. Iteration ends when the workflow context is
+	// canceled. Multiple calls with the same name are independent
+	// subscribers and each receives every payload delivered after
+	// subscription.
+	ReceiveSignal(name string) iter.Seq2[any, error]
 
 	// Sleep pauses the workflow for the given duration. Unlike time.Sleep,
 	// this is recorded and replayed correctly during recovery.

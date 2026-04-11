@@ -4,13 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/memory"
 	"github.com/lookatitude/beluga-ai/memory/stores/internal/storeutil"
 	"github.com/lookatitude/beluga-ai/schema"
 )
+
+// validTableName matches SQL identifiers: letter/underscore followed by
+// letters, digits, or underscores. Rejects everything else so interpolation
+// into DDL/DML via fmt.Sprintf below is safe.
+var validTableName = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
 // DBTX is the minimal interface satisfied by both pgx.Conn, pgxpool.Pool,
 // and pgxmock for testing.
@@ -38,11 +45,14 @@ type MessageStore struct {
 // Use EnsureTable to auto-create it.
 func New(cfg Config) (*MessageStore, error) {
 	if cfg.DB == nil {
-		return nil, fmt.Errorf("postgres: db is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "postgres: db is required")
 	}
 	table := cfg.Table
 	if table == "" {
 		table = "messages"
+	}
+	if !validTableName.MatchString(table) {
+		return nil, core.Errorf(core.ErrInvalidInput, "postgres: invalid table name %q (must match ^[a-zA-Z_][a-zA-Z0-9_]*$)", table)
 	}
 	return &MessageStore{
 		db:    cfg.DB,
@@ -52,6 +62,7 @@ func New(cfg Config) (*MessageStore, error) {
 
 // EnsureTable creates the messages table if it does not exist.
 func (s *MessageStore) EnsureTable(ctx context.Context) error {
+	// #nosec G201 -- table name validated in New() against ^[a-zA-Z_][a-zA-Z0-9_]*$
 	query := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
 		id SERIAL PRIMARY KEY,
 		role TEXT NOT NULL,
@@ -68,21 +79,22 @@ func (s *MessageStore) Append(ctx context.Context, msg schema.Message) error {
 	sc := storeutil.EncodeContent(msg)
 	contentJSON, err := json.Marshal(sc)
 	if err != nil {
-		return fmt.Errorf("postgres: marshal content: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "postgres: marshal content: %w", err)
 	}
 
 	metadataJSON, err := json.Marshal(msg.GetMetadata())
 	if err != nil {
-		return fmt.Errorf("postgres: marshal metadata: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "postgres: marshal metadata: %w", err)
 	}
 
+	// #nosec G201 -- table name validated in New() against ^[a-zA-Z_][a-zA-Z0-9_]*$
 	query := fmt.Sprintf(
 		"INSERT INTO %s (role, content, metadata) VALUES ($1, $2, $3)",
 		s.table,
 	)
 	_, err = s.db.Exec(ctx, query, string(msg.GetRole()), contentJSON, metadataJSON)
 	if err != nil {
-		return fmt.Errorf("postgres: append: %w", err)
+		return core.Errorf(core.ErrProviderDown, "postgres: append: %w", err)
 	}
 	return nil
 }
@@ -90,6 +102,7 @@ func (s *MessageStore) Append(ctx context.Context, msg schema.Message) error {
 // Search finds messages whose text content contains the query as a
 // case-insensitive substring, returning at most k results.
 func (s *MessageStore) Search(ctx context.Context, query string, k int) ([]schema.Message, error) {
+	// #nosec G201 -- table name validated in New() against ^[a-zA-Z_][a-zA-Z0-9_]*$
 	sqlQuery := fmt.Sprintf(
 		"SELECT role, content, metadata FROM %s WHERE content::text ILIKE $1 ORDER BY created_at ASC LIMIT $2",
 		s.table,
@@ -98,7 +111,7 @@ func (s *MessageStore) Search(ctx context.Context, query string, k int) ([]schem
 
 	rows, err := s.db.Query(ctx, sqlQuery, pattern, k)
 	if err != nil {
-		return nil, fmt.Errorf("postgres: search: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "postgres: search: %w", err)
 	}
 	defer rows.Close()
 	return scanMessages(rows)
@@ -106,13 +119,14 @@ func (s *MessageStore) Search(ctx context.Context, query string, k int) ([]schem
 
 // All returns all stored messages in chronological order.
 func (s *MessageStore) All(ctx context.Context) ([]schema.Message, error) {
+	// #nosec G201 -- table name validated in New() against ^[a-zA-Z_][a-zA-Z0-9_]*$
 	query := fmt.Sprintf(
 		"SELECT role, content, metadata FROM %s ORDER BY created_at ASC",
 		s.table,
 	)
 	rows, err := s.db.Query(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("postgres: all: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "postgres: all: %w", err)
 	}
 	defer rows.Close()
 	return scanMessages(rows)
@@ -120,10 +134,11 @@ func (s *MessageStore) All(ctx context.Context) ([]schema.Message, error) {
 
 // Clear removes all messages from the store.
 func (s *MessageStore) Clear(ctx context.Context) error {
+	// #nosec G201 -- table name validated in New() against ^[a-zA-Z_][a-zA-Z0-9_]*$
 	query := fmt.Sprintf("DELETE FROM %s", s.table)
 	_, err := s.db.Exec(ctx, query)
 	if err != nil {
-		return fmt.Errorf("postgres: clear: %w", err)
+		return core.Errorf(core.ErrProviderDown, "postgres: clear: %w", err)
 	}
 	return nil
 }
@@ -134,7 +149,7 @@ func scanMessages(rows pgx.Rows) ([]schema.Message, error) {
 		var role string
 		var contentJSON, metadataJSON []byte
 		if err := rows.Scan(&role, &contentJSON, &metadataJSON); err != nil {
-			return nil, fmt.Errorf("postgres: scan: %w", err)
+			return nil, core.Errorf(core.ErrProviderDown, "postgres: scan: %w", err)
 		}
 
 		msg, err := decodeMessage(role, contentJSON, metadataJSON)
@@ -144,7 +159,7 @@ func scanMessages(rows pgx.Rows) ([]schema.Message, error) {
 		msgs = append(msgs, msg)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("postgres: rows: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "postgres: rows: %w", err)
 	}
 	return msgs, nil
 }
@@ -153,13 +168,13 @@ func scanMessages(rows pgx.Rows) ([]schema.Message, error) {
 func decodeMessage(role string, contentJSON, metadataJSON []byte) (schema.Message, error) {
 	var sc storeutil.StoredContent
 	if err := json.Unmarshal(contentJSON, &sc); err != nil {
-		return nil, fmt.Errorf("postgres: unmarshal content: %w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, "postgres: unmarshal content: %w", err)
 	}
 
 	var metadata map[string]any
 	if len(metadataJSON) > 0 && string(metadataJSON) != "null" {
 		if err := json.Unmarshal(metadataJSON, &metadata); err != nil {
-			return nil, fmt.Errorf("postgres: unmarshal metadata: %w", err)
+			return nil, core.Errorf(core.ErrInvalidInput, "postgres: unmarshal metadata: %w", err)
 		}
 	}
 

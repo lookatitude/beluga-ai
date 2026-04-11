@@ -33,9 +33,9 @@ func TestNewError_NilCause(t *testing.T) {
 
 func TestError_Error(t *testing.T) {
 	tests := []struct {
-		name  string
-		err   *Error
-		want  string
+		name string
+		err  *Error
+		want string
 	}{
 		{
 			name: "with_cause",
@@ -229,6 +229,51 @@ func TestIsRetryable(t *testing.T) {
 				t.Errorf("IsRetryable() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func checkErrf(t *testing.T, e *Error, wantCode ErrorCode, wantMsg string) {
+	t.Helper()
+	if e.Code != wantCode {
+		t.Errorf("Code = %q, want %q", e.Code, wantCode)
+	}
+	if wantMsg != "" && e.Message != wantMsg {
+		t.Errorf("Message = %q, want %q", e.Message, wantMsg)
+	}
+}
+
+func TestErrorf_PlainMessageNoWrap(t *testing.T) {
+	e := Errorf(ErrInvalidInput, "llm: model %q is required", "openai")
+	checkErrf(t, e, ErrInvalidInput, `llm: model "openai" is required`)
+	if e.Err != nil {
+		t.Errorf("Err = %v, want nil", e.Err)
+	}
+}
+
+func TestErrorf_WrapsCauseViaW(t *testing.T) {
+	cause := fmt.Errorf("network unreachable")
+	e := Errorf(ErrProviderDown, "llm: generate failed: %w", cause)
+	checkErrf(t, e, ErrProviderDown, "")
+	if !errors.Is(e, cause) {
+		t.Errorf("errors.Is should find wrapped cause")
+	}
+	if !IsRetryable(e) {
+		t.Errorf("IsRetryable should be true for ErrProviderDown")
+	}
+}
+
+func TestErrorf_RetryabilityPreserved(t *testing.T) {
+	cause := fmt.Errorf("dial tcp: connect timeout")
+	e := Errorf(ErrTimeout, "llm: %w", cause)
+	if !IsRetryable(e) {
+		t.Error("ErrTimeout should be retryable")
+	}
+}
+
+func TestErrorf_NonRetryableStaysNonRetryable(t *testing.T) {
+	e := Errorf(ErrAuth, "llm: invalid api key")
+	if IsRetryable(e) {
+		t.Error("ErrAuth should NOT be retryable")
 	}
 }
 

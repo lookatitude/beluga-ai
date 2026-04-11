@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Compile-time check.
@@ -28,7 +30,7 @@ func NewRoundRobinProtocol() *RoundRobinProtocol {
 // from previous rounds.
 func (p *RoundRobinProtocol) NextRound(_ context.Context, state DebateState) (map[string]string, error) {
 	if len(state.AgentIDs) == 0 {
-		return nil, fmt.Errorf("debate/roundrobin: no agents configured")
+		return nil, core.Errorf(core.ErrInvalidInput, "debate/roundrobin: no agents configured")
 	}
 
 	history := buildHistory(state)

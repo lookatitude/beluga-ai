@@ -3,6 +3,7 @@ package inmemory
 import (
 	"context"
 	"fmt"
+	"iter"
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/state"
@@ -182,38 +183,78 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
-// Watch returns a channel that receives StateChange notifications for the
-// given key. The channel is buffered with capacity 16 to reduce blocking.
-// The channel is closed when the store is closed or the context is cancelled.
-func (s *Store) Watch(ctx context.Context, key string) (<-chan state.StateChange, error) {
+// Watch returns an iter.Seq2 stream of StateChange notifications for the
+// given key. The subscription is established eagerly before Watch returns,
+// so events produced after this call but before the caller starts iterating
+// are buffered (capacity 16) and will be delivered on the first iteration.
+// Events that arrive while the buffer is full are dropped.
+//
+// The iterator ends when ctx is cancelled, the store is closed, or the
+// caller breaks out of the loop. Initial-subscription errors (ctx already
+// cancelled, store already closed) are reported by yielding a zero-value
+// StateChange together with a non-nil error.
+func (s *Store) Watch(ctx context.Context, key string) iter.Seq2[state.StateChange, error] {
 	if err := ctx.Err(); err != nil {
-		return nil, fmt.Errorf("state/watch: %w", err)
+		wrapped := fmt.Errorf("state/watch: %w", err)
+		return func(yield func(state.StateChange, error) bool) {
+			yield(state.StateChange{}, wrapped)
+		}
 	}
 
 	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	if s.closed {
-		return nil, fmt.Errorf("state/watch: store is closed")
+		s.mu.Unlock()
+		err := fmt.Errorf("state/watch: store is closed")
+		return func(yield func(state.StateChange, error) bool) {
+			yield(state.StateChange{}, err)
+		}
 	}
 
 	ch := make(chan state.StateChange, 16)
 	s.watchers[key] = append(s.watchers[key], ch)
+	s.mu.Unlock()
 
-	// Close the channel when the context is cancelled or the store is closed.
+	var unsubOnce sync.Once
+	unsub := func() {
+		unsubOnce.Do(func() {
+			s.removeWatcherOrphan(key, ch)
+		})
+	}
+
+	// Background goroutine unsubscribes when ctx is cancelled or the store
+	// is closed, so callers who never iterate still release the watcher slot.
 	go func() {
 		select {
 		case <-ctx.Done():
-			s.removeWatcher(key, ch)
+			unsub()
 		case <-s.done:
-			// Store was closed; channels already closed by Close().
+			unsub()
 		}
 	}()
 
-	return ch, nil
+	return func(yield func(state.StateChange, error) bool) {
+		defer unsub()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-s.done:
+				return
+			case change, ok := <-ch:
+				if !ok {
+					return
+				}
+				if !yield(change, nil) {
+					return
+				}
+			}
+		}
+	}
 }
 
-// Close releases resources and closes all watcher channels.
+// Close releases resources and signals all active watcher iterators to exit
+// by closing the done channel. Individual watcher channels are not closed —
+// iterators observe the done signal via select and unsubscribe themselves.
 func (s *Store) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -225,10 +266,7 @@ func (s *Store) Close() error {
 	s.closed = true
 	close(s.done)
 
-	for key, chs := range s.watchers {
-		for _, ch := range chs {
-			close(ch)
-		}
+	for key := range s.watchers {
 		delete(s.watchers, key)
 	}
 
@@ -252,14 +290,13 @@ func (s *Store) broadcast(change state.StateChange) {
 	}
 }
 
-// removeWatcher removes a specific channel from the watchers for a key.
-func (s *Store) removeWatcher(key string, target chan state.StateChange) {
+// removeWatcherOrphan removes a specific channel from the watchers list for
+// a key without closing it. The channel is orphaned; any pending broadcast
+// uses a non-blocking send (see broadcast) so there is no panic risk from
+// the unclosed channel.
+func (s *Store) removeWatcherOrphan(key string, target chan state.StateChange) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
-	if s.closed {
-		return // channels already closed by Close()
-	}
 
 	chs, ok := s.watchers[key]
 	if !ok {
@@ -269,7 +306,6 @@ func (s *Store) removeWatcher(key string, target chan state.StateChange) {
 	for i, ch := range chs {
 		if ch == target {
 			s.watchers[key] = append(chs[:i], chs[i+1:]...)
-			close(ch)
 			break
 		}
 	}

@@ -6,6 +6,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -120,7 +121,7 @@ func (p *DefaultPipeline) Execute(ctx gocontext.Context, input PipelineInput) (P
 		var err error
 		items, err = step.Process(ctx, items)
 		if err != nil {
-			return PipelineOutput{}, fmt.Errorf("context: step %q: %w", step.Name(), err)
+			return PipelineOutput{}, core.Errorf(core.ErrInvalidInput, "context: step %q: %w", step.Name(), err)
 		}
 		stepsExecuted = append(stepsExecuted, step.Name())
 	}
@@ -367,7 +368,7 @@ func NewStep(name string) (ContextStep, error) {
 	f, ok := registry[name]
 	registryMu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("context: unknown step %q (registered: %v)", name, ListSteps())
+		return nil, core.Errorf(core.ErrNotFound, "context: unknown step %q (registered: %v)", name, ListSteps())
 	}
 	return f()
 }

@@ -2,7 +2,6 @@ package structured
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/lookatitude/beluga-ai/core"
@@ -69,12 +68,7 @@ func validateReadOnly(query string) error {
 	for _, kw := range writeKeywords {
 		for _, tok := range tokens {
 			if tok == kw {
-				return core.NewError(
-					"structured.execute",
-					core.ErrInvalidInput,
-					fmt.Sprintf("write operation %q is not allowed in read-only mode", kw),
-					nil,
-				)
+				return core.Errorf(core.ErrInvalidInput, "structured.execute: write operation %q is not allowed in read-only mode", kw)
 			}
 		}
 	}

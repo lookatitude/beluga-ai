@@ -2,9 +2,9 @@ package colbert
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/rag/embedding"
 	"github.com/lookatitude/beluga-ai/rag/retriever"
 	"github.com/lookatitude/beluga-ai/schema"
@@ -12,7 +12,7 @@ import (
 
 func init() {
 	retriever.Register("colbert", func(_ config.ProviderConfig) (retriever.Retriever, error) {
-		return nil, fmt.Errorf("colbert: use colbert.NewColBERTRetriever() with WithEmbedder and WithIndex options")
+		return nil, core.Errorf(core.ErrInvalidInput, "colbert: use colbert.NewColBERTRetriever() with WithEmbedder and WithIndex options")
 	})
 }
 
@@ -74,10 +74,10 @@ func NewColBERTRetriever(opts ...ColBERTOption) (*ColBERTRetriever, error) {
 		o(r)
 	}
 	if r.embedder == nil {
-		return nil, fmt.Errorf("colbert: embedder is required (use WithEmbedder)")
+		return nil, core.Errorf(core.ErrInvalidInput, "colbert: embedder is required (use WithEmbedder)")
 	}
 	if r.index == nil {
-		return nil, fmt.Errorf("colbert: index is required (use WithIndex)")
+		return nil, core.Errorf(core.ErrInvalidInput, "colbert: index is required (use WithIndex)")
 	}
 	return r, nil
 }
@@ -106,14 +106,14 @@ func (r *ColBERTRetriever) Retrieve(ctx context.Context, query string, opts ...r
 	// Encode query into per-token embeddings.
 	queryEmbeddings, err := r.embedder.EmbedMulti(ctx, []string{query})
 	if err != nil {
-		err = fmt.Errorf("colbert: embed query: %w", err)
+		err = core.Errorf(core.ErrProviderDown, "colbert: embed query: %w", err)
 		if r.hooks.AfterRetrieve != nil {
 			r.hooks.AfterRetrieve(ctx, nil, err)
 		}
 		return nil, err
 	}
 	if len(queryEmbeddings) == 0 {
-		err := fmt.Errorf("colbert: embedder returned no embeddings for query")
+		err := core.Errorf(core.ErrProviderDown, "colbert: embedder returned no embeddings for query")
 		if r.hooks.AfterRetrieve != nil {
 			r.hooks.AfterRetrieve(ctx, nil, err)
 		}
@@ -124,7 +124,7 @@ func (r *ColBERTRetriever) Retrieve(ctx context.Context, query string, opts ...r
 	// Search the index.
 	results, err := r.index.Search(ctx, queryVecs, topK)
 	if err != nil {
-		err = fmt.Errorf("colbert: index search: %w", err)
+		err = core.Errorf(core.ErrProviderDown, "colbert: index search: %w", err)
 		if r.hooks.AfterRetrieve != nil {
 			r.hooks.AfterRetrieve(ctx, nil, err)
 		}

@@ -2,9 +2,10 @@ package sandbox
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Sandbox is the interface for sandboxed code execution. Implementations
@@ -43,7 +44,7 @@ func NewSandbox(name string) (Sandbox, error) {
 	f, ok := registry[name]
 	mu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("sandbox: unknown provider %q (registered: %v)", name, ListSandboxes())
+		return nil, core.Errorf(core.ErrNotFound, "sandbox: unknown provider %q (registered: %v)", name, ListSandboxes())
 	}
 	return f()
 }

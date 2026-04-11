@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/guard"
 	"github.com/lookatitude/beluga-ai/internal/httpclient"
 )
@@ -74,10 +75,10 @@ type analyzeOutputRequest struct {
 
 // analyzeResponse is the LLM Guard analyze API response.
 type analyzeResponse struct {
-	IsValid    bool             `json:"is_valid"`
-	Scanners   []scannerResult  `json:"scanners"`
-	SanitizedPrompt string     `json:"sanitized_prompt,omitempty"`
-	SanitizedOutput string     `json:"sanitized_output,omitempty"`
+	IsValid         bool            `json:"is_valid"`
+	Scanners        []scannerResult `json:"scanners"`
+	SanitizedPrompt string          `json:"sanitized_prompt,omitempty"`
+	SanitizedOutput string          `json:"sanitized_output,omitempty"`
 }
 
 // scannerResult holds an individual scanner's outcome.
@@ -98,7 +99,7 @@ func (g *Guard) Name() string {
 func (g *Guard) Validate(ctx context.Context, input guard.GuardInput) (guard.GuardResult, error) {
 	resp, err := g.callAnalyze(ctx, input)
 	if err != nil {
-		return guard.GuardResult{}, fmt.Errorf("llmguard: validate: %w", err)
+		return guard.GuardResult{}, core.Errorf(core.ErrProviderDown, "llmguard: validate: %w", err)
 	}
 
 	result := guard.GuardResult{

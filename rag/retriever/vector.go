@@ -2,8 +2,8 @@ package retriever
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/rag/embedding"
 	"github.com/lookatitude/beluga-ai/rag/vectorstore"
 	"github.com/lookatitude/beluga-ai/schema"
@@ -53,7 +53,7 @@ func (r *VectorStoreRetriever) Retrieve(ctx context.Context, query string, opts 
 
 	vec, err := r.embedder.EmbedSingle(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("retriever: embed query: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "retriever: embed query: %w", err)
 	}
 
 	var searchOpts []vectorstore.SearchOption

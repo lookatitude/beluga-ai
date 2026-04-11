@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // OPAPolicy implements authorization via an external Open Policy Agent (OPA)
@@ -85,37 +86,37 @@ func (p *OPAPolicy) Authorize(ctx context.Context, subject string, permission Pe
 	}
 	body, err := json.Marshal(req)
 	if err != nil {
-		return false, fmt.Errorf("auth/opa: failed to marshal request: %w", err)
+		return false, core.Errorf(core.ErrInvalidInput, "auth/opa: failed to marshal request: %w", err)
 	}
 
 	// Create and execute the HTTP request.
 	httpReq, err := http.NewRequestWithContext(opaCtx, http.MethodPost, p.endpoint, bytes.NewReader(body))
 	if err != nil {
-		return false, fmt.Errorf("auth/opa: failed to create request: %w", err)
+		return false, core.Errorf(core.ErrInvalidInput, "auth/opa: failed to create request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
 	resp, err := p.client.Do(httpReq)
 	if err != nil {
-		return false, fmt.Errorf("auth/opa: request failed: %w", err)
+		return false, core.Errorf(core.ErrProviderDown, "auth/opa: request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	// Check for HTTP errors.
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return false, fmt.Errorf("auth/opa: OPA returned status %d: %s", resp.StatusCode, string(body))
+		return false, core.Errorf(core.ErrProviderDown, "auth/opa: OPA returned status %d: %s", resp.StatusCode, string(body))
 	}
 
 	// Parse the response.
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return false, fmt.Errorf("auth/opa: failed to read response body: %w", err)
+		return false, core.Errorf(core.ErrProviderDown, "auth/opa: failed to read response body: %w", err)
 	}
 
 	var opaResp opaResponse
 	if err := json.Unmarshal(respBody, &opaResp); err != nil {
-		return false, fmt.Errorf("auth/opa: failed to unmarshal response: %w", err)
+		return false, core.Errorf(core.ErrProviderDown, "auth/opa: failed to unmarshal response: %w", err)
 	}
 
 	return opaResp.Result, nil
@@ -128,10 +129,10 @@ func init() {
 	Register("opa", func(cfg Config) (Policy, error) {
 		endpoint, ok := cfg.Extra["endpoint"].(string)
 		if !ok {
-			return nil, fmt.Errorf("auth: OPA policy requires 'endpoint' in config")
+			return nil, core.Errorf(core.ErrInvalidInput, "auth: OPA policy requires 'endpoint' in config")
 		}
 		if endpoint == "" {
-			return nil, fmt.Errorf("auth: OPA endpoint must not be empty")
+			return nil, core.Errorf(core.ErrInvalidInput, "auth: OPA endpoint must not be empty")
 		}
 
 		var opts []OPAOption

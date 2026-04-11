@@ -1,9 +1,10 @@
 package guard
 
 import (
-	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // registry holds the named guard factories. It is populated via Register
@@ -41,7 +42,7 @@ func New(name string, cfg map[string]any) (Guard, error) {
 	registryMu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("guard: unknown guard %q", name)
+		return nil, core.Errorf(core.ErrNotFound, "guard: unknown guard %q", name)
 	}
 	return f(cfg)
 }

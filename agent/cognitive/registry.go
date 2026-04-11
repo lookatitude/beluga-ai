@@ -1,9 +1,10 @@
 package cognitive
 
 import (
-	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // ScorerConfig holds configuration for creating a ComplexityScorer via the
@@ -36,7 +37,7 @@ func NewScorer(name string, cfg ScorerConfig) (ComplexityScorer, error) {
 	scorerMu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("cognitive: scorer %q not registered (registered: %v)", name, ListScorers())
+		return nil, core.Errorf(core.ErrNotFound, "cognitive: scorer %q not registered (registered: %v)", name, ListScorers())
 	}
 	return factory(cfg)
 }

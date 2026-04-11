@@ -3,19 +3,24 @@ package transport
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
+	"iter"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/coder/websocket"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/voice"
 )
 
 // Compile-time interface check.
 var _ AudioTransport = (*WebSocketTransport)(nil)
+
+// errWSClosedMsg is the shared error message for operations on a closed
+// WebSocket transport; extracted to avoid duplicated literals.
+const errWSClosedMsg = "transport: websocket transport is closed"
 
 // WSOption configures a WebSocketTransport.
 type WSOption func(*wsConfig)
@@ -117,10 +122,10 @@ type WebSocketTransport struct {
 // (userinfo) in the URL; use WithWSHeaders to pass authentication tokens.
 func NewWebSocketTransport(ctx context.Context, url string, opts ...WSOption) (*WebSocketTransport, error) {
 	if url == "" {
-		return nil, fmt.Errorf("transport: websocket URL must not be empty")
+		return nil, core.Errorf(core.ErrInvalidInput, "transport: websocket URL must not be empty")
 	}
 	if !strings.HasPrefix(url, "ws://") && !strings.HasPrefix(url, "wss://") {
-		return nil, fmt.Errorf("transport: websocket URL must use ws:// or wss:// scheme")
+		return nil, core.Errorf(core.ErrInvalidInput, "transport: websocket URL must use ws:// or wss:// scheme")
 	}
 
 	cfg := wsConfig{
@@ -149,7 +154,7 @@ func NewWebSocketTransport(ctx context.Context, url string, opts ...WSOption) (*
 
 	conn, _, err := websocket.Dial(ctx, url, dialOpts)
 	if err != nil {
-		return nil, fmt.Errorf("transport: websocket dial %q: %w", url, err)
+		return nil, core.Errorf(core.ErrProviderDown, "transport: websocket dial %q: %w", url, err)
 	}
 
 	conn.SetReadLimit(cfg.readLimit)
@@ -225,13 +230,31 @@ func (t *WebSocketTransport) readLoop(ctx context.Context) {
 	}
 }
 
-// Recv returns a channel of incoming frames from the WebSocket connection.
-func (t *WebSocketTransport) Recv(_ context.Context) (<-chan voice.Frame, error) {
-	select {
-	case <-t.done:
-		return nil, fmt.Errorf("transport: websocket transport is closed")
-	default:
-		return t.frames, nil
+// Recv returns an iterator of incoming frames from the WebSocket connection.
+// If the transport is already closed the first yielded pair carries an error
+// and the iterator ends. Otherwise frames flow until the read loop exits or
+// ctx is cancelled.
+func (t *WebSocketTransport) Recv(ctx context.Context) iter.Seq2[voice.Frame, error] {
+	return func(yield func(voice.Frame, error) bool) {
+		select {
+		case <-t.done:
+			yield(voice.Frame{}, core.Errorf(core.ErrProviderDown, errWSClosedMsg))
+			return
+		default:
+		}
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case frame, ok := <-t.frames:
+				if !ok {
+					return
+				}
+				if !yield(frame, nil) {
+					return
+				}
+			}
+		}
 	}
 }
 
@@ -241,7 +264,7 @@ func (t *WebSocketTransport) Recv(_ context.Context) (<-chan voice.Frame, error)
 func (t *WebSocketTransport) Send(ctx context.Context, frame voice.Frame) error {
 	select {
 	case <-t.done:
-		return fmt.Errorf("transport: websocket transport is closed")
+		return core.Errorf(core.ErrProviderDown, errWSClosedMsg)
 	default:
 	}
 
@@ -270,7 +293,7 @@ func (t *WebSocketTransport) Send(ctx context.Context, frame voice.Frame) error 
 
 	data, err := json.Marshal(wf)
 	if err != nil {
-		return fmt.Errorf("transport: websocket marshal frame: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "transport: websocket marshal frame: %w", err)
 	}
 	return t.conn.Write(ctx, websocket.MessageText, data)
 }
@@ -283,7 +306,7 @@ type wsAudioWriter struct {
 func (w *wsAudioWriter) Write(p []byte) (int, error) {
 	select {
 	case <-w.t.done:
-		return 0, fmt.Errorf("transport: websocket transport is closed")
+		return 0, core.Errorf(core.ErrProviderDown, errWSClosedMsg)
 	default:
 	}
 

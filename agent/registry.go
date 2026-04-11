@@ -1,10 +1,10 @@
 package agent
 
 import (
-	"fmt"
 	"sort"
 	"sync"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 )
 
@@ -39,7 +39,7 @@ func NewPlanner(name string, cfg PlannerConfig) (Planner, error) {
 	plannerMu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("planner %q not registered", name)
+		return nil, core.Errorf(core.ErrNotFound, "planner %q not registered", name)
 	}
 	return factory(cfg)
 }

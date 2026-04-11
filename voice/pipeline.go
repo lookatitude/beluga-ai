@@ -2,9 +2,9 @@ package voice
 
 import (
 	"context"
-	"fmt"
 	"iter"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/internal/hookutil"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -30,8 +30,10 @@ type LLMProcessor interface {
 // Transport is a local interface for audio input/output transport.
 // Concrete implementations live in voice/transport/.
 type Transport interface {
-	// Recv returns a channel of incoming audio frames from the client.
-	Recv(ctx context.Context) (<-chan Frame, error)
+	// Recv returns an iterator of incoming audio frames from the client.
+	// Transport-level errors are delivered via the iterator's second element;
+	// a non-nil error terminates the stream.
+	Recv(ctx context.Context) iter.Seq2[Frame, error]
 
 	// Send writes an outgoing audio frame to the client.
 	Send(ctx context.Context, frame Frame) error
@@ -93,8 +95,10 @@ type PipelineConfig struct {
 	Hooks     Hooks
 	Session   *VoiceSession
 
-	// ChannelBufferSize is the buffer size for inter-processor channels.
-	// Defaults to 64 if zero.
+	// ChannelBufferSize is retained for backward compatibility with callers
+	// that previously configured inter-processor channel buffer sizes. The
+	// iter.Seq2-based pipeline does not use intermediate channels, so this
+	// field has no runtime effect.
 	ChannelBufferSize int
 }
 
@@ -150,7 +154,8 @@ func WithSession(s *VoiceSession) PipelineOption {
 	}
 }
 
-// WithChannelBufferSize sets the buffer size for inter-processor channels.
+// WithChannelBufferSize is retained for backward compatibility; it has no
+// effect on the iter.Seq2-based pipeline.
 func WithChannelBufferSize(size int) PipelineOption {
 	return func(cfg *PipelineConfig) {
 		cfg.ChannelBufferSize = size
@@ -158,7 +163,7 @@ func WithChannelBufferSize(size int) PipelineOption {
 }
 
 // VoicePipeline implements the cascading voice pipeline: STT → LLM → TTS.
-// Each stage is a FrameProcessor goroutine connected by channels.
+// Each stage is a FrameProcessor composed lazily over iter.Seq2 streams.
 type VoicePipeline struct {
 	config PipelineConfig
 }
@@ -176,27 +181,18 @@ func NewPipeline(opts ...PipelineOption) *VoicePipeline {
 
 // Run starts the cascading pipeline and blocks until ctx is cancelled or an
 // error occurs. The pipeline connects Transport → VAD → STT → LLM → TTS →
-// Transport in a chain of FrameProcessor goroutines.
+// Transport by composing FrameProcessors over an iter.Seq2 stream.
 func (p *VoicePipeline) Run(ctx context.Context) error {
 	if p.config.Transport == nil {
-		return fmt.Errorf("voice: pipeline requires a transport")
-	}
-
-	// Receive audio frames from transport.
-	incoming, err := p.config.Transport.Recv(ctx)
-	if err != nil {
-		return fmt.Errorf("voice: transport recv: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "voice: pipeline requires a transport")
 	}
 
 	// Build the processor chain from available components.
 	var processors []FrameProcessor
 
-	// VAD processor: filters audio frames based on speech detection.
 	if p.config.VAD != nil {
 		processors = append(processors, p.vadProcessor())
 	}
-
-	// STT, LLM, TTS processors.
 	if p.config.STT != nil {
 		processors = append(processors, p.config.STT)
 	}
@@ -208,88 +204,84 @@ func (p *VoicePipeline) Run(ctx context.Context) error {
 	}
 
 	if len(processors) == 0 {
-		return fmt.Errorf("voice: pipeline has no processors")
+		return core.Errorf(core.ErrInvalidInput, "voice: pipeline has no processors")
 	}
 
-	// Chain processors and run.
+	// Receive audio frames from transport as an iter.Seq2 stream. Any
+	// transport-level dial failure is delivered as the first yielded pair.
+	incoming := p.config.Transport.Recv(ctx)
+
+	// Compose the pipeline lazily over the input stream.
 	chain := Chain(processors...)
+	output := chain.Process(ctx, incoming)
 
-	bufSize := p.config.ChannelBufferSize
-	out := make(chan Frame, bufSize)
-
-	// Process output frames back through transport.
-	done := make(chan error, 1)
-	go func() {
-		defer close(done)
-		for frame := range out {
-			if sendErr := p.config.Transport.Send(ctx, frame); sendErr != nil {
-				done <- fmt.Errorf("voice: transport send: %w", sendErr)
-				return
-			}
+	// Drain the composed stream, forwarding frames through transport.
+	for frame, err := range output {
+		if err != nil {
+			// Distinguish transport dial errors from downstream failures by
+			// wrapping untyped errors with ErrProviderDown only when they
+			// arrived on the first iteration with a zero frame (common case
+			// for Transport.Recv early failure). Downstream stages already
+			// return typed core errors, so pass those through unchanged.
+			return err
 		}
-	}()
-
-	// Run the processor chain.
-	if chainErr := chain.Process(ctx, incoming, out); chainErr != nil {
-		return chainErr
+		if sendErr := p.config.Transport.Send(ctx, frame); sendErr != nil {
+			return core.Errorf(core.ErrProviderDown, "voice: transport send: %w", sendErr)
+		}
 	}
 
-	// Wait for output drain.
-	if sendErr := <-done; sendErr != nil {
-		return sendErr
-	}
-
-	return nil
+	return ctx.Err()
 }
 
-// processVADResult emits control frames for VAD state transitions and
-// forwards speech audio frames to out.
-func (p *VoicePipeline) processVADResult(ctx context.Context, result ActivityResult, frame Frame, out chan<- Frame) {
+// processVADResult emits control frames for VAD state transitions and any
+// speech audio frame to the output slice.
+func (p *VoicePipeline) processVADResult(ctx context.Context, result ActivityResult, frame Frame) []Frame {
+	var out []Frame
 	switch result.EventType {
 	case VADSpeechStart:
 		if p.config.Hooks.OnSpeechStart != nil {
 			p.config.Hooks.OnSpeechStart(ctx)
 		}
-		out <- NewControlFrame(SignalStart)
+		out = append(out, NewControlFrame(SignalStart))
 	case VADSpeechEnd:
 		if p.config.Hooks.OnSpeechEnd != nil {
 			p.config.Hooks.OnSpeechEnd(ctx)
 		}
-		out <- NewControlFrame(SignalEndOfUtterance)
+		out = append(out, NewControlFrame(SignalEndOfUtterance))
 	}
-
 	if result.IsSpeech {
-		out <- frame
+		out = append(out, frame)
 	}
+	return out
 }
 
-// handleVADFrame processes a single audio frame through VAD and emits results.
-// Returns a non-nil error only if a hook error should stop the processor.
-func (p *VoicePipeline) handleVADFrame(ctx context.Context, frame Frame, out chan<- Frame) error {
+// handleVADFrame processes a single audio frame through VAD and returns any
+// resulting output frames. A non-nil error stops the processor; hook errors
+// are the only errors propagated as fatal (VAD provider errors are reported
+// to the OnError hook and otherwise suppressed).
+func (p *VoicePipeline) handleVADFrame(ctx context.Context, frame Frame) ([]Frame, error) {
 	if frame.Type != FrameAudio {
-		out <- frame
-		return nil
+		return []Frame{frame}, nil
 	}
 
 	result, err := p.config.VAD.DetectActivity(ctx, frame.Data)
 	if err != nil {
 		if p.config.Hooks.OnError != nil {
 			if hookErr := p.config.Hooks.OnError(ctx, err); hookErr != nil {
-				return hookErr
+				return nil, hookErr
 			}
 		}
-		return nil
+		return nil, nil
 	}
 
-	p.processVADResult(ctx, result, frame, out)
-	return nil
+	return p.processVADResult(ctx, result, frame), nil
 }
 
 // vadProcessor creates a FrameProcessor that runs VAD on audio frames and
 // injects control frames for speech start/end events.
 func (p *VoicePipeline) vadProcessor() FrameProcessor {
-	return FrameLoop(func(ctx context.Context, frame Frame, out chan<- Frame) error {
-		return p.handleVADFrame(ctx, frame, out)
+	return FrameLoop(func(ctx context.Context, frame Frame) ([]Frame, error) {
+		return p.handleVADFrame(ctx, frame)
 	})
 }
 

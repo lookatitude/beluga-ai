@@ -2,6 +2,7 @@ package voice
 
 import (
 	"context"
+	"strings"
 	"testing"
 )
 
@@ -190,7 +191,7 @@ func TestHybridPipelineRunS2SNoSession(t *testing.T) {
 	if err == nil {
 		t.Fatal("Run() should return error for S2S without session")
 	}
-	if err.Error() != "voice: S2S pipeline requires a session" {
+	if !strings.Contains(err.Error(), "voice: S2S pipeline requires a session") {
 		t.Errorf("Run() error = %q, want session required error", err)
 	}
 }
@@ -209,7 +210,7 @@ func TestHybridPipelineRunCascadeNotConfigured(t *testing.T) {
 	if err == nil {
 		t.Fatal("Run() should return error when cascade not configured")
 	}
-	if err.Error() != "voice: cascade pipeline not configured" {
+	if !strings.Contains(err.Error(), "voice: cascade pipeline not configured") {
 		t.Errorf("Run() error = %q, want cascade not configured error", err)
 	}
 }
@@ -227,7 +228,7 @@ func TestHybridPipelineUnknownMode(t *testing.T) {
 		t.Fatal("Run() should return error for unknown mode")
 	}
 	expected := `voice: unknown pipeline mode "invalid_mode"`
-	if err.Error() != expected {
+	if !strings.Contains(err.Error(), expected) {
 		t.Errorf("Run() error = %q, want %q", err, expected)
 	}
 }

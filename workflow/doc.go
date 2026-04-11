@@ -21,7 +21,7 @@
 //	type WorkflowContext interface {
 //	    context.Context
 //	    ExecuteActivity(fn ActivityFunc, input any, opts ...ActivityOption) (any, error)
-//	    ReceiveSignal(name string) <-chan any
+//	    ReceiveSignal(name string) iter.Seq2[any, error]
 //	    Sleep(d time.Duration) error
 //	}
 //
@@ -42,13 +42,13 @@
 //	    }
 //
 //	    // Wait for an external signal
-//	    ch := ctx.ReceiveSignal("approval")
-//	    select {
-//	    case approval := <-ch:
+//	    for approval, err := range ctx.ReceiveSignal("approval") {
+//	        if err != nil {
+//	            return nil, err
+//	        }
 //	        return approval, nil
-//	    case <-ctx.Done():
-//	        return nil, ctx.Err()
 //	    }
+//	    return nil, ctx.Err()
 //	}
 //
 // # Executing Workflows

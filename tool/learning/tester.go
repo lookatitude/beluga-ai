@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -111,7 +112,7 @@ func (tt *ToolTester) Validate(ctx context.Context, t *DynamicTool, cases []Test
 	}
 
 	if len(failures) > 0 {
-		return fmt.Errorf("tool %q validation failed: %s", t.Name(), strings.Join(failures, "; "))
+		return core.Errorf(core.ErrToolFailed, "tool %q validation failed: %s", t.Name(), strings.Join(failures, "; "))
 	}
 	return nil
 }

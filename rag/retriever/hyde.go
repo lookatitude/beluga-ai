@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/rag/embedding"
 	"github.com/lookatitude/beluga-ai/rag/vectorstore"
@@ -77,7 +78,7 @@ func (r *HyDERetriever) Retrieve(ctx context.Context, query string, opts ...Opti
 
 	resp, err := r.llm.Generate(ctx, msgs)
 	if err != nil {
-		return nil, fmt.Errorf("retriever: hyde generate: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "retriever: hyde generate: %w", err)
 	}
 
 	hypoDoc := resp.Text()
@@ -85,7 +86,7 @@ func (r *HyDERetriever) Retrieve(ctx context.Context, query string, opts ...Opti
 	// Embed the hypothetical document.
 	vec, err := r.embedder.EmbedSingle(ctx, hypoDoc)
 	if err != nil {
-		return nil, fmt.Errorf("retriever: hyde embed: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "retriever: hyde embed: %w", err)
 	}
 
 	// Search for similar real documents.

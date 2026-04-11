@@ -2,6 +2,8 @@ package state
 
 import (
 	"context"
+	"iter"
+	"sync"
 	"testing"
 	"time"
 
@@ -10,15 +12,39 @@ import (
 
 // watchMockStore is a minimal Store for testing WatchSeq.
 type watchMockStore struct {
+	mu      sync.Mutex
 	watchCh chan StateChange
+	closed  bool
 }
 
 func (m *watchMockStore) Get(context.Context, string) (any, error) { return nil, nil }
 func (m *watchMockStore) Set(context.Context, string, any) error   { return nil }
 func (m *watchMockStore) Delete(context.Context, string) error     { return nil }
-func (m *watchMockStore) Close() error                             { close(m.watchCh); return nil }
-func (m *watchMockStore) Watch(_ context.Context, _ string) (<-chan StateChange, error) {
-	return m.watchCh, nil
+func (m *watchMockStore) Close() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if !m.closed {
+		m.closed = true
+		close(m.watchCh)
+	}
+	return nil
+}
+func (m *watchMockStore) Watch(ctx context.Context, _ string) iter.Seq2[StateChange, error] {
+	return func(yield func(StateChange, error) bool) {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case change, ok := <-m.watchCh:
+				if !ok {
+					return
+				}
+				if !yield(change, nil) {
+					return
+				}
+			}
+		}
+	}
 }
 
 func TestWatchSeq_ReceivesChanges(t *testing.T) {
@@ -50,6 +76,7 @@ func TestWatchSeq_ReceivesChanges(t *testing.T) {
 func TestWatchSeq_ContextCancellation(t *testing.T) {
 	ch := make(chan StateChange, 4)
 	ms := &watchMockStore{watchCh: ch}
+	defer ms.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -58,15 +85,15 @@ func TestWatchSeq_ContextCancellation(t *testing.T) {
 		cancel()
 	}()
 
-	var lastErr error
+	// Ctx cancellation ends iteration silently (no terminal error yield),
+	// matching the memory/shared Watch semantics.
+	events := 0
 	for _, err := range WatchSeq(ctx, ms, "k") {
-		if err != nil {
-			lastErr = err
-			break
-		}
+		assert.NoError(t, err)
+		events++
 	}
-
-	assert.ErrorIs(t, lastErr, context.Canceled)
+	assert.Equal(t, 0, events)
+	assert.ErrorIs(t, ctx.Err(), context.Canceled)
 }
 
 func TestWatchSeq_ChannelClosed(t *testing.T) {

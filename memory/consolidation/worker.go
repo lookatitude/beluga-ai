@@ -114,7 +114,7 @@ func (w *Worker) Start(ctx context.Context) error {
 	defer w.mu.Unlock()
 
 	if w.running {
-		return fmt.Errorf("consolidation: worker already running")
+		return core.Errorf(core.ErrInvalidInput, "consolidation: worker already running")
 	}
 
 	// The worker daemon runs until Stop() is explicitly called. The ctx
@@ -225,7 +225,7 @@ func (w *Worker) runCycle(ctx context.Context) CycleMetrics {
 
 	records, err := w.store.ListRecords(ctx, 0, w.opts.maxRecordsPerCycle)
 	if err != nil {
-		metrics.Errors = append(metrics.Errors, fmt.Errorf("list records: %w", err))
+		metrics.Errors = append(metrics.Errors, core.Errorf(core.ErrProviderDown, "list records: %w", err))
 		metrics.CycleEnd = time.Now()
 		return metrics
 	}
@@ -239,7 +239,7 @@ func (w *Worker) runCycle(ctx context.Context) CycleMetrics {
 
 	decisions, err := w.opts.policy.Evaluate(ctx, records)
 	if err != nil {
-		metrics.Errors = append(metrics.Errors, fmt.Errorf("evaluate: %w", err))
+		metrics.Errors = append(metrics.Errors, core.Errorf(core.ErrInvalidInput, "evaluate: %w", err))
 		metrics.CycleEnd = time.Now()
 		return metrics
 	}
@@ -260,12 +260,12 @@ func (w *Worker) runCycle(ctx context.Context) CycleMetrics {
 		if w.opts.compressor != nil {
 			compressed, err := w.opts.compressor.Compress(ctx, toCompress)
 			if err != nil {
-				metrics.Errors = append(metrics.Errors, fmt.Errorf("compress: %w", err))
+				metrics.Errors = append(metrics.Errors, core.Errorf(core.ErrProviderDown, "compress: %w", err))
 				// Fall back to pruning on compression failure.
 				toPrune = append(toPrune, toCompress...)
 			} else {
 				if err := w.store.UpdateRecords(ctx, compressed); err != nil {
-					metrics.Errors = append(metrics.Errors, fmt.Errorf("update compressed: %w", err))
+					metrics.Errors = append(metrics.Errors, core.Errorf(core.ErrProviderDown, "update compressed: %w", err))
 				} else {
 					metrics.RecordsCompressed = len(compressed)
 					if w.opts.hooks.OnCompressed != nil {
@@ -285,7 +285,7 @@ func (w *Worker) runCycle(ctx context.Context) CycleMetrics {
 			ids[i] = r.ID
 		}
 		if err := w.store.DeleteRecords(ctx, ids); err != nil {
-			metrics.Errors = append(metrics.Errors, fmt.Errorf("delete: %w", err))
+			metrics.Errors = append(metrics.Errors, core.Errorf(core.ErrProviderDown, "delete: %w", err))
 		} else {
 			metrics.RecordsPruned = len(toPrune)
 			if w.opts.hooks.OnPruned != nil {

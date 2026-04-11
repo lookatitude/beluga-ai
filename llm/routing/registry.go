@@ -1,9 +1,10 @@
 package routing
 
 import (
-	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // RouterFactory constructs a CostRouter from a RouterConfig.
@@ -58,7 +59,7 @@ func NewRouter(name string, cfg RouterConfig) (CostRouter, error) {
 	f, ok := routerRegistry[name]
 	routerMu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("routing: unknown router %q (registered: %v)", name, ListRouters())
+		return nil, core.Errorf(core.ErrNotFound, "routing: unknown router %q (registered: %v)", name, ListRouters())
 	}
 	return f(cfg)
 }
@@ -88,7 +89,7 @@ func NewClassifier(name string, cfg ClassifierConfig) (ComplexityClassifier, err
 	f, ok := classifierReg[name]
 	classifierMu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("routing: unknown classifier %q (registered: %v)", name, ListClassifiers())
+		return nil, core.Errorf(core.ErrNotFound, "routing: unknown classifier %q (registered: %v)", name, ListClassifiers())
 	}
 	return f(cfg)
 }
@@ -118,7 +119,7 @@ func NewEnforcer(name string, cfg EnforcerConfig) (BudgetEnforcer, error) {
 	f, ok := enforcerRegistry[name]
 	enforcerMu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("routing: unknown enforcer %q (registered: %v)", name, ListEnforcers())
+		return nil, core.Errorf(core.ErrNotFound, "routing: unknown enforcer %q (registered: %v)", name, ListEnforcers())
 	}
 	return f(cfg)
 }

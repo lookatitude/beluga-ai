@@ -2,9 +2,12 @@ package state
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"iter"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Store is the interface for shared agent state storage.
@@ -20,11 +23,17 @@ type Store interface {
 	// Delete removes the given key. Deleting a non-existent key is a no-op.
 	Delete(ctx context.Context, key string) error
 
-	// Watch returns a channel that receives StateChange notifications
-	// whenever the given key is modified or deleted. The caller must read
-	// from the channel to avoid blocking writers. The channel is closed
-	// when the store is closed.
-	Watch(ctx context.Context, key string) (<-chan StateChange, error)
+	// Watch returns an iter.Seq2 stream of StateChange notifications for
+	// the given key. The subscription is established eagerly before Watch
+	// returns, so events produced after this call but before the caller
+	// starts iterating are buffered (implementation-defined capacity) and
+	// will be delivered on the first iteration.
+	//
+	// The iterator ends when ctx is cancelled, the store is closed, or
+	// the caller breaks out of the loop. Errors (including initial
+	// subscription errors such as a closed store) are reported by yielding
+	// a zero-value StateChange together with a non-nil error.
+	Watch(ctx context.Context, key string) iter.Seq2[StateChange, error]
 
 	// Close releases resources held by the store and closes all watcher
 	// channels.
@@ -74,10 +83,10 @@ type VersionedStore interface {
 
 // ErrVersionMismatch is returned by CompareAndSwap when the expected version
 // does not match the current version of the key.
-var ErrVersionMismatch = fmt.Errorf("state: version mismatch")
+var ErrVersionMismatch = errors.New("state: version mismatch")
 
 // ErrStoreClosed is returned when an operation is attempted on a closed store.
-var ErrStoreClosed = fmt.Errorf("state: store is closed")
+var ErrStoreClosed = errors.New("state: store is closed")
 
 // Scope defines the visibility level for state keys.
 type Scope string
@@ -125,7 +134,7 @@ func New(name string, cfg Config) (Store, error) {
 	mu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("state: store %q not registered", name)
+		return nil, core.Errorf(core.ErrNotFound, "state: store %q not registered", name)
 	}
 	return f(cfg)
 }

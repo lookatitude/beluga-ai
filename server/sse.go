@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // SSEEvent represents a Server-Sent Event.
@@ -36,7 +38,7 @@ type SSEWriter struct {
 func NewSSEWriter(w http.ResponseWriter) (*SSEWriter, error) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		return nil, fmt.Errorf("server/sse: response writer does not support flushing")
+		return nil, core.Errorf(core.ErrInvalidInput, "server/sse: response writer does not support flushing")
 	}
 
 	w.Header().Set("Content-Type", "text/event-stream")
@@ -72,7 +74,7 @@ func (sw *SSEWriter) WriteEvent(event SSEEvent) error {
 	b.WriteString("\n")
 
 	if _, err := fmt.Fprint(sw.w, b.String()); err != nil {
-		return fmt.Errorf("server/sse: write error: %w", err)
+		return core.Errorf(core.ErrProviderDown, "server/sse: write error: %w", err)
 	}
 	sw.flusher.Flush()
 	return nil
@@ -82,7 +84,7 @@ func (sw *SSEWriter) WriteEvent(event SSEEvent) error {
 // connection alive. This is useful for proxies that close idle connections.
 func (sw *SSEWriter) WriteHeartbeat() error {
 	if _, err := fmt.Fprint(sw.w, ": heartbeat\n\n"); err != nil {
-		return fmt.Errorf("server/sse: heartbeat write error: %w", err)
+		return core.Errorf(core.ErrProviderDown, "server/sse: heartbeat write error: %w", err)
 	}
 	sw.flusher.Flush()
 	return nil

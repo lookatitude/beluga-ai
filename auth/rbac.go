@@ -2,8 +2,9 @@ package auth
 
 import (
 	"context"
-	"fmt"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Role groups a set of permissions under a name. Roles are assigned to subjects
@@ -45,14 +46,14 @@ func (p *RBACPolicy) Name() string { return p.name }
 // already exists.
 func (p *RBACPolicy) AddRole(role Role) error {
 	if role.Name == "" {
-		return fmt.Errorf("auth/rbac: role name must not be empty")
+		return core.Errorf(core.ErrInvalidInput, "auth/rbac: role name must not be empty")
 	}
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	if _, exists := p.roles[role.Name]; exists {
-		return fmt.Errorf("auth/rbac: role %q already exists", role.Name)
+		return core.Errorf(core.ErrInvalidInput, "auth/rbac: role %q already exists", role.Name)
 	}
 	r := role // copy
 	p.roles[role.Name] = &r
@@ -66,12 +67,12 @@ func (p *RBACPolicy) AssignRole(subject, roleName string) error {
 	defer p.mu.Unlock()
 
 	if _, exists := p.roles[roleName]; !exists {
-		return fmt.Errorf("auth/rbac: role %q does not exist", roleName)
+		return core.Errorf(core.ErrNotFound, "auth/rbac: role %q does not exist", roleName)
 	}
 
 	for _, r := range p.assignments[subject] {
 		if r == roleName {
-			return fmt.Errorf("auth/rbac: role %q already assigned to %q", roleName, subject)
+			return core.Errorf(core.ErrInvalidInput, "auth/rbac: role %q already assigned to %q", roleName, subject)
 		}
 	}
 
@@ -92,7 +93,7 @@ func (p *RBACPolicy) RemoveRole(subject, roleName string) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("auth/rbac: role %q not assigned to %q", roleName, subject)
+	return core.Errorf(core.ErrNotFound, "auth/rbac: role %q not assigned to %q", roleName, subject)
 }
 
 // Authorize checks whether subject has permission on resource. It iterates

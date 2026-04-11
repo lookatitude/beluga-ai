@@ -2,11 +2,11 @@ package workflow
 
 import (
 	"context"
-	"fmt"
 	"iter"
 	"strings"
 
 	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/tool"
 )
 
@@ -48,7 +48,7 @@ func (a *SequentialAgent) Invoke(ctx context.Context, input string, opts ...agen
 	for _, child := range a.children {
 		result, err := child.Invoke(ctx, current, opts...)
 		if err != nil {
-			return "", fmt.Errorf("sequential agent %q: child %q failed: %w", a.id, child.ID(), err)
+			return "", core.Errorf(core.ErrProviderDown, "sequential agent %q: child %q failed: %w", a.id, child.ID(), err)
 		}
 		current = result
 	}
@@ -84,7 +84,7 @@ func (a *SequentialAgent) streamChild(ctx context.Context, child agent.Agent, in
 			yield(agent.Event{
 				Type:    agent.EventError,
 				AgentID: a.id,
-			}, fmt.Errorf("sequential agent %q: child %q failed: %w", a.id, child.ID(), err))
+			}, core.Errorf(core.ErrProviderDown, "sequential agent %q: child %q failed: %w", a.id, child.ID(), err))
 			return "", false
 		}
 		if !yield(event, nil) {

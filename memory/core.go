@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -78,7 +79,7 @@ func (c *Core) SetPersona(persona string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if len(persona) > c.personaLimit {
-		return fmt.Errorf("memory/core: persona exceeds limit (%d > %d)", len(persona), c.personaLimit)
+		return core.Errorf(core.ErrInvalidInput, "memory/core: persona exceeds limit (%d > %d)", len(persona), c.personaLimit)
 	}
 	c.persona = persona
 	return nil
@@ -97,7 +98,7 @@ func (c *Core) SetHuman(human string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if len(human) > c.humanLimit {
-		return fmt.Errorf("memory/core: human exceeds limit (%d > %d)", len(human), c.humanLimit)
+		return core.Errorf(core.ErrInvalidInput, "memory/core: human exceeds limit (%d > %d)", len(human), c.humanLimit)
 	}
 	c.human = human
 	return nil

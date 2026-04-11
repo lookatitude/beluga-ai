@@ -54,3 +54,10 @@ __debug_bin*
 *.bak
 
 tmp/
+
+# Local Go build cache and Claude worktrees (never commit)
+.cache/
+.claude/worktrees/
+.claude/agents/*/rules/learning-*.md
+.claude/agents/*/rules/build-*.md
+.claude/agents/*/rules/review-*.md

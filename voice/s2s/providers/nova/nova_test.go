@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"iter"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -17,6 +18,29 @@ import (
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/voice/s2s"
 )
+
+// recvChan adapts an iter.Seq2[SessionEvent, error] iterator into a channel
+// for use with select-timeout tests. The caller must invoke stop() to release
+// the pull goroutine when done.
+type recvResult struct {
+	event s2s.SessionEvent
+	err   error
+	ok    bool
+}
+
+func startRecv(seq iter.Seq2[s2s.SessionEvent, error]) (<-chan recvResult, func()) {
+	out := make(chan recvResult, 8)
+	go func() {
+		defer close(out)
+		for event, err := range seq {
+			out <- recvResult{event: event, err: err, ok: true}
+		}
+	}()
+	return out, func() {
+		// Intentionally empty: stop is a no-op retained for API symmetry;
+		// cancellation happens via the iterator's ctx (passed to session.Recv).
+	}
+}
 
 func TestNew(t *testing.T) {
 	t.Run("default config", func(t *testing.T) {
@@ -108,23 +132,26 @@ func TestStartAndRecv(t *testing.T) {
 		require.NoError(t, err)
 		defer session.Close()
 
+		recvCh, stopRecv := startRecv(session.Recv(ctx))
+		defer stopRecv()
 		var events []s2s.SessionEvent
 		timeout := time.After(3 * time.Second)
+	collect1:
 		for {
 			select {
-			case event, ok := <-session.Recv():
-				if !ok {
-					goto done
+			case r, chOk := <-recvCh:
+				if !chOk || !r.ok {
+					break collect1
 				}
-				events = append(events, event)
-				if event.Type == s2s.EventTurnEnd {
-					goto done
+				require.NoError(t, r.err)
+				events = append(events, r.event)
+				if r.event.Type == s2s.EventTurnEnd {
+					break collect1
 				}
 			case <-timeout:
-				goto done
+				break collect1
 			}
 		}
-	done:
 		require.GreaterOrEqual(t, len(events), 2)
 		assert.Equal(t, s2s.EventAudioOutput, events[0].Type)
 		assert.Equal(t, audioData, events[0].Audio)
@@ -167,12 +194,16 @@ func TestStartAndRecv(t *testing.T) {
 		require.NoError(t, err)
 		defer session.Close()
 
+		recvCh, stopRecv := startRecv(session.Recv(ctx))
+		defer stopRecv()
 		select {
-		case event := <-session.Recv():
-			assert.Equal(t, s2s.EventToolCall, event.Type)
-			require.NotNil(t, event.ToolCall)
-			assert.Equal(t, "tu_123", event.ToolCall.ID)
-			assert.Equal(t, "get_weather", event.ToolCall.Name)
+		case r := <-recvCh:
+			require.True(t, r.ok)
+			require.NoError(t, r.err)
+			assert.Equal(t, s2s.EventToolCall, r.event.Type)
+			require.NotNil(t, r.event.ToolCall)
+			assert.Equal(t, "tu_123", r.event.ToolCall.ID)
+			assert.Equal(t, "get_weather", r.event.ToolCall.Name)
 		case <-time.After(3 * time.Second):
 			t.Fatal("timeout waiting for tool call event")
 		}
@@ -427,10 +458,14 @@ func TestReadLoopEvents(t *testing.T) {
 		require.NoError(t, err)
 		defer session.Close()
 
+		recvCh, stopRecv := startRecv(session.Recv(ctx))
+		defer stopRecv()
 		select {
-		case event := <-session.Recv():
-			assert.Equal(t, s2s.EventTextOutput, event.Type)
-			assert.Equal(t, "Hello from Nova", event.Text)
+		case r := <-recvCh:
+			require.True(t, r.ok)
+			require.NoError(t, r.err)
+			assert.Equal(t, s2s.EventTextOutput, r.event.Type)
+			assert.Equal(t, "Hello from Nova", r.event.Text)
 		case <-time.After(3 * time.Second):
 			t.Fatal("timeout waiting for text event")
 		}
@@ -468,10 +503,14 @@ func TestReadLoopEvents(t *testing.T) {
 		require.NoError(t, err)
 		defer session.Close()
 
+		recvCh, stopRecv := startRecv(session.Recv(ctx))
+		defer stopRecv()
 		select {
-		case event := <-session.Recv():
-			assert.Equal(t, s2s.EventTranscript, event.Type)
-			assert.Equal(t, "user said hello", event.Text)
+		case r := <-recvCh:
+			require.True(t, r.ok)
+			require.NoError(t, r.err)
+			assert.Equal(t, s2s.EventTranscript, r.event.Type)
+			assert.Equal(t, "user said hello", r.event.Text)
 		case <-time.After(3 * time.Second):
 			t.Fatal("timeout waiting for transcript event")
 		}
@@ -509,10 +548,14 @@ func TestReadLoopEvents(t *testing.T) {
 		require.NoError(t, err)
 		defer session.Close()
 
+		recvCh, stopRecv := startRecv(session.Recv(ctx))
+		defer stopRecv()
 		select {
-		case event := <-session.Recv():
-			assert.Equal(t, s2s.EventError, event.Type)
-			assert.Contains(t, event.Error.Error(), "rate limit exceeded")
+		case r := <-recvCh:
+			require.True(t, r.ok)
+			require.NoError(t, r.err)
+			assert.Equal(t, s2s.EventError, r.event.Type)
+			assert.Contains(t, r.event.Error.Error(), "rate limit exceeded")
 		case <-time.After(3 * time.Second):
 			t.Fatal("timeout waiting for error event")
 		}
@@ -549,10 +592,14 @@ func TestReadLoopEvents(t *testing.T) {
 		require.NoError(t, err)
 		defer session.Close()
 
+		recvCh, stopRecv := startRecv(session.Recv(ctx))
+		defer stopRecv()
 		select {
-		case event := <-session.Recv():
-			assert.Equal(t, s2s.EventError, event.Type)
-			assert.Contains(t, event.Error.Error(), "unknown error")
+		case r := <-recvCh:
+			require.True(t, r.ok)
+			require.NoError(t, r.err)
+			assert.Equal(t, s2s.EventError, r.event.Type)
+			assert.Contains(t, r.event.Error.Error(), "unknown error")
 		case <-time.After(3 * time.Second):
 			t.Fatal("timeout waiting for error event")
 		}
@@ -587,9 +634,13 @@ func TestReadLoopEvents(t *testing.T) {
 		require.NoError(t, err)
 		defer session.Close()
 
+		recvCh, stopRecv := startRecv(session.Recv(ctx))
+		defer stopRecv()
 		select {
-		case event := <-session.Recv():
-			assert.Equal(t, s2s.EventTurnEnd, event.Type)
+		case r := <-recvCh:
+			require.True(t, r.ok)
+			require.NoError(t, r.err)
+			assert.Equal(t, s2s.EventTurnEnd, r.event.Type)
 		case <-time.After(3 * time.Second):
 			t.Fatal("timeout waiting for messageStop event")
 		}
@@ -620,10 +671,14 @@ func TestReadLoopEvents(t *testing.T) {
 		require.NoError(t, err)
 		defer session.Close()
 
+		recvCh, stopRecv := startRecv(session.Recv(ctx))
+		defer stopRecv()
 		select {
-		case event := <-session.Recv():
-			assert.Equal(t, s2s.EventError, event.Type)
-			assert.Contains(t, event.Error.Error(), "nova: read:")
+		case r := <-recvCh:
+			require.True(t, r.ok)
+			require.NoError(t, r.err)
+			assert.Equal(t, s2s.EventError, r.event.Type)
+			assert.Contains(t, r.event.Error.Error(), "nova: read:")
 		case <-time.After(3 * time.Second):
 			t.Fatal("timeout waiting for connection error event")
 		}
@@ -666,23 +721,26 @@ func TestReadLoopEvents(t *testing.T) {
 		require.NoError(t, err)
 		defer session.Close()
 
+		recvCh, stopRecv := startRecv(session.Recv(ctx))
+		defer stopRecv()
 		var events []s2s.SessionEvent
 		timeout := time.After(3 * time.Second)
+	collect2:
 		for {
 			select {
-			case event, ok := <-session.Recv():
-				if !ok {
-					goto done
+			case r, chOk := <-recvCh:
+				if !chOk || !r.ok {
+					break collect2
 				}
-				events = append(events, event)
+				require.NoError(t, r.err)
+				events = append(events, r.event)
 				if len(events) >= 2 {
-					goto done
+					break collect2
 				}
 			case <-timeout:
-				goto done
+				break collect2
 			}
 		}
-	done:
 		require.Len(t, events, 2)
 		assert.Equal(t, s2s.EventAudioOutput, events[0].Type)
 		assert.Equal(t, audioData, events[0].Audio)

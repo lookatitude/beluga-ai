@@ -3,9 +3,12 @@ package workflow
 import (
 	"context"
 	"fmt"
+	"iter"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // seq is a package-level counter for generating unique IDs.
@@ -35,15 +38,15 @@ func WithExecutorHooks(h Hooks) ExecutorOption {
 // DefaultExecutor is a goroutine-based durable executor that runs workflows
 // in-process. It records execution history for replay/recovery.
 type DefaultExecutor struct {
-	store    WorkflowStore
-	hooks    Hooks
-	running  map[string]*runningWorkflow
-	mu       sync.RWMutex
+	store   WorkflowStore
+	hooks   Hooks
+	running map[string]*runningWorkflow
+	mu      sync.RWMutex
 }
 
 type runningWorkflow struct {
-	handle *defaultHandle
-	cancel context.CancelFunc
+	handle  *defaultHandle
+	cancel  context.CancelFunc
 	signals map[string]chan any
 	mu      sync.Mutex
 }
@@ -74,10 +77,13 @@ func (e *DefaultExecutor) Execute(ctx context.Context, fn WorkflowFunc, opts Wor
 		done:   make(chan struct{}),
 	}
 
-	wfCtx, cancel := context.WithCancel(ctx)
-	if opts.Timeout > 0 {
-		wfCtx, cancel = context.WithTimeout(ctx, opts.Timeout)
-	}
+	// Create the workflow context. The cancel function is stored on the
+	// runningWorkflow and invoked when the workflow completes, times out,
+	// or is cancelled via CancelWorkflow.
+	//
+	//nolint:gosec // G601: cancel is stored in rw.cancel and invoked in runWorkflow's
+	// deferred finalize path; gosec cannot trace storage through a struct field.
+	wfCtx, cancel := newWorkflowContext(ctx, opts.Timeout)
 
 	rw := &runningWorkflow{
 		handle:  handle,
@@ -102,7 +108,7 @@ func (e *DefaultExecutor) Execute(ctx context.Context, fn WorkflowFunc, opts Wor
 		},
 	}
 	if e.store != nil {
-		e.store.Save(ctx, state)
+		_ = e.store.Save(ctx, state)
 	}
 
 	if e.hooks.OnWorkflowStart != nil {
@@ -194,7 +200,7 @@ func (e *DefaultExecutor) persistFinalState(ctx context.Context, wfID, runID str
 	if err != nil {
 		finalState.Error = err.Error()
 	}
-	e.store.Save(ctx, finalState)
+	_ = e.store.Save(ctx, finalState)
 }
 
 // Signal sends a signal to a running workflow.
@@ -204,7 +210,7 @@ func (e *DefaultExecutor) Signal(ctx context.Context, workflowID string, signal 
 	e.mu.RUnlock()
 
 	if !ok {
-		return fmt.Errorf("workflow/signal: workflow %q not found or not running", workflowID)
+		return core.Errorf(core.ErrNotFound, "workflow/signal: workflow %q not found or not running", workflowID)
 	}
 
 	rw.mu.Lock()
@@ -234,10 +240,10 @@ func (e *DefaultExecutor) Query(ctx context.Context, workflowID string, queryTyp
 		if e.store != nil {
 			state, err := e.store.Load(ctx, workflowID)
 			if err != nil {
-				return nil, fmt.Errorf("workflow/query: %w", err)
+				return nil, core.Errorf(core.ErrProviderDown, "workflow/query: %w", err)
 			}
 			if state == nil {
-				return nil, fmt.Errorf("workflow/query: workflow %q not found", workflowID)
+				return nil, core.Errorf(core.ErrNotFound, "workflow/query: workflow %q not found", workflowID)
 			}
 			switch queryType {
 			case "status":
@@ -245,17 +251,17 @@ func (e *DefaultExecutor) Query(ctx context.Context, workflowID string, queryTyp
 			case "result":
 				return state.Result, nil
 			default:
-				return nil, fmt.Errorf("workflow/query: unknown query type %q", queryType)
+				return nil, core.Errorf(core.ErrInvalidInput, "workflow/query: unknown query type %q", queryType)
 			}
 		}
-		return nil, fmt.Errorf("workflow/query: workflow %q not found", workflowID)
+		return nil, core.Errorf(core.ErrNotFound, "workflow/query: workflow %q not found", workflowID)
 	}
 
 	switch queryType {
 	case "status":
 		return rw.handle.Status(), nil
 	default:
-		return nil, fmt.Errorf("workflow/query: unknown query type %q", queryType)
+		return nil, core.Errorf(core.ErrInvalidInput, "workflow/query: unknown query type %q", queryType)
 	}
 }
 
@@ -266,7 +272,7 @@ func (e *DefaultExecutor) Cancel(_ context.Context, workflowID string) error {
 	e.mu.RUnlock()
 
 	if !ok {
-		return fmt.Errorf("workflow/cancel: workflow %q not found or not running", workflowID)
+		return core.Errorf(core.ErrNotFound, "workflow/cancel: workflow %q not found or not running", workflowID)
 	}
 
 	rw.cancel()
@@ -296,6 +302,17 @@ func (h *defaultHandle) Status() WorkflowStatus {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.status
+}
+
+// newWorkflowContext returns a workflow context and its cancel function. If
+// timeout > 0 the context has a deadline; otherwise it is a plain cancellable
+// child of the parent. The returned cancel MUST be stored and invoked by the
+// caller when the workflow finishes or is cancelled.
+func newWorkflowContext(parent context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
+	if timeout > 0 {
+		return context.WithTimeout(parent, timeout) // #nosec G118 -- cancel returned to caller, stored in rw.cancel
+	}
+	return context.WithCancel(parent) // #nosec G118 -- cancel returned to caller, stored in rw.cancel
 }
 
 func (h *defaultHandle) Result(ctx context.Context) (any, error) {
@@ -361,16 +378,31 @@ func (c *defaultWorkflowContext) ExecuteActivity(fn ActivityFunc, input any, opt
 	return result, nil
 }
 
-func (c *defaultWorkflowContext) ReceiveSignal(name string) <-chan any {
+func (c *defaultWorkflowContext) ReceiveSignal(name string) iter.Seq2[any, error] {
+	// Eagerly create/lookup the shared channel so that a Signal() delivered
+	// between ReceiveSignal() returning and the caller iterating is still
+	// buffered and not lost.
 	c.workflow.mu.Lock()
-	defer c.workflow.mu.Unlock()
-
 	ch, exists := c.workflow.signals[name]
 	if !exists {
 		ch = make(chan any, 10)
 		c.workflow.signals[name] = ch
 	}
-	return ch
+	c.workflow.mu.Unlock()
+
+	ctx := c.Context
+	return func(yield func(any, error) bool) {
+		for {
+			select {
+			case payload := <-ch:
+				if !yield(payload, nil) {
+					return
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
 }
 
 func (c *defaultWorkflowContext) Sleep(d time.Duration) error {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -129,7 +130,7 @@ func TestOPAPolicy_HTTPError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for HTTP 500")
 	}
-	if err.Error() != "auth/opa: OPA returned status 500: internal error" {
+	if !strings.Contains(err.Error(), "auth/opa: OPA returned status 500: internal error") {
 		t.Errorf("unexpected error message: %v", err)
 	}
 }

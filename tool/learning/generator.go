@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -96,10 +97,10 @@ type generatedTool struct {
 // executor with a production implementation before registering.
 func (g *ToolGenerator) Generate(ctx context.Context, req GenerateRequest, executor CodeExecutor) (*DynamicTool, error) {
 	if req.Name == "" {
-		return nil, fmt.Errorf("tool generator: name is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "tool generator: name is required")
 	}
 	if req.Description == "" {
-		return nil, fmt.Errorf("tool generator: description is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "tool generator: description is required")
 	}
 
 	prompt := g.buildPrompt(req)
@@ -125,13 +126,13 @@ func (g *ToolGenerator) Generate(ctx context.Context, req GenerateRequest, execu
 
 		resp, err := g.model.Generate(ctx, msgs)
 		if err != nil {
-			return nil, fmt.Errorf("tool generator: llm error: %w", err)
+			return nil, core.Errorf(core.ErrProviderDown, "tool generator: llm error: %w", err)
 		}
 
 		text := resp.Text()
 		gen, err := parseGeneratedTool(text)
 		if err != nil {
-			lastErr = fmt.Errorf("failed to parse LLM output: %w", err)
+			lastErr = core.Errorf(core.ErrInvalidInput, "failed to parse LLM output: %w", err)
 			continue
 		}
 
@@ -150,7 +151,7 @@ func (g *ToolGenerator) Generate(ctx context.Context, req GenerateRequest, execu
 		), nil
 	}
 
-	return nil, fmt.Errorf("tool generator: failed after %d retries: %w", g.maxRetries, lastErr)
+	return nil, core.Errorf(core.ErrInvalidInput, "tool generator: failed after %d retries: %w", g.maxRetries, lastErr)
 }
 
 // buildPrompt constructs the user prompt for tool generation.
@@ -230,11 +231,11 @@ func parseGeneratedTool(text string) (*generatedTool, error) {
 
 	var gen generatedTool
 	if err := json.Unmarshal([]byte(text), &gen); err != nil {
-		return nil, fmt.Errorf("invalid JSON in response: %w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, "invalid JSON in response: %w", err)
 	}
 
 	if gen.Code == "" {
-		return nil, fmt.Errorf("generated code is empty")
+		return nil, core.Errorf(core.ErrInvalidInput, "generated code is empty")
 	}
 	if gen.InputSchema == nil {
 		gen.InputSchema = map[string]any{"type": "object"}

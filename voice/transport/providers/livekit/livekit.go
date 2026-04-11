@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"iter"
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/voice"
@@ -61,14 +62,33 @@ func New(cfg transport.Config) (*Transport, error) {
 	}, nil
 }
 
-// Recv returns a channel of incoming audio frames from the LiveKit room.
-func (t *Transport) Recv(_ context.Context) (<-chan voice.Frame, error) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if t.closed {
-		return nil, fmt.Errorf("livekit: transport is closed")
+// Recv returns an iterator of incoming audio frames from the LiveKit room.
+// If the transport is already closed the first yielded pair carries an error
+// and the iterator ends.
+func (t *Transport) Recv(ctx context.Context) iter.Seq2[voice.Frame, error] {
+	return func(yield func(voice.Frame, error) bool) {
+		t.mu.Lock()
+		closed := t.closed
+		frames := t.frames
+		t.mu.Unlock()
+		if closed {
+			yield(voice.Frame{}, fmt.Errorf("livekit: transport is closed"))
+			return
+		}
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case frame, ok := <-frames:
+				if !ok {
+					return
+				}
+				if !yield(frame, nil) {
+					return
+				}
+			}
+		}
 	}
-	return t.frames, nil
 }
 
 // Send writes an outgoing frame to the LiveKit room.

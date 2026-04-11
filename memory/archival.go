@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/rag/embedding"
 	"github.com/lookatitude/beluga-ai/rag/vectorstore"
 	"github.com/lookatitude/beluga-ai/schema"
@@ -33,10 +34,10 @@ type Archival struct {
 // Both VectorStore and Embedder must be non-nil.
 func NewArchival(cfg ArchivalConfig) (*Archival, error) {
 	if cfg.VectorStore == nil {
-		return nil, fmt.Errorf("memory/archival: VectorStore is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "memory/archival: VectorStore is required")
 	}
 	if cfg.Embedder == nil {
-		return nil, fmt.Errorf("memory/archival: Embedder is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "memory/archival: Embedder is required")
 	}
 	return &Archival{
 		vs:  cfg.VectorStore,
@@ -70,7 +71,7 @@ func (a *Archival) Save(ctx context.Context, input, output schema.Message) error
 	}
 	embeddings, err := a.emb.Embed(ctx, texts)
 	if err != nil {
-		return fmt.Errorf("memory/archival: embed: %w", err)
+		return core.Errorf(core.ErrProviderDown, "memory/archival: embed: %w", err)
 	}
 	return a.vs.Add(ctx, docs, embeddings)
 }
@@ -89,7 +90,7 @@ func (a *Archival) Search(ctx context.Context, query string, k int) ([]schema.Do
 	}
 	vec, err := a.emb.EmbedSingle(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("memory/archival: embed query: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "memory/archival: embed query: %w", err)
 	}
 	return a.vs.Search(ctx, vec, k)
 }
@@ -105,7 +106,7 @@ func init() {
 	Register("archival", func(cfg config.ProviderConfig) (Memory, error) {
 		// Archival requires VectorStore and Embedder to be provided via
 		// composite memory options rather than the generic registry.
-		return nil, fmt.Errorf("memory/archival: use NewArchival directly with ArchivalConfig; " +
+		return nil, core.Errorf(core.ErrInvalidInput, "memory/archival: use NewArchival directly with ArchivalConfig; "+
 			"the registry factory requires VectorStore and Embedder")
 	})
 }

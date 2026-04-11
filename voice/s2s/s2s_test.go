@@ -3,6 +3,7 @@ package s2s
 import (
 	"context"
 	"errors"
+	"iter"
 	"testing"
 	"time"
 
@@ -54,8 +55,22 @@ func (m *mockSession) SendToolResult(ctx context.Context, result schema.ToolResu
 	return nil
 }
 
-func (m *mockSession) Recv() <-chan SessionEvent {
-	return m.recvChan
+func (m *mockSession) Recv(ctx context.Context) iter.Seq2[SessionEvent, error] {
+	return func(yield func(SessionEvent, error) bool) {
+		for {
+			select {
+			case event, ok := <-m.recvChan:
+				if !ok {
+					return
+				}
+				if !yield(event, nil) {
+					return
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
 }
 
 func (m *mockSession) Interrupt(ctx context.Context) error {
@@ -252,13 +267,23 @@ func TestMockSession_SendToolResult(t *testing.T) {
 func TestMockSession_Recv(t *testing.T) {
 	session := newMockSession()
 
-	// Send some events.
+	// Subscribe before producing events, then send some events.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	next, stop := iter.Pull2(session.Recv(ctx))
+	defer stop()
+
 	session.recvChan <- SessionEvent{Type: EventTextOutput, Text: "hello"}
 	session.recvChan <- SessionEvent{Type: EventAudioOutput, Audio: []byte{0x01}}
 	close(session.recvChan)
 
 	var events []SessionEvent
-	for event := range session.Recv() {
+	for {
+		event, err, ok := next()
+		if !ok {
+			break
+		}
+		require.NoError(t, err)
 		events = append(events, event)
 	}
 
@@ -435,23 +460,42 @@ func TestSessionEvent_Error(t *testing.T) {
 
 // --- AsFrameProcessor tests ---
 
+// framesFromSlice yields the given voice.Frames as an iter.Seq2 with nil errors.
+func framesFromSlice(frames ...voice.Frame) iter.Seq2[voice.Frame, error] {
+	return func(yield func(voice.Frame, error) bool) {
+		for _, f := range frames {
+			if !yield(f, nil) {
+				return
+			}
+		}
+	}
+}
+
+// runProcessor drains proc applied to the given input frames and returns
+// collected output frames and the first error encountered (if any).
+func runProcessor(ctx context.Context, proc voice.FrameProcessor, inputs ...voice.Frame) ([]voice.Frame, error) {
+	var frames []voice.Frame
+	for f, err := range proc.Process(ctx, framesFromSlice(inputs...)) {
+		if err != nil {
+			return frames, err
+		}
+		frames = append(frames, f)
+	}
+	return frames, nil
+}
+
 func TestAsFrameProcessor_AudioForwarding(t *testing.T) {
 	session := newMockSession()
-	// Pre-close recv so the output goroutine finishes immediately.
 	close(session.recvChan)
 	session.closed = true
 
 	engine := &mockS2S{session: session}
 	proc := AsFrameProcessor(engine)
 
-	in := make(chan voice.Frame, 5)
-	out := make(chan voice.Frame, 5)
-
-	in <- voice.NewAudioFrame([]byte{0x01, 0x02}, 16000)
-	in <- voice.NewAudioFrame([]byte{0x03, 0x04}, 16000)
-	close(in)
-
-	err := proc.Process(context.Background(), in, out)
+	_, err := runProcessor(context.Background(), proc,
+		voice.NewAudioFrame([]byte{0x01, 0x02}, 16000),
+		voice.NewAudioFrame([]byte{0x03, 0x04}, 16000),
+	)
 	require.NoError(t, err)
 
 	assert.Len(t, session.audioSent, 2)
@@ -467,13 +511,7 @@ func TestAsFrameProcessor_TextForwarding(t *testing.T) {
 	engine := &mockS2S{session: session}
 	proc := AsFrameProcessor(engine)
 
-	in := make(chan voice.Frame, 5)
-	out := make(chan voice.Frame, 5)
-
-	in <- voice.NewTextFrame("hello from user")
-	close(in)
-
-	err := proc.Process(context.Background(), in, out)
+	_, err := runProcessor(context.Background(), proc, voice.NewTextFrame("hello from user"))
 	require.NoError(t, err)
 
 	assert.Len(t, session.textSent, 1)
@@ -488,13 +526,7 @@ func TestAsFrameProcessor_InterruptForwarding(t *testing.T) {
 	engine := &mockS2S{session: session}
 	proc := AsFrameProcessor(engine)
 
-	in := make(chan voice.Frame, 5)
-	out := make(chan voice.Frame, 5)
-
-	in <- voice.NewControlFrame(voice.SignalInterrupt)
-	close(in)
-
-	err := proc.Process(context.Background(), in, out)
+	_, err := runProcessor(context.Background(), proc, voice.NewControlFrame(voice.SignalInterrupt))
 	require.NoError(t, err)
 
 	assert.True(t, session.interrupted)
@@ -508,16 +540,8 @@ func TestAsFrameProcessor_NonInterruptControlIgnored(t *testing.T) {
 	engine := &mockS2S{session: session}
 	proc := AsFrameProcessor(engine)
 
-	in := make(chan voice.Frame, 5)
-	out := make(chan voice.Frame, 5)
-
-	// Send a non-interrupt control frame; should not trigger interrupt.
-	in <- voice.NewControlFrame(voice.SignalStart)
-	close(in)
-
-	err := proc.Process(context.Background(), in, out)
+	_, err := runProcessor(context.Background(), proc, voice.NewControlFrame(voice.SignalStart))
 	require.NoError(t, err)
-
 	assert.False(t, session.interrupted)
 }
 
@@ -530,19 +554,8 @@ func TestAsFrameProcessor_AudioOutputEvent(t *testing.T) {
 	engine := &mockS2S{session: session}
 	proc := AsFrameProcessor(engine)
 
-	in := make(chan voice.Frame)
-	out := make(chan voice.Frame, 10)
-
-	close(in)
-
-	err := proc.Process(context.Background(), in, out)
+	frames, err := runProcessor(context.Background(), proc)
 	require.NoError(t, err)
-
-	var frames []voice.Frame
-	for f := range out {
-		frames = append(frames, f)
-	}
-
 	require.Len(t, frames, 1)
 	assert.Equal(t, voice.FrameAudio, frames[0].Type)
 	assert.Equal(t, []byte{0xAA, 0xBB}, frames[0].Data)
@@ -558,19 +571,8 @@ func TestAsFrameProcessor_TextOutputEvent(t *testing.T) {
 	engine := &mockS2S{session: session}
 	proc := AsFrameProcessor(engine)
 
-	in := make(chan voice.Frame)
-	out := make(chan voice.Frame, 10)
-
-	close(in)
-
-	err := proc.Process(context.Background(), in, out)
+	frames, err := runProcessor(context.Background(), proc)
 	require.NoError(t, err)
-
-	var frames []voice.Frame
-	for f := range out {
-		frames = append(frames, f)
-	}
-
 	require.Len(t, frames, 1)
 	assert.Equal(t, voice.FrameText, frames[0].Type)
 	assert.Equal(t, "hello from model", frames[0].Text())
@@ -585,19 +587,8 @@ func TestAsFrameProcessor_TurnEndEvent(t *testing.T) {
 	engine := &mockS2S{session: session}
 	proc := AsFrameProcessor(engine)
 
-	in := make(chan voice.Frame)
-	out := make(chan voice.Frame, 10)
-
-	close(in)
-
-	err := proc.Process(context.Background(), in, out)
+	frames, err := runProcessor(context.Background(), proc)
 	require.NoError(t, err)
-
-	var frames []voice.Frame
-	for f := range out {
-		frames = append(frames, f)
-	}
-
 	require.Len(t, frames, 1)
 	assert.Equal(t, voice.FrameControl, frames[0].Type)
 	assert.Equal(t, voice.SignalEndOfUtterance, frames[0].Signal())
@@ -611,12 +602,7 @@ func TestAsFrameProcessor_ErrorEvent(t *testing.T) {
 	engine := &mockS2S{session: session}
 	proc := AsFrameProcessor(engine)
 
-	in := make(chan voice.Frame)
-	out := make(chan voice.Frame, 10)
-
-	close(in)
-
-	err := proc.Process(context.Background(), in, out)
+	_, err := runProcessor(context.Background(), proc)
 	assert.ErrorIs(t, err, testErr)
 }
 
@@ -630,12 +616,7 @@ func TestAsFrameProcessor_ErrorEventNilError(t *testing.T) {
 	engine := &mockS2S{session: session}
 	proc := AsFrameProcessor(engine)
 
-	in := make(chan voice.Frame)
-	out := make(chan voice.Frame, 10)
-
-	close(in)
-
-	err := proc.Process(context.Background(), in, out)
+	_, err := runProcessor(context.Background(), proc)
 	require.NoError(t, err)
 }
 
@@ -647,10 +628,7 @@ func TestAsFrameProcessor_StartError(t *testing.T) {
 	}
 	proc := AsFrameProcessor(engine)
 
-	in := make(chan voice.Frame)
-	out := make(chan voice.Frame, 10)
-
-	err := proc.Process(context.Background(), in, out)
+	_, err := runProcessor(context.Background(), proc)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "s2s: start session:")
 	assert.Contains(t, err.Error(), "connection failed")
@@ -663,16 +641,25 @@ func TestAsFrameProcessor_ContextCancellation(t *testing.T) {
 	proc := AsFrameProcessor(engine)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	in := make(chan voice.Frame) // unbuffered so main loop blocks on select
-	out := make(chan voice.Frame, 10)
+
+	// Blocking input iterator that waits on ctx.
+	blocking := iter.Seq2[voice.Frame, error](func(yield func(voice.Frame, error) bool) {
+		<-ctx.Done()
+	})
 
 	go func() {
 		time.Sleep(10 * time.Millisecond)
 		cancel()
 	}()
 
-	err := proc.Process(ctx, in, out)
-	assert.ErrorIs(t, err, context.Canceled)
+	var lastErr error
+	for _, err := range proc.Process(ctx, blocking) {
+		if err != nil {
+			lastErr = err
+			break
+		}
+	}
+	assert.ErrorIs(t, lastErr, context.Canceled)
 }
 
 func TestAsFrameProcessor_SendAudioError(t *testing.T) {
@@ -686,13 +673,7 @@ func TestAsFrameProcessor_SendAudioError(t *testing.T) {
 	engine := &mockS2S{session: session}
 	proc := AsFrameProcessor(engine)
 
-	in := make(chan voice.Frame, 5)
-	out := make(chan voice.Frame, 5)
-
-	in <- voice.NewAudioFrame([]byte{0x01}, 16000)
-	close(in)
-
-	err := proc.Process(context.Background(), in, out)
+	_, err := runProcessor(context.Background(), proc, voice.NewAudioFrame([]byte{0x01}, 16000))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "s2s: send audio:")
 }
@@ -708,13 +689,7 @@ func TestAsFrameProcessor_SendTextError(t *testing.T) {
 	engine := &mockS2S{session: session}
 	proc := AsFrameProcessor(engine)
 
-	in := make(chan voice.Frame, 5)
-	out := make(chan voice.Frame, 5)
-
-	in <- voice.NewTextFrame("hello")
-	close(in)
-
-	err := proc.Process(context.Background(), in, out)
+	_, err := runProcessor(context.Background(), proc, voice.NewTextFrame("hello"))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "s2s: send text:")
 }
@@ -730,13 +705,7 @@ func TestAsFrameProcessor_InterruptError(t *testing.T) {
 	engine := &mockS2S{session: session}
 	proc := AsFrameProcessor(engine)
 
-	in := make(chan voice.Frame, 5)
-	out := make(chan voice.Frame, 5)
-
-	in <- voice.NewControlFrame(voice.SignalInterrupt)
-	close(in)
-
-	err := proc.Process(context.Background(), in, out)
+	_, err := runProcessor(context.Background(), proc, voice.NewControlFrame(voice.SignalInterrupt))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "s2s: interrupt:")
 }
@@ -752,19 +721,8 @@ func TestAsFrameProcessor_MultipleOutputEvents(t *testing.T) {
 	engine := &mockS2S{session: session}
 	proc := AsFrameProcessor(engine)
 
-	in := make(chan voice.Frame)
-	out := make(chan voice.Frame, 10)
-
-	close(in)
-
-	err := proc.Process(context.Background(), in, out)
+	frames, err := runProcessor(context.Background(), proc)
 	require.NoError(t, err)
-
-	var frames []voice.Frame
-	for f := range out {
-		frames = append(frames, f)
-	}
-
 	require.Len(t, frames, 3)
 	assert.Equal(t, voice.FrameAudio, frames[0].Type)
 	assert.Equal(t, voice.FrameText, frames[1].Type)

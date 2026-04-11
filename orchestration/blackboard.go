@@ -73,7 +73,7 @@ func (b *Blackboard) snapshot() map[string]any {
 // maxRounds is reached.
 func (b *Blackboard) Invoke(ctx context.Context, input any, opts ...core.Option) (any, error) {
 	if len(b.agents) == 0 {
-		return nil, fmt.Errorf("orchestration/blackboard: no agents configured")
+		return nil, core.Errorf(core.ErrInvalidInput, "orchestration/blackboard: no agents configured")
 	}
 
 	// Set the initial input on the board.
@@ -92,7 +92,7 @@ func (b *Blackboard) Invoke(ctx context.Context, input any, opts ...core.Option)
 			inputStr := fmt.Sprintf("%v", snap)
 			result, err := a.Invoke(ctx, inputStr)
 			if err != nil {
-				return nil, fmt.Errorf("orchestration/blackboard: agent %q round %d: %w", a.ID(), round, err)
+				return nil, core.Errorf(core.ErrProviderDown, "orchestration/blackboard: agent %q round %d: %w", a.ID(), round, err)
 			}
 			b.Set(a.ID(), result)
 		}
@@ -106,7 +106,7 @@ func (b *Blackboard) Invoke(ctx context.Context, input any, opts ...core.Option)
 func (b *Blackboard) Stream(ctx context.Context, input any, opts ...core.Option) iter.Seq2[any, error] {
 	return func(yield func(any, error) bool) {
 		if len(b.agents) == 0 {
-			yield(nil, fmt.Errorf("orchestration/blackboard: no agents configured"))
+			yield(nil, core.Errorf(core.ErrInvalidInput, "orchestration/blackboard: no agents configured"))
 			return
 		}
 
@@ -138,7 +138,7 @@ func (b *Blackboard) runAgents(ctx context.Context, snap map[string]any, round i
 		inputStr := fmt.Sprintf("%v", snap)
 		result, err := a.Invoke(ctx, inputStr)
 		if err != nil {
-			return fmt.Errorf("orchestration/blackboard: agent %q round %d: %w", a.ID(), round, err)
+			return core.Errorf(core.ErrProviderDown, "orchestration/blackboard: agent %q round %d: %w", a.ID(), round, err)
 		}
 		b.Set(a.ID(), result)
 	}

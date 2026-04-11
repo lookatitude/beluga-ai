@@ -2,6 +2,7 @@ package state
 
 import (
 	"context"
+	"iter"
 	"sync"
 	"testing"
 
@@ -14,14 +15,12 @@ type mockVersionedStore struct {
 	mu       sync.Mutex
 	data     map[string]any
 	versions map[string]uint64
-	watchCh  chan StateChange
 }
 
 func newMockVersionedStore() *mockVersionedStore {
 	return &mockVersionedStore{
 		data:     make(map[string]any),
 		versions: make(map[string]uint64),
-		watchCh:  make(chan StateChange, 16),
 	}
 }
 
@@ -46,11 +45,13 @@ func (m *mockVersionedStore) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
-func (m *mockVersionedStore) Watch(_ context.Context, _ string) (<-chan StateChange, error) {
-	return m.watchCh, nil
+func (m *mockVersionedStore) Watch(_ context.Context, _ string) iter.Seq2[StateChange, error] {
+	return func(yield func(StateChange, error) bool) {
+		// Intentionally empty: reducer tests do not exercise the Watch path.
+	}
 }
 
-func (m *mockVersionedStore) Close() error { close(m.watchCh); return nil }
+func (m *mockVersionedStore) Close() error { return nil }
 
 func (m *mockVersionedStore) GetVersioned(ctx context.Context, key string) (any, uint64, error) {
 	m.mu.Lock()

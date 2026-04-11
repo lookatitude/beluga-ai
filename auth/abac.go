@@ -2,9 +2,10 @@ package auth
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Effect specifies whether a rule allows or denies access.
@@ -65,7 +66,7 @@ func (p *ABACPolicy) Name() string { return p.name }
 // empty or a rule with the same name already exists.
 func (p *ABACPolicy) AddRule(rule Rule) error {
 	if rule.Name == "" {
-		return fmt.Errorf("auth/abac: rule name must not be empty")
+		return core.Errorf(core.ErrInvalidInput, "auth/abac: rule name must not be empty")
 	}
 
 	p.mu.Lock()
@@ -73,7 +74,7 @@ func (p *ABACPolicy) AddRule(rule Rule) error {
 
 	for _, r := range p.rules {
 		if r.Name == rule.Name {
-			return fmt.Errorf("auth/abac: rule %q already exists", rule.Name)
+			return core.Errorf(core.ErrInvalidInput, "auth/abac: rule %q already exists", rule.Name)
 		}
 	}
 

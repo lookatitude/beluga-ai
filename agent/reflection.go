@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -12,7 +13,7 @@ import (
 func init() {
 	RegisterPlanner("reflexion", func(cfg PlannerConfig) (Planner, error) {
 		if cfg.LLM == nil {
-			return nil, fmt.Errorf("reflexion planner requires an LLM")
+			return nil, core.Errorf(core.ErrInvalidInput, "reflexion planner requires an LLM")
 		}
 		opts := []ReflexionOption{}
 		if eval, ok := cfg.Extra["evaluator"].(llm.ChatModel); ok {
@@ -114,7 +115,7 @@ func (p *ReflexionPlanner) generateWithReflection(ctx context.Context, state Pla
 	// Actor generates
 	resp, err := model.Generate(ctx, messages)
 	if err != nil {
-		return nil, fmt.Errorf("reflexion actor: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "reflexion actor: %w", err)
 	}
 
 	// If tool calls, skip evaluation and return tool actions directly
@@ -178,7 +179,7 @@ func (p *ReflexionPlanner) evaluate(ctx context.Context, input, response string)
 		schema.NewHumanMessage(evalPrompt),
 	})
 	if err != nil {
-		return 0, fmt.Errorf("evaluate: %w", err)
+		return 0, core.Errorf(core.ErrProviderDown, "evaluate: %w", err)
 	}
 
 	text := strings.TrimSpace(resp.Text())
@@ -211,7 +212,7 @@ func (p *ReflexionPlanner) reflect(ctx context.Context, input, response string, 
 		schema.NewHumanMessage(reflectPrompt),
 	})
 	if err != nil {
-		return "", fmt.Errorf("reflect: %w", err)
+		return "", core.Errorf(core.ErrProviderDown, "reflect: %w", err)
 	}
 
 	return resp.Text(), nil

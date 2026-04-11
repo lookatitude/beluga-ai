@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/eval/trajectory"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
@@ -38,7 +39,7 @@ func init() {
 	// map-based config. Callers must construct it directly with
 	// NewTrajectoryFaithfulness(WithModel(...)).
 	trajectory.Register("trajectory_faithfulness", func(_ map[string]any) (trajectory.TrajectoryMetric, error) {
-		return nil, fmt.Errorf("trajectory_faithfulness: must be constructed directly with NewTrajectoryFaithfulness(WithModel(...))")
+		return nil, core.Errorf(core.ErrInvalidInput, "trajectory_faithfulness: must be constructed directly with NewTrajectoryFaithfulness(WithModel(...))")
 	})
 }
 
@@ -75,7 +76,7 @@ func (tf *TrajectoryFaithfulness) Name() string { return "trajectory_faithfulnes
 // Returns an error if no LLM model was configured.
 func (tf *TrajectoryFaithfulness) ScoreTrajectory(ctx context.Context, t trajectory.Trajectory) (*trajectory.TrajectoryScore, error) {
 	if tf.llm == nil {
-		return nil, fmt.Errorf("trajectory_faithfulness: no LLM model configured")
+		return nil, core.Errorf(core.ErrInvalidInput, "trajectory_faithfulness: no LLM model configured")
 	}
 
 	stepsText := formatTrajectorySteps(t.Steps)
@@ -85,12 +86,12 @@ func (tf *TrajectoryFaithfulness) ScoreTrajectory(ctx context.Context, t traject
 		schema.NewHumanMessage(prompt),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("trajectory_faithfulness: llm generate: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "trajectory_faithfulness: llm generate: %w", err)
 	}
 
 	score, err := parseScoreResponse(resp.Text())
 	if err != nil {
-		return nil, fmt.Errorf("trajectory_faithfulness: %w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, "trajectory_faithfulness: %w", err)
 	}
 
 	return &trajectory.TrajectoryScore{
@@ -155,5 +156,5 @@ func parseScoreResponse(text string) (float64, error) {
 	}
 	// Avoid echoing the full LLM response into the error: it may contain
 	// user-supplied content that should not surface to external callers.
-	return 0, fmt.Errorf("failed to parse score from LLM response")
+	return 0, core.Errorf(core.ErrInvalidInput, "failed to parse score from LLM response")
 }

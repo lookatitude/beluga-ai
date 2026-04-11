@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // NodeType identifies the kind of node in a reasoning graph.
@@ -109,10 +111,10 @@ func (g *ReasoningGraph) AddEdge(from, to string, edgeType EdgeType, weight floa
 	defer g.mu.Unlock()
 
 	if _, ok := g.nodes[from]; !ok {
-		return fmt.Errorf("source node %q not found", from)
+		return core.Errorf(core.ErrNotFound, "source node %q not found", from)
 	}
 	if _, ok := g.nodes[to]; !ok {
-		return fmt.Errorf("target node %q not found", to)
+		return core.Errorf(core.ErrNotFound, "target node %q not found", to)
 	}
 
 	g.edges = append(g.edges, GraphEdge{

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -62,12 +63,12 @@ func (e *LLMEvaluator) Evaluate(ctx context.Context, question string, results []
 		schema.NewHumanMessage(prompt),
 	})
 	if err != nil {
-		return 0, fmt.Errorf("structured.evaluate: llm call: %w", err)
+		return 0, core.Errorf(core.ErrProviderDown, "structured.evaluate: llm call: %w", err)
 	}
 
 	score, err := parseScore(resp.Text())
 	if err != nil {
-		return 0, fmt.Errorf("structured.evaluate: parse score: %w", err)
+		return 0, core.Errorf(core.ErrInvalidInput, "structured.evaluate: parse score: %w", err)
 	}
 
 	return score, nil
@@ -91,7 +92,7 @@ func parseScore(text string) (float64, error) {
 	s := strings.TrimSpace(text)
 	score, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-		return 0, fmt.Errorf("expected float, got %q: %w", s, err)
+		return 0, core.Errorf(core.ErrInvalidInput, "expected float, got %q: %w", s, err)
 	}
 	if score < 0 {
 		score = 0

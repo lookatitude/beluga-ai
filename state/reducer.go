@@ -2,6 +2,7 @@ package state
 
 import (
 	"context"
+	"iter"
 )
 
 // ReducerFunc merges an old value with a new value. The old value may be nil
@@ -107,7 +108,7 @@ func (rs *ReducerStore) Delete(ctx context.Context, key string) error {
 }
 
 // Watch delegates to the inner store.
-func (rs *ReducerStore) Watch(ctx context.Context, key string) (<-chan StateChange, error) {
+func (rs *ReducerStore) Watch(ctx context.Context, key string) iter.Seq2[StateChange, error] {
 	return rs.inner.Watch(ctx, key)
 }
 

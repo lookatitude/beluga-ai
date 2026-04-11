@@ -2,10 +2,11 @@ package cache
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Cache is the interface that all cache backends implement. It provides
@@ -64,7 +65,7 @@ func New(name string, cfg Config) (Cache, error) {
 	f, ok := registry[name]
 	mu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("cache: unknown provider %q (registered: %v)", name, List())
+		return nil, core.Errorf(core.ErrNotFound, "cache: unknown provider %q (registered: %v)", name, List())
 	}
 	return f(cfg)
 }

@@ -1,10 +1,10 @@
 package azure
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/internal/openaicompat"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/openai/openai-go/option"
@@ -26,7 +26,7 @@ func init() {
 // The api-version is read from cfg.Options["api_version"] (default: "2024-10-21").
 func New(cfg config.ProviderConfig) (llm.ChatModel, error) {
 	if cfg.BaseURL == "" {
-		return nil, fmt.Errorf("azure: base_url is required (format: https://{resource}.openai.azure.com/openai/deployments/{deployment})")
+		return nil, core.Errorf(core.ErrInvalidInput, "azure: base_url is required (format: https://{resource}.openai.azure.com/openai/deployments/{deployment})")
 	}
 	if cfg.Model == "" {
 		cfg.Model = "gpt-4o"

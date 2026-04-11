@@ -38,18 +38,26 @@ func TestNew(t *testing.T) {
 }
 
 func TestRecv(t *testing.T) {
-	t.Run("returns channel", func(t *testing.T) {
+	t.Run("returns iterator", func(t *testing.T) {
 		tr, _ := New(transport.Config{URL: "ws://localhost:8765"})
-		ch, err := tr.Recv(context.Background())
-		require.NoError(t, err)
-		assert.NotNil(t, ch)
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		for _, err := range tr.Recv(ctx) {
+			assert.NoError(t, err)
+		}
 	})
 
 	t.Run("error when closed", func(t *testing.T) {
 		tr, _ := New(transport.Config{URL: "ws://localhost:8765"})
 		tr.Close()
-		_, err := tr.Recv(context.Background())
-		require.Error(t, err)
+		var gotErr error
+		for _, err := range tr.Recv(context.Background()) {
+			if err != nil {
+				gotErr = err
+				break
+			}
+		}
+		require.Error(t, gotErr)
 	})
 }
 

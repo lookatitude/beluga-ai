@@ -158,14 +158,14 @@ func (ge *GeneratorEvaluator) Invoke(ctx context.Context, input any, opts ...cor
 		// Generate.
 		response, err := ge.generator.Invoke(ctx, currentPrompt)
 		if err != nil {
-			return nil, ge.handleError(ctx, fmt.Errorf("generator_evaluator: generation iteration %d: %w", iteration+1, err))
+			return nil, ge.handleError(ctx, core.Errorf(core.ErrProviderDown, "generator_evaluator: generation iteration %d: %w", iteration+1, err))
 		}
 		lastResponse = response
 
 		// Evaluate.
 		critiques, err := ge.evaluate(ctx, prompt, response)
 		if err != nil {
-			return nil, ge.handleError(ctx, fmt.Errorf("generator_evaluator: evaluation iteration %d: %w", iteration+1, err))
+			return nil, ge.handleError(ctx, core.Errorf(core.ErrProviderDown, "generator_evaluator: evaluation iteration %d: %w", iteration+1, err))
 		}
 		allCritiques = append(allCritiques, critiques)
 
@@ -224,7 +224,7 @@ func (ge *GeneratorEvaluator) Stream(ctx context.Context, input any, opts ...cor
 			// Generate.
 			response, err := ge.generator.Invoke(ctx, currentPrompt)
 			if err != nil {
-				yield(nil, ge.handleError(ctx, fmt.Errorf("generator_evaluator: generation iteration %d: %w", iteration+1, err)))
+				yield(nil, ge.handleError(ctx, core.Errorf(core.ErrProviderDown, "generator_evaluator: generation iteration %d: %w", iteration+1, err)))
 				return
 			}
 			lastResponse = response
@@ -240,7 +240,7 @@ func (ge *GeneratorEvaluator) Stream(ctx context.Context, input any, opts ...cor
 			// Evaluate.
 			critiques, err := ge.evaluate(ctx, prompt, response)
 			if err != nil {
-				yield(nil, ge.handleError(ctx, fmt.Errorf("generator_evaluator: evaluation iteration %d: %w", iteration+1, err)))
+				yield(nil, ge.handleError(ctx, core.Errorf(core.ErrProviderDown, "generator_evaluator: evaluation iteration %d: %w", iteration+1, err)))
 				return
 			}
 			allCritiques = append(allCritiques, critiques)
@@ -310,7 +310,7 @@ func (ge *GeneratorEvaluator) evaluate(ctx context.Context, input, response stri
 
 		c, err := eval(ctx, input, response)
 		if err != nil {
-			return nil, fmt.Errorf("evaluator %d: %w", i, err)
+			return nil, core.Errorf(core.ErrProviderDown, "evaluator %d: %w", i, err)
 		}
 		critiques = append(critiques, c)
 	}

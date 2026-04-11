@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/tool"
 )
 
@@ -74,10 +75,10 @@ func WithMetrics(m *RoutingMetrics) Option {
 // System 2 (deliberative) agents. Both agents are required.
 func New(id string, s1, s2 agent.Agent, opts ...Option) (*DualProcessAgent, error) {
 	if s1 == nil {
-		return nil, fmt.Errorf("cognitive: system 1 agent is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "cognitive: system 1 agent is required")
 	}
 	if s2 == nil {
-		return nil, fmt.Errorf("cognitive: system 2 agent is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "cognitive: system 2 agent is required")
 	}
 
 	a := &DualProcessAgent{
@@ -126,7 +127,7 @@ func (a *DualProcessAgent) Invoke(ctx context.Context, input string, opts ...age
 	// Score complexity
 	score, err := a.scorer.Score(ctx, input)
 	if err != nil {
-		return "", fmt.Errorf("cognitive: scoring failed: %w", err)
+		return "", core.Errorf(core.ErrProviderDown, "cognitive: scoring failed: %w", err)
 	}
 
 	// If clearly complex, go directly to S2. This matches the Stream path,
@@ -200,7 +201,7 @@ func (a *DualProcessAgent) Stream(ctx context.Context, input string, opts ...age
 			yield(agent.Event{
 				Type:    agent.EventError,
 				AgentID: a.id,
-			}, fmt.Errorf("cognitive: scoring failed: %w", err))
+			}, core.Errorf(core.ErrProviderDown, "cognitive: scoring failed: %w", err))
 			return
 		}
 

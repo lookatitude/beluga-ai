@@ -2,12 +2,12 @@ package workflow
 
 import (
 	"context"
-	"fmt"
 	"iter"
 	"strings"
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/tool"
 )
 
@@ -62,7 +62,7 @@ func (a *ParallelAgent) Invoke(ctx context.Context, input string, opts ...agent.
 	// Check for errors
 	for i, err := range errs {
 		if err != nil {
-			return "", fmt.Errorf("parallel agent %q: child %q failed: %w", a.id, a.children[i].ID(), err)
+			return "", core.Errorf(core.ErrProviderDown, "parallel agent %q: child %q failed: %w", a.id, a.children[i].ID(), err)
 		}
 	}
 

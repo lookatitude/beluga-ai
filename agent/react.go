@@ -2,8 +2,8 @@ package agent
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tool"
@@ -12,7 +12,7 @@ import (
 func init() {
 	RegisterPlanner("react", func(cfg PlannerConfig) (Planner, error) {
 		if cfg.LLM == nil {
-			return nil, fmt.Errorf("react planner requires an LLM")
+			return nil, core.Errorf(core.ErrInvalidInput, "react planner requires an LLM")
 		}
 		return NewReActPlanner(cfg.LLM), nil
 	})
@@ -59,7 +59,7 @@ func (p *ReActPlanner) generate(ctx context.Context, state PlannerState) ([]Acti
 	// Generate response
 	resp, err := model.Generate(ctx, messages)
 	if err != nil {
-		return nil, fmt.Errorf("react planner: generate failed: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "react planner: generate failed: %w", err)
 	}
 
 	return parseAIResponse(resp), nil

@@ -2,7 +2,6 @@ package simulation
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/core"
@@ -146,7 +145,7 @@ func (r *SimRunner) RunEpisode(ctx context.Context) (*EpisodeResult, error) {
 	// Reset environment if present.
 	if r.opts.env != nil {
 		if _, err := r.opts.env.Reset(ctx); err != nil {
-			return nil, fmt.Errorf("simulation: env reset: %w", err)
+			return nil, core.Errorf(core.ErrProviderDown, "simulation: env reset: %w", err)
 		}
 	}
 
@@ -157,7 +156,7 @@ func (r *SimRunner) RunEpisode(ctx context.Context) (*EpisodeResult, error) {
 	// Start with an initial agent greeting.
 	agentResp, err := r.opts.agent(ctx, "")
 	if err != nil {
-		return nil, fmt.Errorf("simulation: initial agent response: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "simulation: initial agent response: %w", err)
 	}
 
 	for turn := 0; turn < r.opts.maxTurns; turn++ {
@@ -168,7 +167,7 @@ func (r *SimRunner) RunEpisode(ctx context.Context) (*EpisodeResult, error) {
 		// Simulated user responds to agent.
 		userResp, err := r.opts.user.Respond(ctx, agentResp)
 		if err != nil {
-			return nil, fmt.Errorf("simulation: user respond at turn %d: %w", turn, err)
+			return nil, core.Errorf(core.ErrProviderDown, "simulation: user respond at turn %d: %w", turn, err)
 		}
 
 		// If the user has reached a terminal state, record the final
@@ -197,7 +196,7 @@ func (r *SimRunner) RunEpisode(ctx context.Context) (*EpisodeResult, error) {
 		// Step environment if present.
 		if r.opts.env != nil {
 			if _, err := r.opts.env.Step(ctx, userResp.Message); err != nil {
-				return nil, fmt.Errorf("simulation: env step at turn %d: %w", turn, err)
+				return nil, core.Errorf(core.ErrProviderDown, "simulation: env step at turn %d: %w", turn, err)
 			}
 		}
 
@@ -206,7 +205,7 @@ func (r *SimRunner) RunEpisode(ctx context.Context) (*EpisodeResult, error) {
 		// actual (input, output) pair rather than the agent's prior turn.
 		nextAgentResp, err := r.opts.agent(ctx, userResp.Message)
 		if err != nil {
-			return nil, fmt.Errorf("simulation: agent at turn %d: %w", turn, err)
+			return nil, core.Errorf(core.ErrProviderDown, "simulation: agent at turn %d: %w", turn, err)
 		}
 
 		sample := eval.EvalSample{
@@ -271,7 +270,7 @@ func (r *SimRunner) Run(ctx context.Context, episodes int) (*SimReport, error) {
 
 		result, err := r.RunEpisode(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("simulation: episode %d: %w", i, err)
+			return nil, core.Errorf(core.ErrProviderDown, "simulation: episode %d: %w", i, err)
 		}
 
 		report.Episodes = append(report.Episodes, *result)

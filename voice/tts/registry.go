@@ -1,9 +1,10 @@
 package tts
 
 import (
-	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Factory creates a TTS engine from a Config. Each provider registers a
@@ -42,7 +43,7 @@ func New(name string, cfg Config) (TTS, error) {
 	registryMu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("tts: unknown provider %q (registered: %v)", name, List())
+		return nil, core.Errorf(core.ErrNotFound, "tts: unknown provider %q (registered: %v)", name, List())
 	}
 	return f(cfg)
 }

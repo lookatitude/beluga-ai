@@ -2,8 +2,8 @@ package metrics
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/eval/trajectory"
 )
 
@@ -93,7 +93,7 @@ func (c *CostPerTask) extractCost(t trajectory.Trajectory) (float64, error) {
 		if v, ok := t.Metadata["total_cost"]; ok {
 			cost, err := toFloat(v)
 			if err != nil {
-				return 0, fmt.Errorf("cost_per_task: invalid total_cost: %w", err)
+				return 0, core.Errorf(core.ErrInvalidInput, "cost_per_task: invalid total_cost: %w", err)
 			}
 			return cost, nil
 		}
@@ -106,7 +106,7 @@ func (c *CostPerTask) extractCost(t trajectory.Trajectory) (float64, error) {
 			if v, ok := step.Metadata["step_cost"]; ok {
 				cost, err := toFloat(v)
 				if err != nil {
-					return 0, fmt.Errorf("cost_per_task: invalid step_cost at step %d: %w", step.Index, err)
+					return 0, core.Errorf(core.ErrInvalidInput, "cost_per_task: invalid step_cost at step %d: %w", step.Index, err)
 				}
 				total += cost
 			}
@@ -128,6 +128,6 @@ func toFloat(v any) (float64, error) {
 	case int64:
 		return float64(n), nil
 	default:
-		return 0, fmt.Errorf("expected numeric value, got %T", v)
+		return 0, core.Errorf(core.ErrInvalidInput, "expected numeric value, got %T", v)
 	}
 }

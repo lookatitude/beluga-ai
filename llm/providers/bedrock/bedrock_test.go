@@ -3,7 +3,9 @@ package bedrock
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -11,6 +13,7 @@ import (
 	brdocument "github.com/aws/aws-sdk-go-v2/service/bedrockruntime/document"
 	brtypes "github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -657,7 +660,11 @@ func TestConvertMessages_UnsupportedType(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for unsupported message type")
 	}
-	if err.Error() != "bedrock: unsupported message type *bedrock.unsupportedMsg" {
+	var cerr *core.Error
+	if !errors.As(err, &cerr) || cerr.Code != core.ErrInvalidInput {
+		t.Errorf("expected core.ErrInvalidInput, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "bedrock: unsupported message type *bedrock.unsupportedMsg") {
 		t.Errorf("unexpected error: %v", err)
 	}
 }
@@ -931,7 +938,11 @@ func TestGenerate_BuildInputError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if err.Error() != "bedrock: unsupported message type *bedrock.unsupportedMsg" {
+	var cerr *core.Error
+	if !errors.As(err, &cerr) || cerr.Code != core.ErrInvalidInput {
+		t.Errorf("expected core.ErrInvalidInput, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "bedrock: unsupported message type *bedrock.unsupportedMsg") {
 		t.Errorf("unexpected error: %v", err)
 	}
 }

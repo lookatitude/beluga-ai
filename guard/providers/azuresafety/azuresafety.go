@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/guard"
 	"github.com/lookatitude/beluga-ai/internal/httpclient"
 )
@@ -58,10 +59,10 @@ func New(opts ...Option) (*Guard, error) {
 	}
 
 	if cfg.endpoint == "" {
-		return nil, fmt.Errorf("azuresafety: endpoint is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "azuresafety: endpoint is required")
 	}
 	if cfg.apiKey == "" {
-		return nil, fmt.Errorf("azuresafety: API key is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "azuresafety: API key is required")
 	}
 
 	client := httpclient.New(
@@ -107,7 +108,7 @@ func (g *Guard) Validate(ctx context.Context, input guard.GuardInput) (guard.Gua
 	resp, err := httpclient.DoJSON[analyzeResponse](ctx, g.client, "POST",
 		"/contentsafety/text:analyze?api-version=2024-09-01", req)
 	if err != nil {
-		return guard.GuardResult{}, fmt.Errorf("azuresafety: validate: %w", err)
+		return guard.GuardResult{}, core.Errorf(core.ErrProviderDown, "azuresafety: validate: %w", err)
 	}
 
 	result := guard.GuardResult{

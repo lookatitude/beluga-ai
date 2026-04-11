@@ -2,11 +2,11 @@ package mongodb
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"sync/atomic"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/memory"
 	"github.com/lookatitude/beluga-ai/schema"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -39,7 +39,7 @@ type MessageStore struct {
 // New creates a new MongoDB MessageStore with the given config.
 func New(cfg Config) (*MessageStore, error) {
 	if cfg.Collection == nil {
-		return nil, fmt.Errorf("mongodb: collection is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "mongodb: collection is required")
 	}
 	return &MessageStore{
 		coll: cfg.Collection,
@@ -76,7 +76,7 @@ func (s *MessageStore) Append(ctx context.Context, msg schema.Message) error {
 	doc := s.marshalMessage(msg)
 	_, err := s.coll.InsertOne(ctx, doc)
 	if err != nil {
-		return fmt.Errorf("mongodb: insert: %w", err)
+		return core.Errorf(core.ErrProviderDown, "mongodb: insert: %w", err)
 	}
 	return nil
 }
@@ -121,7 +121,7 @@ func (s *MessageStore) All(ctx context.Context) ([]schema.Message, error) {
 func (s *MessageStore) Clear(ctx context.Context) error {
 	_, err := s.coll.DeleteMany(ctx, bson.D{})
 	if err != nil {
-		return fmt.Errorf("mongodb: clear: %w", err)
+		return core.Errorf(core.ErrProviderDown, "mongodb: clear: %w", err)
 	}
 	return nil
 }
@@ -131,13 +131,13 @@ func (s *MessageStore) allDocs(ctx context.Context) ([]messageDoc, error) {
 	findOpts := options.Find().SetSort(bson.D{{Key: "seq", Value: 1}})
 	cursor, err := s.coll.Find(ctx, bson.D{}, findOpts)
 	if err != nil {
-		return nil, fmt.Errorf("mongodb: find: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "mongodb: find: %w", err)
 	}
 	defer cursor.Close(ctx)
 
 	var docs []messageDoc
 	if err := cursor.All(ctx, &docs); err != nil {
-		return nil, fmt.Errorf("mongodb: decode: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "mongodb: decode: %w", err)
 	}
 	return docs, nil
 }

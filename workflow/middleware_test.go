@@ -3,6 +3,7 @@ package workflow
 import (
 	"context"
 	"fmt"
+	"iter"
 	"testing"
 )
 
@@ -71,13 +72,16 @@ func TestWithHooks_Signal(t *testing.T) {
 	wrapped := mw(exec)
 
 	handle, _ := wrapped.Execute(context.Background(), func(ctx WorkflowContext, _ any) (any, error) {
-		ch := ctx.ReceiveSignal("go")
-		select {
-		case <-ch:
-			return "got-signal", nil
-		case <-ctx.Done():
+		next, stop := iter.Pull2(ctx.ReceiveSignal("go"))
+		defer stop()
+		_, err, ok := next()
+		if !ok {
 			return nil, ctx.Err()
 		}
+		if err != nil {
+			return nil, err
+		}
+		return "got-signal", nil
 	}, WorkflowOptions{ID: "mw-signal"})
 
 	_ = handle
