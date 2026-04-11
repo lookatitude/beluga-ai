@@ -33,10 +33,31 @@ alwaysApply: true
 
 ## Quality Gates
 
-### Before Security Review (Developer must verify)
-- `go build ./...` passes
-- `go vet ./...` passes
-- `go test ./...` passes
+### Branch discipline (MANDATORY, every change)
+- Every code change starts with `git checkout -b <branch>` — **never commit to `main`**
+- Every branch ends with `gh pr create` — **never merge directly to `main`**
+- Verify `git branch --show-current` is not `main` before any `git commit`
+
+### Before commit (MANDATORY, every commit — not just before push)
+Run the full suite locally BEFORE `git commit`. Only commit when all pass:
+
+```bash
+go build ./...
+go vet ./...
+go test -race ./...
+go mod tidy && git diff --exit-code go.mod go.sum
+gofmt -l . | grep -v ".claude/worktrees"
+golangci-lint run ./...
+gosec -quiet ./...
+govulncheck ./...
+```
+
+Pre-existing findings in files you did NOT change do not block your commit, but
+MUST be documented in the commit message so reviewers know to ignore or fix
+separately. New findings in files you DID change MUST be fixed before commit.
+
+### Before Security Review (additional, for full-workflow tasks)
+- All of the "Before commit" checks above pass
 - No `TODO` or `FIXME` without associated tracking
 
 ### Security Review (2 clean passes required)
