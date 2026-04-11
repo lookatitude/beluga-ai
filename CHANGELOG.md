@@ -2,6 +2,13 @@
 
 All notable changes to Beluga AI are documented here.
 
+## [2.5.1] - 2026-04-11
+
+### Miscellaneous
+
+- **rules**: Enforce pre-commit security gate and branch-PR discipline
+
+
 ## [2.5.0] - 2026-04-11
 
 ### Bug Fixes
