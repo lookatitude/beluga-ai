@@ -2,6 +2,7 @@ package computeruse
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"iter"
 	"testing"
@@ -384,4 +385,281 @@ func TestToInt(t *testing.T) {
 	assert.Equal(t, 42, toInt(42))
 	assert.Equal(t, 0, toInt("not a number"))
 	assert.Equal(t, 0, toInt(nil))
+	assert.Equal(t, 99, toInt(json.Number("99")))
+}
+
+// mockExtendedBrowser is a BrowserBackend that also implements ExtendedBrowser.
+type mockExtendedBrowser struct {
+	mockBrowser
+	lastScrollX     int
+	lastScrollY     int
+	lastScrollDelta int
+	scrollErr       error
+}
+
+func (m *mockExtendedBrowser) Scroll(_ context.Context, x, y, delta int) error {
+	m.lastScrollX = x
+	m.lastScrollY = y
+	m.lastScrollDelta = delta
+	return m.scrollErr
+}
+
+func (m *mockExtendedBrowser) ExecuteJS(_ context.Context, _ string) (string, error) {
+	return "", nil
+}
+
+func TestComputerUseTool_Scroll(t *testing.T) {
+	tests := []struct {
+		name       string
+		useAction  bool
+		useBrowser bool
+		extBrowser bool
+		scrollErr  bool
+		input      map[string]any
+		wantError  bool
+	}{
+		{
+			name:       "scroll via extended browser",
+			useBrowser: true,
+			extBrowser: true,
+			input:      map[string]any{"action": "scroll", "x": float64(10), "y": float64(20), "scroll_delta": float64(3)},
+		},
+		{
+			name:       "scroll via extended browser error",
+			useBrowser: true,
+			extBrowser: true,
+			scrollErr:  true,
+			input:      map[string]any{"action": "scroll", "x": float64(10), "y": float64(20), "scroll_delta": float64(3)},
+			wantError:  true,
+		},
+		{
+			name:      "scroll via action backend",
+			useAction: true,
+			input:     map[string]any{"action": "scroll", "x": float64(5), "y": float64(5), "scroll_delta": float64(-1)},
+		},
+		{
+			name:       "scroll no action backend (plain browser)",
+			useBrowser: true,
+			input:      map[string]any{"action": "scroll", "x": float64(0), "y": float64(0), "scroll_delta": float64(1)},
+			wantError:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var opts []ToolOption
+			var extBr *mockExtendedBrowser
+			var act *mockAction
+
+			if tt.extBrowser {
+				scrollErr := error(nil)
+				if tt.scrollErr {
+					scrollErr = errors.New("scroll failed")
+				}
+				extBr = &mockExtendedBrowser{scrollErr: scrollErr}
+				opts = append(opts, WithBrowser(extBr))
+			} else if tt.useBrowser {
+				opts = append(opts, WithBrowser(&mockBrowser{}))
+			}
+
+			if tt.useAction {
+				act = &mockAction{}
+				opts = append(opts, WithAction(act))
+			}
+
+			ct, err := NewComputerUseTool(opts...)
+			require.NoError(t, err)
+
+			result, err := ct.Execute(context.Background(), tt.input)
+			require.NoError(t, err)
+			assert.NotNil(t, result)
+			assert.Equal(t, tt.wantError, result.IsError)
+
+			if extBr != nil && !tt.scrollErr {
+				assert.Equal(t, 10, extBr.lastScrollX)
+				assert.Equal(t, 20, extBr.lastScrollY)
+				assert.Equal(t, 3, extBr.lastScrollDelta)
+			}
+		})
+	}
+}
+
+func TestComputerUseTool_ClickViaAction(t *testing.T) {
+	action := &mockAction{result: &ActionResult{Success: true, Description: "clicked"}}
+	ct, err := NewComputerUseTool(WithAction(action))
+	require.NoError(t, err)
+
+	result, err := ct.Execute(context.Background(), map[string]any{
+		"action": "click", "x": float64(50), "y": float64(60),
+	})
+	require.NoError(t, err)
+	assert.False(t, result.IsError)
+	assert.Equal(t, ActionClick, action.lastReq.Type)
+}
+
+func TestComputerUseTool_ClickViaActionError(t *testing.T) {
+	action := &mockAction{err: errors.New("action failed")}
+	ct, err := NewComputerUseTool(WithAction(action))
+	require.NoError(t, err)
+
+	result, err := ct.Execute(context.Background(), map[string]any{
+		"action": "click", "x": float64(50), "y": float64(60),
+	})
+	require.NoError(t, err)
+	assert.True(t, result.IsError)
+}
+
+func TestComputerUseTool_ClickViaActionNoBrowser(t *testing.T) {
+	action := &mockAction{}
+	browser := &mockBrowser{err: errors.New("click failed")}
+	ct, err := NewComputerUseTool(WithAction(action), WithBrowser(browser))
+	require.NoError(t, err)
+
+	result, err := ct.Execute(context.Background(), map[string]any{
+		"action": "click", "x": float64(50), "y": float64(60),
+	})
+	require.NoError(t, err)
+	assert.True(t, result.IsError)
+}
+
+func TestComputerUseTool_TypeViaAction(t *testing.T) {
+	action := &mockAction{result: &ActionResult{Success: true, Description: "typed"}}
+	ct, err := NewComputerUseTool(WithAction(action))
+	require.NoError(t, err)
+
+	result, err := ct.Execute(context.Background(), map[string]any{
+		"action": "type", "text": "hello world",
+	})
+	require.NoError(t, err)
+	assert.False(t, result.IsError)
+	assert.Equal(t, ActionTypeText, action.lastReq.Type)
+	assert.Equal(t, "hello world", action.lastReq.Text)
+}
+
+func TestComputerUseTool_TypeViaActionError(t *testing.T) {
+	action := &mockAction{err: errors.New("type failed")}
+	ct, err := NewComputerUseTool(WithAction(action))
+	require.NoError(t, err)
+
+	result, err := ct.Execute(context.Background(), map[string]any{
+		"action": "type", "text": "hello",
+	})
+	require.NoError(t, err)
+	assert.True(t, result.IsError)
+}
+
+func TestComputerUseTool_TypeViaActionNoBrowserText(t *testing.T) {
+	action := &mockAction{}
+	browser := &mockBrowser{err: errors.New("type failed")}
+	ct, err := NewComputerUseTool(WithAction(action), WithBrowser(browser))
+	require.NoError(t, err)
+
+	result, err := ct.Execute(context.Background(), map[string]any{
+		"action": "type", "text": "hello",
+	})
+	require.NoError(t, err)
+	// browser Type error returns an error result, but browser path is tried first
+	assert.True(t, result.IsError)
+}
+
+func TestComputerUseTool_KeyPressMissingText(t *testing.T) {
+	action := &mockAction{}
+	ct, err := NewComputerUseTool(WithAction(action))
+	require.NoError(t, err)
+
+	result, err := ct.Execute(context.Background(), map[string]any{"action": "key_press"})
+	require.NoError(t, err)
+	assert.True(t, result.IsError)
+}
+
+func TestComputerUseTool_KeyPressActionError(t *testing.T) {
+	action := &mockAction{err: errors.New("key press failed")}
+	ct, err := NewComputerUseTool(WithAction(action))
+	require.NoError(t, err)
+
+	result, err := ct.Execute(context.Background(), map[string]any{
+		"action": "key_press", "text": "Escape",
+	})
+	require.NoError(t, err)
+	assert.True(t, result.IsError)
+}
+
+func TestComputerUseTool_ScreenshotActionError(t *testing.T) {
+	action := &mockAction{err: errors.New("screenshot failed")}
+	ct, err := NewComputerUseTool(WithAction(action))
+	require.NoError(t, err)
+
+	result, err := ct.Execute(context.Background(), map[string]any{"action": "screenshot"})
+	require.NoError(t, err)
+	assert.True(t, result.IsError)
+}
+
+func TestComputerUseTool_InputSchema_BrowserOnly(t *testing.T) {
+	browser := &mockBrowser{}
+	ct, err := NewComputerUseTool(WithBrowser(browser))
+	require.NoError(t, err)
+
+	schema := ct.InputSchema()
+	props := schema["properties"].(map[string]any)
+	actionSchema := props["action"].(map[string]any)
+	actions := actionSchema["enum"].([]string)
+
+	// key_press should not be in actions list when no ComputerAction backend
+	for _, a := range actions {
+		assert.NotEqual(t, "key_press", a)
+	}
+	// navigate should be present for browser backend
+	found := false
+	for _, a := range actions {
+		if a == "navigate" {
+			found = true
+		}
+	}
+	assert.True(t, found, "navigate should be advertised when browser backend is set")
+}
+
+func TestSafetyGuard_CheckURL_SchemeBlocked(t *testing.T) {
+	guard := NewSafetyGuard()
+	tests := []struct {
+		name string
+		url  string
+	}{
+		{"file scheme", "file:///etc/passwd"},
+		{"javascript scheme", "javascript:alert(1)"},
+		{"data scheme", "data:text/html,<h1>test</h1>"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := guard.CheckURL(tt.url)
+			require.Error(t, err)
+			var coreErr *core.Error
+			require.ErrorAs(t, err, &coreErr)
+			assert.Equal(t, core.ErrInvalidInput, coreErr.Code)
+		})
+	}
+}
+
+func TestSafetyGuard_WithAllowedHosts_IPv6(t *testing.T) {
+	// IPv6 addresses: url.Hostname() strips brackets, returning "::1".
+	// WithAllowedHosts must normalize "[::1]" to "::1" so that the comparison
+	// is consistent (the colon-check detects the colons inside the brackets
+	// and leaves the entry unchanged because strings.Contains(normalized[:i], ":")
+	// is true for an IPv6 address).
+	guard := NewSafetyGuard(WithAllowedHosts("::1"))
+	err := guard.CheckURL("https://[::1]/page")
+	require.NoError(t, err)
+}
+
+func TestWithAnalyzerPrompt(t *testing.T) {
+	model := &mockChatModel{mockllm.New(mockllm.WithResponse(schema.NewAIMessage("described")))}
+	analyzer, err := NewScreenAnalyzer(
+		WithAnalyzerModel(model),
+		WithAnalyzerPrompt("custom prompt"),
+	)
+	require.NoError(t, err)
+	assert.Equal(t, "custom prompt", analyzer.opts.prompt)
+
+	desc, err := analyzer.Analyze(context.Background(), []byte("fake-png"))
+	require.NoError(t, err)
+	assert.Equal(t, "described", desc)
 }
