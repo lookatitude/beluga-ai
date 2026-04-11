@@ -91,6 +91,29 @@ func (ms *mockSelector) Select(ctx context.Context, task string, candidates []Po
 	return ms.selectFn(ctx, task, candidates)
 }
 
+// mockScoredSelector is a configurable ScoredSelector for testing the builder.
+type mockScoredSelector struct {
+	scoredFn func(ctx context.Context, task string, candidates []PoolEntry) ([]ScoredPoolEntry, error)
+}
+
+var _ ScoredSelector = (*mockScoredSelector)(nil)
+
+func (ms *mockScoredSelector) Select(ctx context.Context, task string, candidates []PoolEntry) ([]PoolEntry, error) {
+	scored, err := ms.scoredFn(ctx, task, candidates)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]PoolEntry, len(scored))
+	for i, s := range scored {
+		out[i] = s.Entry
+	}
+	return out, nil
+}
+
+func (ms *mockScoredSelector) SelectScored(ctx context.Context, task string, candidates []PoolEntry) ([]ScoredPoolEntry, error) {
+	return ms.scoredFn(ctx, task, candidates)
+}
+
 // --- AgentPool tests ---
 
 func TestAgentPool_Register(t *testing.T) {
@@ -758,6 +781,169 @@ func TestTruncate(t *testing.T) {
 	assert.Equal(t, "hello", truncate("hello", 10))
 	assert.Equal(t, "hel...", truncate("hello world", 3))
 	assert.Equal(t, "", truncate("", 5))
+}
+
+// --- ScoredSelector tests ---
+
+func TestKeywordSelector_SelectScored(t *testing.T) {
+	coder := PoolEntry{
+		Agent:        newMockAgent("coder", "engineer", "write golang code and tests"),
+		Capabilities: []string{"golang", "testing"},
+		Metrics:      NewAgentMetrics(),
+	}
+	writer := PoolEntry{
+		Agent:        newMockAgent("writer", "tech writer", "write documentation"),
+		Capabilities: []string{"documentation"},
+		Metrics:      NewAgentMetrics(),
+	}
+
+	sel := NewKeywordSelector()
+	scored, err := sel.SelectScored(context.Background(), "write golang tests", []PoolEntry{writer, coder})
+	require.NoError(t, err)
+	require.NotEmpty(t, scored)
+	// Coder should rank first with a concrete normalized score in (0, 1].
+	assert.Equal(t, "coder", scored[0].Entry.Agent.ID())
+	assert.Greater(t, scored[0].Score, 0.0)
+	assert.LessOrEqual(t, scored[0].Score, 1.0)
+	// Scores must be ordered descending.
+	for i := 1; i < len(scored); i++ {
+		assert.GreaterOrEqual(t, scored[i-1].Score, scored[i].Score)
+	}
+}
+
+func TestKeywordSelector_SelectScored_EmptyTask(t *testing.T) {
+	sel := NewKeywordSelector()
+	scored, err := sel.SelectScored(context.Background(), "", []PoolEntry{
+		{Agent: newMockAgent("a", "r", "g"), Capabilities: []string{"x"}, Metrics: NewAgentMetrics()},
+	})
+	require.NoError(t, err)
+	assert.Nil(t, scored)
+}
+
+func TestLLMSelector_SelectScored(t *testing.T) {
+	candidates := []PoolEntry{
+		{Agent: newMockAgent("coder", "engineer", "write code"), Capabilities: []string{"golang"}, Metrics: NewAgentMetrics()},
+		{Agent: newMockAgent("writer", "writer", "docs"), Capabilities: []string{"docs"}, Metrics: NewAgentMetrics()},
+	}
+
+	resp := selectionResponse{
+		Selections: []agentSelection{
+			{AgentID: "coder", Score: 0.87, Reasoning: "best"},
+			{AgentID: "writer", Score: 0.42, Reasoning: "ok"},
+		},
+	}
+	respJSON, _ := json.Marshal(resp)
+
+	model := &mockChatModel{
+		generateFn: func(_ context.Context, _ []schema.Message, _ ...llm.GenerateOption) (*schema.AIMessage, error) {
+			return schema.NewAIMessage(string(respJSON)), nil
+		},
+	}
+
+	sel := NewLLMSelector(model)
+	scored, err := sel.SelectScored(context.Background(), "write golang tests", candidates)
+	require.NoError(t, err)
+	require.Len(t, scored, 2)
+	// Real LLM scores must be forwarded, not positional estimates.
+	assert.Equal(t, "coder", scored[0].Entry.Agent.ID())
+	assert.InDelta(t, 0.87, scored[0].Score, 0.001)
+	assert.Equal(t, "writer", scored[1].Entry.Agent.ID())
+	assert.InDelta(t, 0.42, scored[1].Score, 0.001)
+}
+
+func TestLLMSelector_SelectScored_ClampsOutOfRange(t *testing.T) {
+	candidates := []PoolEntry{
+		{Agent: newMockAgent("a", "r", "g"), Capabilities: nil, Metrics: NewAgentMetrics()},
+		{Agent: newMockAgent("b", "r", "g"), Capabilities: nil, Metrics: NewAgentMetrics()},
+	}
+	resp := selectionResponse{
+		Selections: []agentSelection{
+			{AgentID: "a", Score: 1.5},
+			{AgentID: "b", Score: 0.9},
+		},
+	}
+	respJSON, _ := json.Marshal(resp)
+	model := &mockChatModel{
+		generateFn: func(_ context.Context, _ []schema.Message, _ ...llm.GenerateOption) (*schema.AIMessage, error) {
+			return schema.NewAIMessage(string(respJSON)), nil
+		},
+	}
+	sel := NewLLMSelector(model)
+	scored, err := sel.SelectScored(context.Background(), "task", candidates)
+	require.NoError(t, err)
+	require.Len(t, scored, 2)
+	assert.LessOrEqual(t, scored[0].Score, 1.0)
+	assert.GreaterOrEqual(t, scored[0].Score, 0.0)
+}
+
+func TestTeamBuilder_ForwardsRealScoresFromScoredSelector(t *testing.T) {
+	pool := NewAgentPool()
+	a := newMockAgent("coder", "engineer", "write code")
+	b := newMockAgent("writer", "writer", "docs")
+	require.NoError(t, pool.Register(a, "code"))
+	require.NoError(t, pool.Register(b, "docs"))
+
+	// Scored selector returns non-positional, non-decreasing scores.
+	scorer := &mockScoredSelector{
+		scoredFn: func(_ context.Context, _ string, candidates []PoolEntry) ([]ScoredPoolEntry, error) {
+			return []ScoredPoolEntry{
+				{Entry: candidates[0], Score: 0.73},
+				{Entry: candidates[1], Score: 0.55},
+			}, nil
+		},
+	}
+
+	type scored struct {
+		id    string
+		score float64
+	}
+	var observed []scored
+
+	hooks := Hooks{
+		OnAgentSelected: func(_ context.Context, _ string, entry PoolEntry, score float64) {
+			observed = append(observed, scored{id: entry.Agent.ID(), score: score})
+		},
+	}
+
+	tb := NewTeamBuilder(pool,
+		WithSelector(scorer),
+		WithHooks(hooks),
+	)
+	_, err := tb.Build(context.Background(), "task")
+	require.NoError(t, err)
+	require.Len(t, observed, 2)
+	// Exact scores must be forwarded, not 1.0/0.9 positional approximation.
+	assert.InDelta(t, 0.73, observed[0].score, 0.001)
+	assert.InDelta(t, 0.55, observed[1].score, 0.001)
+}
+
+func TestTeamBuilder_FallsBackToPositionalScoresForPlainSelector(t *testing.T) {
+	pool := NewAgentPool()
+	a := newMockAgent("a", "r", "g")
+	b := newMockAgent("b", "r", "g")
+	require.NoError(t, pool.Register(a, "x"))
+	require.NoError(t, pool.Register(b, "y"))
+
+	plain := &mockSelector{
+		selectFn: func(_ context.Context, _ string, candidates []PoolEntry) ([]PoolEntry, error) {
+			return candidates, nil
+		},
+	}
+
+	var scores []float64
+	hooks := Hooks{
+		OnAgentSelected: func(_ context.Context, _ string, _ PoolEntry, score float64) {
+			scores = append(scores, score)
+		},
+	}
+
+	tb := NewTeamBuilder(pool, WithSelector(plain), WithHooks(hooks))
+	_, err := tb.Build(context.Background(), "task")
+	require.NoError(t, err)
+	require.Len(t, scores, 2)
+	// Positional fallback: first is 1.0, each subsequent drops by 0.1.
+	assert.InDelta(t, 1.0, scores[0], 0.001)
+	assert.InDelta(t, 0.9, scores[1], 0.001)
 }
 
 // --- mapSelectionsToEntries tests ---

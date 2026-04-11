@@ -100,13 +100,37 @@ func (tb *TeamBuilder) Build(ctx context.Context, task string) (*runtime.Team, e
 			"agent pool is empty", nil)
 	}
 
-	selected, err := tb.selector.Select(ctx, task, candidates)
-	if err != nil {
-		if tb.hooks.OnSelectionFailed != nil {
-			tb.hooks.OnSelectionFailed(ctx, task, err)
+	// Prefer ScoredSelector when the selector supports it so hook consumers
+	// receive the real relevance score rather than a positional estimate.
+	var (
+		selected []PoolEntry
+		scores   []float64 // parallel to selected; nil if selector is not scored
+	)
+	if scorer, ok := tb.selector.(ScoredSelector); ok {
+		scoredEntries, err := scorer.SelectScored(ctx, task, candidates)
+		if err != nil {
+			if tb.hooks.OnSelectionFailed != nil {
+				tb.hooks.OnSelectionFailed(ctx, task, err)
+			}
+			return nil, core.NewError("teambuilder.build", core.ErrToolFailed,
+				"agent selection failed", err)
 		}
-		return nil, core.NewError("teambuilder.build", core.ErrToolFailed,
-			"agent selection failed", err)
+		selected = make([]PoolEntry, len(scoredEntries))
+		scores = make([]float64, len(scoredEntries))
+		for i, e := range scoredEntries {
+			selected[i] = e.Entry
+			scores[i] = e.Score
+		}
+	} else {
+		var err error
+		selected, err = tb.selector.Select(ctx, task, candidates)
+		if err != nil {
+			if tb.hooks.OnSelectionFailed != nil {
+				tb.hooks.OnSelectionFailed(ctx, task, err)
+			}
+			return nil, core.NewError("teambuilder.build", core.ErrToolFailed,
+				"agent selection failed", err)
+		}
 	}
 
 	if len(selected) == 0 {
@@ -121,21 +145,24 @@ func (tb *TeamBuilder) Build(ctx context.Context, task string) (*runtime.Team, e
 	// Apply maxAgents limit.
 	if tb.maxAgents > 0 && len(selected) > tb.maxAgents {
 		selected = selected[:tb.maxAgents]
+		if scores != nil {
+			scores = scores[:tb.maxAgents]
+		}
 	}
 
-	// Fire OnAgentSelected hooks.
-	//
-	// NOTE: the score passed here is a positional approximation derived from
-	// rank — not the concrete relevance score the selector computed. The
-	// Selector interface currently only returns []PoolEntry, so the real
-	// score is not available at this layer. Hook consumers should treat this
-	// value as ordinal signal, not absolute relevance. A future API revision
-	// could extend Selector to return scored entries.
+	// Fire OnAgentSelected hooks with the real score when the selector is a
+	// ScoredSelector, or a positional approximation derived from rank as a
+	// fallback for plain Selector implementations that do not expose scores.
 	if tb.hooks.OnAgentSelected != nil {
 		for i, entry := range selected {
-			score := 1.0 - float64(i)*0.1
-			if score < 0.1 {
-				score = 0.1
+			var score float64
+			if scores != nil {
+				score = scores[i]
+			} else {
+				score = 1.0 - float64(i)*0.1
+				if score < 0.1 {
+					score = 0.1
+				}
 			}
 			tb.hooks.OnAgentSelected(ctx, task, entry, score)
 		}

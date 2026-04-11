@@ -6,8 +6,12 @@ import (
 	"strings"
 )
 
-// Compile-time check that KeywordSelector implements Selector.
-var _ Selector = (*KeywordSelector)(nil)
+// Compile-time checks that KeywordSelector implements Selector and
+// ScoredSelector.
+var (
+	_ Selector       = (*KeywordSelector)(nil)
+	_ ScoredSelector = (*KeywordSelector)(nil)
+)
 
 // KeywordSelector selects agents by computing word overlap between the task
 // description and each candidate's capabilities and persona goal. It is the
@@ -51,11 +55,35 @@ type scoredEntry struct {
 // Select returns candidates ranked by keyword overlap with the task.
 // It matches task words against each candidate's capabilities and persona goal.
 // Candidates scoring below minScore are excluded.
-func (ks *KeywordSelector) Select(_ context.Context, task string, candidates []PoolEntry) ([]PoolEntry, error) {
+func (ks *KeywordSelector) Select(ctx context.Context, task string, candidates []PoolEntry) ([]PoolEntry, error) {
+	scored, err := ks.SelectScored(ctx, task, candidates)
+	if err != nil {
+		return nil, err
+	}
+	if scored == nil {
+		return nil, nil
+	}
+	result := make([]PoolEntry, len(scored))
+	for i, s := range scored {
+		result[i] = s.Entry
+	}
+	return result, nil
+}
+
+// SelectScored ranks candidates by keyword overlap and returns each surviving
+// entry with a normalized relevance score in [0.0, 1.0]. The raw overlap
+// integer is normalized against the theoretical maximum possible score for
+// the task (len(taskWords) * 3), so values are comparable across tasks of
+// similar size.
+func (ks *KeywordSelector) SelectScored(_ context.Context, task string, candidates []PoolEntry) ([]ScoredPoolEntry, error) {
 	taskWords := tokenize(task)
 	if len(taskWords) == 0 {
 		return nil, nil
 	}
+
+	// Theoretical maximum: every task word matches both capabilities (+2)
+	// and the goal (+1) for a total of 3 per word.
+	maxPossible := len(taskWords) * 3
 
 	var scored []scoredEntry
 	for _, c := range candidates {
@@ -70,9 +98,13 @@ func (ks *KeywordSelector) Select(_ context.Context, task string, candidates []P
 		return scored[i].score > scored[j].score
 	})
 
-	result := make([]PoolEntry, len(scored))
+	result := make([]ScoredPoolEntry, len(scored))
 	for i, s := range scored {
-		result[i] = s.entry
+		norm := float64(s.score) / float64(maxPossible)
+		if norm > 1.0 {
+			norm = 1.0
+		}
+		result[i] = ScoredPoolEntry{Entry: s.entry, Score: norm}
 	}
 	return result, nil
 }

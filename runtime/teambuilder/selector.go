@@ -19,6 +19,31 @@ type Selector interface {
 	Select(ctx context.Context, task string, candidates []PoolEntry) ([]PoolEntry, error)
 }
 
+// ScoredPoolEntry pairs a PoolEntry with the concrete relevance score the
+// selector computed for it. Scores are normalized to the range [0.0, 1.0]
+// where 1.0 is the strongest match.
+type ScoredPoolEntry struct {
+	// Entry is the selected pool entry.
+	Entry PoolEntry
+	// Score is the selector's computed relevance score in [0.0, 1.0].
+	Score float64
+}
+
+// ScoredSelector is an optional capability interface that a Selector may
+// implement to expose the concrete relevance scores it computed for each
+// selected entry. Consumers (e.g. TeamBuilder hooks) should prefer
+// SelectScored when the selector supports it, and fall back to Select for
+// plain selectors that do not carry score information.
+//
+// Results must be ordered by Score descending, matching the ordering
+// contract of Selector.Select.
+type ScoredSelector interface {
+	Selector
+	// SelectScored returns a ranked subset of candidates with their
+	// concrete relevance scores in [0.0, 1.0], ordered by Score descending.
+	SelectScored(ctx context.Context, task string, candidates []PoolEntry) ([]ScoredPoolEntry, error)
+}
+
 // SelectorFactory creates a Selector from a configuration map.
 type SelectorFactory func(cfg map[string]any) (Selector, error)
 

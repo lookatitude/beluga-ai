@@ -11,8 +11,11 @@ import (
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
-// Compile-time check that LLMSelector implements Selector.
-var _ Selector = (*LLMSelector)(nil)
+// Compile-time checks that LLMSelector implements Selector and ScoredSelector.
+var (
+	_ Selector       = (*LLMSelector)(nil)
+	_ ScoredSelector = (*LLMSelector)(nil)
+)
 
 // LLMSelector uses an LLM to select the most suitable agents for a task.
 // It sends a structured prompt describing the task and available agents,
@@ -64,6 +67,24 @@ type agentSelection struct {
 // Select uses the LLM to evaluate which candidates are best suited for the task.
 // It returns candidates ordered by the LLM's relevance scoring.
 func (s *LLMSelector) Select(ctx context.Context, task string, candidates []PoolEntry) ([]PoolEntry, error) {
+	scored, err := s.SelectScored(ctx, task, candidates)
+	if err != nil {
+		return nil, err
+	}
+	if scored == nil {
+		return nil, nil
+	}
+	result := make([]PoolEntry, len(scored))
+	for i, e := range scored {
+		result[i] = e.Entry
+	}
+	return result, nil
+}
+
+// SelectScored uses the LLM to evaluate candidates and returns each selected
+// entry with the concrete relevance score the LLM assigned (clamped to
+// [0.0, 1.0]). Results are ordered by Score descending.
+func (s *LLMSelector) SelectScored(ctx context.Context, task string, candidates []PoolEntry) ([]ScoredPoolEntry, error) {
 	if len(candidates) == 0 {
 		return nil, nil
 	}
@@ -85,7 +106,7 @@ func (s *LLMSelector) Select(ctx context.Context, task string, candidates []Pool
 			"LLM selection failed", err)
 	}
 
-	return mapSelectionsToEntries(resp.Selections, candidates)
+	return mapSelectionsToScored(resp.Selections, candidates)
 }
 
 // buildSelectionPrompt constructs the prompt for the LLM describing the task
@@ -123,9 +144,10 @@ func buildSelectionPrompt(task string, candidates []PoolEntry) string {
 	return b.String()
 }
 
-// mapSelectionsToEntries maps the LLM's selection response back to pool entries,
-// preserving the LLM's ordering.
-func mapSelectionsToEntries(selections []agentSelection, candidates []PoolEntry) ([]PoolEntry, error) {
+// mapSelectionsToScored maps the LLM's selection response to scored pool
+// entries, preserving the LLM's ordering and concrete scores. Scores are
+// clamped to [0.0, 1.0].
+func mapSelectionsToScored(selections []agentSelection, candidates []PoolEntry) ([]ScoredPoolEntry, error) {
 	// Build lookup map.
 	candidateMap := make(map[string]PoolEntry, len(candidates))
 	for _, c := range candidates {
@@ -137,14 +159,36 @@ func mapSelectionsToEntries(selections []agentSelection, candidates []PoolEntry)
 		return selections[i].Score > selections[j].Score
 	})
 
-	var result []PoolEntry
+	var result []ScoredPoolEntry
 	for _, sel := range selections {
 		if sel.Score <= 0.3 {
 			continue
 		}
-		if entry, ok := candidateMap[sel.AgentID]; ok {
-			result = append(result, entry)
+		entry, ok := candidateMap[sel.AgentID]
+		if !ok {
+			continue
 		}
+		score := sel.Score
+		if score < 0 {
+			score = 0
+		} else if score > 1 {
+			score = 1
+		}
+		result = append(result, ScoredPoolEntry{Entry: entry, Score: score})
+	}
+	return result, nil
+}
+
+// mapSelectionsToEntries maps the LLM's selection response back to plain pool
+// entries, preserving the LLM's ordering. Retained for internal compatibility.
+func mapSelectionsToEntries(selections []agentSelection, candidates []PoolEntry) ([]PoolEntry, error) {
+	scored, err := mapSelectionsToScored(selections, candidates)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]PoolEntry, len(scored))
+	for i, s := range scored {
+		result[i] = s.Entry
 	}
 	return result, nil
 }
