@@ -15,6 +15,9 @@ type StreamChunk struct {
 	FinishReason string
 	// Usage contains token usage statistics. May be nil for intermediate chunks.
 	Usage *Usage
+	// ReasoningDelta is the incremental reasoning/thinking content in this chunk.
+	// Non-empty only for models that stream their chain-of-thought.
+	ReasoningDelta string
 	// ModelID identifies the model that produced this chunk.
 	ModelID string
 }

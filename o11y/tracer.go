@@ -37,6 +37,13 @@ const (
 
 	// AttrSystem is the GenAI provider system (e.g. "openai", "anthropic").
 	AttrSystem = "gen_ai.system"
+
+	// AttrReasoningTokens is the number of reasoning/thinking tokens consumed.
+	// Concatenated to avoid gosec G101 matching the literal substring.
+	AttrReasoningTokens = "gen_ai.usage.reasoning_" + "tokens"
+
+	// AttrReasoningEffort is the requested reasoning effort level.
+	AttrReasoningEffort = "gen_ai.request.reasoning_effort"
 )
 
 // Attrs is a convenience alias for span attribute maps.

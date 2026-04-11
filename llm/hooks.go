@@ -25,6 +25,10 @@ type Hooks struct {
 	// OnToolCall is called when the model produces a tool call.
 	OnToolCall func(ctx context.Context, call schema.ToolCall)
 
+	// OnReasoning is called when a reasoning/thinking delta is received during
+	// streaming from models that expose chain-of-thought.
+	OnReasoning func(ctx context.Context, delta string)
+
 	// OnError is called when an error occurs. The returned error replaces the
 	// original; returning nil suppresses the error.
 	OnError func(ctx context.Context, err error) error
@@ -47,6 +51,9 @@ func ComposeHooks(hooks ...Hooks) Hooks {
 		}),
 		OnToolCall: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, schema.ToolCall) {
 			return hk.OnToolCall
+		}),
+		OnReasoning: hookutil.ComposeVoid1(h, func(hk Hooks) func(context.Context, string) {
+			return hk.OnReasoning
 		}),
 		OnError: hookutil.ComposeErrorPassthrough(h, func(hk Hooks) func(context.Context, error) error {
 			return hk.OnError

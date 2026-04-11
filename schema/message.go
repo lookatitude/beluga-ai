@@ -37,6 +37,10 @@ type Usage struct {
 	TotalTokens int
 	// CachedTokens is the number of tokens served from cache.
 	CachedTokens int
+	// ReasoningTokens is the number of tokens used for reasoning/thinking
+	// by models that expose chain-of-thought (e.g. OpenAI o-series, Claude
+	// with extended thinking). Zero means no reasoning tokens were reported.
+	ReasoningTokens int
 }
 
 // SystemMessage represents a system-level instruction message that sets
