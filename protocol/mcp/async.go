@@ -70,10 +70,20 @@ type AsyncHandler interface {
 	Cancel(ctx context.Context, id string) error
 }
 
-// asyncEntry holds a running operation's state and cancellation handle.
+// asyncEntry holds a running operation's state and a cancel signal channel.
+// Cancellation is delivered to the running goroutine via cancelCh; the
+// goroutine owns its context and cancel function locally (always deferred)
+// to satisfy static analysis that cancel functions are invoked.
 type asyncEntry struct {
-	op     AsyncOperation
-	cancel context.CancelFunc
+	op       AsyncOperation
+	cancelCh chan struct{}
+	// cancelOnce guards cancelCh against double close.
+	cancelOnce sync.Once
+}
+
+// signalCancel closes the cancel channel at most once.
+func (e *asyncEntry) signalCancel() {
+	e.cancelOnce.Do(func() { close(e.cancelCh) })
 }
 
 // InMemoryAsyncHandler is an in-memory implementation of AsyncHandler suitable
@@ -134,12 +144,7 @@ func (h *InMemoryAsyncHandler) Start(ctx context.Context, fn func(ctx context.Co
 		return "", fmt.Errorf("mcp/async: maximum operations (%d) exceeded", h.maxOps)
 	}
 
-	// The cancel function is stored on the asyncEntry and invoked via run()
-	// when the operation completes (deferred) or via Cancel(). Static analysis
-	// (gosec G307) cannot follow the closure into the struct field.
-	opCtx, cancel := context.WithTimeout(ctx, h.timeout) //#nosec G307 -- cancel is stored in entry and always invoked
 	now := time.Now()
-
 	entry := &asyncEntry{
 		op: AsyncOperation{
 			ID:        id,
@@ -147,24 +152,39 @@ func (h *InMemoryAsyncHandler) Start(ctx context.Context, fn func(ctx context.Co
 			CreatedAt: now,
 			UpdatedAt: now,
 		},
-		cancel: cancel,
+		cancelCh: make(chan struct{}),
 	}
 	h.ops[id] = entry
 	h.mu.Unlock()
 
-	go h.run(opCtx, id, fn)
+	go h.run(ctx, id, entry, fn)
 
 	return id, nil
 }
 
-// run executes the async function and updates the operation state.
-func (h *InMemoryAsyncHandler) run(ctx context.Context, id string, fn func(ctx context.Context) (any, error)) {
-	defer func() {
-		h.mu.Lock()
-		if e, ok := h.ops[id]; ok {
-			e.cancel()
+// run executes the async function and updates the operation state. The
+// per-operation context (with timeout) is owned entirely by this goroutine,
+// and its cancel function is always invoked via defer. External cancellation
+// is delivered via entry.cancelCh and a small watchdog goroutine that cancels
+// the local context when the signal fires.
+func (h *InMemoryAsyncHandler) run(parentCtx context.Context, id string, entry *asyncEntry, fn func(ctx context.Context) (any, error)) {
+	opCtx, cancel := context.WithTimeout(parentCtx, h.timeout)
+	defer cancel()
+
+	// Watchdog: propagate external cancel signal into opCtx cancellation.
+	watchdogDone := make(chan struct{})
+	go func() {
+		defer close(watchdogDone)
+		select {
+		case <-entry.cancelCh:
+			cancel()
+		case <-opCtx.Done():
 		}
-		h.mu.Unlock()
+	}()
+	defer func() {
+		// Ensure watchdog exits before run returns.
+		cancel()
+		<-watchdogDone
 	}()
 
 	h.mu.Lock()
@@ -174,7 +194,7 @@ func (h *InMemoryAsyncHandler) run(ctx context.Context, id string, fn func(ctx c
 	}
 	h.mu.Unlock()
 
-	result, err := fn(ctx)
+	result, err := fn(opCtx)
 
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -233,7 +253,7 @@ func (h *InMemoryAsyncHandler) Cancel(_ context.Context, id string) error {
 
 	e.op.Status = AsyncStatusCancelled
 	e.op.UpdatedAt = time.Now()
-	e.cancel()
+	e.signalCancel()
 
 	return nil
 }
