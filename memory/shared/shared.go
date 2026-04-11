@@ -3,6 +3,7 @@ package shared
 import (
 	"context"
 	"fmt"
+	"iter"
 	"sync"
 	"time"
 
@@ -237,33 +238,58 @@ func (sm *SharedMemory) Delete(ctx context.Context, key string, agentID string) 
 	return nil
 }
 
-// Watch returns a channel that receives FragmentChange notifications for the
-// given key. The channel is buffered with capacity 16. The caller should
-// read from the channel to avoid blocking writers. Cancel the context to
-// unsubscribe.
-func (sm *SharedMemory) Watch(ctx context.Context, key string) <-chan FragmentChange {
+// Watch returns an iterator over FragmentChange notifications for the given
+// key. The subscription is established eagerly before Watch returns, so
+// events produced after this call but before the caller starts iterating
+// are buffered (capacity 16) and will be delivered on the first iteration.
+// Events that arrive while the buffer is full are dropped.
+//
+// The iterator ends when ctx is cancelled or when the caller breaks out of
+// the loop. A background goroutine unsubscribes the watcher when ctx is
+// cancelled, so callers who never iterate the returned sequence must still
+// cancel ctx to avoid leaking a watcher slot.
+func (sm *SharedMemory) Watch(ctx context.Context, key string) iter.Seq2[FragmentChange, error] {
 	ch := make(chan FragmentChange, 16)
 
 	sm.watchMu.Lock()
 	sm.watchers[key] = append(sm.watchers[key], ch)
 	sm.watchMu.Unlock()
 
+	var unsubOnce sync.Once
+	unsub := func() {
+		unsubOnce.Do(func() {
+			sm.watchMu.Lock()
+			defer sm.watchMu.Unlock()
+			watchers := sm.watchers[key]
+			for i, w := range watchers {
+				if w == ch {
+					sm.watchers[key] = append(watchers[:i], watchers[i+1:]...)
+					return
+				}
+			}
+		})
+	}
+
+	// Unsubscribe eagerly on ctx cancellation so callers who never iterate
+	// the returned sequence don't leak a watcher slot.
 	go func() {
 		<-ctx.Done()
-		sm.watchMu.Lock()
-		defer sm.watchMu.Unlock()
-
-		watchers := sm.watchers[key]
-		for i, w := range watchers {
-			if w == ch {
-				sm.watchers[key] = append(watchers[:i], watchers[i+1:]...)
-				break
-			}
-		}
-		close(ch)
+		unsub()
 	}()
 
-	return ch
+	return func(yield func(FragmentChange, error) bool) {
+		defer unsub()
+		for {
+			select {
+			case change := <-ch:
+				if !yield(change, nil) {
+					return
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
 }
 
 // Grant adds agentID to the readers or writers list of the fragment

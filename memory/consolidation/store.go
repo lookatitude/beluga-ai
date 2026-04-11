@@ -2,9 +2,10 @@ package consolidation
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // ConsolidationStore is the storage interface used by the consolidation
@@ -131,7 +132,7 @@ func (s *InMemoryConsolidationStore) RecordAccess(ctx context.Context, id string
 	defer s.mu.Unlock()
 	r, ok := s.records[id]
 	if !ok {
-		return fmt.Errorf("consolidation: record %q not found", id)
+		return core.Errorf(core.ErrNotFound, "consolidation: record %q not found", id)
 	}
 	r.Utility.AccessCount++
 	r.Utility.LastAccessedAt = time.Now()

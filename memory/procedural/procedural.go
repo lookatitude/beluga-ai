@@ -3,10 +3,10 @@ package procedural
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/rag/embedding"
 	"github.com/lookatitude/beluga-ai/rag/vectorstore"
 	"github.com/lookatitude/beluga-ai/schema"
@@ -26,10 +26,10 @@ type ProceduralMemory struct {
 // and functional options. Both embedder and vector store must be non-nil.
 func New(emb embedding.Embedder, vs vectorstore.VectorStore, opts ...Option) (*ProceduralMemory, error) {
 	if emb == nil {
-		return nil, fmt.Errorf("procedural: Embedder is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "procedural: Embedder is required")
 	}
 	if vs == nil {
-		return nil, fmt.Errorf("procedural: VectorStore is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "procedural: VectorStore is required")
 	}
 	o := defaults()
 	for _, opt := range opts {
@@ -53,13 +53,13 @@ func New(emb embedding.Embedder, vs vectorstore.VectorStore, opts ...Option) (*P
 // callers MUST use UpdateSkill when updating an existing skill.
 func (p *ProceduralMemory) SaveSkill(ctx context.Context, skill *schema.Skill) error {
 	if skill == nil {
-		return fmt.Errorf("procedural: skill must not be nil")
+		return core.Errorf(core.ErrInvalidInput, "procedural: skill must not be nil")
 	}
 	if skill.ID == "" {
-		return fmt.Errorf("procedural: skill ID is required")
+		return core.Errorf(core.ErrInvalidInput, "procedural: skill ID is required")
 	}
 	if skill.Name == "" {
-		return fmt.Errorf("procedural: skill name is required")
+		return core.Errorf(core.ErrInvalidInput, "procedural: skill name is required")
 	}
 
 	now := time.Now()
@@ -73,17 +73,17 @@ func (p *ProceduralMemory) SaveSkill(ctx context.Context, skill *schema.Skill) e
 
 	doc, err := p.skillToDocument(skill)
 	if err != nil {
-		return fmt.Errorf("procedural: serialize skill: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "procedural: serialize skill: %w", err)
 	}
 
 	text := p.skillSearchText(skill)
 	vec, err := p.emb.EmbedSingle(ctx, text)
 	if err != nil {
-		return fmt.Errorf("procedural: embed skill: %w", err)
+		return core.Errorf(core.ErrProviderDown, "procedural: embed skill: %w", err)
 	}
 
 	if err := p.vs.Add(ctx, []schema.Document{doc}, [][]float32{vec}); err != nil {
-		return fmt.Errorf("procedural: store skill: %w", err)
+		return core.Errorf(core.ErrProviderDown, "procedural: store skill: %w", err)
 	}
 
 	if p.opts.hooks.OnSkillSaved != nil {
@@ -102,7 +102,7 @@ func (p *ProceduralMemory) SearchSkills(ctx context.Context, query string, k int
 
 	vec, err := p.emb.EmbedSingle(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("procedural: embed query: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "procedural: embed query: %w", err)
 	}
 
 	// Request more results than k to allow for confidence filtering.
@@ -113,7 +113,7 @@ func (p *ProceduralMemory) SearchSkills(ctx context.Context, query string, k int
 
 	docs, err := p.vs.Search(ctx, vec, fetchK)
 	if err != nil {
-		return nil, fmt.Errorf("procedural: search skills: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "procedural: search skills: %w", err)
 	}
 
 	var skills []*schema.Skill
@@ -145,10 +145,10 @@ func (p *ProceduralMemory) SearchSkills(ctx context.Context, query string, k int
 // skill's mutated Version/UpdatedAt are rolled back.
 func (p *ProceduralMemory) UpdateSkill(ctx context.Context, skill *schema.Skill) error {
 	if skill == nil {
-		return fmt.Errorf("procedural: skill must not be nil")
+		return core.Errorf(core.ErrInvalidInput, "procedural: skill must not be nil")
 	}
 	if skill.ID == "" {
-		return fmt.Errorf("procedural: skill ID is required")
+		return core.Errorf(core.ErrInvalidInput, "procedural: skill ID is required")
 	}
 
 	// Fetch old version for hook.
@@ -157,7 +157,7 @@ func (p *ProceduralMemory) UpdateSkill(ctx context.Context, skill *schema.Skill)
 		var err error
 		old, err = p.GetSkill(ctx, skill.ID)
 		if err != nil {
-			return fmt.Errorf("procedural: get old skill for update: %w", err)
+			return core.Errorf(core.ErrProviderDown, "procedural: get old skill for update: %w", err)
 		}
 	}
 
@@ -171,7 +171,7 @@ func (p *ProceduralMemory) UpdateSkill(ctx context.Context, skill *schema.Skill)
 	if err != nil {
 		skill.Version = origVersion
 		skill.UpdatedAt = origUpdatedAt
-		return fmt.Errorf("procedural: serialize skill: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "procedural: serialize skill: %w", err)
 	}
 
 	text := p.skillSearchText(skill)
@@ -179,7 +179,7 @@ func (p *ProceduralMemory) UpdateSkill(ctx context.Context, skill *schema.Skill)
 	if err != nil {
 		skill.Version = origVersion
 		skill.UpdatedAt = origUpdatedAt
-		return fmt.Errorf("procedural: embed updated skill: %w", err)
+		return core.Errorf(core.ErrProviderDown, "procedural: embed updated skill: %w", err)
 	}
 
 	// 2. Now mutate the store: delete the old, then add the new.
@@ -188,11 +188,11 @@ func (p *ProceduralMemory) UpdateSkill(ctx context.Context, skill *schema.Skill)
 	if err := p.vs.Delete(ctx, []string{skillDocID(skill.ID)}); err != nil {
 		skill.Version = origVersion
 		skill.UpdatedAt = origUpdatedAt
-		return fmt.Errorf("procedural: delete old skill: %w", err)
+		return core.Errorf(core.ErrProviderDown, "procedural: delete old skill: %w", err)
 	}
 
 	if err := p.vs.Add(ctx, []schema.Document{doc}, [][]float32{vec}); err != nil {
-		return fmt.Errorf("procedural: store updated skill: %w", err)
+		return core.Errorf(core.ErrProviderDown, "procedural: store updated skill: %w", err)
 	}
 
 	if p.opts.hooks.OnSkillUpdated != nil {
@@ -204,7 +204,7 @@ func (p *ProceduralMemory) UpdateSkill(ctx context.Context, skill *schema.Skill)
 // DeleteSkill removes a skill from the vector store by its ID.
 func (p *ProceduralMemory) DeleteSkill(ctx context.Context, id string) error {
 	if id == "" {
-		return fmt.Errorf("procedural: skill ID is required")
+		return core.Errorf(core.ErrInvalidInput, "procedural: skill ID is required")
 	}
 	return p.vs.Delete(ctx, []string{skillDocID(id)})
 }
@@ -226,7 +226,7 @@ func (p *ProceduralMemory) DeleteSkill(ctx context.Context, id string) error {
 // auxiliary key-value index.
 func (p *ProceduralMemory) GetSkill(ctx context.Context, id string) (*schema.Skill, error) {
 	if id == "" {
-		return nil, fmt.Errorf("procedural: skill ID is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "procedural: skill ID is required")
 	}
 
 	// Use a zero vector to search, then filter by ID.
@@ -236,7 +236,7 @@ func (p *ProceduralMemory) GetSkill(ctx context.Context, id string) (*schema.Ski
 		"skill_id": id,
 	}))
 	if err != nil {
-		return nil, fmt.Errorf("procedural: search for skill %q: %w", id, err)
+		return nil, core.Errorf(core.ErrProviderDown, "procedural: search for skill %q: %w", id, err)
 	}
 	for _, doc := range docs {
 		sk, err := p.documentToSkill(doc)
@@ -279,7 +279,7 @@ func (p *ProceduralMemory) skillSearchText(skill *schema.Skill) string {
 func (p *ProceduralMemory) skillToDocument(skill *schema.Skill) (schema.Document, error) {
 	content, err := json.Marshal(skill)
 	if err != nil {
-		return schema.Document{}, fmt.Errorf("marshal skill: %w", err)
+		return schema.Document{}, core.Errorf(core.ErrInvalidInput, "marshal skill: %w", err)
 	}
 	return schema.Document{
 		ID:      skillDocID(skill.ID),
@@ -298,7 +298,7 @@ func (p *ProceduralMemory) skillToDocument(skill *schema.Skill) (schema.Document
 func (p *ProceduralMemory) documentToSkill(doc schema.Document) (*schema.Skill, error) {
 	var skill schema.Skill
 	if err := json.Unmarshal([]byte(doc.Content), &skill); err != nil {
-		return nil, fmt.Errorf("unmarshal skill: %w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, "unmarshal skill: %w", err)
 	}
 	return &skill, nil
 }

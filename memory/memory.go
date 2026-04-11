@@ -2,11 +2,11 @@ package memory
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -55,7 +55,7 @@ func New(name string, cfg config.ProviderConfig) (Memory, error) {
 	f, ok := registry[name]
 	registryMu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("memory: unknown provider %q (registered: %v)", name, List())
+		return nil, core.Errorf(core.ErrNotFound, "memory: unknown provider %q (registered: %v)", name, List())
 	}
 	return f(cfg)
 }

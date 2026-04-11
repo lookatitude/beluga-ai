@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/memory"
 	driver "github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
@@ -127,7 +128,7 @@ type GraphStore struct {
 func New(cfg Config) (*GraphStore, error) {
 	drv, err := driver.NewDriverWithContext(cfg.URI, driver.BasicAuth(cfg.Username, cfg.Password, ""))
 	if err != nil {
-		return nil, fmt.Errorf("neo4j: create driver: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "neo4j: create driver: %w", err)
 	}
 	return &GraphStore{
 		runner: &neo4jRunner{drv: drv, database: cfg.Database},
@@ -163,7 +164,7 @@ func (g *GraphStore) AddEntity(ctx context.Context, entity memory.Entity) error 
 		"props": props,
 	}
 	if err := g.runner.executeWrite(ctx, cypher, params); err != nil {
-		return fmt.Errorf("neo4j/add_entity: %w", err)
+		return core.Errorf(core.ErrProviderDown, "neo4j/add_entity: %w", err)
 	}
 	return nil
 }
@@ -183,7 +184,7 @@ SET r += $props`
 		"props":   sanitizeProps(props),
 	}
 	if err := g.runner.executeWrite(ctx, cypher, params); err != nil {
-		return fmt.Errorf("neo4j/add_relation: %w", err)
+		return core.Errorf(core.ErrProviderDown, "neo4j/add_relation: %w", err)
 	}
 	return nil
 }
@@ -201,7 +202,7 @@ func (g *GraphStore) SetupSchema(ctx context.Context) error {
 	}
 	for _, cypher := range indexes {
 		if err := g.runner.executeWrite(ctx, cypher, nil); err != nil {
-			return fmt.Errorf("neo4j/setup_schema: %w", err)
+			return core.Errorf(core.ErrProviderDown, "neo4j/setup_schema: %w", err)
 		}
 	}
 	return nil
@@ -212,7 +213,7 @@ func (g *GraphStore) SetupSchema(ctx context.Context) error {
 func (g *GraphStore) Query(ctx context.Context, query string) ([]memory.GraphResult, error) {
 	records, err := g.runner.executeRead(ctx, query, nil)
 	if err != nil {
-		return nil, fmt.Errorf("neo4j/query: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "neo4j/query: %w", err)
 	}
 
 	entities, relations := collectFromRecords(records)
@@ -235,7 +236,7 @@ func (g *GraphStore) Neighbors(ctx context.Context, entityID string, depth int) 
 			"RETURN neighbor, r", depth)
 	records, err := g.runner.executeRead(ctx, cypher, map[string]any{"id": entityID})
 	if err != nil {
-		return nil, nil, fmt.Errorf("neo4j/neighbors: %w", err)
+		return nil, nil, core.Errorf(core.ErrProviderDown, "neo4j/neighbors: %w", err)
 	}
 
 	entities, relations := collectFromRecords(records)

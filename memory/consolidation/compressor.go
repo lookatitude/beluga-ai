@@ -2,9 +2,9 @@ package consolidation
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -45,7 +45,7 @@ func (c *SummaryCompressor) Compress(ctx context.Context, records []Record) ([]R
 
 		summary, err := c.summarise(ctx, r.Content)
 		if err != nil {
-			return nil, fmt.Errorf("consolidation: compress record %q: %w", r.ID, err)
+			return nil, core.Errorf(core.ErrProviderDown, "consolidation: compress record %q: %w", r.ID, err)
 		}
 
 		out := r

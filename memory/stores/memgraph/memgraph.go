@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/memory"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
@@ -126,7 +127,7 @@ type GraphStore struct {
 func New(cfg Config) (*GraphStore, error) {
 	drv, err := neo4j.NewDriverWithContext(cfg.URI, neo4j.BasicAuth(cfg.Username, cfg.Password, ""))
 	if err != nil {
-		return nil, fmt.Errorf("memgraph: create driver: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "memgraph: create driver: %w", err)
 	}
 	return &GraphStore{
 		runner: &memgraphRunner{drv: drv, database: cfg.Database},
@@ -153,7 +154,7 @@ func (g *GraphStore) AddEntity(ctx context.Context, entity memory.Entity) error 
 		"props": sanitizeProps(entity.Properties),
 	}
 	if err := g.runner.executeWrite(ctx, cypher, params); err != nil {
-		return fmt.Errorf("memgraph/add_entity: %w", err)
+		return core.Errorf(core.ErrProviderDown, "memgraph/add_entity: %w", err)
 	}
 	return nil
 }
@@ -171,7 +172,7 @@ SET r += $props`
 		"props":   sanitizeProps(props),
 	}
 	if err := g.runner.executeWrite(ctx, cypher, params); err != nil {
-		return fmt.Errorf("memgraph/add_relation: %w", err)
+		return core.Errorf(core.ErrProviderDown, "memgraph/add_relation: %w", err)
 	}
 	return nil
 }
@@ -181,7 +182,7 @@ SET r += $props`
 func (g *GraphStore) Query(ctx context.Context, query string) ([]memory.GraphResult, error) {
 	records, err := g.runner.executeRead(ctx, query, nil)
 	if err != nil {
-		return nil, fmt.Errorf("memgraph/query: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "memgraph/query: %w", err)
 	}
 
 	entities, relations := collectRecordValues(records)
@@ -203,7 +204,7 @@ func (g *GraphStore) Neighbors(ctx context.Context, entityID string, depth int) 
 			"RETURN neighbor, r", depth)
 	records, err := g.runner.executeRead(ctx, cypher, map[string]any{"id": entityID})
 	if err != nil {
-		return nil, nil, fmt.Errorf("memgraph/neighbors: %w", err)
+		return nil, nil, core.Errorf(core.ErrProviderDown, "memgraph/neighbors: %w", err)
 	}
 
 	entities, relations := collectRecordValues(records)

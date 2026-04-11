@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/rag/embedding"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -98,7 +99,7 @@ func (u *RetroactiveUpdater) Update(ctx context.Context, newNote *schema.Note, n
 func (u *RetroactiveUpdater) updateNeighbor(ctx context.Context, newNote *schema.Note, neighborID string) error {
 	neighbor, err := u.store.Get(ctx, neighborID)
 	if err != nil {
-		return fmt.Errorf("associative.updater: get neighbor %q: %w", neighborID, err)
+		return core.Errorf(core.ErrProviderDown, "associative.updater: get neighbor %q: %w", neighborID, err)
 	}
 
 	// Build enrichment prompt that includes context from the new note.
@@ -110,7 +111,7 @@ func (u *RetroactiveUpdater) updateNeighbor(ctx context.Context, newNote *schema
 
 	enrichment, err := u.enricher.Enrich(ctx, combinedContent)
 	if err != nil {
-		return fmt.Errorf("associative.updater: enrich neighbor %q: %w", neighborID, err)
+		return core.Errorf(core.ErrProviderDown, "associative.updater: enrich neighbor %q: %w", neighborID, err)
 	}
 
 	// Update the neighbor's metadata.
@@ -122,12 +123,12 @@ func (u *RetroactiveUpdater) updateNeighbor(ctx context.Context, newNote *schema
 	// Re-embed the neighbor's content.
 	vec, err := u.embedder.EmbedSingle(ctx, neighbor.Content)
 	if err != nil {
-		return fmt.Errorf("associative.updater: embed neighbor %q: %w", neighborID, err)
+		return core.Errorf(core.ErrProviderDown, "associative.updater: embed neighbor %q: %w", neighborID, err)
 	}
 	neighbor.Embedding = vec
 
 	if err := u.store.Update(ctx, neighbor); err != nil {
-		return fmt.Errorf("associative.updater: update neighbor %q: %w", neighborID, err)
+		return core.Errorf(core.ErrProviderDown, "associative.updater: update neighbor %q: %w", neighborID, err)
 	}
 
 	return nil

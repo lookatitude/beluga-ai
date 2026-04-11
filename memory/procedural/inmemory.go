@@ -2,10 +2,10 @@ package procedural
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"sync"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -27,7 +27,7 @@ func NewInMemoryStore() *InMemoryStore {
 // Save stores a skill in the map, keyed by its ID.
 func (s *InMemoryStore) Save(_ context.Context, skill *schema.Skill) error {
 	if skill.ID == "" {
-		return fmt.Errorf("procedural/inmemory: skill ID is required")
+		return core.Errorf(core.ErrInvalidInput, "procedural/inmemory: skill ID is required")
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()

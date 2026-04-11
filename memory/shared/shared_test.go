@@ -3,6 +3,7 @@ package shared
 import (
 	"context"
 	"crypto/sha256"
+	"iter"
 	"sync"
 	"testing"
 	"time"
@@ -389,10 +390,13 @@ func TestRevoke_ReadAccess(t *testing.T) {
 
 func TestWatch_ReceivesWriteNotification(t *testing.T) {
 	sm, _ := newTestMemory()
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	ch := sm.Watch(ctx, "watched-key")
+	// Watch eagerly subscribes, so events produced after this call are
+	// buffered even before we start pulling.
+	next, stop := iter.Pull2(sm.Watch(ctx, "watched-key"))
+	defer stop()
 
 	err := sm.Write(context.Background(), &Fragment{
 		Key:      "watched-key",
@@ -401,30 +405,30 @@ func TestWatch_ReceivesWriteNotification(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	select {
-	case change := <-ch:
-		assert.Equal(t, OpWrite, change.Op)
-		assert.Equal(t, "watched-key", change.Key)
-		require.NotNil(t, change.Fragment)
-		assert.Equal(t, "hello", change.Fragment.Content)
-	case <-time.After(time.Second):
-		t.Fatal("timed out waiting for watch notification")
-	}
+	change, pullErr, ok := next()
+	require.True(t, ok, "expected a notification before ctx timeout")
+	require.NoError(t, pullErr)
+	assert.Equal(t, OpWrite, change.Op)
+	assert.Equal(t, "watched-key", change.Key)
+	require.NotNil(t, change.Fragment)
+	assert.Equal(t, "hello", change.Fragment.Content)
 }
 
 func TestWatch_CancelUnsubscribes(t *testing.T) {
 	sm, _ := newTestMemory()
 	ctx, cancel := context.WithCancel(context.Background())
 
-	ch := sm.Watch(ctx, "key")
+	next, stop := iter.Pull2(sm.Watch(ctx, "key"))
+	defer stop()
+
 	cancel()
 
-	// Wait for unsubscribe goroutine.
-	time.Sleep(50 * time.Millisecond)
+	// The iterator should end after ctx cancellation.
+	_, _, ok := next()
+	assert.False(t, ok, "iterator should end after context cancel")
 
-	// Channel should be closed.
-	_, ok := <-ch
-	assert.False(t, ok, "channel should be closed after context cancel")
+	// Wait briefly for the background unsubscribe goroutine.
+	time.Sleep(50 * time.Millisecond)
 
 	// No watchers should remain.
 	sm.watchMu.RLock()

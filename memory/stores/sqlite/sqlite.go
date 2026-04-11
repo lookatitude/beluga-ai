@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/memory"
 	"github.com/lookatitude/beluga-ai/memory/stores/internal/storeutil"
 	"github.com/lookatitude/beluga-ai/schema"
@@ -30,7 +31,7 @@ type MessageStore struct {
 // New creates a new SQLite MessageStore with the given config.
 func New(cfg Config) (*MessageStore, error) {
 	if cfg.DB == nil {
-		return nil, fmt.Errorf("sqlite: db is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "sqlite: db is required")
 	}
 	table := cfg.Table
 	if table == "" {
@@ -60,12 +61,12 @@ func (s *MessageStore) Append(ctx context.Context, msg schema.Message) error {
 	sc := storeutil.EncodeContent(msg)
 	contentJSON, err := json.Marshal(sc)
 	if err != nil {
-		return fmt.Errorf("sqlite: marshal content: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "sqlite: marshal content: %w", err)
 	}
 
 	metadataJSON, err := json.Marshal(msg.GetMetadata())
 	if err != nil {
-		return fmt.Errorf("sqlite: marshal metadata: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "sqlite: marshal metadata: %w", err)
 	}
 
 	query := fmt.Sprintf(
@@ -74,7 +75,7 @@ func (s *MessageStore) Append(ctx context.Context, msg schema.Message) error {
 	)
 	_, err = s.db.ExecContext(ctx, query, string(msg.GetRole()), string(contentJSON), string(metadataJSON), time.Now().UTC().Format(time.RFC3339Nano))
 	if err != nil {
-		return fmt.Errorf("sqlite: append: %w", err)
+		return core.Errorf(core.ErrProviderDown, "sqlite: append: %w", err)
 	}
 	return nil
 }
@@ -90,7 +91,7 @@ func (s *MessageStore) Search(ctx context.Context, query string, k int) ([]schem
 
 	rows, err := s.db.QueryContext(ctx, sqlQuery, pattern, k)
 	if err != nil {
-		return nil, fmt.Errorf("sqlite: search: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "sqlite: search: %w", err)
 	}
 	defer rows.Close()
 	return scanMessages(rows)
@@ -104,7 +105,7 @@ func (s *MessageStore) All(ctx context.Context) ([]schema.Message, error) {
 	)
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("sqlite: all: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "sqlite: all: %w", err)
 	}
 	defer rows.Close()
 	return scanMessages(rows)
@@ -115,7 +116,7 @@ func (s *MessageStore) Clear(ctx context.Context) error {
 	query := fmt.Sprintf("DELETE FROM %s", s.table)
 	_, err := s.db.ExecContext(ctx, query)
 	if err != nil {
-		return fmt.Errorf("sqlite: clear: %w", err)
+		return core.Errorf(core.ErrProviderDown, "sqlite: clear: %w", err)
 	}
 	return nil
 }
@@ -125,7 +126,7 @@ func scanMessages(rows *sql.Rows) ([]schema.Message, error) {
 	for rows.Next() {
 		var role, contentStr, metadataStr string
 		if err := rows.Scan(&role, &contentStr, &metadataStr); err != nil {
-			return nil, fmt.Errorf("sqlite: scan: %w", err)
+			return nil, core.Errorf(core.ErrProviderDown, "sqlite: scan: %w", err)
 		}
 
 		msg, err := decodeMessage(role, []byte(contentStr), metadataStr)
@@ -135,7 +136,7 @@ func scanMessages(rows *sql.Rows) ([]schema.Message, error) {
 		msgs = append(msgs, msg)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("sqlite: rows: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "sqlite: rows: %w", err)
 	}
 	return msgs, nil
 }
@@ -144,13 +145,13 @@ func scanMessages(rows *sql.Rows) ([]schema.Message, error) {
 func decodeMessage(role string, contentBytes []byte, metadataStr string) (schema.Message, error) {
 	var sc storeutil.StoredContent
 	if err := json.Unmarshal(contentBytes, &sc); err != nil {
-		return nil, fmt.Errorf("sqlite: unmarshal content: %w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, "sqlite: unmarshal content: %w", err)
 	}
 
 	var metadata map[string]any
 	if metadataStr != "" && metadataStr != "null" {
 		if err := json.Unmarshal([]byte(metadataStr), &metadata); err != nil {
-			return nil, fmt.Errorf("sqlite: unmarshal metadata: %w", err)
+			return nil, core.Errorf(core.ErrInvalidInput, "sqlite: unmarshal metadata: %w", err)
 		}
 	}
 
