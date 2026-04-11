@@ -221,86 +221,128 @@ func (a *CodeActAgent) Stream(ctx context.Context, input string, opts ...agent.O
 	return func(yield func(agent.Event, error) bool) {
 		// If we don't have a planner, fall back to the base agent behaviour.
 		if a.planner == nil {
-			for event, err := range a.base.Stream(ctx, input, opts...) {
-				if !yield(event, err) {
-					return
-				}
-				if err != nil {
-					return
-				}
-			}
+			a.streamFromBase(ctx, input, opts, yield)
+			return
+		}
+		a.runPlanActObserve(ctx, input, yield)
+	}
+}
+
+// streamFromBase forwards events from the wrapped BaseAgent unchanged. Used
+// when no planner is configured.
+func (a *CodeActAgent) streamFromBase(ctx context.Context, input string, opts []agent.Option, yield func(agent.Event, error) bool) {
+	for event, err := range a.base.Stream(ctx, input, opts...) {
+		if !yield(event, err) {
+			return
+		}
+		if err != nil {
+			return
+		}
+	}
+}
+
+// runPlanActObserve drives the plan → act → observe loop until the planner
+// emits ActionFinish, max iterations is reached, the context is cancelled, or
+// the consumer stops iterating.
+func (a *CodeActAgent) runPlanActObserve(ctx context.Context, input string, yield func(agent.Event, error) bool) {
+	state := a.initialPlannerState(input)
+
+	for i := 0; i < a.maxIterations; i++ {
+		if err := ctx.Err(); err != nil {
+			yield(agent.Event{Type: agent.EventError, AgentID: a.ID()}, err)
+			return
+		}
+		state.Iteration = i
+
+		actions, err := a.planOrReplan(ctx, i, state)
+		if err != nil {
+			yield(agent.Event{Type: agent.EventError, AgentID: a.ID()}, err)
 			return
 		}
 
-		// Build initial messages from persona + input.
-		var messages []schema.Message
-		if !a.base.Persona().IsEmpty() {
-			if sysMsg := a.base.Persona().ToSystemMessage(); sysMsg != nil {
-				messages = append(messages, sysMsg)
-			}
+		done, stop := a.dispatchActions(ctx, actions, &state, yield)
+		if stop || done {
+			return
 		}
-		messages = append(messages, schema.NewHumanMessage(input))
+	}
 
-		state := agent.PlannerState{
-			Input:    input,
-			Messages: messages,
-			Tools:    a.base.Tools(),
-			Metadata: make(map[string]any),
+	yield(
+		agent.Event{Type: agent.EventError, AgentID: a.ID(), Text: "maximum iterations exceeded"},
+		fmt.Errorf("codeact agent: reached maximum iterations (%d)", a.maxIterations),
+	)
+}
+
+// initialPlannerState builds the starting PlannerState from persona + input.
+func (a *CodeActAgent) initialPlannerState(input string) agent.PlannerState {
+	var messages []schema.Message
+	if !a.base.Persona().IsEmpty() {
+		if sysMsg := a.base.Persona().ToSystemMessage(); sysMsg != nil {
+			messages = append(messages, sysMsg)
 		}
+	}
+	messages = append(messages, schema.NewHumanMessage(input))
 
-		for i := 0; i < a.maxIterations; i++ {
-			if err := ctx.Err(); err != nil {
-				yield(agent.Event{Type: agent.EventError, AgentID: a.ID()}, err)
-				return
-			}
-			state.Iteration = i
+	return agent.PlannerState{
+		Input:    input,
+		Messages: messages,
+		Tools:    a.base.Tools(),
+		Metadata: make(map[string]any),
+	}
+}
 
-			var actions []agent.Action
-			var err error
-			if i == 0 {
-				actions, err = a.planner.Plan(ctx, state)
-			} else {
-				actions, err = a.planner.Replan(ctx, state)
-			}
-			if err != nil {
-				yield(agent.Event{Type: agent.EventError, AgentID: a.ID()}, err)
-				return
-			}
+// planOrReplan calls Plan on the first iteration and Replan thereafter.
+func (a *CodeActAgent) planOrReplan(ctx context.Context, iteration int, state agent.PlannerState) ([]agent.Action, error) {
+	if iteration == 0 {
+		return a.planner.Plan(ctx, state)
+	}
+	return a.planner.Replan(ctx, state)
+}
 
-			done := false
-			for _, action := range actions {
-				if action.Type == ActionCode {
-					obs, stop := a.handleCodeAction(ctx, action, yield)
-					state.Observations = append(state.Observations, obs)
-					if stop {
-						return
-					}
-					continue
-				}
-
-				switch action.Type {
-				case agent.ActionFinish, agent.ActionRespond:
-					if action.Message != "" {
-						if !yield(agent.Event{Type: agent.EventText, AgentID: a.ID(), Text: action.Message}, nil) {
-							return
-						}
-					}
-					if action.Type == agent.ActionFinish {
-						yield(agent.Event{Type: agent.EventDone, AgentID: a.ID(), Text: action.Message}, nil)
-						done = true
-					}
-				default:
-					// Unsupported action type in the codeact loop.
-					yield(agent.Event{Type: agent.EventError, AgentID: a.ID(), Text: fmt.Sprintf("unsupported action type: %s", action.Type)}, fmt.Errorf("unsupported action type: %s", action.Type))
-					return
-				}
-				if done {
-					return
-				}
+// dispatchActions processes each action returned from the planner. It returns
+// (done, stop): done=true when the loop should terminate normally, stop=true
+// when the consumer signalled that iteration should stop.
+func (a *CodeActAgent) dispatchActions(ctx context.Context, actions []agent.Action, state *agent.PlannerState, yield func(agent.Event, error) bool) (done, stop bool) {
+	for _, action := range actions {
+		if action.Type == ActionCode {
+			obs, shouldStop := a.handleCodeAction(ctx, action, yield)
+			state.Observations = append(state.Observations, obs)
+			if shouldStop {
+				return false, true
 			}
+			continue
 		}
 
-		yield(agent.Event{Type: agent.EventError, AgentID: a.ID(), Text: "maximum iterations exceeded"}, fmt.Errorf("codeact agent: reached maximum iterations (%d)", a.maxIterations))
+		finished, shouldStop := a.handleNonCodeAction(action, yield)
+		if shouldStop {
+			return false, true
+		}
+		if finished {
+			return true, false
+		}
+	}
+	return false, false
+}
+
+// handleNonCodeAction dispatches Finish/Respond actions and reports unsupported
+// types. finished=true when the loop should terminate, stop=true when the
+// consumer asked to stop iterating.
+func (a *CodeActAgent) handleNonCodeAction(action agent.Action, yield func(agent.Event, error) bool) (finished, stop bool) {
+	switch action.Type {
+	case agent.ActionFinish, agent.ActionRespond:
+		if action.Message != "" {
+			if !yield(agent.Event{Type: agent.EventText, AgentID: a.ID(), Text: action.Message}, nil) {
+				return false, true
+			}
+		}
+		if action.Type == agent.ActionFinish {
+			yield(agent.Event{Type: agent.EventDone, AgentID: a.ID(), Text: action.Message}, nil)
+			return true, false
+		}
+		return false, false
+	default:
+		msg := fmt.Sprintf("unsupported action type: %s", action.Type)
+		yield(agent.Event{Type: agent.EventError, AgentID: a.ID(), Text: msg}, fmt.Errorf("%s", msg))
+		return false, true
 	}
 }
 

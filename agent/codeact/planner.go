@@ -9,6 +9,7 @@ import (
 	"github.com/lookatitude/beluga-ai/agent"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/tool"
 )
 
 // ActionCode is the action type for code execution actions.
@@ -109,8 +110,7 @@ func (p *CodeActPlanner) buildMessages(state agent.PlannerState) []schema.Messag
 	msgs := make([]schema.Message, 0, len(state.Messages)+2)
 
 	// Inject CodeAct system instruction
-	sysPrompt := p.systemPrompt()
-	msgs = append(msgs, schema.NewSystemMessage(sysPrompt))
+	msgs = append(msgs, schema.NewSystemMessage(p.systemPrompt()))
 
 	// Add conversation history, skipping any existing system messages to avoid conflicts.
 	for _, m := range state.Messages {
@@ -120,31 +120,43 @@ func (p *CodeActPlanner) buildMessages(state agent.PlannerState) []schema.Messag
 		msgs = append(msgs, m)
 	}
 
-	// Add observation results from previous code executions
+	// Add observation results from previous code executions.
 	for _, obs := range state.Observations {
-		if obs.Action.Type == ActionCode {
-			code, _ := obs.Action.Metadata["code"].(string)
-			lang, _ := obs.Action.Metadata["language"].(string)
-
-			var resultText string
-			if obs.Result != nil {
-				for _, part := range obs.Result.Content {
-					if tp, ok := part.(schema.TextPart); ok {
-						resultText = tp.Text
-						break
-					}
-				}
-			}
-			if obs.Error != nil && resultText == "" {
-				resultText = obs.Error.Error()
-			}
-
-			obsMsg := fmt.Sprintf("Code executed (%s):\n```%s\n%s\n```\n\nResult:\n%s", lang, lang, code, resultText)
-			msgs = append(msgs, schema.NewHumanMessage(obsMsg))
+		if obs.Action.Type != ActionCode {
+			continue
 		}
+		msgs = append(msgs, observationToMessage(obs))
 	}
 
 	return msgs
+}
+
+// observationToMessage renders a code-execution observation as a human message
+// so the LLM can see the executed code and its result on the next planner turn.
+func observationToMessage(obs agent.Observation) schema.Message {
+	code, _ := obs.Action.Metadata["code"].(string)
+	lang, _ := obs.Action.Metadata["language"].(string)
+
+	resultText := extractResultText(obs.Result)
+	if resultText == "" && obs.Error != nil {
+		resultText = obs.Error.Error()
+	}
+
+	obsMsg := fmt.Sprintf("Code executed (%s):\n```%s\n%s\n```\n\nResult:\n%s", lang, lang, code, resultText)
+	return schema.NewHumanMessage(obsMsg)
+}
+
+// extractResultText returns the first text part from a tool result, or "".
+func extractResultText(result *tool.Result) string {
+	if result == nil {
+		return ""
+	}
+	for _, part := range result.Content {
+		if tp, ok := part.(schema.TextPart); ok {
+			return tp.Text
+		}
+	}
+	return ""
 }
 
 // systemPrompt returns the system message instructing the LLM to use CodeAct.

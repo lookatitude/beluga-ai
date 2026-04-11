@@ -10,6 +10,9 @@ import (
 	"github.com/lookatitude/beluga-ai/core"
 )
 
+// opExecute is the operation name used in error codes emitted by code executors.
+const opExecute = "codeact.execute"
+
 // CodeExecutor executes code actions and returns results. Implementations
 // must respect context cancellation and enforce timeouts.
 type CodeExecutor interface {
@@ -94,7 +97,7 @@ func (e *ProcessExecutor) Execute(ctx context.Context, action CodeAction) (CodeR
 	interpreter, ok := e.interpreters[action.Language]
 	if !ok {
 		return CodeResult{}, core.NewError(
-			"codeact.execute",
+			opExecute,
 			core.ErrInvalidInput,
 			fmt.Sprintf("unsupported language %q (supported: %v)", action.Language, e.supportedLanguages()),
 			nil,
@@ -103,7 +106,7 @@ func (e *ProcessExecutor) Execute(ctx context.Context, action CodeAction) (CodeR
 
 	if action.Code == "" {
 		return CodeResult{}, core.NewError(
-			"codeact.execute",
+			opExecute,
 			core.ErrInvalidInput,
 			"empty code",
 			nil,
@@ -147,7 +150,7 @@ func (e *ProcessExecutor) Execute(ctx context.Context, action CodeAction) (CodeR
 		// context error, so we must branch on ctx state before the type check.
 		if execCtx.Err() != nil {
 			return result, core.NewError(
-				"codeact.execute",
+				opExecute,
 				core.ErrTimeout,
 				fmt.Sprintf("code execution timed out after %v", timeout),
 				execCtx.Err(),
@@ -158,7 +161,7 @@ func (e *ProcessExecutor) Execute(ctx context.Context, action CodeAction) (CodeR
 			return result, nil
 		}
 		return result, core.NewError(
-			"codeact.execute",
+			opExecute,
 			core.ErrToolFailed,
 			"code execution failed",
 			err,

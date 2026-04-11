@@ -56,22 +56,26 @@ func TestExtractCodeBlocks(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := ExtractCodeBlocks(tt.input)
-			if len(got) == 0 && len(tt.want) == 0 {
-				return
-			}
-			if len(got) != len(tt.want) {
-				t.Fatalf("got %d blocks, want %d", len(got), len(tt.want))
-			}
-			for i, block := range got {
-				if block.Language != tt.want[i].Language {
-					t.Errorf("block[%d].Language = %q, want %q", i, block.Language, tt.want[i].Language)
-				}
-				if block.Code != tt.want[i].Code {
-					t.Errorf("block[%d].Code = %q, want %q", i, block.Code, tt.want[i].Code)
-				}
-			}
+			assertCodeBlocksEqual(t, ExtractCodeBlocks(tt.input), tt.want)
 		})
+	}
+}
+
+func assertCodeBlocksEqual(t *testing.T, got, want []CodeBlock) {
+	t.Helper()
+	if len(got) == 0 && len(want) == 0 {
+		return
+	}
+	if len(got) != len(want) {
+		t.Fatalf("got %d blocks, want %d", len(got), len(want))
+	}
+	for i, block := range got {
+		if block.Language != want[i].Language {
+			t.Errorf("block[%d].Language = %q, want %q", i, block.Language, want[i].Language)
+		}
+		if block.Code != want[i].Code {
+			t.Errorf("block[%d].Code = %q, want %q", i, block.Code, want[i].Code)
+		}
 	}
 }
 
@@ -553,46 +557,54 @@ func TestCodeActAgent_Stream_ExecutesCodeAction(t *testing.T) {
 		WithMaxIterations(5),
 	)
 
-	var (
-		sawExec, sawResult, sawDone bool
-		finalText                   string
-	)
+	obs := collectStreamObservations(t, a)
+
+	if !obs.sawExec {
+		t.Error("expected EventCodeExec event")
+	}
+	if !obs.sawResult {
+		t.Error("expected EventCodeResult event")
+	}
+	if !obs.sawDone {
+		t.Error("expected EventDone event")
+	}
+	if obs.finalText != "final-answer" {
+		t.Errorf("finalText = %q, want final-answer", obs.finalText)
+	}
+	if planner.calls < 2 {
+		t.Errorf("planner.calls = %d, want >= 2 (code observation fed back)", planner.calls)
+	}
+}
+
+type streamObs struct {
+	sawExec, sawResult, sawDone bool
+	finalText                   string
+}
+
+func collectStreamObservations(t *testing.T, a *CodeActAgent) streamObs {
+	t.Helper()
+	var obs streamObs
 	for event, err := range a.Stream(context.Background(), "hello") {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		switch event.Type {
 		case EventCodeExec:
-			sawExec = true
+			obs.sawExec = true
 			if event.Text != "print('hi')" {
 				t.Errorf("EventCodeExec Text = %q, want print('hi')", event.Text)
 			}
 		case EventCodeResult:
-			sawResult = true
+			obs.sawResult = true
 			if event.ToolResult == nil {
 				t.Error("EventCodeResult ToolResult is nil")
 			}
 		case agent.EventDone:
-			sawDone = true
-			finalText = event.Text
+			obs.sawDone = true
+			obs.finalText = event.Text
 		}
 	}
-
-	if !sawExec {
-		t.Error("expected EventCodeExec event")
-	}
-	if !sawResult {
-		t.Error("expected EventCodeResult event")
-	}
-	if !sawDone {
-		t.Error("expected EventDone event")
-	}
-	if finalText != "final-answer" {
-		t.Errorf("finalText = %q, want final-answer", finalText)
-	}
-	if planner.calls < 2 {
-		t.Errorf("planner.calls = %d, want >= 2 (code observation fed back)", planner.calls)
-	}
+	return obs
 }
 
 func TestCodeActAgent_ID(t *testing.T) {

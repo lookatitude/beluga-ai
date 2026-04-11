@@ -50,36 +50,51 @@ type CodeActHooks struct {
 // Callbacks are called in the order provided. The first error short-circuits.
 func ComposeCodeActHooks(hooks ...CodeActHooks) CodeActHooks {
 	return CodeActHooks{
-		BeforeExec: func(ctx context.Context, action CodeAction) error {
-			for _, h := range hooks {
-				if h.BeforeExec != nil {
-					if err := h.BeforeExec(ctx, action); err != nil {
-						return err
-					}
-				}
+		BeforeExec: composeBeforeExec(hooks),
+		AfterExec:  composeAfterExec(hooks),
+		OnError:    composeOnError(hooks),
+	}
+}
+
+func composeBeforeExec(hooks []CodeActHooks) func(context.Context, CodeAction) error {
+	return func(ctx context.Context, action CodeAction) error {
+		for _, h := range hooks {
+			if h.BeforeExec == nil {
+				continue
 			}
-			return nil
-		},
-		AfterExec: func(ctx context.Context, action CodeAction, result CodeResult) error {
-			for _, h := range hooks {
-				if h.AfterExec != nil {
-					if err := h.AfterExec(ctx, action, result); err != nil {
-						return err
-					}
-				}
+			if err := h.BeforeExec(ctx, action); err != nil {
+				return err
 			}
-			return nil
-		},
-		OnError: func(ctx context.Context, action CodeAction, err error) error {
-			for _, h := range hooks {
-				if h.OnError != nil {
-					err = h.OnError(ctx, action, err)
-					if err == nil {
-						return nil
-					}
-				}
+		}
+		return nil
+	}
+}
+
+func composeAfterExec(hooks []CodeActHooks) func(context.Context, CodeAction, CodeResult) error {
+	return func(ctx context.Context, action CodeAction, result CodeResult) error {
+		for _, h := range hooks {
+			if h.AfterExec == nil {
+				continue
 			}
-			return err
-		},
+			if err := h.AfterExec(ctx, action, result); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
+func composeOnError(hooks []CodeActHooks) func(context.Context, CodeAction, error) error {
+	return func(ctx context.Context, action CodeAction, err error) error {
+		for _, h := range hooks {
+			if h.OnError == nil {
+				continue
+			}
+			err = h.OnError(ctx, action, err)
+			if err == nil {
+				return nil
+			}
+		}
+		return err
 	}
 }
