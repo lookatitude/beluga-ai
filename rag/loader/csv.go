@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -55,14 +56,14 @@ func NewCSVLoader(opts ...CSVLoaderOption) *CSVLoader {
 func (l *CSVLoader) Load(ctx context.Context, source string) ([]schema.Document, error) {
 	f, err := os.Open(source)
 	if err != nil {
-		return nil, err
+		return nil, core.Errorf(core.ErrProviderDown, "loader: csv open %q: %w", source, err)
 	}
 	defer f.Close()
 
 	reader := csv.NewReader(f)
 	records, err := reader.ReadAll()
 	if err != nil {
-		return nil, fmt.Errorf("loader: csv parse error: %w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, "loader: csv parse error: %w", err)
 	}
 
 	if len(records) < 2 {

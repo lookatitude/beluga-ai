@@ -6,6 +6,7 @@ import (
 	"math"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -15,7 +16,7 @@ const stepFmt = "Step %d: %s\n"
 func init() {
 	RegisterPlanner("lats", func(cfg PlannerConfig) (Planner, error) {
 		if cfg.LLM == nil {
-			return nil, fmt.Errorf("lats planner requires an LLM")
+			return nil, core.Errorf(core.ErrInvalidInput, "lats planner requires an LLM")
 		}
 		var opts []LATSOption
 		if ew, ok := cfg.Extra["expansion_width"].(int); ok {
@@ -408,7 +409,7 @@ func (p *LATSPlanner) synthesize(ctx context.Context, state PlannerState, path [
 
 	resp, err := model.Generate(ctx, msgs)
 	if err != nil {
-		return nil, fmt.Errorf("lats synthesize: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "lats synthesize: %w", err)
 	}
 
 	return parseAIResponse(resp), nil

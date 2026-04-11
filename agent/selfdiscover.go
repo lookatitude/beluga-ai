@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -12,7 +13,7 @@ import (
 func init() {
 	RegisterPlanner("self-discover", func(cfg PlannerConfig) (Planner, error) {
 		if cfg.LLM == nil {
-			return nil, fmt.Errorf("self-discover planner requires an LLM")
+			return nil, core.Errorf(core.ErrInvalidInput, "self-discover planner requires an LLM")
 		}
 		var opts []SelfDiscoverOption
 		if modules, ok := cfg.Extra["modules"].([]ReasoningModule); ok {
@@ -120,13 +121,13 @@ func (p *SelfDiscoverPlanner) Plan(ctx context.Context, state PlannerState) ([]A
 	// Phase 1: SELECT — choose relevant reasoning modules for this task
 	selected, err := p.selectModules(ctx, state.Input)
 	if err != nil {
-		return nil, fmt.Errorf("self-discover select: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "self-discover select: %w", err)
 	}
 
 	// Phase 2: ADAPT — adapt the selected modules to the specific task
 	adapted, err := p.adaptModules(ctx, state.Input, selected)
 	if err != nil {
-		return nil, fmt.Errorf("self-discover adapt: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "self-discover adapt: %w", err)
 	}
 
 	// Phase 3: IMPLEMENT — use the adapted reasoning structure to solve the task
@@ -242,7 +243,7 @@ func (p *SelfDiscoverPlanner) implement(ctx context.Context, state PlannerState,
 
 	resp, err := model.Generate(ctx, msgs)
 	if err != nil {
-		return nil, fmt.Errorf("self-discover implement: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "self-discover implement: %w", err)
 	}
 
 	actions := parseAIResponse(resp)

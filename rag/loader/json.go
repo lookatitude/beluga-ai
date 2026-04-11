@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -69,19 +70,19 @@ func NewJSONLoader(opts ...JSONLoaderOption) *JSONLoader {
 func (l *JSONLoader) Load(ctx context.Context, source string) ([]schema.Document, error) {
 	data, err := os.ReadFile(source)
 	if err != nil {
-		return nil, err
+		return nil, core.Errorf(core.ErrProviderDown, "loader: json read %q: %w", source, err)
 	}
 
 	var raw any
 	if err := json.Unmarshal(data, &raw); err != nil {
-		return nil, fmt.Errorf("loader: json parse error: %w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, "loader: json parse error: %w", err)
 	}
 
 	// Navigate jqPath if set.
 	if l.jqPath != "" {
 		raw, err = navigatePath(raw, l.jqPath)
 		if err != nil {
-			return nil, fmt.Errorf("loader: json path %q: %w", l.jqPath, err)
+			return nil, core.Errorf(core.ErrNotFound, "loader: json path %q: %w", l.jqPath, err)
 		}
 	}
 
@@ -99,7 +100,7 @@ func (l *JSONLoader) Load(ctx context.Context, source string) ([]schema.Document
 	for i, item := range items {
 		content, err := l.extractContent(item)
 		if err != nil {
-			return nil, fmt.Errorf("loader: json item %d: %w", i, err)
+			return nil, core.Errorf(core.ErrInvalidInput, "loader: json item %d: %w", i, err)
 		}
 		doc := schema.Document{
 			ID:      fmt.Sprintf("%s#%d", source, i),
@@ -121,25 +122,25 @@ func (l *JSONLoader) extractContent(item any) (string, error) {
 	if l.contentKey != "" {
 		obj, ok := item.(map[string]any)
 		if !ok {
-			return "", fmt.Errorf("expected object for content_key extraction, got %T", item)
+			return "", core.Errorf(core.ErrInvalidInput, "expected object for content_key extraction, got %T", item)
 		}
 		val, ok := obj[l.contentKey]
 		if !ok {
-			return "", fmt.Errorf("key %q not found in object", l.contentKey)
+			return "", core.Errorf(core.ErrNotFound, "key %q not found in object", l.contentKey)
 		}
 		if s, ok := val.(string); ok {
 			return s, nil
 		}
 		b, err := json.Marshal(val)
 		if err != nil {
-			return "", err
+			return "", core.Errorf(core.ErrInvalidInput, "loader: json marshal value: %w", err)
 		}
 		return string(b), nil
 	}
 	// Serialize entire item.
 	b, err := json.Marshal(item)
 	if err != nil {
-		return "", err
+		return "", core.Errorf(core.ErrInvalidInput, "loader: json marshal item: %w", err)
 	}
 	return string(b), nil
 }
@@ -151,11 +152,11 @@ func navigatePath(data any, path string) (any, error) {
 	for _, part := range parts {
 		obj, ok := current.(map[string]any)
 		if !ok {
-			return nil, fmt.Errorf("expected object at %q, got %T", part, current)
+			return nil, core.Errorf(core.ErrInvalidInput, "expected object at %q, got %T", part, current)
 		}
 		val, ok := obj[part]
 		if !ok {
-			return nil, fmt.Errorf("key %q not found", part)
+			return nil, core.Errorf(core.ErrNotFound, "key %q not found", part)
 		}
 		current = val
 	}

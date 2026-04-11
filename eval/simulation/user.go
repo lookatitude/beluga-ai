@@ -112,7 +112,7 @@ func (u *SimulatedUser) Respond(ctx context.Context, agentResponse string) (*Use
 		schema.NewHumanMessage(prompt),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("simulated user: llm generate: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "simulated user: llm generate: %w", err)
 	}
 
 	text := resp.Text()

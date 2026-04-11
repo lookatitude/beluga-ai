@@ -2,7 +2,6 @@ package structured
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/lookatitude/beluga-ai/core"
@@ -45,7 +44,7 @@ func (g *LLMCypherGenerator) Generate(ctx context.Context, question string, info
 		schema.NewHumanMessage(prompt),
 	})
 	if err != nil {
-		return "", fmt.Errorf("structured.generate: llm call: %w", err)
+		return "", core.Errorf(core.ErrProviderDown, "structured.generate: llm call: %w", err)
 	}
 
 	return extractQuery(resp.Text()), nil
@@ -77,7 +76,7 @@ func (g *LLMSQLGenerator) Generate(ctx context.Context, question string, info Sc
 		schema.NewHumanMessage(prompt),
 	})
 	if err != nil {
-		return "", fmt.Errorf("structured.generate: llm call: %w", err)
+		return "", core.Errorf(core.ErrProviderDown, "structured.generate: llm call: %w", err)
 	}
 
 	return extractQuery(resp.Text()), nil

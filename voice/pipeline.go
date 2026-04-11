@@ -2,9 +2,9 @@ package voice
 
 import (
 	"context"
-	"fmt"
 	"iter"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/internal/hookutil"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -179,13 +179,13 @@ func NewPipeline(opts ...PipelineOption) *VoicePipeline {
 // Transport in a chain of FrameProcessor goroutines.
 func (p *VoicePipeline) Run(ctx context.Context) error {
 	if p.config.Transport == nil {
-		return fmt.Errorf("voice: pipeline requires a transport")
+		return core.Errorf(core.ErrInvalidInput, "voice: pipeline requires a transport")
 	}
 
 	// Receive audio frames from transport.
 	incoming, err := p.config.Transport.Recv(ctx)
 	if err != nil {
-		return fmt.Errorf("voice: transport recv: %w", err)
+		return core.Errorf(core.ErrProviderDown, "voice: transport recv: %w", err)
 	}
 
 	// Build the processor chain from available components.
@@ -208,7 +208,7 @@ func (p *VoicePipeline) Run(ctx context.Context) error {
 	}
 
 	if len(processors) == 0 {
-		return fmt.Errorf("voice: pipeline has no processors")
+		return core.Errorf(core.ErrInvalidInput, "voice: pipeline has no processors")
 	}
 
 	// Chain processors and run.
@@ -223,7 +223,7 @@ func (p *VoicePipeline) Run(ctx context.Context) error {
 		defer close(done)
 		for frame := range out {
 			if sendErr := p.config.Transport.Send(ctx, frame); sendErr != nil {
-				done <- fmt.Errorf("voice: transport send: %w", sendErr)
+				done <- core.Errorf(core.ErrProviderDown, "voice: transport send: %w", sendErr)
 				return
 			}
 		}

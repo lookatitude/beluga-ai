@@ -1,9 +1,10 @@
 package voice
 
 import (
-	"fmt"
 	"sync"
 	"time"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // SessionState represents the current state of a voice session.
@@ -85,7 +86,7 @@ func (s *VoiceSession) Transition(state SessionState) error {
 	defer s.mu.Unlock()
 
 	if !validTransition(s.State, state) {
-		return fmt.Errorf("voice: invalid state transition from %s to %s", s.State, state)
+		return core.Errorf(core.ErrInvalidInput, "voice: invalid state transition from %s to %s", s.State, state)
 	}
 	s.State = state
 	return nil

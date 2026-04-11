@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -60,7 +61,7 @@ func (d *LLMDecomposer) Decompose(ctx context.Context, query string, available [
 
 	resp, err := d.llm.Generate(ctx, msgs)
 	if err != nil {
-		return nil, fmt.Errorf("decompose query: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "decompose query: %w", err)
 	}
 
 	return parseSubQuestions(resp.Text(), available), nil
@@ -182,11 +183,11 @@ func (r *SubQuestionRetriever) Retrieve(ctx context.Context, query string, opts 
 	}
 
 	if r.decomposer == nil {
-		return nil, fmt.Errorf("retriever: subquestion: decomposer not configured")
+		return nil, core.Errorf(core.ErrInvalidInput, "retriever: subquestion: decomposer not configured")
 	}
 
 	if len(r.retrievers) == 0 {
-		return nil, fmt.Errorf("retriever: subquestion: no retrievers configured")
+		return nil, core.Errorf(core.ErrInvalidInput, "retriever: subquestion: no retrievers configured")
 	}
 
 	available := make([]string, 0, len(r.retrievers))
@@ -199,7 +200,7 @@ func (r *SubQuestionRetriever) Retrieve(ctx context.Context, query string, opts 
 
 	subQuestions, err := r.decomposer.Decompose(ctx, query, available)
 	if err != nil {
-		return nil, fmt.Errorf("retriever: subquestion decompose: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "retriever: subquestion decompose: %w", err)
 	}
 
 	// Limit sub-questions.
@@ -225,7 +226,7 @@ func (r *SubQuestionRetriever) Retrieve(ctx context.Context, query string, opts 
 
 		docs, err := ret.Retrieve(ctx, sq.Question, opts...)
 		if err != nil {
-			return nil, fmt.Errorf("retriever: subquestion retrieve %q via %q: %w", sq.Question, sq.Retriever, err)
+			return nil, core.Errorf(core.ErrProviderDown, "retriever: subquestion retrieve %q via %q: %w", sq.Question, sq.Retriever, err)
 		}
 
 		for _, doc := range docs {

@@ -3,11 +3,11 @@ package mcp
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net"
 	"net/http"
 	"sync"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tool"
 )
@@ -77,7 +77,7 @@ func (s *MCPServer) Serve(ctx context.Context, addr string) error {
 
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
-		return fmt.Errorf("mcp/serve: %w", err)
+		return core.Errorf(core.ErrProviderDown, "mcp/serve: %w", err)
 	}
 
 	errCh := make(chan error, 1)
@@ -88,14 +88,14 @@ func (s *MCPServer) Serve(ctx context.Context, addr string) error {
 	select {
 	case <-ctx.Done():
 		if shutdownErr := srv.Close(); shutdownErr != nil {
-			return fmt.Errorf("mcp/serve: shutdown: %w", shutdownErr)
+			return core.Errorf(core.ErrProviderDown, "mcp/serve: shutdown: %w", shutdownErr)
 		}
 		return ctx.Err()
 	case err := <-errCh:
 		if err == http.ErrServerClosed {
 			return nil
 		}
-		return fmt.Errorf("mcp/serve: %w", err)
+		return core.Errorf(core.ErrProviderDown, "mcp/serve: %w", err)
 	}
 }
 

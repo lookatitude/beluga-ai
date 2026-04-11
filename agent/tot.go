@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -13,7 +14,7 @@ import (
 func init() {
 	RegisterPlanner("tree-of-thought", func(cfg PlannerConfig) (Planner, error) {
 		if cfg.LLM == nil {
-			return nil, fmt.Errorf("tree-of-thought planner requires an LLM")
+			return nil, core.Errorf(core.ErrInvalidInput, "tree-of-thought planner requires an LLM")
 		}
 		var opts []ToTOption
 		if bf, ok := cfg.Extra["branch_factor"].(int); ok {
@@ -109,11 +110,18 @@ type thoughtNode struct {
 // thoughtHeap implements a max-heap of thought nodes ordered by score.
 type thoughtHeap []*thoughtNode
 
-func (h thoughtHeap) Len() int            { return len(h) }
-func (h thoughtHeap) Less(i, j int) bool   { return h[i].score > h[j].score } // max-heap
-func (h thoughtHeap) Swap(i, j int)        { h[i], h[j] = h[j], h[i]; h[i].index = i; h[j].index = j }
-func (h *thoughtHeap) Push(x any)          { n := x.(*thoughtNode); n.index = len(*h); *h = append(*h, n) }
-func (h *thoughtHeap) Pop() any            { old := *h; n := old[len(old)-1]; old[len(old)-1] = nil; n.index = -1; *h = old[:len(old)-1]; return n }
+func (h thoughtHeap) Len() int           { return len(h) }
+func (h thoughtHeap) Less(i, j int) bool { return h[i].score > h[j].score } // max-heap
+func (h thoughtHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i]; h[i].index = i; h[j].index = j }
+func (h *thoughtHeap) Push(x any)        { n := x.(*thoughtNode); n.index = len(*h); *h = append(*h, n) }
+func (h *thoughtHeap) Pop() any {
+	old := *h
+	n := old[len(old)-1]
+	old[len(old)-1] = nil
+	n.index = -1
+	*h = old[:len(old)-1]
+	return n
+}
 
 // Plan explores the thought tree to find the best reasoning path, then
 // generates a final response using that path.
@@ -128,7 +136,7 @@ func (p *ToTPlanner) Plan(ctx context.Context, state PlannerState) ([]Action, er
 		bestPath, err = p.searchBFS(ctx, state)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("tree-of-thought search: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "tree-of-thought search: %w", err)
 	}
 
 	return p.synthesize(ctx, state, bestPath)
@@ -355,7 +363,7 @@ func (p *ToTPlanner) synthesize(ctx context.Context, state PlannerState, path []
 
 	resp, err := model.Generate(ctx, msgs)
 	if err != nil {
-		return nil, fmt.Errorf("tree-of-thought synthesize: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "tree-of-thought synthesize: %w", err)
 	}
 
 	return parseAIResponse(resp), nil

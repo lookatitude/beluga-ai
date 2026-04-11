@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"sync/atomic"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tool"
 )
@@ -31,7 +31,7 @@ func NewClient(serverURL string) *MCPClient {
 func (c *MCPClient) Initialize(ctx context.Context) (*ServerCapabilities, error) {
 	var result InitializeResult
 	if err := c.call(ctx, "initialize", nil, &result); err != nil {
-		return nil, fmt.Errorf("mcp/initialize: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "mcp/initialize: %w", err)
 	}
 	return &result.Capabilities, nil
 }
@@ -42,7 +42,7 @@ func (c *MCPClient) ListTools(ctx context.Context) ([]ToolInfo, error) {
 		Tools []ToolInfo `json:"tools"`
 	}
 	if err := c.call(ctx, "tools/list", nil, &result); err != nil {
-		return nil, fmt.Errorf("mcp/list_tools: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "mcp/list_tools: %w", err)
 	}
 	return result.Tools, nil
 }
@@ -55,7 +55,7 @@ func (c *MCPClient) CallTool(ctx context.Context, name string, args map[string]a
 	}
 	var result ToolCallResult
 	if err := c.call(ctx, "tools/call", params, &result); err != nil {
-		return nil, fmt.Errorf("mcp/call_tool: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "mcp/call_tool: %w", err)
 	}
 	return &result, nil
 }
@@ -71,37 +71,37 @@ func (c *MCPClient) call(ctx context.Context, method string, params any, result 
 
 	body, err := json.Marshal(req)
 	if err != nil {
-		return fmt.Errorf("marshal request: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "marshal request: %w", err)
 	}
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.serverURL, bytes.NewReader(body))
 	if err != nil {
-		return fmt.Errorf("create request: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "create request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
 	httpResp, err := c.httpClient.Do(httpReq)
 	if err != nil {
-		return fmt.Errorf("send request: %w", err)
+		return core.Errorf(core.ErrProviderDown, "send request: %w", err)
 	}
 	defer httpResp.Body.Close()
 
 	var resp Response
 	if err := json.NewDecoder(httpResp.Body).Decode(&resp); err != nil {
-		return fmt.Errorf("decode response: %w", err)
+		return core.Errorf(core.ErrProviderDown, "decode response: %w", err)
 	}
 
 	if resp.Error != nil {
-		return fmt.Errorf("rpc error %d: %s", resp.Error.Code, resp.Error.Message)
+		return core.Errorf(core.ErrProviderDown, "rpc error %d: %s", resp.Error.Code, resp.Error.Message)
 	}
 
 	// Re-marshal the result to decode into the target type.
 	resultBytes, err := json.Marshal(resp.Result)
 	if err != nil {
-		return fmt.Errorf("marshal result: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "marshal result: %w", err)
 	}
 	if err := json.Unmarshal(resultBytes, result); err != nil {
-		return fmt.Errorf("decode result: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "decode result: %w", err)
 	}
 
 	return nil
@@ -112,12 +112,12 @@ func FromMCP(ctx context.Context, serverURL string) ([]tool.Tool, error) {
 	client := NewClient(serverURL)
 
 	if _, err := client.Initialize(ctx); err != nil {
-		return nil, fmt.Errorf("mcp/from_mcp: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "mcp/from_mcp: %w", err)
 	}
 
 	infos, err := client.ListTools(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("mcp/from_mcp: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "mcp/from_mcp: %w", err)
 	}
 
 	tools := make([]tool.Tool, len(infos))
@@ -136,14 +136,14 @@ type mcpTool struct {
 	info   ToolInfo
 }
 
-func (t *mcpTool) Name() string              { return t.info.Name }
-func (t *mcpTool) Description() string        { return t.info.Description }
+func (t *mcpTool) Name() string                { return t.info.Name }
+func (t *mcpTool) Description() string         { return t.info.Description }
 func (t *mcpTool) InputSchema() map[string]any { return t.info.InputSchema }
 
 func (t *mcpTool) Execute(ctx context.Context, input map[string]any) (*tool.Result, error) {
 	result, err := t.client.CallTool(ctx, t.info.Name, input)
 	if err != nil {
-		return nil, fmt.Errorf("mcp/execute: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "mcp/execute: %w", err)
 	}
 
 	parts := make([]schema.ContentPart, 0, len(result.Content))

@@ -2,7 +2,6 @@ package orchestration
 
 import (
 	"context"
-	"fmt"
 	"iter"
 
 	"github.com/lookatitude/beluga-ai/core"
@@ -49,7 +48,7 @@ func (r *Router) Invoke(ctx context.Context, input any, opts ...core.Option) (an
 	}
 	result, err := handler.Invoke(ctx, input, opts...)
 	if err != nil {
-		return nil, fmt.Errorf("orchestration/router: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "orchestration/router: %w", err)
 	}
 	return result, nil
 }
@@ -77,7 +76,7 @@ func (r *Router) Stream(ctx context.Context, input any, opts ...core.Option) ite
 func (r *Router) resolve(ctx context.Context, input any) (core.Runnable, error) {
 	route, err := r.classifier(ctx, input)
 	if err != nil {
-		return nil, fmt.Errorf("orchestration/router: classifier: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "orchestration/router: classifier: %w", err)
 	}
 
 	handler, ok := r.routes[route]
@@ -89,5 +88,5 @@ func (r *Router) resolve(ctx context.Context, input any) (core.Runnable, error) 
 		return r.fallback, nil
 	}
 
-	return nil, fmt.Errorf("orchestration/router: unknown route %q and no fallback set", route)
+	return nil, core.Errorf(core.ErrNotFound, "orchestration/router: unknown route %q and no fallback set", route)
 }

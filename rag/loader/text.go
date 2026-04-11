@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -30,7 +31,7 @@ func NewTextLoader() *TextLoader {
 func (l *TextLoader) Load(ctx context.Context, source string) ([]schema.Document, error) {
 	data, err := os.ReadFile(source)
 	if err != nil {
-		return nil, err
+		return nil, core.Errorf(core.ErrProviderDown, "loader: text read %q: %w", source, err)
 	}
 
 	doc := schema.Document{

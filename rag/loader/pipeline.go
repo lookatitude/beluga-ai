@@ -2,8 +2,8 @@ package loader
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -45,14 +45,14 @@ func NewPipeline(opts ...PipelineOption) *LoaderPipeline {
 // resulting documents, and applies all transformers to each document.
 func (p *LoaderPipeline) Load(ctx context.Context, source string) ([]schema.Document, error) {
 	if len(p.loaders) == 0 {
-		return nil, fmt.Errorf("loader: pipeline has no loaders")
+		return nil, core.Errorf(core.ErrInvalidInput, "loader: pipeline has no loaders")
 	}
 
 	var docs []schema.Document
 	for i, l := range p.loaders {
 		result, err := l.Load(ctx, source)
 		if err != nil {
-			return nil, fmt.Errorf("loader: pipeline loader %d: %w", i, err)
+			return nil, core.Errorf(core.ErrProviderDown, "loader: pipeline loader %d: %w", i, err)
 		}
 		docs = append(docs, result...)
 	}
@@ -62,7 +62,7 @@ func (p *LoaderPipeline) Load(ctx context.Context, source string) ([]schema.Docu
 		for _, doc := range docs {
 			d, err := t.Transform(ctx, doc)
 			if err != nil {
-				return nil, fmt.Errorf("loader: pipeline transformer %d: %w", i, err)
+				return nil, core.Errorf(core.ErrProviderDown, "loader: pipeline transformer %d: %w", i, err)
 			}
 			transformed = append(transformed, d)
 		}

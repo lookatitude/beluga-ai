@@ -2,11 +2,11 @@ package embedding
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // MultiVectorEmbedder produces per-token embeddings for late interaction
@@ -53,7 +53,7 @@ func NewMultiVector(name string, cfg config.ProviderConfig) (MultiVectorEmbedder
 	f, ok := mvRegistry[name]
 	mvRegistryMu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("embedding: unknown multi-vector provider %q (registered: %v)", name, ListMultiVector())
+		return nil, core.Errorf(core.ErrNotFound, "embedding: unknown multi-vector provider %q (registered: %v)", name, ListMultiVector())
 	}
 	return f(cfg)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/eval"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
@@ -45,7 +46,7 @@ func (r *Relevance) Score(ctx context.Context, sample eval.EvalSample) (float64,
 		schema.NewHumanMessage(prompt),
 	})
 	if err != nil {
-		return 0, fmt.Errorf("relevance: llm generate: %w", err)
+		return 0, core.Errorf(core.ErrProviderDown, "relevance: llm generate: %w", err)
 	}
 
 	return parseScore(resp.Text())

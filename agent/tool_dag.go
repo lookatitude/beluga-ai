@@ -3,10 +3,10 @@ package agent
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"sync"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tool"
 )
@@ -306,19 +306,19 @@ func runOneTool(ctx context.Context, call schema.ToolCall, registry *tool.Regist
 
 	t, err := registry.Get(call.Name)
 	if err != nil {
-		return tool.ErrorResult(fmt.Errorf("tool %q not found: %w", call.Name, err))
+		return tool.ErrorResult(core.Errorf(core.ErrNotFound, "tool %q not found: %w", call.Name, err))
 	}
 
 	var args map[string]any
 	if strings.TrimSpace(call.Arguments) != "" {
 		if err := json.Unmarshal([]byte(call.Arguments), &args); err != nil {
-			return tool.ErrorResult(fmt.Errorf("invalid arguments for tool %q: %w", call.Name, err))
+			return tool.ErrorResult(core.Errorf(core.ErrInvalidInput, "invalid arguments for tool %q: %w", call.Name, err))
 		}
 	}
 
 	res, err := t.Execute(ctx, args)
 	if err != nil {
-		return tool.ErrorResult(fmt.Errorf("tool %q execution failed: %w", call.Name, err))
+		return tool.ErrorResult(core.Errorf(core.ErrProviderDown, "tool %q execution failed: %w", call.Name, err))
 	}
 	return res
 }

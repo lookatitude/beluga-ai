@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/rag/embedding"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -74,13 +75,13 @@ func NewTreeBuilder(opts ...BuilderOption) *TreeBuilder {
 // nodes to build higher abstraction levels.
 func (b *TreeBuilder) Build(ctx context.Context, docs []schema.Document) (*Tree, error) {
 	if len(docs) == 0 {
-		return nil, fmt.Errorf("raptor: build: no documents provided")
+		return nil, core.Errorf(core.ErrInvalidInput, "raptor: build: no documents provided")
 	}
 	if b.embedder == nil {
-		return nil, fmt.Errorf("raptor: build: embedder is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "raptor: build: embedder is required")
 	}
 	if b.summarizer == nil {
-		return nil, fmt.Errorf("raptor: build: summarizer is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "raptor: build: summarizer is required")
 	}
 
 	tree := &Tree{
@@ -106,12 +107,12 @@ func (b *TreeBuilder) Build(ctx context.Context, docs []schema.Document) (*Tree,
 			var err error
 			emb, err = b.embedder.EmbedSingle(ctx, doc.Content)
 			if err != nil {
-				return nil, fmt.Errorf("raptor: build: embed leaf %d: %w", i, err)
+				return nil, core.Errorf(core.ErrProviderDown, "raptor: build: embed leaf %d: %w", i, err)
 			}
 		}
 
 		if _, exists := tree.Nodes[id]; exists {
-			return nil, fmt.Errorf("raptor: build: duplicate document ID %q at index %d", id, i)
+			return nil, core.Errorf(core.ErrInvalidInput, "raptor: build: duplicate document ID %q at index %d", id, i)
 		}
 
 		node := &TreeNode{
@@ -145,7 +146,7 @@ func (b *TreeBuilder) Build(ctx context.Context, docs []schema.Document) (*Tree,
 
 		clusters, err := b.clusterer.Cluster(ctx, embeddings)
 		if err != nil {
-			return nil, fmt.Errorf("raptor: build: cluster level %d: %w", level, err)
+			return nil, core.Errorf(core.ErrProviderDown, "raptor: build: cluster level %d: %w", level, err)
 		}
 
 		nextLevel := make([]*TreeNode, 0, len(clusters))
@@ -164,12 +165,12 @@ func (b *TreeBuilder) Build(ctx context.Context, docs []schema.Document) (*Tree,
 
 			summary, err := b.summarizer.Summarize(ctx, texts)
 			if err != nil {
-				return nil, fmt.Errorf("raptor: build: summarize cluster %d at level %d: %w", ci, level, err)
+				return nil, core.Errorf(core.ErrProviderDown, "raptor: build: summarize cluster %d at level %d: %w", ci, level, err)
 			}
 
 			emb, err := b.embedder.EmbedSingle(ctx, summary)
 			if err != nil {
-				return nil, fmt.Errorf("raptor: build: embed summary cluster %d at level %d: %w", ci, level, err)
+				return nil, core.Errorf(core.ErrProviderDown, "raptor: build: embed summary cluster %d at level %d: %w", ci, level, err)
 			}
 
 			nodeID := fmt.Sprintf("summary-L%d-C%d", level, ci)

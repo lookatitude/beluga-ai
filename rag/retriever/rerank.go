@@ -2,8 +2,8 @@ package retriever
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 )
 
@@ -67,7 +67,7 @@ func (r *RerankRetriever) Retrieve(ctx context.Context, query string, opts ...Op
 
 	docs, err := r.inner.Retrieve(ctx, query, opts...)
 	if err != nil {
-		return nil, fmt.Errorf("retriever: rerank inner retrieve: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "retriever: rerank inner retrieve: %w", err)
 	}
 
 	if len(docs) == 0 {
@@ -79,7 +79,7 @@ func (r *RerankRetriever) Retrieve(ctx context.Context, query string, opts ...Op
 
 	reranked, err := r.reranker.Rerank(ctx, query, docs)
 	if err != nil {
-		return nil, fmt.Errorf("retriever: rerank: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "retriever: rerank: %w", err)
 	}
 
 	if r.hooks.OnRerank != nil {

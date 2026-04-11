@@ -2,10 +2,11 @@ package hitl
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // InteractionType identifies the kind of human interaction required.
@@ -203,7 +204,7 @@ func New(name string, cfg Config) (Manager, error) {
 	registryMu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("hitl: unknown manager %q", name)
+		return nil, core.Errorf(core.ErrNotFound, "hitl: unknown manager %q", name)
 	}
 	return f(cfg)
 }

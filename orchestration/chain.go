@@ -2,7 +2,6 @@ package orchestration
 
 import (
 	"context"
-	"fmt"
 	"iter"
 
 	"github.com/lookatitude/beluga-ai/core"
@@ -37,7 +36,7 @@ func (c *chainRunnable) Invoke(ctx context.Context, input any, opts ...core.Opti
 	for i, step := range c.steps {
 		result, err := step.Invoke(ctx, current, opts...)
 		if err != nil {
-			return nil, fmt.Errorf(chainStepErrFmt, i, err)
+			return nil, core.Errorf(core.ErrProviderDown, chainStepErrFmt, i, err)
 		}
 		current = result
 	}
@@ -68,7 +67,7 @@ func (c *chainRunnable) invokeLeadingSteps(ctx context.Context, input any, opts 
 	for i, step := range c.steps[:len(c.steps)-1] {
 		result, err := step.Invoke(ctx, current, opts...)
 		if err != nil {
-			return nil, fmt.Errorf(chainStepErrFmt, i, err)
+			return nil, core.Errorf(core.ErrProviderDown, chainStepErrFmt, i, err)
 		}
 		current = result
 	}
@@ -80,7 +79,7 @@ func (c *chainRunnable) streamLastStep(ctx context.Context, input any, yield fun
 	last := c.steps[len(c.steps)-1]
 	for val, err := range last.Stream(ctx, input, opts...) {
 		if err != nil {
-			yield(nil, fmt.Errorf(chainStepErrFmt, len(c.steps)-1, err))
+			yield(nil, core.Errorf(core.ErrProviderDown, chainStepErrFmt, len(c.steps)-1, err))
 			return
 		}
 		if !yield(val, nil) {

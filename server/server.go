@@ -2,13 +2,13 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"sort"
 	"sync"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/internal/httputil"
 )
 
@@ -71,7 +71,7 @@ func New(name string, cfg Config) (ServerAdapter, error) {
 	f, ok := registry[name]
 	registryMu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("server: unknown adapter %q (registered: %v)", name, List())
+		return nil, core.Errorf(core.ErrNotFound, "server: unknown adapter %q (registered: %v)", name, List())
 	}
 	return f(cfg)
 }
@@ -109,7 +109,7 @@ func NewStdlibAdapter(cfg Config) *StdlibAdapter {
 // for SSE streaming.
 func (s *StdlibAdapter) RegisterAgent(path string, a agent.Agent) error {
 	if a == nil {
-		return fmt.Errorf("server/register-agent: agent must not be nil")
+		return core.Errorf(core.ErrInvalidInput, "server/register-agent: agent must not be nil")
 	}
 	handler := NewAgentHandler(a)
 	s.mux.Handle(path+"/", handler)
@@ -119,7 +119,7 @@ func (s *StdlibAdapter) RegisterAgent(path string, a agent.Agent) error {
 // RegisterHandler registers a raw http.Handler at the given path.
 func (s *StdlibAdapter) RegisterHandler(path string, handler http.Handler) error {
 	if handler == nil {
-		return fmt.Errorf("server/register-handler: handler must not be nil")
+		return core.Errorf(core.ErrInvalidInput, "server/register-handler: handler must not be nil")
 	}
 	s.mux.Handle(path, handler)
 	return nil

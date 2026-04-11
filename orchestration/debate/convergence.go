@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // ConvergenceDetector determines whether a debate has reached a point
@@ -37,7 +39,7 @@ func NewDetector(name string, cfg map[string]any) (ConvergenceDetector, error) {
 	f, ok := detectorRegistry[name]
 	detectorMu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("debate: unknown detector %q (registered: %v)", name, ListDetectors())
+		return nil, core.Errorf(core.ErrNotFound, "debate: unknown detector %q (registered: %v)", name, ListDetectors())
 	}
 	return f(cfg)
 }

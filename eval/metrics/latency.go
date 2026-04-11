@@ -2,8 +2,8 @@ package metrics
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/eval"
 )
 
@@ -49,12 +49,12 @@ func (l *Latency) Name() string { return "latency" }
 func (l *Latency) Score(_ context.Context, sample eval.EvalSample) (float64, error) {
 	raw, ok := sample.Metadata["latency_ms"]
 	if !ok {
-		return 0, fmt.Errorf("latency: missing metadata key %q", "latency_ms")
+		return 0, core.Errorf(core.ErrInvalidInput, "latency: missing metadata key %q", "latency_ms")
 	}
 
 	ms, err := toFloat64(raw)
 	if err != nil {
-		return 0, fmt.Errorf("latency: %w", err)
+		return 0, core.Errorf(core.ErrInvalidInput, "latency: %w", err)
 	}
 
 	if ms <= 0 {
@@ -81,6 +81,6 @@ func toFloat64(v any) (float64, error) {
 	case int32:
 		return float64(n), nil
 	default:
-		return 0, fmt.Errorf("unsupported numeric type %T for value %v", v, v)
+		return 0, core.Errorf(core.ErrInvalidInput, "unsupported numeric type %T for value %v", v, v)
 	}
 }

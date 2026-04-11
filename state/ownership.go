@@ -2,16 +2,18 @@ package state
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // ErrOwnershipDenied is returned when a non-owner attempts to write to a
 // claimed key.
-var ErrOwnershipDenied = fmt.Errorf("state: ownership denied")
+var ErrOwnershipDenied = errors.New("state: ownership denied")
 
 // ErrAlreadyClaimed is returned when a key is already claimed by another owner.
-var ErrAlreadyClaimed = fmt.Errorf("state: key already claimed")
+var ErrAlreadyClaimed = errors.New("state: key already claimed")
 
 // OwnershipManager tracks which agent owns which keys and enforces write
 // access control.
@@ -34,7 +36,7 @@ func (om *OwnershipManager) Claim(key, ownerID string) error {
 	defer om.mu.Unlock()
 
 	if existing, ok := om.claims[key]; ok && existing != ownerID {
-		return fmt.Errorf("%w: key %q owned by %q", ErrAlreadyClaimed, key, existing)
+		return core.Errorf(core.ErrInvalidInput, "%w: key %q owned by %q", ErrAlreadyClaimed, key, existing)
 	}
 	om.claims[key] = ownerID
 	return nil
@@ -51,7 +53,7 @@ func (om *OwnershipManager) Release(key, ownerID string) error {
 		return nil // no claim to release
 	}
 	if existing != ownerID {
-		return fmt.Errorf("%w: key %q owned by %q, not %q", ErrOwnershipDenied, key, existing, ownerID)
+		return core.Errorf(core.ErrInvalidInput, "%w: key %q owned by %q, not %q", ErrOwnershipDenied, key, existing, ownerID)
 	}
 	delete(om.claims, key)
 	return nil
@@ -76,7 +78,7 @@ func (om *OwnershipManager) CheckWrite(key, ownerID string) error {
 		return nil // unclaimed, anyone can write
 	}
 	if existing != ownerID {
-		return fmt.Errorf("%w: key %q owned by %q, writer %q", ErrOwnershipDenied, key, existing, ownerID)
+		return core.Errorf(core.ErrInvalidInput, "%w: key %q owned by %q, writer %q", ErrOwnershipDenied, key, existing, ownerID)
 	}
 	return nil
 }

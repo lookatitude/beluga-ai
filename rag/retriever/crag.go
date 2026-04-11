@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -99,7 +100,7 @@ func (r *CRAGRetriever) Retrieve(ctx context.Context, query string, opts ...Opti
 
 		docs, err := r.inner.Retrieve(ctx, currentQuery, opts...)
 		if err != nil {
-			return nil, fmt.Errorf("retriever: crag inner retrieve: %w", err)
+			return nil, core.Errorf(core.ErrProviderDown, "retriever: crag inner retrieve: %w", err)
 		}
 
 		if len(docs) == 0 {
@@ -107,7 +108,7 @@ func (r *CRAGRetriever) Retrieve(ctx context.Context, query string, opts ...Opti
 			if attempt < r.maxAttempts-1 {
 				rewritten, err := r.rewriteQuery(ctx, query, currentQuery)
 				if err != nil {
-					return nil, fmt.Errorf("retriever: crag rewrite: %w", err)
+					return nil, core.Errorf(core.ErrProviderDown, "retriever: crag rewrite: %w", err)
 				}
 				currentQuery = rewritten
 				continue
@@ -118,7 +119,7 @@ func (r *CRAGRetriever) Retrieve(ctx context.Context, query string, opts ...Opti
 		// Evaluate relevance of retrieved documents.
 		relevant, err := r.evaluateRelevance(ctx, currentQuery, docs)
 		if err != nil {
-			return nil, fmt.Errorf("retriever: crag evaluate: %w", err)
+			return nil, core.Errorf(core.ErrProviderDown, "retriever: crag evaluate: %w", err)
 		}
 
 		// If enough relevant documents, return them.
@@ -136,7 +137,7 @@ func (r *CRAGRetriever) Retrieve(ctx context.Context, query string, opts ...Opti
 		if attempt < r.maxAttempts-1 {
 			rewritten, err := r.rewriteQuery(ctx, query, currentQuery)
 			if err != nil {
-				return nil, fmt.Errorf("retriever: crag rewrite: %w", err)
+				return nil, core.Errorf(core.ErrProviderDown, "retriever: crag rewrite: %w", err)
 			}
 			currentQuery = rewritten
 			continue
@@ -187,13 +188,13 @@ func (r *CRAGRetriever) scoreDocument(ctx context.Context, query string, doc sch
 
 	resp, err := r.llm.Generate(ctx, msgs)
 	if err != nil {
-		return 0, fmt.Errorf("crag score: %w", err)
+		return 0, core.Errorf(core.ErrProviderDown, "crag score: %w", err)
 	}
 
 	text := strings.TrimSpace(resp.Text())
 	score, err := strconv.ParseFloat(text, 64)
 	if err != nil {
-		return 0, fmt.Errorf("crag score parse %q: %w", text, err)
+		return 0, core.Errorf(core.ErrInvalidInput, "crag score parse %q: %w", text, err)
 	}
 
 	// Clamp to [-1, 1].
@@ -224,7 +225,7 @@ func (r *CRAGRetriever) rewriteQuery(ctx context.Context, originalQuery, current
 
 	resp, err := r.llm.Generate(ctx, msgs)
 	if err != nil {
-		return "", fmt.Errorf("crag rewrite generate: %w", err)
+		return "", core.Errorf(core.ErrProviderDown, "crag rewrite generate: %w", err)
 	}
 
 	rewritten := strings.TrimSpace(resp.Text())
@@ -250,7 +251,7 @@ func (r *CRAGRetriever) fallbackSearch(ctx context.Context, query string, cfg Co
 
 	docs, err := r.web.Search(ctx, query, k)
 	if err != nil {
-		return nil, fmt.Errorf("retriever: crag web search: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "retriever: crag web search: %w", err)
 	}
 
 	if r.hooks.AfterRetrieve != nil {

@@ -2,8 +2,8 @@ package retriever
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/rag/embedding"
 	"github.com/lookatitude/beluga-ai/rag/vectorstore"
 	"github.com/lookatitude/beluga-ai/schema"
@@ -75,7 +75,7 @@ func (r *HybridRetriever) Retrieve(ctx context.Context, query string, opts ...Op
 	// Dense retrieval: embed query and search vector store.
 	vec, err := r.embedder.EmbedSingle(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("retriever: hybrid embed: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "retriever: hybrid embed: %w", err)
 	}
 
 	var searchOpts []vectorstore.SearchOption
@@ -91,7 +91,7 @@ func (r *HybridRetriever) Retrieve(ctx context.Context, query string, opts ...Op
 
 	vectorDocs, err := r.store.Search(ctx, vec, vectorK, searchOpts...)
 	if err != nil {
-		return nil, fmt.Errorf("retriever: hybrid vector search: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "retriever: hybrid vector search: %w", err)
 	}
 
 	// Sparse retrieval: BM25 search.
@@ -102,14 +102,14 @@ func (r *HybridRetriever) Retrieve(ctx context.Context, query string, opts ...Op
 
 	bm25Docs, err := r.bm25.Search(ctx, query, bm25K)
 	if err != nil {
-		return nil, fmt.Errorf("retriever: hybrid bm25 search: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "retriever: hybrid bm25 search: %w", err)
 	}
 
 	// Fuse using RRF.
 	rrf := NewRRFStrategy(r.rrfK)
 	fused, err := rrf.Fuse(ctx, [][]schema.Document{vectorDocs, bm25Docs})
 	if err != nil {
-		return nil, fmt.Errorf("retriever: hybrid fuse: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "retriever: hybrid fuse: %w", err)
 	}
 
 	if cfg.TopK > 0 && len(fused) > cfg.TopK {

@@ -2,8 +2,8 @@ package workflow
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/hitl"
 )
 
@@ -13,7 +13,7 @@ func LLMActivity(invoker func(ctx context.Context, prompt string) (string, error
 	return func(ctx context.Context, input any) (any, error) {
 		prompt, ok := input.(string)
 		if !ok {
-			return nil, fmt.Errorf("workflow/llm_activity: expected string input, got %T", input)
+			return nil, core.Errorf(core.ErrInvalidInput, "workflow/llm_activity: expected string input, got %T", input)
 		}
 		return invoker(ctx, prompt)
 	}
@@ -25,12 +25,12 @@ func ToolActivity(executor func(ctx context.Context, name string, args map[strin
 	return func(ctx context.Context, input any) (any, error) {
 		params, ok := input.(map[string]any)
 		if !ok {
-			return nil, fmt.Errorf("workflow/tool_activity: expected map[string]any input, got %T", input)
+			return nil, core.Errorf(core.ErrInvalidInput, "workflow/tool_activity: expected map[string]any input, got %T", input)
 		}
 		name, _ := params["name"].(string)
 		args, _ := params["args"].(map[string]any)
 		if name == "" {
-			return nil, fmt.Errorf("workflow/tool_activity: missing 'name' in input")
+			return nil, core.Errorf(core.ErrInvalidInput, "workflow/tool_activity: missing 'name' in input")
 		}
 		return executor(ctx, name, args)
 	}
@@ -43,11 +43,11 @@ func HumanActivity(mgr hitl.Manager) ActivityFunc {
 	return func(ctx context.Context, input any) (any, error) {
 		req, ok := input.(hitl.InteractionRequest)
 		if !ok {
-			return nil, fmt.Errorf("workflow/human_activity: expected hitl.InteractionRequest, got %T", input)
+			return nil, core.Errorf(core.ErrInvalidInput, "workflow/human_activity: expected hitl.InteractionRequest, got %T", input)
 		}
 		resp, err := mgr.RequestInteraction(ctx, req)
 		if err != nil {
-			return nil, fmt.Errorf("workflow/human_activity: %w", err)
+			return nil, core.Errorf(core.ErrProviderDown, "workflow/human_activity: %w", err)
 		}
 		return resp, nil
 	}

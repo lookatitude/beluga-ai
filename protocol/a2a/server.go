@@ -3,7 +3,6 @@ package a2a
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 const (
@@ -58,7 +58,7 @@ func (s *A2AServer) Serve(ctx context.Context, addr string) error {
 
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
-		return fmt.Errorf("a2a/serve: %w", err)
+		return core.Errorf(core.ErrProviderDown, "a2a/serve: %w", err)
 	}
 
 	errCh := make(chan error, 1)
@@ -69,14 +69,14 @@ func (s *A2AServer) Serve(ctx context.Context, addr string) error {
 	select {
 	case <-ctx.Done():
 		if shutdownErr := srv.Close(); shutdownErr != nil {
-			return fmt.Errorf("a2a/serve: shutdown: %w", shutdownErr)
+			return core.Errorf(core.ErrProviderDown, "a2a/serve: shutdown: %w", shutdownErr)
 		}
 		return ctx.Err()
 	case err := <-errCh:
 		if err == http.ErrServerClosed {
 			return nil
 		}
-		return fmt.Errorf("a2a/serve: %w", err)
+		return core.Errorf(core.ErrProviderDown, "a2a/serve: %w", err)
 	}
 }
 

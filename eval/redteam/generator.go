@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -65,7 +66,7 @@ func NewGenerator(opts ...GeneratorOption) *AttackGenerator {
 // the underlying LLM. It returns a map of category to generated prompts.
 func (g *AttackGenerator) Generate(ctx context.Context) (map[AttackCategory][]string, error) {
 	if g.opts.model == nil {
-		return nil, fmt.Errorf("redteam: generator requires a model (use WithModel)")
+		return nil, core.Errorf(core.ErrInvalidInput, "redteam: generator requires a model (use WithModel)")
 	}
 
 	results := make(map[AttackCategory][]string, len(g.opts.categories))
@@ -77,7 +78,7 @@ func (g *AttackGenerator) Generate(ctx context.Context) (map[AttackCategory][]st
 
 		prompts, err := g.generateForCategory(ctx, cat)
 		if err != nil {
-			return nil, fmt.Errorf("redteam: generate %s: %w", cat, err)
+			return nil, core.Errorf(core.ErrProviderDown, "redteam: generate %s: %w", cat, err)
 		}
 		results[cat] = prompts
 	}

@@ -2,10 +2,11 @@ package workflow
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // WorkflowStatus represents the lifecycle state of a workflow execution.
@@ -140,7 +141,7 @@ func New(name string, cfg Config) (DurableExecutor, error) {
 	f, ok := registry[name]
 	registryMu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("workflow: unknown executor %q", name)
+		return nil, core.Errorf(core.ErrNotFound, "workflow: unknown executor %q", name)
 	}
 	return f(cfg)
 }

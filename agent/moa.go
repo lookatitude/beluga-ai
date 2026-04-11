@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -13,7 +14,7 @@ import (
 func init() {
 	RegisterPlanner("moa", func(cfg PlannerConfig) (Planner, error) {
 		if cfg.LLM == nil {
-			return nil, fmt.Errorf("moa planner requires an LLM (used as aggregator)")
+			return nil, core.Errorf(core.ErrInvalidInput, "moa planner requires an LLM (used as aggregator)")
 		}
 		var opts []MoAOption
 		if layers, ok := cfg.Extra["layers"].([][]llm.ChatModel); ok {
@@ -96,7 +97,7 @@ func (p *MoAPlanner) Plan(ctx context.Context, state PlannerState) ([]Action, er
 	for layerIdx, models := range layers {
 		outputs, err := p.executeLayer(ctx, state, currentMessages, models, layerOutputs)
 		if err != nil {
-			return nil, fmt.Errorf("moa layer %d: %w", layerIdx, err)
+			return nil, core.Errorf(core.ErrProviderDown, "moa layer %d: %w", layerIdx, err)
 		}
 
 		layerOutputs = outputs
@@ -254,7 +255,7 @@ func (p *MoAPlanner) aggregate(ctx context.Context, state PlannerState, outputs 
 
 	resp, err := model.Generate(ctx, msgs)
 	if err != nil {
-		return nil, fmt.Errorf("moa aggregate: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "moa aggregate: %w", err)
 	}
 
 	return parseAIResponse(resp), nil

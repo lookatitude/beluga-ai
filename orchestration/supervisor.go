@@ -13,6 +13,8 @@ import (
 )
 
 const supervisorAgentErrFmt = "orchestration/supervisor: agent %q: %w"
+const supervisorStrategyErrFmt = "orchestration/supervisor: strategy: %w"
+const supervisorNoAgentsMsg = "orchestration/supervisor: no agents configured"
 
 // StrategyFunc selects an agent from the available agents for the given input.
 // Returning a nil agent signals that execution should stop.
@@ -49,14 +51,14 @@ func (s *Supervisor) WithMaxRounds(n int) *Supervisor {
 // strategy returns nil or maxRounds is reached.
 func (s *Supervisor) Invoke(ctx context.Context, input any, opts ...core.Option) (any, error) {
 	if len(s.agents) == 0 {
-		return nil, fmt.Errorf("orchestration/supervisor: no agents configured")
+		return nil, core.Errorf(core.ErrInvalidInput, supervisorNoAgentsMsg)
 	}
 
 	current := input
 	for round := 0; round < s.maxRounds; round++ {
 		selected, err := s.strategy(ctx, current, s.agents)
 		if err != nil {
-			return nil, fmt.Errorf("orchestration/supervisor: strategy: %w", err)
+			return nil, core.Errorf(core.ErrProviderDown, supervisorStrategyErrFmt, err)
 		}
 		if selected == nil {
 			return current, nil
@@ -66,7 +68,7 @@ func (s *Supervisor) Invoke(ctx context.Context, input any, opts ...core.Option)
 		inputStr := fmt.Sprintf("%v", current)
 		result, err := selected.Invoke(ctx, inputStr)
 		if err != nil {
-			return nil, fmt.Errorf(supervisorAgentErrFmt, selected.ID(), err)
+			return nil, core.Errorf(core.ErrProviderDown, supervisorAgentErrFmt, selected.ID(), err)
 		}
 		current = result
 	}
@@ -77,7 +79,7 @@ func (s *Supervisor) Invoke(ctx context.Context, input any, opts ...core.Option)
 func (s *Supervisor) Stream(ctx context.Context, input any, opts ...core.Option) iter.Seq2[any, error] {
 	return func(yield func(any, error) bool) {
 		if len(s.agents) == 0 {
-			yield(nil, fmt.Errorf("orchestration/supervisor: no agents configured"))
+			yield(nil, core.Errorf(core.ErrInvalidInput, supervisorNoAgentsMsg))
 			return
 		}
 
@@ -91,7 +93,7 @@ func (s *Supervisor) streamRounds(ctx context.Context, input any, yield func(any
 	for round := 0; round < s.maxRounds; round++ {
 		selected, err := s.strategy(ctx, current, s.agents)
 		if err != nil {
-			yield(nil, fmt.Errorf("orchestration/supervisor: strategy: %w", err))
+			yield(nil, core.Errorf(core.ErrProviderDown, supervisorStrategyErrFmt, err))
 			return
 		}
 		if selected == nil {
@@ -108,7 +110,7 @@ func (s *Supervisor) streamRounds(ctx context.Context, input any, yield func(any
 
 		result, err := selected.Invoke(ctx, inputStr)
 		if err != nil {
-			yield(nil, fmt.Errorf(supervisorAgentErrFmt, selected.ID(), err))
+			yield(nil, core.Errorf(core.ErrProviderDown, supervisorAgentErrFmt, selected.ID(), err))
 			return
 		}
 		current = result
@@ -119,7 +121,7 @@ func (s *Supervisor) streamRounds(ctx context.Context, input any, yield func(any
 func streamAgent(ctx context.Context, a agent.Agent, input string, yield func(any, error) bool) {
 	for event, err := range a.Stream(ctx, input) {
 		if err != nil {
-			yield(nil, fmt.Errorf(supervisorAgentErrFmt, a.ID(), err))
+			yield(nil, core.Errorf(core.ErrProviderDown, supervisorAgentErrFmt, a.ID(), err))
 			return
 		}
 		if !yield(event, nil) {

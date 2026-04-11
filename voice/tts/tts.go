@@ -2,9 +2,9 @@ package tts
 
 import (
 	"context"
-	"fmt"
 	"iter"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/internal/hookutil"
 	"github.com/lookatitude/beluga-ai/voice"
 )
@@ -153,7 +153,7 @@ func synthesizeFrame(ctx context.Context, engine TTS, frame voice.Frame, sampleR
 	}
 	audio, err := engine.Synthesize(ctx, frame.Text(), opts...)
 	if err != nil {
-		return fmt.Errorf("tts: synthesize: %w", err)
+		return core.Errorf(core.ErrProviderDown, "tts: synthesize: %w", err)
 	}
 	if len(audio) > 0 {
 		out <- voice.NewAudioFrame(audio, sampleRate)

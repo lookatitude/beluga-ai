@@ -2,9 +2,10 @@ package workflow
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // SignalChannel is the interface for sending and receiving signals in workflows.
@@ -44,10 +45,10 @@ func NewInMemorySignalChannel() *InMemorySignalChannel {
 // It adds the signal to the queue for that workflow ID and signal name.
 func (sc *InMemorySignalChannel) Send(ctx context.Context, workflowID string, signal Signal) error {
 	if workflowID == "" {
-		return fmt.Errorf("workflow signal: workflowID cannot be empty")
+		return core.Errorf(core.ErrInvalidInput, "workflow signal: workflowID cannot be empty")
 	}
 	if signal.Name == "" {
-		return fmt.Errorf("workflow signal: signal name cannot be empty")
+		return core.Errorf(core.ErrInvalidInput, "workflow signal: signal name cannot be empty")
 	}
 
 	// Capture the current time if not set
@@ -74,10 +75,10 @@ func (sc *InMemorySignalChannel) Send(ctx context.Context, workflowID string, si
 // It removes and returns the first signal from the queue.
 func (sc *InMemorySignalChannel) Receive(ctx context.Context, workflowID string, signalName string) (*Signal, error) {
 	if workflowID == "" {
-		return nil, fmt.Errorf("workflow signal: workflowID cannot be empty")
+		return nil, core.Errorf(core.ErrInvalidInput, "workflow signal: workflowID cannot be empty")
 	}
 	if signalName == "" {
-		return nil, fmt.Errorf("workflow signal: signalName cannot be empty")
+		return nil, core.Errorf(core.ErrInvalidInput, "workflow signal: signalName cannot be empty")
 	}
 
 	ticker := time.NewTicker(10 * time.Millisecond)

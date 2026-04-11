@@ -6,6 +6,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // seq is a package-level counter for generating unique IDs.
@@ -35,15 +37,15 @@ func WithExecutorHooks(h Hooks) ExecutorOption {
 // DefaultExecutor is a goroutine-based durable executor that runs workflows
 // in-process. It records execution history for replay/recovery.
 type DefaultExecutor struct {
-	store    WorkflowStore
-	hooks    Hooks
-	running  map[string]*runningWorkflow
-	mu       sync.RWMutex
+	store   WorkflowStore
+	hooks   Hooks
+	running map[string]*runningWorkflow
+	mu      sync.RWMutex
 }
 
 type runningWorkflow struct {
-	handle *defaultHandle
-	cancel context.CancelFunc
+	handle  *defaultHandle
+	cancel  context.CancelFunc
 	signals map[string]chan any
 	mu      sync.Mutex
 }
@@ -204,7 +206,7 @@ func (e *DefaultExecutor) Signal(ctx context.Context, workflowID string, signal 
 	e.mu.RUnlock()
 
 	if !ok {
-		return fmt.Errorf("workflow/signal: workflow %q not found or not running", workflowID)
+		return core.Errorf(core.ErrNotFound, "workflow/signal: workflow %q not found or not running", workflowID)
 	}
 
 	rw.mu.Lock()
@@ -234,10 +236,10 @@ func (e *DefaultExecutor) Query(ctx context.Context, workflowID string, queryTyp
 		if e.store != nil {
 			state, err := e.store.Load(ctx, workflowID)
 			if err != nil {
-				return nil, fmt.Errorf("workflow/query: %w", err)
+				return nil, core.Errorf(core.ErrProviderDown, "workflow/query: %w", err)
 			}
 			if state == nil {
-				return nil, fmt.Errorf("workflow/query: workflow %q not found", workflowID)
+				return nil, core.Errorf(core.ErrNotFound, "workflow/query: workflow %q not found", workflowID)
 			}
 			switch queryType {
 			case "status":
@@ -245,17 +247,17 @@ func (e *DefaultExecutor) Query(ctx context.Context, workflowID string, queryTyp
 			case "result":
 				return state.Result, nil
 			default:
-				return nil, fmt.Errorf("workflow/query: unknown query type %q", queryType)
+				return nil, core.Errorf(core.ErrInvalidInput, "workflow/query: unknown query type %q", queryType)
 			}
 		}
-		return nil, fmt.Errorf("workflow/query: workflow %q not found", workflowID)
+		return nil, core.Errorf(core.ErrNotFound, "workflow/query: workflow %q not found", workflowID)
 	}
 
 	switch queryType {
 	case "status":
 		return rw.handle.Status(), nil
 	default:
-		return nil, fmt.Errorf("workflow/query: unknown query type %q", queryType)
+		return nil, core.Errorf(core.ErrInvalidInput, "workflow/query: unknown query type %q", queryType)
 	}
 }
 
@@ -266,7 +268,7 @@ func (e *DefaultExecutor) Cancel(_ context.Context, workflowID string) error {
 	e.mu.RUnlock()
 
 	if !ok {
-		return fmt.Errorf("workflow/cancel: workflow %q not found or not running", workflowID)
+		return core.Errorf(core.ErrNotFound, "workflow/cancel: workflow %q not found or not running", workflowID)
 	}
 
 	rw.cancel()

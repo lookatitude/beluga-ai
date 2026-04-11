@@ -47,7 +47,7 @@ func (p *Pipeline) Invoke(ctx context.Context, input any, opts ...core.Option) (
 	for i, stage := range p.stages {
 		result, err := stage.Invoke(ctx, current)
 		if err != nil {
-			return nil, fmt.Errorf(pipelineStageErrFmt, i, stage.ID(), err)
+			return nil, core.Errorf(core.ErrProviderDown, pipelineStageErrFmt, i, stage.ID(), err)
 		}
 		current = result
 	}
@@ -79,7 +79,7 @@ func (p *Pipeline) Stream(ctx context.Context, input any, opts ...core.Option) i
 
 			result, err := stage.Invoke(ctx, current)
 			if err != nil {
-				yield(nil, fmt.Errorf(pipelineStageErrFmt, i, stage.ID(), err))
+				yield(nil, core.Errorf(core.ErrProviderDown, pipelineStageErrFmt, i, stage.ID(), err))
 				return
 			}
 			current = result
@@ -91,7 +91,7 @@ func (p *Pipeline) Stream(ctx context.Context, input any, opts ...core.Option) i
 
 		for event, err := range last.Stream(ctx, current) {
 			if err != nil {
-				yield(nil, fmt.Errorf(pipelineStageErrFmt, lastIdx, last.ID(), err))
+				yield(nil, core.Errorf(core.ErrProviderDown, pipelineStageErrFmt, lastIdx, last.ID(), err))
 				return
 			}
 			if !yield(event, nil) {

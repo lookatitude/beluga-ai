@@ -1,9 +1,10 @@
 package cost
 
 import (
-	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Config holds the configuration passed to a Tracker factory when creating a
@@ -52,7 +53,7 @@ func New(name string, cfg Config) (Tracker, error) {
 	f, ok := registry[name]
 	mu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("cost: unknown tracker %q (registered: %v)", name, List())
+		return nil, core.Errorf(core.ErrNotFound, "cost: unknown tracker %q (registered: %v)", name, List())
 	}
 	return f(cfg)
 }

@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // RESTServer exposes Beluga agents as REST/SSE HTTP endpoints.
@@ -32,10 +33,10 @@ func (s *RESTServer) RegisterAgent(path string, a agent.Agent) error {
 
 	path = strings.Trim(path, "/")
 	if path == "" {
-		return fmt.Errorf("rest/register: path cannot be empty")
+		return core.Errorf(core.ErrInvalidInput, "rest/register: path cannot be empty")
 	}
 	if _, exists := s.agents[path]; exists {
-		return fmt.Errorf("rest/register: path %q already registered", path)
+		return core.Errorf(core.ErrInvalidInput, "rest/register: path %q already registered", path)
 	}
 	s.agents[path] = a
 	return nil
@@ -56,7 +57,7 @@ func (s *RESTServer) Serve(ctx context.Context, addr string) error {
 
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
-		return fmt.Errorf("rest/serve: %w", err)
+		return core.Errorf(core.ErrProviderDown, "rest/serve: %w", err)
 	}
 
 	errCh := make(chan error, 1)
@@ -67,14 +68,14 @@ func (s *RESTServer) Serve(ctx context.Context, addr string) error {
 	select {
 	case <-ctx.Done():
 		if shutdownErr := srv.Close(); shutdownErr != nil {
-			return fmt.Errorf("rest/serve: shutdown: %w", shutdownErr)
+			return core.Errorf(core.ErrProviderDown, "rest/serve: shutdown: %w", shutdownErr)
 		}
 		return ctx.Err()
 	case err := <-errCh:
 		if err == http.ErrServerClosed {
 			return nil
 		}
-		return fmt.Errorf("rest/serve: %w", err)
+		return core.Errorf(core.ErrProviderDown, "rest/serve: %w", err)
 	}
 }
 

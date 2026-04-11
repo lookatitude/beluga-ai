@@ -2,10 +2,11 @@ package raptor
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"math/rand/v2" //#nosec G404 -- non-crypto randomness for K-means++ initialization; seed is a reproducibility feature
 	"sort"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Clusterer groups embedding vectors into clusters. Each returned cluster is a
@@ -39,7 +40,7 @@ var _ Clusterer = (*KMeansClusterer)(nil)
 func (c *KMeansClusterer) Cluster(ctx context.Context, embeddings [][]float32) ([][]int, error) {
 	n := len(embeddings)
 	if n == 0 {
-		return nil, fmt.Errorf("raptor: cluster: no embeddings provided")
+		return nil, core.Errorf(core.ErrInvalidInput, "raptor: cluster: no embeddings provided")
 	}
 	if n == 1 {
 		return [][]int{{0}}, nil
@@ -71,7 +72,7 @@ func (c *KMeansClusterer) Cluster(ctx context.Context, embeddings [][]float32) (
 	dim := len(embeddings[0])
 	for i, e := range embeddings[1:] {
 		if len(e) != dim {
-			return nil, fmt.Errorf("raptor: cluster: embedding %d has dimension %d, want %d", i+1, len(e), dim)
+			return nil, core.Errorf(core.ErrInvalidInput, "raptor: cluster: embedding %d has dimension %d, want %d", i+1, len(e), dim)
 		}
 	}
 

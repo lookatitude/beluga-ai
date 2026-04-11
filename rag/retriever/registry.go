@@ -1,11 +1,11 @@
 package retriever
 
 import (
-	"fmt"
 	"sort"
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Factory creates a Retriever from a ProviderConfig. Each implementation
@@ -33,7 +33,7 @@ func New(name string, cfg config.ProviderConfig) (Retriever, error) {
 	f, ok := registry[name]
 	registryMu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("retriever: unknown provider %q (registered: %v)", name, List())
+		return nil, core.Errorf(core.ErrNotFound, "retriever: unknown provider %q (registered: %v)", name, List())
 	}
 	return f(cfg)
 }

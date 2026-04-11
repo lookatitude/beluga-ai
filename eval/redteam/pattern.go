@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strings"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // AttackPattern generates adversarial prompts for a specific attack category.
@@ -40,7 +42,7 @@ func NewPattern(name string) (AttackPattern, error) {
 	f, ok := patternRegistry[name]
 	patternMu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("redteam: unknown pattern %q (registered: %v)", name, ListPatterns())
+		return nil, core.Errorf(core.ErrNotFound, "redteam: unknown pattern %q (registered: %v)", name, ListPatterns())
 	}
 	return f(), nil
 }

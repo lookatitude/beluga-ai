@@ -2,11 +2,11 @@ package raptor
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"sort"
 
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/rag/embedding"
 	"github.com/lookatitude/beluga-ai/rag/retriever"
 	"github.com/lookatitude/beluga-ai/schema"
@@ -17,7 +17,7 @@ func init() {
 	// be sourced from a generic ProviderConfig. Register a factory that
 	// returns a descriptive error directing callers to NewRAPTORRetriever.
 	retriever.Register("raptor", func(cfg config.ProviderConfig) (retriever.Retriever, error) {
-		return nil, fmt.Errorf("raptor: use NewRAPTORRetriever directly; tree and embedder cannot be provided via ProviderConfig")
+		return nil, core.Errorf(core.ErrInvalidInput, "raptor: use NewRAPTORRetriever directly; tree and embedder cannot be provided via ProviderConfig")
 	})
 }
 
@@ -94,7 +94,7 @@ func (r *RAPTORRetriever) Retrieve(ctx context.Context, query string, opts ...re
 	}
 
 	if r.tree == nil || len(r.tree.Nodes) == 0 {
-		err := fmt.Errorf("raptor: retrieve: tree is empty or not set")
+		err := core.Errorf(core.ErrInvalidInput, "raptor: retrieve: tree is empty or not set")
 		if r.hooks.AfterRetrieve != nil {
 			r.hooks.AfterRetrieve(ctx, nil, err)
 		}
@@ -102,7 +102,7 @@ func (r *RAPTORRetriever) Retrieve(ctx context.Context, query string, opts ...re
 	}
 
 	if r.embedder == nil {
-		err := fmt.Errorf("raptor: retrieve: embedder is required")
+		err := core.Errorf(core.ErrInvalidInput, "raptor: retrieve: embedder is required")
 		if r.hooks.AfterRetrieve != nil {
 			r.hooks.AfterRetrieve(ctx, nil, err)
 		}
@@ -111,7 +111,7 @@ func (r *RAPTORRetriever) Retrieve(ctx context.Context, query string, opts ...re
 
 	queryEmb, err := r.embedder.EmbedSingle(ctx, query)
 	if err != nil {
-		err = fmt.Errorf("raptor: retrieve: embed query: %w", err)
+		err = core.Errorf(core.ErrProviderDown, "raptor: retrieve: embed query: %w", err)
 		if r.hooks.AfterRetrieve != nil {
 			r.hooks.AfterRetrieve(ctx, nil, err)
 		}

@@ -2,9 +2,11 @@ package state
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Store is the interface for shared agent state storage.
@@ -74,10 +76,10 @@ type VersionedStore interface {
 
 // ErrVersionMismatch is returned by CompareAndSwap when the expected version
 // does not match the current version of the key.
-var ErrVersionMismatch = fmt.Errorf("state: version mismatch")
+var ErrVersionMismatch = errors.New("state: version mismatch")
 
 // ErrStoreClosed is returned when an operation is attempted on a closed store.
-var ErrStoreClosed = fmt.Errorf("state: store is closed")
+var ErrStoreClosed = errors.New("state: store is closed")
 
 // Scope defines the visibility level for state keys.
 type Scope string
@@ -125,7 +127,7 @@ func New(name string, cfg Config) (Store, error) {
 	mu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("state: store %q not registered", name)
+		return nil, core.Errorf(core.ErrNotFound, "state: store %q not registered", name)
 	}
 	return f(cfg)
 }

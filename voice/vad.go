@@ -3,10 +3,11 @@ package voice
 import (
 	"context"
 	"encoding/binary"
-	"fmt"
 	"math"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // VADEventType identifies the type of voice activity event.
@@ -77,7 +78,7 @@ func NewVAD(name string, cfg map[string]any) (ActivityDetector, error) {
 	vadRegistryMu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("voice: unknown VAD %q", name)
+		return nil, core.Errorf(core.ErrNotFound, "voice: unknown VAD %q", name)
 	}
 	return f(cfg)
 }

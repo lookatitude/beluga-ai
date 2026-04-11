@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tool"
 )
@@ -72,7 +73,7 @@ func newHandoffTool(h Handoff) *handoffTool {
 }
 
 func (t *handoffTool) Name() string        { return t.name }
-func (t *handoffTool) Description() string  { return t.desc }
+func (t *handoffTool) Description() string { return t.desc }
 func (t *handoffTool) InputSchema() map[string]any {
 	return map[string]any{
 		"type": "object",
@@ -88,7 +89,7 @@ func (t *handoffTool) InputSchema() map[string]any {
 func (t *handoffTool) Execute(ctx context.Context, input map[string]any) (*tool.Result, error) {
 	// Check if handoff is enabled
 	if t.handoff.IsEnabled != nil && !t.handoff.IsEnabled(ctx) {
-		return tool.ErrorResult(fmt.Errorf("handoff to %s is currently disabled", t.handoff.TargetAgent.ID())), nil
+		return tool.ErrorResult(core.Errorf(core.ErrInvalidInput, "handoff to %s is currently disabled", t.handoff.TargetAgent.ID())), nil
 	}
 
 	// Fire OnHandoff callback
@@ -115,7 +116,7 @@ func (t *handoffTool) Execute(ctx context.Context, input map[string]any) (*tool.
 	// Invoke the target agent
 	result, err := t.handoff.TargetAgent.Invoke(ctx, hi.Message)
 	if err != nil {
-		return nil, fmt.Errorf("handoff to %s failed: %w", t.handoff.TargetAgent.ID(), err)
+		return nil, core.Errorf(core.ErrProviderDown, "handoff to %s failed: %w", t.handoff.TargetAgent.ID(), err)
 	}
 
 	return tool.TextResult(result), nil
@@ -150,7 +151,7 @@ type handoffToolInput struct {
 func ParseHandoffInput(args string) (string, error) {
 	var input handoffToolInput
 	if err := json.Unmarshal([]byte(args), &input); err != nil {
-		return "", fmt.Errorf("invalid handoff input: %w", err)
+		return "", core.Errorf(core.ErrInvalidInput, "invalid handoff input: %w", err)
 	}
 	return input.Message, nil
 }

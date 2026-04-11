@@ -73,7 +73,7 @@ func (h *HandoffOrchestrator) Name() string { return "handoff" }
 // output.
 func (h *HandoffOrchestrator) Invoke(ctx context.Context, input any, opts ...core.Option) (any, error) {
 	if len(h.agents) == 0 {
-		return nil, fmt.Errorf("orchestration/handoff: no agents registered")
+		return nil, core.Errorf(core.ErrInvalidInput, "orchestration/handoff: no agents registered")
 	}
 
 	inputStr := fmt.Sprintf("%v", input)
@@ -83,13 +83,13 @@ func (h *HandoffOrchestrator) Invoke(ctx context.Context, input any, opts ...cor
 	for hops <= h.maxHops {
 		a, ok := h.agents[currentID]
 		if !ok {
-			return nil, fmt.Errorf("orchestration/handoff: unknown agent %q", currentID)
+			return nil, core.Errorf(core.ErrNotFound, "orchestration/handoff: unknown agent %q", currentID)
 		}
 
 		// Stream the agent to detect handoff events.
 		nextID, result, err := h.runAgent(ctx, a, inputStr)
 		if err != nil {
-			return nil, fmt.Errorf("orchestration/handoff: agent %q: %w", currentID, err)
+			return nil, core.Errorf(core.ErrProviderDown, "orchestration/handoff: agent %q: %w", currentID, err)
 		}
 
 		if nextID == "" {
@@ -98,7 +98,7 @@ func (h *HandoffOrchestrator) Invoke(ctx context.Context, input any, opts ...cor
 		}
 
 		if _, known := h.agents[nextID]; !known {
-			return nil, fmt.Errorf("orchestration/handoff: unknown target agent %q", nextID)
+			return nil, core.Errorf(core.ErrNotFound, "orchestration/handoff: unknown target agent %q", nextID)
 		}
 
 		// Carry the result forward as input to the next agent.
@@ -107,7 +107,7 @@ func (h *HandoffOrchestrator) Invoke(ctx context.Context, input any, opts ...cor
 		hops++
 	}
 
-	return nil, fmt.Errorf("orchestration/handoff: max hops (%d) exceeded", h.maxHops)
+	return nil, core.Errorf(core.ErrInvalidInput, "orchestration/handoff: max hops (%d) exceeded", h.maxHops)
 }
 
 // Stream executes the entry agent and follows handoffs, yielding all events
@@ -115,7 +115,7 @@ func (h *HandoffOrchestrator) Invoke(ctx context.Context, input any, opts ...cor
 func (h *HandoffOrchestrator) Stream(ctx context.Context, input any, opts ...core.Option) iter.Seq2[any, error] {
 	return func(yield func(any, error) bool) {
 		if len(h.agents) == 0 {
-			yield(nil, fmt.Errorf("orchestration/handoff: no agents registered"))
+			yield(nil, core.Errorf(core.ErrInvalidInput, "orchestration/handoff: no agents registered"))
 			return
 		}
 
@@ -126,7 +126,7 @@ func (h *HandoffOrchestrator) Stream(ctx context.Context, input any, opts ...cor
 		for hops <= h.maxHops {
 			a, ok := h.agents[currentID]
 			if !ok {
-				yield(nil, fmt.Errorf("orchestration/handoff: unknown agent %q", currentID))
+				yield(nil, core.Errorf(core.ErrNotFound, "orchestration/handoff: unknown agent %q", currentID))
 				return
 			}
 
@@ -142,7 +142,7 @@ func (h *HandoffOrchestrator) Stream(ctx context.Context, input any, opts ...cor
 			}
 
 			if _, known := h.agents[nextID]; !known {
-				yield(nil, fmt.Errorf("orchestration/handoff: unknown target agent %q", nextID))
+				yield(nil, core.Errorf(core.ErrNotFound, "orchestration/handoff: unknown target agent %q", nextID))
 				return
 			}
 
@@ -151,7 +151,7 @@ func (h *HandoffOrchestrator) Stream(ctx context.Context, input any, opts ...cor
 			hops++
 		}
 
-		yield(nil, fmt.Errorf("orchestration/handoff: max hops (%d) exceeded", h.maxHops))
+		yield(nil, core.Errorf(core.ErrInvalidInput, "orchestration/handoff: max hops (%d) exceeded", h.maxHops))
 	}
 }
 
@@ -194,7 +194,7 @@ func (h *HandoffOrchestrator) streamAgent(
 
 	for event, evErr := range a.Stream(ctx, input) {
 		if evErr != nil {
-			if !yield(nil, fmt.Errorf("orchestration/handoff: agent %q: %w", a.ID(), evErr)) {
+			if !yield(nil, core.Errorf(core.ErrProviderDown, "orchestration/handoff: agent %q: %w", a.ID(), evErr)) {
 				return "", textBuf.String(), true
 			}
 			return "", textBuf.String(), true

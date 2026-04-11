@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -111,13 +112,13 @@ func (r *QueryRewriter) Retrieve(ctx context.Context, query string, opts ...Opti
 
 		docs, err := r.inner.Retrieve(ctx, currentQuery, opts...)
 		if err != nil {
-			return nil, fmt.Errorf("retriever: rewrite retrieve (attempt %d): %w", attempt, err)
+			return nil, core.Errorf(core.ErrProviderDown, "retriever: rewrite retrieve (attempt %d): %w", attempt, err)
 		}
 
 		if len(docs) == 0 && attempt < r.maxRewrites {
 			rewritten, err := r.rewriteQuery(ctx, query, currentQuery, attempt)
 			if err != nil {
-				return nil, fmt.Errorf("retriever: rewrite query: %w", err)
+				return nil, core.Errorf(core.ErrProviderDown, "retriever: rewrite query: %w", err)
 			}
 			currentQuery = rewritten
 			continue
@@ -141,7 +142,7 @@ func (r *QueryRewriter) Retrieve(ctx context.Context, query string, opts ...Opti
 		// Relevance too low — rewrite the query.
 		rewritten, err := r.rewriteQuery(ctx, query, currentQuery, attempt)
 		if err != nil {
-			return nil, fmt.Errorf("retriever: rewrite query: %w", err)
+			return nil, core.Errorf(core.ErrProviderDown, "retriever: rewrite query: %w", err)
 		}
 		currentQuery = rewritten
 	}
@@ -182,7 +183,7 @@ func (r *QueryRewriter) rewriteQuery(ctx context.Context, originalQuery, current
 
 	resp, err := r.rewriteModel.Generate(ctx, msgs)
 	if err != nil {
-		return "", fmt.Errorf("rewrite generate: %w", err)
+		return "", core.Errorf(core.ErrProviderDown, "rewrite generate: %w", err)
 	}
 
 	rewritten := strings.TrimSpace(resp.Text())

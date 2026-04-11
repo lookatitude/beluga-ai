@@ -3,6 +3,8 @@ package rest
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // SSEEvent represents a Server-Sent Event.
@@ -26,7 +28,7 @@ type SSEWriter struct {
 func NewSSEWriter(w http.ResponseWriter) (*SSEWriter, error) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		return nil, fmt.Errorf("rest/sse: response writer does not support flushing")
+		return nil, core.Errorf(core.ErrInvalidInput, "rest/sse: response writer does not support flushing")
 	}
 
 	w.Header().Set("Content-Type", "text/event-stream")
@@ -40,16 +42,16 @@ func NewSSEWriter(w http.ResponseWriter) (*SSEWriter, error) {
 func (sw *SSEWriter) WriteEvent(event SSEEvent) error {
 	if event.ID != "" {
 		if _, err := fmt.Fprintf(sw.w, "id: %s\n", event.ID); err != nil {
-			return fmt.Errorf("rest/sse: write id: %w", err)
+			return core.Errorf(core.ErrProviderDown, "rest/sse: write id: %w", err)
 		}
 	}
 	if event.Event != "" {
 		if _, err := fmt.Fprintf(sw.w, "event: %s\n", event.Event); err != nil {
-			return fmt.Errorf("rest/sse: write event: %w", err)
+			return core.Errorf(core.ErrProviderDown, "rest/sse: write event: %w", err)
 		}
 	}
 	if _, err := fmt.Fprintf(sw.w, "data: %s\n\n", event.Data); err != nil {
-		return fmt.Errorf("rest/sse: write data: %w", err)
+		return core.Errorf(core.ErrProviderDown, "rest/sse: write data: %w", err)
 	}
 	sw.flusher.Flush()
 	return nil
@@ -58,7 +60,7 @@ func (sw *SSEWriter) WriteEvent(event SSEEvent) error {
 // WriteHeartbeat writes a comment line as a keep-alive heartbeat.
 func (sw *SSEWriter) WriteHeartbeat() error {
 	if _, err := fmt.Fprint(sw.w, ": heartbeat\n\n"); err != nil {
-		return fmt.Errorf("rest/sse: write heartbeat: %w", err)
+		return core.Errorf(core.ErrProviderDown, "rest/sse: write heartbeat: %w", err)
 	}
 	sw.flusher.Flush()
 	return nil

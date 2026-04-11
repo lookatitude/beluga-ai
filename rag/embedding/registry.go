@@ -1,11 +1,11 @@
 package embedding
 
 import (
-	"fmt"
 	"sort"
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Factory creates an Embedder from a ProviderConfig. Each provider registers
@@ -33,7 +33,7 @@ func New(name string, cfg config.ProviderConfig) (Embedder, error) {
 	f, ok := registry[name]
 	registryMu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("embedding: unknown provider %q (registered: %v)", name, List())
+		return nil, core.Errorf(core.ErrNotFound, "embedding: unknown provider %q (registered: %v)", name, List())
 	}
 	return f(cfg)
 }

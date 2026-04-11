@@ -1,9 +1,10 @@
 package s2s
 
 import (
-	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Factory creates an S2S engine from a Config. Each provider registers a
@@ -42,7 +43,7 @@ func New(name string, cfg Config) (S2S, error) {
 	registryMu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("s2s: unknown provider %q (registered: %v)", name, List())
+		return nil, core.Errorf(core.ErrNotFound, "s2s: unknown provider %q (registered: %v)", name, List())
 	}
 	return f(cfg)
 }

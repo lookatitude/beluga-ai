@@ -2,11 +2,12 @@ package trajectory
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // StepType identifies the kind of step in an agent trajectory.
@@ -107,17 +108,17 @@ func (t *Trajectory) ActualTools() []string {
 func LoadTrajectories(path string) ([]Trajectory, error) {
 	clean := filepath.Clean(path)
 	if strings.Contains(clean, "..") {
-		return nil, fmt.Errorf("trajectory: invalid path containing '..'")
+		return nil, core.Errorf(core.ErrInvalidInput, "trajectory: invalid path containing '..'")
 	}
 
 	data, err := os.ReadFile(clean)
 	if err != nil {
-		return nil, fmt.Errorf("trajectory: read file: %w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, "trajectory: read file: %w", err)
 	}
 
 	var trajectories []Trajectory
 	if err := json.Unmarshal(data, &trajectories); err != nil {
-		return nil, fmt.Errorf("trajectory: unmarshal: %w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, "trajectory: unmarshal: %w", err)
 	}
 
 	return trajectories, nil
@@ -128,12 +129,12 @@ func LoadTrajectories(path string) ([]Trajectory, error) {
 func SaveTrajectories(path string, trajectories []Trajectory) error {
 	clean := filepath.Clean(path)
 	if strings.Contains(clean, "..") {
-		return fmt.Errorf("trajectory: invalid path containing '..'")
+		return core.Errorf(core.ErrInvalidInput, "trajectory: invalid path containing '..'")
 	}
 
 	data, err := json.MarshalIndent(trajectories, "", "  ")
 	if err != nil {
-		return fmt.Errorf("trajectory: marshal: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "trajectory: marshal: %w", err)
 	}
 
 	return os.WriteFile(clean, data, 0o600)

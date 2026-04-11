@@ -2,7 +2,6 @@ package orchestration
 
 import (
 	"context"
-	"fmt"
 	"iter"
 	"sync"
 	"time"
@@ -65,13 +64,13 @@ func (sg *ScatterGather) Invoke(ctx context.Context, input any, opts ...core.Opt
 	// Check for errors.
 	for i, err := range errs {
 		if err != nil {
-			return nil, fmt.Errorf("orchestration/scatter: worker %d: %w", i, err)
+			return nil, core.Errorf(core.ErrProviderDown, "orchestration/scatter: worker %d: %w", i, err)
 		}
 	}
 
 	aggregated, err := sg.aggregator(results)
 	if err != nil {
-		return nil, fmt.Errorf("orchestration/scatter: aggregator: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "orchestration/scatter: aggregator: %w", err)
 	}
 	return aggregated, nil
 }

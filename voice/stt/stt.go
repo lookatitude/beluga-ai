@@ -2,10 +2,10 @@ package stt
 
 import (
 	"context"
-	"fmt"
 	"iter"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/internal/hookutil"
 	"github.com/lookatitude/beluga-ai/voice"
 )
@@ -174,7 +174,7 @@ func transcribeFrame(ctx context.Context, engine STT, frame voice.Frame, out cha
 	}
 	text, err := engine.Transcribe(ctx, frame.Data, opts...)
 	if err != nil {
-		return fmt.Errorf("stt: transcribe: %w", err)
+		return core.Errorf(core.ErrProviderDown, "stt: transcribe: %w", err)
 	}
 	if text != "" {
 		out <- voice.NewTextFrame(text)

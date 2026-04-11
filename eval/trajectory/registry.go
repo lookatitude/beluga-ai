@@ -1,9 +1,10 @@
 package trajectory
 
 import (
-	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Factory creates a TrajectoryMetric from configuration.
@@ -29,7 +30,7 @@ func New(name string, cfg map[string]any) (TrajectoryMetric, error) {
 	f, ok := registry[name]
 	mu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("trajectory: unknown metric %q (registered: %v)", name, List())
+		return nil, core.Errorf(core.ErrNotFound, "trajectory: unknown metric %q (registered: %v)", name, List())
 	}
 	return f(cfg)
 }

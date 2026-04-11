@@ -7,6 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -14,7 +15,7 @@ import (
 func init() {
 	RegisterPlanner("graph-of-thought", func(cfg PlannerConfig) (Planner, error) {
 		if cfg.LLM == nil {
-			return nil, fmt.Errorf("graph-of-thought planner requires an LLM")
+			return nil, core.Errorf(core.ErrInvalidInput, "graph-of-thought planner requires an LLM")
 		}
 		var opts []GoTOption
 		if ctrl, ok := cfg.Extra["controller"].(Controller); ok {
@@ -298,14 +299,14 @@ func (p *GoTPlanner) Plan(ctx context.Context, state PlannerState) ([]Action, er
 	for i := 0; i < p.maxOperations; i++ {
 		op, err := p.controller.NextOperation(ctx, graph)
 		if err != nil {
-			return nil, fmt.Errorf("graph-of-thought controller: %w", err)
+			return nil, core.Errorf(core.ErrProviderDown, "graph-of-thought controller: %w", err)
 		}
 		if op == nil {
 			break // controller signals completion
 		}
 
 		if err := p.executeOperation(ctx, state.Input, graph, op); err != nil {
-			return nil, fmt.Errorf("graph-of-thought op %s: %w", op.Type, err)
+			return nil, core.Errorf(core.ErrProviderDown, "graph-of-thought op %s: %w", op.Type, err)
 		}
 
 		// If the last operation was aggregate, we're done
@@ -336,7 +337,7 @@ func (p *GoTPlanner) executeOperation(ctx context.Context, input string, graph *
 	case OpAggregate:
 		return p.opAggregate(ctx, input, graph, op)
 	default:
-		return fmt.Errorf("unknown operation type: %s", op.Type)
+		return core.Errorf(core.ErrInvalidInput, "unknown operation type: %s", op.Type)
 	}
 }
 
@@ -525,7 +526,7 @@ func (p *GoTPlanner) synthesizeFromGraph(ctx context.Context, state PlannerState
 
 	resp, err := model.Generate(ctx, msgs)
 	if err != nil {
-		return nil, fmt.Errorf("graph-of-thought synthesize: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "graph-of-thought synthesize: %w", err)
 	}
 
 	return parseAIResponse(resp), nil

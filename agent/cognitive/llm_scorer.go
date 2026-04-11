@@ -51,7 +51,7 @@ func (s *LLMScorer) Score(ctx context.Context, input string) (ComplexityScore, e
 
 	resp, err := s.model.Generate(ctx, msgs)
 	if err != nil {
-		return ComplexityScore{}, fmt.Errorf("cognitive: llm scorer: %w", err)
+		return ComplexityScore{}, core.Errorf(core.ErrProviderDown, "cognitive: llm scorer: %w", err)
 	}
 
 	text := strings.TrimSpace(strings.ToLower(resp.Text()))

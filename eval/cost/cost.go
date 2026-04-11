@@ -2,8 +2,8 @@ package cost
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/eval"
 	"github.com/lookatitude/beluga-ai/eval/metrics"
 )
@@ -139,7 +139,7 @@ func (c *CostMetric) Score(ctx context.Context, sample eval.EvalSample) (float64
 
 	quality, err := c.opts.qualityMetric.Score(ctx, sample)
 	if err != nil {
-		return 0, fmt.Errorf("cost_quality: quality metric: %w", err)
+		return 0, core.Errorf(core.ErrInvalidInput, "cost_quality: quality metric: %w", err)
 	}
 
 	if cost <= 0 {
@@ -168,34 +168,34 @@ func (c *CostMetric) ComputeRawCost(sample eval.EvalSample) (float64, error) {
 func (c *CostMetric) computeCost(sample eval.EvalSample) (float64, error) {
 	modelRaw, ok := sample.Metadata["model"]
 	if !ok {
-		return 0, fmt.Errorf("cost: missing metadata key %q", "model")
+		return 0, core.Errorf(core.ErrInvalidInput, "cost: missing metadata key %q", "model")
 	}
 	model, ok := modelRaw.(string)
 	if !ok {
-		return 0, fmt.Errorf("cost: metadata %q must be a string, got %T", "model", modelRaw)
+		return 0, core.Errorf(core.ErrInvalidInput, "cost: metadata %q must be a string, got %T", "model", modelRaw)
 	}
 
 	pricing, ok := c.opts.pricing[model]
 	if !ok {
-		return 0, fmt.Errorf("cost: no pricing for model %q", model)
+		return 0, core.Errorf(core.ErrNotFound, "cost: no pricing for model %q", model)
 	}
 
 	inputRaw, ok := sample.Metadata["input_tokens"]
 	if !ok {
-		return 0, fmt.Errorf("cost: missing metadata key %q", "input_tokens")
+		return 0, core.Errorf(core.ErrInvalidInput, "cost: missing metadata key %q", "input_tokens")
 	}
 	inputTokens, err := toFloat64(inputRaw)
 	if err != nil {
-		return 0, fmt.Errorf("cost: input_tokens: %w", err)
+		return 0, core.Errorf(core.ErrInvalidInput, "cost: input_tokens: %w", err)
 	}
 
 	outputRaw, ok := sample.Metadata["output_tokens"]
 	if !ok {
-		return 0, fmt.Errorf("cost: missing metadata key %q", "output_tokens")
+		return 0, core.Errorf(core.ErrInvalidInput, "cost: missing metadata key %q", "output_tokens")
 	}
 	outputTokens, err := toFloat64(outputRaw)
 	if err != nil {
-		return 0, fmt.Errorf("cost: output_tokens: %w", err)
+		return 0, core.Errorf(core.ErrInvalidInput, "cost: output_tokens: %w", err)
 	}
 
 	return (inputTokens*pricing.InputTokenPrice + outputTokens*pricing.OutputTokenPrice) / 1_000_000, nil
@@ -226,6 +226,6 @@ func toFloat64(v any) (float64, error) {
 	case int32:
 		return float64(n), nil
 	default:
-		return 0, fmt.Errorf("unsupported numeric type %T", v)
+		return 0, core.Errorf(core.ErrInvalidInput, "unsupported numeric type %T", v)
 	}
 }

@@ -2,7 +2,6 @@ package audit
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/core"
@@ -53,7 +52,7 @@ func NewInMemoryStore(opts ...InMemoryOption) *InMemoryStore {
 //   - ID generation fails.
 func (s *InMemoryStore) Log(ctx context.Context, entry Entry) error {
 	if err := ctx.Err(); err != nil {
-		return fmt.Errorf("audit: Log: %w", err)
+		return core.Errorf(core.ErrTimeout, "audit: Log: %w", err)
 	}
 
 	enriched, err := enrichEntry(entry)
@@ -85,7 +84,7 @@ func (s *InMemoryStore) Log(ctx context.Context, entry Entry) error {
 // Query returns an error if the context is cancelled.
 func (s *InMemoryStore) Query(ctx context.Context, filter Filter) ([]Entry, error) {
 	if err := ctx.Err(); err != nil {
-		return nil, fmt.Errorf("audit: Query: %w", err)
+		return nil, core.Errorf(core.ErrTimeout, "audit: Query: %w", err)
 	}
 
 	s.mu.RLock()

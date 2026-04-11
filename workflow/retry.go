@@ -2,10 +2,11 @@ package workflow
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"math/rand/v2"
 	"time"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // RetryPolicy configures retry behavior for activities.
@@ -24,7 +25,7 @@ type RetryPolicy struct {
 func DefaultRetryPolicy() RetryPolicy {
 	return RetryPolicy{
 		MaxAttempts:        3,
-		InitialInterval:   100 * time.Millisecond,
+		InitialInterval:    100 * time.Millisecond,
 		BackoffCoefficient: 2.0,
 		MaxInterval:        10 * time.Second,
 	}
@@ -58,7 +59,7 @@ func executeWithRetry(ctx context.Context, policy RetryPolicy, fn func(ctx conte
 		interval = nextInterval(interval, policy.BackoffCoefficient, policy.MaxInterval)
 	}
 
-	return fmt.Errorf("workflow/retry: max attempts (%d) exceeded: %w", policy.MaxAttempts, lastErr)
+	return core.Errorf(core.ErrProviderDown, "workflow/retry: max attempts (%d) exceeded: %w", policy.MaxAttempts, lastErr)
 }
 
 // normalizeRetryPolicy fills in zero-valued fields with sensible defaults.

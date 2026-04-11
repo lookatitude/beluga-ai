@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Notifier is the interface for sending interaction notifications to humans.
@@ -71,23 +72,23 @@ func NewWebhookNotifierWithClient(url string, client *http.Client) *WebhookNotif
 func (n *WebhookNotifier) Notify(ctx context.Context, req InteractionRequest) error {
 	body, err := json.Marshal(req)
 	if err != nil {
-		return fmt.Errorf("hitl/webhook: marshal: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "hitl/webhook: marshal: %w", err)
 	}
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, n.url, bytes.NewReader(body))
 	if err != nil {
-		return fmt.Errorf("hitl/webhook: create request: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "hitl/webhook: create request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
 	resp, err := n.client.Do(httpReq)
 	if err != nil {
-		return fmt.Errorf("hitl/webhook: send: %w", err)
+		return core.Errorf(core.ErrProviderDown, "hitl/webhook: send: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("hitl/webhook: unexpected status %d", resp.StatusCode)
+		return core.Errorf(core.ErrProviderDown, "hitl/webhook: unexpected status %d", resp.StatusCode)
 	}
 	return nil
 }

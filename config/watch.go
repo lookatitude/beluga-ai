@@ -3,10 +3,11 @@ package config
 import (
 	"context"
 	"crypto/sha256"
-	"fmt"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Watcher watches for configuration changes and invokes a callback when
@@ -64,7 +65,7 @@ func (w *FileWatcher) Watch(ctx context.Context, callback func(newConfig any)) e
 	// Compute initial hash so we only fire on actual changes.
 	data, err := os.ReadFile(w.path)
 	if err != nil {
-		return fmt.Errorf("config: watch initial read %s: %w", w.path, err)
+		return core.Errorf(core.ErrNotFound, "config: watch initial read %s: %w", w.path, err)
 	}
 
 	w.mu.Lock()

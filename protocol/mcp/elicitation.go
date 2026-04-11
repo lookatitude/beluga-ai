@@ -2,7 +2,8 @@ package mcp
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // ElicitationType identifies the kind of user input to request.
@@ -90,7 +91,7 @@ type ElicitationHandler interface {
 // ValidateElicitationRequest checks that an ElicitationRequest is well-formed.
 func ValidateElicitationRequest(req ElicitationRequest) error {
 	if req.Message == "" {
-		return fmt.Errorf("mcp/elicitation: message is required")
+		return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: message is required")
 	}
 
 	switch req.Type {
@@ -98,26 +99,26 @@ func ValidateElicitationRequest(req ElicitationRequest) error {
 		// No additional validation needed.
 	case ElicitationSelect:
 		if len(req.Options) == 0 {
-			return fmt.Errorf("mcp/elicitation: select type requires at least one option")
+			return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: select type requires at least one option")
 		}
 	case ElicitationConfirm:
 		// No additional validation needed.
 	case ElicitationForm:
 		if len(req.Fields) == 0 {
-			return fmt.Errorf("mcp/elicitation: form type requires at least one field")
+			return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: form type requires at least one field")
 		}
 		seen := make(map[string]struct{}, len(req.Fields))
 		for _, f := range req.Fields {
 			if f.Name == "" {
-				return fmt.Errorf("mcp/elicitation: field name is required")
+				return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: field name is required")
 			}
 			if _, exists := seen[f.Name]; exists {
-				return fmt.Errorf("mcp/elicitation: duplicate field name %q", f.Name)
+				return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: duplicate field name %q", f.Name)
 			}
 			seen[f.Name] = struct{}{}
 		}
 	default:
-		return fmt.Errorf("mcp/elicitation: unknown type %q", req.Type)
+		return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: unknown type %q", req.Type)
 	}
 
 	return nil
@@ -134,7 +135,7 @@ func ValidateElicitationResponse(req ElicitationRequest, resp ElicitationRespons
 	switch req.Type {
 	case ElicitationSelect:
 		if resp.Selected == "" {
-			return fmt.Errorf("mcp/elicitation: select response requires a selected value")
+			return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: select response requires a selected value")
 		}
 		found := false
 		for _, opt := range req.Options {
@@ -144,16 +145,16 @@ func ValidateElicitationResponse(req ElicitationRequest, resp ElicitationRespons
 			}
 		}
 		if !found {
-			return fmt.Errorf("mcp/elicitation: selected value %q is not among options", resp.Selected)
+			return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: selected value %q is not among options", resp.Selected)
 		}
 	case ElicitationForm:
 		if resp.Values == nil {
-			return fmt.Errorf("mcp/elicitation: form response requires values")
+			return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: form response requires values")
 		}
 		for _, f := range req.Fields {
 			if f.Required {
 				if _, ok := resp.Values[f.Name]; !ok {
-					return fmt.Errorf("mcp/elicitation: required field %q is missing", f.Name)
+					return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: required field %q is missing", f.Name)
 				}
 			}
 		}

@@ -143,7 +143,7 @@ func (r *StructuredRetriever) Retrieve(ctx context.Context, query string, opts .
 
 		generated, err := r.opts.generator.Generate(ctx, query, r.opts.schema)
 		if err != nil {
-			return nil, fmt.Errorf("structured.retrieve: generate (attempt %d): %w", attempt+1, err)
+			return nil, core.Errorf(core.ErrProviderDown, "structured.retrieve: generate (attempt %d): %w", attempt+1, err)
 		}
 
 		rows, err := r.opts.executor.Execute(ctx, generated)
@@ -199,7 +199,7 @@ func (r *StructuredRetriever) Retrieve(ctx context.Context, query string, opts .
 
 	if !haveResult {
 		if lastErr != nil {
-			return nil, fmt.Errorf("structured.retrieve: all attempts failed: %w", lastErr)
+			return nil, core.Errorf(core.ErrProviderDown, "structured.retrieve: all attempts failed: %w", lastErr)
 		}
 		return nil, core.NewError(
 			"structured.retrieve",

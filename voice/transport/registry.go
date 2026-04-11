@@ -1,9 +1,10 @@
 package transport
 
 import (
-	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Factory creates an AudioTransport from a Config. Each provider registers a
@@ -42,7 +43,7 @@ func New(name string, cfg Config) (AudioTransport, error) {
 	registryMu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("transport: unknown provider %q (registered: %v)", name, List())
+		return nil, core.Errorf(core.ErrNotFound, "transport: unknown provider %q (registered: %v)", name, List())
 	}
 	return f(cfg)
 }

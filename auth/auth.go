@@ -2,9 +2,10 @@ package auth
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Policy determines whether a subject is authorized to perform a given
@@ -105,7 +106,7 @@ func New(name string, cfg Config) (Policy, error) {
 	registryMu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("auth: unknown policy %q", name)
+		return nil, core.Errorf(core.ErrNotFound, "auth: unknown policy %q", name)
 	}
 	return f(cfg)
 }

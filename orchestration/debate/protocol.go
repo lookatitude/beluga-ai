@@ -2,9 +2,10 @@ package debate
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // DebateProtocol determines how agents participate in each round of a debate.
@@ -56,7 +57,7 @@ func NewProtocol(name string, cfg map[string]any) (DebateProtocol, error) {
 	f, ok := protocolRegistry[name]
 	protocolMu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("debate: unknown protocol %q (registered: %v)", name, ListProtocols())
+		return nil, core.Errorf(core.ErrNotFound, "debate: unknown protocol %q (registered: %v)", name, ListProtocols())
 	}
 	return f(cfg)
 }

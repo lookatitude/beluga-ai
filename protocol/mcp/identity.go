@@ -3,7 +3,8 @@ package mcp
 import (
 	"crypto/ed25519"
 	"encoding/base64"
-	"fmt"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // ServerIdentity describes an MCP server's identity and verifiable credentials.
@@ -34,30 +35,30 @@ type ServerIdentity struct {
 // The signature must be base64-encoded.
 func (si *ServerIdentity) Verify(message []byte, signature string) error {
 	if si.PublicKey == "" {
-		return fmt.Errorf("mcp/identity: server has no public key")
+		return core.Errorf(core.ErrInvalidInput, "mcp/identity: server has no public key")
 	}
 
 	pubKeyBytes, err := base64.StdEncoding.DecodeString(si.PublicKey)
 	if err != nil {
-		return fmt.Errorf("mcp/identity: decode public key: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "mcp/identity: decode public key: %w", err)
 	}
 
 	if len(pubKeyBytes) != ed25519.PublicKeySize {
-		return fmt.Errorf("mcp/identity: invalid public key size %d, expected %d", len(pubKeyBytes), ed25519.PublicKeySize)
+		return core.Errorf(core.ErrInvalidInput, "mcp/identity: invalid public key size %d, expected %d", len(pubKeyBytes), ed25519.PublicKeySize)
 	}
 
 	sigBytes, err := base64.StdEncoding.DecodeString(signature)
 	if err != nil {
-		return fmt.Errorf("mcp/identity: decode signature: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "mcp/identity: decode signature: %w", err)
 	}
 
 	if len(sigBytes) != ed25519.SignatureSize {
-		return fmt.Errorf("mcp/identity: invalid signature size %d, expected %d", len(sigBytes), ed25519.SignatureSize)
+		return core.Errorf(core.ErrInvalidInput, "mcp/identity: invalid signature size %d, expected %d", len(sigBytes), ed25519.SignatureSize)
 	}
 
 	pubKey := ed25519.PublicKey(pubKeyBytes)
 	if !ed25519.Verify(pubKey, message, sigBytes) {
-		return fmt.Errorf("mcp/identity: signature verification failed")
+		return core.Errorf(core.ErrInvalidInput, "mcp/identity: signature verification failed")
 	}
 
 	return nil
@@ -68,7 +69,7 @@ func (si *ServerIdentity) Verify(message []byte, signature string) error {
 // 64-byte Ed25519 private key. The returned signature is base64-encoded.
 func Sign(privateKey ed25519.PrivateKey, message []byte) (string, error) {
 	if len(privateKey) != ed25519.PrivateKeySize {
-		return "", fmt.Errorf("mcp/identity: invalid private key size %d, expected %d", len(privateKey), ed25519.PrivateKeySize)
+		return "", core.Errorf(core.ErrInvalidInput, "mcp/identity: invalid private key size %d, expected %d", len(privateKey), ed25519.PrivateKeySize)
 	}
 
 	sig := ed25519.Sign(privateKey, message)
@@ -79,7 +80,7 @@ func Sign(privateKey ed25519.PrivateKey, message []byte) (string, error) {
 // the given Ed25519 private key.
 func PublicKeyFromPrivate(privateKey ed25519.PrivateKey) (string, error) {
 	if len(privateKey) != ed25519.PrivateKeySize {
-		return "", fmt.Errorf("mcp/identity: invalid private key size %d, expected %d", len(privateKey), ed25519.PrivateKeySize)
+		return "", core.Errorf(core.ErrInvalidInput, "mcp/identity: invalid private key size %d, expected %d", len(privateKey), ed25519.PrivateKeySize)
 	}
 
 	pubKey := privateKey.Public().(ed25519.PublicKey)

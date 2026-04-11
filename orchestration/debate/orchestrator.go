@@ -134,7 +134,7 @@ func (d *DebateOrchestrator) Invoke(ctx context.Context, input any, opts ...core
 
 		if d.opts.hooks.BeforeRound != nil {
 			if err := d.opts.hooks.BeforeRound(ctx, state); err != nil {
-				return nil, d.handleError(ctx, fmt.Errorf("debate: before round %d: %w", round, err))
+				return nil, d.handleError(ctx, core.Errorf(core.ErrProviderDown, "debate: before round %d: %w", round, err))
 			}
 		}
 
@@ -147,18 +147,18 @@ func (d *DebateOrchestrator) Invoke(ctx context.Context, input any, opts ...core
 
 		if d.opts.hooks.AfterRound != nil {
 			if err := d.opts.hooks.AfterRound(ctx, state); err != nil {
-				return nil, d.handleError(ctx, fmt.Errorf("debate: after round %d: %w", round, err))
+				return nil, d.handleError(ctx, core.Errorf(core.ErrProviderDown, "debate: after round %d: %w", round, err))
 			}
 		}
 
 		conv, err := d.opts.detector.Check(ctx, state)
 		if err != nil {
-			return nil, d.handleError(ctx, fmt.Errorf("debate: convergence check: %w", err))
+			return nil, d.handleError(ctx, core.Errorf(core.ErrProviderDown, "debate: convergence check: %w", err))
 		}
 
 		if d.opts.hooks.OnConvergence != nil {
 			if err := d.opts.hooks.OnConvergence(ctx, conv); err != nil {
-				return nil, d.handleError(ctx, fmt.Errorf("debate: on convergence: %w", err))
+				return nil, d.handleError(ctx, core.Errorf(core.ErrProviderDown, "debate: on convergence: %w", err))
 			}
 		}
 
@@ -208,7 +208,7 @@ func (d *DebateOrchestrator) Stream(ctx context.Context, input any, opts ...core
 
 			if d.opts.hooks.BeforeRound != nil {
 				if err := d.opts.hooks.BeforeRound(ctx, state); err != nil {
-					yield(nil, d.handleError(ctx, fmt.Errorf("debate: before round %d: %w", round, err)))
+					yield(nil, d.handleError(ctx, core.Errorf(core.ErrProviderDown, "debate: before round %d: %w", round, err)))
 					return
 				}
 			}
@@ -239,14 +239,14 @@ func (d *DebateOrchestrator) Stream(ctx context.Context, input any, opts ...core
 
 			if d.opts.hooks.AfterRound != nil {
 				if err := d.opts.hooks.AfterRound(ctx, state); err != nil {
-					yield(nil, d.handleError(ctx, fmt.Errorf("debate: after round %d: %w", round, err)))
+					yield(nil, d.handleError(ctx, core.Errorf(core.ErrProviderDown, "debate: after round %d: %w", round, err)))
 					return
 				}
 			}
 
 			conv, err := d.opts.detector.Check(ctx, state)
 			if err != nil {
-				yield(nil, d.handleError(ctx, fmt.Errorf("debate: convergence check: %w", err)))
+				yield(nil, d.handleError(ctx, core.Errorf(core.ErrProviderDown, "debate: convergence check: %w", err)))
 				return
 			}
 
@@ -256,7 +256,7 @@ func (d *DebateOrchestrator) Stream(ctx context.Context, input any, opts ...core
 
 			if d.opts.hooks.OnConvergence != nil {
 				if err := d.opts.hooks.OnConvergence(ctx, conv); err != nil {
-					yield(nil, d.handleError(ctx, fmt.Errorf("debate: on convergence: %w", err)))
+					yield(nil, d.handleError(ctx, core.Errorf(core.ErrProviderDown, "debate: on convergence: %w", err)))
 					return
 				}
 			}
@@ -294,7 +294,7 @@ func (d *DebateOrchestrator) initState(topic string) DebateState {
 func (d *DebateOrchestrator) executeRound(ctx context.Context, state DebateState) (Round, error) {
 	prompts, err := d.opts.protocol.NextRound(ctx, state)
 	if err != nil {
-		return Round{}, fmt.Errorf("debate: protocol.NextRound: %w", err)
+		return Round{}, core.Errorf(core.ErrProviderDown, "debate: protocol.NextRound: %w", err)
 	}
 
 	round := Round{Number: state.CurrentRound + 1}
@@ -306,7 +306,7 @@ func (d *DebateOrchestrator) executeRound(ctx context.Context, state DebateState
 	if twoPass, ok := d.opts.protocol.(TwoPassProtocol); ok {
 		followUp, err := twoPass.FollowUp(ctx, state, round)
 		if err != nil {
-			return Round{}, fmt.Errorf("debate: protocol.FollowUp: %w", err)
+			return Round{}, core.Errorf(core.ErrProviderDown, "debate: protocol.FollowUp: %w", err)
 		}
 		if len(followUp) > 0 {
 			if err := d.dispatchPrompts(ctx, followUp, &round, state.CurrentRound); err != nil {
@@ -341,7 +341,7 @@ func (d *DebateOrchestrator) dispatchPrompts(ctx context.Context, prompts map[st
 
 		result, err := a.Invoke(ctx, prompt)
 		if err != nil {
-			return fmt.Errorf("debate: agent %q round %d: %w", id, roundIdx+1, err)
+			return core.Errorf(core.ErrProviderDown, "debate: agent %q round %d: %w", id, roundIdx+1, err)
 		}
 
 		round.Contributions = append(round.Contributions, Contribution{

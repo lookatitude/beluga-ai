@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/eval"
 	"github.com/lookatitude/beluga-ai/llm"
 	"github.com/lookatitude/beluga-ai/schema"
@@ -51,7 +52,7 @@ func (f *Faithfulness) Score(ctx context.Context, sample eval.EvalSample) (float
 		schema.NewHumanMessage(prompt),
 	})
 	if err != nil {
-		return 0, fmt.Errorf("faithfulness: llm generate: %w", err)
+		return 0, core.Errorf(core.ErrProviderDown, "faithfulness: llm generate: %w", err)
 	}
 
 	return parseScore(resp.Text())
@@ -74,7 +75,7 @@ func parseScore(text string) (float64, error) {
 	text = strings.TrimSpace(text)
 	score, err := strconv.ParseFloat(text, 64)
 	if err != nil {
-		return 0, fmt.Errorf("failed to parse score from response %q: %w", text, err)
+		return 0, core.Errorf(core.ErrInvalidInput, "failed to parse score from response %q: %w", text, err)
 	}
 	if score < 0 {
 		score = 0

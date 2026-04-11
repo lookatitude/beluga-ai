@@ -2,8 +2,8 @@ package s2s
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/internal/hookutil"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/voice"
@@ -228,16 +228,16 @@ func forwardInputFrame(ctx context.Context, session Session, frame voice.Frame) 
 	switch frame.Type {
 	case voice.FrameAudio:
 		if sendErr := session.SendAudio(ctx, frame.Data); sendErr != nil {
-			return fmt.Errorf("s2s: send audio: %w", sendErr)
+			return core.Errorf(core.ErrProviderDown, "s2s: send audio: %w", sendErr)
 		}
 	case voice.FrameText:
 		if sendErr := session.SendText(ctx, frame.Text()); sendErr != nil {
-			return fmt.Errorf("s2s: send text: %w", sendErr)
+			return core.Errorf(core.ErrProviderDown, "s2s: send text: %w", sendErr)
 		}
 	case voice.FrameControl:
 		if frame.Signal() == voice.SignalInterrupt {
 			if intErr := session.Interrupt(ctx); intErr != nil {
-				return fmt.Errorf("s2s: interrupt: %w", intErr)
+				return core.Errorf(core.ErrProviderDown, "s2s: interrupt: %w", intErr)
 			}
 		}
 	}
@@ -252,7 +252,7 @@ func AsFrameProcessor(engine S2S, opts ...Option) voice.FrameProcessor {
 
 		session, err := engine.Start(ctx, opts...)
 		if err != nil {
-			return fmt.Errorf("s2s: start session: %w", err)
+			return core.Errorf(core.ErrProviderDown, "s2s: start session: %w", err)
 		}
 		defer session.Close()
 

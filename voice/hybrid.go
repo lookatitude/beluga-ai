@@ -2,8 +2,9 @@ package voice
 
 import (
 	"context"
-	"fmt"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // PipelineMode identifies the active mode in a hybrid pipeline.
@@ -144,7 +145,7 @@ func NewHybridPipeline(opts ...HybridPipelineOption) *HybridPipeline {
 // cascade mode when the switch policy indicates.
 func (h *HybridPipeline) Run(ctx context.Context) error {
 	if h.config.S2S == nil && h.config.Cascade == nil {
-		return fmt.Errorf("voice: hybrid pipeline requires at least one of S2S or cascade")
+		return core.Errorf(core.ErrInvalidInput, "voice: hybrid pipeline requires at least one of S2S or cascade")
 	}
 
 	// Snapshot state under read lock for the switch policy decision.
@@ -173,7 +174,7 @@ func (h *HybridPipeline) Run(ctx context.Context) error {
 	case ModeCascade:
 		return h.runCascade(ctx)
 	default:
-		return fmt.Errorf("voice: unknown pipeline mode %q", state.CurrentMode)
+		return core.Errorf(core.ErrInvalidInput, "voice: unknown pipeline mode %q", state.CurrentMode)
 	}
 }
 
@@ -198,7 +199,7 @@ func (h *HybridPipeline) UpdateState(toolCalls, turnCount int) {
 // cascade transport system.
 func (h *HybridPipeline) runS2S(ctx context.Context) error {
 	if h.config.Session == nil {
-		return fmt.Errorf("voice: S2S pipeline requires a session")
+		return core.Errorf(core.ErrInvalidInput, "voice: S2S pipeline requires a session")
 	}
 
 	// S2S processors are self-contained FrameProcessors that manage their
@@ -225,7 +226,7 @@ func (h *HybridPipeline) runS2S(ctx context.Context) error {
 // runCascade delegates to the cascade pipeline.
 func (h *HybridPipeline) runCascade(ctx context.Context) error {
 	if h.config.Cascade == nil {
-		return fmt.Errorf("voice: cascade pipeline not configured")
+		return core.Errorf(core.ErrInvalidInput, "voice: cascade pipeline not configured")
 	}
 	return h.config.Cascade.Run(ctx)
 }

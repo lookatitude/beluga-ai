@@ -2,12 +2,13 @@ package mcp
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
 	"crypto/rand"
 	"encoding/hex"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // AsyncStatus represents the current state of an asynchronous operation.
@@ -135,13 +136,13 @@ func NewInMemoryAsyncHandler(opts ...AsyncOption) *InMemoryAsyncHandler {
 func (h *InMemoryAsyncHandler) Start(ctx context.Context, fn func(ctx context.Context) (any, error)) (string, error) {
 	id, err := generateOpID()
 	if err != nil {
-		return "", fmt.Errorf("mcp/async: generate ID: %w", err)
+		return "", core.Errorf(core.ErrProviderDown, "mcp/async: generate ID: %w", err)
 	}
 
 	h.mu.Lock()
 	if len(h.ops) >= h.maxOps {
 		h.mu.Unlock()
-		return "", fmt.Errorf("mcp/async: maximum operations (%d) exceeded", h.maxOps)
+		return "", core.Errorf(core.ErrInvalidInput, "mcp/async: maximum operations (%d) exceeded", h.maxOps)
 	}
 
 	now := time.Now()
@@ -228,7 +229,7 @@ func (h *InMemoryAsyncHandler) Poll(_ context.Context, id string) (*AsyncOperati
 
 	e, ok := h.ops[id]
 	if !ok {
-		return nil, fmt.Errorf("mcp/async: operation %q not found", id)
+		return nil, core.Errorf(core.ErrNotFound, "mcp/async: operation %q not found", id)
 	}
 
 	// Return a copy to avoid races.
@@ -243,12 +244,12 @@ func (h *InMemoryAsyncHandler) Cancel(_ context.Context, id string) error {
 
 	e, ok := h.ops[id]
 	if !ok {
-		return fmt.Errorf("mcp/async: operation %q not found", id)
+		return core.Errorf(core.ErrNotFound, "mcp/async: operation %q not found", id)
 	}
 
 	switch e.op.Status {
 	case AsyncStatusCompleted, AsyncStatusFailed, AsyncStatusCancelled:
-		return fmt.Errorf("mcp/async: operation %q is already in terminal state %q", id, e.op.Status)
+		return core.Errorf(core.ErrInvalidInput, "mcp/async: operation %q is already in terminal state %q", id, e.op.Status)
 	}
 
 	e.op.Status = AsyncStatusCancelled

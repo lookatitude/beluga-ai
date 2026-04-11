@@ -3,6 +3,8 @@ package mcp
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // StructuredToolInfo extends ToolInfo with an optional output schema for
@@ -46,12 +48,12 @@ func ValidateToolOutput(output any, schema map[string]any) error {
 	// Marshal output to JSON and back to get a normalized map representation.
 	data, err := json.Marshal(output)
 	if err != nil {
-		return fmt.Errorf("mcp/structured: marshal output: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "mcp/structured: marshal output: %w", err)
 	}
 
 	var normalized any
 	if err := json.Unmarshal(data, &normalized); err != nil {
-		return fmt.Errorf("mcp/structured: unmarshal output: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "mcp/structured: unmarshal output: %w", err)
 	}
 
 	return validateValue(normalized, schema, "")
@@ -87,37 +89,37 @@ func validateValue(value any, schema map[string]any, path string) error {
 // validateType checks that the value matches the expected JSON Schema type.
 func validateType(value any, schemaType string, path string) error {
 	if value == nil {
-		return fmt.Errorf("mcp/structured: %s: expected %s, got null", pathOrRoot(path), schemaType)
+		return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: expected %s, got null", pathOrRoot(path), schemaType)
 	}
 
 	switch schemaType {
 	case "object":
 		if _, ok := value.(map[string]any); !ok {
-			return fmt.Errorf("mcp/structured: %s: expected object, got %T", pathOrRoot(path), value)
+			return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: expected object, got %T", pathOrRoot(path), value)
 		}
 	case "array":
 		if _, ok := value.([]any); !ok {
-			return fmt.Errorf("mcp/structured: %s: expected array, got %T", pathOrRoot(path), value)
+			return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: expected array, got %T", pathOrRoot(path), value)
 		}
 	case "string":
 		if _, ok := value.(string); !ok {
-			return fmt.Errorf("mcp/structured: %s: expected string, got %T", pathOrRoot(path), value)
+			return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: expected string, got %T", pathOrRoot(path), value)
 		}
 	case "number":
 		if _, ok := value.(float64); !ok {
-			return fmt.Errorf("mcp/structured: %s: expected number, got %T", pathOrRoot(path), value)
+			return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: expected number, got %T", pathOrRoot(path), value)
 		}
 	case "integer":
 		v, ok := value.(float64)
 		if !ok {
-			return fmt.Errorf("mcp/structured: %s: expected integer, got %T", pathOrRoot(path), value)
+			return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: expected integer, got %T", pathOrRoot(path), value)
 		}
 		if v != float64(int64(v)) {
-			return fmt.Errorf("mcp/structured: %s: expected integer, got float", pathOrRoot(path))
+			return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: expected integer, got float", pathOrRoot(path))
 		}
 	case "boolean":
 		if _, ok := value.(bool); !ok {
-			return fmt.Errorf("mcp/structured: %s: expected boolean, got %T", pathOrRoot(path), value)
+			return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: expected boolean, got %T", pathOrRoot(path), value)
 		}
 	}
 
@@ -139,7 +141,7 @@ func validateObject(value any, schema map[string]any, path string) error {
 				continue
 			}
 			if _, exists := obj[name]; !exists {
-				return fmt.Errorf("mcp/structured: %s: missing required property %q", pathOrRoot(path), name)
+				return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: missing required property %q", pathOrRoot(path), name)
 			}
 		}
 	}
@@ -208,7 +210,7 @@ func validateEnum(value any, schema map[string]any, path string) error {
 		}
 	}
 
-	return fmt.Errorf("mcp/structured: %s: value %q not in enum", pathOrRoot(path), str)
+	return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: value %q not in enum", pathOrRoot(path), str)
 }
 
 // pathOrRoot returns "root" if path is empty, otherwise returns path.

@@ -3,11 +3,11 @@ package agent
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"iter"
 	"strings"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tool"
 )
@@ -148,7 +148,7 @@ func (e *Executor) newRunContext(agentID string, tools []tool.Tool, hooks Hooks,
 func (e *Executor) runLoop(ctx context.Context, rc *runContext, agentID string) {
 	for i := 0; i < e.maxIterations; i++ {
 		if err := ctx.Err(); err != nil {
-			rc.yieldError(fmt.Errorf("agent execution cancelled: %w", err))
+			rc.yieldError(core.Errorf(core.ErrTimeout, "agent execution cancelled: %w", err))
 			return
 		}
 
@@ -166,7 +166,7 @@ func (e *Executor) runLoop(ctx context.Context, rc *runContext, agentID string) 
 		rc.state.Messages = e.buildMessages(rc.state)
 	}
 
-	rc.yieldError(fmt.Errorf("agent reached maximum iterations (%d)", e.maxIterations))
+	rc.yieldError(core.Errorf(core.ErrInvalidInput, "agent reached maximum iterations (%d)", e.maxIterations))
 }
 
 // runIteration executes a single plan-act-observe cycle. It returns (done, shouldReturn).
@@ -329,7 +329,7 @@ func (e *Executor) executeAction(
 	default:
 		return Observation{
 			Action:  action,
-			Error:   fmt.Errorf("unknown action type: %s", action.Type),
+			Error:   core.Errorf(core.ErrInvalidInput, "unknown action type: %s", action.Type),
 			Latency: time.Since(start),
 		}
 	}
@@ -349,7 +349,7 @@ func (e *Executor) executeToolAction(
 	if action.ToolCall == nil {
 		return Observation{
 			Action:  action,
-			Error:   fmt.Errorf("tool action missing tool call"),
+			Error:   core.Errorf(core.ErrInvalidInput, "tool action missing tool call"),
 			Latency: time.Since(start),
 		}
 	}
@@ -386,13 +386,13 @@ func (e *Executor) lookupAndExecuteTool(
 ) (*tool.Result, error) {
 	t, err := reg.Get(action.ToolCall.Name)
 	if err != nil {
-		return tool.ErrorResult(fmt.Errorf("tool not found: %s", action.ToolCall.Name)), err
+		return tool.ErrorResult(core.Errorf(core.ErrNotFound, "tool not found: %s", action.ToolCall.Name)), err
 	}
 
 	var args map[string]any
 	if action.ToolCall.Arguments != "" {
 		if err := json.Unmarshal([]byte(action.ToolCall.Arguments), &args); err != nil {
-			return tool.ErrorResult(fmt.Errorf("invalid tool arguments: %w", err)), err
+			return tool.ErrorResult(core.Errorf(core.ErrInvalidInput, "invalid tool arguments: %w", err)), err
 		}
 	}
 

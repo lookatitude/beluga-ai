@@ -1,11 +1,12 @@
 package deploy
 
 import (
-	"errors"
 	"fmt"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // goVersionRe matches valid Go version strings such as "1.23" or "1.23.4".
@@ -48,30 +49,30 @@ func (cfg *DockerfileConfig) defaults() {
 // validate checks that cfg is well-formed.
 func (cfg *DockerfileConfig) validate() error {
 	if cfg.Port < 1 || cfg.Port > 65535 {
-		return errors.New("deploy: Port must be between 1 and 65535")
+		return core.Errorf(core.ErrInvalidInput, "deploy: Port must be between 1 and 65535")
 	}
 	// Validate GoVersion to prevent Dockerfile instruction injection.
 	if !goVersionRe.MatchString(cfg.GoVersion) {
-		return errors.New("deploy: GoVersion must match ^[0-9]+\\.[0-9]+(\\.[0-9]+)?$")
+		return core.Errorf(core.ErrInvalidInput, "deploy: GoVersion must match ^[0-9]+\\.[0-9]+(\\.[0-9]+)?$")
 	}
 	// Validate BaseImage to prevent Dockerfile instruction injection.
 	if !baseImageRe.MatchString(cfg.BaseImage) {
-		return errors.New("deploy: BaseImage contains invalid characters")
+		return core.Errorf(core.ErrInvalidInput, "deploy: BaseImage contains invalid characters")
 	}
 	// Explicitly reject newlines in either image field.
 	if strings.ContainsAny(cfg.GoVersion, "\n\r") || strings.ContainsAny(cfg.BaseImage, "\n\r") {
-		return errors.New("deploy: GoVersion and BaseImage must not contain newlines")
+		return core.Errorf(core.ErrInvalidInput, "deploy: GoVersion and BaseImage must not contain newlines")
 	}
 	if cfg.AgentConfig == "" {
-		return errors.New("deploy: AgentConfig must not be empty")
+		return core.Errorf(core.ErrInvalidInput, "deploy: AgentConfig must not be empty")
 	}
 	if strings.ContainsAny(cfg.AgentConfig, "\n\r") {
-		return errors.New("deploy: AgentConfig must not contain newlines")
+		return core.Errorf(core.ErrInvalidInput, "deploy: AgentConfig must not contain newlines")
 	}
 	// Use filepath.Clean-based path traversal check instead of naive ".." substring match.
 	cleaned := filepath.Clean(cfg.AgentConfig)
 	if strings.HasPrefix(cleaned, "..") || filepath.IsAbs(cleaned) {
-		return errors.New("deploy: AgentConfig must not contain path traversal sequences or be absolute")
+		return core.Errorf(core.ErrInvalidInput, "deploy: AgentConfig must not contain path traversal sequences or be absolute")
 	}
 	return nil
 }

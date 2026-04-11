@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // runnerOptions holds configuration for a RedTeamRunner.
@@ -103,7 +104,7 @@ type attackItem struct {
 // Run executes the red team exercise and returns a report.
 func (r *RedTeamRunner) Run(ctx context.Context) (*RedTeamReport, error) {
 	if r.opts.target == nil {
-		return nil, fmt.Errorf("redteam: target agent is required (use WithTarget)")
+		return nil, core.Errorf(core.ErrInvalidInput, "redteam: target agent is required (use WithTarget)")
 	}
 
 	if r.opts.timeout > 0 {
@@ -117,11 +118,11 @@ func (r *RedTeamRunner) Run(ctx context.Context) (*RedTeamReport, error) {
 	// Collect all attack prompts.
 	attacks, err := r.collectAttacks(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("redteam: collect attacks: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "redteam: collect attacks: %w", err)
 	}
 
 	if len(attacks) == 0 {
-		return nil, fmt.Errorf("redteam: no attack prompts generated (configure patterns or generator)")
+		return nil, core.Errorf(core.ErrInvalidInput, "redteam: no attack prompts generated (configure patterns or generator)")
 	}
 
 	// Execute attacks with bounded concurrency.
@@ -149,7 +150,7 @@ func (r *RedTeamRunner) collectAttacks(ctx context.Context) ([]attackItem, error
 
 		prompts, err := pattern.Generate(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("pattern %q: %w", name, err)
+			return nil, core.Errorf(core.ErrProviderDown, "pattern %q: %w", name, err)
 		}
 
 		for _, prompt := range prompts {
@@ -164,7 +165,7 @@ func (r *RedTeamRunner) collectAttacks(ctx context.Context) ([]attackItem, error
 	if r.opts.generator != nil {
 		generated, err := r.opts.generator.Generate(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("generator: %w", err)
+			return nil, core.Errorf(core.ErrProviderDown, "generator: %w", err)
 		}
 		for cat, prompts := range generated {
 			for _, prompt := range prompts {

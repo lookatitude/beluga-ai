@@ -2,11 +2,11 @@ package cache
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"sync"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/rag/embedding"
 )
 
@@ -122,7 +122,7 @@ func NewSemanticCache(embedder embedding.Embedder, opts ...Option) *SemanticCach
 func (sc *SemanticCache) Get(ctx context.Context, key string) (any, bool, error) {
 	emb, err := sc.embedder.EmbedSingle(ctx, key)
 	if err != nil {
-		return nil, false, fmt.Errorf("cache: semantic embed: %w", err)
+		return nil, false, core.Errorf(core.ErrProviderDown, "cache: semantic embed: %w", err)
 	}
 	return sc.GetByEmbedding(ctx, emb)
 }
@@ -136,7 +136,7 @@ func (sc *SemanticCache) Get(ctx context.Context, key string) (any, bool, error)
 func (sc *SemanticCache) Set(ctx context.Context, key string, value any, ttl time.Duration) error {
 	emb, err := sc.embedder.EmbedSingle(ctx, key)
 	if err != nil {
-		return fmt.Errorf("cache: semantic embed: %w", err)
+		return core.Errorf(core.ErrProviderDown, "cache: semantic embed: %w", err)
 	}
 	return sc.SetByEmbedding(ctx, key, emb, value, ttl)
 }
@@ -197,7 +197,7 @@ func (sc *SemanticCache) GetByEmbedding(_ context.Context, emb []float32) (any, 
 // treated as immutable once passed.
 func (sc *SemanticCache) SetByEmbedding(_ context.Context, key string, emb []float32, value any, ttl time.Duration) error {
 	if sc.maxDimensions > 0 && len(emb) > sc.maxDimensions {
-		return fmt.Errorf("cache: embedding dimension %d exceeds maximum %d", len(emb), sc.maxDimensions)
+		return core.Errorf(core.ErrInvalidInput, "cache: embedding dimension %d exceeds maximum %d", len(emb), sc.maxDimensions)
 	}
 
 	// Defensive copy to prevent caller mutations from corrupting cache.
@@ -280,11 +280,11 @@ func init() {
 	Register("semantic", func(cfg Config) (Cache, error) {
 		emb, ok := cfg.Options["embedder"]
 		if !ok {
-			return nil, fmt.Errorf("cache: semantic factory requires Options[\"embedder\"] as embedding.Embedder")
+			return nil, core.Errorf(core.ErrInvalidInput, "cache: semantic factory requires Options[\"embedder\"] as embedding.Embedder")
 		}
 		embedder, ok := emb.(embedding.Embedder)
 		if !ok {
-			return nil, fmt.Errorf("cache: semantic factory: Options[\"embedder\"] is not an embedding.Embedder")
+			return nil, core.Errorf(core.ErrInvalidInput, "cache: semantic factory: Options[\"embedder\"] is not an embedding.Embedder")
 		}
 		opts := []Option{}
 		if cfg.TTL > 0 {

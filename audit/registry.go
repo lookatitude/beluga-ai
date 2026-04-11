@@ -1,9 +1,10 @@
 package audit
 
 import (
-	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/core"
 )
 
 // Config holds configuration used to construct a Store via the registry.
@@ -49,7 +50,7 @@ func New(name string, cfg Config) (Store, error) {
 	registryMu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("audit: store %q not registered (registered: %v)", name, List())
+		return nil, core.Errorf(core.ErrNotFound, "audit: store %q not registered (registered: %v)", name, List())
 	}
 	return f(cfg)
 }
