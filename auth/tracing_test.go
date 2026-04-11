@@ -111,3 +111,12 @@ func TestWithTracing_RecordsErrorOnFailure(t *testing.T) {
 		t.Errorf("expected span status Error, got %v", spans[0].Status.Code)
 	}
 }
+
+// TestWithTracing_NamePassthrough verifies tracedPolicy forwards Name().
+func TestWithTracing_NamePassthrough(t *testing.T) {
+	base := &tracingTestPolicy{name: "rbac-test", allowed: true}
+	wrapped := ApplyMiddleware(Policy(base), WithTracing())
+	if got := wrapped.Name(); got != "rbac-test" {
+		t.Errorf("Name() = %q, want %q", got, "rbac-test")
+	}
+}

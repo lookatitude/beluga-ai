@@ -11,6 +11,11 @@ import (
 	"github.com/lookatitude/beluga-ai/core"
 )
 
+// errHitlRequest is the common prefix for wrapped errors returned by the
+// request-interaction code path. Extracted as a constant so the literal is
+// not duplicated across multiple error sites.
+const errHitlRequest = "hitl/request: %w"
+
 // seq is a package-level counter for generating unique request IDs.
 var seq atomic.Int64
 
@@ -145,10 +150,10 @@ func (m *DefaultManager) checkAutoApproval(ctx context.Context, req InteractionR
 	if err != nil {
 		if m.hooks.OnError != nil {
 			if e := m.hooks.OnError(ctx, err); e != nil {
-				return nil, core.Errorf(core.ErrInvalidInput, "hitl/request: %w", e)
+				return nil, core.Errorf(core.ErrInvalidInput, errHitlRequest, e)
 			}
 		}
-		return nil, core.Errorf(core.ErrInvalidInput, "hitl/request: %w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, errHitlRequest, err)
 	}
 	if !autoApprove {
 		return nil, nil
@@ -203,7 +208,7 @@ func (m *DefaultManager) awaitResponse(ctx context.Context, req InteractionReque
 		if m.hooks.OnTimeout != nil {
 			m.hooks.OnTimeout(ctx, req)
 		}
-		return nil, core.Errorf(core.ErrTimeout, "hitl/request: %w", timeoutCtx.Err())
+		return nil, core.Errorf(core.ErrTimeout, errHitlRequest, timeoutCtx.Err())
 	}
 }
 

@@ -178,3 +178,18 @@ func TestWithTracing_RecordsErrorOnStreamFailure(t *testing.T) {
 		t.Errorf("expected span status Error, got %v", spans[0].Status.Code)
 	}
 }
+
+// TestWithTracing_PassthroughMethods verifies that tracedAgent forwards the
+// non-spanned methods (ID, Persona, Tools, Children) unchanged.
+func TestWithTracing_PassthroughMethods(t *testing.T) {
+	base := &tracingTestAgent{id: "passthrough-id"}
+	wrapped := ApplyMiddleware(Agent(base), WithTracing())
+
+	if got := wrapped.ID(); got != "passthrough-id" {
+		t.Errorf("ID() = %q, want %q", got, "passthrough-id")
+	}
+	// Zero-value passthroughs: must not panic and return the base value.
+	_ = wrapped.Persona()
+	_ = wrapped.Tools()
+	_ = wrapped.Children()
+}

@@ -118,3 +118,20 @@ func TestWithTracing_RecordsErrorOnFailure(t *testing.T) {
 		t.Errorf("expected span status Error, got %v", spans[0].Status.Code)
 	}
 }
+
+// TestWithTracing_PassthroughMethods verifies that tracedTool forwards the
+// non-spanned metadata methods (Name, Description, InputSchema) unchanged.
+func TestWithTracing_PassthroughMethods(t *testing.T) {
+	base := &tracingTestTool{name: "calc"}
+	wrapped := ApplyMiddleware(Tool(base), WithTracing())
+
+	if got := wrapped.Name(); got != "calc" {
+		t.Errorf("Name() = %q, want %q", got, "calc")
+	}
+	if got := wrapped.Description(); got != "test tool" {
+		t.Errorf("Description() = %q, want %q", got, "test tool")
+	}
+	if got := wrapped.InputSchema(); got == nil {
+		t.Error("InputSchema() = nil, want non-nil")
+	}
+}

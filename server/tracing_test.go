@@ -70,7 +70,11 @@ func TestWithTracing_EmitsSpansForEveryOperation(t *testing.T) {
 		{
 			name: "register_handler",
 			run: func() error {
-				return s.RegisterHandler("/x", http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+				// Intentionally empty: the test only verifies that a span
+				// is emitted around RegisterHandler; the handler body is
+				// never invoked.
+				noop := http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})
+				return s.RegisterHandler("/x", noop)
 			},
 			spanOp: "server.register_handler",
 		},

@@ -146,3 +146,18 @@ func TestWithTracing_RecordsErrorOnFailure(t *testing.T) {
 		t.Errorf("expected span status Error, got %v", spans[0].Status.Code)
 	}
 }
+
+// TestWithTracing_PassthroughMethods verifies tracedModel forwards the
+// non-spanned methods (BindTools, ModelID) unchanged.
+func TestWithTracing_PassthroughMethods(t *testing.T) {
+	base := &tracingTestModel{modelID: "gpt-test"}
+	wrapped := ApplyMiddleware(ChatModel(base), WithTracing())
+
+	if got := wrapped.ModelID(); got != "gpt-test" {
+		t.Errorf("ModelID() = %q, want %q", got, "gpt-test")
+	}
+	// BindTools returns a new ChatModel; the passthrough just forwards.
+	if bound := wrapped.BindTools(nil); bound == nil {
+		t.Error("BindTools(nil) = nil, want non-nil")
+	}
+}
