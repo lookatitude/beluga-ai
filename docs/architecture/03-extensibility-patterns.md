@@ -248,6 +248,10 @@ It's the simplest possible signature. No factory interfaces, no builders, no dep
 
 See [Middleware Chain pattern](../patterns/middleware-chain.md).
 
+### `WithTracing()` — the canonical framework-wide middleware
+
+One Ring 4 middleware is now provided by every extensible package: `WithTracing()`. It wraps the package interface with OTel GenAI spans named `<pkg>.<method>` using the typed `o11y.Attr*` constants. Seventeen packages (`agent`, `auth`, `hitl`, `llm`, `llm/routing`, `memory`, `orchestration`, `prompt`, `rag/embedding`, `rag/retriever`, `rag/splitter`, `rag/vectorstore`, `server`, `state`, `tool`, `voice/s2s`, `workflow`) all follow the same template rooted in [`memory/tracing.go`](../../memory/tracing.go). Adding `WithTracing()` to a new extensible package is mandatory, not optional. See [DOC-14 — Observability](./14-observability.md) for the template, span-naming rules, and opt-in pattern.
+
 ## How the four rings compose
 
 ```mermaid

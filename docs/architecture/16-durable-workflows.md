@@ -76,6 +76,50 @@ A workflow can `await` a signal. The worker goes idle (no CPU, no memory beyond 
 
 This is the mechanism for human-in-the-loop: the workflow pauses, a notification goes to Slack/email, and when the human clicks approve, the API posts a signal that wakes the workflow.
 
+### Signal delivery as `iter.Seq2`
+
+The `WorkflowContext` interface exposes signals as a typed Go 1.23 iterator, not a raw channel:
+
+```go
+import (
+    "context"
+    "iter"
+    "time"
+)
+
+type WorkflowContext interface {
+    context.Context
+
+    ExecuteActivity(fn ActivityFunc, input any, opts ...ActivityOption) (any, error)
+
+    // ReceiveSignal returns an iterator that yields payloads delivered to
+    // the named signal. Iteration ends when the workflow context is
+    // canceled.
+    ReceiveSignal(name string) iter.Seq2[any, error]
+
+    Sleep(d time.Duration) error
+}
+```
+
+Consuming a signal is a plain range loop — the workflow idles inside `for … range` until the next payload arrives:
+
+```go
+for approval, err := range ctx.ReceiveSignal("approval") {
+    if err != nil {
+        return err
+    }
+    if approval.(bool) {
+        break
+    }
+}
+```
+
+This brings signals in line with invariant #6 (public streaming APIs use `iter.Seq2[T, error]`, never channels) and prevents the class of bugs where callers forget to drain a returned channel on the error path.
+
+#### Temporal constraint: `Context.Done()` returns nil
+
+Temporal's `temporalworkflow.Context` is not a regular `context.Context` — its `Done()` method returns `nil`, so the canonical iterator termination pattern `case <-ctx.Done()` becomes a permanent block. The Temporal provider works around this by eagerly spawning the bridge coroutine on first call and guarding a `sync.Once`-closed `done` channel that the coroutine selects on when pushing; the bridge exits cleanly when the caller stops pulling. Any future `iter.Seq2` conversion of a Temporal-wrapping method must use the same approach. This discovery is captured as correction C-004 in [`.wiki/corrections.md`](../../.wiki/corrections.md).
+
 ## The agent loop as a workflow
 
 ```mermaid

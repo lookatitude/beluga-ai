@@ -56,6 +56,67 @@ Every LLM call records:
 
 Backends that understand GenAI conventions (recent versions of Datadog, Honeycomb, Grafana) render these as first-class cost and latency dashboards without manual setup.
 
+## `WithTracing()` middleware — the universal instrumentation pattern
+
+Every extensible package in Beluga now exposes a `WithTracing()` Ring 4 middleware (see [DOC-03 — Extensibility Patterns](./03-extensibility-patterns.md)) that wraps its core interface with OTel GenAI spans. It's a single opt-in line for uniform instrumentation across the stack:
+
+```go
+import (
+    "github.com/lookatitude/beluga-ai/memory"
+    _ "github.com/lookatitude/beluga-ai/memory/stores/inmemory"
+)
+
+func buildMemory() (memory.Memory, error) {
+    base, err := memory.New("inmemory", memory.Config{})
+    if err != nil {
+        return nil, err
+    }
+    return memory.ApplyMiddleware(base, memory.WithTracing()), nil
+}
+```
+
+The wrapper opens a span named `<pkg>.<method>` at every public method, attaches a `gen_ai.operation.name` attribute using the typed `o11y.Attr*` constants, records errors via `span.RecordError`, and sets `StatusError` on failure. The canonical template lives in [`memory/tracing.go`](../../memory/tracing.go):
+
+```go
+func (m *tracedMemory) Load(ctx context.Context, query string) ([]schema.Message, error) {
+    ctx, span := o11y.StartSpan(ctx, "memory.load", o11y.Attrs{
+        o11y.AttrOperationName: "memory.load",
+    })
+    defer span.End()
+
+    msgs, err := m.next.Load(ctx, query)
+    if err != nil {
+        span.RecordError(err)
+        span.SetStatus(o11y.StatusError, err.Error())
+        return nil, err
+    }
+    span.SetAttributes(o11y.Attrs{"memory.load.result_count": len(msgs)})
+    span.SetStatus(o11y.StatusOK, "")
+    return msgs, nil
+}
+```
+
+Seventeen packages ship `WithTracing()` against this template:
+
+`agent`, `auth`, `hitl`, `llm`, `llm/routing`, `memory`, `orchestration`, `prompt`, `rag/embedding`, `rag/retriever`, `rag/splitter`, `rag/vectorstore`, `server`, `state`, `tool`, `voice/s2s`, `workflow`.
+
+Three of those (`prompt`, `rag/splitter`, `llm/routing`) gained a minimal `middleware.go` (`type Middleware func(T) T` + `ApplyMiddleware`) as a precondition so tracing could layer on the standard 4-ring template.
+
+### Span naming and attribute conventions
+
+Two rules keep the instrumentation coherent:
+
+1. **Span name = `<package>.<method>`.** For example `tool.execute`, `rag.retrieve`, `llm.generate`, `workflow.execute_activity`. Downstream queries group by span name, so consistency matters.
+2. **Attributes come from `o11y.Attr*` constants, never raw strings.** The constants encode the GenAI v1.37 semconv keys (`gen_ai.operation.name`, `gen_ai.request.model`, `gen_ai.usage.input_tokens`, …). Packages that need a domain-specific count use a dotted key scoped to the package (e.g. `memory.load.result_count`), not a new top-level namespace.
+
+### Why middleware, not hooks
+
+Instrumentation applies uniformly to every call on the interface — classic cross-cutting behaviour. A hook would have to re-implement the start/end/error bookkeeping at every lifecycle point; the `func(T) T` middleware shape lets one 40-line wrapper cover the entire interface. It also composes cleanly with retry, rate-limit, and logging middleware via `ApplyMiddleware` (outside-in order).
+
+### Adding `WithTracing()` to a new package
+
+When you add a new extensible package, providing `WithTracing()` is mandatory, not optional. Copy `memory/tracing.go` as a template, rename the wrapper, change the span names, and wire the attribute constants. The paired test (`memory/tracing_test.go`) uses `tracetest.InMemoryExporter` with `o11y.InitTracer(..., o11y.WithSyncExport())` and asserts per-method span + attribute + status; mirror it for the new package.
+
 ## Metrics pipeline
 
 ```mermaid
@@ -136,7 +197,8 @@ Using the standard also means provider-specific features (reasoning tokens, cach
 
 ## Common mistakes
 
-- **Custom attribute names.** Use `gen_ai.*` — custom names are invisible to standard dashboards.
+- **Custom attribute names.** Use `gen_ai.*` via the typed `o11y.Attr*` constants — hand-typed keys drift over time and are invisible to standard dashboards.
+- **Implementing tracing as a hook instead of middleware.** Lifecycle hooks are for specific points; tracing wraps every call uniformly and belongs in `WithTracing()`.
 - **Forgetting `span.End()`.** Spans leak if not ended. Always `defer span.End()` right after `tracer.Start`.
 - **Logging secrets in span attributes.** Attributes are exported and retained; strip them.
 - **Missing `span.RecordError(err)` on failure.** The span status goes to Error but without the error message — debugging is harder than it needs to be.
