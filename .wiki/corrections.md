@@ -55,3 +55,20 @@ Entries reach `.claude/rules/` when seen ≥3 times or HIGH confidence.
 **Prevention rule:** Invariant 1 already forbids channels in public APIs. Consider adding a `.wiki/patterns/streaming.md` sub-section documenting the Temporal termination workaround, and scan `workflow/` in `/arch-validate` when touching streaming surfaces.
 **Confidence:** HIGH — compile-time enforced by interface change; test suite green.
 
+### C-005 | 2026-04-11 | arch-validate | voice · RESOLVED 2026-04-11
+**Symptom:** Two coupled channel-based interfaces in the voice subtree violated Invariant 1: `voice.FrameProcessor.Process(ctx, in <-chan Frame, out chan<- Frame) error` (`voice/processor.go:8-13`) and `voice.Transport.Recv(ctx) (<-chan Frame, error)` (`voice/pipeline.go:33-34`). The pipeline wired `Transport.Recv()` into `FrameProcessor.Chain`, so both had to convert together.
+**Root cause:** Pre-`iter.Seq2` voice pipeline modelled each stage as a goroutine connected by buffered channels, with `runChain`/`resolveChainIO` orchestration. Chain composition required N-1 intermediate channels and errgroup-style wait.
+**Correction:** Converted both interfaces to `iter.Seq2[Frame, error]`:
+  - `FrameProcessor.Process(ctx, in iter.Seq2[Frame, error]) iter.Seq2[Frame, error]` — pure transformer.
+  - `Transport.Recv(ctx) iter.Seq2[Frame, error]` — early/dial errors delivered as `(Frame{}, err)` then end.
+  - `FrameHandler` redesigned to `func(ctx, Frame) ([]Frame, error)` (slice-return matched every existing handler body: STT/TTS/VAD each emit 0, 1, or 2 frames per input).
+  - `Chain` composes closures left-to-right — no intermediate channels, no goroutines. `runChain`, `resolveChainIO`, `passthroughProcessor`'s old form all removed/simplified.
+  - Transport provider impls (websocket/livekit/daily/pipecat) keep their internal `chan voice.Frame` but expose it via a Seq2 closure that `select`s over `ctx.Done()` + the channel.
+  - `voice/s2s.AsFrameProcessor` kept its fan-in architecture (session output + input forwarding) but migrated to `iter.Seq2` via an input-pump goroutine that calls `iter.Pull2(in)` + `defer stop()` and a separate output-pump goroutine for `session.Recv`.
+**Notable constraint (new discovery):** When converting a bidirectional FrameProcessor like `s2s.AsFrameProcessor` that fans input+output onto a single events channel, the classic "send on closed channel" race is trivially re-introducible: two writers (input pump, output pump) sharing one channel with `defer close(events)` on one of them creates a race where the other writer blocks in `select` on a send that executes after close. **Rule:** every fan-in channel must have exactly one writer. Use separate result channels (one per writer) + the select-nil-channel trick to disable drained branches — see `voice/s2s/s2s.go:AsFrameProcessor` for the canonical layout: `outResults` (owned and closed by output pump), `inputErr` + `inputDone` (owned by input pump). The main consumer `select`s over all three plus `ctx.Done()` and nils out branches as they complete. Invisible without `-race`.
+**Pattern reference:** Transport Seq2 producers mirror `voice/s2s/providers/openai/openai.go` Recv (wraps internal channel with ctx select). FrameLoop mirrors `memory/shared/shared.go` Watch minus the eager-subscribe phase since pure transformers have no shared state.
+**Scope:** 16 files touched — `voice/{processor,pipeline,hybrid,processor_test,pipeline_test}.go`, `voice/stt/{stt,stt_test}.go`, `voice/tts/{tts,tts_test}.go`, `voice/s2s/{s2s,s2s_test}.go`, `voice/transport/{transport,websocket,transport_test}.go`, `voice/transport/providers/{daily,livekit,pipecat}/{*,*_test}.go`.
+**Verification:** `go build ./...` PASS, `go vet ./...` PASS, `go test -race ./voice/...` — all 28 voice packages PASS.
+**Prevention rule:** Invariant 1 already forbids channels in public APIs. Add a `-race` requirement to any fan-in goroutine refactor; shared-owner channel closes are invisible without it.
+**Confidence:** HIGH — compile-time enforced by interface change; race-detector clean.
+

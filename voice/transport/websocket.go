@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"iter"
 	"net/http"
 	"strings"
 	"sync"
@@ -225,13 +226,31 @@ func (t *WebSocketTransport) readLoop(ctx context.Context) {
 	}
 }
 
-// Recv returns a channel of incoming frames from the WebSocket connection.
-func (t *WebSocketTransport) Recv(_ context.Context) (<-chan voice.Frame, error) {
-	select {
-	case <-t.done:
-		return nil, core.Errorf(core.ErrProviderDown, "transport: websocket transport is closed")
-	default:
-		return t.frames, nil
+// Recv returns an iterator of incoming frames from the WebSocket connection.
+// If the transport is already closed the first yielded pair carries an error
+// and the iterator ends. Otherwise frames flow until the read loop exits or
+// ctx is cancelled.
+func (t *WebSocketTransport) Recv(ctx context.Context) iter.Seq2[voice.Frame, error] {
+	return func(yield func(voice.Frame, error) bool) {
+		select {
+		case <-t.done:
+			yield(voice.Frame{}, core.Errorf(core.ErrProviderDown, "transport: websocket transport is closed"))
+			return
+		default:
+		}
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case frame, ok := <-t.frames:
+				if !ok {
+					return
+				}
+				if !yield(frame, nil) {
+					return
+				}
+			}
+		}
 	}
 }
 

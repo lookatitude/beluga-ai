@@ -165,28 +165,27 @@ func ComposeHooks(hooks ...Hooks) Hooks {
 	}
 }
 
-// transcribeFrame transcribes a single audio frame and sends the result to out.
-// Non-audio frames are passed through unchanged.
-func transcribeFrame(ctx context.Context, engine STT, frame voice.Frame, out chan<- voice.Frame, opts ...Option) error {
+// transcribeFrame transcribes a single audio frame and returns any resulting
+// output frames. Non-audio frames are passed through unchanged.
+func transcribeFrame(ctx context.Context, engine STT, frame voice.Frame, opts ...Option) ([]voice.Frame, error) {
 	if frame.Type != voice.FrameAudio {
-		out <- frame
-		return nil
+		return []voice.Frame{frame}, nil
 	}
 	text, err := engine.Transcribe(ctx, frame.Data, opts...)
 	if err != nil {
-		return core.Errorf(core.ErrProviderDown, "stt: transcribe: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "stt: transcribe: %w", err)
 	}
-	if text != "" {
-		out <- voice.NewTextFrame(text)
+	if text == "" {
+		return nil, nil
 	}
-	return nil
+	return []voice.Frame{voice.NewTextFrame(text)}, nil
 }
 
 // AsFrameProcessor wraps an STT engine as a voice.FrameProcessor.
-// It reads audio frames from in, runs transcription, and emits text frames
-// to out with transcription results.
+// It reads audio frames from the input stream, runs transcription, and yields
+// text frames for each successful transcription result.
 func AsFrameProcessor(engine STT, opts ...Option) voice.FrameProcessor {
-	return voice.FrameLoop(func(ctx context.Context, frame voice.Frame, out chan<- voice.Frame) error {
-		return transcribeFrame(ctx, engine, frame, out, opts...)
+	return voice.FrameLoop(func(ctx context.Context, frame voice.Frame) ([]voice.Frame, error) {
+		return transcribeFrame(ctx, engine, frame, opts...)
 	})
 }

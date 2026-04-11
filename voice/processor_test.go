@@ -3,148 +3,118 @@ package voice
 import (
 	"context"
 	"errors"
+	"iter"
 	"testing"
 )
 
+// framesFromSlice returns an iter.Seq2 that yields the given frames with nil errors.
+func framesFromSlice(frames ...Frame) iter.Seq2[Frame, error] {
+	return func(yield func(Frame, error) bool) {
+		for _, f := range frames {
+			if !yield(f, nil) {
+				return
+			}
+		}
+	}
+}
+
+// collectFrames drains an iter.Seq2[Frame, error], returning collected frames and
+// the first error encountered (if any).
+func collectFrames(stream iter.Seq2[Frame, error]) ([]Frame, error) {
+	var frames []Frame
+	for f, err := range stream {
+		if err != nil {
+			return frames, err
+		}
+		frames = append(frames, f)
+	}
+	return frames, nil
+}
+
 func TestFrameProcessorFunc(t *testing.T) {
 	called := false
-	f := FrameProcessorFunc(func(_ context.Context, in <-chan Frame, out chan<- Frame) error {
-		defer close(out)
+	f := FrameProcessorFunc(func(_ context.Context, in iter.Seq2[Frame, error]) iter.Seq2[Frame, error] {
 		called = true
-		for frame := range in {
-			out <- frame
-		}
-		return nil
+		return in
 	})
 
-	in := make(chan Frame, 1)
-	out := make(chan Frame, 1)
-	in <- NewTextFrame("test")
-	close(in)
-
-	err := f.Process(context.Background(), in, out)
+	out := f.Process(context.Background(), framesFromSlice(NewTextFrame("test")))
+	frames, err := collectFrames(out)
 	if err != nil {
 		t.Fatalf("Process() error = %v", err)
 	}
 	if !called {
 		t.Error("FrameProcessorFunc was not called")
 	}
-
-	frame := <-out
-	if frame.Text() != "test" {
-		t.Errorf("frame.Text() = %q, want %q", frame.Text(), "test")
+	if len(frames) != 1 || frames[0].Text() != "test" {
+		t.Errorf("frames = %v, want one 'test' frame", frames)
 	}
 }
 
 func TestChainEmpty(t *testing.T) {
 	chain := Chain()
-
-	in := make(chan Frame, 1)
-	out := make(chan Frame, 1)
-	in <- NewTextFrame("passthrough")
-	close(in)
-
-	err := chain.Process(context.Background(), in, out)
+	out := chain.Process(context.Background(), framesFromSlice(NewTextFrame("passthrough")))
+	frames, err := collectFrames(out)
 	if err != nil {
 		t.Fatalf("Chain() error = %v", err)
 	}
-
-	frame := <-out
-	if frame.Text() != "passthrough" {
-		t.Errorf("frame.Text() = %q, want %q", frame.Text(), "passthrough")
+	if len(frames) != 1 || frames[0].Text() != "passthrough" {
+		t.Errorf("frames = %v, want one 'passthrough' frame", frames)
 	}
 }
 
-func TestChainSingle(t *testing.T) {
-	upper := FrameProcessorFunc(func(_ context.Context, in <-chan Frame, out chan<- Frame) error {
-		defer close(out)
-		for f := range in {
-			if f.Type == FrameText {
-				out <- NewTextFrame(f.Text() + "!")
-			} else {
-				out <- f
-			}
+// suffixProcessor appends a suffix to each text frame; non-text frames pass through.
+func suffixProcessor(suffix string) FrameProcessor {
+	return FrameLoop(func(_ context.Context, f Frame) ([]Frame, error) {
+		if f.Type == FrameText {
+			return []Frame{NewTextFrame(f.Text() + suffix)}, nil
 		}
-		return nil
+		return []Frame{f}, nil
 	})
+}
 
-	chain := Chain(upper)
-
-	in := make(chan Frame, 1)
-	out := make(chan Frame, 1)
-	in <- NewTextFrame("hello")
-	close(in)
-
-	err := chain.Process(context.Background(), in, out)
+func TestChainSingle(t *testing.T) {
+	chain := Chain(suffixProcessor("!"))
+	out := chain.Process(context.Background(), framesFromSlice(NewTextFrame("hello")))
+	frames, err := collectFrames(out)
 	if err != nil {
 		t.Fatalf("Chain() error = %v", err)
 	}
-
-	frame := <-out
-	if frame.Text() != "hello!" {
-		t.Errorf("frame.Text() = %q, want %q", frame.Text(), "hello!")
+	if len(frames) != 1 || frames[0].Text() != "hello!" {
+		t.Errorf("frames = %v, want one 'hello!' frame", frames)
 	}
 }
 
 func TestChainMultiple(t *testing.T) {
-	addExclaim := FrameProcessorFunc(func(_ context.Context, in <-chan Frame, out chan<- Frame) error {
-		defer close(out)
-		for f := range in {
-			if f.Type == FrameText {
-				out <- NewTextFrame(f.Text() + "!")
-			} else {
-				out <- f
-			}
-		}
-		return nil
-	})
-
-	addQuestion := FrameProcessorFunc(func(_ context.Context, in <-chan Frame, out chan<- Frame) error {
-		defer close(out)
-		for f := range in {
-			if f.Type == FrameText {
-				out <- NewTextFrame(f.Text() + "?")
-			} else {
-				out <- f
-			}
-		}
-		return nil
-	})
-
-	chain := Chain(addExclaim, addQuestion)
-
-	in := make(chan Frame, 1)
-	out := make(chan Frame, 1)
-	in <- NewTextFrame("hello")
-	close(in)
-
-	err := chain.Process(context.Background(), in, out)
+	chain := Chain(suffixProcessor("!"), suffixProcessor("?"))
+	out := chain.Process(context.Background(), framesFromSlice(NewTextFrame("hello")))
+	frames, err := collectFrames(out)
 	if err != nil {
 		t.Fatalf("Chain() error = %v", err)
 	}
-
-	frame := <-out
-	if frame.Text() != "hello!?" {
-		t.Errorf("frame.Text() = %q, want %q", frame.Text(), "hello!?")
+	if len(frames) != 1 || frames[0].Text() != "hello!?" {
+		t.Errorf("frames = %v, want one 'hello!?' frame", frames)
 	}
 }
 
 func TestChainCancelContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	blocker := FrameProcessorFunc(func(ctx context.Context, in <-chan Frame, out chan<- Frame) error {
-		defer close(out)
+	// A source that blocks forever unless ctx cancels.
+	blockingSource := iter.Seq2[Frame, error](func(yield func(Frame, error) bool) {
 		<-ctx.Done()
-		return ctx.Err()
+		yield(Frame{}, ctx.Err())
 	})
 
-	chain := Chain(blocker)
-	in := make(chan Frame)
-	out := make(chan Frame, 1)
+	// Identity processor — will propagate the source's error.
+	chain := Chain(FrameProcessorFunc(func(_ context.Context, in iter.Seq2[Frame, error]) iter.Seq2[Frame, error] {
+		return in
+	}))
 
 	done := make(chan error, 1)
 	go func() {
-		done <- chain.Process(ctx, in, out)
+		_, err := collectFrames(chain.Process(ctx, blockingSource))
+		done <- err
 	}()
 
 	cancel()
@@ -156,79 +126,43 @@ func TestChainCancelContext(t *testing.T) {
 }
 
 func TestChainErrorInMiddleProcessor(t *testing.T) {
-	// When a middle processor fails, Chain should return the error.
-	proc1 := FrameProcessorFunc(func(_ context.Context, in <-chan Frame, out chan<- Frame) error {
-		defer close(out)
-		for f := range in {
-			out <- f
+	// A middle processor that errors after consuming its input.
+	errProc := FrameProcessorFunc(func(_ context.Context, in iter.Seq2[Frame, error]) iter.Seq2[Frame, error] {
+		return func(yield func(Frame, error) bool) {
+			for _, err := range in {
+				if err != nil {
+					yield(Frame{}, err)
+					return
+				}
+				// drain
+			}
+			yield(Frame{}, errors.New("middle processor failed"))
 		}
-		return nil
 	})
 
-	errProc := FrameProcessorFunc(func(_ context.Context, in <-chan Frame, out chan<- Frame) error {
-		defer close(out)
-		for range in {
-			// drain input
-		}
-		return errors.New("middle processor failed")
+	// Passthroughs on either side.
+	pass := FrameProcessorFunc(func(_ context.Context, in iter.Seq2[Frame, error]) iter.Seq2[Frame, error] {
+		return in
 	})
 
-	proc3 := FrameProcessorFunc(func(_ context.Context, in <-chan Frame, out chan<- Frame) error {
-		defer close(out)
-		for f := range in {
-			out <- f
-		}
-		return nil
-	})
-
-	chain := Chain(proc1, errProc, proc3)
-	in := make(chan Frame, 1)
-	out := make(chan Frame, 1)
-	in <- NewTextFrame("test")
-	close(in)
-
-	err := chain.Process(context.Background(), in, out)
+	chain := Chain(pass, errProc, pass)
+	_, err := collectFrames(chain.Process(context.Background(), framesFromSlice(NewTextFrame("test"))))
 	if err == nil {
 		t.Error("Chain should return error from failing processor")
 	}
-	if err.Error() != "middle processor failed" {
+	if err != nil && err.Error() != "middle processor failed" {
 		t.Errorf("error = %q, want %q", err, "middle processor failed")
 	}
 }
 
-func makeSuffixProcessor(suffix string) FrameProcessorFunc {
-	return FrameProcessorFunc(func(_ context.Context, in <-chan Frame, out chan<- Frame) error {
-		defer close(out)
-		for f := range in {
-			if f.Type == FrameText {
-				out <- NewTextFrame(f.Text() + suffix)
-			} else {
-				out <- f
-			}
-		}
-		return nil
-	})
-}
-
 func TestChainThreeProcessors(t *testing.T) {
-	// Three-processor chain exercises the intermediate channel path (i > 0 && i < len-1).
-	addA := makeSuffixProcessor("A")
-	addB := makeSuffixProcessor("B")
-	addC := makeSuffixProcessor("C")
-
-	chain := Chain(addA, addB, addC)
-	in := make(chan Frame, 1)
-	out := make(chan Frame, 1)
-	in <- NewTextFrame("x")
-	close(in)
-
-	err := chain.Process(context.Background(), in, out)
+	chain := Chain(suffixProcessor("A"), suffixProcessor("B"), suffixProcessor("C"))
+	out := chain.Process(context.Background(), framesFromSlice(NewTextFrame("x")))
+	frames, err := collectFrames(out)
 	if err != nil {
 		t.Fatalf("Chain() error = %v", err)
 	}
-
-	frame := <-out
-	if frame.Text() != "xABC" {
-		t.Errorf("frame.Text() = %q, want %q", frame.Text(), "xABC")
+	if len(frames) != 1 || frames[0].Text() != "xABC" {
+		t.Errorf("frames = %v, want one 'xABC' frame", frames)
 	}
 }

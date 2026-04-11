@@ -3,6 +3,7 @@ package transport
 import (
 	"context"
 	"io"
+	"iter"
 
 	"github.com/lookatitude/beluga-ai/voice"
 )
@@ -11,9 +12,11 @@ import (
 // and the voice pipeline. Implementations handle the underlying transport
 // protocol (WebSocket, WebRTC via LiveKit/Daily, etc.).
 type AudioTransport interface {
-	// Recv returns a channel of incoming audio frames from the remote client.
-	// The channel is closed when the connection ends.
-	Recv(ctx context.Context) (<-chan voice.Frame, error)
+	// Recv returns an iterator of incoming audio frames from the remote client.
+	// Transport-level errors are delivered via the iterator's second element;
+	// a non-nil error terminates the stream. The iterator ends when the
+	// connection closes or ctx is cancelled.
+	Recv(ctx context.Context) iter.Seq2[voice.Frame, error]
 
 	// Send writes an outgoing frame to the remote client.
 	Send(ctx context.Context, frame voice.Frame) error
@@ -82,7 +85,7 @@ type AsVoiceTransport struct {
 }
 
 // Recv delegates to the underlying AudioTransport.
-func (a *AsVoiceTransport) Recv(ctx context.Context) (<-chan voice.Frame, error) {
+func (a *AsVoiceTransport) Recv(ctx context.Context) iter.Seq2[voice.Frame, error] {
 	return a.T.Recv(ctx)
 }
 

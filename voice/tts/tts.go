@@ -144,28 +144,27 @@ func ComposeHooks(hooks ...Hooks) Hooks {
 	}
 }
 
-// synthesizeFrame synthesizes a single text frame and sends the result to out.
-// Non-text frames are passed through unchanged.
-func synthesizeFrame(ctx context.Context, engine TTS, frame voice.Frame, sampleRate int, out chan<- voice.Frame, opts ...Option) error {
+// synthesizeFrame synthesizes a single text frame and returns any resulting
+// output frames. Non-text frames are passed through unchanged.
+func synthesizeFrame(ctx context.Context, engine TTS, frame voice.Frame, sampleRate int, opts ...Option) ([]voice.Frame, error) {
 	if frame.Type != voice.FrameText {
-		out <- frame
-		return nil
+		return []voice.Frame{frame}, nil
 	}
 	audio, err := engine.Synthesize(ctx, frame.Text(), opts...)
 	if err != nil {
-		return core.Errorf(core.ErrProviderDown, "tts: synthesize: %w", err)
+		return nil, core.Errorf(core.ErrProviderDown, "tts: synthesize: %w", err)
 	}
-	if len(audio) > 0 {
-		out <- voice.NewAudioFrame(audio, sampleRate)
+	if len(audio) == 0 {
+		return nil, nil
 	}
-	return nil
+	return []voice.Frame{voice.NewAudioFrame(audio, sampleRate)}, nil
 }
 
 // AsFrameProcessor wraps a TTS engine as a voice.FrameProcessor.
-// It reads text frames from in, runs synthesis, and emits audio frames
-// to out with the synthesized audio.
+// It reads text frames from the input stream, runs synthesis, and yields
+// audio frames containing the synthesized audio.
 func AsFrameProcessor(engine TTS, sampleRate int, opts ...Option) voice.FrameProcessor {
-	return voice.FrameLoop(func(ctx context.Context, frame voice.Frame, out chan<- voice.Frame) error {
-		return synthesizeFrame(ctx, engine, frame, sampleRate, out, opts...)
+	return voice.FrameLoop(func(ctx context.Context, frame voice.Frame) ([]voice.Frame, error) {
+		return synthesizeFrame(ctx, engine, frame, sampleRate, opts...)
 	})
 }

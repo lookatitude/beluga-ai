@@ -3,6 +3,7 @@ package s2s
 import (
 	"context"
 	"iter"
+	"sync"
 
 	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/internal/hookutil"
@@ -205,29 +206,18 @@ func ComposeHooks(hooks ...Hooks) Hooks {
 	}
 }
 
-// forwardSessionEvents reads session events and forwards them as voice frames.
-func forwardSessionEvents(ctx context.Context, session Session, out chan<- voice.Frame, done chan<- error) {
-	defer close(done)
-	for event, err := range session.Recv(ctx) {
-		if err != nil {
-			done <- err
-			return
-		}
-		switch event.Type {
-		case EventAudioOutput:
-			sampleRate := 24000 // default S2S sample rate
-			out <- voice.NewAudioFrame(event.Audio, sampleRate)
-		case EventTextOutput:
-			out <- voice.NewTextFrame(event.Text)
-		case EventTurnEnd:
-			out <- voice.NewControlFrame(voice.SignalEndOfUtterance)
-		case EventError:
-			if event.Error != nil {
-				done <- event.Error
-				return
-			}
-		}
+// sessionEventToFrame converts an S2S SessionEvent to a voice.Frame, returning
+// ok=false if the event should be dropped (e.g. EventError with nil Error).
+func sessionEventToFrame(event SessionEvent) (voice.Frame, bool) {
+	switch event.Type {
+	case EventAudioOutput:
+		return voice.NewAudioFrame(event.Audio, 24000), true
+	case EventTextOutput:
+		return voice.NewTextFrame(event.Text), true
+	case EventTurnEnd:
+		return voice.NewControlFrame(voice.SignalEndOfUtterance), true
 	}
+	return voice.Frame{}, false
 }
 
 // forwardInputFrame sends a single input frame to the session.
@@ -252,30 +242,163 @@ func forwardInputFrame(ctx context.Context, session Session, frame voice.Frame) 
 }
 
 // AsFrameProcessor wraps an S2S engine as a voice.FrameProcessor.
-// It creates a session, forwards audio frames, and emits output audio frames.
+// It creates a session, forwards input audio/text/control frames to the
+// session, and yields output frames produced by the session. Any
+// transport-level error from the session or from input forwarding terminates
+// the output iterator.
+//
+// The implementation uses two separate channels (session output events and
+// input-forwarding errors) so each has exactly one writer — avoiding the
+// classic "send on closed channel" race that arises when two goroutines fan
+// into a single channel with shared ownership of the close.
 func AsFrameProcessor(engine S2S, opts ...Option) voice.FrameProcessor {
-	return voice.FrameProcessorFunc(func(ctx context.Context, in <-chan voice.Frame, out chan<- voice.Frame) error {
-		defer close(out)
+	return voice.FrameProcessorFunc(func(ctx context.Context, in iter.Seq2[voice.Frame, error]) iter.Seq2[voice.Frame, error] {
+		return func(yield func(voice.Frame, error) bool) {
+			session, err := engine.Start(ctx, opts...)
+			if err != nil {
+				yield(voice.Frame{}, core.Errorf(core.ErrProviderDown, "s2s: start session: %w", err))
+				return
+			}
+			defer session.Close()
 
-		session, err := engine.Start(ctx, opts...)
-		if err != nil {
-			return core.Errorf(core.ErrProviderDown, "s2s: start session: %w", err)
-		}
-		defer session.Close()
+			pumpCtx, cancelPump := context.WithCancel(ctx)
+			var wg sync.WaitGroup
 
-		done := make(chan error, 1)
-		go forwardSessionEvents(ctx, session, out, done)
+			// Session output stream → outFrames / outErr. Exactly one writer
+			// (the output pump goroutine); close signalled via closing
+			// outFrames and a separate outDone channel for errors.
+			type frameResult struct {
+				frame voice.Frame
+				err   error
+			}
+			outResults := make(chan frameResult, 16)
 
-		for {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case frame, ok := <-in:
-				if !ok {
-					return <-done
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				defer close(outResults)
+				for event, rerr := range session.Recv(pumpCtx) {
+					if rerr != nil {
+						select {
+						case outResults <- frameResult{err: rerr}:
+						case <-pumpCtx.Done():
+						}
+						return
+					}
+					if event.Type == EventError {
+						if event.Error != nil {
+							select {
+							case outResults <- frameResult{err: event.Error}:
+							case <-pumpCtx.Done():
+							}
+							return
+						}
+						continue
+					}
+					frame, ok := sessionEventToFrame(event)
+					if !ok {
+						continue
+					}
+					select {
+					case outResults <- frameResult{frame: frame}:
+					case <-pumpCtx.Done():
+						return
+					}
 				}
-				if fwdErr := forwardInputFrame(ctx, session, frame); fwdErr != nil {
-					return fwdErr
+			}()
+
+			// Input pump: input iterator → session. Input-forwarding errors
+			// flow on inputErr (single writer). inputDone closes when the
+			// input iterator is exhausted or the pump aborted.
+			inputErr := make(chan error, 1)
+			inputDone := make(chan struct{})
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				defer close(inputDone)
+				next, stop := iter.Pull2(in)
+				defer stop()
+				for {
+					// Respect pumpCtx cancellation between iterator pulls.
+					if pumpCtx.Err() != nil {
+						return
+					}
+					frame, ierr, ok := next()
+					if !ok {
+						return
+					}
+					if ierr != nil {
+						select {
+						case inputErr <- ierr:
+						default:
+						}
+						return
+					}
+					if fwdErr := forwardInputFrame(pumpCtx, session, frame); fwdErr != nil {
+						select {
+						case inputErr <- fwdErr:
+						default:
+						}
+						return
+					}
+				}
+			}()
+
+			// Cleanup: cancel pumps and wait for both goroutines to exit.
+			// A draining goroutine ensures the output pump can always send
+			// its final value even after the consumer has bailed.
+			defer func() {
+				cancelPump()
+				go func() {
+					for range outResults {
+					}
+				}()
+				wg.Wait()
+			}()
+
+			outputClosed := false
+			inputClosed := false
+			for {
+				if outputClosed && inputClosed {
+					return
+				}
+				select {
+				case <-ctx.Done():
+					yield(voice.Frame{}, ctx.Err())
+					return
+				case res, open := <-outResults:
+					if !open {
+						outputClosed = true
+						// Nil out the channel so this branch never fires again.
+						outResults = nil
+						continue
+					}
+					if res.err != nil {
+						yield(voice.Frame{}, res.err)
+						return
+					}
+					if !yield(res.frame, nil) {
+						return
+					}
+				case ierr := <-inputErr:
+					if ierr != nil {
+						yield(voice.Frame{}, ierr)
+						return
+					}
+				case <-inputDone:
+					inputClosed = true
+					// Drain any buffered input error delivered just before close.
+					select {
+					case ierr := <-inputErr:
+						if ierr != nil {
+							yield(voice.Frame{}, ierr)
+							return
+						}
+					default:
+					}
+					// Nil out these branches so they don't fire again.
+					inputDone = nil
+					inputErr = nil
 				}
 			}
 		}

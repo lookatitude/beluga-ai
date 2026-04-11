@@ -51,16 +51,33 @@ func TestNew(t *testing.T) {
 }
 
 func TestRecv(t *testing.T) {
-	t.Run("returns frame channel", func(t *testing.T) {
+	t.Run("returns frame iterator", func(t *testing.T) {
 		tr, err := New(transport.Config{
 			URL:   "wss://test.livekit.cloud",
 			Token: "token",
 		})
 		require.NoError(t, err)
 
-		ch, err := tr.Recv(context.Background())
-		require.NoError(t, err)
-		assert.NotNil(t, ch)
+		// Iterator should not yield an error when the transport is healthy.
+		// Drain in a goroutine with a cancellable context.
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		done := make(chan error, 1)
+		go func() {
+			var lastErr error
+			for _, err := range tr.Recv(ctx) {
+				if err != nil {
+					lastErr = err
+					break
+				}
+			}
+			done <- lastErr
+		}()
+		cancel()
+		select {
+		case err := <-done:
+			assert.NoError(t, err)
+		}
 	})
 
 	t.Run("error when closed", func(t *testing.T) {
@@ -71,9 +88,15 @@ func TestRecv(t *testing.T) {
 		require.NoError(t, err)
 
 		tr.Close()
-		_, err = tr.Recv(context.Background())
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "closed")
+		var gotErr error
+		for _, err := range tr.Recv(context.Background()) {
+			if err != nil {
+				gotErr = err
+				break
+			}
+		}
+		require.Error(t, gotErr)
+		assert.Contains(t, gotErr.Error(), "closed")
 	})
 }
 

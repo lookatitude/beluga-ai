@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"iter"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -19,7 +20,7 @@ import (
 
 // mockAudioTransport is a test implementation of the AudioTransport interface.
 type mockAudioTransport struct {
-	recvFunc     func(context.Context) (<-chan voice.Frame, error)
+	recvFunc     func(context.Context) iter.Seq2[voice.Frame, error]
 	sendFunc     func(context.Context, voice.Frame) error
 	audioOutFunc func() io.Writer
 	closeFunc    func() error
@@ -29,13 +30,23 @@ type mockAudioTransport struct {
 // Compile-time interface check.
 var _ AudioTransport = (*mockAudioTransport)(nil)
 
-func (m *mockAudioTransport) Recv(ctx context.Context) (<-chan voice.Frame, error) {
+func (m *mockAudioTransport) Recv(ctx context.Context) iter.Seq2[voice.Frame, error] {
 	if m.recvFunc != nil {
 		return m.recvFunc(ctx)
 	}
-	ch := make(chan voice.Frame)
-	close(ch)
-	return ch, nil
+	return func(yield func(voice.Frame, error) bool) {}
+}
+
+// drainFrames collects all frames from an iter.Seq2, stopping at the first error.
+func drainFrames(stream iter.Seq2[voice.Frame, error]) ([]voice.Frame, error) {
+	var frames []voice.Frame
+	for f, err := range stream {
+		if err != nil {
+			return frames, err
+		}
+		frames = append(frames, f)
+	}
+	return frames, nil
 }
 
 func (m *mockAudioTransport) Send(ctx context.Context, frame voice.Frame) error {
@@ -118,24 +129,19 @@ func TestMockAudioTransport_Recv(t *testing.T) {
 	}
 
 	transport := &mockAudioTransport{
-		recvFunc: func(ctx context.Context) (<-chan voice.Frame, error) {
-			ch := make(chan voice.Frame, len(expectedFrames))
-			for _, f := range expectedFrames {
-				ch <- f
+		recvFunc: func(ctx context.Context) iter.Seq2[voice.Frame, error] {
+			return func(yield func(voice.Frame, error) bool) {
+				for _, f := range expectedFrames {
+					if !yield(f, nil) {
+						return
+					}
+				}
 			}
-			close(ch)
-			return ch, nil
 		},
 	}
 
-	ch, err := transport.Recv(context.Background())
+	receivedFrames, err := drainFrames(transport.Recv(context.Background()))
 	require.NoError(t, err)
-
-	var receivedFrames []voice.Frame
-	for frame := range ch {
-		receivedFrames = append(receivedFrames, frame)
-	}
-
 	require.Len(t, receivedFrames, 2)
 	assert.Equal(t, voice.FrameAudio, receivedFrames[0].Type)
 	assert.Equal(t, voice.FrameText, receivedFrames[1].Type)
@@ -190,21 +196,19 @@ func TestMockAudioTransport_Close(t *testing.T) {
 
 func TestAsVoiceTransport_Recv(t *testing.T) {
 	mockTransport := &mockAudioTransport{
-		recvFunc: func(ctx context.Context) (<-chan voice.Frame, error) {
-			ch := make(chan voice.Frame, 1)
-			ch <- voice.NewAudioFrame([]byte{0x01}, 16000)
-			close(ch)
-			return ch, nil
+		recvFunc: func(ctx context.Context) iter.Seq2[voice.Frame, error] {
+			return func(yield func(voice.Frame, error) bool) {
+				yield(voice.NewAudioFrame([]byte{0x01}, 16000), nil)
+			}
 		},
 	}
 
 	wrapped := &AsVoiceTransport{T: mockTransport}
 
-	ch, err := wrapped.Recv(context.Background())
+	frames, err := drainFrames(wrapped.Recv(context.Background()))
 	require.NoError(t, err)
-
-	frame := <-ch
-	assert.Equal(t, voice.FrameAudio, frame.Type)
+	require.Len(t, frames, 1)
+	assert.Equal(t, voice.FrameAudio, frames[0].Type)
 }
 
 func TestAsVoiceTransport_Send(t *testing.T) {
@@ -259,14 +263,15 @@ func TestConfig_Extra(t *testing.T) {
 
 func TestMockAudioTransport_RecvError(t *testing.T) {
 	transport := &mockAudioTransport{
-		recvFunc: func(ctx context.Context) (<-chan voice.Frame, error) {
-			return nil, assert.AnError
+		recvFunc: func(ctx context.Context) iter.Seq2[voice.Frame, error] {
+			return func(yield func(voice.Frame, error) bool) {
+				yield(voice.Frame{}, assert.AnError)
+			}
 		},
 	}
 
-	ch, err := transport.Recv(context.Background())
+	_, err := drainFrames(transport.Recv(context.Background()))
 	require.Error(t, err)
-	assert.Nil(t, ch)
 }
 
 func TestMockAudioTransport_SendError(t *testing.T) {
@@ -423,17 +428,32 @@ func TestWebSocketTransport_SendRecvAudioRoundTrip(t *testing.T) {
 	err = ws.Send(ctx, voice.NewAudioFrame(audioData, 16000))
 	require.NoError(t, err)
 
-	// Receive the echoed frame.
-	ch, err := ws.Recv(ctx)
-	require.NoError(t, err)
-
+	// Receive the echoed frame via iterator, delivered on a channel so we
+	// can enforce a test timeout.
+	frameCh := pumpFirstFrame(ctx, ws)
 	select {
-	case frame := <-ch:
+	case frame := <-frameCh:
 		assert.Equal(t, voice.FrameAudio, frame.Type)
 		assert.Equal(t, audioData, frame.Data)
 	case <-time.After(5 * time.Second):
 		t.Fatal("timed out waiting for echoed audio frame")
 	}
+}
+
+// pumpFirstFrame consumes the first frame from ws.Recv(ctx) on a goroutine and
+// delivers it via a channel. Used so tests can enforce their own timeout.
+func pumpFirstFrame(ctx context.Context, ws *WebSocketTransport) <-chan voice.Frame {
+	out := make(chan voice.Frame, 1)
+	go func() {
+		for f, err := range ws.Recv(ctx) {
+			if err != nil {
+				return
+			}
+			out <- f
+			return
+		}
+	}()
+	return out
 }
 
 func TestWebSocketTransport_SendRecvTextFrame(t *testing.T) {
@@ -459,12 +479,9 @@ func TestWebSocketTransport_SendRecvTextFrame(t *testing.T) {
 	err = ws.Send(ctx, voice.NewTextFrame("hello world"))
 	require.NoError(t, err)
 
-	// Receive the echoed frame.
-	ch, err := ws.Recv(ctx)
-	require.NoError(t, err)
-
+	frameCh := pumpFirstFrame(ctx, ws)
 	select {
-	case frame := <-ch:
+	case frame := <-frameCh:
 		assert.Equal(t, voice.FrameText, frame.Type)
 		assert.Equal(t, "hello world", frame.Text())
 	case <-time.After(5 * time.Second):
@@ -498,11 +515,9 @@ func TestWebSocketTransport_SendControlFrame(t *testing.T) {
 	err = ws.Send(ctx, voice.NewControlFrame(voice.SignalInterrupt))
 	require.NoError(t, err)
 
-	ch, err := ws.Recv(ctx)
-	require.NoError(t, err)
-
+	frameCh := pumpFirstFrame(ctx, ws)
 	select {
-	case frame := <-ch:
+	case frame := <-frameCh:
 		assert.Equal(t, voice.FrameControl, frame.Type)
 		assert.Equal(t, voice.SignalInterrupt, frame.Signal())
 	case <-time.After(5 * time.Second):
@@ -520,9 +535,8 @@ func TestWebSocketTransport_RecvClosed(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, ws.Close())
 
-	ch, err := ws.Recv(context.Background())
+	_, err = drainFrames(ws.Recv(context.Background()))
 	require.Error(t, err)
-	assert.Nil(t, ch)
 	assert.Contains(t, err.Error(), "closed")
 }
 
@@ -571,24 +585,19 @@ func TestWebSocketTransport_ContextCancellation(t *testing.T) {
 	require.NoError(t, err)
 	defer ws.Close()
 
-	ch, err := ws.Recv(ctx)
-	require.NoError(t, err)
-	require.NotNil(t, ch)
+	// Run the iterator on a goroutine; it should exit after cancel.
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for range ws.Recv(ctx) {
+			// discard
+		}
+	}()
 
-	// Cancel the context — readLoop should exit and close the frames channel.
 	cancel()
 
-	// The frames channel should eventually be closed.
 	select {
-	case _, ok := <-ch:
-		// Either we got a frame or the channel closed; both are acceptable.
-		// We mainly care that it doesn't hang.
-		if ok {
-			// Drain remaining frames.
-			for f := range ch {
-				_ = f // discard
-			}
-		}
+	case <-done:
 	case <-time.After(5 * time.Second):
 		t.Fatal("timed out waiting for readLoop to stop after context cancel")
 	}
@@ -761,15 +770,23 @@ func TestWebSocketTransport_RegistryIntegration(t *testing.T) {
 	assert.Equal(t, 2, ws.config.channels)
 
 	// Verify the interface methods work: send and receive.
-	ch, err := tr.Recv(context.Background())
-	require.NoError(t, err)
-	require.NotNil(t, ch)
+	// Start iterator in goroutine so we can enforce a timeout.
+	frameCh := make(chan voice.Frame, 1)
+	go func() {
+		for f, err := range tr.Recv(context.Background()) {
+			if err != nil {
+				return
+			}
+			frameCh <- f
+			return
+		}
+	}()
 
 	err = tr.Send(context.Background(), voice.NewTextFrame("test"))
 	require.NoError(t, err)
 
 	select {
-	case frame := <-ch:
+	case frame := <-frameCh:
 		assert.Equal(t, voice.FrameText, frame.Type)
 		assert.Equal(t, "test", frame.Text())
 	case <-time.After(5 * time.Second):
@@ -784,8 +801,8 @@ func TestWebSocketTransport_RegistryIntegration(t *testing.T) {
 	require.NoError(t, err)
 
 	// After close, Send and Recv should fail.
-	_, err = tr.Recv(context.Background())
-	require.Error(t, err)
+	_, rerr := drainFrames(tr.Recv(context.Background()))
+	require.Error(t, rerr)
 
 	err = tr.Send(context.Background(), voice.NewTextFrame("fail"))
 	require.Error(t, err)
@@ -813,12 +830,10 @@ func TestWebSocketTransport_MalformedJSONResilience(t *testing.T) {
 	require.NoError(t, err)
 	defer ws.Close()
 
-	ch, err := ws.Recv(context.Background())
-	require.NoError(t, err)
-
+	frameCh := pumpFirstFrame(context.Background(), ws)
 	// The transport should skip the malformed text and deliver the audio frame.
 	select {
-	case frame := <-ch:
+	case frame := <-frameCh:
 		assert.Equal(t, voice.FrameAudio, frame.Type)
 		assert.Equal(t, []byte{0xDE, 0xAD}, frame.Data)
 	case <-time.After(5 * time.Second):
