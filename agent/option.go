@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/llm"
+	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tool"
 )
 
@@ -34,6 +35,7 @@ type agentConfig struct {
 	plannerName   string
 	children      []Agent
 	metadata      map[string]any
+	contract      *schema.Contract
 }
 
 // defaultConfig returns the default agent configuration.
@@ -130,5 +132,13 @@ func WithChildren(children []Agent) Option {
 func WithMetadata(meta map[string]any) Option {
 	return func(c *agentConfig) {
 		c.metadata = meta
+	}
+}
+
+// WithContract sets the semantic contract for the agent, defining expected
+// input and output schemas.
+func WithContract(ct *schema.Contract) Option {
+	return func(c *agentConfig) {
+		c.contract = ct
 	}
 }
