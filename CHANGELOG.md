@@ -2,6 +2,235 @@
 
 All notable changes to Beluga AI are documented here.
 
+## [2.5.0] - 2026-04-11
+
+### Bug Fixes
+
+- **security**: Address gosec findings from CI (PR #248)
+- **quality**: Address SonarCloud findings on arch-validate-sweep
+- **security**: Address residual gosec findings on touched files
+- **security**: Suppress G118 false positives in newWorkflowContext
+- **quality**: Nudge coverage >=80%, cover tracing passthroughs, last gosec
+
+### Documentation
+
+- **specs**: Add unified agent system design
+- **wiki**: Populate from codebase via /wiki-learn all
+- **specs**: Add docs architecture redesign spec
+- Replace monolithic docs with 29-document architecture set
+- **wiki**: /arch-validate all — capture findings
+- **architecture**: Arch-update for arch-validate sweep
+
+### Features
+
+- **.claude**: Unified self-evolving multi-agent system
+
+### Refactoring
+
+- **agent, voice/s2s**: Split 6-method interfaces via composition
+- Add core.Errorf helper; migrate llm + FuncTool to typed errors
+- **tool, guard**: Migrate error handling to core.Errorf
+- **memory**: Fix arch-validate violations (errors, streaming, tracing)
+- Arch-validate sweep across framework (errors + tracing)
+- Chan->iter.Seq2 cross-package cascades (3 of 5)
+- **voice**: FrameProcessor + Transport chan->iter.Seq2 cascade
+
+## [2.4.3] - 2026-04-11
+
+### Bug Fixes
+
+- **website**: Bump react-dom to 19.2.5 to match react version (#246)
+
+### LOO-10
+
+- Agent Trajectory Evaluation (#200)
+
+### LOO-11
+
+- System 1/System 2 Dual-Process Cognitive Architecture (#201)
+
+### LOO-12
+
+- Metacognitive Agents (Self-Model Improvement) (#202)
+
+### LOO-13
+
+- Role-Based Dynamic Team Formation (#203)
+
+### LOO-14
+
+- Multi-Agent Debate and Generator-Evaluator Pattern (#204)
+
+### LOO-15
+
+- Shared Blackboard / Shared Context Layer (#205)
+
+### LOO-16
+
+- Semantic Contracts Between Agents (#206)
+
+### LOO-17
+
+- Procedural Memory (How-To Knowledge) (#207)
+
+### LOO-18
+
+- Memory Consolidation with Intentional Forgetting (#208)
+
+### LOO-19
+
+- Sleep-Time Compute (#209)
+
+### LOO-20
+
+- Cross-Agent Shared Memory with Access Control (#210)
+
+### LOO-21
+
+- RL-Optimized Memory Operations (Memory-R1) (#211)
+
+### LOO-22
+
+- Zettelkasten-Style Associative Memory (A-MEM) (#212)
+
+### LOO-23
+
+- Late Interaction Retrieval Models (ColBERT/ColPali) (#213)
+
+### LOO-24
+
+- RAPTOR Hierarchical Tree-Based Retrieval (#214)
+
+### LOO-25
+
+- Agentic RAG Orchestration (#215)
+
+### LOO-26
+
+- Structured Data RAG (Text2Cypher/Text2SQL) (#216)
+
+### LOO-28
+
+- Sandboxed Code Execution (E2B-Style) (#217)
+
+### LOO-30
+
+- MCP November 2025 Spec Features (#219)
+
+### LOO-31
+
+- Tool Learning and Creation by Agents (#220)
+
+### LOO-32
+
+- OWASP Top 10 for Agentic Applications Compliance (#221)
+
+### LOO-33
+
+- Memory Poisoning Detection and Cascading Failure Prevention (#222)
+
+### LOO-34
+
+- Temporal Least Privilege and Agentic Identity (#223)
+
+### LOO-35
+
+- Automated Red Teaming (#224)
+
+### LOO-37
+
+- Simulation-Based Testing Environments (#226)
+
+### LOO-38
+
+- Cost-Aware Evaluation (#227)
+
+### LOO-40
+
+- Agent Replay and Time-Travel Debugging (#229)
+
+### LOO-41
+
+- Conversation Clustering and Pattern Analysis (#230)
+
+### LOO-42
+
+- Agent Execution Visualization (#231)
+
+### LOO-44
+
+- Declarative Agent Definition (YAML/JSON) (#233)
+
+### LOO-46
+
+- Speaker Diarization (#235)
+
+### LOO-47
+
+- Telephony Integration (SIP/PSTN) (#236)
+
+### LOO-48
+
+- AG-UI and AGENTS.md (#237)
+
+### LOO-49
+
+- Intelligent Model Routing for Cost Optimization (#238)
+
+### LOO-50
+
+- Self-Evolving / Self-Improving Agents (#239)
+
+### LOO-51
+
+- Agent File Format / Portable Serialization (#240)
+
+### LOO-52
+
+- Context Engineering as Explicit Discipline (#241)
+
+### LOO-55
+
+- Mind-Map Agent / Structured Reasoning Context (#244)
+
+### LOO-7
+
+- Reasoning Model Integration (o3/o4, Claude thinking) (#197)
+
+### LOO-8
+
+- Agentic Plan Caching (#198)
+
+### LOO-9
+
+- Temporal Knowledge Graph Memory (#199)
+
+### Security
+
+- Graceful Degradation Under Security Events (#225)
+
+## [2.4.2] - 2026-04-11
+
+### Documentation
+
+- Fix architecture, concepts, packages, and API reference to match current codebase
+- Tier 2 sweep — fix code examples across all documentation pages
+
+### LOO-53
+
+- Speculative Execution for Agents (#242)
+
+### Miscellaneous
+
+- **release**: Update CHANGELOG.md for v2.4.1 [skip ci] (#190)
+
+### Build
+
+- **deps**: Bump @tailwindcss/vite from 4.2.1 to 4.2.2 in /docs/website (#192)
+- **deps**: Bump devalue from 5.6.3 to 5.7.1 in /docs/website (#195)
+- **deps**: Bump react from 19.2.4 to 19.2.5 in /docs/website (#194)
+- **deps**: Bump lodash-es from 4.17.23 to 4.18.1 in /docs/website (#196)
+
 ## [2.4.0] - 2026-04-07
 
 ### Bug Fixes
