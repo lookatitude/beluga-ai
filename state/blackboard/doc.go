@@ -8,4 +8,21 @@
 //
 // This package follows the Beluga 4-ring extension contract --
 // see docs/architecture/03-extensibility-patterns.md.
+//
+// # Usage
+//
+//	store := inmemory.New()
+//	bb := blackboard.New(store,
+//	    blackboard.WithReducers(
+//	        state.WithReducer("counter", func(old, new any) any {
+//	            o, _ := old.(int)
+//	            n, _ := new.(int)
+//	            return o + n
+//	        }),
+//	    ),
+//	)
+//	defer bb.Close()
+//
+//	bb.Set(ctx, "agent-1", "counter", 5)
+//	bb.Set(ctx, "agent-2", "counter", 3) // merged to 8
 package blackboard
