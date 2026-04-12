@@ -212,17 +212,11 @@ func main() {
         prompt.WithCacheBreakpoint(),
         prompt.WithDynamicContext([]schema.Message{
             schema.NewHumanMessage("What is an interface?"),
-        }),
-        prompt.WithUserInput(schema.NewHumanMessage("How do I implement one?")),
-    ).Build()
-
-    fmt.Printf("%d messages assembled\n", len(all))
-}
-```
-
-## Full example
-
-The following example shows versioned template retrieval, manual rendering with variable overrides, and cache-optimised assembly with tool definitions.
+    base, err := promptfile.NewFileManager("/etc/prompts")
+    if err != nil {
+        log.Fatal(err)
+    }
+    mgr := prompt.ApplyMiddleware(base, prompt.WithTracing())
 
 ```go
 package main
