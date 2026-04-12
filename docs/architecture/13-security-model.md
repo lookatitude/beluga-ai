@@ -260,6 +260,7 @@ When no detectors are supplied, `NewMemoryGuard` defaults to `EntropyDetector`, 
 ```go
 import (
     "context"
+    "fmt"
 
     guardmem "github.com/lookatitude/beluga-ai/guard/memory"
 )
@@ -284,7 +285,7 @@ if result.Blocked {
 
 ### Signed memory integrity
 
-`SignedMemoryMiddleware` ([`guard/memory/signed.go:23-25`](../../guard/memory/signed.go)) wraps a `memory.Memory` with HMAC-SHA256 signing. On `Save`, it computes a signature over the output message text and stores it in the `_beluga_sig` metadata key ([`signed.go:17`](../../guard/memory/signed.go)). On `Load`, it verifies each message's signature and silently drops messages that fail or lack one, firing the `OnSignatureInvalid` hook for each rejection.
+`SignedMemoryMiddleware` ([`guard/memory/signed.go:23-26`](../../guard/memory/signed.go)) wraps a `memory.Memory` with HMAC-SHA256 signing. On `Save`, it computes a signature over the output message text and stores it in the `_beluga_sig` metadata key ([`signed.go:18`](../../guard/memory/signed.go)). On `Load`, it verifies each message's signature and silently drops messages that fail or lack one, firing the `OnSignatureInvalid` hook for each rejection.
 
 This prevents a compromised write path from injecting unsigned content that would later be read back as trusted context. The signature covers the text content of the message — structural fields such as tool call IDs are not included, so the middleware cooperates cleanly with message transformations that preserve text.
 
@@ -301,11 +302,18 @@ if err != nil {
 }
 // Wrap any memory.Memory implementation.
 signedMem := sigMiddleware.Wrap(baseMemory)
+
+// Use the signed memory for all subsequent Load/Save operations.
+msgs, err := signedMem.Load(ctx, sessionID)
+if err != nil {
+    return err
+}
+_ = msgs // process messages...
 ```
 
 ### Inter-agent circuit breaker
 
-`InterAgentCircuitBreaker` ([`guard/memory/circuit.go:19-27`](../../guard/memory/circuit.go)) tracks per-agent-pair circuit breakers keyed by a collision-free `"<len(writer)>:<writer>|<reader>"` encoding. When `RecordPoisoning` is called for a writer-reader pair enough times to exceed the failure threshold (default 3), the circuit opens and `Allow` returns a `core.ErrGuardBlocked` error for that pair, isolating the compromised writer without affecting memory access between unrelated agents.
+`InterAgentCircuitBreaker` ([`guard/memory/circuit.go:19-26`](../../guard/memory/circuit.go)) tracks per-agent-pair circuit breakers keyed by a collision-free `"<len(writer)>:<writer>|<reader>"` encoding. When `RecordPoisoning` is called for a writer-reader pair enough times to exceed the failure threshold (default 3), the circuit opens and `Allow` returns a `core.ErrGuardBlocked` error for that pair, isolating the compromised writer without affecting memory access between unrelated agents.
 
 State transitions follow the standard circuit-breaker model — closed, open, half-open — backed by `resilience.CircuitBreaker`. `RecordSuccess` closes a half-open circuit; `Reset` clears it manually. `ListTripped` returns sorted keys of all open circuits for observability.
 
@@ -371,6 +379,13 @@ degrader := degradation.NewRuntimeDegrader(monitor, policy,
 
 // Wrap an agent with the degradation middleware.
 safeAgent := agent.ApplyMiddleware(myAgent, degrader.Middleware())
+
+// Use the safe agent for all subsequent invocations.
+resp, err := safeAgent.Invoke(ctx, "process user request")
+if err != nil {
+    slog.ErrorContext(ctx, "agent invoke failed", "error", err)
+}
+_ = resp
 
 // Record anomalies from guard results.
 degrader.RecordEvent(ctx, degradation.SecurityEvent{
