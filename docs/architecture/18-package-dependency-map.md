@@ -129,7 +129,7 @@ guard      → core, schema, o11y, llm (for guard LLMs)
 prompt     → o11y, schema
 cache      → core, rag/embedding
 eval       → core, schema, llm, tool, agent (⚠ violation — see below)
-hitl       → core, o11y
+hitl       → core, o11y (plus internal/hookutil)
 ```
 
 **Layering violation — `eval` imports `agent`:** The `eval` package (Layer 3) imports `agent` (Layer 6), which is an upward dependency. The `eval` package also imports `llm` and `tool` (Layer 3 peers), which is acceptable for evaluation runners that need to invoke models and tools. However, the `agent` import violates the layering rule and should be refactored so that evaluation of agents is wired at Layer 6 or Layer 7, not inside `eval/` itself.
