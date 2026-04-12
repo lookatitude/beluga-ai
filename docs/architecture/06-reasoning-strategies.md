@@ -6,17 +6,16 @@
 
 ## Overview
 
-A planner decides *what an agent does next*. Beluga ships seven reasoning strategies that trade off cost against quality. Pick the cheapest one that gives acceptable results for your task — upgrading is a one-line change because every planner implements the same `Planner` interface.
+A planner decides *what an agent does next*. Beluga ships eight reasoning strategies that trade off cost against quality. Pick the cheapest one that gives acceptable results for your task — upgrading is a one-line change because every planner implements the same `Planner` interface. Run `agent.ListPlanners()` at runtime to see what is registered in your build.
 
-**Status note:** some of the advanced strategies below (LATS, MoA) are on the roadmap but may not be fully implemented yet. Check `agent/planners/` for the current list and use `planner.List()` at runtime to see what's registered.
-
-## The seven strategies, cheapest to most expensive
+## The eight strategies, cheapest to most expensive
 
 ```mermaid
 graph LR
   ReAct[ReAct · cheap] --> Reflexion[Reflexion]
   Reflexion --> SD[Self-Discover]
-  SD --> ToT[Tree-of-Thought]
+  SD --> MM[MindMap]
+  MM --> ToT[Tree-of-Thought]
   ToT --> GoT[Graph-of-Thought]
   GoT --> LATS[LATS]
   LATS --> MoA[Mixture-of-Agents · expensive]
@@ -27,6 +26,7 @@ graph LR
 | ReAct | 1 | Simple tool use, general tasks |
 | Reflexion | 2-3 | Quality-sensitive, iterative improvement |
 | Self-Discover | 2 | Cost-sensitive planning, reusable plans |
+| MindMap | 2-4 | Structured reasoning with contradiction detection |
 | Tree-of-Thought | 5-20 | Combinatorial search, puzzles |
 | Graph-of-Thought | 5-20 | Reasoning with cycles and merging |
 | LATS | 20-100 | Deep reasoning, math proofs, code synthesis |
@@ -60,6 +60,27 @@ Three roles, all played by the same LLM with different prompts. The actor produc
 ### Self-Discover
 
 The model first composes a task-specific reasoning plan ("decompose → find evidence → synthesise"), then executes it. The plan is cached and reused for similar inputs. Cheaper than full Tree-of-Thought, more structured than ReAct.
+
+### MindMap — Structured Reasoning Graph
+
+`MindMapPlanner` constructs a typed reasoning graph — claims, evidence, questions, and conclusions connected by support, contradiction, derivation, and refinement edges — before synthesising actions. At each iteration it adds nodes from the LLM's structured output, then runs coherence checking. When the coherence score falls below the configured threshold, the planner asks the LLM to resolve contradictions before synthesising.
+
+```mermaid
+graph TD
+  Input --> Populate[Populate graph: claims, evidence, questions]
+  Populate --> Check[Coherence check]
+  Check -->|score >= threshold| Synthesize[Synthesize actions]
+  Check -->|score < threshold| Resolve[Resolve contradictions]
+  Resolve --> Synthesize
+  Synthesize -->|new observations| AddEvidence[Add evidence nodes]
+  AddEvidence --> Populate
+```
+
+**Source:** `agent/mindmap.go:55-130` — `MindMapPlanner` struct, `Plan`, and `Replan`.
+
+The graph is reset on each `Plan` call and updated incrementally on each `Replan` call. `PlannerState.Metadata` is not used for graph persistence — the graph lives in the planner struct across the Plan/Replan lifecycle of one agent loop. This means `MindMapPlanner` is stateful within a single agent turn but stateless across sessions.
+
+`WithMaxNodes(n)` caps total nodes per iteration (default 20). `WithCoherenceThreshold(t)` sets the minimum acceptable coherence score (default 0.5). The planner auto-registers as `"mindmap"` in `init()` (`agent/mindmap.go:17`).
 
 ### Tree-of-Thought
 
@@ -168,6 +189,7 @@ graph TD
   Start --> Simple[Simple tool use or Q&A]
   Start --> Quality[Quality-sensitive, iterative]
   Start --> Plan[Plans repeatable]
+  Start --> Structured[Structured reasoning with contradictions]
   Start --> Combinatorial[Combinatorial search]
   Start --> Deep[Deep reasoning, math/code]
   Start --> Ensemble[Need diverse perspectives]
@@ -175,12 +197,107 @@ graph TD
   Simple --> R1[ReAct]
   Quality --> R2[Reflexion]
   Plan --> R3[Self-Discover]
-  Combinatorial --> R4[Tree-of-Thought]
-  Deep --> R5[LATS]
-  Ensemble --> R6[MoA]
+  Structured --> R4[MindMap]
+  Combinatorial --> R5[Tree-of-Thought]
+  Deep --> R6[LATS]
+  Ensemble --> R7[MoA]
 ```
 
-Start with ReAct. Upgrade only when you have a measurable quality gap and a budget for more tokens. Never pick LATS for a use case that ReAct handles — the cost difference is 20-100×.
+Start with ReAct. Upgrade only when you have a measurable quality gap and a budget for more tokens. Never pick LATS for a use case that ReAct handles — the cost difference is 20-100x.
+
+## agent/plancache — Plan-Level Caching [experimental]
+
+`agent/plancache` is a strategy-agnostic optimisation layer that caches the action sequences produced by any planner. It wraps the planner; callers see the same `agent.Planner` interface.
+
+```mermaid
+graph LR
+  Input --> Matcher[Matcher.Score vs templates]
+  Matcher -->|score >= minScore| CacheHit[Return cached actions]
+  Matcher -->|cache miss| Inner[Inner planner.Plan]
+  Inner --> Extract[ExtractTemplate / Store.Save]
+  Replan --> Inner2[Inner planner.Replan]
+  Replan --> Track[Track deviation count]
+  Track -->|ratio > evictionThreshold| Evict[Store.Delete]
+```
+
+**Key interfaces:**
+
+- `Store` (`agent/plancache/store.go:7-23`) — `Save`, `Get`, `List`, `Delete`. `InMemoryStore` ships for testing; implement `Store` for Redis- or Postgres-backed persistence.
+- `Matcher` (`agent/plancache/matcher.go:8-12`) — returns a `[0.0, 1.0]` similarity score for `(input, template)` pairs. The default keyword matcher registers as `"keyword"`.
+- `Template` (`agent/plancache/template.go:12-43`) — captures the input, keyword fingerprint, action sequence, success/deviation counts, and a `DeviationRatio()` method used for eviction.
+
+**Wiring a cached planner** (simplest path via `plancache.WrapPlanner`, `agent/plancache/integration.go:17`):
+
+```go
+import (
+    "context"
+    "github.com/lookatitude/beluga-ai/agent/plancache"
+)
+
+cached, err := plancache.WrapPlanner(myPlanner,
+    plancache.WithMinScore(0.7),
+    plancache.WithMaxTemplates(50),
+    plancache.WithEvictionThreshold(0.4),
+    plancache.WithHooks(plancache.Hooks{
+        OnCacheHit: func(ctx context.Context, tmpl *plancache.Template, score float64) {
+            // observe cache hits
+        },
+        OnTemplateEvicted: func(ctx context.Context, tmpl *plancache.Template) {
+            // observe evictions
+        },
+    }),
+)
+if err != nil {
+    return err
+}
+```
+
+**Eviction:** every `Replan` call increments `Template.DeviationCount`. When `DeviationRatio()` exceeds `evictionThreshold` (default 0.5), the template is deleted. Plans that required frequent replanning are not served from cache.
+
+**Namespace isolation:** `CachedPlanner` derives the agent namespace from `state.Metadata["agent_id"]` (`agent/plancache/cached_planner.go:224`). If this key is absent, all planners fall into the `"default"` namespace and may share templates. Set `state.Metadata["agent_id"]` explicitly when multiple planners share a store.
+
+**When to use:** tasks that recur structurally — ticket triage, document routing, data extraction pipelines — where the same tool sequence applies to most inputs. `plancache` is transparent to the planner it wraps and compatible with every strategy.
+
+## agent/speculative — Speculative Execution [experimental]
+
+`agent/speculative` runs a cheap `Predictor` and the full ground-truth agent in parallel. If the predictor's result is validated before the ground-truth finishes, it is returned with a measurable latency speedup — similar to speculative execution in CPU pipelines.
+
+```mermaid
+graph TD
+  Input --> PredGo[Predictor.Predict goroutine]
+  Input --> GTGo[GroundTruth.Invoke goroutine]
+  PredGo --> PredDone[prediction + confidence]
+  PredDone -->|confidence < threshold| WaitGT[Wait for ground truth]
+  PredDone -->|confidence >= threshold| Validate[Validator.Validate]
+  Validate -->|valid| ReturnPred[Return prediction]
+  Validate -->|invalid| ReturnGT[Return ground truth]
+  GTGo --> WaitGT
+  WaitGT --> ReturnGT
+```
+
+**Key interfaces** (`agent/speculative/predictor.go:13-15`, `agent/speculative/validator.go:10-13`):
+
+```go
+type Predictor interface {
+    Predict(ctx context.Context, input string) (prediction string, confidence float64, err error)
+}
+
+type Validator interface {
+    Validate(ctx context.Context, prediction, groundTruth string) (valid bool, err error)
+}
+```
+
+Built-in implementations:
+
+- `LightModelPredictor` (`agent/speculative/predictor.go:21`) — uses any `llm.ChatModel`. Confidence is estimated from response length (shorter = higher confidence, per heuristic at `agent/speculative/predictor.go:54`).
+- `ExactValidator` — case-normalised exact match.
+- `SemanticValidator` — cosine similarity of TF vectors with a configurable threshold.
+
+**Metrics** (`agent/speculative/metrics.go`) track `HitRate()`, total speedup, and wasted tokens from mispredictions. Instrument these before setting the confidence threshold in production.
+
+**Streaming path:** when `WithFastAgent` is configured and predictor confidence exceeds the threshold, the fast agent's stream is used directly (`agent/speculative/executor.go:253-316`). Without `WithFastAgent`, streaming always falls back to the ground-truth agent.
+
+**When to use:** the ground-truth agent is expensive (e.g., LATS or MoA) and a large fraction of inputs have predictable answers a lighter model can supply. A hit rate below roughly 40% typically means the speedup is outweighed by the wasted predictor tokens.
 
 ## Common mistakes
 
@@ -188,9 +305,12 @@ Start with ReAct. Upgrade only when you have a measurable quality gap and a budg
 - **Forgetting that planners use the same LLM.** If your LLM is rate-limited, switching to LATS makes the problem worse, not better.
 - **Using MoA with identical agents.** The point of ensemble is *diversity*. Running the same agent 5 times gets you no new information.
 - **Mutating `PlannerState.Metadata` in the executor.** That's the planner's private storage. The executor round-trips it untouched.
+- **Using `plancache` without setting `state.Metadata["agent_id"]`.** Missing agent IDs put all planners in the same `"default"` namespace and templates bleed across unrelated agents.
+- **Deploying speculative execution without measuring hit rate.** A low hit rate means every request pays predictor cost with no benefit. Always baseline `Metrics().HitRate()` in a shadow-run before routing real traffic.
+- **Treating MindMap as a drop-in for Tree-of-Thought.** MindMap builds a typed knowledge graph and is better for reasoning problems with known contradictions. ToT explores a search tree and is better for combinatorial problems with a reachable goal state.
 
 ## Related reading
 
 - [04 — Data Flow](./04-data-flow.md) — how the executor calls the planner.
-- [05 — Agent Anatomy](./05-agent-anatomy.md) — where the planner lives inside an agent.
+- [05 — Agent Anatomy](./05-agent-anatomy.md) — where the planner lives inside an agent, and the experimental agent architectures.
 - [Custom Planner guide](../guides/custom-planner.md) — end-to-end example of implementing one.

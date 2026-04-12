@@ -72,6 +72,20 @@ Entries reach `.claude/rules/` when seen ≥3 times or HIGH confidence.
 **Prevention rule:** Invariant 1 already forbids channels in public APIs. Add a `-race` requirement to any fan-in goroutine refactor; shared-owner channel closes are invisible without it.
 **Confidence:** HIGH — compile-time enforced by interface change; race-detector clean.
 
+---
+
+### C-010 | 2026-04-12 | docs-writer | prompt · OPEN
+**Symptom:** Doc code examples for `prompt` package used `mgr = prompt.ApplyMiddleware(mgr, ...)` where `mgr` was declared as `*file.FileManager` (the concrete type returned by `NewFileManager`). `ApplyMiddleware` returns `prompt.PromptManager` (an interface), causing a compile error: "cannot use … as *file.FileManager value in assignment: need type assertion".
+**Root cause:** `NewFileManager` returns a concrete pointer type, not the interface. The middleware wrapping pattern returns the interface, so the variable must be typed as the interface before or at the point of wrapping. The pattern is easy to misread because in other packages (e.g., `llm`) the constructor already returns the interface, so reassignment works without an explicit type declaration.
+**Correction:** Always introduce an explicit interface-typed variable before calling `ApplyMiddleware`:
+```go
+base, err := promptfile.NewFileManager(dir)
+// ... error check ...
+var mgr prompt.PromptManager = base
+mgr = prompt.ApplyMiddleware(mgr, prompt.WithTracing())
+```
+**Prevention rule:** When a provider constructor returns a concrete type (pointer to struct), you cannot directly reassign the result of `ApplyMiddleware` to that variable. The variable must be declared as the interface type before wrapping. Verify all doc code examples compile with `go build` before committing — not just after.
+**Confidence:** HIGH — caught by `go build` during post-submission verification; fix confirmed compile-clean.
 ### C-007 | 2026-04-12 | docs-writer | docs/feature-status
 **Symptom:** When writing a feature-status page describing "Planned" features, the doc-writer used `gh pr view N --json state` to determine whether features existed in `main`. All five PRs returned `"state":"MERGED"`. The doc-writer initially assumed this confirmed the feature was not in `main` (via prior context from the task), but the evidence was contradictory and required clarification.
 **Root cause:** GitHub PR state `"MERGED"` means the PR was closed via merge into *some* branch — not necessarily `main`. PRs can be merged into `develop`, `release`, or staging branches and show as MERGED while `main` HEAD has none of their artifacts.
@@ -100,3 +114,11 @@ Entries reach `.claude/rules/` when seen ≥3 times or HIGH confidence.
 **Correction:** When operating in a git worktree, always derive the base path from `pwd` (which returns the worktree root), not from any hardcoded repo root. Verify with `git status` in the worktree after every Write/Edit call to confirm the file is tracked.
 **Prevention rule:** In any worktree session, run `git status --short` after the first Write/Edit to confirm modified files appear. If `git status` is clean after a write, the write landed in the wrong tree.
 **Confidence:** HIGH — reproducible; discovered by checking `git status` which was clean despite edits.
+
+### C-010 | 2026-04-12 | docs-writer | rag/retriever
+**Symptom:** A developer calls `retriever.New("colbert", cfg)` expecting a working `ColBERTRetriever`, but receives an error: "colbert: use colbert.NewColBERTRetriever() with WithEmbedder and WithIndex options". Same for `retriever.New("raptor", cfg)`.
+**Root cause:** ColBERT and RAPTOR require dependencies (`ColBERTIndex`/`MultiVectorEmbedder`, or a pre-built `*Tree`/`Embedder`) that cannot be sourced from a generic `config.ProviderConfig`. Their `init()` registrations deliberately return descriptive errors to guide callers away from the generic factory path. See `rag/retriever/colbert/retriever.go:13-16` and `rag/retriever/raptor/retriever.go:15-21`.
+**Correction:** Use the typed constructors: `colbert.NewColBERTRetriever(colbert.WithEmbedder(...), colbert.WithIndex(...))` and `raptor.NewRAPTORRetriever(raptor.WithTree(...), raptor.WithRetrieverEmbedder(...))`. The `retriever.New("colbert", cfg)` / `retriever.New("raptor", cfg)` registry paths exist solely so `retriever.List()` includes these names for discovery — not for construction.
+**Contrast:** `StructuredRetriever` has the same pattern (`retriever.New("structured", cfg)` errors on purpose) but uses `structured.NewStructuredRetriever(structured.WithGenerator(...), structured.WithExecutor(...))`.
+**Prevention rule:** Documented in DOC-10 "Common mistakes". Any new retriever that requires non-config dependencies should follow this same "register with descriptive error, provide typed constructor" pattern.
+**Confidence:** HIGH — error text read directly from source; confirmed by source code at cited lines.
