@@ -58,6 +58,7 @@ Data flows down. Each layer imports only from layers below.
 - [16 — Durable Workflows](./16-durable-workflows.md)
 - [17 — Deployment Modes](./17-deployment-modes.md)
 - [18 — Package Dependency Map](./18-package-dependency-map.md)
+- [19 — Prompt Management](./19-prompt-management.md)
 
 ## Visual sources
 
