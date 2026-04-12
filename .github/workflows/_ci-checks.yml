@@ -113,14 +113,24 @@ jobs:
         id: test_result
         if: always()
         run: |
-          TEST_COUNT=$(grep -c '"Test":' test-output.json 2>/dev/null | head -1 || echo "0")
-          PASS_COUNT=$(grep -c '"Action":"pass"' test-output.json 2>/dev/null || echo "0")
-          FAIL_COUNT=$(grep -c '"Action":"fail"' test-output.json 2>/dev/null || echo "0")
+          # Counts — use `|| true` to tolerate zero matches under pipefail,
+          # and `tr -dc '0-9'` to guarantee a single numeric token (no stray
+          # lines, no trailing newline) for downstream arithmetic and
+          # $GITHUB_OUTPUT formatting.
+          TEST_COUNT=$(grep -c '"Test":' test-output.json 2>/dev/null || true)
+          TEST_COUNT=$(printf '%s' "${TEST_COUNT}" | tr -dc '0-9')
+          TEST_COUNT=${TEST_COUNT:-0}
+          FAIL_COUNT=$(grep -c '"Action":"fail"' test-output.json 2>/dev/null || true)
+          FAIL_COUNT=$(printf '%s' "${FAIL_COUNT}" | tr -dc '0-9')
+          FAIL_COUNT=${FAIL_COUNT:-0}
 
           if [ -f coverage.out ]; then
-            # Extract coverage percentage and truncate to integer to satisfy
-            # GITHUB_OUTPUT format requirements (decimal values are rejected).
-            COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | tr -d '%' | awk -F'.' '{print $1}')
+            # Match only the final "total:" summary line — function names
+            # containing the substring "total" would otherwise produce a
+            # multi-line value and break $GITHUB_OUTPUT. Truncate the float
+            # to an integer because GHA rejects decimal values.
+            COVERAGE=$(go tool cover -func=coverage.out | awk '/^total:/ {gsub("%","",$3); split($3,a,"."); print a[1]; exit}')
+            COVERAGE=${COVERAGE:-0}
           else
             COVERAGE="0"
           fi
@@ -170,8 +180,12 @@ jobs:
         id: integration_result
         if: always()
         run: |
-          TEST_COUNT=$(grep -c '"Test":' integration-output.json 2>/dev/null | head -1 || echo "0")
-          FAIL_COUNT=$(grep -c '"Action":"fail"' integration-output.json 2>/dev/null || echo "0")
+          TEST_COUNT=$(grep -c '"Test":' integration-output.json 2>/dev/null || true)
+          TEST_COUNT=$(printf '%s' "${TEST_COUNT}" | tr -dc '0-9')
+          TEST_COUNT=${TEST_COUNT:-0}
+          FAIL_COUNT=$(grep -c '"Action":"fail"' integration-output.json 2>/dev/null || true)
+          FAIL_COUNT=$(printf '%s' "${FAIL_COUNT}" | tr -dc '0-9')
+          FAIL_COUNT=${FAIL_COUNT:-0}
 
           if [ "$FAIL_COUNT" -gt 0 ]; then
             echo "status=failing" >> $GITHUB_OUTPUT
