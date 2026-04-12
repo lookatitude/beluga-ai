@@ -2,6 +2,28 @@
 
 All notable changes to Beluga AI are documented here.
 
+## [2.8.0] - 2026-04-12
+
+### Miscellaneous
+
+- **release**: Update CHANGELOG.md for v2.7.0 [skip ci]
+
+## [2.8.0] - 2026-04-12
+
+### Bug Fixes
+
+- **eval/judge**: Address review feedback on rubric, batch, consistency
+- **ci**: Truncate coverage float to integer for GITHUB_OUTPUT
+- **ci**: Harden test-parse step against multi-line GITHUB_OUTPUT
+
+### Features
+
+- **eval/judge**: LLM-as-Judge evaluation with rubrics (LOO-39)
+
+### Testing
+
+- **eval/judge**: Add coverage for review-comment fixes
+
 ## [2.7.0] - 2026-04-12
 
 ### Bug Fixes

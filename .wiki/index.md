@@ -34,6 +34,16 @@ To validate findings or add new patterns:
 
 Raw scan output: `raw/research/wiki-scan-2026-04-11.md`
 
+## Documentation Conventions (for docs-writer tasks)
+
+Key corrections for anyone writing or auditing documentation:
+
+- **C-006** — `docs/` has drifted from codebase: providers.md undercounts, first-agent.md uses non-existent APIs, README has unshipped features. See `.wiki/corrections.md`.
+- **C-007** — `gh pr view --json state` returning `MERGED` does NOT confirm code is in `main`. Always verify with `ls <path>` in the worktree. See `.wiki/corrections.md`.
+- **C-009** — This repo uses a multi-branch merge workflow. PRs merge into staging/integration before `main`. Canonical presence check: `git ls-files origin/main -- <path>`. See `.wiki/corrections.md`.
+- **feature-status**: Provider counts verified by `ls <pkg>/providers/ | wc -l`. As of 2026-04-12: 22 LLM, 9 embedding, 13 vectorstore, 9 memory, 6 STT, 7 TTS, 3 S2S, 3 transport providers.
+- **readme-drift**: README and `docs/reference/providers.md` must match `ls */providers/` output. Both files are hand-curated and drift within one release cycle.
+
 ## Project Documentation Cross-Reference
 
 The authoritative human-facing docs now live under `docs/`:

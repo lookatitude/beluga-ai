@@ -8,7 +8,7 @@ RM ?= rm -f
 
 .DEFAULT_GOAL := help
 
-.PHONY: help build test test-verbose integration-test coverage lint lint-fix fmt tidy fuzz bench docs docs-website clean check
+.PHONY: help build test test-verbose integration-test coverage lint lint-fix fmt tidy fuzz bench docs docs-website docs-providers clean check
 
 help: ## Show available targets
 	@echo "Beluga AI development targets:"
@@ -72,5 +72,9 @@ docs-website: ## Start docs website locally
 
 clean: ## Remove generated artifacts
 	$(RM) coverage.out coverage.html
+
+docs-providers: ## Check provider catalog is up-to-date
+	@$(GO) run ./internal/tools/provider-catalog > /tmp/providers-check.md
+	@diff -u docs/reference/providers.md /tmp/providers-check.md || (echo "ERROR: docs/reference/providers.md is stale. Run: go run ./internal/tools/provider-catalog > docs/reference/providers.md" && exit 1)
 
 check: lint test tidy ## Run pre-commit checks (lint + test + tidy)
