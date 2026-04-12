@@ -160,7 +160,7 @@ hooks := tool.ComposeHooks(
     myhooks.AuditHooks(logger),
     cost.ToolHooks(),
 )
-wrappedTool := tool.NewWithHooks(myTool, hooks)
+wrappedTool := tool.WithHooks(myTool, hooks)
 ```
 
 Only `AfterExecute` is set — `BeforeExecute` and `OnError` remain nil and are skipped. This is the "pay only for what you use" property of the pattern.
