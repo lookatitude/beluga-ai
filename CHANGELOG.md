@@ -2,12 +2,43 @@
 
 All notable changes to Beluga AI are documented here.
 
+## [2.6.0] - 2026-04-12
+
+### Bug Fixes
+
+- Address Greptile review for codeact agent
+- **codeact**: Restore NewProcessExecutor body and add gosec annotation
+- Address Greptile review and security findings
+- **security**: Use #nosec G204 directive so GHAS honours the suppression
+- Address Greptile review and security findings
+- **playground**: Extract Content-Type constant to resolve Sonar duplication
+
+### Features
+
+- **agent**: Add CodeAct (code-as-action) agent pattern
+- **cmd**: Add beluga CLI with init/dev/test/deploy subcommands (LOO-45)
+- **server**: Add playground chat UI package (LOO-43)
+
+### Miscellaneous
+
+- **release**: Update CHANGELOG.md for v2.5.0 [skip ci]
+- **release**: Update CHANGELOG.md for v2.5.1 [skip ci]
+
+### Refactoring
+
+- **codeact**: Reduce cognitive complexity for SonarCloud gate
+
+### Testing
+
+- **codeact**: Add coverage for planner, agent, and executor paths
+- **cmd/beluga**: Raise coverage and harden go binary lookup
+- **playground**: Raise coverage to 98.7% to pass SonarCloud gate
+
 ## [2.5.1] - 2026-04-11
 
 ### Miscellaneous
 
 - **rules**: Enforce pre-commit security gate and branch-PR discipline
-
 
 ## [2.5.0] - 2026-04-11
 
