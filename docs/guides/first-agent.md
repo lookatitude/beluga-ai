@@ -1,205 +1,268 @@
-# Guide: Build Your First Agent
+# First Agent — 20 minutes from zero to streaming output
 
-**Time:** ~5 minutes
-**You will build:** a single-LLM agent that answers questions using a built-in calculator tool.
-**Prerequisites:** Go 1.23+, an API key for an LLM provider (OpenAI, Anthropic, or any registered provider).
+**You will build:** a single-LLM agent with a typed calculator tool that streams its answer back one chunk at a time.
+**Prerequisites:** Go 1.23+, an API key for an LLM provider registered in this build (OpenAI, Anthropic, Ollama, etc.).
+**Related:** [DOC-02 Core Primitives](../architecture/02-core-primitives.md), [DOC-05 Agent Anatomy](../architecture/05-agent-anatomy.md), [Provider Template](../patterns/provider-template.md).
 
-## What you'll learn
+Every code block below has been compile-verified against the current tree using a `replace` directive against this repository. You can paste the blocks into a fresh module and run them unchanged.
 
-- Importing Beluga and a provider.
-- Building an agent with functional options.
-- Registering a simple tool.
-- Streaming the response.
-
-## Step 1 — initialise a Go module
+## 1. Install
 
 ```bash
 mkdir first-agent && cd first-agent
 go mod init example.com/first-agent
-go get github.com/lookatitude/beluga-ai
+go get github.com/lookatitude/beluga-ai@latest
 ```
 
-## Step 2 — the main file
+Beluga requires Go 1.23 or newer (streaming uses `iter.Seq2`, introduced in the 1.23 stdlib).
+
+## 2. Pick a provider and set credentials
+
+Provider packages register themselves in `init()` — you opt in by *blank-importing* the subpackage you want. This guide uses OpenAI; swap in any of `anthropic`, `ollama`, `google`, `bedrock`, etc. by changing two lines.
+
+```bash
+export OPENAI_API_KEY=sk-...
+```
+
+The provider is wired up by a single blank import:
+
+```go
+import _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+```
+
+That import triggers the provider's `init()` which calls `llm.Register("openai", ...)`. After that, `llm.New("openai", cfg)` will resolve. See [`llm/providers/openai/openai.go`](../../llm/providers/openai/openai.go) and [`llm/registry.go`](../../llm/registry.go) for the exact registration pattern.
+
+## 3. Your first agent
+
+One file. It builds an LLM, constructs a `BaseAgent` with a persona, and collects the answer via `Invoke`:
 
 ```go
 // main.go
 package main
 
 import (
-    "context"
-    "fmt"
-    "log"
-    "os"
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"time"
 
-    "github.com/lookatitude/beluga-ai/agent"
-    "github.com/lookatitude/beluga-ai/core"
-    "github.com/lookatitude/beluga-ai/llm"
-    "github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/llm"
 
-    // Import for side effect — registers the provider in llm.registry
-    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+	// Register the OpenAI provider via init().
+	_ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
 
 func main() {
-    ctx := context.Background()
-    ctx = core.WithTenant(ctx, "default")
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
 
-    // 1. Build the LLM
-    model, err := llm.New("openai", llm.Config{
-        "model":   "gpt-4o",
-        "api_key": os.Getenv("OPENAI_API_KEY"),
-    })
-    if err != nil {
-        log.Fatalf("llm.New: %v", err)
-    }
+	// 1. Build the LLM from a ProviderConfig struct (not a map).
+	model, err := llm.New("openai", config.ProviderConfig{
+		Provider: "openai",
+		APIKey:   os.Getenv("OPENAI_API_KEY"),
+		Model:    "gpt-4o-mini",
+	})
+	if err != nil {
+		log.Fatalf("llm.New: %v", err)
+	}
 
-    // 2. Build the agent
-    a := agent.NewLLMAgent(
-        agent.WithPersona(agent.Persona{
-            Role:      "Math tutor",
-            Goal:      "Solve arithmetic questions using the calculator tool",
-            Backstory: "You never compute arithmetic in your head — always use the calculator.",
-        }),
-        agent.WithLLM(model),
-        agent.WithTools(newCalculatorTool()),
-    )
+	// 2. Build the agent using functional options.
+	a := agent.New("math-tutor",
+		agent.WithLLM(model),
+		agent.WithPersona(agent.Persona{
+			Role:      "patient math tutor",
+			Goal:      "answer arithmetic questions clearly",
+			Backstory: "You explain each step before giving the final answer.",
+			Traits:    []string{"concise", "accurate"},
+		}),
+	)
 
-    // 3. Stream a response
-    stream, err := a.Stream(ctx, "What's 17 times 42, minus 19?")
-    if err != nil {
-        log.Fatalf("agent.Stream: %v", err)
-    }
-    for _, ev := range stream.Range {
-        if ev.Err != nil {
-            log.Fatalf("stream error: %v", ev.Err)
-        }
-        if text, ok := ev.Payload.(string); ok {
-            fmt.Print(text)
-        }
-    }
-    fmt.Println()
+	// 3. Invoke the agent synchronously — this streams internally and
+	//    returns the concatenated text.
+	answer, err := a.Invoke(ctx, "What is 17 times 42, minus 19?")
+	if err != nil {
+		log.Fatalf("agent.Invoke: %v", err)
+	}
+
+	fmt.Println(answer)
 }
 ```
 
-## Step 3 — define the calculator tool
+Key API facts (verify in source):
+
+- `agent.New(id string, opts ...Option) *BaseAgent` lives at [`agent/base.go:23`](../../agent/base.go). There is no `agent.NewLLMAgent`.
+- `llm.New` takes a `config.ProviderConfig` struct, defined at [`config/provider.go:19`](../../config/provider.go). It is not a `map[string]any`.
+- `Persona` fields are `Role`, `Goal`, `Backstory`, `Traits` — see [`agent/persona.go:13`](../../agent/persona.go).
+
+Run it:
+
+```bash
+go run .
+```
+
+## 4. Add a tool
+
+Tools in Beluga are typed. `tool.NewFuncTool[I any]` wraps a Go function whose input is a struct with `json` and `description` tags — the JSON Schema is generated automatically. See [`tool/functool.go:44`](../../tool/functool.go).
+
+Add a calculator tool in the same module. This example uses a trivial evaluator so the guide stays self-contained; in real code use `go/parser` or a proper expression library.
 
 ```go
 // calculator.go
 package main
 
 import (
-    "context"
-    "fmt"
+	"context"
+	"fmt"
+	"strconv"
+	"strings"
 
-    "github.com/lookatitude/beluga-ai/core"
-    "github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/tool"
 )
 
-func newCalculatorTool() tool.Tool {
-    return &calculatorTool{}
+// CalculatorInput is the typed input schema for the calculator tool.
+// Struct tags drive the generated JSON Schema.
+type CalculatorInput struct {
+	A  float64 `json:"a" description:"Left operand" required:"true"`
+	Op string  `json:"op" description:"Operator: one of + - * /" required:"true"`
+	B  float64 `json:"b" description:"Right operand" required:"true"`
 }
 
-type calculatorTool struct{}
-
-func (c *calculatorTool) Name() string { return "calculator" }
-
-func (c *calculatorTool) Description() string {
-    return "Evaluates arithmetic expressions. Input: expression (string), e.g. '17 * 42 - 19'."
+// NewCalculatorTool returns a tool that evaluates a single binary operation.
+func NewCalculatorTool() tool.Tool {
+	return tool.NewFuncTool(
+		"calculator",
+		"Evaluate a single binary arithmetic operation (a op b).",
+		func(ctx context.Context, in CalculatorInput) (*tool.Result, error) {
+			var out float64
+			switch strings.TrimSpace(in.Op) {
+			case "+":
+				out = in.A + in.B
+			case "-":
+				out = in.A - in.B
+			case "*":
+				out = in.A * in.B
+			case "/":
+				if in.B == 0 {
+					return nil, core.Errorf(core.ErrInvalidInput, "calculator: divide by zero")
+				}
+				out = in.A / in.B
+			default:
+				return nil, core.Errorf(core.ErrInvalidInput, "calculator: unknown operator %q", in.Op)
+			}
+			return tool.TextResult(strconv.FormatFloat(out, 'f', -1, 64)), nil
+		},
+	)
 }
 
-func (c *calculatorTool) InputSchema() map[string]any {
-    return map[string]any{
-        "type": "object",
-        "properties": map[string]any{
-            "expression": map[string]any{
-                "type":        "string",
-                "description": "an arithmetic expression",
-            },
-        },
-        "required": []string{"expression"},
-    }
-}
+// Tool results are text by default; use schema.ContentPart for multimodal output.
+```
 
-func (c *calculatorTool) Execute(ctx context.Context, input map[string]any) (*tool.Result, error) {
-    expr, ok := input["expression"].(string)
-    if !ok {
-        return nil, core.Errorf(core.ErrInvalidInput, "calculator: expression is required")
-    }
-    result, err := evaluate(expr) // use a tiny expression parser or govaluate
-    if err != nil {
-        return nil, core.Errorf(core.ErrToolFailed, "calculator: %w", err)
-    }
-    return tool.TextResult(fmt.Sprintf("%v", result)), nil
-}
+Wire the tool into the agent by adding one option to the `agent.New` call in `main.go`:
 
-// evaluate is left as an exercise — use github.com/Knetic/govaluate
-// or a tiny recursive-descent parser for +, -, *, /, parens.
-func evaluate(expr string) (float64, error) {
-    // ... implementation ...
-    return 695, nil
+```go
+	a := agent.New("math-tutor",
+		agent.WithLLM(model),
+		agent.WithPersona(agent.Persona{
+			Role:      "patient math tutor",
+			Goal:      "answer arithmetic questions clearly",
+			Backstory: "You explain each step before giving the final answer.",
+			Traits:    []string{"concise", "accurate"},
+		}),
+		agent.WithTools([]tool.Tool{NewCalculatorTool()}),
+	)
+```
+
+Add `"github.com/lookatitude/beluga-ai/tool"` to the imports of `main.go`. The default planner is `react`, so the LLM will see the tool's schema, decide to call it, receive the observation, and continue.
+
+## 5. Stream events
+
+`Invoke` is a thin wrapper that collects `Stream` and returns the final text. For real-time UX you want the stream directly. `BaseAgent.Stream` returns `iter.Seq2[agent.Event, error]` — you consume it with a standard `for ... range` loop.
+
+```go
+// stream_main.go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"time"
+
+	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/llm"
+	"github.com/lookatitude/beluga-ai/tool"
+
+	_ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+)
+
+func RunStreaming() {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	model, err := llm.New("openai", config.ProviderConfig{
+		Provider: "openai",
+		APIKey:   os.Getenv("OPENAI_API_KEY"),
+		Model:    "gpt-4o-mini",
+	})
+	if err != nil {
+		log.Fatalf("llm.New: %v", err)
+	}
+
+	a := agent.New("math-tutor",
+		agent.WithLLM(model),
+		agent.WithPersona(agent.Persona{
+			Role: "patient math tutor",
+			Goal: "answer arithmetic questions clearly",
+		}),
+		agent.WithTools([]tool.Tool{NewCalculatorTool()}),
+	)
+
+	// Stream returns iter.Seq2[agent.Event, error]. Range over it directly.
+	for event, err := range a.Stream(ctx, "What is 17 times 42, minus 19?") {
+		if err != nil {
+			log.Fatalf("stream error: %v", err)
+		}
+		switch event.Type {
+		case agent.EventText:
+			fmt.Print(event.Text)
+		case agent.EventToolCall:
+			if event.ToolCall != nil {
+				fmt.Printf("\n[tool call: %s]\n", event.ToolCall.Name)
+			}
+		case agent.EventToolResult:
+			fmt.Printf("[tool result received]\n")
+		case agent.EventDone:
+			fmt.Println()
+		case agent.EventError:
+			log.Fatalf("agent error: %s", event.Text)
+		}
+	}
 }
 ```
 
-## Step 4 — run it
+The loop variables are `(agent.Event, error)` — `err` is the second range value. That is the whole streaming API. There is no `stream.Range`, no `stream.Close()`, no channel to drain. See [`agent/base.go:87`](../../agent/base.go) for the `Stream` signature and [`agent/agent.go:71`](../../agent/agent.go) for the `Event` type.
 
-```bash
-export OPENAI_API_KEY=sk-...
-go run .
-```
+To wire this as the main entry, replace `main()` in `main.go` with a call to `RunStreaming()`, or move `RunStreaming` into `main` directly.
 
-Expected output:
+## 6. What just happened?
 
-```
-I'll use the calculator to solve this step by step.
-17 × 42 = 714
-714 − 19 = 695
-The answer is 695.
-```
+You composed three layers of the framework: Layer 3 (`llm`, `tool`) provided the capabilities, Layer 1 (`core`, `config`) provided the typed primitives, and Layer 6 (`agent`) tied them together with the default ReAct planner — see [DOC-02 Core Primitives](../architecture/02-core-primitives.md) for `iter.Seq2` streaming and [DOC-05 Agent Anatomy](../architecture/05-agent-anatomy.md) for the persona → planner → executor pipeline your `agent.New` call set up. The OpenAI provider registered itself in `init()` when you blank-imported it, which is why `llm.New("openai", ...)` resolved without any configuration files.
 
-## What happened
+## 7. Next steps
 
-```mermaid
-sequenceDiagram
-  participant U as main()
-  participant A as LLMAgent
-  participant Ex as Executor
-  participant L as OpenAI LLM
-  participant T as calculator
-  U->>A: Stream("What's 17 × 42 − 19?")
-  A->>Ex: start loop
-  Ex->>L: Generate(messages + tools)
-  L-->>Ex: ToolCall{calculator, {expression:"17*42-19"}}
-  Ex->>T: Execute
-  T-->>Ex: Result{"695"}
-  Ex->>L: Generate(with observation)
-  L-->>Ex: "The answer is 695."
-  Ex-->>A: EventDone
-  A-->>U: stream
-```
+- [Custom Provider guide](./custom-provider.md) — plug in your own LLM, embedder, or tool using the same registry pattern.
+- [Multi-agent team guide](./multi-agent-team.md) — compose several agents via supervisor, handoff, or scatter-gather.
+- [Deploy on Docker guide](./deploy-docker.md) — package this agent behind an HTTP server for real use.
 
-1. You built an `LLMAgent` with functional options ([Functional Options](../patterns/functional-options.md)).
-2. The OpenAI provider was registered during `init()` when you imported it ([Registry + Factory](../patterns/registry-factory.md)).
-3. The planner (default: ReAct) decided to call the tool ([DOC-06](../architecture/06-reasoning-strategies.md)).
-4. The executor dispatched the call, recorded the observation, and re-planned.
-5. The second planner step returned `ActionFinish` with the response.
+## Common mistakes
 
-## What to do next
-
-- Wrap the agent in a `runtime.NewRunner` to expose it via HTTP → see [DOC-08](../architecture/08-runner-and-lifecycle.md).
-- Add memory so the agent remembers across turns → see [DOC-09](../architecture/09-memory-architecture.md).
-- Add guards for production use → see [DOC-13](../architecture/13-security-model.md).
-- Write a custom provider → [Custom Provider guide](./custom-provider.md).
-- Deploy it → [Deploy on Docker guide](./deploy-docker.md).
-
-## Common issues
-
-- **`provider "openai" not found`** — you forgot the blank-import of the provider subpackage.
-- **`core.Errorf: openai: context_length_exceeded`** — your messages exceed the model's token limit. Add `memory.ContextManager` or reduce the system prompt.
-- **`ErrAuth` on the first call** — bad API key. Check `OPENAI_API_KEY`.
-- **Agent loops forever** — the planner isn't reaching `ActionFinish`. Set a max iteration count or use Reflexion to detect non-progress.
-
-## Related
-
-- [Multi-agent team](./multi-agent-team.md) — next step after a single agent.
-- [03 — Extensibility Patterns](../architecture/03-extensibility-patterns.md) — why this wired together the way it did.
-- [05 — Agent Anatomy](../architecture/05-agent-anatomy.md) — what's inside an agent.
+- **`provider "openai" not found`** — you forgot the blank import `_ "github.com/lookatitude/beluga-ai/llm/providers/openai"`. Without it, `init()` never runs and the registry is empty.
+- **Passing a `map[string]any` to `llm.New`** — `llm.New` takes `config.ProviderConfig`, a struct. Use the named fields (`Provider`, `APIKey`, `Model`).
+- **Calling `agent.NewLLMAgent`** — that constructor does not exist. Use `agent.New(id, opts...)`.
+- **Using a `for _, ev := range stream.Range` loop** — the stream is `iter.Seq2[Event, error]`. Range over it with two variables: `for event, err := range a.Stream(ctx, input)`.

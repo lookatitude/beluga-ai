@@ -57,7 +57,8 @@ Data flows down. Each layer imports only from layers below.
 - [15 — Resilience](./15-resilience.md)
 - [16 — Durable Workflows](./16-durable-workflows.md)
 - [20 — Evaluation Framework](./20-evaluation.md)
-- [20 — Evaluation Framework](./20-evaluation.md)
+- [17 — Deployment Modes](./17-deployment-modes.md)
+- [18 — Package Dependency Map](./18-package-dependency-map.md)
 - [21 — Human-in-the-Loop](./21-hitl.md)
 
 ## Visual sources

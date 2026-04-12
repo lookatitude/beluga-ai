@@ -73,7 +73,7 @@ var _ Tool = (*HTTPFetchTool)(nil)
 
 A registry lets the framework discover implementations at runtime without import cycles.
 
-Canonical example (adapted from `llm/registry.go:19-27`):
+Canonical example (adapted from `llm/registry.go:20-44`):
 
 ```go
 // llm/registry.go
@@ -110,7 +110,7 @@ func List() []string { /* … */ }
 Providers register themselves in `init()`:
 
 ```go
-// llm/providers/anthropic/anthropic.go:19-23
+// llm/providers/anthropic/anthropic.go:19-21
 func init() {
     if err := llm.Register("anthropic", newFactory()); err != nil {
         panic(err)
@@ -141,28 +141,21 @@ See [Provider Registration pattern](../patterns/registry-factory.md) and [`.wiki
 
 Hooks are optional function fields on a struct. `nil` means "skip this hook". `ComposeHooks(h1, h2, h3)` combines multiple hook sets into one that invokes each in order.
 
-Canonical example (adapted from `tool/hooks.go:9-44`):
+Canonical example (adapted from `tool/hooks.go:11-44`):
 
 ```go
 type Hooks struct {
-    OnStart func(ctx context.Context, name string, input map[string]any) error
-    OnEnd   func(ctx context.Context, name string) error
-    OnError func(ctx context.Context, name string, err error) error
+    BeforeExecute func(ctx context.Context, toolName string, input map[string]any) error
+    AfterExecute  func(ctx context.Context, toolName string, result *Result, err error)
+    OnError       func(ctx context.Context, toolName string, err error) error
 }
 
-func ComposeHooks(hks ...Hooks) Hooks {
+func ComposeHooks(hooks ...Hooks) Hooks {
+    h := append([]Hooks{}, hooks...)
     return Hooks{
-        OnStart: func(ctx context.Context, name string, input map[string]any) error {
-            for _, h := range hks {
-                if h.OnStart != nil {
-                    if err := h.OnStart(ctx, name, input); err != nil {
-                        return err
-                    }
-                }
-            }
-            return nil
-        },
-        // OnEnd, OnError similarly
+        BeforeExecute: /* compose BeforeExecute hooks in order; stop on first error */,
+        AfterExecute:  /* compose AfterExecute hooks in order unconditionally */,
+        OnError:       /* compose OnError hooks in order; first non-nil return wins */,
     }
 }
 ```
@@ -171,11 +164,9 @@ func ComposeHooks(hks ...Hooks) Hooks {
 
 Hooks intercept **specific lifecycle points**:
 
-- `OnStart` — before the operation begins.
-- `OnToolCall` — when the executor decides to call a tool.
-- `OnToolResult` — when a tool returns.
-- `OnEnd` — when the operation completes.
-- `OnError` — on any error.
+- `BeforeExecute` — before the operation begins. Returning an error aborts execution.
+- `AfterExecute` — after the operation completes (success or failure). Receives the result and any error.
+- `OnError` — when the operation fails. Can suppress or replace the error.
 
 They are fine-grained. If you need to record the exact moment a planner chose a specific tool, use a hook.
 
@@ -194,7 +185,7 @@ A rule of thumb: middleware *wraps the whole call*; hooks *fire at specific mome
 
 Middleware is a function `func(T) T` that wraps an implementation and returns a new one with the same interface but augmented behaviour.
 
-Canonical example (adapted from `tool/middleware.go:11-22`):
+Canonical example (adapted from `tool/middleware.go:13-22`):
 
 ```go
 type Middleware func(Tool) Tool
@@ -302,9 +293,9 @@ func buildModel() (llm.Model, error) {
 ## Common mistakes
 
 - **Using middleware for lifecycle interception.** If you need to fire at a specific moment ("when the planner chooses a tool"), use a hook. Middleware sees only the outer call.
-- **Using hooks for cross-cutting concerns.** Retry, rate limit, logging — all apply uniformly to every call, so they're middleware. Adding retry logic to an `OnStart` hook fights the design.
+- **Using hooks for cross-cutting concerns.** Retry, rate limit, logging — all apply uniformly to every call, so they're middleware. Adding retry logic to a `BeforeExecute` hook fights the design.
 - **Registering outside `init()`.** The registry is append-only at startup. Dynamic registration post-`main()` is a race condition.
-- **Non-nil-safe hooks.** Always check `if h.OnStart != nil` before invoking. `ComposeHooks` does this for you; hand-rolled code often forgets.
+- **Non-nil-safe hooks.** Always check `if h.BeforeExecute != nil` before invoking. `ComposeHooks` does this for you; hand-rolled code often forgets.
 - **Forgetting the compile-time check.** `var _ Interface = (*Impl)(nil)` catches interface-drift at compile time. Add it to every implementation.
 
 ## Related reading
