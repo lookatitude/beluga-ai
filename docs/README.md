@@ -13,6 +13,14 @@ New to Beluga? Read in this order:
 
 ## Production readiness
 
+Beluga is designed for the production agent stack. Every package ships with
+OpenTelemetry GenAI spans ([DOC-14](architecture/14-observability.md)),
+circuit breakers and rate limits are middleware on the same interface as your
+LLM calls ([DOC-15](architecture/15-resilience.md)), and the `workflow/`
+package provides crash-durable execution ([DOC-16](architecture/16-durable-workflows.md)).
+Deployment targets — Docker, Kubernetes, Temporal, and embedded — are documented in
+[DOC-17](architecture/17-deployment-modes.md).
+See the [Production Checklist](production-checklist.md).
 Before deploying to production, work through the [Production Checklist](./production-checklist.md). It maps each enterprise-grade capability — observability, resilience, safety guards, auth, durability, cost enforcement, and evaluation — to the exact package and file that implements it, with verification steps.
 
 ## Sections

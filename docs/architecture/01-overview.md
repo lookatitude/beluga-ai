@@ -195,7 +195,7 @@ graph TD
 
 See [DOC-07](./07-orchestration-patterns.md).
 
-## The three design principles
+## The four design principles
 
 ### 1. Streaming first
 
@@ -214,6 +214,12 @@ See [DOC-07](./07-orchestration-patterns.md).
 `core/` and `schema/` have **zero** external dependencies beyond the Go stdlib and OpenTelemetry. Providers live in `*/providers/` subdirectories and pull their own SDKs. You can import `core` and build a toy agent without touching a single cloud SDK.
 
 **Why:** keeps the critical path auditable, makes dependency updates targeted (a breaking change in the OpenAI SDK never destabilises `memory/`), and enables embedded/edge use cases.
+
+### 4. Production-ready by default
+
+Every extensible package ships with `WithTracing()` middleware that emits OTel GenAI spans at package boundaries ([DOC-14](./14-observability.md)). Circuit breakers, retry, and rate limiting are middleware on the same `func(T) T` signature as any other wrapper — no special infrastructure required ([DOC-15](./15-resilience.md)). The `workflow/` package provides crash-durable execution via a Temporal-compatible backend so agent runs survive process restarts without application-level checkpointing ([DOC-16](./16-durable-workflows.md)).
+
+**Why:** observability, resilience, and durability are default concerns for any agent running in a multi-tenant or long-running context. Requiring users to bolt these on after the fact produces inconsistent coverage. Shipping them as opt-in middleware on every interface keeps the path from prototype to production a configuration change, not an architectural one.
 
 ## The universal package shape
 
