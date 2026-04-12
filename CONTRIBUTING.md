@@ -159,7 +159,7 @@ gosec -quiet ./...
 govulncheck ./...
 ```
 
-`make check` runs the first five commands. Run `gosec` and `govulncheck` separately.
+`make check` runs lint, test, and tidy (commands 2–4). Run `go build ./...`, `gofmt`, `gosec`, and `govulncheck` separately.
 
 ---
 
