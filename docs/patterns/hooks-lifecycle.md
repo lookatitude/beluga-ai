@@ -17,7 +17,7 @@ The optional-function-field pattern is minimal, type-safe, and composes triviall
 
 ## How it works
 
-Canonical code from `tool/hooks.go:9-44` (see [`.wiki/patterns/hooks.md`](../../.wiki/patterns/hooks.md)):
+Canonical code from `tool/hooks.go:11-44` (see [`.wiki/patterns/hooks.md`](../../.wiki/patterns/hooks.md)):
 
 ```go
 // tool/hooks.go
@@ -26,43 +26,22 @@ package tool
 import "context"
 
 type Hooks struct {
-    OnStart func(ctx context.Context, name string, input map[string]any) error
-    OnEnd   func(ctx context.Context, name string) error
-    OnError func(ctx context.Context, name string, err error) error
+    // BeforeExecute is called before a tool executes. Returning an error aborts execution.
+    BeforeExecute func(ctx context.Context, toolName string, input map[string]any) error
+
+    // AfterExecute is called after a tool executes (success or failure).
+    AfterExecute func(ctx context.Context, toolName string, result *Result, err error)
+
+    // OnError is called when tool execution fails. Returning nil suppresses the error.
+    OnError func(ctx context.Context, toolName string, err error) error
 }
 
-func ComposeHooks(hks ...Hooks) Hooks {
+func ComposeHooks(hooks ...Hooks) Hooks {
+    h := append([]Hooks{}, hooks...)
     return Hooks{
-        OnStart: func(ctx context.Context, name string, input map[string]any) error {
-            for _, h := range hks {
-                if h.OnStart != nil {
-                    if err := h.OnStart(ctx, name, input); err != nil {
-                        return err
-                    }
-                }
-            }
-            return nil
-        },
-        OnEnd: func(ctx context.Context, name string) error {
-            for _, h := range hks {
-                if h.OnEnd != nil {
-                    if err := h.OnEnd(ctx, name); err != nil {
-                        return err
-                    }
-                }
-            }
-            return nil
-        },
-        OnError: func(ctx context.Context, name string, err error) error {
-            for _, h := range hks {
-                if h.OnError != nil {
-                    if hookErr := h.OnError(ctx, name, err); hookErr != nil {
-                        return hookErr
-                    }
-                }
-            }
-            return nil
-        },
+        BeforeExecute: /* compose in order; stop on first error */,
+        AfterExecute:  /* compose in order unconditionally */,
+        OnError:       /* compose in order; first non-nil return wins */,
     }
 }
 ```
@@ -76,23 +55,30 @@ Key properties:
 Inside an implementation:
 
 ```go
-func (t *toolImpl) Execute(ctx context.Context, input map[string]any) (*Result, error) {
-    if t.hooks.OnStart != nil {
-        if err := t.hooks.OnStart(ctx, t.Name(), input); err != nil {
+func (h *hookedTool) Execute(ctx context.Context, input map[string]any) (*Result, error) {
+    name := h.tool.Name()
+
+    // BeforeExecute
+    if h.hooks.BeforeExecute != nil {
+        if err := h.hooks.BeforeExecute(ctx, name, input); err != nil {
             return nil, err
         }
     }
-    out, err := t.doExecute(ctx, input)
-    if err != nil {
-        if t.hooks.OnError != nil {
-            _ = t.hooks.OnError(ctx, t.Name(), err)
-        }
-        return nil, err
+
+    // Execute
+    result, err := h.tool.Execute(ctx, input)
+
+    // OnError
+    if err != nil && h.hooks.OnError != nil {
+        err = h.hooks.OnError(ctx, name, err)
     }
-    if t.hooks.OnEnd != nil {
-        _ = t.hooks.OnEnd(ctx, t.Name())
+
+    // AfterExecute
+    if h.hooks.AfterExecute != nil {
+        h.hooks.AfterExecute(ctx, name, result, err)
     }
-    return out, nil
+
+    return result, err
 }
 ```
 
@@ -109,16 +95,16 @@ func (t *toolImpl) Execute(ctx context.Context, input map[string]any) (*Result, 
 
 ## Where it's used
 
-- `tool` — `OnStart`, `OnEnd`, `OnError`.
-- `llm` — `OnRequest`, `OnResponse`, `OnError`, `OnStreamChunk`.
-- `memory` — `OnLoad`, `OnSave`, `OnEntityExtracted`.
-- `agent` — `BeforePlan`, `AfterPlan`, `OnToolCall`, `OnToolResult`, `OnIteration`.
+- `tool` — `BeforeExecute`, `AfterExecute`, `OnError`.
+- `llm` — `BeforeGenerate`, `AfterGenerate`, `OnStream`, `OnToolCall`, `OnReasoning`, `OnError`.
+- `memory` — `BeforeSave`, `AfterSave`, `BeforeLoad`, `AfterLoad`, `BeforeSearch`, `AfterSearch`, `BeforeClear`, `AfterClear`, `OnError`.
+- `agent` — `OnStart`, `OnEnd`, `OnError`, `BeforePlan`, `AfterPlan`, `BeforeAct`, `AfterAct`, `OnToolCall`, `OnToolResult`, `OnIteration`, `OnHandoff`, `BeforeGenerate`, `AfterGenerate`.
 - `runtime` — (plugin level) `BeforeTurn`, `AfterTurn`. Plugins are a runner-level generalisation of the same pattern.
 
 ## Common mistakes
 
 - **Nil-pointer dereference.** Always check `if hooks.OnX != nil` before invoking. `ComposeHooks` does this for you; hand-rolled invocation often forgets.
-- **Swallowing hook errors.** An `OnStart` returning an error should abort the operation — treating it as best-effort defeats the whole point of having a hook. Propagate.
+- **Swallowing hook errors.** A `BeforeExecute` returning an error should abort the operation — treating it as best-effort defeats the whole point of having a hook. Propagate.
 - **Modifying shared state inside a hook.** Hooks run in the caller's goroutine, but the data they touch may be shared. Use sync primitives or keep hooks side-effect-free.
 - **Unbounded hook chains.** `ComposeHooks(a, b, c, d, e, …)` is O(n) per call. If you're composing dozens of hooks, consider whether a registry of handlers would be more appropriate.
 - **Using hooks where middleware belongs.** If your hook has a `func doWithRetry()` inside, that's middleware masquerading as a hook.
@@ -145,15 +131,14 @@ type CostTracker struct {
 
 func (c *CostTracker) ToolHooks() tool.Hooks {
     return tool.Hooks{
-        OnEnd: func(ctx context.Context, name string) error {
+        AfterExecute: func(ctx context.Context, toolName string, result *tool.Result, err error) {
             tenant := core.GetTenant(ctx)
             if tenant == "" {
-                return nil // no tenant, no charge
+                return // no tenant, no charge
             }
             // load-or-store and atomic add
             v, _ := c.totalByTenant.LoadOrStore(tenant, new(int64))
             atomic.AddInt64(v.(*int64), c.perCallCost)
-            return nil
         },
     }
 }
@@ -178,7 +163,7 @@ hooks := tool.ComposeHooks(
 wrappedTool := tool.NewWithHooks(myTool, hooks)
 ```
 
-Only `OnEnd` is set — `OnStart` and `OnError` remain nil and are skipped. This is the "pay only for what you use" property of the pattern.
+Only `AfterExecute` is set — `BeforeExecute` and `OnError` remain nil and are skipped. This is the "pay only for what you use" property of the pattern.
 
 ## Related
 
