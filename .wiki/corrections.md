@@ -72,3 +72,17 @@ Entries reach `.claude/rules/` when seen ≥3 times or HIGH confidence.
 **Prevention rule:** Invariant 1 already forbids channels in public APIs. Add a `-race` requirement to any fan-in goroutine refactor; shared-owner channel closes are invisible without it.
 **Confidence:** HIGH — compile-time enforced by interface change; race-detector clean.
 
+---
+
+### C-010 | 2026-04-12 | docs-writer | prompt · OPEN
+**Symptom:** Doc code examples for `prompt` package used `mgr = prompt.ApplyMiddleware(mgr, ...)` where `mgr` was declared as `*file.FileManager` (the concrete type returned by `NewFileManager`). `ApplyMiddleware` returns `prompt.PromptManager` (an interface), causing a compile error: "cannot use … as *file.FileManager value in assignment: need type assertion".
+**Root cause:** `NewFileManager` returns a concrete pointer type, not the interface. The middleware wrapping pattern returns the interface, so the variable must be typed as the interface before or at the point of wrapping. The pattern is easy to misread because in other packages (e.g., `llm`) the constructor already returns the interface, so reassignment works without an explicit type declaration.
+**Correction:** Always introduce an explicit interface-typed variable before calling `ApplyMiddleware`:
+```go
+base, err := promptfile.NewFileManager(dir)
+// ... error check ...
+var mgr prompt.PromptManager = base
+mgr = prompt.ApplyMiddleware(mgr, prompt.WithTracing())
+```
+**Prevention rule:** When a provider constructor returns a concrete type (pointer to struct), you cannot directly reassign the result of `ApplyMiddleware` to that variable. The variable must be declared as the interface type before wrapping. Verify all doc code examples compile with `go build` before committing — not just after.
+**Confidence:** HIGH — caught by `go build` during post-submission verification; fix confirmed compile-clean.

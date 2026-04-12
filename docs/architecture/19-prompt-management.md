@@ -93,11 +93,13 @@ import (
     promptfile "github.com/lookatitude/beluga-ai/prompt/providers/file"
 )
 
-mgr, err := promptfile.NewFileManager("/etc/prompts")
+base, err := promptfile.NewFileManager("/etc/prompts")
 if err != nil {
     return err
 }
-// Tracing wraps the manager. Add additional middleware to the left of WithTracing.
+// ApplyMiddleware returns prompt.PromptManager, not *file.FileManager.
+// Declare mgr as the interface type before wrapping.
+var mgr prompt.PromptManager = base
 mgr = prompt.ApplyMiddleware(mgr, prompt.WithTracing())
 ```
 
@@ -198,10 +200,12 @@ import (
 )
 
 func main() {
-    mgr, err := promptfile.NewFileManager("/etc/prompts")
+    base, err := promptfile.NewFileManager("/etc/prompts")
     if err != nil {
         log.Fatal(err)
     }
+    // ApplyMiddleware returns prompt.PromptManager, not *file.FileManager.
+    var mgr prompt.PromptManager = base
     mgr = prompt.ApplyMiddleware(mgr, prompt.WithTracing())
 
     msgs, err := mgr.Render("system-assistant", map[string]any{"role": "a Go expert"})
@@ -239,10 +243,12 @@ import (
 )
 
 func main() {
-    mgr, err := promptfile.NewFileManager("/etc/prompts")
+    base, err := promptfile.NewFileManager("/etc/prompts")
     if err != nil {
         log.Fatal(err)
     }
+    // ApplyMiddleware returns prompt.PromptManager, not *file.FileManager.
+    var mgr prompt.PromptManager = base
     mgr = prompt.ApplyMiddleware(mgr, prompt.WithTracing())
 
     // List all available templates.
