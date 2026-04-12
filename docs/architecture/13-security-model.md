@@ -379,7 +379,7 @@ degrader := degradation.NewRuntimeDegrader(monitor, policy,
 )
 
 // Wrap an agent with the degradation middleware.
-safeAgent := agent.ApplyMiddleware(myAgent, degrader.Middleware())
+_ = agent.ApplyMiddleware(myAgent, degrader.Middleware()) // wire into your server/runner
 
 // Use the safe agent for all subsequent invocations.
 resp, err := safeAgent.Invoke(ctx, "process user request")
