@@ -107,11 +107,13 @@ May NOT import: each other (in most cases), or anything in Layer 3+.
 ```
 resilience → core, o11y
 auth       → core, schema, o11y
-audit      → core, schema, o11y
-cost       → core, schema, o11y
-state      → core, schema, o11y
+audit      → core
+cost       → core
+state      → core, o11y
 workflow   → core, schema, o11y, config
 ```
+
+Note: `audit` and `cost` currently depend only on `core`. `state` depends on `core` and `o11y` (plus `internal/hookutil`).
 
 ### Layer 3 — Capability (`llm`, `tool`, `memory`, `rag`, `voice`, `guard`, `prompt`, `cache`, `eval`, `hitl`)
 
@@ -124,11 +126,13 @@ memory     → core, schema, o11y, rag (for archival)
 rag        → core, schema, o11y
 voice      → core, schema, o11y, llm, tool
 guard      → core, schema, o11y, llm (for guard LLMs)
-prompt     → core, schema, o11y, cache
-cache      → core, schema, o11y
-eval       → core, schema, o11y, llm
-hitl       → core, schema, o11y, state
+prompt     → o11y, schema
+cache      → core, rag/embedding
+eval       → core, schema, llm, tool, agent (⚠ violation — see below)
+hitl       → core, o11y
 ```
+
+**Layering violation — `eval` imports `agent`:** The `eval` package (Layer 3) imports `agent` (Layer 6), which is an upward dependency. The `eval` package also imports `llm` and `tool` (Layer 3 peers), which is acceptable for evaluation runners that need to invoke models and tools. However, the `agent` import violates the layering rule and should be refactored so that evaluation of agents is wired at Layer 6 or Layer 7, not inside `eval/` itself.
 
 ### Layer 4 — Protocol (`protocol`, `server`)
 
