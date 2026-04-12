@@ -5,7 +5,7 @@
 <h1 align="center">Beluga AI</h1>
 
 <p align="center">
-  <strong>Build production-ready AI agents in Go. Fast.</strong>
+  <strong>Build production-ready AI agents in Go.</strong>
 </p>
 
 <p align="center">
@@ -31,7 +31,7 @@ Beluga AI is a **Go-native framework** for building agentic AI systems. It provi
 
 The framework distills production patterns from **Google ADK**, **OpenAI Agents SDK**, **LangGraph**, **ByteDance Eino**, and **LiveKit** into a unified, idiomatic Go framework. Streaming leverages Go 1.23+ `iter.Seq2[T, error]` — no channels, no callbacks. Every component is extensible through a consistent **interface + registry + middleware + hooks** pattern.
 
-> **157 packages · 2,885 tests (all race-free) · 20+ LLM providers** — built for teams that need enterprise-grade reliability without leaving the Go ecosystem.
+> **157 packages · 2,885 tests (all race-free) · [22 LLM providers](docs/reference/providers.md)** — built for teams that need production-grade reliability without leaving the Go ecosystem.
 
 <br>
 
@@ -41,7 +41,7 @@ The framework distills production patterns from **Google ADK**, **OpenAI Agents 
 <tr><td width="50%" valign="top">
 
 ### LLM Abstraction
-Unified `ChatModel` interface across **20+ providers** (OpenAI, Anthropic, Google, Ollama, Bedrock, Groq, Mistral, DeepSeek, xAI, Cohere, and more). Intelligent routing, structured output, context window management, and prompt cache optimization.
+Unified `ChatModel` interface across [**22 LLM providers**](docs/reference/providers.md) — OpenAI, Anthropic, Google, Ollama, Bedrock, Groq, Mistral, DeepSeek, xAI, Cohere, Together, Fireworks, OpenRouter, Perplexity, Qwen, Cerebras, SambaNova, HuggingFace, and more. Intelligent routing, structured output, context window management, and prompt cache optimization.
 
 ### Agent Framework
 Pluggable reasoning strategies via the `Planner` interface: **ReAct, Reflexion, Self-Discover, Tree-of-Thought, Graph-of-Thought, LATS**, and Mixture of Agents. Bring your own strategy with zero framework changes.
@@ -88,6 +88,8 @@ RBAC, ABAC, and capability-based security. **Tenant isolation** via `context.Con
 </table>
 
 **Plus:** generics-based configuration with hot-reload (file, Consul, etcd, K8s) · CI/CD-integrated evaluation with built-in quality metrics (faithfulness, relevance, hallucination, toxicity, latency, cost) · prompt management and versioning.
+
+> **Coming soon:** [Code-as-Action agents](https://github.com/lookatitude/beluga-ai/pull/243) · [Computer Use / browser tools](https://github.com/lookatitude/beluga-ai/pull/218) · [LLM-as-Judge eval framework](https://github.com/lookatitude/beluga-ai/pull/228) · [`beluga` CLI scaffolding](https://github.com/lookatitude/beluga-ai/pull/234) · [Agent Playground UI](https://github.com/lookatitude/beluga-ai/pull/232). See [feature-status.md](docs/feature-status.md) for the full roadmap.
 
 <br>
 
@@ -223,6 +225,7 @@ beluga-ai/
 │   └── providers/    openai, anthropic, google, ollama, bedrock, groq, mistral,
 │                     deepseek, xai, cohere, together, fireworks, and more
 ├── tool/             Tools: Tool, FuncTool, MCP client, registry
+│   └── computeruse/  Browser and computer-use tools [planned — PR #218]
 ├── memory/           Memory: Core, Recall, Archival, Graph (MemGPT model)
 │   └── stores/       inmemory, redis, postgres, sqlite, neo4j, memgraph
 ├── rag/              RAG pipeline
@@ -232,7 +235,12 @@ beluga-ai/
 │   ├── loader/       PDF, HTML, web, CSV, JSON, docx, Confluence, Notion
 │   └── splitter/     Recursive, markdown text splitters
 ├── agent/            Agent: BaseAgent, Planner, Executor, Handoffs
-│   └── workflow/     SequentialAgent, ParallelAgent, LoopAgent
+│   ├── workflow/     SequentialAgent, ParallelAgent, LoopAgent
+│   ├── cognitive/    Cognitive architectures [experimental]
+│   ├── metacognitive/ Self-reflective planners [experimental]
+│   ├── evolving/     Self-modifying agents [experimental]
+│   ├── speculative/  Speculative decoding for agents [experimental]
+│   └── codeact/      Code-as-Action agents [planned — PR #243]
 ├── voice/            Voice: Frame-based pipeline, STT/TTS/S2S
 │   ├── stt/          Deepgram, AssemblyAI, Whisper, ElevenLabs, Groq, Gladia
 │   ├── tts/          ElevenLabs, Cartesia, OpenAI, PlayHT, Groq, Fish, LMNT
@@ -287,6 +295,7 @@ Full documentation, tutorials, and API reference are available at **[beluga-ai.o
 | **Guides** | LLM providers, agents, tools, RAG, voice, memory, orchestration |
 | **Cookbooks** | Multi-agent customer service, RAG pipeline, voice assistant |
 | **Architecture** | Design decisions, extensibility patterns, data flows |
+| **[Feature Status](docs/feature-status.md)** | What is stable, experimental, or planned (with tracking PRs) |
 
 <br>
 
