@@ -134,7 +134,7 @@ err = mgr.AddPolicy(hitl.ApprovalPolicy{
 })
 ```
 
-## Notification channels
+| `WebhookNotifier` | `NewWebhookNotifier(url string)` | HTTP POST with JSON body. `NewWebhookNotifierWithClient` accepts a custom `*http.Client`. Returns `core.ErrProviderDown` on HTTP 4xx/5xx responses (note: 3xx redirects are treated as success by the default `http.DefaultClient`). |
 
 The `Notifier` interface (`hitl/notifier.go:14-17`) decouples request delivery from the approval mechanism:
 
