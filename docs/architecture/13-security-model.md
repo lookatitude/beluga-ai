@@ -302,7 +302,7 @@ if err != nil {
     return err
 }
 // Wrap any memory.Memory implementation.
-signedMem := sigMiddleware.Wrap(baseMemory)
+_ = sigMiddleware.Wrap(baseMemory) // assign to your memory.Memory-typed field
 
 // Use the signed memory for all subsequent Load/Save operations.
 msgs, err := signedMem.Load(ctx, sessionID)
