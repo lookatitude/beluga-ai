@@ -2,6 +2,22 @@
 
 All notable changes to Beluga AI are documented here.
 
+## [2.8.2] - 2026-04-12
+
+### Bug Fixes
+
+- **docs**: Address 5 Greptile comments in DOC-13
+- **docs**: Address Greptile review on doc.go files
+
+### Documentation
+
+- **arch**: Expand DOC-13 with agentic guards, memory safety, degradation
+- Add missing doc.go for undocumented packages
+
+### Miscellaneous
+
+- **release**: Update CHANGELOG.md for v2.8.1 [skip ci]
+
 ## [2.8.1] - 2026-04-12
 
 ### Bug Fixes
