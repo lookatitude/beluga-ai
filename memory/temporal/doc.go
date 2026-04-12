@@ -2,7 +2,8 @@
 //
 // It implements the Graphiti-inspired 2-condition conflict resolution algorithm
 // and supports querying the knowledge graph as it existed at any point in time.
-// The package lives in Layer 3 (Capability) and depends on the memory and core
+// The package lives in Layer 3 (Capability) and depends on the memory, schema, and core
+// packages.
 // packages.
 //
 // Key components include ConflictResolver for temporal conflict detection,
