@@ -10,7 +10,7 @@ Automated agents make decisions at machine speed, but not all decisions should r
 
 `hitl` operates as a pause-and-wait gate inside an agent's tool-call or workflow step. When the agent reaches a decision point gated by a HITL check, execution blocks until a human responds — or a configurable timeout elapses. Approval policies let you fine-tune this: safe, high-confidence, read-only actions can be auto-approved without involving a human at all, while irreversible or uncertain actions always escalate.
 
-The package sits in Layer 3 (Capability) of the 7-layer architecture, depends only on `core`, `schema`, and `o11y`, and follows the standard four-ring extension model: interface → registry → hooks → middleware. It integrates with `workflow/` via `HumanActivity`, so approval gates survive process restarts when backed by a durable workflow engine.
+The package sits in Layer 3 (Capability) of the 7-layer architecture, depends on `core` and `o11y` (and `net/http` for the webhook notifier), and follows the standard four-ring extension model: interface → registry → hooks → middleware. It integrates with `workflow/` via `HumanActivity`, so approval gates survive process restarts when backed by a durable workflow engine.
 
 ## Interface
 
