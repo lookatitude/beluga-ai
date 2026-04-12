@@ -159,17 +159,11 @@ The `prompt` package does not import `cache/` — it does not perform LLM-level 
 
 ```
 System prompt  (slot 1)  ← most static → cached by provider
-Tool defs      (slot 2)  ← semi-static →
-Static context (slot 3)  ← semi-static →
-── cache_breakpoint ──   ← explicit boundary via WithCacheBreakpoint()
-Dynamic history (slot 4) ← per-session →
-User input     (slot 5)  ← always changes →
-```
-
-The breakpoint is a `schema.SystemMessage` carrying `Metadata["cache_breakpoint"] = true` (`prompt/builder.go:116-119`). LLM providers that support explicit cache control (Anthropic's `cache_control` block, OpenAI's cached prefix API) can inspect this metadata to know where to anchor the cache boundary.
-
-The `cache/` package (Layer 3) implements exact-match, semantic, and prompt caches that wrap the LLM layer. Those two concerns are orthogonal: `Builder` orders content for provider-native prefix caching; `cache/` deduplicates full prompt+response pairs at the framework layer.
-
+    base, err := promptfile.NewFileManager("/etc/prompts")
+    if err != nil {
+        log.Fatal(err)
+    }
+    mgr := prompt.ApplyMiddleware(base, prompt.WithTracing())
 ### Builder API
 
 **Source:** `prompt/builder.go`
