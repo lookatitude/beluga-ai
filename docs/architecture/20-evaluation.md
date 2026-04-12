@@ -258,7 +258,7 @@ import (
 )
 
 func main() {
-    userModel, err := llm.New("anthropic", config.ProviderConfig{
+**`AttackCategory`** (`eval/redteam/types.go:6`) — typed constant for each attack class. `AllCategories()` returns all seven.
         Provider: "anthropic",
         Model:    "claude-3-haiku-20240307",
     })
