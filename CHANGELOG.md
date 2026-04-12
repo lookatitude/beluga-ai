@@ -2,6 +2,47 @@
 
 All notable changes to Beluga AI are documented here.
 
+## [2.8.0] - 2026-04-12
+
+### Miscellaneous
+
+- **release**: Update CHANGELOG.md for v2.7.0 [skip ci]
+
+## [2.8.0] - 2026-04-12
+
+### Bug Fixes
+
+- **eval/judge**: Address review feedback on rubric, batch, consistency
+- **ci**: Truncate coverage float to integer for GITHUB_OUTPUT
+- **ci**: Harden test-parse step against multi-line GITHUB_OUTPUT
+
+### Features
+
+- **eval/judge**: LLM-as-Judge evaluation with rubrics (LOO-39)
+
+### Testing
+
+- **eval/judge**: Add coverage for review-comment fixes
+
+## [2.7.0] - 2026-04-12
+
+### Bug Fixes
+
+- **computeruse**: Address Greptile review comments
+- **computeruse**: Extract duplicated guard error code literal
+
+### Features
+
+- **tool/computeruse**: Computer use and browser automation (LOO-29)
+
+### Miscellaneous
+
+- **release**: Update CHANGELOG.md for v2.6.0 [skip ci]
+
+### Testing
+
+- **computeruse**: Expand coverage to 95.6% to pass SonarCloud gate
+
 ## [2.6.0] - 2026-04-12
 
 ### Bug Fixes
