@@ -27,7 +27,7 @@ Other great first contributions:
 - **Write a cookbook** — realistic end-to-end examples in `docs/guides/`
 - **Improve docs** — if something confused you, fix the wording and open a PR
 - **Add eval metrics** — new metrics go in `eval/metrics/`
-- **Add a built-in tool** — new tools go in `tool/builtin/<name>/`
+- **Add a built-in tool** — new tools go in `tool/<name>/`
 - **Fix a bug** — search [open issues](https://github.com/lookatitude/beluga-ai/issues) labelled `good first issue`
 
 ---
