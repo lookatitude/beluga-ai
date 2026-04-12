@@ -112,15 +112,17 @@ These packages are in `main` and have tests, but their public API may change sig
 
 ## Planned
 
-These capabilities are advertised or commonly requested but are **not yet merged to `main`**. Do not write code that depends on them — link to the PR to follow progress.
+These capabilities are **not present in `main` at the current HEAD** — their code artifacts do not exist in the tree regardless of PR merge status. Do not write code that depends on them.
 
-| Capability | Tracking | Description |
-|---|---|---|
-| `beluga` CLI scaffolding | [PR #234](https://github.com/lookatitude/beluga-ai/pull/234) | `beluga new`, `beluga test`, `beluga run` — project scaffolding and provider smoke-tests |
-| Agent Playground UI | [PR #232](https://github.com/lookatitude/beluga-ai/pull/232) | Browser-based chat UI for inspecting tool calls, planner traces, and memory state |
-| Code-as-Action (CodeAct) | [PR #243](https://github.com/lookatitude/beluga-ai/pull/243) | Agents that generate and execute sandboxed code as their primary action (`agent/codeact/`) |
-| Computer Use / browser tools | [PR #218](https://github.com/lookatitude/beluga-ai/pull/218) | Native click/type/scroll/screenshot tools for browser-driving agents (`tool/computeruse/`) |
-| LLM-as-Judge framework | [PR #228](https://github.com/lookatitude/beluga-ai/pull/228) | Rubric-based scoring, batch evaluation, consistency checks as a first-class `eval/judge/` sub-package |
+To verify: `ls agent/codeact/ tool/computeruse/ eval/judge/ cmd/beluga/ website/` on `main` — none of these paths exist.
+
+| Capability | PR | Code path | Description |
+|---|---|---|---|
+| `beluga` CLI scaffolding | [PR #234](https://github.com/lookatitude/beluga-ai/pull/234) | `cmd/beluga/` | `beluga new`, `beluga test`, `beluga run` — project scaffolding and provider smoke-tests |
+| Agent Playground UI | [PR #232](https://github.com/lookatitude/beluga-ai/pull/232) | `website/` | Browser-based chat UI for inspecting tool calls, planner traces, and memory state |
+| Code-as-Action (CodeAct) | [PR #243](https://github.com/lookatitude/beluga-ai/pull/243) | `agent/codeact/` | Agents that generate and execute sandboxed code as their primary action |
+| Computer Use / browser tools | [PR #218](https://github.com/lookatitude/beluga-ai/pull/218) | `tool/computeruse/` | Native click/type/scroll/screenshot tools for browser-driving agents |
+| LLM-as-Judge framework | [PR #228](https://github.com/lookatitude/beluga-ai/pull/228) | `eval/judge/` | Rubric-based scoring, batch evaluation, consistency checks as a first-class sub-package |
 
 ---
 

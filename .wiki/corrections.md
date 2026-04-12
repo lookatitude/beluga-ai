@@ -72,3 +72,17 @@ Entries reach `.claude/rules/` when seen ≥3 times or HIGH confidence.
 **Prevention rule:** Invariant 1 already forbids channels in public APIs. Add a `-race` requirement to any fan-in goroutine refactor; shared-owner channel closes are invisible without it.
 **Confidence:** HIGH — compile-time enforced by interface change; race-detector clean.
 
+### C-007 | 2026-04-12 | docs-writer | docs/feature-status
+**Symptom:** When writing a feature-status page describing "Planned" features, the doc-writer used `gh pr view N --json state` to determine whether features existed in `main`. All five PRs returned `"state":"MERGED"`. The doc-writer initially assumed this confirmed the feature was not in `main` (via prior context from the task), but the evidence was contradictory and required clarification.
+**Root cause:** GitHub PR state `"MERGED"` means the PR was closed via merge into *some* branch — not necessarily `main`. PRs can be merged into `develop`, `release`, or staging branches and show as MERGED while `main` HEAD has none of their artifacts.
+**Correction:** Never use GitHub PR merge state alone to assert code presence in `main`. The authoritative check is filesystem presence: `ls <expected-path>` on the actual `main` worktree. If the directory/file does not exist, the feature is not in `main` regardless of PR state.
+**Rule:** Feature presence in `main` = `ls <code-path>` returns a result. PR "MERGED" = PR was closed via merge, not "code is in main".
+**Prevention rule:** Before marking a feature as "Stable" or "in main" in any doc, verify `ls <code-path>` in the worktree rooted at the branch being documented. Record the verification command and output in the commit message.
+**Confidence:** HIGH — verified by `ls agent/codeact/ tool/computeruse/ eval/judge/ cmd/beluga/ website/` all returning "No such file or directory" on main HEAD (commit `67f854c6`) despite PRs #234, #232, #243, #218, #228 showing MERGED.
+
+### C-008 | 2026-04-12 | docs-writer | worktree-awareness
+**Symptom:** When running inside a git worktree at `.claude/worktrees/agent-ada144bd/`, Write tool calls used absolute paths rooted at the main repository (`/home/miguelp/Projects/lookatitude/beluga-ai/`) instead of the worktree. Files were written to the main checkout, not to the branch being prepared. `git status` in the worktree showed "nothing to commit" despite apparent file edits.
+**Root cause:** The agent's working directory (`pwd`) was the worktree, but absolute paths were explicitly constructed using the known main repo root. The Write tool honors the path given without inferring which git worktree should be active.
+**Correction:** When operating in a git worktree, always derive the base path from `pwd` (which returns the worktree root), not from any hardcoded repo root. Verify with `git status` in the worktree after every Write/Edit call to confirm the file is tracked.
+**Prevention rule:** In any worktree session, run `git status --short` after the first Write/Edit to confirm modified files appear. If `git status` is clean after a write, the write landed in the wrong tree.
+**Confidence:** HIGH — reproducible; discovered by checking `git status` which was clean despite edits.
