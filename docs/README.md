@@ -11,6 +11,10 @@ New to Beluga? Read in this order:
 3. [Extensibility Patterns](./architecture/03-extensibility-patterns.md) — the 4 mechanisms every package uses.
 4. [Build Your First Agent](./guides/first-agent.md) — 5-minute quickstart.
 
+## Production readiness
+
+Before deploying to production, work through the [Production Checklist](./production-checklist.md). It maps each enterprise-grade capability — observability, resilience, safety guards, auth, durability, cost enforcement, and evaluation — to the exact package and file that implements it, with verification steps.
+
 ## Sections
 
 ### [Architecture](./architecture/README.md)
