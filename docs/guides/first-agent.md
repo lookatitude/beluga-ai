@@ -158,9 +158,7 @@ func NewCalculatorTool() tool.Tool {
 	)
 }
 
-// stringMustNotBeEmpty is unused here but kept as a reminder that tool
-// results are text by default — use schema.ContentPart for multimodal.
-var _ = fmt.Sprintf
+// Tool results are text by default; use schema.ContentPart for multimodal output.
 ```
 
 Wire the tool into the agent by adding one option to the `agent.New` call in `main.go`:
