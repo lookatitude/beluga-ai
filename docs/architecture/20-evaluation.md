@@ -64,13 +64,17 @@ import (
     "log"
 
     _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/eval"
     "github.com/lookatitude/beluga-ai/eval/metrics"
     "github.com/lookatitude/beluga-ai/llm"
 )
 
 func main() {
-    judge, err := llm.New("anthropic", llm.Config{Model: "claude-3-haiku-20240307"})
+    judge, err := llm.New("anthropic", config.ProviderConfig{
+        Provider: "anthropic",
+        Model:    "claude-3-haiku-20240307",
+    })
     if err != nil {
         log.Fatal(err)
     }
@@ -136,13 +140,17 @@ import (
     "log"
 
     _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/eval"
     "github.com/lookatitude/beluga-ai/eval/judge"
     "github.com/lookatitude/beluga-ai/llm"
 )
 
 func main() {
-    model, err := llm.New("anthropic", llm.Config{Model: "claude-3-haiku-20240307"})
+    model, err := llm.New("anthropic", config.ProviderConfig{
+        Provider: "anthropic",
+        Model:    "claude-3-haiku-20240307",
+    })
     if err != nil {
         log.Fatal(err)
     }
@@ -244,12 +252,16 @@ import (
     "log"
 
     _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/eval/simulation"
     "github.com/lookatitude/beluga-ai/llm"
 )
 
 func main() {
-    userModel, err := llm.New("anthropic", llm.Config{Model: "claude-3-haiku-20240307"})
+    userModel, err := llm.New("anthropic", config.ProviderConfig{
+        Provider: "anthropic",
+        Model:    "claude-3-haiku-20240307",
+    })
     if err != nil {
         log.Fatal(err)
     }
@@ -436,10 +448,10 @@ A typical CI quality gate pattern:
 import (
     "context"
     "fmt"
-    "log"
     "time"
 
     _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
+    "github.com/lookatitude/beluga-ai/config"
     "github.com/lookatitude/beluga-ai/eval"
     "github.com/lookatitude/beluga-ai/eval/metrics"
     "github.com/lookatitude/beluga-ai/llm"
@@ -453,7 +465,10 @@ func runQualityGate(datasetPath string) error {
         return fmt.Errorf("load dataset: %w", err)
     }
 
-    judge, err := llm.New("anthropic", llm.Config{Model: "claude-3-haiku-20240307"})
+    judge, err := llm.New("anthropic", config.ProviderConfig{
+        Provider: "anthropic",
+        Model:    "claude-3-haiku-20240307",
+    })
     if err != nil {
         return fmt.Errorf("create judge model: %w", err)
     }
