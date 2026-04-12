@@ -176,7 +176,7 @@ The `raptor_level` and `raptor_node_id` metadata fields on returned `schema.Docu
 
 For data that lives in relational databases or graph stores, vector similarity over embedded text is the wrong tool. `StructuredRetriever` takes a natural-language query, uses an LLM to translate it into SQL or Cypher against a known `SchemaInfo`, executes the query via a `QueryExecutor`, and returns rows as `schema.Document` values. An optional `ResultEvaluator` scores result quality; low scores trigger regeneration up to `maxRetries` times.
 
-**Security by design:** the LLM prompt wraps the user question in `<question>...</question>` spotlighting delimiters to prevent prompt injection. The `ReadOnlyExecutor` wrapper rejects any query containing write keywords (DROP, DELETE, INSERT, UPDATE, ...) before touching the database — see [`executor.go:40-89`](../../rag/retriever/structured/executor.go).
+**Security by design:** the LLM prompt wraps the user question in `<question>...</question>` spotlighting delimiters to prevent prompt injection. The `ReadOnlyExecutor` wrapper rejects any query containing write keywords (DROP, DELETE, INSERT, UPDATE, ...) before touching the database — see [`executor.go:40-76`](../../rag/retriever/structured/executor.go).
 
 **When to use:**
 - Structured corpora: product catalogues, financial records, knowledge graphs, CRMs.
