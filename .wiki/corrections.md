@@ -114,3 +114,11 @@ mgr = prompt.ApplyMiddleware(mgr, prompt.WithTracing())
 **Correction:** When operating in a git worktree, always derive the base path from `pwd` (which returns the worktree root), not from any hardcoded repo root. Verify with `git status` in the worktree after every Write/Edit call to confirm the file is tracked.
 **Prevention rule:** In any worktree session, run `git status --short` after the first Write/Edit to confirm modified files appear. If `git status` is clean after a write, the write landed in the wrong tree.
 **Confidence:** HIGH — reproducible; discovered by checking `git status` which was clean despite edits.
+
+### C-010 | 2026-04-12 | docs-writer | rag/retriever
+**Symptom:** A developer calls `retriever.New("colbert", cfg)` expecting a working `ColBERTRetriever`, but receives an error: "colbert: use colbert.NewColBERTRetriever() with WithEmbedder and WithIndex options". Same for `retriever.New("raptor", cfg)`.
+**Root cause:** ColBERT and RAPTOR require dependencies (`ColBERTIndex`/`MultiVectorEmbedder`, or a pre-built `*Tree`/`Embedder`) that cannot be sourced from a generic `config.ProviderConfig`. Their `init()` registrations deliberately return descriptive errors to guide callers away from the generic factory path. See `rag/retriever/colbert/retriever.go:13-16` and `rag/retriever/raptor/retriever.go:15-21`.
+**Correction:** Use the typed constructors: `colbert.NewColBERTRetriever(colbert.WithEmbedder(...), colbert.WithIndex(...))` and `raptor.NewRAPTORRetriever(raptor.WithTree(...), raptor.WithRetrieverEmbedder(...))`. The `retriever.New("colbert", cfg)` / `retriever.New("raptor", cfg)` registry paths exist solely so `retriever.List()` includes these names for discovery — not for construction.
+**Contrast:** `StructuredRetriever` has the same pattern (`retriever.New("structured", cfg)` errors on purpose) but uses `structured.NewStructuredRetriever(structured.WithGenerator(...), structured.WithExecutor(...))`.
+**Prevention rule:** Documented in DOC-10 "Common mistakes". Any new retriever that requires non-config dependencies should follow this same "register with descriptive error, provide typed constructor" pattern.
+**Confidence:** HIGH — error text read directly from source; confirmed by source code at cited lines.
