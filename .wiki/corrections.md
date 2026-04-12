@@ -80,6 +80,20 @@ Entries reach `.claude/rules/` when seen ≥3 times or HIGH confidence.
 **Prevention rule:** Before marking a feature as "Stable" or "in main" in any doc, verify `ls <code-path>` in the worktree rooted at the branch being documented. Record the verification command and output in the commit message.
 **Confidence:** HIGH — verified by `ls agent/codeact/ tool/computeruse/ eval/judge/ cmd/beluga/ website/` all returning "No such file or directory" on main HEAD (commit `67f854c6`) despite PRs #234, #232, #243, #218, #228 showing MERGED.
 
+### C-009 | 2026-04-12 | docs-writer | feature-presence-invariant
+**Symptom:** Five feature PRs (#234 CLI, #232 Playground, #243 CodeAct, #218 Computer Use, #228 LLM-as-Judge) all show `state=MERGED` on GitHub. Their code artifacts (`cmd/beluga/`, `website/`, `agent/codeact/`, `tool/computeruse/`, `eval/judge/`) do not exist at `main` HEAD (`git log main | head` shows no commit for these features). A doc-writer checking PR state alone would incorrectly classify these features as "shipped."
+**Root cause:** This project uses a multi-branch merge workflow. Feature branches are merged into an integration or staging branch (not `main`) before being promoted. GitHub shows `MERGED` as soon as the PR is closed via merge into *any* target — there is no visual distinction between "merged into main" and "merged into staging."
+**Correction:** The canonical test for feature presence in `main` is `git ls-files -- <path>` or `ls <path>` on the `main` worktree. For this repo specifically:
+- `ls cmd/beluga/` → absent on main = CLI not shipped
+- `ls agent/codeact/` → absent on main = CodeAct not shipped
+- `ls tool/computeruse/` → absent on main = Computer Use not shipped
+- `ls eval/judge/` → absent on main = LLM-as-Judge not shipped
+- `ls website/` → absent on main = Playground not shipped
+**Invariant:** Feature is in `main` ⟺ `git ls-files main -- <expected-path>` is non-empty. GitHub PR MERGED state is neither necessary nor sufficient for this.
+**Pattern implication for docs:** Any `docs/feature-status.md` "Stable" classification requires `git ls-files main -- <path>` to return at least one file. If the path is absent, the feature belongs in "Planned" regardless of PR state. Re-verify on every docs branch rebase.
+**Verification command:** `git ls-files origin/main -- agent/codeact tool/computeruse eval/judge cmd/beluga website` → empty output on 2026-04-12 at main HEAD `67f854c6`.
+**Confidence:** HIGH — independently confirmed by `ls`, `git log`, and filesystem enumeration.
+
 ### C-008 | 2026-04-12 | docs-writer | worktree-awareness
 **Symptom:** When running inside a git worktree at `.claude/worktrees/agent-ada144bd/`, Write tool calls used absolute paths rooted at the main repository (`/home/miguelp/Projects/lookatitude/beluga-ai/`) instead of the worktree. Files were written to the main checkout, not to the branch being prepared. `git status` in the worktree showed "nothing to commit" despite apparent file edits.
 **Root cause:** The agent's working directory (`pwd`) was the worktree, but absolute paths were explicitly constructed using the known main repo root. The Write tool honors the path given without inferring which git worktree should be active.
