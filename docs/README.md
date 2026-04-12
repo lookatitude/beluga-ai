@@ -11,6 +11,17 @@ New to Beluga? Read in this order:
 3. [Extensibility Patterns](./architecture/03-extensibility-patterns.md) — the 4 mechanisms every package uses.
 4. [Build Your First Agent](./guides/first-agent.md) — 5-minute quickstart.
 
+## Production readiness
+
+Beluga is designed for the production agent stack. Every package ships with
+OpenTelemetry GenAI spans ([DOC-14](architecture/14-observability.md)),
+circuit breakers and rate limits are middleware on the same interface as your
+LLM calls ([DOC-15](architecture/15-resilience.md)), and the `workflow/`
+package provides crash-durable execution ([DOC-16](architecture/16-durable-workflows.md)).
+Deployment targets — Docker, Kubernetes, Temporal, and embedded — are documented in
+[DOC-17](architecture/17-deployment-modes.md).
+See the [Production Checklist](production-checklist.md).
+
 ## Sections
 
 ### [Architecture](./architecture/README.md)

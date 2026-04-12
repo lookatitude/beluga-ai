@@ -1,6 +1,10 @@
 # Architecture
 
 The 18 documents in this directory explain the Beluga AI v2 architecture, layer by layer.
+The design targets production deployments: observability ([DOC-14](./14-observability.md)) and
+resilience ([DOC-15](./15-resilience.md)) are first-class concerns in Layer 2, not retrofit; durable
+workflow execution ([DOC-16](./16-durable-workflows.md)) and deployment topology ([DOC-17](./17-deployment-modes.md))
+are covered in the cross-cutting section.
 
 ## The 7-layer model
 
