@@ -2,11 +2,43 @@
 
 All notable changes to Beluga AI are documented here.
 
-## [2.8.0] - 2026-04-12
+## [2.8.1] - 2026-04-12
+
+### Bug Fixes
+
+- **docs**: Correct prompt examples — ApplyMiddleware type mismatch
+- **docs**: Correct code examples in DOC-20 — use config.ProviderConfig
+
+### Documentation
+
+- Add feature-status page and reconcile README with main
+- Amend feature-status accuracy and capture two doc-writer corrections
+- Include full rewritten README with all planned-feature fixes applied
+- **arch**: Correct dependency tables for 7 packages in DOC-18
+- Correct Hooks field names in DOC-03 and hooks-lifecycle
+- **reference**: Regenerate provider catalog from the tree
+- Add honest competitive comparison page
+- **arch**: Add DOC-21 — Human-in-the-Loop
+- **arch**: Fix hitl dependency statement — core+o11y not schema
+- Add CONTRIBUTING.md contributor on-ramp
+- Add production-readiness framing to docs hub pages
+- **arch**: Add DOC-19 — Prompt Management
+- **arch**: Add DOC-20 — Evaluation Framework
+- **guides**: Rewrite first-agent against the real API
+- Add production checklist for enterprise deployment
+- **arch**: Expand DOC-10 with advanced RAG retrievers and loaders
+- **wiki**: Capture C-010 registry-vs-constructor footgun for advanced RAG retrievers
+- **arch**: Expand DOC-09 with advanced memory sub-packages
+- **arch**: Expand DOC-05/06 with cognitive architectures and missing strategies
 
 ### Miscellaneous
 
 - **release**: Update CHANGELOG.md for v2.7.0 [skip ci]
+- **release**: Update CHANGELOG.md for v2.8.0 [skip ci]
+
+### Wiki
+
+- Add C-009 (feature-presence-invariant) and index routing entries
 
 ## [2.8.0] - 2026-04-12
 
