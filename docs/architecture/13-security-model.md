@@ -259,10 +259,11 @@ When no detectors are supplied, `NewMemoryGuard` defaults to `EntropyDetector`, 
 
 ```go
 import (
-    "context"
-    "fmt"
+import (
+	"context"
+	"fmt"
 
-    guardmem "github.com/lookatitude/beluga-ai/guard/memory"
+	guardmem "github.com/lookatitude/beluga-ai/guard/memory"
 )
 
 guard := guardmem.NewMemoryGuard(
