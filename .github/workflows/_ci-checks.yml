@@ -118,7 +118,9 @@ jobs:
           FAIL_COUNT=$(grep -c '"Action":"fail"' test-output.json 2>/dev/null || echo "0")
 
           if [ -f coverage.out ]; then
-            COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | tr -d '%')
+            # Extract coverage percentage and truncate to integer to satisfy
+            # GITHUB_OUTPUT format requirements (decimal values are rejected).
+            COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | tr -d '%' | awk -F'.' '{print $1}')
           else
             COVERAGE="0"
           fi
