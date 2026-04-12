@@ -207,7 +207,7 @@ LLM token spend can spike without warning. Budget enforcement prevents runaway c
       new values without a process restart.
 
 - [ ] **Prompt cache enabled for repeated system prompts** — `cache/`
-      Wrap your LLM with `cache.NewSemanticCache(embedder, threshold, store)`
+      Wrap your LLM with `cache.NewSemanticCache(embedder, cache.WithThreshold(0.85))`
       (`cache/semantic.go`) or use provider-native prompt caching for Anthropic and
       OpenAI. Cache hits reduce latency and token spend on shared system prompts.
 
