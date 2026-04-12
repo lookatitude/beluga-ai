@@ -1,6 +1,6 @@
 # Architecture
 
-The 18 documents in this directory explain the Beluga AI v2 architecture, layer by layer.
+The documents in this directory explain the Beluga AI v2 architecture, layer by layer.
 
 ## The 7-layer model
 
@@ -58,6 +58,9 @@ Data flows down. Each layer imports only from layers below.
 - [16 — Durable Workflows](./16-durable-workflows.md)
 - [17 — Deployment Modes](./17-deployment-modes.md)
 - [18 — Package Dependency Map](./18-package-dependency-map.md)
+- [19 — Prompt Management](./19-prompt-management.md)
+- [20 — Evaluation Framework](./20-evaluation.md)
+- [21 — Human-in-the-Loop](./21-hitl.md)
 
 ## Visual sources
 
