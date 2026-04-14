@@ -311,6 +311,29 @@
   border: 1px solid var(--sl-color-hairline);
 }
 
+/* Mermaid diagrams — center in frame, give breathing room.
+   Mermaid inlines its own max-width based on the natural SVG
+   size, so tall narrow flowcharts (graph TB) end up pinned to
+   the left of a wide content column. Wrap them in a framed
+   panel and center the SVG. */
+.sl-markdown-content pre.mermaid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: clamp(1rem, 2vw, 2rem);
+  margin-block: 1.5rem;
+  background: color-mix(in oklch, var(--sl-color-gray-6) 25%, transparent);
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.sl-markdown-content pre.mermaid svg {
+  display: block;
+  height: auto;
+  max-width: 100%;
+}
+
 /* Starlight asides — solid tint, not glass */
 .starlight-aside {
   border-radius: 0.5rem;
