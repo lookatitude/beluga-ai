@@ -8,7 +8,7 @@ RM ?= rm -f
 
 .DEFAULT_GOAL := help
 
-.PHONY: help build test test-verbose integration-test coverage lint lint-fix fmt tidy fuzz bench docs docs-website docs-providers clean check
+.PHONY: help build test test-verbose integration-test coverage lint lint-fix fmt tidy fuzz bench docs docs-providers clean check
 
 help: ## Show available targets
 	@echo "Beluga AI development targets:"
@@ -66,9 +66,6 @@ bench: ## Run benchmarks
 docs: ## Start local pkgsite on :8080
 	$(GO) install golang.org/x/pkgsite/cmd/pkgsite@latest
 	$(PKGSITE) -http=:8080 .
-
-docs-website: ## Start docs website locally
-	cd docs/website && yarn dev
 
 clean: ## Remove generated artifacts
 	$(RM) coverage.out coverage.html
