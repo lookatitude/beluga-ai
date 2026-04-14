@@ -72,6 +72,36 @@ Entries reach `.claude/rules/` when seen ≥3 times or HIGH confidence.
 **Prevention rule:** Invariant 1 already forbids channels in public APIs. Add a `-race` requirement to any fan-in goroutine refactor; shared-owner channel closes are invisible without it.
 **Confidence:** HIGH — compile-time enforced by interface change; race-detector clean.
 
+### C-006 | 2026-04-12 | docs-audit | docs/** · OPEN
+**Symptom:** User-facing documentation under `docs/` has drifted from the current codebase across multiple vectors:
+1. `docs/guides/first-agent.md` — the headline 5-minute onboarding doc — uses APIs that do not exist: `llm.Config{...}` map literal (real signature takes `config.ProviderConfig` struct), `agent.NewLLMAgent(...)` (real constructor is `agent.New(id, ...Option) *BaseAgent` at `agent/base.go:23`), and `stream.Range` channel-style iteration (real API is `iter.Seq2[Event, error]` at `agent/base.go:87`). None of the quickstart code compiles.
+2. `docs/architecture/03-extensibility-patterns.md` — the canonical teaching doc for the 4-ring extension contract — shows `tool.Hooks{OnStart, OnEnd, OnError}` but actual `tool/hooks.go:11-25` defines `{BeforeExecute, AfterExecute, OnError}`. Line citations (e.g., `llm/registry.go:19-27`) are also off by several lines (actual `Register` lives at `llm/registry.go:22-26`).
+3. `docs/reference/providers.md` — tables undercount every category: LLM lists 7 of 22 actual providers (`.wiki/log.md:68` already recorded "22/22 LLM providers auto-register" during the 2026-04-11 arch-validate sweep — the data was available but never propagated); vector stores list 7 of 13; embeddings list 5 of 9. The file also references a `tool/builtin/<name>` directory structure that does not exist — the tool package only contains `learning/` and `sandbox/` subdirs.
+4. `README.md` advertises features that are not in `main`: `cmd/beluga` CLI (actual `cmd/` contains only `docgen/`), `website/` Agent Playground UI (no such directory), and `agent/codeact` (only present in `.claude/worktrees/agent-affc291b/`, not in the main tree). README prose is shipped-tense for all three.
+5. `docs/architecture/18-package-dependency-map.md` omits `prompt/`, `eval/`, `cache/`, `hitl/`, `cost/`, `state/`, `audit/`, `optimize/` from its per-package dependency tables despite each being a top-level package with a `doc.go`.
+
+**Root cause:** Three compounding factors:
+- **No generation pipeline for reference material.** `providers.md` and `18-package-dependency-map.md` are hand-curated; providers get added to `llm/providers/` in PRs that never touch the docs.
+- **No compile-check for doc code examples.** The pre-commit gate covers `go build`, `go vet`, `go test`, `gofmt`, `golangci-lint`, `gosec`, `govulncheck` — none extract and compile Go fences from `docs/**/*.md`. Drift is invisible to CI.
+- **README feature copy written ahead of implementation.** CodeAct/CLI/Playground were advertised as shipping while live on feature branches; no status-gate prevents unreleased features from appearing in headline bullets.
+
+**Correction (recommended, not yet applied):**
+- **P0 — rewrite `first-agent.md`** to match the README quickstart (which IS correct). Single source of truth for the working quickstart.
+- **P0 — fix `03-extensibility-patterns.md` Hooks example** to use real field names; re-run line citations against current source.
+- **P0 — either ship or retract** the CodeAct/CLI/Playground README claims. A "Roadmap" section with tracking links is acceptable; silent-tense fiction is not.
+- **P1 — generate `reference/providers.md`** from the filesystem. A small Go program walking `llm/providers/*`, `rag/{embedding,vectorstore}/providers/*`, `voice/{stt,tts,s2s,transport}/providers/*`, `memory/stores/*`, `guard/providers/*`, `protocol/*`, `auth/providers/*`, `cache/providers/*` and emitting the tables eliminates drift structurally.
+- **P1 — add a doc-compile pre-commit step.** Extract ```go fences from `docs/**/*.md`, write to temp `main.go`, run `go vet`. Blocks non-compiling examples.
+- **P1 — add architecture docs (or short sections in DOC-14/15)** for `prompt/`, `eval/`, `cache/`, `hitl/`, `state/`, `cost/`, `audit/`.
+
+**Prevention rule:**
+1. **Docs-as-code gate:** doc code examples must compile as part of CI. Add `doc-check` step to `_ci-checks.yml` using a small extract-and-vet helper.
+2. **Reference material must be generated,** not hand-curated. Hand-curated provider tables drift within a single release cycle — already demonstrated by `.wiki/log.md:68` knowing about all 22 LLM providers on 2026-04-11 while `docs/reference/providers.md` still lists 7 on 2026-04-12.
+3. **README feature bullets require an evidence link** (`cmd/beluga/main.go`, `website/package.json`, `agent/codeact/doc.go`). PR review rejects bullets whose evidence path doesn't exist in `main`.
+4. **When arch-validate or any sweep discovers a count/inventory fact** (e.g., "22/22 LLM providers auto-register"), the sweep's follow-up tasks must include a diff against `docs/reference/*` to propagate. Add a step to the `/arch-validate` command checklist.
+
+**Confidence:** HIGH for all five findings — each backed by concrete file reads and grep verification against the current tree (`llm/registry.go`, `tool/{tool,hooks,middleware}.go`, `agent/base.go`, directory listings of `llm/providers/`, `rag/vectorstore/providers/`, `rag/embedding/providers/`, `cmd/`, `website/` absence, `agent/codeact` worktree-only presence).
+**Confidence:** HIGH for all five findings — each backed by concrete file reads and grep verification against the current tree (`llm/registry.go`, `tool/{tool,hooks,middleware}.go`, `agent/base.go`, directory listings of `llm/providers/`, `rag/vectorstore/providers/`, `rag/embedding/providers/`, `cmd/`, `website/` absence, `agent/codeact` worktree-only presence).
+
 ---
 
 ### C-010 | 2026-04-12 | docs-writer | prompt · OPEN
