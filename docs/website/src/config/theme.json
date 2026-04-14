@@ -3,34 +3,50 @@
     "default": {
       "theme_color": {
         "primary": "#5CA3CA",
-        "body": "#0d0d0d",
-        "light": "#f6f6f6",
-        "dark": "#151515"
+        "primary_soft": "#C9E1E5",
+        "body": "#0a0d12",
+        "surface": "#10141b",
+        "elevated": "#151a22",
+        "hairline": "#1e2531",
+        "light": "#eef2f6",
+        "dark": "#0a0d12"
       },
       "text_color": {
-        "text": "#999999"
+        "text": "#9aa4b2",
+        "text_strong": "#cfd6e0",
+        "text_muted": "#6b7483"
       }
     },
     "lightmode": {
       "theme_color": {
-        "primary": "#5CA3CA",
-        "body": "#fff",
-        "light": "#181818",
-        "dark": "#f7f7f7"
+        "primary": "#3a7a9c",
+        "primary_soft": "#C9E1E5",
+        "body": "#f8fafa",
+        "surface": "#ffffff",
+        "elevated": "#ffffff",
+        "hairline": "#e4e9ee",
+        "light": "#0f1419",
+        "dark": "#f8fafa"
       },
       "text_color": {
-        "text": "#000"
+        "text": "#5a6472",
+        "text_strong": "#1a2029",
+        "text_muted": "#8a939f"
       }
     }
   },
   "fonts": {
     "font_family": {
-      "primary": "Inter:wght@400;500;600",
-      "primary_type": "sans-serif"
+      "primary": "IBM Plex Sans:wght@300;400;500;600;700",
+      "primary_type": "system-ui, -apple-system, Segoe UI, sans-serif",
+      "display": "Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700",
+      "display_type": "Georgia, Cambria, Times, serif",
+      "mono": "JetBrains Mono:wght@400;500;600",
+      "mono_type": "ui-monospace, SFMono-Regular, Menlo, monospace"
     },
     "font_size": {
       "base": "16",
-      "scale": "1.15"
+      "scale": "1.2"
     }
   }
 }

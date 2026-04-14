@@ -106,7 +106,7 @@ const socialLinks = social.main;
 
   .footer-divider {
     height: 1px;
-    background: linear-gradient(90deg, transparent, #3a1c71, #D76D77, #ffca7b, transparent);
+    background: var(--sl-color-hairline);
   }
 
   .footer-inner {
@@ -160,14 +160,14 @@ const socialLinks = social.main;
 
   .footer-tagline {
     font-size: 0.875rem;
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 50%, transparent);
+    color: color-mix(in srgb, var(--sl-color-white) 50%, transparent);
     line-height: 1.5;
     max-width: 20rem;
     margin: 0;
   }
 
   :root[data-theme="light"] .footer-tagline {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 50%, transparent);
+    color: color-mix(in srgb, var(--sl-color-white) 50%, transparent);
   }
 
   /* ── Columns ── */
@@ -188,12 +188,12 @@ const socialLinks = social.main;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--color-light, #f6f6f6);
+    color: var(--sl-color-white);
     margin-bottom: 0.875rem;
   }
 
   :root[data-theme="light"] .footer-column-title {
-    color: var(--color-lightmode-light, #181818);
+    color: var(--sl-color-white);
   }
 
   .footer-column-list {
@@ -210,21 +210,21 @@ const socialLinks = social.main;
     align-items: center;
     gap: 0.375rem;
     font-size: 0.8125rem;
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 55%, transparent);
+    color: color-mix(in srgb, var(--sl-color-white) 55%, transparent);
     text-decoration: none;
     transition: color 0.15s ease;
   }
 
   .footer-link:hover {
-    color: var(--color-primary, #5CA3CA);
+    color: var(--brand-300);
   }
 
   :root[data-theme="light"] .footer-link {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 55%, transparent);
+    color: color-mix(in srgb, var(--sl-color-white) 55%, transparent);
   }
 
   :root[data-theme="light"] .footer-link:hover {
-    color: var(--color-primary, #5CA3CA);
+    color: var(--brand-300);
   }
 
   .external-icon {
@@ -238,7 +238,7 @@ const socialLinks = social.main;
     flex-direction: column;
     gap: 1rem;
     padding-top: 1.5rem;
-    border-top: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--sl-color-white) 8%, transparent);
   }
 
   @media (min-width: 768px) {
@@ -250,16 +250,16 @@ const socialLinks = social.main;
   }
 
   :root[data-theme="light"] .footer-bottom {
-    border-top-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 10%, transparent);
+    border-top-color: color-mix(in srgb, var(--sl-color-white) 10%, transparent);
   }
 
   .footer-copyright {
     font-size: 0.8125rem;
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 40%, transparent);
+    color: color-mix(in srgb, var(--sl-color-white) 40%, transparent);
   }
 
   .footer-copyright :global(a) {
-    color: var(--color-primary, #5CA3CA);
+    color: var(--brand-300);
     text-decoration: none;
   }
 
@@ -268,7 +268,7 @@ const socialLinks = social.main;
   }
 
   :root[data-theme="light"] .footer-copyright {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 40%, transparent);
+    color: color-mix(in srgb, var(--sl-color-white) 40%, transparent);
   }
 
   .footer-bottom-right {
@@ -279,11 +279,11 @@ const socialLinks = social.main;
 
   .footer-built-with {
     font-size: 0.75rem;
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 35%, transparent);
+    color: color-mix(in srgb, var(--sl-color-white) 35%, transparent);
   }
 
   :root[data-theme="light"] .footer-built-with {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 35%, transparent);
+    color: color-mix(in srgb, var(--sl-color-white) 35%, transparent);
   }
 
   .footer-social {
@@ -297,21 +297,21 @@ const socialLinks = social.main;
     align-items: center;
     justify-content: center;
     padding: 0.375rem;
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 45%, transparent);
+    color: color-mix(in srgb, var(--sl-color-white) 45%, transparent);
     transition: color 0.15s ease;
     text-decoration: none;
     border-radius: 0.25rem;
   }
 
   .footer-social-link:hover {
-    color: var(--color-primary, #5CA3CA);
+    color: var(--brand-300);
   }
 
   :root[data-theme="light"] .footer-social-link {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 45%, transparent);
+    color: color-mix(in srgb, var(--sl-color-white) 45%, transparent);
   }
 
   :root[data-theme="light"] .footer-social-link:hover {
-    color: var(--color-primary, #5CA3CA);
+    color: var(--brand-300);
   }
 </style>

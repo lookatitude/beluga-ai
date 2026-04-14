@@ -1,0 +1,213 @@
+---
+/**
+ * EditorialSection — the one section primitive for marketing pages.
+ *
+ * Every marketing page composes from this. It handles eyebrow labels,
+ * headline + deck, asymmetric vs split vs centered layouts, optional
+ * full-bleed background tint, and the "cite" footer link that every
+ * claim on this site should carry. No page-specific CSS lives inside
+ * a marketing page any more — it composes this.
+ */
+
+interface Props {
+  eyebrow?: string;
+  headline: string;
+  /** Use "display" for hero / section titles (Fraunces). Default "sans". */
+  headlineFont?: "display" | "sans";
+  deck?: string;
+  /** editorial = left, asymmetric, max 780ch (default)
+   *  split     = 7/5 grid, content right
+   *  centered  = use sparingly — reserved for final CTA blocks */
+  layout?: "editorial" | "split" | "centered";
+  /** Optional "see the source" link under the section body. */
+  cite?: { label: string; href: string };
+  /** Full-bleed tinted background for alternating visual rhythm. */
+  bleed?: boolean;
+  /** Element tag, defaults to <section>. */
+  as?: "section" | "article" | "div";
+  /** Extra class hook for per-page tuning when absolutely required. */
+  class?: string;
+}
+
+const {
+  eyebrow,
+  headline,
+  headlineFont = "sans",
+  deck,
+  layout = "editorial",
+  cite,
+  bleed = false,
+  as: Tag = "section",
+  class: className = "",
+} = Astro.props;
+---
+
+<Tag
+  class:list={[
+    "ed-section",
+    `ed-layout-${layout}`,
+    bleed && "ed-bleed",
+    className,
+  ]}
+>
+  <div class="ed-frame">
+    <header class="ed-header">
+      {eyebrow && <span class="eyebrow ed-eyebrow">{eyebrow}</span>}
+      <h2 class:list={["ed-headline", headlineFont === "display" && "font-display"]}>
+        {headline}
+      </h2>
+      {deck && <p class="ed-deck">{deck}</p>}
+    </header>
+
+    <div class="ed-body">
+      <slot />
+    </div>
+
+    {cite && (
+      <footer class="ed-cite">
+        <a href={cite.href}>
+          <span class="ed-cite-label">{cite.label}</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+      </footer>
+    )}
+  </div>
+</Tag>
+
+<style>
+  .ed-section {
+    display: block;
+    position: relative;
+    padding-block: clamp(4rem, 8vw, 7rem);
+  }
+
+  .ed-bleed {
+    background: color-mix(in oklch, var(--ink-900) 65%, var(--ink-950));
+    border-block: 1px solid var(--sl-color-hairline);
+  }
+
+  :global([data-theme="light"]) .ed-bleed {
+    background: color-mix(in oklch, var(--paper-100) 70%, var(--paper-50));
+  }
+
+  .ed-frame {
+    max-width: 76rem;
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+  }
+
+  /* Header */
+  .ed-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 56rem;
+    margin-bottom: clamp(2rem, 4vw, 3.5rem);
+  }
+
+  .ed-eyebrow {
+    margin-bottom: 0.25rem;
+  }
+
+  .ed-headline {
+    font-size: clamp(1.75rem, 3.6vw, 2.75rem);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    font-weight: 600;
+    margin: 0;
+    color: var(--sl-color-white);
+    max-width: 20ch;
+  }
+
+  /* Display variant uses Fraunces — larger, heavier, more editorial */
+  .ed-headline.font-display {
+    font-size: clamp(2.25rem, 4.8vw, 3.75rem);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1.02;
+    font-variation-settings: "opsz" 144, "SOFT" 30;
+  }
+
+  .ed-deck {
+    font-size: clamp(1.0625rem, 1.5vw, 1.1875rem);
+    line-height: 1.55;
+    color: var(--sl-color-gray-2);
+    margin: 0;
+    max-width: 58ch;
+  }
+
+  /* Body layouts */
+  .ed-body {
+    display: block;
+  }
+
+  .ed-layout-editorial .ed-body {
+    max-width: 72rem;
+  }
+
+  .ed-layout-split .ed-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(1.5rem, 3vw, 3rem);
+  }
+
+  @media (min-width: 900px) {
+    .ed-layout-split .ed-header {
+      grid-column: 1 / 2;
+    }
+    .ed-layout-split .ed-body {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      align-items: start;
+    }
+  }
+
+  .ed-layout-centered .ed-frame {
+    text-align: center;
+  }
+  .ed-layout-centered .ed-header {
+    margin-inline: auto;
+    align-items: center;
+  }
+  .ed-layout-centered .ed-headline {
+    max-width: 28ch;
+  }
+  .ed-layout-centered .ed-deck {
+    text-align: center;
+  }
+
+  /* Cite footer — small mono link back to source */
+  .ed-cite {
+    margin-top: clamp(2rem, 3vw, 3rem);
+  }
+  .ed-cite a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--sl-color-text-accent);
+    text-decoration: none;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid transparent;
+    transition: color 0.15s ease, border-color 0.2s ease;
+  }
+  .ed-cite a:hover {
+    color: var(--brand-200);
+    border-bottom-color: var(--brand-200);
+  }
+  .ed-cite a svg {
+    transition: transform 0.2s ease;
+  }
+  .ed-cite a:hover svg {
+    transform: translateX(2px);
+  }
+  .ed-cite a:focus-visible {
+    outline: 2px solid var(--brand-500);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+</style>

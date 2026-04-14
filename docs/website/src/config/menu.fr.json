@@ -1,87 +1,46 @@
 {
   "main": [
-    {
-      "name": "Accueil",
-      "url": "/"
-    },
-    {
-      "name": "Documentation",
-      "url": "/docs/getting-started/overview/"
-    },
-    {
-      "name": "Guides",
-      "url": "",
-      "hasChildren": true,
-      "children": [
-        {
-          "name": "Commencer",
-          "url": "/docs/getting-started/quick-start/"
-        },
-        {
-          "name": "Premier Agent",
-          "url": "/docs/guides/first-agent/"
-        }
-      ]
-    }
+    { "name": "Produit", "url": "/product/" },
+    { "name": "Docs", "url": "/docs/start/" },
+    { "name": "Fournisseurs", "url": "/providers/" },
+    { "name": "Recettes", "url": "/docs/recipes/" },
+    { "name": "Entreprise", "url": "/enterprise/" },
+    { "name": "Communauté", "url": "/community/" }
   ],
   "footer": {
+    "framework": {
+      "title": "Framework",
+      "links": [
+        { "name": "Produit", "url": "/product/" },
+        { "name": "Fournisseurs", "url": "/providers/" },
+        { "name": "Comparer", "url": "/compare/" },
+        { "name": "Entreprise", "url": "/enterprise/" }
+      ]
+    },
+    "docs": {
+      "title": "Docs",
+      "links": [
+        { "name": "Démarrage", "url": "/docs/start/" },
+        { "name": "Concepts", "url": "/docs/concepts/" },
+        { "name": "Guides", "url": "/docs/guides/" },
+        { "name": "Recettes", "url": "/docs/recipes/" },
+        { "name": "Référence", "url": "/docs/reference/" }
+      ]
+    },
     "community": {
       "title": "Communauté",
       "links": [
-        {
-          "name": "Discussions GitHub",
-          "url": "https://github.com/lookatitude/beluga-ai/discussions"
-        },
-        {
-          "name": "Issues GitHub",
-          "url": "https://github.com/lookatitude/beluga-ai/issues"
-        },
-        {
-          "name": "Guide de contribution",
-          "url": "/docs/contributing/"
-        }
+        { "name": "GitHub", "url": "https://github.com/lookatitude/beluga-ai" },
+        { "name": "Discussions", "url": "https://github.com/lookatitude/beluga-ai/discussions" },
+        { "name": "Issues", "url": "https://github.com/lookatitude/beluga-ai/issues" },
+        { "name": "Contribution", "url": "/docs/contributing/" }
       ]
     },
-    "help_links": {
-      "title": "Ressources",
+    "info": {
+      "title": "Info",
       "links": [
-        {
-          "name": "Commencer",
-          "url": "/docs/getting-started/overview/"
-        },
-        {
-          "name": "Guides",
-          "url": "/docs/guides/first-agent/"
-        },
-        {
-          "name": "Cookbook",
-          "url": "/docs/cookbook/agent-recipes/"
-        },
-        {
-          "name": "Cas d'usage",
-          "url": "/docs/use-cases/enterprise-rag/"
-        }
-      ]
-    },
-    "company": {
-      "title": "Documentation",
-      "links": [
-        {
-          "name": "Architecture",
-          "url": "/docs/architecture/concepts/"
-        },
-        {
-          "name": "Fournisseurs",
-          "url": "/docs/providers/"
-        },
-        {
-          "name": "Intégrations",
-          "url": "/docs/integrations/llm-providers/"
-        },
-        {
-          "name": "Référence API",
-          "url": "/docs/api-reference/"
-        }
+        { "name": "Communauté", "url": "/community/" },
+        { "name": "Licence — MIT", "url": "https://github.com/lookatitude/beluga-ai/blob/main/LICENSE" }
       ]
     }
   }

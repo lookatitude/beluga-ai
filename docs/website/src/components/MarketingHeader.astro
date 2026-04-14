@@ -2,7 +2,6 @@
 import config from "@/config/config.json";
 import menu from "@/config/menu.en.json";
 import social from "@/config/social.json";
-import MegaMenu from "./MegaMenu.astro";
 import ImageMod from "./ImageMod.astro";
 
 const { site, navigation_button } = config;
@@ -39,39 +38,12 @@ const currentPath = Astro.url.pathname;
         {
           navItems.map((item: any) => (
             <li class={`marketing-nav-item ${item.megaMenu ? "has-mega-menu" : ""}`}>
-              {item.megaMenu ? (
-                <button
-                  class={`marketing-nav-link ${currentPath.startsWith(item.url) ? "active" : ""}`}
-                  data-mega-trigger
-                  aria-expanded="false"
-                  aria-haspopup="true"
-                >
-                  {item.name}
-                  <svg
-                    class="chevron-icon"
-                    width="10"
-                    height="10"
-                    viewBox="0 0 10 10"
-                    fill="none"
-                  >
-                    <path
-                      d="M2 4l3 3 3-3"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                  <MegaMenu />
-                </button>
-              ) : (
-                <a
-                  href={item.url}
-                  class={`marketing-nav-link ${currentPath === item.url || currentPath.startsWith(item.url) ? "active" : ""}`}
-                >
-                  {item.name}
-                </a>
-              )}
+              <a
+                href={item.url}
+                class={`marketing-nav-link ${currentPath === item.url || currentPath.startsWith(item.url) ? "active" : ""}`}
+              >
+                {item.name}
+              </a>
             </li>
           ))
         }
@@ -125,7 +97,7 @@ const currentPath = Astro.url.pathname;
       </button>
 
       <!-- Docs button -->
-      <a href="/docs/getting-started/overview/" class="marketing-docs-btn">
+      <a href="/docs/concepts/" class="marketing-docs-btn">
         Docs
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
           <path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -161,18 +133,13 @@ const currentPath = Astro.url.pathname;
                   </svg>
                 </button>
                 <ul class="mobile-accordion-panel">
-                  {item.children.map((child: any) => (
+                  {(item.children || []).map((child: any) => (
                     <li>
                       <a href={child.url} class="mobile-accordion-link">
                         {child.name}
                       </a>
                     </li>
                   ))}
-                  <li>
-                    <a href="/features/" class="mobile-accordion-link mobile-accordion-all">
-                      View All Features
-                    </a>
-                  </li>
                 </ul>
               </>
             ) : (
@@ -184,7 +151,7 @@ const currentPath = Astro.url.pathname;
         ))
       }
       <li class="mobile-nav-item mobile-nav-cta">
-        <a href="/docs/getting-started/overview/" class="marketing-docs-btn mobile">
+        <a href="/docs/concepts/" class="marketing-docs-btn mobile">
           Docs
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -203,19 +170,14 @@ const currentPath = Astro.url.pathname;
     left: 0;
     right: 0;
     z-index: 1000;
-    transition: background-color 0.3s ease, backdrop-filter 0.3s ease;
+    background-color: var(--sl-color-bg);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.25s ease;
   }
 
+  /* On scroll, reveal a 1px hairline. The background stays solid. */
   .marketing-header.scrolled {
-    background: color-mix(in srgb, var(--color-body, #0d0d0d) 85%, transparent);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
-  }
-
-  :root[data-theme="light"] .marketing-header.scrolled {
-    background: color-mix(in srgb, var(--color-lightmode-body, #fff) 90%, transparent);
-    border-bottom-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+    border-bottom-color: var(--sl-color-hairline);
   }
 
   .marketing-header-inner {
@@ -285,31 +247,21 @@ const currentPath = Astro.url.pathname;
     padding: 0.5rem 0.75rem;
     font-size: 0.875rem;
     font-weight: 500;
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 75%, transparent);
+    color: var(--sl-color-gray-2);
     text-decoration: none;
     border: none;
     background: none;
     cursor: pointer;
-    border-radius: 0.5rem;
+    border-radius: 0.375rem;
     transition: color 0.15s ease, background-color 0.15s ease;
     white-space: nowrap;
-    font-family: inherit;
+    font-family: var(--font-sans);
   }
 
   .marketing-nav-link:hover,
   .marketing-nav-link.active {
-    color: var(--color-light, #f6f6f6);
-    background: color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
-  }
-
-  :root[data-theme="light"] .marketing-nav-link {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 70%, transparent);
-  }
-
-  :root[data-theme="light"] .marketing-nav-link:hover,
-  :root[data-theme="light"] .marketing-nav-link.active {
-    color: var(--color-lightmode-light, #181818);
-    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 6%, transparent);
+    color: var(--sl-color-white);
+    background: color-mix(in oklch, var(--sl-color-white) 6%, transparent);
   }
 
   .chevron-icon {
@@ -338,53 +290,26 @@ const currentPath = Astro.url.pathname;
     gap: 0.75rem;
   }
 
-  .marketing-github-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 60%, transparent);
-    transition: color 0.15s ease;
-    text-decoration: none;
-    padding: 0.375rem;
-    border-radius: 0.375rem;
-  }
-
-  .marketing-github-link:hover {
-    color: var(--color-light, #f6f6f6);
-  }
-
-  :root[data-theme="light"] .marketing-github-link {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
-  }
-
-  :root[data-theme="light"] .marketing-github-link:hover {
-    color: var(--color-lightmode-light, #181818);
-  }
-
-  /* ── Theme toggle ── */
+  .marketing-github-link,
   .marketing-theme-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
+    color: var(--sl-color-gray-3);
+    transition: color 0.15s ease, background-color 0.15s ease;
+    text-decoration: none;
     padding: 0.375rem;
     border: none;
     background: none;
     cursor: pointer;
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 60%, transparent);
     border-radius: 0.375rem;
-    transition: color 0.15s ease;
+    font-family: var(--font-sans);
   }
 
+  .marketing-github-link:hover,
   .marketing-theme-toggle:hover {
-    color: var(--color-light, #f6f6f6);
-  }
-
-  :root[data-theme="light"] .marketing-theme-toggle {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
-  }
-
-  :root[data-theme="light"] .marketing-theme-toggle:hover {
-    color: var(--color-lightmode-light, #181818);
+    color: var(--sl-color-white);
+    background: color-mix(in oklch, var(--sl-color-white) 5%, transparent);
   }
 
   /* Show correct icon per theme */
@@ -400,25 +325,38 @@ const currentPath = Astro.url.pathname;
     display: block;
   }
 
-  /* ── Docs button ── */
+  /* ── Docs button — solid brand primary, no gradient ── */
   .marketing-docs-btn {
     display: none;
     align-items: center;
     gap: 0.375rem;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0.9rem;
+    font-family: var(--font-sans);
     font-size: 0.8125rem;
     font-weight: 600;
-    color: #fff;
-    background: var(--color-primary-gradient);
-    border-radius: 0.5rem;
+    letter-spacing: -0.005em;
+    color: var(--ink-950);
+    background: var(--brand-500);
+    border: 1px solid var(--brand-500);
+    border-radius: 0.375rem;
     text-decoration: none;
-    transition: transform 0.15s ease, filter 0.15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease;
     white-space: nowrap;
   }
 
   .marketing-docs-btn:hover {
-    transform: scale(1.03);
-    filter: brightness(1.1);
+    background: var(--brand-400);
+    border-color: var(--brand-400);
+  }
+
+  :root[data-theme="light"] .marketing-docs-btn {
+    background: oklch(0.42 0.11 240);
+    border-color: oklch(0.42 0.11 240);
+    color: var(--paper-50);
+  }
+  :root[data-theme="light"] .marketing-docs-btn:hover {
+    background: oklch(0.36 0.11 242);
+    border-color: oklch(0.36 0.11 242);
   }
 
   @media (min-width: 1024px) {
@@ -453,13 +391,13 @@ const currentPath = Astro.url.pathname;
     display: block;
     width: 20px;
     height: 2px;
-    background: var(--color-light, #f6f6f6);
+    background: var(--sl-color-white);
     border-radius: 1px;
     transition: transform 0.25s ease, opacity 0.25s ease;
   }
 
   :root[data-theme="light"] .hamburger-line {
-    background: var(--color-lightmode-light, #181818);
+    background: var(--sl-color-white);
   }
 
   .marketing-hamburger[aria-expanded="true"] .hamburger-line:nth-child(1) {
@@ -478,11 +416,11 @@ const currentPath = Astro.url.pathname;
   .marketing-mobile-nav {
     display: none;
     padding: 1rem 1.5rem 1.5rem;
-    border-top: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--sl-color-white) 6%, transparent);
   }
 
   :root[data-theme="light"] .marketing-mobile-nav {
-    border-top-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+    border-top-color: color-mix(in srgb, var(--sl-color-white) 8%, transparent);
   }
 
   .marketing-mobile-nav.is-open {
@@ -511,7 +449,7 @@ const currentPath = Astro.url.pathname;
     padding: 0.75rem 0.5rem;
     font-size: 1rem;
     font-weight: 500;
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 80%, transparent);
+    color: color-mix(in srgb, var(--sl-color-white) 80%, transparent);
     text-decoration: none;
     border: none;
     background: none;
@@ -525,18 +463,18 @@ const currentPath = Astro.url.pathname;
 
   .mobile-nav-link:hover,
   .mobile-nav-link.active {
-    color: var(--color-light, #f6f6f6);
-    background: color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
+    color: var(--sl-color-white);
+    background: color-mix(in srgb, var(--sl-color-white) 6%, transparent);
   }
 
   :root[data-theme="light"] .mobile-nav-link {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 75%, transparent);
+    color: color-mix(in srgb, var(--sl-color-white) 75%, transparent);
   }
 
   :root[data-theme="light"] .mobile-nav-link:hover,
   :root[data-theme="light"] .mobile-nav-link.active {
-    color: var(--color-lightmode-light, #181818);
-    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 6%, transparent);
+    color: var(--sl-color-white);
+    background: color-mix(in srgb, var(--sl-color-white) 6%, transparent);
   }
 
   .mobile-accordion-panel {
@@ -563,24 +501,24 @@ const currentPath = Astro.url.pathname;
     padding: 0.5rem 0.75rem;
     font-size: 0.9rem;
     font-weight: 400;
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 65%, transparent);
+    color: color-mix(in srgb, var(--sl-color-white) 65%, transparent);
     text-decoration: none;
     border-radius: 0.375rem;
     transition: color 0.15s ease, background-color 0.15s ease;
   }
 
   .mobile-accordion-link:hover {
-    color: var(--color-light, #f6f6f6);
-    background: color-mix(in srgb, var(--color-light, #f6f6f6) 4%, transparent);
+    color: var(--sl-color-white);
+    background: color-mix(in srgb, var(--sl-color-white) 4%, transparent);
   }
 
   :root[data-theme="light"] .mobile-accordion-link {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
+    color: color-mix(in srgb, var(--sl-color-white) 60%, transparent);
   }
 
   :root[data-theme="light"] .mobile-accordion-link:hover {
-    color: var(--color-lightmode-light, #181818);
-    background: color-mix(in srgb, var(--color-lightmode-light, #181818) 4%, transparent);
+    color: var(--sl-color-white);
+    background: color-mix(in srgb, var(--sl-color-white) 4%, transparent);
   }
 
   .mobile-accordion-all {
@@ -591,11 +529,11 @@ const currentPath = Astro.url.pathname;
   .mobile-nav-cta {
     margin-top: 0.75rem;
     padding-top: 0.75rem;
-    border-top: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--sl-color-white) 6%, transparent);
   }
 
   :root[data-theme="light"] .mobile-nav-cta {
-    border-top-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
+    border-top-color: color-mix(in srgb, var(--sl-color-white) 8%, transparent);
   }
 </style>
 

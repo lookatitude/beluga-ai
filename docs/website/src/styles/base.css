@@ -1,112 +1,97 @@
 html {
-  @apply text-base-sm md:text-base;
+  font-size: clamp(15px, 0.9vw + 0.6rem, 17px);
+  background: var(--sl-color-bg);
+  color: var(--sl-color-text);
 }
 
 body {
-  @apply bg-lightmode-body text-base dark:bg-body font-primary font-normal leading-relaxed text-lightmode-text dark:text-text;
+  min-height: 100vh;
+  background: var(--sl-color-bg);
+  color: var(--sl-color-text);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  line-height: 1.65;
+  font-feature-settings: "ss01", "cv11";
+  margin: 0;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  @apply leading-tight;
-  font-weight: 800;
+/* UI / docs headings: IBM Plex Sans, tight, rigorous */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
   color: var(--sl-color-white);
 }
 
-h1, h2, h3 {
-  letter-spacing: -0.03em;
+h1, h2 {
+  letter-spacing: -0.025em;
+  font-weight: 600;
 }
 
-/* Impactful doc headings */
+/* Editorial headings (marketing hero, section titles) opt in with
+   .font-display to switch to Fraunces. Do not apply globally. */
+
+/* Docs headings — fluid, legible, no inflated AI-slop sizes */
 .sl-markdown-content h1 {
-  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-size: clamp(1.875rem, 3.2vw, 2.375rem);
+  font-weight: 600;
+  margin-top: 0;
 }
 .sl-markdown-content h2 {
-  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-size: clamp(1.375rem, 2.2vw, 1.625rem);
+  font-weight: 600;
+  margin-top: 2.5rem;
 }
 .sl-markdown-content h3 {
-  font-size: clamp(1.15rem, 2.5vw, 1.4rem);
+  font-size: clamp(1.125rem, 1.6vw, 1.25rem);
+  font-weight: 600;
+  margin-top: 2rem;
 }
 
-h1,
-.h1 {
-  @apply text-h1-sm md:text-h1;
-}
+h1, .h1 { font-size: clamp(2rem, 4.5vw, 2.75rem); }
+h2, .h2 { font-size: clamp(1.5rem, 3vw, 1.875rem); }
+h3, .h3 { font-size: clamp(1.25rem, 2.2vw, 1.5rem); }
+h4, .h4 { font-size: 1.125rem; }
+h5, .h5 { font-size: 1rem; }
+h6, .h6 { font-size: 0.875rem; letter-spacing: 0.02em; text-transform: uppercase; }
 
-h2,
-.h2 {
-  @apply text-h2-sm md:text-h2;
-}
+b, strong { font-weight: 600; }
 
-h3,
-.h3 {
-  @apply text-h3-sm md:text-h3;
-}
-
-h4,
-.h4 {
-  @apply text-h4;
-}
-
-h5,
-.h5 {
-  @apply text-h5;
-}
-
-h6,
-.h6 {
-  @apply text-h6;
-}
-
-b,
-strong {
-  @apply font-semibold;
-}
-
-/* Content paragraphs: readable line length */
 .sl-markdown-content p {
   max-width: 72ch;
 }
 
-/* Styled horizontal rules */
 hr {
   border: none;
   height: 1px;
   background: linear-gradient(
     to right,
     transparent,
-    var(--sl-color-gray-5),
+    var(--sl-color-hairline),
     transparent
   );
   margin: 2rem 0;
 }
 
-/* Inline code styling */
-code {
-  @apply after:border-none;
-}
+code::after { border: none; }
 :not(pre) > code {
-  font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
-  background: color-mix(in srgb, var(--sl-color-gray-6) 50%, transparent);
-  border: 1px solid color-mix(in srgb, var(--sl-color-white) 6%, transparent);
-  padding: 0.15em 0.4em;
-  border-radius: 0.375em;
-  font-size: 0.9em;
+  font-family: var(--font-mono);
+  background: color-mix(in oklch, var(--sl-color-bg-inline-code) 80%, transparent);
+  border: 1px solid var(--sl-color-hairline);
+  padding: 0.1em 0.38em;
+  border-radius: 0.25em;
+  font-size: 0.88em;
+  font-weight: 500;
 }
-:root[data-theme="light"] :not(pre) > code {
-  background: color-mix(in srgb, var(--sl-color-gray-6) 70%, transparent);
-  border-color: color-mix(in srgb, var(--sl-color-black) 6%, transparent);
-}
-
-/* Links in doc content — animated underline */
+/* Links in doc content — animated underline reveal on hover */
 .sl-markdown-content a:not([class]) {
-  color: var(--color-primary, #5CA3CA);
+  color: var(--sl-color-text-accent);
   text-decoration: none;
-  background-image: linear-gradient(var(--color-primary, #5CA3CA), var(--color-primary, #5CA3CA));
+  background-image: linear-gradient(
+    var(--sl-color-text-accent),
+    var(--sl-color-text-accent)
+  );
   background-size: 0% 1px;
   background-position: 0 100%;
   background-repeat: no-repeat;
@@ -116,17 +101,18 @@ code {
   background-size: 100% 1px;
 }
 .sl-markdown-content a:not([class]):focus-visible {
-  outline: 2px solid var(--color-primary, #5CA3CA);
+  outline: 2px solid var(--brand-500);
   outline-offset: 2px;
   border-radius: 2px;
 }
 
-/* Enhanced blockquote */
+/* Blockquote — solid brand rule, no gradient border-image */
 blockquote {
-  border-left: 3px solid transparent;
-  border-image: var(--color-primary-gradient) 1;
+  border-left: 3px solid var(--brand-500);
   padding-left: 1rem;
+  color: var(--sl-color-gray-2);
+  font-style: normal;
 }
 blockquote > p {
-  @apply my-0!;
+  margin-block: 0 !important;
 }

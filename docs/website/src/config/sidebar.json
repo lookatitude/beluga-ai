@@ -1,29 +1,29 @@
 {
   "main": [
     {
-      "label": "Getting Started",
+      "label": "Start",
       "items": [
-        {
-          "label": "[seti:vite] Overview",
-          "slug": "docs/getting-started/overview"
-        },
-        {
-          "label": "[setting] Installation",
-          "slug": "docs/getting-started/installation"
-        },
-        {
-          "label": "[rocket] Quick Start",
-          "slug": "docs/getting-started/quick-start"
-        }
+        { "label": "Overview", "slug": "docs/start" },
+        { "label": "Installation", "slug": "docs/start/installation" },
+        { "label": "Quick Start", "slug": "docs/start/quick-start" }
+      ]
+    },
+    {
+      "label": "Concepts",
+      "collapsed": true,
+      "items": [
+        { "label": "Overview", "slug": "docs/concepts" },
+        { "label": "Core Primitives", "slug": "docs/concepts/core-primitives" },
+        { "label": "Extensibility", "slug": "docs/concepts/extensibility" },
+        { "label": "Streaming", "slug": "docs/concepts/streaming" },
+        { "label": "Errors", "slug": "docs/concepts/errors" },
+        { "label": "Context", "slug": "docs/concepts/context" }
       ]
     },
     {
       "label": "Guides",
       "items": [
-        {
-          "label": "Overview",
-          "slug": "docs/guides"
-        },
+        { "label": "Overview", "slug": "docs/guides" },
         {
           "label": "Foundations",
           "collapsed": true,
@@ -32,433 +32,186 @@
         {
           "label": "Capabilities",
           "collapsed": true,
-          "autogenerate": { "directory": "docs/guides/capabilities" }
+          "items": [
+            { "label": "Overview", "slug": "docs/guides/capabilities" },
+            {
+              "label": "Agents",
+              "collapsed": true,
+              "autogenerate": { "directory": "docs/guides/capabilities/agents" }
+            },
+            {
+              "label": "RAG",
+              "collapsed": true,
+              "autogenerate": { "directory": "docs/guides/capabilities/rag" }
+            },
+            {
+              "label": "Memory",
+              "collapsed": true,
+              "autogenerate": { "directory": "docs/guides/capabilities/memory" }
+            },
+            {
+              "label": "Voice",
+              "collapsed": true,
+              "autogenerate": { "directory": "docs/guides/capabilities/voice" }
+            },
+            {
+              "label": "Orchestration",
+              "collapsed": true,
+              "autogenerate": { "directory": "docs/guides/capabilities/orchestration" }
+            },
+            {
+              "label": "Documents",
+              "collapsed": true,
+              "autogenerate": { "directory": "docs/guides/capabilities/documents" }
+            },
+            {
+              "label": "Multimodal",
+              "collapsed": true,
+              "autogenerate": { "directory": "docs/guides/capabilities/multimodal" }
+            },
+            {
+              "label": "Messaging",
+              "collapsed": true,
+              "autogenerate": { "directory": "docs/guides/capabilities/messaging" }
+            }
+          ]
         },
         {
           "label": "Production",
           "collapsed": true,
-          "autogenerate": { "directory": "docs/guides/production" }
+          "items": [
+            { "label": "Overview", "slug": "docs/guides/production" },
+            { "label": "Observability", "slug": "docs/guides/production/observability" },
+            { "label": "Safety and Guards", "slug": "docs/guides/production/safety-and-guards" },
+            { "label": "Resilience", "slug": "docs/guides/production/resilience" },
+            { "label": "Workflow Durability", "slug": "docs/guides/production/workflow-durability" },
+            {
+              "label": "More",
+              "collapsed": true,
+              "autogenerate": { "directory": "docs/guides/production" }
+            },
+            {
+              "label": "Integrations",
+              "collapsed": true,
+              "autogenerate": { "directory": "docs/guides/production/integrations" }
+            }
+          ]
         }
       ]
     },
     {
-      "label": "Tutorials",
+      "label": "Recipes",
+      "collapsed": true,
       "items": [
-        {
-          "label": "Overview",
-          "slug": "docs/tutorials"
-        },
-        {
-          "label": "Foundation",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/tutorials/foundation" }
-        },
-        {
-          "label": "Providers",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/tutorials/providers" }
-        },
+        { "label": "Overview", "slug": "docs/recipes" },
         {
           "label": "Agents",
           "collapsed": true,
-          "autogenerate": { "directory": "docs/tutorials/agents" }
+          "autogenerate": { "directory": "docs/recipes/agents" }
+        },
+        {
+          "label": "LLM",
+          "collapsed": true,
+          "autogenerate": { "directory": "docs/recipes/llm" }
+        },
+        {
+          "label": "RAG",
+          "collapsed": true,
+          "autogenerate": { "directory": "docs/recipes/rag" }
         },
         {
           "label": "Memory",
           "collapsed": true,
-          "autogenerate": { "directory": "docs/tutorials/memory" }
+          "autogenerate": { "directory": "docs/recipes/memory" }
         },
         {
-          "label": "RAG & Retrieval",
+          "label": "Voice",
           "collapsed": true,
-          "autogenerate": { "directory": "docs/tutorials/rag" }
-        },
-        {
-          "label": "Orchestration",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/tutorials/orchestration" }
-        },
-        {
-          "label": "Safety",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/tutorials/safety" }
-        },
-        {
-          "label": "Server & Deployment",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/tutorials/server" }
-        },
-        {
-          "label": "Messaging",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/tutorials/messaging" }
+          "autogenerate": { "directory": "docs/recipes/voice" }
         },
         {
           "label": "Multimodal",
           "collapsed": true,
-          "autogenerate": { "directory": "docs/tutorials/multimodal" }
+          "autogenerate": { "directory": "docs/recipes/multimodal" }
         },
         {
-          "label": "Documents",
+          "label": "Prompts",
           "collapsed": true,
-          "autogenerate": { "directory": "docs/tutorials/documents" }
-        },
-        {
-          "label": "Voice",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/tutorials/voice" }
-        }
-      ]
-    },
-    {
-      "label": "Cookbook",
-      "items": [
-        {
-          "label": "Overview",
-          "slug": "docs/cookbook"
-        },
-        {
-          "label": "[seti:robot] Agent Recipes",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/cookbook/agents" }
-        },
-        {
-          "label": "[seti:chat] LLM Recipes",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/cookbook/llm" }
-        },
-        {
-          "label": "[seti:search] RAG Recipes",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/cookbook/rag" }
-        },
-        {
-          "label": "[seti:db] Memory Recipes",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/cookbook/memory" }
-        },
-        {
-          "label": "[seti:audio] Voice Recipes",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/cookbook/voice" }
-        },
-        {
-          "label": "[seti:image] Multimodal Recipes",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/cookbook/multimodal" }
-        },
-        {
-          "label": "[seti:code] Prompt Recipes",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/cookbook/prompts" }
-        },
-        {
-          "label": "[setting] Infrastructure Recipes",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/cookbook/infrastructure" }
-        }
-      ]
-    },
-    {
-      "label": "Integrations",
-      "items": [
-        {
-          "label": "Overview",
-          "slug": "docs/integrations"
-        },
-        {
-          "label": "[seti:robot] Agents & Tools",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/integrations/agents" }
-        },
-        {
-          "label": "[seti:chat] LLM Providers",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/integrations/llm" }
-        },
-        {
-          "label": "[seti:vectors] Embeddings & NLP",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/integrations/embeddings" }
-        },
-        {
-          "label": "[seti:db] Data & Storage",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/integrations/data" }
-        },
-        {
-          "label": "[seti:audio] Voice",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/integrations/voice" }
-        },
-        {
-          "label": "[seti:config] Infrastructure",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/integrations/infrastructure" }
-        },
-        {
-          "label": "[graph] Observability",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/integrations/observability" }
-        },
-        {
-          "label": "[seti:message] Messaging",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/integrations/messaging" }
-        },
-        {
-          "label": "[seti:code] Prompts & Schema",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/integrations/prompts" }
-        },
-        {
-          "label": "[shield] Safety & Compliance",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/integrations/safety" }
-        }
-      ]
-    },
-    {
-      "label": "Use Cases",
-      "items": [
-        {
-          "label": "Overview",
-          "slug": "docs/use-cases"
-        },
-        {
-          "label": "[seti:search] Search & RAG",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/use-cases/search" }
-        },
-        {
-          "label": "[seti:robot] Agents & Automation",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/use-cases/agents" }
-        },
-        {
-          "label": "[seti:audio] Voice",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/use-cases/voice" }
-        },
-        {
-          "label": "[document] Documents",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/use-cases/documents" }
-        },
-        {
-          "label": "[graph] Analytics & Monitoring",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/use-cases/analytics" }
-        },
-        {
-          "label": "[shield] Safety & Compliance",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/use-cases/safety" }
-        },
-        {
-          "label": "[seti:docker] Infrastructure",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/use-cases/infrastructure" }
-        },
-        {
-          "label": "[seti:message] Messaging",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/use-cases/messaging" }
-        }
-      ]
-    },
-    {
-      "label": "Architecture",
-      "items": [
-        {
-          "label": "Overview",
-          "slug": "docs/architecture"
-        },
-        {
-          "label": "[document] Design Concepts",
-          "slug": "docs/architecture/concepts"
-        },
-        {
-          "label": "[seti:plan] Package Layout",
-          "slug": "docs/architecture/packages"
-        },
-        {
-          "label": "[seti:config] Full Architecture",
-          "slug": "docs/architecture/architecture"
-        },
-        {
-          "label": "[seti:plug] Provider Integration",
-          "slug": "docs/architecture/providers"
-        }
-      ]
-    },
-    {
-      "label": "Providers",
-      "items": [
-        {
-          "label": "Overview",
-          "slug": "docs/providers"
-        },
-        {
-          "label": "LLM Providers",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/providers/llm" }
-        },
-        {
-          "label": "Embedding Providers",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/providers/embedding" }
-        },
-        {
-          "label": "Vector Store Providers",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/providers/vectorstore" }
-        },
-        {
-          "label": "Voice Providers",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/providers/voice" }
-        },
-        {
-          "label": "Document Loader Providers",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/providers/loader" }
-        },
-        {
-          "label": "Guard Providers",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/providers/guard" }
-        },
-        {
-          "label": "Evaluation Providers",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/providers/eval" }
-        },
-        {
-          "label": "Observability Providers",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/providers/observability" }
-        },
-        {
-          "label": "Workflow Providers",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/providers/workflow" }
-        },
-        {
-          "label": "VAD Providers",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/providers/vad" }
-        },
-        {
-          "label": "Transport Providers",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/providers/transport" }
-        },
-        {
-          "label": "Cache Providers",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/providers/cache" }
-        },
-        {
-          "label": "State Providers",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/providers/state" }
-        },
-        {
-          "label": "Prompt Providers",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/providers/prompt" }
-        },
-        {
-          "label": "MCP Providers",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/providers/mcp" }
-        }
-      ]
-    },
-    {
-      "label": "API Reference",
-      "items": [
-        { "label": "Overview", "slug": "docs/api-reference" },
-        {
-          "label": "Foundation",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/api-reference/foundation" }
-        },
-        {
-          "label": "LLM & Agents",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/api-reference/llm-agents" }
-        },
-        {
-          "label": "Memory & RAG",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/api-reference/memory-rag" }
-        },
-        {
-          "label": "Voice",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/api-reference/voice" }
+          "autogenerate": { "directory": "docs/recipes/prompts" }
         },
         {
           "label": "Infrastructure",
           "collapsed": true,
-          "autogenerate": { "directory": "docs/api-reference/infrastructure" }
-        },
-        {
-          "label": "Protocol & Server",
-          "collapsed": true,
-          "autogenerate": { "directory": "docs/api-reference/protocol" }
+          "autogenerate": { "directory": "docs/recipes/infrastructure" }
         }
       ]
     },
     {
-      "label": "Reports",
+      "label": "Reference",
+      "collapsed": true,
       "items": [
+        { "label": "Overview", "slug": "docs/reference" },
         {
-          "label": "Overview",
-          "slug": "docs/reports"
+          "label": "Providers",
+          "collapsed": true,
+          "items": [
+            { "label": "Overview", "slug": "docs/reference/providers" },
+            { "label": "LLM", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/llm" } },
+            { "label": "Embedding", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/embedding" } },
+            { "label": "Vector Stores", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/vectorstore" } },
+            { "label": "Voice", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/voice" } },
+            { "label": "Document Loaders", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/loader" } },
+            { "label": "Guard", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/guard" } },
+            { "label": "Eval", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/eval" } },
+            { "label": "Observability", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/observability" } },
+            { "label": "Workflow", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/workflow" } },
+            { "label": "VAD", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/vad" } },
+            { "label": "Transport", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/transport" } },
+            { "label": "Cache", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/cache" } },
+            { "label": "State", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/state" } },
+            { "label": "Prompt", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/prompt" } },
+            { "label": "MCP", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/mcp" } }
+          ]
         },
         {
-          "label": "[pencil] Changelog",
-          "slug": "docs/reports/changelog"
+          "label": "API",
+          "collapsed": true,
+          "items": [
+            { "label": "Overview", "slug": "docs/reference/api" },
+            { "label": "Foundation", "collapsed": true, "autogenerate": { "directory": "docs/reference/api/foundation" } },
+            { "label": "LLM and Agents", "collapsed": true, "autogenerate": { "directory": "docs/reference/api/llm-agents" } },
+            { "label": "Memory and RAG", "collapsed": true, "autogenerate": { "directory": "docs/reference/api/memory-rag" } },
+            { "label": "Voice", "collapsed": true, "autogenerate": { "directory": "docs/reference/api/voice" } },
+            { "label": "Infrastructure", "collapsed": true, "autogenerate": { "directory": "docs/reference/api/infrastructure" } },
+            { "label": "Protocol and Server", "collapsed": true, "autogenerate": { "directory": "docs/reference/api/protocol" } }
+          ]
         },
         {
-          "label": "[shield] Security",
-          "slug": "docs/reports/security"
+          "label": "Architecture",
+          "collapsed": true,
+          "autogenerate": { "directory": "docs/reference/architecture" }
         },
-        {
-          "label": "[graph] Code Quality",
-          "slug": "docs/reports/code-quality"
-        }
+        { "label": "Config Schema", "slug": "docs/reference/config-schema" }
       ]
     },
     {
       "label": "Contributing",
+      "collapsed": true,
       "items": [
+        { "label": "Overview", "slug": "docs/contributing" },
+        { "label": "Development Setup", "slug": "docs/contributing/development-setup" },
+        { "label": "Code Style", "slug": "docs/contributing/code-style" },
+        { "label": "Testing", "slug": "docs/contributing/testing" },
+        { "label": "Pull Requests", "slug": "docs/contributing/pull-requests" },
+        { "label": "Releases", "slug": "docs/contributing/releases" },
         {
-          "label": "Overview",
-          "slug": "docs/contributing"
-        },
-        {
-          "label": "[setting] Development Setup",
-          "slug": "docs/contributing/development-setup"
-        },
-        {
-          "label": "[seti:code] Code Style",
-          "slug": "docs/contributing/code-style"
-        },
-        {
-          "label": "[seti:test] Testing",
-          "slug": "docs/contributing/testing"
-        },
-        {
-          "label": "[seti:git] Pull Requests",
-          "slug": "docs/contributing/pull-requests"
-        },
-        {
-          "label": "[rocket] Releases",
-          "slug": "docs/contributing/releases"
+          "label": "Project Reports",
+          "collapsed": true,
+          "items": [
+            { "label": "Changelog", "slug": "docs/contributing/project-reports/changelog" },
+            { "label": "Security", "slug": "docs/contributing/project-reports/security" },
+            { "label": "Code Quality", "slug": "docs/contributing/project-reports/code-quality" }
+          ]
         }
       ]
     }

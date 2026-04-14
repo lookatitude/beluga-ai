@@ -1,5 +1,4 @@
 ---
-import { AstroFont } from "astro-font";
 import theme from "@/config/theme.json";
 
 const route = Astro.locals.starlightRoute;
@@ -52,18 +51,21 @@ const breadcrumbJsonLd = {
 // Contextual article schema based on URL pattern
 const isSplash = route.entry.data.template === "splash";
 const pathname = Astro.url.pathname;
-const isApiRef = pathname.startsWith("/docs/api-reference/");
+const isApiRef = pathname.startsWith("/docs/reference/api/");
 const customSchemaType = (route.entry.data as Record<string, unknown>).schemaType as string | undefined;
 
 // Section for Pagefind filtering (inferred from URL path)
 function getPageSection(): string {
   if (isSplash) return "Home";
-  if (pathname.startsWith("/docs/getting-started/")) return "Getting Started";
+  if (pathname.startsWith("/docs/start/")) return "Start";
+  if (pathname.startsWith("/docs/concepts/")) return "Concepts";
   if (pathname.startsWith("/docs/guides/")) return "Guides";
-  if (pathname.startsWith("/docs/tutorials/")) return "Tutorials";
-  if (pathname.startsWith("/docs/api-reference/")) return "API Reference";
-  if (pathname.startsWith("/docs/providers/")) return "Providers";
-  if (pathname.startsWith("/docs/architecture/")) return "Architecture";
+  if (pathname.startsWith("/docs/recipes/")) return "Recipes";
+  if (pathname.startsWith("/docs/reference/api/")) return "API Reference";
+  if (pathname.startsWith("/docs/reference/providers/")) return "Providers";
+  if (pathname.startsWith("/docs/reference/architecture/")) return "Architecture";
+  if (pathname.startsWith("/docs/reference/")) return "Reference";
+  if (pathname.startsWith("/docs/contributing/")) return "Contributing";
   return "Docs";
 }
 const pageSection = getPageSection();
@@ -148,25 +150,6 @@ const softwareJsonLd = isSplash
 // Check for keywords in frontmatter (custom extended schema)
 const keywords = (route.entry.data as Record<string, unknown>).keywords as string | undefined;
 
-// font families
-const pf = theme.fonts.font_family.primary;
-// @ts-ignore
-const sf = theme.fonts.font_family.secondary ;
-
-let fontPrimary, fontSecondary;
-if (theme.fonts.font_family.primary) {
-  fontPrimary = theme.fonts.font_family.primary
-    .replace(/\+/g, " ")
-    .replace(/:[ital,]*[ital@]*[wght@]*[0-9,;.]+/gi, "");
-}
-// @ts-ignore
-if (theme.fonts.font_family.secondary) {
-// @ts-ignore
-  fontSecondary = theme.fonts.font_family.secondary
-    .replace(/\+/g, " ")
-    .replace(/:[ital,]*[ital@]*[wght@]*[0-9,;.]+/gi, "");
-}
-
 ---
 
 {head.map(({ tag: Tag, attrs, content }) => <Tag {...attrs} set:html={content} />)}
@@ -218,33 +201,16 @@ if (theme.fonts.font_family.secondary) {
   <script type="application/ld+json" set:html={JSON.stringify(softwareJsonLd)} />
 )}
 
-<!-- Preconnect to Google Fonts for faster font loading -->
+<!-- Critical base rules (not processed by Tailwind) -->
+<link rel="stylesheet" href="/theme-base.css" />
+
+<!-- Typography: Fraunces (display) · IBM Plex Sans (body) · JetBrains Mono. -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
-<!-- google font css -->
-    <AstroFont
-      config={[
-        {
-          src: [],
-          preload: false,
-          display: "swap",
-          name: fontPrimary!,
-          fallback: "sans-serif",
-          cssVariable: "font-primary",
-          googleFontsURL: `https://fonts.googleapis.com/css2?family=${pf}&display=swap`,
-        },
-        {
-          src: [],
-          preload: false,
-          display: "swap",
-          name: fontSecondary!,
-          fallback: "sans-serif",
-          cssVariable: "font-secondary",
-          googleFontsURL: `https://fonts.googleapis.com/css2?family=${sf}&display=swap`,
-        },
-      ]}
-    />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+/>
 
 <script>
   import mermaid from "mermaid";

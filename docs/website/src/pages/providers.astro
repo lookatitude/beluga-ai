@@ -1,0 +1,595 @@
+---
+/**
+ * /providers — Filterable provider catalog.
+ *
+ * Data is loaded at build time via import.meta.glob over the
+ * src/content/docs/docs/reference/providers/ tree. Each provider
+ * file's frontmatter contributes one card. Filter and search are
+ * client-side, no React, no runtime fetches.
+ */
+import MarketingLayout from "@/layouts/MarketingLayout.astro";
+
+type ProviderRecord = {
+  category: string;
+  categoryLabel: string;
+  slug: string;
+  name: string;
+  title: string;
+  description: string;
+  href: string;
+};
+
+// Eagerly import frontmatter for every provider .md file.
+// The path pattern matches .../reference/providers/{category}/{provider}.md
+// Index files are excluded explicitly below.
+const modules = import.meta.glob<{ frontmatter: { title: string; description?: string } }>(
+  "../content/docs/docs/reference/providers/*/*.md",
+  { eager: true }
+);
+
+const CATEGORY_LABELS: Record<string, string> = {
+  llm: "LLM",
+  embedding: "Embedding",
+  vectorstore: "Vector store",
+  loader: "Document loader",
+  voice: "Voice",
+  transport: "Voice transport",
+  vad: "VAD",
+  guard: "Guard",
+  workflow: "Workflow",
+  observability: "Observability",
+  eval: "Evaluation",
+  state: "State store",
+  cache: "Cache",
+  prompt: "Prompt",
+  mcp: "MCP",
+};
+
+// Hand-curated category order — anchors LLM and the most-clicked
+// categories at the top, with infrastructure-flavored ones at the end.
+const CATEGORY_ORDER = [
+  "llm",
+  "vectorstore",
+  "embedding",
+  "loader",
+  "voice",
+  "transport",
+  "vad",
+  "guard",
+  "workflow",
+  "observability",
+  "eval",
+  "state",
+  "cache",
+  "prompt",
+  "mcp",
+];
+
+const providers: ProviderRecord[] = [];
+
+for (const [path, mod] of Object.entries(modules)) {
+  // path is like "../content/docs/docs/reference/providers/llm/anthropic.md"
+  const match = path.match(/providers\/([^/]+)\/([^/]+)\.md$/);
+  if (!match) continue;
+  const [, category, slug] = match;
+  if (slug === "index") continue;
+
+  const fm = mod.frontmatter || ({} as any);
+  const title = (fm.title || slug).replace(/^"|"$/g, "");
+  const description = (fm.description || "").replace(/^"|"$/g, "");
+
+  providers.push({
+    category,
+    categoryLabel: CATEGORY_LABELS[category] || category,
+    slug,
+    name: slug,
+    title,
+    description,
+    href: `/docs/reference/providers/${category}/${slug}/`,
+  });
+}
+
+// Sort by category (per CATEGORY_ORDER), then by name
+providers.sort((a, b) => {
+  const ai = CATEGORY_ORDER.indexOf(a.category);
+  const bi = CATEGORY_ORDER.indexOf(b.category);
+  if (ai !== bi) return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  return a.name.localeCompare(b.name);
+});
+
+// Build category facets with counts
+const categoryCounts = new Map<string, number>();
+for (const p of providers) {
+  categoryCounts.set(p.category, (categoryCounts.get(p.category) || 0) + 1);
+}
+const categories = CATEGORY_ORDER
+  .filter((c) => categoryCounts.has(c))
+  .map((c) => ({
+    slug: c,
+    label: CATEGORY_LABELS[c] || c,
+    count: categoryCounts.get(c) || 0,
+  }));
+
+const total = providers.length;
+
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: "Providers — Beluga AI",
+  description: `${total} providers across ${categories.length} categories.`,
+});
+---
+
+<MarketingLayout
+  title="Providers"
+  description={`${total} providers across ${categories.length} categories — search and filter by name or category.`}
+  jsonLd={jsonLd}
+>
+  <section class="cat-intro">
+    <div class="cat-frame">
+      <span class="eyebrow">PROVIDERS</span>
+      <h1 class="cat-headline font-display">{total} providers. {categories.length} categories.</h1>
+      <p class="cat-deck">
+        Every provider registers itself in <code>init()</code>. Import for
+        side-effect, call <code>&lt;pkg&gt;.New</code> — middleware, hooks,
+        and metrics attach automatically. Search by name or filter by
+        category to find the one you need.
+      </p>
+    </div>
+  </section>
+
+  <section class="cat-controls">
+    <div class="cat-frame cat-frame-wide">
+      <div class="cat-search-row">
+        <label class="cat-search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.75" />
+            <path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+          </svg>
+          <input
+            type="search"
+            id="cat-search-input"
+            placeholder="Search providers — anthropic, pgvector, deepgram…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <kbd class="cat-kbd">/</kbd>
+        </label>
+        <span class="cat-result-count" id="cat-result-count">{total} providers</span>
+      </div>
+
+      <div class="cat-facets" role="tablist" aria-label="Filter by category">
+        <button class="cat-chip is-active" data-filter="all" type="button">
+          All <span class="cat-chip-count">{total}</span>
+        </button>
+        {categories.map((c) => (
+          <button class="cat-chip" data-filter={c.slug} type="button">
+            {c.label} <span class="cat-chip-count">{c.count}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="cat-grid-section">
+    <div class="cat-frame cat-frame-wide">
+      <div class="cat-grid" id="cat-grid">
+        {providers.map((p) => (
+          <a
+            href={p.href}
+            class="cat-card"
+            data-category={p.category}
+            data-name={p.name.toLowerCase()}
+            data-title={p.title.toLowerCase()}
+          >
+            <div class="cat-card-head">
+              <span class="cat-card-name">{p.name}</span>
+              <span class="cat-card-cat">{p.categoryLabel}</span>
+            </div>
+            <p class="cat-card-desc">
+              {p.description || `Beluga AI provider for ${p.title}.`}
+            </p>
+            <span class="cat-card-arrow" aria-hidden="true">→</span>
+          </a>
+        ))}
+      </div>
+      <p class="cat-empty" id="cat-empty" hidden>
+        No providers match. Try a broader search or clear the category filter.
+      </p>
+    </div>
+  </section>
+
+  <section class="cat-cta">
+    <div class="cat-frame">
+      <h2 class="font-display">Adding your own?</h2>
+      <p>
+        The <a href="/docs/concepts/extensibility/">four-ring extensibility pattern</a>
+        applies identically to every provider category. Interface, registry,
+        hooks, middleware — once you know the shape, every package is
+        learnable in minutes.
+      </p>
+      <a href="/docs/guides/foundations/" class="btn btn-primary">Read the provider template →</a>
+    </div>
+  </section>
+</MarketingLayout>
+
+<script>
+  const search = document.getElementById("cat-search-input") as HTMLInputElement | null;
+  const grid = document.getElementById("cat-grid");
+  const empty = document.getElementById("cat-empty");
+  const count = document.getElementById("cat-result-count");
+  const chips = document.querySelectorAll<HTMLButtonElement>(".cat-chip");
+  const cards = grid?.querySelectorAll<HTMLAnchorElement>(".cat-card") ?? [];
+
+  let activeCategory = "all";
+  let activeQuery = "";
+
+  function applyFilter() {
+    let visible = 0;
+    cards.forEach((card) => {
+      const cat = card.dataset.category || "";
+      const name = card.dataset.name || "";
+      const title = card.dataset.title || "";
+      const matchesCat = activeCategory === "all" || cat === activeCategory;
+      const matchesQuery =
+        !activeQuery ||
+        name.includes(activeQuery) ||
+        title.includes(activeQuery) ||
+        cat.includes(activeQuery);
+      const show = matchesCat && matchesQuery;
+      card.style.display = show ? "" : "none";
+      if (show) visible++;
+    });
+
+    if (count) {
+      count.textContent =
+        visible === cards.length
+          ? `${cards.length} providers`
+          : `${visible} of ${cards.length}`;
+    }
+    if (empty) empty.hidden = visible !== 0;
+  }
+
+  search?.addEventListener("input", () => {
+    activeQuery = search.value.trim().toLowerCase();
+    applyFilter();
+  });
+
+  chips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      chips.forEach((c) => c.classList.remove("is-active"));
+      chip.classList.add("is-active");
+      activeCategory = chip.dataset.filter || "all";
+      applyFilter();
+    });
+  });
+
+  // "/" focuses the search input
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "/" && document.activeElement?.tagName !== "INPUT") {
+      e.preventDefault();
+      search?.focus();
+    }
+    if (e.key === "Escape" && document.activeElement === search) {
+      search!.value = "";
+      activeQuery = "";
+      applyFilter();
+      search!.blur();
+    }
+  });
+</script>
+
+<style>
+  /* Intro */
+  .cat-intro {
+    padding-block: clamp(5rem, 11vw, 8.5rem) clamp(2rem, 4vw, 3rem);
+  }
+  .cat-frame {
+    max-width: 58rem;
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .cat-frame-wide { max-width: 80rem; }
+
+  .cat-intro .eyebrow { color: var(--brand-300); }
+  :root[data-theme="light"] .cat-intro .eyebrow { color: oklch(0.45 0.10 240); }
+
+  .cat-headline {
+    font-size: clamp(2.25rem, 5vw, 4rem);
+    line-height: 1;
+    letter-spacing: -0.035em;
+    font-weight: 500;
+    color: var(--sl-color-white);
+    margin: 0.5rem 0 0;
+    font-variation-settings: "opsz" 144, "SOFT" 30;
+  }
+  .cat-deck {
+    font-size: clamp(1.0625rem, 1.3vw, 1.1875rem);
+    line-height: 1.6;
+    color: var(--sl-color-gray-2);
+    max-width: 60ch;
+    margin: 0;
+  }
+  .cat-deck code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    color: var(--brand-200);
+  }
+
+  /* Controls bar */
+  .cat-controls {
+    padding-block: 1.5rem 1rem;
+    position: sticky;
+    top: 4.25rem;
+    z-index: 10;
+    background: color-mix(in oklch, var(--sl-color-bg) 92%, transparent);
+    backdrop-filter: none;
+    border-bottom: 1px solid var(--sl-color-hairline);
+  }
+
+  .cat-search-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .cat-search {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.625rem 0.875rem;
+    background: color-mix(in oklch, var(--ink-900) 60%, var(--ink-950));
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.5rem;
+    flex: 1;
+    min-width: 18rem;
+    transition: border-color 0.2s ease;
+    color: var(--sl-color-gray-3);
+  }
+  :root[data-theme="light"] .cat-search {
+    background: var(--paper-100);
+  }
+  .cat-search:focus-within {
+    border-color: var(--brand-500);
+  }
+  .cat-search input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--sl-color-white);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    flex: 1;
+    min-width: 0;
+  }
+  .cat-search input::placeholder {
+    color: var(--sl-color-gray-3);
+  }
+  .cat-kbd {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--sl-color-gray-3);
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.25rem;
+    padding: 0.1em 0.4em;
+    background: color-mix(in oklch, var(--ink-950) 50%, transparent);
+  }
+
+  .cat-result-count {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--sl-color-gray-3);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .cat-facets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .cat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    background: transparent;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.375rem;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--sl-color-gray-2);
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+  .cat-chip:hover {
+    color: var(--sl-color-white);
+    border-color: color-mix(in oklch, var(--brand-500) 40%, var(--sl-color-hairline));
+  }
+  .cat-chip.is-active {
+    color: var(--ink-950);
+    background: var(--brand-500);
+    border-color: var(--brand-500);
+    font-weight: 600;
+  }
+  :root[data-theme="light"] .cat-chip.is-active {
+    background: oklch(0.42 0.11 240);
+    border-color: oklch(0.42 0.11 240);
+    color: var(--paper-50);
+  }
+  .cat-chip-count {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    opacity: 0.7;
+  }
+  .cat-chip.is-active .cat-chip-count {
+    opacity: 0.9;
+  }
+
+  /* Grid */
+  .cat-grid-section {
+    padding-block: 2rem clamp(4rem, 8vw, 6rem);
+  }
+
+  .cat-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    border-top: 1px solid var(--sl-color-hairline);
+  }
+  @media (min-width: 700px) {
+    .cat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (min-width: 1100px) {
+    .cat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+
+  .cat-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--sl-color-hairline);
+    text-decoration: none;
+    transition: background 0.2s ease;
+  }
+  @media (min-width: 700px) {
+    .cat-card {
+      border-right: 1px solid var(--sl-color-hairline);
+    }
+    .cat-card:nth-child(2n) {
+      border-right: none;
+    }
+  }
+  @media (min-width: 1100px) {
+    .cat-card:nth-child(2n) {
+      border-right: 1px solid var(--sl-color-hairline);
+    }
+    .cat-card:nth-child(3n) {
+      border-right: none;
+    }
+  }
+  .cat-card:hover {
+    background: color-mix(in oklch, var(--brand-500) 6%, transparent);
+  }
+  .cat-card:focus-visible {
+    outline: 2px solid var(--brand-500);
+    outline-offset: -2px;
+  }
+
+  .cat-card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .cat-card-name {
+    font-family: var(--font-mono);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--sl-color-white);
+    letter-spacing: -0.005em;
+  }
+  .cat-card-cat {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--brand-300);
+  }
+  :root[data-theme="light"] .cat-card-cat {
+    color: oklch(0.42 0.11 240);
+  }
+  .cat-card-desc {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    color: var(--sl-color-gray-2);
+    margin: 0;
+    /* clamp to 3 lines for grid uniformity */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .cat-card-arrow {
+    position: absolute;
+    right: 1.5rem;
+    top: 1.25rem;
+    font-family: var(--font-mono);
+    color: var(--sl-color-gray-3);
+    transition: transform 0.2s ease, color 0.15s ease;
+  }
+  .cat-card:hover .cat-card-arrow {
+    transform: translateX(3px);
+    color: var(--brand-300);
+  }
+
+  .cat-empty {
+    margin: 3rem auto;
+    text-align: center;
+    font-family: var(--font-sans);
+    color: var(--sl-color-gray-3);
+    max-width: 40ch;
+  }
+
+  /* CTA */
+  .cat-cta {
+    padding-block: clamp(4rem, 9vw, 7rem);
+    border-top: 1px solid var(--sl-color-hairline);
+  }
+  .cat-cta h2 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    font-weight: 500;
+    color: var(--sl-color-white);
+    margin: 0;
+    font-variation-settings: "opsz" 144, "SOFT" 30;
+  }
+  .cat-cta p {
+    font-size: 1.0625rem;
+    color: var(--sl-color-gray-2);
+    max-width: 54ch;
+    margin: 0;
+  }
+  .cat-cta a {
+    color: var(--brand-300);
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: 0.375rem;
+    width: fit-content;
+  }
+  .btn-primary {
+    background: var(--brand-500);
+    color: var(--ink-950);
+    font-weight: 600;
+    border: 1px solid var(--brand-500);
+  }
+  :root[data-theme="light"] .btn-primary {
+    background: oklch(0.42 0.11 240);
+    border-color: oklch(0.42 0.11 240);
+    color: var(--paper-50);
+  }
+  .cat-cta .btn {
+    border-bottom: 1px solid var(--brand-500);
+  }
+</style>
