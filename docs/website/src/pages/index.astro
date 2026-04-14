@@ -342,19 +342,20 @@ const jsonLd = JSON.stringify({
   }
 
   .hero-headline {
-    font-size: clamp(2.5rem, 5.6vw, 4.25rem);
-    line-height: 1;
-    letter-spacing: -0.035em;
+    font-family: var(--font-sans);
+    font-size: var(--text-display);
+    line-height: var(--lh-display);
+    letter-spacing: var(--track-display);
     font-weight: 500;
     color: var(--sl-color-white);
     margin: 0.25rem 0 0;
-    font-variation-settings: "opsz" 144, "SOFT" 30;
-    max-width: 14ch;
+    max-width: 16ch;
+    text-wrap: balance;
   }
 
   .hero-deck {
-    font-size: clamp(1.0625rem, 1.3vw, 1.1875rem);
-    line-height: 1.55;
+    font-size: var(--text-lead);
+    line-height: var(--lh-body);
     color: var(--sl-color-gray-2);
     max-width: 54ch;
     margin: 0;
@@ -431,9 +432,10 @@ const jsonLd = JSON.stringify({
 
   .pillar-title {
     font-family: var(--font-sans);
-    font-size: clamp(1.25rem, 1.8vw, 1.4rem);
+    font-size: var(--text-h3);
+    line-height: var(--lh-h3);
+    letter-spacing: var(--track-h3);
     font-weight: 600;
-    letter-spacing: -0.02em;
     color: var(--sl-color-white);
     margin: 0;
   }
@@ -445,8 +447,8 @@ const jsonLd = JSON.stringify({
   }
 
   .pillar-body {
-    font-size: 0.9375rem;
-    line-height: 1.6;
+    font-size: var(--text-body);
+    line-height: var(--lh-body);
     color: var(--sl-color-gray-2);
     margin: 0;
   }
@@ -604,16 +606,18 @@ const jsonLd = JSON.stringify({
     align-items: flex-start;
   }
   .final-cta h2 {
-    font-size: clamp(2rem, 4.2vw, 3.25rem);
-    line-height: 1.02;
-    letter-spacing: -0.03em;
+    font-family: var(--font-sans);
+    font-size: var(--text-h1);
+    line-height: var(--lh-h1);
+    letter-spacing: var(--track-h1);
     font-weight: 500;
     color: var(--sl-color-white);
     margin: 0;
-    font-variation-settings: "opsz" 144, "SOFT" 30;
+    text-wrap: balance;
   }
   .final-cta p {
-    font-size: 1.0625rem;
+    font-size: var(--text-lead);
+    line-height: var(--lh-body);
     color: var(--sl-color-gray-2);
     max-width: 44ch;
     margin: 0;

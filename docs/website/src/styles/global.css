@@ -71,14 +71,44 @@
   --paper-900: oklch(0.22 0.014 240);   /* body text */
   --paper-950: oklch(0.14 0.016 242);   /* headings */
 
-  /* ── Typography stack ── */
-  --font-display: "Fraunces", Georgia, Cambria, Times, serif;
+  /* ── Typography stack ──
+     Two fonts, zero ambiguity:
+       --font-sans — IBM Plex Sans for ALL text and headings
+       --font-mono — JetBrains Mono only for code, eyebrows, metadata
+     --font-display is aliased to --font-sans so legacy .font-display
+     class declarations keep working but no longer switch face. */
   --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-
-  /* Keep legacy aliases so existing components that use font-primary
-     do not break until they are migrated. */
+  --font-display: var(--font-sans);
   --font-primary: var(--font-sans);
+
+  /* ── Fluid type scale (single source of truth) ──
+     Apply via the semantic tokens below rather than hand-rolling
+     clamp() on every heading. Scale tuned for IBM Plex Sans 500. */
+  --text-display: clamp(2.75rem, 5.5vw, 4rem);    /* hero h1, max headline */
+  --text-h1:      clamp(2.25rem, 4.2vw, 3.25rem); /* page headlines, major section h2 */
+  --text-h2:      clamp(1.75rem, 3.2vw, 2.5rem);  /* editorial section headlines */
+  --text-h3:      clamp(1.125rem, 1.4vw, 1.375rem); /* card titles, pillar titles */
+  --text-lead:    clamp(1.0625rem, 1.3vw, 1.1875rem); /* decks, leads */
+  --text-body:    0.9375rem;                       /* cards, secondary prose */
+  --text-prose:   1.0625rem;                       /* long-form prose */
+  --text-micro:   0.75rem;                         /* eyebrows, small mono labels */
+
+  /* Tracking */
+  --track-display: -0.035em;
+  --track-h1:      -0.028em;
+  --track-h2:      -0.022em;
+  --track-h3:      -0.015em;
+  --track-body:    0;
+  --track-eyebrow: 0.1em;
+
+  /* Line-heights */
+  --lh-display: 1.02;
+  --lh-h1:      1.05;
+  --lh-h2:      1.1;
+  --lh-h3:      1.25;
+  --lh-body:    1.6;
+  --lh-prose:   1.65;
 
   /* ── Surface layers (canonical card / panel backgrounds) ── */
   --surface-1: color-mix(in oklch, var(--ink-900) 40%, var(--ink-950));
@@ -207,12 +237,15 @@ html:where([data-theme]) body,
   line-height: 1.65;
 }
 
-/* Display face reserved for opt-in editorial moments.
-   Use .font-display on the element (hero, section titles). */
+/* Legacy class — Fraunces has been removed from the font stack, so
+   .font-display now only tightens tracking for headline-sized text.
+   Use the --text-* tokens for sizing; this class is kept to avoid
+   a sweeping rename across page-level class lists. */
 .font-display {
-  font-family: var(--font-display);
-  font-variation-settings: "opsz" 144, "SOFT" 50;
-  letter-spacing: -0.02em;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: var(--track-display);
+  font-variation-settings: normal;
 }
 
 .font-mono, code, pre, kbd, samp {
@@ -223,11 +256,12 @@ html:where([data-theme]) body,
    section titles. Used as <span class="eyebrow">KNOW</span>. */
 .eyebrow {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: var(--text-micro);
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--track-eyebrow);
   text-transform: uppercase;
   color: var(--brand-300);
+  line-height: 1.45;
 }
 
 :root[data-theme="light"] .eyebrow {

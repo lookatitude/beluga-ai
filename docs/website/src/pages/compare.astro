@@ -478,13 +478,14 @@ const jsonLd = JSON.stringify({
     align-items: flex-start;
   }
   .cmp-cta h2 {
-    font-size: clamp(2rem, 4vw, 3rem);
-    line-height: 1.05;
-    letter-spacing: -0.03em;
+    font-family: var(--font-sans);
+    font-size: var(--text-h1);
+    line-height: var(--lh-h1);
+    letter-spacing: var(--track-h1);
     font-weight: 500;
     color: var(--sl-color-white);
     margin: 0;
-    font-variation-settings: "opsz" 144, "SOFT" 30;
+    text-wrap: balance;
   }
   .cmp-cta p {
     font-size: 1.0625rem;

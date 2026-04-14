@@ -542,13 +542,14 @@ const jsonLd = JSON.stringify({
     border-top: 1px solid var(--sl-color-hairline);
   }
   .com-license h2 {
-    font-size: clamp(2rem, 4.2vw, 3.25rem);
-    line-height: 1.02;
-    letter-spacing: -0.03em;
+    font-family: var(--font-sans);
+    font-size: var(--text-h1);
+    line-height: var(--lh-h1);
+    letter-spacing: var(--track-h1);
     font-weight: 500;
     color: var(--sl-color-white);
     margin: 0;
-    font-variation-settings: "opsz" 144, "SOFT" 30;
+    text-wrap: balance;
   }
   .com-license p {
     font-size: 1.0625rem;

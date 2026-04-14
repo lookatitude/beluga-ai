@@ -112,27 +112,27 @@ const {
   }
 
   .ed-headline {
-    font-size: clamp(1.75rem, 3.6vw, 2.75rem);
-    line-height: 1.1;
-    letter-spacing: -0.025em;
+    font-family: var(--font-sans);
+    font-size: var(--text-h2);
+    line-height: var(--lh-h2);
+    letter-spacing: var(--track-h2);
     font-weight: 500;
     margin: 0;
     color: var(--sl-color-white);
-    max-width: 20ch;
+    max-width: 22ch;
+    text-wrap: balance;
   }
 
-  /* Display variant uses Fraunces — larger, heavier, more editorial */
+  /* Larger variant for sections that need more editorial weight. */
   .ed-headline.font-display {
-    font-size: clamp(2.25rem, 4.8vw, 3.75rem);
-    font-weight: 500;
-    letter-spacing: -0.03em;
-    line-height: 1.02;
-    font-variation-settings: "opsz" 144, "SOFT" 30;
+    font-size: var(--text-h1);
+    line-height: var(--lh-h1);
+    letter-spacing: var(--track-h1);
   }
 
   .ed-deck {
-    font-size: clamp(1.0625rem, 1.5vw, 1.1875rem);
-    line-height: 1.55;
+    font-size: var(--text-lead);
+    line-height: var(--lh-body);
     color: var(--sl-color-gray-2);
     margin: 0;
     max-width: 58ch;

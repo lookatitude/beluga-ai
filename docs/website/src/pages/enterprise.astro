@@ -399,15 +399,15 @@ const jsonLd = JSON.stringify({
     background: color-mix(in oklch, var(--paper-100) 70%, var(--paper-50));
   }
   .ent-inquiry h2 {
-    font-family: var(--font-display);
-    font-size: clamp(2rem, 4.2vw, 3.25rem);
-    line-height: 1.02;
-    letter-spacing: -0.03em;
+    font-family: var(--font-sans);
+    font-size: var(--text-h1);
+    line-height: var(--lh-h1);
+    letter-spacing: var(--track-h1);
     font-weight: 500;
     color: var(--sl-color-white);
     margin: 0.25rem 0 0;
     max-width: 18ch;
-    font-variation-settings: "opsz" 144, "SOFT" 30;
+    text-wrap: balance;
   }
   .ent-inquiry-body {
     font-size: 1.0625rem;
