@@ -2,6 +2,18 @@
 
 All notable changes to Beluga AI are documented here.
 
+## [2.8.4] - 2026-04-14
+
+### Documentation
+
+- **wiki**: Capture C-006 docs-audit correction
+
+### Miscellaneous
+
+- **claude**: Loosen over-paranoid PreToolUse safety prompts
+- **release**: Update CHANGELOG.md for v2.8.3 [skip ci]
+
+
 ## [2.8.3] - 2026-04-14
 
 ### Documentation
