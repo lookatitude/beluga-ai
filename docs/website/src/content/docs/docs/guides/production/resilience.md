@@ -37,6 +37,19 @@ resilient := llm.ApplyMiddleware(base,
 
 ## How retry decides what to retry
 
+```mermaid
+graph LR
+  C[Call] --> A1[Attempt 1]
+  A1 -->|success| Done
+  A1 -->|non-retryable error| Fail
+  A1 -->|retryable error| Wait1[Backoff 100ms ± jitter]
+  Wait1 --> A2[Attempt 2]
+  A2 --> Wait2[Backoff 200ms ± jitter]
+  Wait2 --> A3[Attempt 3]
+  A3 -->|success| Done
+  A3 -->|fail| Fail[Max attempts exceeded]
+```
+
 Beluga errors carry a typed `ErrorCode`. The retry middleware calls `core.IsRetryable(err)` before re-running a call. Retryable codes include:
 
 - `core.ErrCodeRateLimit` — provider rate-limited the request
@@ -46,15 +59,35 @@ Beluga errors carry a typed `ErrorCode`. The retry middleware calls `core.IsRetr
 
 Non-retryable errors (`ErrCodeInvalid`, `ErrCodePermissionDenied`, `ErrCodeNotFound`) propagate immediately. See [Errors](/docs/concepts/errors/) for the full model.
 
-## Circuit breakers
-
-The circuit breaker tracks consecutive failures across a window. When the threshold is exceeded, calls fail fast for `ResetTimeout` before allowing a probe request. This prevents a degraded provider from cascading slow failures upstream.
-
-Circuit breakers operate per-instance, not per-process. Wrapping the same base provider in two different middleware chains gives two independent breakers — useful when one chain has lower latency budget than another.
-
 ## Rate limiting
 
-Beluga's rate limiter is token-aware where the upstream API exposes token budgets. For LLM providers it tracks both request count and prompt+completion tokens against the configured limits. For non-LLM providers it tracks request count only.
+```mermaid
+graph TD
+  Req[Request] --> RPM{RPM bucket full?}
+  RPM -->|no| TPM{TPM bucket has capacity?}
+  RPM -->|yes| Wait[Wait or reject]
+  TPM -->|yes| Conc{Max concurrent?}
+  TPM -->|no| Wait
+  Conc -->|ok| Go[Proceed]
+  Conc -->|full| Wait
+```
+
+Three buckets per provider: **RPM** (requests per minute), **TPM** (tokens per minute), **MaxConcurrent** (simultaneous in-flight calls). Different providers gate on different things — the limiter takes the tightest constraint. Beluga's rate limiter is token-aware where the upstream API exposes token budgets.
+
+## Circuit breakers
+
+```mermaid
+stateDiagram-v2
+  [*] --> Closed
+  Closed --> Open: N failures in window
+  Open --> HalfOpen: after cooldown
+  HalfOpen --> Closed: success
+  HalfOpen --> Open: failure
+```
+
+Three states: **Closed** (normal, calls pass through), **Open** (fail fast without calling the underlying service), **Half-Open** (cooldown elapsed; one probe call decides whether to close or re-open). The breaker tracks consecutive failures across a window and prevents a degraded provider from cascading slow failures upstream.
+
+Circuit breakers operate per-instance, not per-process. Wrapping the same base provider in two different middleware chains gives two independent breakers — useful when one chain has lower latency budget than another.
 
 ## Composing with other middleware
 

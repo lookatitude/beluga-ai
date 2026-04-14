@@ -120,6 +120,26 @@ and returns the assembled response. Middleware and hooks attach to `Stream`;
 
 ## Stream composition
 
+```mermaid
+graph LR
+  subgraph Pipe
+    A[Stream A] --> T[Transform] --> B[Stream B]
+  end
+  subgraph Parallel
+    S1[Stream in] --> F1[Worker 1]
+    S1 --> F2[Worker 2]
+    S1 --> F3[Worker 3]
+  end
+  subgraph Merge
+    M1[Stream 1] --> MM[Merged]
+    M2[Stream 2] --> MM
+  end
+  subgraph Copy
+    C[Stream] --> C1[Consumer 1]
+    C --> C2[Consumer 2]
+  end
+```
+
 Four combinators in `core/stream.go` compose streams without extra goroutines:
 
 ### MapStream — transform each event

@@ -10,20 +10,17 @@ pattern once. It applies everywhere.
 
 ## The four concentric rings
 
-```
-┌────────────────────────────────────────────┐
-│  Middleware (Ring 4)                        │
-│  ┌──────────────────────────────────────┐  │
-│  │  Hooks (Ring 3)                      │  │
-│  │  ┌────────────────────────────────┐  │  │
-│  │  │  Registry (Ring 2)             │  │  │
-│  │  │  ┌──────────────────────────┐  │  │  │
-│  │  │  │  Interface (Ring 1)      │  │  │  │
-│  │  │  │  Implementation          │  │  │  │
-│  │  │  └──────────────────────────┘  │  │  │
-│  │  └────────────────────────────────┘  │  │
-│  └──────────────────────────────────────┘  │
-└────────────────────────────────────────────┘
+```mermaid
+graph TD
+  subgraph Ring4[Middleware - outer]
+    subgraph Ring3[Hooks]
+      subgraph Ring2[Registry]
+        subgraph Ring1[Interface]
+          Impl[(Implementation)]
+        end
+      end
+    end
+  end
 ```
 
 - **Interface** — the compile-time contract. ≤4 methods.
@@ -178,6 +175,15 @@ Application is outside-in: the first argument in the slice is the outermost
 wrapper. `ApplyMiddleware(tool, guardrail, logging, retry)` means every call
 passes through guardrail before logging before retry before the actual
 implementation.
+
+```mermaid
+graph LR
+  Call[caller] --> G[Guardrail]
+  G --> L[Logging]
+  L --> Rl[RateLimit]
+  Rl --> Rt[Retry]
+  Rt --> Core[Tool.Execute]
+```
 
 ### `WithTracing()` — required for every new package
 

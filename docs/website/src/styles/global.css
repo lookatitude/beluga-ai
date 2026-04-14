@@ -80,6 +80,22 @@
      do not break until they are migrated. */
   --font-primary: var(--font-sans);
 
+  /* ── Surface layers (canonical card / panel backgrounds) ── */
+  --surface-1: color-mix(in oklch, var(--ink-900) 40%, var(--ink-950));
+  --surface-2: color-mix(in oklch, var(--ink-900) 65%, var(--ink-950));
+  --surface-3: color-mix(in oklch, var(--ink-900) 92%, var(--ink-950));
+
+  /* Hairline that tints toward brand on hover (used by cards, frames) */
+  --hairline-brand: color-mix(in oklch, var(--brand-500) 40%, var(--sl-color-hairline));
+
+  /* Header height — used for sticky offsets, anchor scroll padding */
+  --header-height: 56px;
+
+  /* Light-mode CTA primary — appears in 18 places as a literal */
+  --brand-cta-light: oklch(0.42 0.11 240);
+  --brand-cta-light-hover: oklch(0.36 0.11 242);
+  --brand-accent-light: oklch(0.45 0.10 240);
+
   /* ── Starlight accent bridge (dark default) ── */
   --sl-color-accent-low: oklch(0.22 0.05 238);
   --sl-color-accent: var(--brand-500);
@@ -291,6 +307,12 @@ html:where([data-theme]) body,
   --color-lightmode-light: var(--paper-950);
   --color-lightmode-dark: var(--paper-50);
   --color-lightmode-text: var(--paper-900);
+
+  /* Light-mode surface remap */
+  --surface-1: var(--paper-50);
+  --surface-2: var(--paper-100);
+  --surface-3: var(--paper-200);
+  --hairline-brand: color-mix(in oklch, var(--brand-500) 30%, var(--paper-200));
 }
 
 @import "./base.css";

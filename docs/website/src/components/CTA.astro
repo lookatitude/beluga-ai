@@ -42,7 +42,7 @@ const { title, description, enable, fill_button, outline_button } =
   /* Ensure background image is visible in light mode */
   :global([data-theme="light"]) .cta-container {
     background-blend-mode: multiply;
-    background-color: #f9fafb; /* Light background color */
+    background-color: var(--paper-100);
   }
 
   /* Dark mode styling */

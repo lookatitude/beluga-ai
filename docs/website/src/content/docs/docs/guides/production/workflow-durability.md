@@ -9,9 +9,45 @@ Long-running agents in production must survive process restarts. Beluga's `workf
 
 ## The model
 
+```mermaid
+graph TD
+  subgraph Workflow[Workflow: deterministic orchestration]
+    WF[Plan → Act → Observe loop]
+  end
+  subgraph Activities[Activities: non-deterministic]
+    L[LLM call]
+    T[Tool.Execute]
+    R[Retrieval]
+  end
+  Workflow --> Activities
+  Activities -.results.-> Workflow
+```
+
 A workflow is a deterministic function whose every observable side effect — LLM call, tool invocation, sleep, signal — is recorded to the workflow store. On replay, completed steps return their cached result and execution resumes at the first step that had not yet completed.
 
 This is the same model used by Temporal, Cadence, Inngest, and Dapr Workflows. Beluga abstracts over them so you write the workflow once and choose the backend per deployment.
+
+## Crash recovery
+
+```mermaid
+sequenceDiagram
+  participant W as Worker
+  participant L as Event log
+  participant E as External service
+  W->>L: start workflow
+  W->>E: activity 1
+  E-->>W: result
+  W->>L: append result
+  W->>E: activity 2
+  E-->>W: result
+  W->>L: append result
+  Note over W: crash (OOM, pod kill, SIGTERM)
+  W->>L: replay from log
+  L-->>W: activities 1 and 2 results
+  W->>E: activity 3 (first time)
+```
+
+On recovery, the worker replays the workflow from the start. For each already-completed activity, it reads the result from the event log instead of re-calling the service. When it reaches the first unfinished activity, it resumes from there. This is how an agent can survive a 10-hour workflow with a mid-run crash.
 
 ## Backends
 

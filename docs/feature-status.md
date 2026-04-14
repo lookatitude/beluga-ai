@@ -44,7 +44,7 @@ These packages exist on `main` with test coverage and a frozen public API.
 |---|---|---|
 | LLM abstraction | `llm/` | 22 providers: OpenAI, Anthropic, Google, Bedrock, Azure, Ollama, Groq, Mistral, DeepSeek, xAI, Cohere, Together, Fireworks, OpenRouter, Perplexity, Qwen, Cerebras, SambaNova, HuggingFace, LiteLLM, Llama, Bifrost |
 | Tool system | `tool/` | `FuncTool`, MCP client/registry, middleware, hooks, DAG execution |
-| Memory | `memory/` | 3-tier MemGPT model; 9 store providers (inmemory, Redis, Postgres, SQLite, Neo4j, Memgraph, MongoDB, Dragonfly) |
+| Memory | `memory/` | 3-tier MemGPT model; 8 store providers (inmemory, Redis, Postgres, SQLite, Neo4j, Memgraph, MongoDB, Dragonfly) |
 | RAG — embedding | `rag/embedding/` | 9 providers: OpenAI, Cohere, Google, Voyage, Jina, Mistral, Ollama, SentenceTransformers, inmemory |
 | RAG — vector store | `rag/vectorstore/` | 13 providers: pgvector, Pinecone, Weaviate, Qdrant, Milvus, Chroma, Redis, MongoDB, Elasticsearch, SQLiteVec, Turbopuffer, Vespa, inmemory |
 | RAG — retriever | `rag/retriever/` | Hybrid (BM25+vector+RRF), CRAG, HyDE, Adaptive, ensemble, multi-query, sub-question, reranking |

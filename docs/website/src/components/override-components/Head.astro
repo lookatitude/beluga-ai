@@ -214,5 +214,43 @@ const keywords = (route.entry.data as Record<string, unknown>).keywords as strin
 
 <script>
   import mermaid from "mermaid";
-  mermaid.initialize({ startOnLoad: true });
+  import { belugaDark, belugaLight } from "@/lib/mermaid-theme";
+
+  const getTheme = () =>
+    document.documentElement.dataset.theme === "light" ? belugaLight : belugaDark;
+
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: getTheme(),
+    securityLevel: "strict",
+    flowchart: { curve: "basis", padding: 16 },
+    sequence: { actorMargin: 48, messageMargin: 36, mirrorActors: false },
+    themeCSS: `
+      .node rect, .node polygon, .node circle, .node path { stroke-width: 1.25px; }
+      .cluster rect { stroke-dasharray: 4 3; }
+      .edgePath .path { stroke-width: 1.25px; }
+      .label foreignObject { overflow: visible; }
+    `,
+  });
+
+  // Mermaid mutates pre.mermaid into <svg> after first run, so re-init
+  // alone won't reparse on theme change. Only reload the page if there
+  // are actual mermaid diagrams to retheme — pages without diagrams
+  // keep the snappy theme toggle.
+  const hasMermaid = () => document.querySelector("pre.mermaid, .mermaid svg") !== null;
+  const reloadIfMermaidPresent = () => {
+    if (hasMermaid()) location.reload();
+  };
+  window.addEventListener("storage", (e) => {
+    if (e.key === "starlight-theme") reloadIfMermaidPresent();
+  });
+  let lastTheme = document.documentElement.dataset.theme;
+  new MutationObserver(() => {
+    const next = document.documentElement.dataset.theme;
+    if (next !== lastTheme) {
+      lastTheme = next;
+      reloadIfMermaidPresent();
+    }
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 </script>
