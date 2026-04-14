@@ -90,9 +90,11 @@
   --text-h2:      clamp(1.75rem, 3.2vw, 2.5rem);  /* editorial section headlines */
   --text-h3:      clamp(1.125rem, 1.4vw, 1.375rem); /* card titles, pillar titles */
   --text-lead:    clamp(1.0625rem, 1.3vw, 1.1875rem); /* decks, leads */
-  --text-body:    0.9375rem;                       /* cards, secondary prose */
-  --text-prose:   1.0625rem;                       /* long-form prose */
-  --text-micro:   0.75rem;                         /* eyebrows, small mono labels */
+  --text-prose:   1.0625rem;                       /* long-form prose (17px) */
+  --text-body:    0.9375rem;                       /* cards, secondary prose (15px) */
+  --text-meta:    0.8125rem;                       /* mono cites, file labels (13px) */
+  --text-micro:   0.75rem;                         /* eyebrows, most mono labels (12px) */
+  --text-label:   0.6875rem;                       /* status chips, numbered markers (11px) */
 
   /* Tracking */
   --track-display: -0.035em;

@@ -249,7 +249,7 @@ const jsonLd = JSON.stringify({
   }
   .why-num {
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: var(--text-micro);
     font-weight: 500;
     letter-spacing: 0.1em;
     color: var(--brand-300);
@@ -259,14 +259,14 @@ const jsonLd = JSON.stringify({
   }
   .why-col h3 {
     font-family: var(--font-sans);
-    font-size: 1.125rem;
+    font-size: var(--text-h3);
     font-weight: 600;
     letter-spacing: -0.015em;
     color: var(--sl-color-white);
     margin: 0;
   }
   .why-col p {
-    font-size: 0.9375rem;
+    font-size: var(--text-body);
     line-height: 1.6;
     color: var(--sl-color-gray-2);
     margin: 0;
@@ -338,7 +338,7 @@ const jsonLd = JSON.stringify({
   }
   .channel-name {
     font-family: var(--font-sans);
-    font-size: 1.0625rem;
+    font-size: var(--text-prose);
     font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--sl-color-white);
@@ -349,13 +349,13 @@ const jsonLd = JSON.stringify({
   }
   .channel-meta {
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: var(--text-label);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--sl-color-gray-3);
   }
   .channel-desc {
-    font-size: 0.9375rem;
+    font-size: var(--text-body);
     line-height: 1.55;
     color: var(--sl-color-gray-2);
     margin: 0;
@@ -404,7 +404,7 @@ const jsonLd = JSON.stringify({
     content: counter(step, decimal-leading-zero);
     display: block;
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: var(--text-micro);
     letter-spacing: 0.08em;
     color: var(--brand-300);
     margin-bottom: 0.625rem;
@@ -422,7 +422,7 @@ const jsonLd = JSON.stringify({
     margin-bottom: 0.25rem;
   }
   .contrib span {
-    font-size: 0.9375rem;
+    font-size: var(--text-body);
     line-height: 1.55;
     color: var(--sl-color-gray-2);
   }
@@ -442,7 +442,7 @@ const jsonLd = JSON.stringify({
   .contrib-link {
     display: inline-block;
     font-family: var(--font-mono);
-    font-size: 0.8125rem;
+    font-size: var(--text-meta);
     color: var(--sl-color-gray-3);
     text-decoration: none;
     border-bottom: 1px solid transparent;
@@ -474,7 +474,7 @@ const jsonLd = JSON.stringify({
   }
   .phase-num {
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: var(--text-micro);
     font-weight: 500;
     letter-spacing: 0.08em;
     color: var(--sl-color-gray-3);
@@ -487,14 +487,14 @@ const jsonLd = JSON.stringify({
   }
   .phase-label {
     font-family: var(--font-sans);
-    font-size: 1.0625rem;
+    font-size: var(--text-prose);
     font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--sl-color-white);
   }
   .phase-status {
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: var(--text-label);
     font-weight: 500;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -515,7 +515,7 @@ const jsonLd = JSON.stringify({
     color: oklch(0.40 0.11 240);
   }
   .phase-desc {
-    font-size: 0.9375rem;
+    font-size: var(--text-body);
     line-height: 1.55;
     color: var(--sl-color-gray-2);
     margin: 0.375rem 0 0;
@@ -526,7 +526,7 @@ const jsonLd = JSON.stringify({
   .roadmap-note {
     margin-top: 1.25rem;
     font-family: var(--font-mono);
-    font-size: 0.8125rem;
+    font-size: var(--text-meta);
     color: var(--sl-color-gray-3);
     max-width: 64ch;
   }
@@ -552,7 +552,7 @@ const jsonLd = JSON.stringify({
     text-wrap: balance;
   }
   .com-license p {
-    font-size: 1.0625rem;
+    font-size: var(--text-prose);
     line-height: 1.6;
     color: var(--sl-color-gray-2);
     max-width: 62ch;
@@ -560,7 +560,7 @@ const jsonLd = JSON.stringify({
   }
   .com-license-link {
     font-family: var(--font-mono);
-    font-size: 0.8125rem;
+    font-size: var(--text-meta);
     color: var(--brand-300);
     text-decoration: none;
     border-bottom: 1px solid transparent;

@@ -250,14 +250,14 @@ const jsonLd = JSON.stringify({
 
   .cmp-meta {
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: var(--text-micro);
     letter-spacing: 0.04em;
     color: var(--sl-color-gray-3);
     margin-top: 0.25rem;
   }
   .cmp-meta span {
     text-transform: uppercase;
-    font-size: 0.6875rem;
+    font-size: var(--text-label);
     letter-spacing: 0.1em;
     color: var(--sl-color-gray-4);
     margin-right: 0.375rem;
@@ -290,7 +290,7 @@ const jsonLd = JSON.stringify({
     min-width: 60rem;
     border-collapse: collapse;
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--text-body);
   }
 
   .cmp-table th,
@@ -304,7 +304,7 @@ const jsonLd = JSON.stringify({
   .cmp-table thead th {
     background: color-mix(in oklch, var(--ink-950) 40%, transparent);
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: var(--text-micro);
     font-weight: 500;
     letter-spacing: 0.04em;
     color: var(--sl-color-gray-2);
@@ -338,7 +338,7 @@ const jsonLd = JSON.stringify({
   .cmp-name {
     display: block;
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-size: var(--text-body);
     font-weight: 600;
     color: var(--sl-color-white);
     text-transform: none;
@@ -349,7 +349,7 @@ const jsonLd = JSON.stringify({
   .cmp-sub {
     display: block;
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: var(--text-label);
     font-weight: 400;
     color: var(--sl-color-gray-3);
     letter-spacing: 0.02em;
@@ -410,14 +410,14 @@ const jsonLd = JSON.stringify({
     display: block;
     margin-top: 0.25rem;
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: var(--text-micro);
     color: var(--sl-color-gray-3);
     line-height: 1.45;
   }
 
   .cmp-footnote {
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: var(--text-micro);
     line-height: 1.55;
     color: var(--sl-color-gray-3);
     margin-top: 1rem;
@@ -436,7 +436,7 @@ const jsonLd = JSON.stringify({
   }
   .narrative-col h3 {
     font-family: var(--font-sans);
-    font-size: 1.125rem;
+    font-size: var(--text-h3);
     font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--sl-color-white);
@@ -452,7 +452,7 @@ const jsonLd = JSON.stringify({
   }
   .narrative-col li {
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-size: var(--text-body);
     line-height: 1.55;
     color: var(--sl-color-gray-2);
     padding-left: 1rem;
@@ -488,7 +488,7 @@ const jsonLd = JSON.stringify({
     text-wrap: balance;
   }
   .cmp-cta p {
-    font-size: 1.0625rem;
+    font-size: var(--text-prose);
     color: var(--sl-color-gray-2);
     max-width: 48ch;
     margin: 0;
