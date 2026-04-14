@@ -4,38 +4,20 @@ import EditorialSection from "@/components/marketing/EditorialSection.astro";
 import CodeProof from "@/components/marketing/CodeProof.astro";
 import LayerStack from "@/components/marketing/LayerStack.astro";
 
-const heroCode = `package main
-
-import (
-    "context"
-    "fmt"
-
+const heroCode = `import (
     _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
     "github.com/lookatitude/beluga-ai/llm"
-    "github.com/lookatitude/beluga-ai/schema"
 )
 
-func main() {
-    model, err := llm.New("anthropic", llm.Config{
-        Model: "claude-sonnet-4-6",
-    })
-    if err != nil {
-        panic(err)
-    }
+model, _ := llm.New("anthropic", llm.Config{Model: "claude-sonnet-4-6"})
 
-    stream, err := model.Stream(context.Background(), []schema.Message{
-        {Role: schema.RoleUser, Content: "explain iter.Seq2 in one sentence"},
-    })
-    if err != nil {
-        panic(err)
-    }
+stream, _ := model.Stream(ctx, []schema.Message{
+    {Role: schema.RoleUser, Content: "explain iter.Seq2 in one sentence"},
+})
 
-    for chunk, err := range stream.Range {
-        if err != nil {
-            panic(err)
-        }
-        fmt.Print(chunk.Content)
-    }
+for chunk, err := range stream.Range {
+    if err != nil { break }
+    fmt.Print(chunk.Content)
 }`;
 
 const middlewareCode = `base, _ := llm.New("anthropic", llm.Config{})
@@ -313,7 +295,7 @@ const jsonLd = JSON.stringify({
 <style>
   /* Hero layout — split, code visible in first viewport */
   .hero {
-    padding-block: clamp(5rem, 11vw, 8.5rem) clamp(3rem, 7vw, 5rem);
+    padding-block: clamp(3.5rem, 7vw, 6rem) clamp(2rem, 5vw, 4rem);
   }
 
   .hero-frame {

@@ -101,7 +101,7 @@ const socialLinks = social.main;
 <style>
   .marketing-footer {
     position: relative;
-    margin-top: 4rem;
+    margin-top: 5rem;
   }
 
   .footer-divider {
@@ -110,22 +110,21 @@ const socialLinks = social.main;
   }
 
   .footer-inner {
-    max-width: 1400px;
+    max-width: 1740px;
     margin: 0 auto;
-    padding: 3rem 1.5rem 2rem;
+    padding: 2.5rem 1rem 1.5rem;
   }
 
   .footer-top {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 3rem;
-    margin-bottom: 3rem;
+    gap: 2rem;
+    margin-bottom: 2rem;
   }
-
   @media (min-width: 768px) {
     .footer-top {
-      grid-template-columns: 1fr 2fr;
-      gap: 4rem;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+      gap: 3rem;
     }
   }
 
@@ -133,67 +132,49 @@ const socialLinks = social.main;
   .footer-brand {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.625rem;
   }
-
   .footer-logo {
     display: inline-flex;
     text-decoration: none;
   }
-
   .footer-logo img {
-    height: 24px;
+    height: 20px;
     width: auto;
   }
-
-  .logo-light {
-    display: none;
-  }
-
-  :root[data-theme="light"] .logo-dark {
-    display: none;
-  }
-
-  :root[data-theme="light"] .logo-light {
-    display: block;
-  }
+  .logo-light { display: none; }
+  :root[data-theme="light"] .logo-dark { display: none; }
+  :root[data-theme="light"] .logo-light { display: block; }
 
   .footer-tagline {
-    font-size: 0.875rem;
-    color: color-mix(in srgb, var(--sl-color-white) 50%, transparent);
-    line-height: 1.5;
-    max-width: 20rem;
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    color: var(--sl-color-gray-3);
+    max-width: 22rem;
     margin: 0;
-  }
-
-  :root[data-theme="light"] .footer-tagline {
-    color: color-mix(in srgb, var(--sl-color-white) 50%, transparent);
   }
 
   /* ── Columns ── */
   .footer-columns {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem 2rem;
   }
-
   @media (min-width: 768px) {
     .footer-columns {
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 2rem;
     }
   }
 
   .footer-column-title {
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--sl-color-white);
-    margin-bottom: 0.875rem;
-  }
-
-  :root[data-theme="light"] .footer-column-title {
-    color: var(--sl-color-white);
+    color: var(--sl-color-gray-3);
+    margin: 0 0 0.75rem;
   }
 
   .footer-column-list {
@@ -202,33 +183,29 @@ const socialLinks = social.main;
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.375rem;
   }
 
   .footer-link {
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
+    font-family: var(--font-sans);
     font-size: 0.8125rem;
-    color: color-mix(in srgb, var(--sl-color-white) 55%, transparent);
+    line-height: 1.4;
+    color: var(--sl-color-gray-2);
     text-decoration: none;
     transition: color 0.15s ease;
   }
-
   .footer-link:hover {
     color: var(--brand-300);
   }
-
-  :root[data-theme="light"] .footer-link {
-    color: color-mix(in srgb, var(--sl-color-white) 55%, transparent);
-  }
-
   :root[data-theme="light"] .footer-link:hover {
-    color: var(--brand-300);
+    color: oklch(0.42 0.11 240);
   }
 
   .external-icon {
-    opacity: 0.5;
+    opacity: 0.55;
     flex-shrink: 0;
   }
 
@@ -236,11 +213,10 @@ const socialLinks = social.main;
   .footer-bottom {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid color-mix(in srgb, var(--sl-color-white) 8%, transparent);
+    gap: 0.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--sl-color-hairline);
   }
-
   @media (min-width: 768px) {
     .footer-bottom {
       flex-direction: row;
@@ -249,26 +225,21 @@ const socialLinks = social.main;
     }
   }
 
-  :root[data-theme="light"] .footer-bottom {
-    border-top-color: color-mix(in srgb, var(--sl-color-white) 10%, transparent);
-  }
-
   .footer-copyright {
-    font-size: 0.8125rem;
-    color: color-mix(in srgb, var(--sl-color-white) 40%, transparent);
+    font-size: 0.75rem;
+    color: var(--sl-color-gray-3);
   }
-
   .footer-copyright :global(a) {
     color: var(--brand-300);
     text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
   }
-
   .footer-copyright :global(a:hover) {
-    text-decoration: underline;
+    border-bottom-color: currentColor;
   }
-
-  :root[data-theme="light"] .footer-copyright {
-    color: color-mix(in srgb, var(--sl-color-white) 40%, transparent);
+  :root[data-theme="light"] .footer-copyright :global(a) {
+    color: oklch(0.42 0.11 240);
   }
 
   .footer-bottom-right {
@@ -278,18 +249,16 @@ const socialLinks = social.main;
   }
 
   .footer-built-with {
-    font-size: 0.75rem;
-    color: color-mix(in srgb, var(--sl-color-white) 35%, transparent);
-  }
-
-  :root[data-theme="light"] .footer-built-with {
-    color: color-mix(in srgb, var(--sl-color-white) 35%, transparent);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    color: var(--sl-color-gray-3);
   }
 
   .footer-social {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.25rem;
   }
 
   .footer-social-link {
@@ -297,21 +266,12 @@ const socialLinks = social.main;
     align-items: center;
     justify-content: center;
     padding: 0.375rem;
-    color: color-mix(in srgb, var(--sl-color-white) 45%, transparent);
+    color: var(--sl-color-gray-3);
     transition: color 0.15s ease;
     text-decoration: none;
     border-radius: 0.25rem;
   }
-
   .footer-social-link:hover {
-    color: var(--brand-300);
-  }
-
-  :root[data-theme="light"] .footer-social-link {
-    color: color-mix(in srgb, var(--sl-color-white) 45%, transparent);
-  }
-
-  :root[data-theme="light"] .footer-social-link:hover {
-    color: var(--brand-300);
+    color: var(--sl-color-white);
   }
 </style>

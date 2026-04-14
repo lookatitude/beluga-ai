@@ -3,42 +3,25 @@ import MarketingLayout from "@/layouts/MarketingLayout.astro";
 import EditorialSection from "@/components/marketing/EditorialSection.astro";
 import CodeProof from "@/components/marketing/CodeProof.astro";
 
-const buildCode = `package main
-
-import (
-    "context"
+const buildCode = `import (
     _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
-
     "github.com/lookatitude/beluga-ai/agent"
-    "github.com/lookatitude/beluga-ai/llm"
     "github.com/lookatitude/beluga-ai/tool"
 )
 
-func main() {
-    ctx := context.Background()
+model, _ := llm.New("anthropic", llm.Config{Model: "claude-sonnet-4-6"})
 
-    model, _ := llm.New("anthropic", llm.Config{Model: "claude-sonnet-4-6"})
+researchAgent, _ := agent.New(ctx,
+    agent.WithLLM(model),
+    agent.WithPersona("senior researcher, cites sources"),
+    agent.WithPlanner("react"),
+    agent.WithTools(tool.Must(tool.HTTPFetch()), tool.Must(tool.MarkdownParser())),
+)
 
-    researchAgent, err := agent.New(ctx,
-        agent.WithLLM(model),
-        agent.WithPersona("senior researcher, cites sources"),
-        agent.WithPlanner("react"),
-        agent.WithTools(
-            tool.Must(tool.HTTPFetch()),
-            tool.Must(tool.MarkdownParser()),
-        ),
-    )
-    if err != nil {
-        panic(err)
-    }
-
-    stream, _ := researchAgent.Stream(ctx, "summarise the streaming-first pattern in Beluga")
-    for ev, err := range stream.Range {
-        if err != nil {
-            panic(err)
-        }
-        ev.Render()
-    }
+stream, _ := researchAgent.Stream(ctx, "summarise streaming-first patterns in Beluga")
+for ev, err := range stream.Range {
+    if err != nil { break }
+    ev.Render()
 }`;
 
 const knowCode = `import (
