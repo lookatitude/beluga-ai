@@ -6,7 +6,6 @@ on:
     paths-ignore:
       - ".github/**"
       - ".claude/**"
-      - "docs/website/**"
 
 jobs:
   ci:

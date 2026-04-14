@@ -30,9 +30,3 @@ updates:
     schedule:
       interval: "weekly"
     labels: ["dependencies", "ci"]
-
-  - package-ecosystem: "npm"
-    directory: "/docs/website"
-    schedule:
-      interval: "weekly"
-    labels: ["dependencies", "docs"]

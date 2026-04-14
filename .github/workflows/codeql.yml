@@ -6,13 +6,11 @@ on:
     paths-ignore:
       - ".github/**"
       - ".claude/**"
-      - "docs/website/**"
   pull_request:
     branches: [main]
     paths-ignore:
       - ".github/**"
       - ".claude/**"
-      - "docs/website/**"
   schedule:
     - cron: "0 6 * * 1" # Weekly Monday 6am UTC
 

@@ -88,13 +88,13 @@ jobs:
           echo "Changed files:"
           echo "${CHANGED_FILES}"
 
-          RELEASE_RELEVANT=$(echo "${CHANGED_FILES}" | grep -Ev '^(\.github/|\.claude/|docs/website/)' || true)
+          RELEASE_RELEVANT=$(echo "${CHANGED_FILES}" | grep -Ev '^(\.github/|\.claude/)' || true)
           if [ -n "${RELEASE_RELEVANT}" ]; then
             echo "Release-relevant changes detected:"
             echo "${RELEASE_RELEVANT}"
             echo "release_needed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "Only .github/, .claude/, or docs/website/ changes detected; skipping release."
+            echo "Only .github/ or .claude/ changes detected; skipping release."
             echo "release_needed=false" >> "$GITHUB_OUTPUT"
           fi
 
@@ -167,24 +167,123 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
-  trigger-docs:
-    name: Trigger Docs Rebuild
+  # Build the docs bundle (godoc HTML + generated reports with frontmatter)
+  # and upload it as a release asset. The beluga-website repo downloads
+  # docs-bundle.tar.gz from the latest release as part of its build.
+  docs-bundle:
+    name: Build and attach docs bundle
     needs: [changes, release]
     if: |
       always() &&
       needs.release.result == 'success'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      actions: write
+      contents: write
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     steps:
-      - name: Trigger documentation rebuild
-        uses: actions/github-script@v8
+      - uses: actions/checkout@v6
         with:
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'docs.yml',
-              ref: 'main'
-            });
+          ref: ${{ env.RELEASE_TAG }}
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install pkgsite
+        run: go install golang.org/x/pkgsite/cmd/pkgsite@latest
+
+      - name: Generate godoc HTML
+        run: |
+          mkdir -p bundle/godoc
+
+          pkgsite -http=:8080 . &
+          PKGSITE_PID=$!
+
+          echo "Waiting for pkgsite to start..."
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/ > /dev/null 2>&1; then
+              echo "pkgsite ready after ${i}s"
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "ERROR: pkgsite failed to start after 60s"
+              kill $PKGSITE_PID 2>/dev/null || true
+              exit 1
+            fi
+            sleep 1
+          done
+
+          wget --mirror --convert-links --adjust-extension \
+            --page-requisites --no-parent \
+            --directory-prefix=bundle/godoc \
+            --no-host-directories \
+            --reject="robots.txt" \
+            --reject-regex '.*\?.*' \
+            --tries=3 --retry-connrefused \
+            "http://localhost:8080/github.com/lookatitude/beluga-ai" 2>&1 || true
+
+          kill $PKGSITE_PID 2>/dev/null || true
+
+          find bundle/godoc -name '*[?*:<>"|]*' -delete 2>/dev/null || true
+
+          FILE_COUNT=$(find bundle/godoc -type f | wc -l)
+          echo "Generated ${FILE_COUNT} godoc files"
+
+      - name: Copy raw reports
+        run: |
+          # Raw bodies only — no frontmatter. The website repo owns the
+          # frontmatter (SEO metadata, Starlight options) and splices
+          # these bodies into its existing report stubs at build time.
+          mkdir -p bundle/reports
+
+          for f in CHANGELOG.md SECURITY.md CODE-QUALITY.md; do
+            if [ ! -f "$f" ]; then
+              echo "Skipping $f (not present at release tag)"
+              continue
+            fi
+
+            slug=$(basename "$f" .md | tr '[:upper:]' '[:lower:]' | tr '_' '-')
+            cp "$f" "bundle/reports/${slug}.md"
+            echo "Prepared reports/${slug}.md"
+          done
+
+      - name: Create tarball
+        run: |
+          tar -C bundle -czf docs-bundle.tar.gz godoc reports
+          ls -lh docs-bundle.tar.gz
+          sha256sum docs-bundle.tar.gz | tee docs-bundle.tar.gz.sha256
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${RELEASE_TAG}" \
+            docs-bundle.tar.gz \
+            docs-bundle.tar.gz.sha256 \
+            --clobber
+
+  # After the bundle is attached, poke the beluga-website repo so it
+  # rebuilds against the new asset.
+  dispatch-website:
+    name: Dispatch beluga-website rebuild
+    needs: [docs-bundle]
+    if: |
+      always() &&
+      needs.docs-bundle.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send repository_dispatch to beluga-website
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          # Requires a PAT (repo scope) stored as WEBSITE_DISPATCH_TOKEN
+          # in this repo's secrets. GITHUB_TOKEN cannot dispatch across repos.
+          token: ${{ secrets.WEBSITE_DISPATCH_TOKEN }}
+          repository: lookatitude/beluga-website
+          event-type: framework-release
+          client-payload: |
+            {
+              "tag": "${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}",
+              "sha": "${{ github.sha }}"
+            }
