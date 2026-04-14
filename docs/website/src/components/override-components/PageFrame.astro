@@ -45,9 +45,10 @@ const { hasSidebar } = Astro.locals.starlightRoute;
       </div>
     )
   }
-  <header class={"header" + (hasSidebar ? " has-sidebar" : " no-sidebar")}>
-    <slot name="header" />
-  </header>
+  <!-- Header slot renders our MarketingHeader directly. No wrapping
+       <header> element — the MarketingHeader component is already a
+       semantic <header> and wrapping it would produce nested headers. -->
+  <slot name="header" />
   {hasSidebar && <SidebarNav />}
   <div class="main-frame">
     <div class="container flex relative">
@@ -79,17 +80,9 @@ const { hasSidebar } = Astro.locals.starlightRoute;
     .page {
       flex-direction: column;
       min-height: 100vh;
-      padding-top: 3.5rem;
-    }
-    .header {
-      z-index: var(--sl-z-index-navbar);
-      position: sticky;
-      inset-inline-start: 0;
-      inset-block-start: 0;
-      width: 100%;
-      min-height: 0;
-      border-bottom: none;
-      padding: 0;
+      /* Match the MarketingHeader height (position: fixed) so the
+         docs content doesn't hide under it. */
+      padding-top: 4.5rem;
     }
     .sidebar {
       opacity: 0;
