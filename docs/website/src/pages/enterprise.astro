@@ -9,42 +9,48 @@ const capabilities = [
     title: "Access control",
     desc: "Capability-based RBAC / ABAC, deny by default, per-tenant isolation via core.WithTenant(ctx). JWT validation at every HTTP handler and RPC endpoint.",
     pkg: "auth/",
-    doc: "docs/architecture/18-package-dependency-map.md §Layer 2",
+    docHref: "/docs/reference/api/infrastructure/",
+    docLabel: "auth package reference",
   },
   {
     label: "02",
     title: "Audit trail",
     desc: "Every agent turn, every tool call, every guard decision logged with run ID and tenant. Audit records are append-only and signed.",
     pkg: "audit/",
-    doc: "docs/architecture/18-package-dependency-map.md §Layer 2",
+    docHref: "/docs/reference/api/infrastructure/",
+    docLabel: "audit package reference",
   },
   {
     label: "03",
     title: "Cost tracking",
     desc: "Token counts, USD attribution, per-team quotas, per-request cost ceilings. Every LLM call emits a cost span. Dashboards and alerts wire to Grafana, Langfuse, or your own backend.",
     pkg: "cost/",
-    doc: "docs/architecture/14-observability.md",
+    docHref: "/docs/guides/production/observability/",
+    docLabel: "cost + observability guide",
   },
   {
     label: "04",
     title: "Safety pipeline",
     desc: "Three-stage guard pipeline — Input, Output, Tool — with five guard providers: Lakera, LLM Guard, Guardrails AI, NeMo, Azure Content Safety. Prompt injection, PII detection, moderation, and capability sandboxing.",
     pkg: "guard/",
-    doc: "docs/architecture/01-overview.md §Layer 3",
+    docHref: "/docs/guides/production/safety-and-guards/",
+    docLabel: "safety and guards guide",
   },
   {
     label: "05",
     title: "Crash-durable execution",
     desc: "Agent runs survive process restarts. The workflow/ package replays from an event log. Temporal is a drop-in backend, plus Inngest, Dapr, NATS, Kafka, or in-process for tests.",
     pkg: "workflow/",
-    doc: "docs/architecture/16-durable-workflows.md",
+    docHref: "/docs/guides/production/workflow-durability/",
+    docLabel: "workflow durability guide",
   },
   {
     label: "06",
     title: "OTel GenAI observability",
     desc: "Seventeen packages emit gen_ai.* spans at every boundary. Four exporters shipped: Langfuse, LangSmith, Opik, Arize Phoenix. Works with any OTel-compatible backend.",
     pkg: "o11y/",
-    doc: "docs/architecture/14-observability.md",
+    docHref: "/docs/guides/production/observability/",
+    docLabel: "observability guide",
   },
 ];
 
@@ -113,7 +119,7 @@ const jsonLd = JSON.stringify({
             <p class="cap-desc">{c.desc}</p>
             <div class="cap-meta">
               <code class="cap-pkg">{c.pkg}</code>
-              <span class="cap-doc">{c.doc}</span>
+              <a class="cap-doc" href={c.docHref}>{c.docLabel} →</a>
             </div>
           </div>
         </article>
@@ -133,7 +139,7 @@ const jsonLd = JSON.stringify({
       lang="go"
       title="production/llm.go"
       caption="Read outside-in: auth, audit, cost, guardrails, tracing, retry — every concern is a function application on the same interface."
-      cite={{ label: "docs/architecture/03-extensibility-patterns.md §Ring 4 — Middleware", href: "/docs/concepts/extensibility/" }}
+      cite={{ label: "Extensibility — Ring 4 · Middleware", href: "/docs/concepts/extensibility/" }}
     />
   </EditorialSection>
 
@@ -318,6 +324,13 @@ const jsonLd = JSON.stringify({
   }
   .cap-doc {
     color: var(--sl-color-gray-3);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: color 0.15s ease, border-color 0.2s ease;
+  }
+  .cap-doc:hover {
+    color: var(--brand-200);
+    border-bottom-color: var(--brand-200);
   }
 
   /* Scenario */

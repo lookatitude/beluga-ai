@@ -10,7 +10,6 @@
     },
     {
       "label": "Concepts",
-      "collapsed": true,
       "items": [
         { "label": "Overview", "slug": "docs/concepts" },
         { "label": "Core Primitives", "slug": "docs/concepts/core-primitives" },
@@ -30,78 +29,54 @@
           "autogenerate": { "directory": "docs/guides/foundations" }
         },
         {
-          "label": "Capabilities",
+          "label": "Agents",
           "collapsed": true,
-          "items": [
-            { "label": "Overview", "slug": "docs/guides/capabilities" },
-            {
-              "label": "Agents",
-              "collapsed": true,
-              "autogenerate": { "directory": "docs/guides/capabilities/agents" }
-            },
-            {
-              "label": "RAG",
-              "collapsed": true,
-              "autogenerate": { "directory": "docs/guides/capabilities/rag" }
-            },
-            {
-              "label": "Memory",
-              "collapsed": true,
-              "autogenerate": { "directory": "docs/guides/capabilities/memory" }
-            },
-            {
-              "label": "Voice",
-              "collapsed": true,
-              "autogenerate": { "directory": "docs/guides/capabilities/voice" }
-            },
-            {
-              "label": "Orchestration",
-              "collapsed": true,
-              "autogenerate": { "directory": "docs/guides/capabilities/orchestration" }
-            },
-            {
-              "label": "Documents",
-              "collapsed": true,
-              "autogenerate": { "directory": "docs/guides/capabilities/documents" }
-            },
-            {
-              "label": "Multimodal",
-              "collapsed": true,
-              "autogenerate": { "directory": "docs/guides/capabilities/multimodal" }
-            },
-            {
-              "label": "Messaging",
-              "collapsed": true,
-              "autogenerate": { "directory": "docs/guides/capabilities/messaging" }
-            }
-          ]
+          "autogenerate": { "directory": "docs/guides/capabilities/agents" }
+        },
+        {
+          "label": "RAG",
+          "collapsed": true,
+          "autogenerate": { "directory": "docs/guides/capabilities/rag" }
+        },
+        {
+          "label": "Memory",
+          "collapsed": true,
+          "autogenerate": { "directory": "docs/guides/capabilities/memory" }
+        },
+        {
+          "label": "Voice",
+          "collapsed": true,
+          "autogenerate": { "directory": "docs/guides/capabilities/voice" }
+        },
+        {
+          "label": "Orchestration",
+          "collapsed": true,
+          "autogenerate": { "directory": "docs/guides/capabilities/orchestration" }
+        },
+        {
+          "label": "Documents",
+          "collapsed": true,
+          "autogenerate": { "directory": "docs/guides/capabilities/documents" }
+        },
+        {
+          "label": "Multimodal",
+          "collapsed": true,
+          "autogenerate": { "directory": "docs/guides/capabilities/multimodal" }
+        },
+        {
+          "label": "Messaging",
+          "collapsed": true,
+          "autogenerate": { "directory": "docs/guides/capabilities/messaging" }
         },
         {
           "label": "Production",
           "collapsed": true,
-          "items": [
-            { "label": "Overview", "slug": "docs/guides/production" },
-            { "label": "Observability", "slug": "docs/guides/production/observability" },
-            { "label": "Safety and Guards", "slug": "docs/guides/production/safety-and-guards" },
-            { "label": "Resilience", "slug": "docs/guides/production/resilience" },
-            { "label": "Workflow Durability", "slug": "docs/guides/production/workflow-durability" },
-            {
-              "label": "More",
-              "collapsed": true,
-              "autogenerate": { "directory": "docs/guides/production" }
-            },
-            {
-              "label": "Integrations",
-              "collapsed": true,
-              "autogenerate": { "directory": "docs/guides/production/integrations" }
-            }
-          ]
+          "autogenerate": { "directory": "docs/guides/production" }
         }
       ]
     },
     {
       "label": "Recipes",
-      "collapsed": true,
       "items": [
         { "label": "Overview", "slug": "docs/recipes" },
         {
@@ -148,55 +123,49 @@
     },
     {
       "label": "Reference",
-      "collapsed": true,
       "items": [
         { "label": "Overview", "slug": "docs/reference" },
-        {
-          "label": "Providers",
-          "collapsed": true,
-          "items": [
-            { "label": "Overview", "slug": "docs/reference/providers" },
-            { "label": "LLM", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/llm" } },
-            { "label": "Embedding", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/embedding" } },
-            { "label": "Vector Stores", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/vectorstore" } },
-            { "label": "Voice", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/voice" } },
-            { "label": "Document Loaders", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/loader" } },
-            { "label": "Guard", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/guard" } },
-            { "label": "Eval", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/eval" } },
-            { "label": "Observability", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/observability" } },
-            { "label": "Workflow", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/workflow" } },
-            { "label": "VAD", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/vad" } },
-            { "label": "Transport", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/transport" } },
-            { "label": "Cache", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/cache" } },
-            { "label": "State", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/state" } },
-            { "label": "Prompt", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/prompt" } },
-            { "label": "MCP", "collapsed": true, "autogenerate": { "directory": "docs/reference/providers/mcp" } }
-          ]
-        },
-        {
-          "label": "API",
-          "collapsed": true,
-          "items": [
-            { "label": "Overview", "slug": "docs/reference/api" },
-            { "label": "Foundation", "collapsed": true, "autogenerate": { "directory": "docs/reference/api/foundation" } },
-            { "label": "LLM and Agents", "collapsed": true, "autogenerate": { "directory": "docs/reference/api/llm-agents" } },
-            { "label": "Memory and RAG", "collapsed": true, "autogenerate": { "directory": "docs/reference/api/memory-rag" } },
-            { "label": "Voice", "collapsed": true, "autogenerate": { "directory": "docs/reference/api/voice" } },
-            { "label": "Infrastructure", "collapsed": true, "autogenerate": { "directory": "docs/reference/api/infrastructure" } },
-            { "label": "Protocol and Server", "collapsed": true, "autogenerate": { "directory": "docs/reference/api/protocol" } }
-          ]
-        },
+        { "label": "Config Schema", "slug": "docs/reference/config-schema" },
         {
           "label": "Architecture",
           "collapsed": true,
           "autogenerate": { "directory": "docs/reference/architecture" }
         },
-        { "label": "Config Schema", "slug": "docs/reference/config-schema" }
+        {
+          "label": "API — Foundation",
+          "collapsed": true,
+          "autogenerate": { "directory": "docs/reference/api/foundation" }
+        },
+        {
+          "label": "API — LLM and Agents",
+          "collapsed": true,
+          "autogenerate": { "directory": "docs/reference/api/llm-agents" }
+        },
+        {
+          "label": "API — Memory and RAG",
+          "collapsed": true,
+          "autogenerate": { "directory": "docs/reference/api/memory-rag" }
+        },
+        {
+          "label": "API — Voice",
+          "collapsed": true,
+          "autogenerate": { "directory": "docs/reference/api/voice" }
+        },
+        {
+          "label": "API — Infrastructure",
+          "collapsed": true,
+          "autogenerate": { "directory": "docs/reference/api/infrastructure" }
+        },
+        {
+          "label": "API — Protocol and Server",
+          "collapsed": true,
+          "autogenerate": { "directory": "docs/reference/api/protocol" }
+        },
+        { "label": "Browse providers →", "link": "/providers/" }
       ]
     },
     {
       "label": "Contributing",
-      "collapsed": true,
       "items": [
         { "label": "Overview", "slug": "docs/contributing" },
         { "label": "Development Setup", "slug": "docs/contributing/development-setup" },

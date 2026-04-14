@@ -209,7 +209,13 @@
    Sidebar, TOC, breadcrumbs, page frame, mobile nav.
    ============================================================ */
 
-/* Sidebar — restrained typography, no oversized brand-color links */
+/* ============================================================
+   Sidebar — flat, editorial, restrained
+   Depth is visually suppressed: top-level groups use mono uppercase
+   labels with clear separation; second-level links are compact
+   indented sibling lists. No deep visual trees.
+   ============================================================ */
+
 nav.sidebar {
   font-family: var(--font-sans);
   font-size: 0.875rem;
@@ -217,16 +223,19 @@ nav.sidebar {
 
 nav.sidebar ul {
   padding-left: 0;
+  list-style: none;
 }
 
+/* Base link treatment — every link, any depth */
 nav.sidebar a {
+  display: block;
   font-size: 0.8125rem !important;
   font-weight: 400;
+  line-height: 1.45;
   color: var(--sl-color-gray-2) !important;
-  padding: 0.375rem 0.75rem !important;
-  border-radius: 0.25rem;
-  text-decoration: none;
+  padding: 0.3rem 0.75rem !important;
   border-left: 2px solid transparent;
+  text-decoration: none;
   transition: color 0.15s ease, border-color 0.2s ease, background 0.15s ease;
 }
 
@@ -242,49 +251,93 @@ nav.sidebar a[aria-current="page"] {
   border-left-color: var(--brand-500);
 }
 
-/* Sidebar group labels — section headings */
+/* Top-level section label — Start / Concepts / Guides / Recipes / Reference / Contributing */
 nav.sidebar .top-level > li > details > summary,
 nav.sidebar .top-level > li > .group-label,
 nav.sidebar summary > .group-label {
   font-family: var(--font-mono) !important;
   font-size: 0.6875rem !important;
   font-weight: 500 !important;
-  letter-spacing: 0.1em !important;
+  letter-spacing: 0.12em !important;
   text-transform: uppercase;
   color: var(--sl-color-gray-3) !important;
-  padding: 0.5rem 0.75rem !important;
+  padding: 1.25rem 0.75rem 0.5rem !important;
+  margin-top: 0.25rem;
+  border-top: 1px solid var(--sl-color-hairline);
 }
 
-nav.sidebar details > summary {
-  list-style: none;
+/* First top-level group has no border-top */
+nav.sidebar .top-level > li:first-child > details > summary,
+nav.sidebar .top-level > li:first-child > .group-label,
+nav.sidebar .top-level > li:first-child > summary > .group-label {
+  border-top: none;
+  padding-top: 0.5rem;
 }
 
-nav.sidebar details > summary::-webkit-details-marker {
-  display: none;
+/* Sub-group label (second level) — smaller, still mono, more muted */
+nav.sidebar .top-level ul details > summary,
+nav.sidebar .top-level ul summary > .group-label {
+  font-family: var(--font-mono) !important;
+  font-size: 0.6875rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase;
+  color: var(--sl-color-gray-3) !important;
+  padding: 0.5rem 0.75rem 0.375rem !important;
+  margin-top: 0.25rem;
+  border-top: none;
+  text-align: left;
 }
 
-nav.sidebar details > summary::after {
-  content: "";
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  margin-left: 0.5rem;
-  border-right: 1.5px solid var(--sl-color-gray-3);
-  border-bottom: 1.5px solid var(--sl-color-gray-3);
-  transform: rotate(45deg);
-  transition: transform 0.2s ease;
-  vertical-align: middle;
+/* Kill the browser's default <details> triangle.
+   A global `summary { display: list-item }` reset (from Tailwind / Starlight)
+   re-enables the list-item marker, so we have to force `display: block`
+   on sidebar summaries to suppress it. Starlight renders its own SVG
+   caret inside every expandable summary — that's the chevron we keep. */
+nav.sidebar summary {
+  display: block !important;
+  list-style: none !important;
+  cursor: pointer;
 }
 
-nav.sidebar details[open] > summary::after {
-  transform: rotate(-135deg);
+nav.sidebar summary::-webkit-details-marker,
+nav.sidebar summary::marker {
+  display: none !important;
+  content: "" !important;
 }
 
-/* Sidebar nested list spacing */
+/* Style the Starlight SVG caret to match the restrained sidebar chrome.
+   Starlight's base stylesheet sets .caret { display: none } in some
+   build passes — override to keep it visible. */
+nav.sidebar summary svg.caret {
+  display: inline-block !important;
+  width: 11px;
+  height: 11px;
+  color: var(--sl-color-gray-3);
+  transition: transform 0.2s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+nav.sidebar details[open] > summary svg.caret {
+  transform: rotate(90deg);
+}
+nav.sidebar summary:hover svg.caret {
+  color: var(--sl-color-white);
+}
+
+/* Nested list under sub-group — compact, no left border */
 nav.sidebar ul ul {
-  margin-left: 0.75rem;
-  border-left: 1px solid var(--sl-color-hairline);
-  padding-left: 0.5rem;
+  margin-left: 0;
+  padding-left: 0;
+  border-left: none;
+  margin-bottom: 0.25rem;
+}
+
+nav.sidebar ul ul a {
+  padding-left: 1.25rem !important;
+}
+
+nav.sidebar ul ul ul a {
+  padding-left: 2rem !important;
 }
 
 /* TOC right rail — restrained, mono-flavored markers */

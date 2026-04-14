@@ -150,7 +150,7 @@ const jsonLd = JSON.stringify({
     headlineFont="display"
     deck="The runtime runs a Plan → Act → Observe → Replan loop on every turn. Eight planning strategies share one Planner interface — swap them with a config change. LLM calls route across 22 providers with a unified ChatModel. Tools are any Go function wrapped with a schema. Handoffs between agents are auto-generated tools."
     layout="split"
-    cite={{ label: "docs/architecture/05-agent-anatomy.md", href: "/docs/concepts/extensibility/" }}
+    cite={{ label: "Agent anatomy", href: "/docs/concepts/extensibility/" }}
     class="section-build"
   >
     <CodeProof
@@ -158,7 +158,7 @@ const jsonLd = JSON.stringify({
       lang="go"
       title="examples/research-agent.go"
       caption={`ReAct planner with two tools, streamed to the caller. Swap WithPlanner("react") for "lats", "tot", or "moa" without touching the rest.`}
-      cite={{ label: "docs/architecture/06-reasoning-strategies.md", href: "/docs/concepts/extensibility/" }}
+      cite={{ label: "The eight reasoning strategies", href: "/docs/guides/capabilities/agents/" }}
     />
   </EditorialSection>
 
@@ -172,7 +172,7 @@ const jsonLd = JSON.stringify({
     deck="Three-tier memory — working, recall, archival — with graph-store support. RAG uses hybrid retrieval: BM25, dense vector, and graph traversal, fused with Reciprocal Rank Fusion. Strategies include CRAG, Adaptive RAG, HyDE, and GraphRAG. Thirteen vector-store backends, nine embedding providers, eight memory stores."
     layout="split"
     bleed
-    cite={{ label: "docs/architecture/10-rag-pipeline.md", href: "/docs/guides/" }}
+    cite={{ label: "RAG pipeline guide", href: "/docs/guides/capabilities/rag/" }}
   >
     <CodeProof
       code={knowCode}
@@ -191,7 +191,7 @@ const jsonLd = JSON.stringify({
     headlineFont="display"
     deck="The guard pipeline runs three stages — Input, Output, Tool — around every LLM interaction. Circuit breakers, rate limits, and retry are middleware on the same interface as your LLM call. OTel GenAI spans emit from 17 packages at every boundary. Durable workflows replay from an event log. Cost tracking attributes every token to a team."
     layout="split"
-    cite={{ label: "docs/architecture/14-observability.md · 15-resilience.md · 16-durable-workflows.md", href: "/docs/concepts/extensibility/" }}
+    cite={{ label: "Production defaults — observability, resilience, durability", href: "/docs/guides/production/" }}
   >
     <CodeProof
       code={shipCode}
@@ -211,7 +211,7 @@ const jsonLd = JSON.stringify({
     deck="STT → LLM → TTS as a typed pipeline. Six STT providers, seven TTS providers, three speech-to-speech providers. LiveKit, Daily, and Pipecat transports. Silero and WebRTC VAD. No other Go agent framework includes this."
     layout="split"
     bleed
-    cite={{ label: "docs/architecture/11-voice-pipeline.md", href: "/docs/guides/" }}
+    cite={{ label: "Voice pipeline guide", href: "/docs/guides/capabilities/voice/" }}
   >
     <CodeProof
       code={voiceCode}
@@ -229,7 +229,7 @@ const jsonLd = JSON.stringify({
     headlineFont="display"
     deck="Expose the same Agent over MCP for tools, A2A for inter-agent discovery, REST/SSE for streaming clients, gRPC for low-latency internal calls, or WebSocket for bidirectional voice. Pick one or ship them all — the Runner is the deployment boundary, not the agent."
     layout="split"
-    cite={{ label: "docs/architecture/12-protocol-layer.md", href: "/docs/guides/" }}
+    cite={{ label: "Protocol layer guide", href: "/docs/guides/production/" }}
   >
     <CodeProof
       code={protocolCode}

@@ -165,7 +165,7 @@ const jsonLd = JSON.stringify({
     headline="Seven layers. One import path."
     headlineFont="display"
     deck="From Foundation primitives to your application code, each layer depends only on the layers below it. Downward arrows only. If you find an upward import, it's a bug."
-    cite={{ label: "docs/architecture/01-overview.md", href: "/docs/concepts/" }}
+    cite={{ label: "Read the concepts", href: "/docs/concepts/" }}
   >
     <LayerStack />
   </EditorialSection>
@@ -187,7 +187,7 @@ const jsonLd = JSON.stringify({
           <code>Stream()</code> + collect — the stream path is the real contract.
         </p>
         <a class="pillar-cite" href="/docs/concepts/streaming/">
-          core/stream.go · Stream[T] backed by iter.Seq2 →
+          Read how Stream[T] works →
         </a>
       </article>
 
@@ -200,8 +200,8 @@ const jsonLd = JSON.stringify({
           <code>Planner</code> interface. Switching strategies is a one-line change.
           Build your own in the same slot.
         </p>
-        <a class="pillar-cite" href="/docs/concepts/extensibility/">
-          docs/architecture/06-reasoning-strategies.md →
+        <a class="pillar-cite" href="/docs/guides/capabilities/agents/">
+          Swap planners in one line →
         </a>
       </article>
 
@@ -214,8 +214,8 @@ const jsonLd = JSON.stringify({
           Grafana Tempo, Honeycomb, Arize, and Langfuse out of the box.
           No custom instrumentation required.
         </p>
-        <a class="pillar-cite" href="/product/#ship">
-          docs/architecture/14-observability.md →
+        <a class="pillar-cite" href="/docs/guides/production/observability/">
+          Observability in production →
         </a>
       </article>
 
@@ -227,8 +227,8 @@ const jsonLd = JSON.stringify({
           Temporal, Inngest, Dapr, NATS, Kafka — or in-process for tests.
           Agents survive process restarts without application-level checkpointing.
         </p>
-        <a class="pillar-cite" href="/product/#ship">
-          docs/architecture/16-durable-workflows.md →
+        <a class="pillar-cite" href="/docs/guides/production/workflow-durability/">
+          Workflow durability →
         </a>
       </article>
     </div>
@@ -293,7 +293,7 @@ const jsonLd = JSON.stringify({
       code={workflowCode}
       lang="go"
       title="workflow/resume.go"
-      cite={{ label: "docs/architecture/16-durable-workflows.md", href: "/docs/concepts/" }}
+      cite={{ label: "Workflow durability guide", href: "/docs/guides/production/workflow-durability/" }}
     />
   </EditorialSection>
 
