@@ -2,6 +2,40 @@
 
 All notable changes to Beluga AI are documented here.
 
+## [2.8.3] - 2026-04-14
+
+### Documentation
+
+- **website**: Phase 10 — embed remaining diagrams + visual polish
+
+### Miscellaneous
+
+- **deps**: Bump the go-minor-patch group with 6 updates
+- **sonar**: Fix UserPromptSubmit hook + allow sonar CLI
+- Consolidate worktree
+- **release**: Update CHANGELOG.md for v2.8.2 [skip ci]
+- **deps**: Bump google.golang.org/genai in the google group
+
+### Website
+
+- Complete redesign — new IA, typography, marketing pages, docs cutover
+- Flatten docs sidebar, clean visible .md citations, fix double chevron
+- Fix sidebar group labels — too big + empty-hr look
+- Consolidate single header on docs pages, harmonize sidebar density
+- Align header logo + docs button with docs content rails
+- Tighten hero rhythm and compact footer
+- Phase 7 — content + visual + diagram consistency pass
+- Phase 8 — utility migration, imagery, more diagrams
+- Phase 9 — 22 canonical diagrams embedded, surface tokens applied
+- Align marketing frames to consistent 88rem width
+- True side-by-side split layout across marketing pages
+- Revert home architecture to editorial, drop sticky header
+- Use split layout consistently for narrow-content sections
+- Restore title-on-top + horizontal grid pattern
+- Unify typography to IBM Plex Sans + fluid type scale
+- Frame mermaid diagrams in centered panel
+- Route every font-size through the type scale tokens
+
 ## [2.8.2] - 2026-04-12
 
 ### Bug Fixes
