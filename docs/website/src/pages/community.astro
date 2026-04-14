@@ -161,6 +161,7 @@ const jsonLd = JSON.stringify({
   <EditorialSection
     eyebrow="CONTRIBUTING"
     headline="The ladder is short."
+    layout="split"
   >
     <div class="contrib">
       <ol>
@@ -191,6 +192,7 @@ const jsonLd = JSON.stringify({
   <EditorialSection
     eyebrow="ROADMAP"
     headline="Four phases shipped. One in progress."
+    layout="split"
     bleed
   >
     <div class="roadmap">
@@ -376,7 +378,8 @@ const jsonLd = JSON.stringify({
 
   /* Contributor ladder */
   .contrib {
-    max-width: 64ch;
+    display: flex;
+    flex-direction: column;
   }
   .contrib ol {
     list-style: none;
@@ -455,7 +458,6 @@ const jsonLd = JSON.stringify({
     display: flex;
     flex-direction: column;
     gap: 0;
-    max-width: 68rem;
   }
   .phase {
     display: grid;
