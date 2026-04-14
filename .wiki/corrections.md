@@ -99,7 +99,7 @@ Entries reach `.claude/rules/` when seen ≥3 times or HIGH confidence.
 3. **README feature bullets require an evidence link** (`cmd/beluga/main.go`, `website/package.json`, `agent/codeact/doc.go`). PR review rejects bullets whose evidence path doesn't exist in `main`.
 4. **When arch-validate or any sweep discovers a count/inventory fact** (e.g., "22/22 LLM providers auto-register"), the sweep's follow-up tasks must include a diff against `docs/reference/*` to propagate. Add a step to the `/arch-validate` command checklist.
 
-**Full analysis:** `docs/superpowers/research/2026-04-12-docs-gap-analysis.md` — inventory, coverage matrix, prioritised gaps, tone observations, and a recommended docs structure.
+**Confidence:** HIGH for all five findings — each backed by concrete file reads and grep verification against the current tree (`llm/registry.go`, `tool/{tool,hooks,middleware}.go`, `agent/base.go`, directory listings of `llm/providers/`, `rag/vectorstore/providers/`, `rag/embedding/providers/`, `cmd/`, `website/` absence, `agent/codeact` worktree-only presence).
 **Confidence:** HIGH for all five findings — each backed by concrete file reads and grep verification against the current tree (`llm/registry.go`, `tool/{tool,hooks,middleware}.go`, `agent/base.go`, directory listings of `llm/providers/`, `rag/vectorstore/providers/`, `rag/embedding/providers/`, `cmd/`, `website/` absence, `agent/codeact` worktree-only presence).
 
 ---
