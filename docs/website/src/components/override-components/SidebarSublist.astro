@@ -181,18 +181,14 @@ const { sublist, nested } = Astro.props;
     a:hover,
     a:focus {
       color: var(--sl-color-white);
-      background-color: color-mix(in srgb, var(--sl-color-white) 4%, transparent);
+      background-color: color-mix(in oklch, var(--sl-color-white) 4%, transparent);
     }
 
     [aria-current="page"],
     [aria-current="page"]:hover,
     [aria-current="page"]:focus {
-      color: var(--color-primary) !important;
-      background-color: color-mix(
-        in srgb,
-        var(--color-primary, #5CA3CA) 10%,
-        transparent
-      );
+      color: var(--brand-300) !important;
+      background-color: color-mix(in oklch, var(--brand-500) 12%, transparent);
     }
     [aria-current="page"] span {
       color: var(--sl-color-white);

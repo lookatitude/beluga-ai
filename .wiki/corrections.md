@@ -115,6 +115,20 @@ mgr = prompt.ApplyMiddleware(mgr, prompt.WithTracing())
 **Prevention rule:** In any worktree session, run `git status --short` after the first Write/Edit to confirm modified files appear. If `git status` is clean after a write, the write landed in the wrong tree.
 **Confidence:** HIGH — reproducible; discovered by checking `git status` which was clean despite edits.
 
+### C-012 | 2026-04-12 | marketeer | .wiki/architecture/package-map
+**Symptom:** `.wiki/architecture/package-map.md` covers only 7 packages (core, tool, llm, guard, o11y, memory, protocol). The arch-validate sweep (commits e97d0771, 33d12ca0, 19741097, f9c06d30) added `WithTracing()` to 17 packages and migrated chan→iter.Seq2 across voice, workflow, and state. The wiki scan predates those commits (last scan: 2026-04-11 before the sweep).
+**Root cause:** `/wiki-learn` was run once before the sweep. Package-map entries are not auto-updated on architecture changes.
+**Correction:** Run `/wiki-learn all` after any architecture sweep to regenerate package-map entries. Until then, use `docs/architecture/03-extensibility-patterns.md` and `docs/architecture/14-observability.md` as the authoritative count of instrumented packages — not the wiki package-map.
+**Prevention rule:** After any multi-package refactor, run `/wiki-learn all` before the next `/promote` or `/blog` task to keep the wiki current.
+**Confidence:** HIGH — stale count confirmed by comparing log.md scan date against commit timestamps.
+
+### C-011 | 2026-04-12 | marketeer | docs/architecture/06-reasoning-strategies
+**Symptom:** Competitor wiki stubs (`.wiki/competitors/adk-go.md`, `.wiki/competitors/eino.md`) claim "7 reasoning strategies vs ADK's 1" and "7 reasoning strategies vs Eino's 3". The canonical source `docs/architecture/06-reasoning-strategies.md` lists 8 strategies: ReAct, Reflexion, Self-Discover, MindMap, Tree-of-Thought, Graph-of-Thought, LATS, Mixture-of-Agents.
+**Root cause:** Competitor stubs were written when the canonical count was 7. A new strategy (Mixture-of-Agents) was added to the planner registry without updating the stub files.
+**Correction:** The authoritative strategy count is in `docs/architecture/06-reasoning-strategies.md`. As of 2026-04-12 the count is 8. All marketing copy and competitor comparisons must read this doc directly — never the stubs.
+**Prevention rule:** Before any `/promote` or `/blog` task, verify the reasoning strategy count from `docs/architecture/06-reasoning-strategies.md`, not from `.wiki/competitors/*.md`. The competitor stubs are secondary references that lag the canonical doc.
+**Confidence:** HIGH — count verified by direct read of `docs/architecture/06-reasoning-strategies.md` strategy table on 2026-04-12.
+
 ### C-010 | 2026-04-12 | docs-writer | rag/retriever
 **Symptom:** A developer calls `retriever.New("colbert", cfg)` expecting a working `ColBERTRetriever`, but receives an error: "colbert: use colbert.NewColBERTRetriever() with WithEmbedder and WithIndex options". Same for `retriever.New("raptor", cfg)`.
 **Root cause:** ColBERT and RAPTOR require dependencies (`ColBERTIndex`/`MultiVectorEmbedder`, or a pre-built `*Tree`/`Embedder`) that cannot be sourced from a generic `config.ProviderConfig`. Their `init()` registrations deliberately return descriptive errors to guide callers away from the generic factory path. See `rag/retriever/colbert/retriever.go:13-16` and `rag/retriever/raptor/retriever.go:15-21`.
@@ -122,3 +136,44 @@ mgr = prompt.ApplyMiddleware(mgr, prompt.WithTracing())
 **Contrast:** `StructuredRetriever` has the same pattern (`retriever.New("structured", cfg)` errors on purpose) but uses `structured.NewStructuredRetriever(structured.WithGenerator(...), structured.WithExecutor(...))`.
 **Prevention rule:** Documented in DOC-10 "Common mistakes". Any new retriever that requires non-config dependencies should follow this same "register with descriptive error, provide typed constructor" pattern.
 **Confidence:** HIGH — error text read directly from source; confirmed by source code at cited lines.
+
+### C-013 | 2026-04-12 | docs-writer | llm · RESOLVED 2026-04-12
+**Symptom:** Concept-section doc examples used four non-existent APIs: `llm.Config{}`, `llm.WithRetry(n)`, `ChatModel.SetHooks(...)`, and `ChatModel.Invoke(ctx, msgs)`. All four caused compile errors.
+**Root cause:** The docs were written from architecture docs and wiki patterns without verifying against the actual `llm` package source. The architecture docs describe the *pattern* generically (registry takes a `Config`, middleware includes retry, hooks attach to the model) — but the concrete `llm` package uses `config.ProviderConfig` as the registry argument, does not export `WithRetry`, applies hooks via `WithHooks(Hooks) Middleware` (not `SetHooks`), and exposes `Generate` not `Invoke` on `ChatModel`.
+**Correction:**
+- `llm.Config{...}` → `config.ProviderConfig{...}` (`github.com/lookatitude/beluga-ai/config`)
+- `llm.WithRetry(n)` → does not exist in `llm`; retry lives in `resilience/` or is a custom middleware
+- `model.SetHooks(hooks)` → `llm.ApplyMiddleware(model, llm.WithHooks(hooks))` — hooks are applied as Ring 4 middleware, not a setter method
+- `model.Invoke(ctx, msgs)` → `model.Generate(ctx, msgs)` — the non-streaming path on `llm.ChatModel`
+- `schema.StreamChunk.Text` → `schema.StreamChunk.Delta` — the incremental text field is `Delta`, not `Text`
+- `llm.ChatModel.Stream` returns `iter.Seq2[schema.StreamChunk, error]` directly, not `core.Stream[T]` — consumer variables should be `chunk, err` not `event, err`
+**Prevention rule:** Before writing any doc example that calls a package API, read the package's primary `.go` file (not just the architecture docs). Architecture docs describe canonical patterns — concrete packages may use different field names, constructor signatures, or omit certain middleware. Run `go build` on every example before committing.
+**Confidence:** HIGH — all 17 examples compiled clean after fixes; verified by `go build ./...` in a local replace-directive module.
+
+### C-014 | 2026-04-12 | docs-writer | docs/architecture · drift
+**Symptom:** `docs/architecture/01-overview.md:15`, `docs/architecture/04-data-flow.md`, `docs/architecture/README.md:72`, and `docs/.redesign/marketing-brief.md:170` reference `docs/beluga_full_layered_architecture.svg` and `docs/beluga_request_lifecycle.svg`. Neither file exists in the working tree — `find docs/ -maxdepth 2 -name "*.svg"` returns nothing. The files were deleted during the DOC-01 rewrite but the markdown references were not updated.
+**Root cause:** No static check scans markdown image references against filesystem state. `doc-check` currently validates code example compilation but not asset existence.
+**Correction:** Either (a) restore the SVGs from git history and retheme to brand palette, or (b) delete the `![](...)` lines and let the adjacent mermaid fences do the work. Recommendation is (b) — the mermaid fence at `01-overview.md:45` is the same 7-layer graph, and `LayerStack.astro` on the marketing homepage already covers the visual. Single-source from markdown.
+**Prevention rule:** Extend `/doc-check` (and/or add a `.claude/hooks/` pre-commit check) to grep `!\[[^]]*\]\(([^)]+\.(svg|png|jpg|gif))\)` across `docs/`, resolve the path relative to the markdown file, and fail when the asset is missing. One-line ripgrep → one-line stat loop. Catches this class of drift permanently.
+**Confidence:** HIGH — four independent references verified, zero SVG files found via Glob.
+
+### C-015 | 2026-04-12 | docs-writer | docs/website/src/lib/mermaid · version drift
+**Symptom:** When proposing a mermaid theme for the Beluga website, the initial draft used v10-era `themeVariables` keys (`arrowheadColor`, `loopTextColor`) and described behaviour as "mermaid 10+". The actual installed version is `mermaid@11.12.3` per `docs/website/package.json`. In v11, `arrowheadColor` was removed (arrowheads inherit `lineColor`) and `loopTextColor` was deprecated in favour of `noteTextColor` inheritance. The keys would compile (because `themeVariables` is typed as `any` in v11) but silently no-op.
+**Root cause:** Same shape as C-013: pattern-matching a library API from memory against its documented shape, without checking the installed version's `*.d.ts` in `node_modules/`. "Mermaid has `arrowheadColor`" is generic, version-free knowledge — but the task was version-specific.
+**Correction:** Before writing configuration or example code for any website library, read `docs/website/node_modules/<pkg>/dist/*.d.ts` (TypeScript) or `package.json` + the installed source (JS). Go equivalent: read the actual package source at `go.mod`-pinned version, not generic package documentation.
+**Prevention rule:** Amend `.claude/rules/website.md` § "Before editing" to include: "Verify library API shape against `node_modules/<pkg>/dist/*.d.ts` at the version pinned in `package.json`. Generic documentation is version-free; your task is not." Matching the existing C-013 rule for Go packages, this closes the same hole on the JS side.
+**Confidence:** HIGH — version verified via `grep '"mermaid"' docs/website/package.json` → `^11.12.3`; type shape verified via `config.type.d.ts`.
+
+### C-017 | 2026-04-12 | docs-writer | docs/website · mermaid diagram divergence
+**Symptom:** Three website pages (`voice/voice-ai.md`, `memory/memory-system.md`, `reference/architecture/packages.md`) each contained a simplified or structurally different mermaid diagram compared to the canonical source in `docs/architecture/`. The website diagrams had been written independently of the architecture docs and had diverged: `voice-ai.md` used a flat `graph LR` with collapsed labels; `memory-system.md` showed a flat 3-node chain without tier subgraphs; `packages.md` used a custom `graph TB` with different subgraph groupings than DOC-18's 7-layer model.
+**Root cause:** Website pages were authored from the architecture docs' *prose* descriptions, not by copying the mermaid fences directly. Each author re-drew the diagram from understanding, producing a structurally valid but non-canonical variant. No automated check enforces "website diagram == architecture source diagram."
+**Correction:** When embedding a diagram designated as canonical (from `docs/.redesign/diagram-inventory.md` or any future inventory), always copy the fence verbatim from the source file — never redraw. If the target page already has a mermaid block for the same concept, replace it; do not add a second block.
+**Prevention rule:** Before inserting a mermaid diagram into a website page, grep the target file for an existing ` ```mermaid ` fence. If one exists, confirm it matches the canonical source. If it differs, replace rather than insert. Add this check to `/doc-check`.
+**Confidence:** HIGH — three independent instances confirmed during diagram-embedding sweep on 2026-04-12. Replacement edits verified by `npx astro build` (0 warnings).
+
+### C-016 | 2026-04-12 | coordinator | retrieval-protocol · docs-only tasks
+**Symptom:** A pure-documentation task (cataloguing 78 mermaid diagrams across 18 architecture docs for website placement) skipped the 3-step retrieval protocol — went directly to grep + Read without first consulting `.wiki/index.md` or running `.claude/hooks/wiki-query.sh`. The stop-hook reviewer flagged this as a retrieval protocol miss.
+**Root cause:** Retrieval protocol is perceived as code-only ("why would I check invariants for a docs task?"). But documentation tasks are the *most* prone to drift because they lack compile-time feedback, and the wiki contains corrections (C-012, C-013) that directly alter the output. In this case, querying the wiki surfaced: (a) `.wiki/architecture/package-map.md` is stale for the observability sweep, meaning the span-hierarchy diagram's target page should cite DOC-14 not the wiki; (b) five diagrams anchor directly to invariants in `.wiki/architecture/invariants.md`, which changes how their captions should be written.
+**Correction:** Retrieval protocol is mandatory for *any* task that touches `docs/architecture/` or references `file:line` anchors, regardless of whether code is being written.
+**Prevention rule:** Amend `.claude/rules/documentation.md` § "Sources to consult before writing" to make the 3-step protocol explicit and ordered: (1) `.wiki/index.md`, (2) `bash .claude/hooks/wiki-query.sh <topic>`, (3) targeted `.wiki/patterns/*.md` or `.wiki/architecture/*.md` files. Only then fall through to grep/Read on `docs/`.
+**Confidence:** HIGH — empirically confirmed: post-hoc wiki query surfaced C-012 and C-013 which each changed specific cells in the output report.

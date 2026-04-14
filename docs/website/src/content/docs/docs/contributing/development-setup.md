@@ -141,7 +141,7 @@ beluga-ai/
 └── docs/           # Documentation and website
 ```
 
-For a detailed breakdown, see the [Architecture documentation](/docs/architecture/packages/).
+For a detailed breakdown, see the [Architecture documentation](/docs/reference/architecture/packages/).
 
 ## Makefile Reference
 

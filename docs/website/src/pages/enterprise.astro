@@ -1,736 +1,476 @@
 ---
 import MarketingLayout from "@/layouts/MarketingLayout.astro";
+import EditorialSection from "@/components/marketing/EditorialSection.astro";
+import CodeProof from "@/components/marketing/CodeProof.astro";
+
+const capabilities = [
+  {
+    label: "01",
+    title: "Access control",
+    desc: "Capability-based RBAC / ABAC, deny by default, per-tenant isolation via core.WithTenant(ctx). JWT validation at every HTTP handler and RPC endpoint.",
+    pkg: "auth/",
+    docHref: "/docs/reference/api/infrastructure/",
+    docLabel: "auth package reference",
+    icon: "key",
+  },
+  {
+    label: "02",
+    title: "Audit trail",
+    desc: "Every agent turn, every tool call, every guard decision logged with run ID and tenant. Audit records are append-only and signed.",
+    pkg: "audit/",
+    docHref: "/docs/reference/api/infrastructure/",
+    docLabel: "audit package reference",
+    icon: "ledger",
+  },
+  {
+    label: "03",
+    title: "Cost tracking",
+    desc: "Token counts, USD attribution, per-team quotas, per-request cost ceilings. Every LLM call emits a cost span. Dashboards and alerts wire to Grafana, Langfuse, or your own backend.",
+    pkg: "cost/",
+    docHref: "/docs/guides/production/observability/",
+    docLabel: "cost + observability guide",
+    icon: "gauge",
+  },
+  {
+    label: "04",
+    title: "Safety pipeline",
+    desc: "Three-stage guard pipeline — Input, Output, Tool — with five guard providers: Lakera, LLM Guard, Guardrails AI, NeMo, Azure Content Safety. Prompt injection, PII detection, moderation, and capability sandboxing.",
+    pkg: "guard/",
+    docHref: "/docs/guides/production/safety-and-guards/",
+    docLabel: "safety and guards guide",
+    icon: "shield",
+  },
+  {
+    label: "05",
+    title: "Crash-durable execution",
+    desc: "Agent runs survive process restarts. The workflow/ package replays from an event log. Temporal is a drop-in backend, plus Inngest, Dapr, NATS, Kafka, or in-process for tests.",
+    pkg: "workflow/",
+    docHref: "/docs/guides/production/workflow-durability/",
+    docLabel: "workflow durability guide",
+    icon: "clockwork",
+  },
+  {
+    label: "06",
+    title: "OTel GenAI observability",
+    desc: "Seventeen packages emit gen_ai.* spans at every boundary. Four exporters shipped: Langfuse, LangSmith, Opik, Arize Phoenix. Works with any OTel-compatible backend.",
+    pkg: "o11y/",
+    docHref: "/docs/guides/production/observability/",
+    docLabel: "observability guide",
+    icon: "eye",
+  },
+];
+
+const enterpriseCode = `// Production wiring — every enterprise concern is middleware
+// on the same interface your dev team already knows.
+base, _ := llm.New("anthropic", llm.Config{Model: "claude-sonnet-4-6"})
+
+enterprise := llm.ApplyMiddleware(base,
+    llm.WithAuth(auth.RequireTenant("finance")),
+    llm.WithAudit(auditSink),
+    llm.WithCostTracking(cost.PerTeam("ingest-team")),
+    llm.WithGuardrails(guard.Pipeline(
+        guard.Input("lakera"),
+        guard.Output("llmguard"),
+        guard.Tool("nemo"),
+    )),
+    llm.WithTracing(),
+    llm.WithRetry(3),
+)`;
 
 const jsonLd = JSON.stringify({
   "@context": "https://schema.org",
   "@type": "WebPage",
-  "name": "Beluga AI for Enterprise",
-  "description": "Enterprise-grade AI agent infrastructure",
-  "url": "https://beluga-ai.org/enterprise/"
+  name: "Enterprise — Beluga AI",
+  description: "Enterprise-grade operational concerns built into the framework, not bolted on.",
 });
 ---
 
 <MarketingLayout
-  title="Enterprise AI Agent Infrastructure"
-  description="Enterprise-grade AI agent infrastructure with security, observability, guardrails, resilience, and durable execution for production teams."
+  title="Enterprise"
+  description="Access control, audit trails, cost tracking, safety pipeline, durable execution, and OTel observability — built into the framework."
   jsonLd={jsonLd}
 >
-  <!-- Block 15.1 — Hero -->
-  <section class="ent-hero">
-    <div class="ent-hero-inner">
-      <h1 class="ent-hero-title">
-        Enterprise-Grade <span class="ent-hero-title-accent">AI Agent Infrastructure</span>
+  <!-- Intro -->
+  <section class="page-intro">
+    <div class="page-intro-frame">
+      <span class="eyebrow">ENTERPRISE</span>
+      <h1 class="page-headline">
+        The concerns that aren't optional at scale.
       </h1>
-      <p class="ent-hero-subtitle">
-        Built for teams that ship to production — with the security, observability, and reliability primitives enterprises require.
+      <p class="page-deck">
+        Beluga is the same open-source framework you use for a prototype,
+        plus six operational capabilities that become load-bearing the
+        moment agents leave a single laptop. No separate paid edition.
+        No feature-flagged fork. The code below is the code that ships.
+      </p>
+      <div class="ent-cta-top">
+        <a href="#inquiry" class="btn btn-primary">File an enterprise inquiry</a>
+        <a href="https://github.com/lookatitude/beluga-ai" class="btn btn-ghost" rel="noopener">View the repo →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Capabilities -->
+  <EditorialSection
+    eyebrow="SIX CAPABILITIES"
+    headline="Mapped to real packages."
+    deck="Each capability below is a real Go package in the repo, not a roadmap bullet. The doc link points to the architecture document that explains how it fits the seven-layer model."
+  >
+    <div class="cap-grid">
+      {capabilities.map((c) => (
+        <article class="cap-row">
+          <span class="cap-label">{c.label}</span>
+          <div class="cap-icon" aria-hidden="true">
+            {c.icon === "key" && (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="8" cy="14" r="4" />
+                <path d="M11 11l9-9" />
+                <path d="M16 6l3 3" />
+              </svg>
+            )}
+            {c.icon === "ledger" && (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 4h11a2 2 0 012 2v14H7a2 2 0 01-2-2V4z" />
+                <path d="M9 8h6M9 12h6M9 16h4" />
+              </svg>
+            )}
+            {c.icon === "gauge" && (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 14a8 8 0 1116 0" />
+                <path d="M12 14l4-4" />
+                <circle cx="12" cy="14" r="1" fill="currentColor" />
+              </svg>
+            )}
+            {c.icon === "shield" && (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3l8 3v6c0 4.5-3.5 8.5-8 9-4.5-.5-8-4.5-8-9V6l8-3z" />
+                <path d="M9 12l2 2 4-4" />
+              </svg>
+            )}
+            {c.icon === "clockwork" && (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" />
+                <path d="M3 12h2M19 12h2M12 3v2M12 19v2" />
+              </svg>
+            )}
+            {c.icon === "eye" && (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            )}
+          </div>
+          <div class="cap-body">
+            <h3 class="cap-title">{c.title}</h3>
+            <p class="cap-desc">{c.desc}</p>
+            <div class="cap-meta">
+              <code class="cap-pkg">{c.pkg}</code>
+              <a class="cap-doc" href={c.docHref}>{c.docLabel} →</a>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  </EditorialSection>
+
+  <!-- Code proof -->
+  <EditorialSection
+    eyebrow="WIRED TOGETHER"
+    headline="One file. Six concerns."
+    deck="All six capabilities compose as middleware on the same Model interface your developers already use for LLM calls in tests. Enterprise is a deployment configuration, not an architecture migration."
+    layout="split"
+    bleed
+  >
+    <CodeProof
+      code={enterpriseCode}
+      lang="go"
+      title="production/llm.go"
+      caption="Read outside-in: auth, audit, cost, guardrails, tracing, retry — every concern is a function application on the same interface."
+      cite={{ label: "Extensibility — Ring 4 · Middleware", href: "/docs/concepts/extensibility/" }}
+    />
+  </EditorialSection>
+
+  <!-- Scenario -->
+  <EditorialSection
+    eyebrow="THE SHAPE OF THE PROBLEM"
+    headline="A platform team standardising agent tooling."
+  >
+    <div class="scenario">
+      <p>
+        A platform team at a fintech is consolidating agent tooling across
+        40 services. They need a framework where every agent emits the same
+        OTel spans, every LLM call is cost-attributed to a team, every tool
+        call passes through the same guard pipeline, and no agent run
+        silently drops state on a pod restart. They need audit logs that
+        satisfy compliance review, not just developer debugging.
+      </p>
+      <p>
+        They evaluate Beluga because it ships all six of those concerns as
+        first-class packages — not because a vendor pitch deck promises them.
+        Every claim on this page is verifiable by reading the file it
+        references. If you are in a similar situation, the inquiry form
+        below is the starting point.
       </p>
     </div>
-  </section>
+  </EditorialSection>
 
-  <!-- Block 15.2 — Enterprise Capabilities Grid -->
-  <section class="ent-section">
-    <div class="ent-section-inner">
-      <div class="ent-section-header">
-        <h2 class="ent-section-title">Enterprise <span class="ent-title-muted">capabilities</span></h2>
-      </div>
+  <!-- Inquiry -->
+  <section id="inquiry" class="ent-inquiry">
+    <div class="page-intro-frame">
+      <span class="eyebrow">ENTERPRISE INQUIRY</span>
+      <h2 class="font-display">What you get when you file.</h2>
+      <p class="ent-inquiry-body">
+        We do not have a sales team. Enterprise inquiries route to a
+        GitHub issue template, reviewed by a core maintainer within three
+        business days. We will schedule a one-hour architecture call, a
+        deployment review, and — if it's a fit — roadmap alignment. No
+        proposal decks, no procurement theatre.
+      </p>
 
-      <div class="ent-grid six-cards">
-        <div class="ent-cap-card">
-          <div class="ent-cap-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              <circle cx="12" cy="16" r="1"/>
-            </svg>
+      <ul class="ent-ladder">
+        <li>
+          <span class="ent-ladder-step">01</span>
+          <div>
+            <strong>Architecture call — 60 min</strong>
+            <span>We walk your team through the seven layers and map them to your constraints.</span>
           </div>
-          <h3 class="ent-cap-title">Security & Auth</h3>
-          <p class="ent-cap-desc">RBAC/ABAC access control, capability-based sandboxing, default-deny network policies, and per-agent resource limits. Every action is auditable.</p>
-        </div>
-
-        <div class="ent-cap-card">
-          <div class="ent-cap-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
+        </li>
+        <li>
+          <span class="ent-ladder-step">02</span>
+          <div>
+            <strong>Deployment review — 60 min</strong>
+            <span>Docker / K8s / Temporal / embedded — we pick the right target for your ops profile.</span>
           </div>
-          <h3 class="ent-cap-title">Observability</h3>
-          <p class="ent-cap-desc">OTel GenAI conventions at every boundary. Token counting, cost tracking, structured logging, and health checks. Works with Datadog, Grafana, Jaeger, Splunk.</p>
-        </div>
-
-        <div class="ent-cap-card">
-          <div class="ent-cap-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
+        </li>
+        <li>
+          <span class="ent-ladder-step">03</span>
+          <div>
+            <strong>Roadmap alignment — ongoing</strong>
+            <span>If your blockers are on the roadmap, we commit to a timeline. If they're not, we say so.</span>
           </div>
-          <h3 class="ent-cap-title">Guardrails</h3>
-          <p class="ent-cap-desc">Three-stage safety pipeline: input → output → tool guards. Prompt injection detection, PII filtering. NeMo and Guardrails AI adapters included.</p>
-        </div>
+        </li>
+      </ul>
 
-        <div class="ent-cap-card">
-          <div class="ent-cap-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
-          </div>
-          <h3 class="ent-cap-title">Resilience</h3>
-          <p class="ent-cap-desc">Circuit breakers, hedge requests, adaptive retry, and provider-aware rate limiting. Your agents stay up when providers go down.</p>
-        </div>
-
-        <div class="ent-cap-card">
-          <div class="ent-cap-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-            </svg>
-          </div>
-          <h3 class="ent-cap-title">Durable Execution</h3>
-          <p class="ent-cap-desc">Event-log-backed workflows surviving crashes, rate limits, and human-in-the-loop delays. Individual activities are independently retryable.</p>
-        </div>
-
-        <div class="ent-cap-card">
-          <div class="ent-cap-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-          </div>
-          <h3 class="ent-cap-title">Multi-Tenancy</h3>
-          <p class="ent-cap-desc">context.Context-based tenant isolation across all packages. No shared mutable state. Clean separation from request to response.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Block 15.2b — Cost, Audit & Deployment -->
-  <section class="ent-section">
-    <div class="ent-section-inner">
-      <div class="ent-section-header">
-        <h2 class="ent-section-title">Built-in <span class="ent-title-muted">operational controls</span></h2>
-      </div>
-
-      <div class="ent-grid six-cards">
-        <div class="ent-cap-card">
-          <div class="ent-cap-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="1" x2="12" y2="23"/>
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-            </svg>
-          </div>
-          <h3 class="ent-cap-title">Cost Tracking</h3>
-          <p class="ent-cap-desc">The <code>cost/</code> package provides a <code>Tracker</code> interface for per-request, per-tenant, and per-session spend. Enforce hard and soft budget limits, and receive callbacks before limits are breached.</p>
-        </div>
-
-        <div class="ent-cap-card">
-          <div class="ent-cap-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-            </svg>
-          </div>
-          <h3 class="ent-cap-title">Audit Logging</h3>
-          <p class="ent-cap-desc">The <code>audit/</code> package produces structured entries for every LLM call, tool execution, and agent handoff. Query by tenant, time range, or event type for compliance and incident investigation.</p>
-        </div>
-
-        <div class="ent-cap-card">
-          <div class="ent-cap-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
-              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
-              <line x1="6" y1="6" x2="6.01" y2="6"/>
-              <line x1="6" y1="18" x2="6.01" y2="18"/>
-            </svg>
-          </div>
-          <h3 class="ent-cap-title">Deployment Utilities</h3>
-          <p class="ent-cap-desc">The <code>deploy/</code> package generates Dockerfile and Docker Compose configurations from agent definitions, and exposes <code>/healthz</code> and <code>/readyz</code> endpoints automatically.</p>
-        </div>
-
-        <div class="ent-cap-card">
-          <div class="ent-cap-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="2"/>
-              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-            </svg>
-          </div>
-          <h3 class="ent-cap-title">Kubernetes Operator</h3>
-          <p class="ent-cap-desc">CRD-native operator with <code>Agent</code>, <code>Team</code>, and <code>ModelConfig</code> custom resources. A Helm chart is included for straightforward cluster installation and upgrades.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Block 15.3 — Deployment Story -->
-  <section class="ent-section">
-    <div class="ent-section-inner">
-      <div class="ent-section-header">
-        <h2 class="ent-section-title">Ship a single binary. <span class="ent-title-muted">Sleep well.</span></h2>
-      </div>
-
-      <div class="ent-deploy-grid">
-        <div class="ent-deploy-item">
-          <div class="ent-deploy-check">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M4 10.5L8 14.5L16 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div class="ent-deploy-text">
-            <h3 class="ent-deploy-title">Single binary, no runtime dependencies</h3>
-            <p class="ent-deploy-desc">No Python runtime, no pip dependencies, no virtual environments. One binary is your entire deployment artifact.</p>
-          </div>
-        </div>
-
-        <div class="ent-deploy-item">
-          <div class="ent-deploy-check">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M4 10.5L8 14.5L16 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div class="ent-deploy-text">
-            <h3 class="ent-deploy-title">Tiny container images</h3>
-            <p class="ent-deploy-desc">Container images from ~15MB using scratch base. Fast pulls, minimal attack surface.</p>
-          </div>
-        </div>
-
-        <div class="ent-deploy-item">
-          <div class="ent-deploy-check">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M4 10.5L8 14.5L16 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div class="ent-deploy-text">
-            <h3 class="ent-deploy-title">Cross-compilation for any architecture</h3>
-            <p class="ent-deploy-desc">Build for linux/amd64, linux/arm64, darwin, windows, or any Go-supported target from a single machine.</p>
-          </div>
-        </div>
-
-        <div class="ent-deploy-item">
-          <div class="ent-deploy-check">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M4 10.5L8 14.5L16 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div class="ent-deploy-text">
-            <h3 class="ent-deploy-title">Kubernetes-native</h3>
-            <p class="ent-deploy-desc">Health checks, graceful shutdown, and lifecycle management built in. CRD-native operator, Helm chart, and <code>deploy/</code> utilities for Dockerfile and Compose generation included.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Block 15.4 — Compliance & Licensing -->
-  <section class="ent-section">
-    <div class="ent-section-inner">
-      <div class="ent-section-header">
-        <h2 class="ent-section-title">Open source. <span class="ent-title-muted">No surprises.</span></h2>
-      </div>
-
-      <div class="ent-compliance-grid">
-        <div class="ent-compliance-card">
-          <div class="ent-compliance-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-              <polyline points="10 9 9 9 8 9"/>
-            </svg>
-          </div>
-          <h3 class="ent-compliance-title">MIT License</h3>
-          <p class="ent-compliance-desc">No commercial restrictions, no copyleft. Use it however you need.</p>
-        </div>
-
-        <div class="ent-compliance-card">
-          <div class="ent-compliance-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </div>
-          <h3 class="ent-compliance-title">No telemetry</h3>
-          <p class="ent-compliance-desc">No phone-home, no cloud lock-in. Your deployment is fully yours.</p>
-        </div>
-
-        <div class="ent-compliance-card">
-          <div class="ent-compliance-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
-              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
-              <line x1="6" y1="6" x2="6.01" y2="6"/>
-              <line x1="6" y1="18" x2="6.01" y2="18"/>
-            </svg>
-          </div>
-          <h3 class="ent-compliance-title">Fully self-hosted</h3>
-          <p class="ent-compliance-desc">Data never leaves your infrastructure. Run on-prem or in your own cloud.</p>
-        </div>
-
-        <div class="ent-compliance-card">
-          <div class="ent-compliance-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-              <polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
-          </div>
-          <h3 class="ent-compliance-title">Compliance-ready</h3>
-          <p class="ent-compliance-desc">Compatible with HIPAA, SOC 2, GDPR workflows (depends on provider selection).</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Block 15.5 — CTAs -->
-  <section class="ent-cta">
-    <div class="ent-section-inner">
-      <h2 class="ent-cta-title">Ready to evaluate?</h2>
-      <p class="ent-cta-desc">Whether you are exploring Beluga AI for your team or want to understand the architecture, we have you covered.</p>
-      <div class="ent-cta-actions">
-        <a href="https://github.com/lookatitude/beluga-ai/discussions" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-          Evaluating for your team?
-          <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
-            <path d="M3.5 1H11v7.5M11 1L1 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
+      <div class="ent-inquiry-cta">
+        <a
+          href="https://github.com/lookatitude/beluga-ai/issues/new?template=enterprise-inquiry.md"
+          class="btn btn-primary"
+          rel="noopener"
+        >
+          File an enterprise inquiry on GitHub
         </a>
-        <a href="/docs/architecture/" class="btn btn-outline-primary">
-          Read the Architecture Overview
-          <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
-            <path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </a>
+        <a href="/docs/concepts/" class="btn btn-ghost">Read the concepts first →</a>
       </div>
     </div>
   </section>
 </MarketingLayout>
 
 <style>
-  /* ── Hero ── */
-  .ent-hero {
-    padding: 8rem 1.5rem 4rem;
-    text-align: center;
-  }
+  /* .page-intro / .page-intro-frame / .page-headline / .page-deck
+     and .eyebrow live in components.css. */
 
-  .ent-hero-inner {
-    max-width: 860px;
-    margin: 0 auto;
-  }
-
-  .ent-hero-title {
-    font-size: clamp(2.5rem, 7vw, 4.5rem);
-    font-weight: 800;
-    line-height: 1.05;
-    letter-spacing: -0.03em;
-    margin: 0 0 1.5rem;
-    color: var(--color-light, #f6f6f6);
-  }
-
-  :root[data-theme="light"] .ent-hero-title {
-    color: var(--color-lightmode-light, #181818);
-  }
-
-  .ent-hero-title-accent {
-    background: var(--color-primary-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .ent-hero-subtitle {
-    font-size: clamp(1.0625rem, 2.2vw, 1.3125rem);
-    color: var(--color-text, #999);
-    max-width: 42rem;
-    margin: 0 auto;
-    line-height: 1.65;
-  }
-
-  :root[data-theme="light"] .ent-hero-subtitle {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
-  }
-
-  /* ── Shared section styles ── */
-  .ent-section {
-    padding: 4rem 1.5rem;
-  }
-
-  .ent-section-inner {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .ent-section-header {
-    text-align: center;
-    margin-bottom: 3rem;
-  }
-
-  .ent-section-title {
-    font-size: clamp(2rem, 4.5vw, 3.5rem);
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
-    margin: 0;
-    color: var(--color-light, #f6f6f6);
-  }
-
-  :root[data-theme="light"] .ent-section-title {
-    color: var(--color-lightmode-light, #181818);
-  }
-
-  .ent-title-muted {
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 40%, transparent);
-  }
-
-  :root[data-theme="light"] .ent-title-muted {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 40%, transparent);
-  }
-
-  /* ── Block 15.2: Capabilities Grid ── */
-  .ent-grid.six-cards {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: 1fr;
-  }
-
-  @media (min-width: 640px) {
-    .ent-grid.six-cards {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .ent-grid.six-cards {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-
-  .ent-cap-card {
-    padding: 1.75rem;
-    border-radius: 1rem;
-    background: color-mix(in srgb, var(--color-dark, #151515) 80%, transparent);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
-    position: relative;
-    transition: transform 0.3s ease, border-color 0.3s ease;
-  }
-
-  .ent-cap-card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    padding: 1px;
-    background: var(--color-primary-gradient);
-    border-radius: inherit;
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    -webkit-mask-composite: xor;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  .ent-cap-card:hover::before {
-    opacity: 0.6;
-  }
-
-  .ent-cap-card:hover {
-    transform: scale(1.02);
-  }
-
-  :root[data-theme="light"] .ent-cap-card {
-    background: color-mix(in srgb, var(--color-lightmode-dark, #f7f7f7) 80%, transparent);
-    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
-  }
-
-  .ent-cap-icon {
-    width: 44px;
-    height: 44px;
+  .ent-cta-top {
     display: flex;
+    gap: 1.25rem;
     align-items: center;
-    justify-content: center;
-    border-radius: 0.75rem;
-    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-    color: var(--color-primary, #5CA3CA);
-    margin-bottom: 1rem;
-  }
-
-  .ent-cap-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--color-light, #f6f6f6);
-    margin: 0 0 0.5rem;
-    line-height: 1.3;
-  }
-
-  :root[data-theme="light"] .ent-cap-title {
-    color: var(--color-lightmode-light, #181818);
-  }
-
-  .ent-cap-desc {
-    font-size: 0.875rem;
-    color: var(--color-text, #999);
-    margin: 0;
-    line-height: 1.65;
-  }
-
-  :root[data-theme="light"] .ent-cap-desc {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
-  }
-
-  /* ── Block 15.3: Deployment Story ── */
-  .ent-deploy-grid {
-    max-width: 720px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .ent-deploy-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1.25rem 1.5rem;
-    border-radius: 1rem;
-    background: color-mix(in srgb, var(--color-dark, #151515) 80%, transparent);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
-    transition: transform 0.2s ease, border-color 0.2s ease;
-  }
-
-  .ent-deploy-item:hover {
-    transform: translateX(4px);
-    border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
-  }
-
-  :root[data-theme="light"] .ent-deploy-item {
-    background: color-mix(in srgb, var(--color-lightmode-dark, #f7f7f7) 80%, transparent);
-    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
-  }
-
-  .ent-deploy-check {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-    color: var(--color-primary, #5CA3CA);
-    margin-top: 2px;
-  }
-
-  .ent-deploy-text {
-    flex: 1;
-  }
-
-  .ent-deploy-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-light, #f6f6f6);
-    margin: 0 0 0.25rem;
-    line-height: 1.4;
-  }
-
-  :root[data-theme="light"] .ent-deploy-title {
-    color: var(--color-lightmode-light, #181818);
-  }
-
-  .ent-deploy-desc {
-    font-size: 0.875rem;
-    color: var(--color-text, #999);
-    margin: 0;
-    line-height: 1.6;
-  }
-
-  :root[data-theme="light"] .ent-deploy-desc {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
-  }
-
-  /* ── Block 15.4: Compliance ── */
-  .ent-compliance-grid {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: 1fr;
-  }
-
-  @media (min-width: 640px) {
-    .ent-compliance-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .ent-compliance-grid {
-      grid-template-columns: repeat(4, 1fr);
-    }
-  }
-
-  .ent-compliance-card {
-    padding: 1.5rem;
-    border-radius: 1rem;
-    background: var(--color-dark, #151515);
-    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
-    text-align: center;
-    position: relative;
-    transition: transform 0.3s ease;
-  }
-
-  .ent-compliance-card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    padding: 1px;
-    background: var(--color-primary-gradient);
-    border-radius: inherit;
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    -webkit-mask-composite: xor;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-  }
-
-  .ent-compliance-card:hover::before {
-    opacity: 1;
-  }
-
-  .ent-compliance-card:hover {
-    box-shadow: inset 0 0 30px color-mix(in srgb, var(--color-primary) 5%, transparent);
-  }
-
-  :root[data-theme="light"] .ent-compliance-card {
-    background: var(--color-lightmode-dark, #f7f7f7);
-    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
-  }
-
-  .ent-compliance-icon {
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0.75rem;
-    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-    color: var(--color-primary, #5CA3CA);
-    margin: 0 auto 1rem;
-  }
-
-  .ent-compliance-title {
-    font-size: 1.0625rem;
-    font-weight: 600;
-    color: var(--color-light, #f6f6f6);
-    margin: 0 0 0.5rem;
-    line-height: 1.3;
-  }
-
-  :root[data-theme="light"] .ent-compliance-title {
-    color: var(--color-lightmode-light, #181818);
-  }
-
-  .ent-compliance-desc {
-    font-size: 0.8125rem;
-    color: var(--color-text, #999);
-    margin: 0;
-    line-height: 1.6;
-  }
-
-  :root[data-theme="light"] .ent-compliance-desc {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
-  }
-
-  /* ── Block 15.5: CTA ── */
-  .ent-cta {
-    padding: 6rem 1.5rem;
-    text-align: center;
-  }
-
-  .ent-cta-title {
-    font-size: clamp(2rem, 4vw, 3.5rem);
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-    margin: 0 0 0.75rem;
-    background: var(--color-primary-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .ent-cta-desc {
-    font-size: 1.125rem;
-    color: var(--color-text, #999);
-    margin: 0 0 2rem;
-    max-width: 36rem;
-    margin-left: auto;
-    margin-right: auto;
-    line-height: 1.6;
-  }
-
-  :root[data-theme="light"] .ent-cta-desc {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 60%, transparent);
-  }
-
-  .ent-cta-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
+    margin-top: 0.75rem;
     flex-wrap: wrap;
   }
 
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    font-size: 0.9375rem;
+  /* Capability rows — not cards */
+  .cap-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .cap-row {
+    display: grid;
+    grid-template-columns: 2.75rem 2.5rem 1fr;
+    gap: 1.25rem;
+    padding-block: 1.75rem;
+    border-top: 1px solid var(--sl-color-hairline);
+  }
+  .cap-icon {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding-top: 0.125rem;
+    color: var(--brand-300);
+    transition: color 0.15s ease;
+  }
+  :global([data-theme="light"]) .cap-icon {
+    color: oklch(0.42 0.11 240);
+  }
+  .cap-row:hover .cap-icon {
+    color: var(--brand-200);
+  }
+  @media (max-width: 640px) {
+    .cap-row {
+      grid-template-columns: 2.25rem 1fr;
+      gap: 0.875rem;
+    }
+    .cap-icon {
+      grid-column: 1 / 3;
+      grid-row: 1;
+      padding-top: 0;
+    }
+  }
+  .cap-row:last-child {
+    border-bottom: 1px solid var(--sl-color-hairline);
+  }
+  .cap-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    color: var(--brand-300);
+    padding-top: 0.25rem;
+  }
+  :global([data-theme="light"]) .cap-label {
+    color: oklch(0.45 0.10 240);
+  }
+
+  .cap-title {
+    font-family: var(--font-sans);
+    font-size: var(--text-h3);
     font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--sl-color-white);
+    margin: 0 0 0.5rem;
+  }
+  .cap-desc {
+    font-size: var(--text-body);
+    line-height: 1.6;
+    color: var(--sl-color-gray-2);
+    margin: 0 0 0.75rem;
+    max-width: 68ch;
+  }
+  .cap-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    flex-wrap: wrap;
+  }
+  .cap-pkg {
+    color: var(--brand-200);
+    font-weight: 500;
+    background: color-mix(in oklch, var(--brand-500) 10%, transparent);
+    padding: 0.15em 0.4em;
+    border-radius: 0.2em;
+    border: 1px solid color-mix(in oklch, var(--brand-500) 24%, transparent);
+  }
+  .cap-doc {
+    color: var(--sl-color-gray-3);
     text-decoration: none;
-    border-radius: 0.75rem;
-    transition: transform 0.15s ease, filter 0.15s ease;
-    cursor: pointer;
-    border: none;
-    font-family: inherit;
+    border-bottom: 1px solid transparent;
+    transition: color 0.15s ease, border-color 0.2s ease;
+  }
+  .cap-doc:hover {
+    color: var(--brand-200);
+    border-bottom-color: var(--brand-200);
   }
 
-  .btn:hover {
-    transform: scale(1.03);
+  /* Scenario */
+  .scenario {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(1.25rem, 3vw, 2.5rem);
+  }
+  @media (min-width: 900px) {
+    .scenario { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  .scenario p {
+    font-size: var(--text-prose);
+    line-height: 1.65;
+    color: var(--sl-color-gray-2);
+    margin: 0;
   }
 
-  .btn-primary {
-    background: var(--color-primary-gradient);
-    color: #fff;
+  /* Inquiry block */
+  .ent-inquiry {
+    padding-block: clamp(4rem, 9vw, 7rem);
+    border-top: 1px solid var(--sl-color-hairline);
+    background: var(--surface-1);
+  }
+  :global([data-theme="light"]) .ent-inquiry {
+    background: color-mix(in oklch, var(--paper-100) 70%, var(--paper-50));
+  }
+  .ent-inquiry h2 {
+    font-family: var(--font-sans);
+    font-size: var(--text-h1);
+    line-height: var(--lh-h1);
+    letter-spacing: var(--track-h1);
+    font-weight: 500;
+    color: var(--sl-color-white);
+    margin: 0.25rem 0 0;
+    max-width: 18ch;
+    text-wrap: balance;
+  }
+  .ent-inquiry-body {
+    font-size: var(--text-prose);
+    line-height: 1.6;
+    color: var(--sl-color-gray-2);
+    max-width: 64ch;
+    margin: 0;
   }
 
-  .btn-primary:hover {
-    filter: brightness(1.1);
+  .ent-ladder {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 64ch;
+  }
+  .ent-ladder li {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    gap: 1rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.375rem;
+    background: color-mix(in oklch, var(--ink-950) 40%, transparent);
+  }
+  :global([data-theme="light"]) .ent-ladder li {
+    background: var(--paper-50);
+  }
+  .ent-ladder-step {
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    color: var(--brand-300);
+    padding-top: 0.15rem;
+  }
+  :global([data-theme="light"]) .ent-ladder-step {
+    color: oklch(0.45 0.10 240);
+  }
+  .ent-ladder strong {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    font-weight: 600;
+    color: var(--sl-color-white);
+    letter-spacing: -0.01em;
+    margin-bottom: 0.25rem;
+  }
+  .ent-ladder span {
+    font-size: var(--text-body);
+    line-height: 1.5;
+    color: var(--sl-color-gray-2);
   }
 
-  .btn-outline-primary {
-    position: relative;
-    background: transparent;
-    color: var(--color-light, #f6f6f6);
+  .ent-inquiry-cta {
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
   }
 
-  .btn-outline-primary::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    padding: 2px;
-    background: var(--color-primary-gradient);
-    border-radius: inherit;
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    -webkit-mask-composite: xor;
-  }
-
-  .btn-outline-primary:hover {
-    background: var(--color-primary-gradient);
-    color: #fff;
-  }
-
-  :root[data-theme="light"] .btn-outline-primary {
-    color: var(--color-lightmode-light, #181818);
-  }
+  /* .btn / .btn-primary / .btn-ghost live in components.css */
 </style>

@@ -54,6 +54,23 @@ func main() {
 
 ## Distributed Tracing
 
+```mermaid
+graph TD
+  Root[agent.invoke root span]
+  Root --> Plan[planner.plan]
+  Root --> LLM[llm.generate]
+  LLM --> LLMReq[llm.request]
+  Root --> ToolSpan[tool.execute]
+  ToolSpan --> ToolCall[tool.http.fetch]
+  Root --> MemLoad[memory.load]
+  MemLoad --> VecSearch[vector.search]
+  Root --> MemSave[memory.save]
+  Root --> Guard[guard.pipeline]
+  Guard --> GIn[guard.input]
+  Guard --> GTool[guard.tool]
+  Guard --> GOut[guard.output]
+```
+
 Distributed tracing captures the full lifecycle of a request as it flows through agents, LLM calls, tool executions, and guard validations. Each operation creates a span, and spans are linked through parent-child relationships to form a trace tree. This structure lets you see not just that a request failed, but exactly where in the pipeline it failed and what happened before the failure.
 
 ### Creating Spans

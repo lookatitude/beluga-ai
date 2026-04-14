@@ -1,55 +1,79 @@
 ---
 import MarketingLayout from "@/layouts/MarketingLayout.astro";
-import HomepageHero from "@/components/marketing/HomepageHero.astro";
-import ProblemSolution from "@/components/marketing/ProblemSolution.astro";
-import ArchitectureDiagram from "@/components/marketing/ArchitectureDiagram.astro";
-import CodeShowcase from "@/components/marketing/CodeShowcase.astro";
-import ProviderGrid from "@/components/marketing/ProviderGrid.astro";
+import EditorialSection from "@/components/marketing/EditorialSection.astro";
+import CodeProof from "@/components/marketing/CodeProof.astro";
+import LayerStack from "@/components/marketing/LayerStack.astro";
 
-const capabilities = [
-  {
-    title: "Agent Runtime & Reasoning",
-    href: "/features/agents/",
-    description: "Build agents with pluggable reasoning — ReAct, Tree-of-Thought, LATS, Reflexion, and more. Handoffs-as-tools enable multi-agent collaboration with zero boilerplate.",
-    icon: "agent",
-  },
-  {
-    title: "LLM Abstraction & Routing",
-    href: "/features/llm/",
-    description: "Unified ChatModel interface across 22+ providers with intelligent routing, structured output, context window management, and provider-aware rate limiting.",
-    icon: "llm",
-  },
-  {
-    title: "RAG Pipeline",
-    href: "/features/rag/",
-    description: "Hybrid retrieval combining dense vectors, BM25, and graph traversal with RRF. Advanced strategies: CRAG, Adaptive RAG, HyDE, GraphRAG.",
-    icon: "rag",
-  },
-  {
-    title: "Voice Pipeline",
-    href: "/features/voice/",
-    description: "Frame-based STT to LLM to TTS processing with sub-800ms latency. Speech-to-speech modes, Silero VAD, semantic turn detection, WebRTC/LiveKit transports.",
-    icon: "voice",
-  },
-  {
-    title: "Guardrails & Safety",
-    href: "/features/guardrails/",
-    description: "Three-stage guard pipeline with prompt injection detection, PII filtering, and capability-based sandboxing with default-deny policies.",
-    icon: "guard",
-  },
-  {
-    title: "Protocols & Interop",
-    href: "/features/protocols/",
-    description: "First-class MCP server/client for tool ecosystems and A2A for agent-to-agent communication. REST, SSE, gRPC, and WebSocket transports.",
-    icon: "protocol",
-  },
-];
+const heroCode = `import (
+    _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
+    "github.com/lookatitude/beluga-ai/llm"
+)
 
-const stats = [
-  { value: "22+", label: "LLM Providers", footnote: "OpenAI, Anthropic, Gemini, Ollama, Bedrock, Groq..." },
-  { value: "157", label: "Packages", footnote: "Covering every layer of agent development" },
-  { value: "2,885", label: "Tests", footnote: "Production-grade test coverage" },
-  { value: "108", label: "Integrations", footnote: "Vector stores, embeddings, voice, tools, infra" },
+model, _ := llm.New("anthropic", llm.Config{Model: "claude-sonnet-4-6"})
+
+stream, _ := model.Stream(ctx, []schema.Message{
+    {Role: schema.RoleUser, Content: "explain iter.Seq2 in one sentence"},
+})
+
+for chunk, err := range stream.Range {
+    if err != nil { break }
+    fmt.Print(chunk.Content)
+}`;
+
+const middlewareCode = `base, _ := llm.New("anthropic", llm.Config{})
+
+// Four lines compose guardrails, tracing, rate limiting, and retry
+// around the same Model instance. Middleware is func(T) T — nothing
+// more, nothing less.
+model := llm.ApplyMiddleware(base,
+    llm.WithGuardrails(guardPipeline),
+    llm.WithTracing(),
+    llm.WithRateLimit(rpm, tpm),
+    llm.WithRetry(3),
+)`;
+
+const plannerCode = `// Swap reasoning strategies with one line.
+// Eight planners share the same interface, from ReAct to LATS.
+agent, _ := agent.New(ctx,
+    agent.WithLLM(model),
+    agent.WithPlanner("lats"),   // was "react"
+    agent.WithTools(tools...),
+)`;
+
+const providerCode = `// 110 providers across 19 categories. Every provider
+// registers itself in init(). Import for side-effect, and
+// call <pkg>.New — middleware, hooks, and tracing attach.
+import (
+    _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
+    _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/pgvector"
+    _ "github.com/lookatitude/beluga-ai/voice/stt/providers/deepgram"
+    _ "github.com/lookatitude/beluga-ai/workflow/providers/temporal"
+)`;
+
+const workflowCode = `import (
+    "github.com/lookatitude/beluga-ai/workflow"
+    _ "github.com/lookatitude/beluga-ai/workflow/providers/temporal"
+)
+
+store, _ := workflow.New("temporal", workflow.Config{
+    Endpoint: "temporal:7233",
+})
+
+// Agents survive restarts. The workflow store replays from
+// an event log — no application-level checkpointing.
+wf, _ := store.Resume(ctx, runID)`;
+
+const providerRows = [
+  ["LLM", "22 providers", "anthropic · openai · bedrock · google · groq · cohere · mistral · deepseek · xai · openrouter · ollama · fireworks · together · perplexity · azure · cerebras · huggingface · qwen · llama · sambanova · bifrost · litellm"],
+  ["Vector stores", "13 providers", "pgvector · pinecone · qdrant · weaviate · milvus · chroma · redis · elasticsearch · mongodb · vespa · turbopuffer · sqlitevec · inmemory"],
+  ["Embedding", "9 providers", "openai · cohere · google · jina · voyage · mistral · sentence-transformers · ollama · inmemory"],
+  ["Memory stores", "8 providers", "postgres · redis · mongodb · sqlite · dragonfly · neo4j · memgraph · inmemory"],
+  ["Document loaders", "8 providers", "gdrive · github · notion · confluence · s3/gcs/azure · firecrawl · docling · unstructured"],
+  ["STT · TTS · S2S", "16 providers", "deepgram · whisper · assemblyai · gladia · elevenlabs (stt+tts) · groq (stt+tts) · cartesia · fish · lmnt · playht · smallest · openai-realtime · gemini-live · amazon-nova"],
+  ["Voice transport · VAD", "5 providers", "livekit · daily · pipecat · silero · webrtc"],
+  ["Workflow engines", "6 providers", "temporal · inngest · dapr · kafka · nats · inmemory"],
+  ["Guard", "5 providers", "lakera · llmguard · guardrailsai · nemo · azuresafety"],
+  ["Observability exporters", "4 providers", "langfuse · langsmith · opik · phoenix"],
 ];
 
 const jsonLd = JSON.stringify({
@@ -57,764 +81,552 @@ const jsonLd = JSON.stringify({
   "@graph": [
     {
       "@type": "WebSite",
-      "name": "Beluga AI",
-      "url": "https://beluga-ai.org",
-      "description": "Build production-ready AI agents in Go"
+      name: "Beluga AI",
+      url: "https://beluga-ai.org",
+      description: "The Go-native agent framework for production.",
     },
     {
       "@type": "SoftwareApplication",
-      "name": "Beluga AI",
-      "applicationCategory": "DeveloperApplication",
-      "operatingSystem": "Cross-platform",
-      "programmingLanguage": "Go",
-      "license": "https://opensource.org/licenses/MIT",
-      "url": "https://beluga-ai.org",
-      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
-    }
-  ]
+      name: "Beluga AI",
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "Cross-platform",
+      programmingLanguage: "Go",
+      license: "https://opensource.org/licenses/MIT",
+      url: "https://beluga-ai.org",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    },
+  ],
 });
 ---
 
 <MarketingLayout
   title="Beluga AI"
-  description="Build production-ready AI agents in Go with Beluga AI. Streaming-first design, 22+ LLM providers, RAG, voice AI, and enterprise-grade infrastructure."
+  description="The Go-native agent framework for production. Streaming via iter.Seq2, OTel at every boundary, crash-durable execution, 110 providers."
   jsonLd={jsonLd}
 >
-
-  <!-- Block 1.1 — Hero -->
-  <HomepageHero />
-
-  <!-- Block 1.2 — Social Proof Bar -->
-  <section class="sp-section" aria-label="Project statistics">
-    <div class="sp-inner">
-      {stats.map((stat) => (
-        <div class="sp-card">
-          <span class="sp-value">{stat.value}</span>
-          <span class="sp-label">{stat.label}</span>
-          <span class="sp-footnote">{stat.footnote}</span>
-        </div>
-      ))}
-    </div>
-  </section>
-
-  <!-- Block 1.3 — Problem / Solution -->
-  <ProblemSolution />
-
-  <!-- Block 1.4 — Core Capabilities Grid -->
-  <section class="cap-section">
-    <div class="cap-inner">
-      <div class="cap-header">
-        <h2 class="cap-heading">
-          Core <span class="cap-heading-muted">capabilities</span>
-        </h2>
-        <p class="cap-subtitle">Everything you need to build, deploy, and operate agentic AI systems.</p>
-      </div>
-
-      <div class="cap-grid">
-        {capabilities.map((cap) => (
-          <a href={cap.href} class="cap-card">
-            <div class="cap-icon" aria-hidden="true">
-              {cap.icon === "agent" && (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <circle cx="12" cy="8" r="4" /><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" /><path d="M16 3.13a4 4 0 010 7.75" /><path d="M21 21v-2a4 4 0 00-3-3.87" />
-                </svg>
-              )}
-              {cap.icon === "llm" && (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <rect x="3" y="3" width="18" height="18" rx="3" /><path d="M9 9l3 3-3 3" /><line x1="14" y1="15" x2="17" y2="15" />
-                </svg>
-              )}
-              {cap.icon === "rag" && (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M4 19.5A2.5 2.5 0 016.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" /><path d="M8 7h8M8 11h5" />
-                </svg>
-              )}
-              {cap.icon === "voice" && (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" /><path d="M19 10v2a7 7 0 01-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" />
-                </svg>
-              )}
-              {cap.icon === "guard" && (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-              )}
-              {cap.icon === "protocol" && (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
-                </svg>
-              )}
-            </div>
-            <h3 class="cap-card-title">{cap.title}</h3>
-            <p class="cap-card-desc">{cap.description}</p>
-            <span class="cap-card-link">
-              Learn more
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                <path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </span>
+  <!-- H1 · Hero with code visible in the first viewport -->
+  <section class="hero" aria-label="Introduction">
+    <div class="hero-frame">
+      <div class="hero-lead">
+        <span class="eyebrow hero-eyebrow">GO-NATIVE · v2 · MIT</span>
+        <h1 class="hero-headline font-display">
+          The Go-native agent framework for production.
+        </h1>
+        <p class="hero-deck">
+          Not a Python port. Not a prototype scaffold. Beluga is a complete
+          seven-layer framework — streaming via
+          <code>iter.Seq2</code>, OpenTelemetry GenAI spans at every boundary,
+          crash-durable execution, 110 providers.
+        </p>
+        <div class="hero-cta">
+          <a href="/docs/start/quick-start/" class="btn btn-primary">
+            Read the quickstart
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
           </a>
-        ))}
+          <a href="/docs/concepts/" class="btn btn-ghost">
+            Browse the architecture →
+          </a>
+        </div>
+      </div>
+      <div class="hero-code">
+        <CodeProof
+          code={heroCode}
+          lang="go"
+          title="first_agent.go"
+          cite={{ label: "core/stream.go — the Stream[T] type", href: "https://github.com/lookatitude/beluga-ai/blob/main/core/stream.go" }}
+        />
       </div>
     </div>
   </section>
 
-  <!-- Block 1.5 — Architecture Diagram -->
-  <ArchitectureDiagram />
+  <!-- H2 · The 7-layer stack -->
+  <EditorialSection
+    eyebrow="ARCHITECTURE"
+    headline="Seven layers. One import path."
+    headlineFont="display"
+    deck="From Foundation primitives to your application code, each layer depends only on the layers below it. Downward arrows only. If you find an upward import, it's a bug."
+    cite={{ label: "Read the concepts", href: "/docs/concepts/" }}
+  >
+    <LayerStack />
+  </EditorialSection>
 
-  <!-- Block 1.6 — Code Showcase -->
-  <CodeShowcase />
+  <!-- H3 · Proof pillars -->
+  <EditorialSection
+    eyebrow="PROOF"
+    headline="Built for the production side of Go."
+    bleed
+  >
+    <div class="pillars">
+      <article class="pillar pillar-a">
+        <div class="pillar-meta"><span class="pillar-num">01</span><span class="pillar-tag">STREAMING</span></div>
+        <h3 class="pillar-title"><code>iter.Seq2</code>, not channels.</h3>
+        <p class="pillar-body">
+          The streaming primitive is a typed range-over-func iterator.
+          Backpressure is free. Goroutine leaks are impossible.
+          <code>Invoke()</code> is the convenience wrapper around
+          <code>Stream()</code> + collect — the stream path is the real contract.
+        </p>
+        <a class="pillar-cite" href="/docs/concepts/streaming/">
+          Read how Stream[T] works →
+        </a>
+      </article>
 
-  <!-- Block 1.7 — Provider Grid -->
-  <ProviderGrid />
+      <article class="pillar pillar-b">
+        <div class="pillar-meta"><span class="pillar-num">02</span><span class="pillar-tag">PLANNERS</span></div>
+        <h3 class="pillar-title">Eight strategies, one interface.</h3>
+        <p class="pillar-body">
+          ReAct, Reflexion, Self-Discover, Mind-Map, Tree-of-Thought,
+          Graph-of-Thought, LATS, Mixture-of-Agents — all implement the same
+          <code>Planner</code> interface. Switching strategies is a one-line change.
+          Build your own in the same slot.
+        </p>
+        <a class="pillar-cite" href="/docs/guides/capabilities/agents/">
+          Swap planners in one line →
+        </a>
+      </article>
 
-  <!-- Block 1.8 — Why Go Teaser -->
-  <section class="wg-section">
-    <div class="wg-inner">
-      <h2 class="wg-heading">Go is the production language for AI infrastructure</h2>
+      <article class="pillar pillar-c">
+        <div class="pillar-meta"><span class="pillar-num">03</span><span class="pillar-tag">OBSERVABILITY</span></div>
+        <h3 class="pillar-title">OTel GenAI spans at every boundary.</h3>
+        <p class="pillar-body">
+          Seventeen extensible packages ship <code>WithTracing()</code> middleware
+          that emits <code>gen_ai.*</code> spans. Works with Jaeger,
+          Grafana Tempo, Honeycomb, Arize, and Langfuse out of the box.
+          No custom instrumentation required.
+        </p>
+        <a class="pillar-cite" href="/docs/guides/production/observability/">
+          Observability in production →
+        </a>
+      </article>
 
-      <div class="wg-grid">
-        <div class="wg-card">
-          <span class="wg-card-tag">Performance</span>
-          <p class="wg-card-stat">15,000+ RPS</p>
-          <p class="wg-card-desc">with p95 &lt; 30ms. Compiled to machine code. No GIL.</p>
-        </div>
-        <div class="wg-card">
-          <span class="wg-card-tag">Deployment</span>
-          <p class="wg-card-stat">Single binary</p>
-          <p class="wg-card-desc">No dependency management. Smallest container images.</p>
-        </div>
-        <div class="wg-card">
-          <span class="wg-card-tag">Cloud-native</span>
-          <p class="wg-card-stat">Born for K8s</p>
-          <p class="wg-card-desc">Kubernetes, Docker, Terraform are all Go. Your AI agents should be too.</p>
-        </div>
-      </div>
+      <article class="pillar pillar-d">
+        <div class="pillar-meta"><span class="pillar-num">04</span><span class="pillar-tag">DURABILITY</span></div>
+        <h3 class="pillar-title">Crash-durable without checkpointing.</h3>
+        <p class="pillar-body">
+          The <code>workflow/</code> package replays from an event log.
+          Temporal, Inngest, Dapr, NATS, Kafka — or in-process for tests.
+          Agents survive process restarts without application-level checkpointing.
+        </p>
+        <a class="pillar-cite" href="/docs/guides/production/workflow-durability/">
+          Workflow durability →
+        </a>
+      </article>
+    </div>
 
-      <div class="wg-cta">
-        <a href="/about/#why-go" class="wg-cta-link">
-          Read the full case for Go
-          <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-            <path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+    <div class="pillar-codes">
+      <CodeProof
+        code={middlewareCode}
+        lang="go"
+        caption="Resilience + observability compose as middleware on the same interface as your LLM call."
+      />
+      <CodeProof
+        code={plannerCode}
+        lang="go"
+        caption="A planner swap is a config change. Every strategy implements the same interface."
+      />
+    </div>
+  </EditorialSection>
+
+  <!-- H4 · Provider breadth — split: text left, code right -->
+  <EditorialSection
+    eyebrow="110 PROVIDERS · 19 CATEGORIES"
+    headline="One import. Fully wired."
+    deck="Every provider registers itself in init(). Import for side-effect, call llm.New or vectorstore.New — middleware, hooks, and metrics attach without a line of wiring."
+    layout="split"
+  >
+    <CodeProof
+      code={providerCode}
+      lang="go"
+      title="main.go"
+    />
+  </EditorialSection>
+
+  <!-- H4b · Full provider catalog table — full-width below the split -->
+  <section class="provider-catalog">
+    <div class="provider-catalog-frame">
+      <table class="provider-index">
+        <thead>
+          <tr>
+            <th scope="col">Category</th>
+            <th scope="col">Count</th>
+            <th scope="col">Providers</th>
+          </tr>
+        </thead>
+        <tbody>
+          {providerRows.map(([cat, count, providers]) => (
+            <tr>
+              <th scope="row">{cat}</th>
+              <td class="pi-count">{count}</td>
+              <td class="pi-list">{providers}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <footer class="provider-catalog-cite">
+        <a href="/providers/">
+          Browse the full catalog
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </a>
-      </div>
+      </footer>
     </div>
   </section>
 
-  <!-- Block 1.9 — Getting Started CTA -->
-  <section class="gs-section">
-    <div class="gs-bg" aria-hidden="true"></div>
-    <div class="gs-inner">
-      <h2 class="gs-heading">Start building AI agents in 5 minutes</h2>
+  <!-- H5 · Durability moment — split: text left, code right -->
+  <EditorialSection
+    eyebrow="CRASH-DURABLE"
+    headline="Agents that survive restarts."
+    deck="Durable workflows are a first-class concern, not a plugin. Replay from an event log so a redeploy, a pod restart, or a machine failure does not lose progress."
+    layout="split"
+    bleed
+  >
+    <CodeProof
+      code={workflowCode}
+      lang="go"
+      title="workflow/resume.go"
+      cite={{ label: "Workflow durability guide", href: "/docs/guides/production/workflow-durability/" }}
+    />
+  </EditorialSection>
 
-      <div class="gs-steps">
-        <div class="gs-step">
-          <span class="gs-step-num">1</span>
-          <div class="gs-step-content">
-            <span class="gs-step-label">Install</span>
-            <code class="gs-step-code">go get github.com/lookatitude/beluga-ai</code>
-          </div>
-        </div>
-        <div class="gs-step-arrow" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M5 10h10M11 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </div>
-        <div class="gs-step">
-          <span class="gs-step-num">2</span>
-          <div class="gs-step-content">
-            <span class="gs-step-label">Configure</span>
-            <code class="gs-step-code">export OPENAI_API_KEY=sk-...</code>
-          </div>
-        </div>
-        <div class="gs-step-arrow" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M5 10h10M11 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </div>
-        <div class="gs-step">
-          <span class="gs-step-num">3</span>
-          <div class="gs-step-content">
-            <span class="gs-step-label">Run</span>
-            <code class="gs-step-code">go run main.go</code>
-          </div>
-        </div>
-      </div>
-
-      <div class="gs-ctas">
-        <a href="/docs/getting-started/quick-start/" class="gs-btn gs-btn-primary">
-          Read the Quick Start
-          <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-            <path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </a>
-        <a href="/docs/cookbook/" class="gs-btn gs-btn-outline">
-          Browse the Cookbook
-          <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-            <path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </a>
+  <!-- H6 · Final CTA -->
+  <section class="final-cta">
+    <div class="final-cta-frame">
+      <h2 class="font-display">Start with the quickstart.</h2>
+      <p>Build a streaming agent, wire a tool, read the architecture. No account required.</p>
+      <div class="final-cta-actions">
+        <a href="/docs/start/quick-start/" class="btn btn-primary">Read the quickstart</a>
+        <a href="https://github.com/lookatitude/beluga-ai" class="btn btn-ghost" rel="noopener">Star on GitHub →</a>
       </div>
     </div>
   </section>
-
 </MarketingLayout>
 
 <style>
-  /* ═══════════════════════════════════════
-     Block 1.2 — Social Proof Bar
-     ═══════════════════════════════════════ */
-  .sp-section {
-    padding: 0 1.5rem 4rem;
+  /* Hero layout — split, code visible in first viewport */
+  .hero {
+    padding-block: clamp(3.5rem, 7vw, 6rem) clamp(2rem, 5vw, 4rem);
   }
 
-  .sp-inner {
+  .hero-frame {
+    max-width: var(--marketing-max);
+    margin-inline: auto;
+    padding-inline: var(--marketing-pad);
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    max-width: 900px;
-    margin: 0 auto;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(2.5rem, 5vw, 4rem);
   }
 
-  @media (min-width: 640px) {
-    .sp-inner {
-      grid-template-columns: repeat(4, 1fr);
+  @media (min-width: 960px) {
+    .hero-frame {
+      grid-template-columns: minmax(0, 6fr) minmax(0, 7fr);
+      align-items: start;
     }
   }
 
-  .sp-card {
+  .hero-lead {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 0.25rem;
-    padding: 1.25rem 1rem;
-    border-radius: 1rem;
-    background: color-mix(in srgb, var(--color-dark, #151515) 60%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
-    transition: border-color 0.2s ease;
-  }
-
-  .sp-card:hover {
-    border-color: color-mix(in srgb, var(--color-primary) 25%, transparent);
-  }
-
-  :root[data-theme="light"] .sp-card {
-    background: color-mix(in srgb, var(--color-lightmode-dark, #f7f7f7) 60%, transparent);
-    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 6%, transparent);
-  }
-
-  :root[data-theme="light"] .sp-card:hover {
-    border-color: color-mix(in srgb, var(--color-primary) 25%, transparent);
-  }
-
-  .sp-value {
-    font-size: clamp(1.5rem, 3vw, 2.25rem);
-    font-weight: 800;
-    line-height: 1.1;
-    background: var(--color-primary-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .sp-label {
-    font-size: 0.8125rem;
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 60%, transparent);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 600;
-  }
-
-  :root[data-theme="light"] .sp-label {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 55%, transparent);
-  }
-
-  .sp-footnote {
-    font-size: 0.6875rem;
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 35%, transparent);
-    line-height: 1.4;
-    margin-top: 0.25rem;
-  }
-
-  :root[data-theme="light"] .sp-footnote {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 35%, transparent);
-  }
-
-
-  /* ═══════════════════════════════════════
-     Block 1.4 — Core Capabilities Grid
-     ═══════════════════════════════════════ */
-  .cap-section {
-    padding: 4rem 1.5rem;
-  }
-
-  .cap-inner {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .cap-header {
-    text-align: center;
-    margin-bottom: 3rem;
-  }
-
-  .cap-heading {
-    font-size: clamp(2rem, 4.5vw, 3.5rem);
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
-    margin: 0 0 1rem;
-    color: var(--color-light, #f6f6f6);
-  }
-
-  :root[data-theme="light"] .cap-heading {
-    color: var(--color-lightmode-light, #181818);
-  }
-
-  .cap-heading-muted {
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 40%, transparent);
-  }
-
-  :root[data-theme="light"] .cap-heading-muted {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 40%, transparent);
-  }
-
-  .cap-subtitle {
-    font-size: 1.125rem;
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 55%, transparent);
-    margin: 0;
-    line-height: 1.6;
-  }
-
-  :root[data-theme="light"] .cap-subtitle {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 55%, transparent);
-  }
-
-  .cap-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  @media (min-width: 640px) {
-    .cap-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .cap-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-
-  .cap-card {
-    display: flex;
-    flex-direction: column;
-    padding: 1.5rem;
-    border-radius: 1rem;
-    background: color-mix(in srgb, var(--color-dark, #151515) 80%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
-    text-decoration: none;
-    color: inherit;
-    position: relative;
-    transition: transform 0.2s ease, border-color 0.2s ease;
-  }
-
-  .cap-card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    padding: 1px;
-    background: var(--color-primary-gradient);
-    border-radius: inherit;
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    -webkit-mask-composite: xor;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  .cap-card:hover::before {
-    opacity: 0.5;
-  }
-
-  .cap-card:hover {
-    transform: translateY(-2px);
-  }
-
-  :root[data-theme="light"] .cap-card {
-    background: color-mix(in srgb, var(--color-lightmode-dark, #f7f7f7) 80%, transparent);
-    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 6%, transparent);
-  }
-
-  .cap-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 0.625rem;
-    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
-    color: var(--color-primary, #5CA3CA);
-    margin-bottom: 1rem;
-    flex-shrink: 0;
-  }
-
-  .cap-card-title {
-    font-size: 1.0625rem;
-    font-weight: 600;
-    color: var(--color-light, #f6f6f6);
-    margin: 0 0 0.5rem;
-    line-height: 1.3;
-  }
-
-  :root[data-theme="light"] .cap-card-title {
-    color: var(--color-lightmode-light, #181818);
-  }
-
-  .cap-card-desc {
-    font-size: 0.875rem;
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 55%, transparent);
-    margin: 0;
-    line-height: 1.65;
-    flex: 1;
-  }
-
-  :root[data-theme="light"] .cap-card-desc {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 55%, transparent);
-  }
-
-  .cap-card-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    margin-top: 1rem;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: var(--color-primary, #5CA3CA);
-    transition: gap 0.15s ease;
-  }
-
-  .cap-card:hover .cap-card-link {
-    gap: 0.625rem;
-  }
-
-
-  /* ═══════════════════════════════════════
-     Block 1.8 — Why Go Teaser
-     ═══════════════════════════════════════ */
-  .wg-section {
-    padding: 5rem 1.5rem;
-  }
-
-  .wg-inner {
-    max-width: 1000px;
-    margin: 0 auto;
-    text-align: center;
-  }
-
-  .wg-heading {
-    font-size: clamp(1.75rem, 4vw, 2.75rem);
-    font-weight: 800;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
-    margin: 0 0 3rem;
-    color: var(--color-light, #f6f6f6);
-  }
-
-  :root[data-theme="light"] .wg-heading {
-    color: var(--color-lightmode-light, #181818);
-  }
-
-  .wg-grid {
-    display: grid;
-    grid-template-columns: 1fr;
     gap: 1.25rem;
-    margin-bottom: 2.5rem;
   }
 
-  @media (min-width: 768px) {
-    .wg-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
+  .hero-eyebrow {
+    color: var(--brand-300);
+    margin-bottom: 0.25rem;
   }
 
-  .wg-card {
-    padding: 1.75rem 1.5rem;
-    border-radius: 1rem;
-    background: color-mix(in srgb, var(--color-dark, #151515) 80%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 6%, transparent);
-    text-align: center;
+  :global([data-theme="light"]) .hero-eyebrow {
+    color: oklch(0.45 0.10 240);
   }
 
-  :root[data-theme="light"] .wg-card {
-    background: color-mix(in srgb, var(--color-lightmode-dark, #f7f7f7) 80%, transparent);
-    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 6%, transparent);
+  .hero-headline {
+    font-family: var(--font-sans);
+    font-size: var(--text-display);
+    line-height: var(--lh-display);
+    letter-spacing: var(--track-display);
+    font-weight: 500;
+    color: var(--sl-color-white);
+    margin: 0.25rem 0 0;
+    max-width: 16ch;
+    text-wrap: balance;
   }
 
-  .wg-card-tag {
-    display: inline-block;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 0.2rem 0.6rem;
-    border-radius: 9999px;
-    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-    color: var(--color-primary, #5CA3CA);
-    margin-bottom: 1rem;
-  }
-
-  .wg-card-stat {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--color-light, #f6f6f6);
-    margin: 0 0 0.375rem;
-    line-height: 1.2;
-  }
-
-  :root[data-theme="light"] .wg-card-stat {
-    color: var(--color-lightmode-light, #181818);
-  }
-
-  .wg-card-desc {
-    font-size: 0.875rem;
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 50%, transparent);
+  .hero-deck {
+    font-size: var(--text-lead);
+    line-height: var(--lh-body);
+    color: var(--sl-color-gray-2);
+    max-width: 54ch;
     margin: 0;
-    line-height: 1.6;
   }
 
-  :root[data-theme="light"] .wg-card-desc {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 50%, transparent);
+  .hero-deck code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: var(--sl-color-bg-inline-code);
+    border: 1px solid var(--sl-color-hairline);
+    padding: 0.08em 0.32em;
+    border-radius: 0.2em;
+    color: var(--sl-color-white);
   }
 
-  .wg-cta {
-    text-align: center;
-  }
-
-  .wg-cta-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9375rem;
-    font-weight: 600;
-    color: var(--color-primary, #5CA3CA);
-    text-decoration: none;
-    transition: gap 0.15s ease;
-  }
-
-  .wg-cta-link:hover {
-    gap: 0.75rem;
-  }
-
-
-  /* ═══════════════════════════════════════
-     Block 1.9 — Getting Started CTA
-     ═══════════════════════════════════════ */
-  .gs-section {
-    position: relative;
-    padding: 5rem 1.5rem;
-    text-align: center;
-    overflow: hidden;
-  }
-
-  .gs-bg {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, #3a1c71 12%, transparent),
-      color-mix(in srgb, #D76D77 8%, transparent),
-      color-mix(in srgb, #ffca7b 6%, transparent)
-    );
-    pointer-events: none;
-  }
-
-  :root[data-theme="light"] .gs-bg {
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, #3a1c71 6%, transparent),
-      color-mix(in srgb, #D76D77 4%, transparent),
-      color-mix(in srgb, #ffca7b 3%, transparent)
-    );
-  }
-
-  .gs-inner {
-    position: relative;
-    z-index: 1;
-    max-width: 900px;
-    margin: 0 auto;
-  }
-
-  .gs-heading {
-    font-size: clamp(2rem, 4.5vw, 3rem);
-    font-weight: 800;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
-    margin: 0 0 3rem;
-    background: var(--color-primary-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* Steps */
-  .gs-steps {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 3rem;
-  }
-
-  @media (min-width: 768px) {
-    .gs-steps {
-      flex-direction: row;
-      justify-content: center;
-      gap: 0.75rem;
-    }
-  }
-
-  .gs-step {
+  .hero-cta {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 1rem 1.25rem;
-    border-radius: 0.75rem;
-    background: color-mix(in srgb, var(--color-dark, #151515) 85%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-light, #f6f6f6) 8%, transparent);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
-
-  :root[data-theme="light"] .gs-step {
-    background: color-mix(in srgb, #fff 85%, transparent);
-    border-color: color-mix(in srgb, var(--color-lightmode-light, #181818) 8%, transparent);
-  }
-
-  .gs-step-num {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: var(--color-primary-gradient);
-    color: #fff;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    flex-shrink: 0;
-  }
-
-  .gs-step-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-    text-align: left;
-  }
-
-  .gs-step-label {
-    font-size: 0.6875rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 50%, transparent);
-  }
-
-  :root[data-theme="light"] .gs-step-label {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 50%, transparent);
-  }
-
-  .gs-step-code {
-    font-size: 0.75rem;
-    font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
-    color: var(--color-light, #f6f6f6);
-    white-space: nowrap;
-  }
-
-  :root[data-theme="light"] .gs-step-code {
-    color: var(--color-lightmode-light, #181818);
-  }
-
-  .gs-step-arrow {
-    color: color-mix(in srgb, var(--color-light, #f6f6f6) 25%, transparent);
-    display: none;
-  }
-
-  :root[data-theme="light"] .gs-step-arrow {
-    color: color-mix(in srgb, var(--color-lightmode-light, #181818) 25%, transparent);
-  }
-
-  @media (min-width: 768px) {
-    .gs-step-arrow {
-      display: flex;
-    }
-  }
-
-  /* CTA Buttons */
-  .gs-ctas {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
+    gap: 1.25rem;
+    margin-top: 0.75rem;
     flex-wrap: wrap;
   }
 
-  .gs-btn {
+  /* Buttons (.btn / .btn-primary / .btn-ghost) live in components.css. */
+
+  /* Pillars — staggered, not a grid */
+  .pillars {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(2.5rem, 4vw, 3.5rem);
+    margin-bottom: clamp(3rem, 6vw, 4rem);
+  }
+
+  @media (min-width: 800px) {
+    .pillars {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      column-gap: clamp(3rem, 6vw, 5rem);
+      row-gap: clamp(3.5rem, 6vw, 5rem);
+    }
+    .pillar-b { transform: translateY(3rem); }
+    .pillar-d { transform: translateY(3rem); }
+  }
+
+  .pillar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 32rem;
+    border-left: 2px solid var(--brand-700);
+    padding-left: 1.5rem;
+  }
+
+  .pillar-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .pillar-num {
+    color: var(--brand-300);
+    font-weight: 500;
+  }
+  .pillar-tag {
+    color: var(--sl-color-gray-3);
+    font-weight: 500;
+  }
+
+  :global([data-theme="light"]) .pillar-num {
+    color: oklch(0.42 0.11 240);
+  }
+
+  .pillar-title {
+    font-family: var(--font-sans);
+    font-size: var(--text-h3);
+    line-height: var(--lh-h3);
+    letter-spacing: var(--track-h3);
+    font-weight: 600;
+    color: var(--sl-color-white);
+    margin: 0;
+  }
+  .pillar-title code {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.92em;
+    color: var(--brand-200);
+  }
+
+  .pillar-body {
+    font-size: var(--text-body);
+    line-height: var(--lh-body);
+    color: var(--sl-color-gray-2);
+    margin: 0;
+  }
+  .pillar-body code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    color: var(--brand-200);
+  }
+
+  .pillar-cite {
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    font-weight: 500;
+    color: var(--sl-color-gray-3);
+    text-decoration: none;
+    padding-top: 0.25rem;
+    border-bottom: 1px solid transparent;
+    width: fit-content;
+    transition: color 0.15s ease, border-color 0.2s ease;
+  }
+  .pillar-cite:hover {
+    color: var(--brand-200);
+    border-bottom-color: var(--brand-200);
+  }
+
+  .pillar-codes {
+    display: grid;
+    gap: clamp(1.5rem, 3vw, 2rem);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 900px) {
+    .pillar-codes {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+  }
+
+  /* Provider catalog — full-width table below the split header section */
+  .provider-catalog {
+    padding-block: 0 clamp(4rem, 8vw, 7rem);
+  }
+  .provider-catalog-frame {
+    max-width: var(--marketing-max);
+    margin-inline: auto;
+    padding-inline: var(--marketing-pad);
+  }
+  .provider-catalog-cite {
+    margin-top: clamp(2rem, 3vw, 3rem);
+  }
+  .provider-catalog-cite a {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    font-size: 0.9375rem;
-    font-weight: 600;
+    font-family: var(--font-mono);
+    font-size: var(--text-meta);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--sl-color-text-accent);
     text-decoration: none;
-    border-radius: 0.75rem;
-    transition: transform 0.15s ease, filter 0.15s ease;
-    cursor: pointer;
-    border: none;
-    font-family: inherit;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid transparent;
+    transition: color 0.15s ease, border-color 0.2s ease;
+  }
+  .provider-catalog-cite a:hover {
+    color: var(--brand-200);
+    border-bottom-color: var(--brand-200);
+  }
+  .provider-catalog-cite a svg {
+    transition: transform 0.2s ease;
+  }
+  .provider-catalog-cite a:hover svg {
+    transform: translateX(2px);
   }
 
-  .gs-btn:hover {
-    transform: scale(1.03);
+  /* Provider index table */
+  .provider-index {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    margin-top: 0;
   }
 
-  .gs-btn-primary {
-    background: var(--color-primary-gradient);
-    color: #fff;
+  .provider-index th,
+  .provider-index td {
+    text-align: left;
+    padding: 0.75rem 0.75rem 0.75rem 0;
+    vertical-align: top;
+    border-bottom: 1px solid var(--sl-color-hairline);
+  }
+  .provider-index thead th {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--sl-color-gray-3);
+    padding-bottom: 0.5rem;
+  }
+  .provider-index tbody th {
+    font-weight: 600;
+    color: var(--sl-color-white);
+    width: 11rem;
+  }
+  .pi-count {
+    font-family: var(--font-mono);
+    font-size: var(--text-meta);
+    color: var(--brand-300);
+    white-space: nowrap;
+    padding-right: 1.5rem !important;
+    width: 8rem;
+  }
+  :global([data-theme="light"]) .pi-count {
+    color: oklch(0.42 0.11 240);
+  }
+  .pi-list {
+    color: var(--sl-color-gray-2);
+    line-height: 1.55;
   }
 
-  .gs-btn-primary:hover {
-    filter: brightness(1.1);
+  @media (max-width: 760px) {
+    .provider-index,
+    .provider-index thead,
+    .provider-index tbody,
+    .provider-index tr {
+      display: block;
+    }
+    .provider-index thead { display: none; }
+    .provider-index tbody th {
+      width: auto;
+      padding-top: 1rem;
+    }
+    .provider-index td {
+      border: none;
+      padding-block: 0.25rem;
+    }
+    .provider-index tr {
+      border-bottom: 1px solid var(--sl-color-hairline);
+      padding-bottom: 0.75rem;
+    }
   }
 
-  .gs-btn-outline {
-    position: relative;
-    background: transparent;
-    color: var(--color-light, #f6f6f6);
+  /* Final CTA */
+  .final-cta {
+    padding-block: clamp(5rem, 10vw, 8rem);
+    border-top: 1px solid var(--sl-color-hairline);
   }
-
-  .gs-btn-outline::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    padding: 2px;
-    background: var(--color-primary-gradient);
-    border-radius: inherit;
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    -webkit-mask-composite: xor;
+  .final-cta-frame {
+    max-width: 52rem;
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
   }
-
-  .gs-btn-outline:hover {
-    background: var(--color-primary-gradient);
-    color: #fff;
+  .final-cta h2 {
+    font-family: var(--font-sans);
+    font-size: var(--text-h1);
+    line-height: var(--lh-h1);
+    letter-spacing: var(--track-h1);
+    font-weight: 500;
+    color: var(--sl-color-white);
+    margin: 0;
+    text-wrap: balance;
   }
-
-  :root[data-theme="light"] .gs-btn-outline {
-    color: var(--color-lightmode-light, #181818);
+  .final-cta p {
+    font-size: var(--text-lead);
+    line-height: var(--lh-body);
+    color: var(--sl-color-gray-2);
+    max-width: 44ch;
+    margin: 0;
+  }
+  .final-cta-actions {
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
   }
 </style>

@@ -1,0 +1,16 @@
+/* Critical base rules loaded from /public so Tailwind v4's
+   preflight compiler cannot strip them. Tailwind drops
+   `background` / `color` / `min-height` from bare html/body
+   rules inside processed CSS — public files are served as-is. */
+
+html,
+body {
+  background-color: var(--sl-color-bg, #0a0d12);
+  color: var(--sl-color-text, #cfd6e0);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  line-height: 1.65;
+}

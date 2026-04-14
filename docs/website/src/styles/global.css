@@ -1,163 +1,364 @@
+/* ============================================================
+   Beluga AI — Global tokens
+   Dark default. OKLCH-tinted neutrals anchored to logo #5CA3CA.
+   Fonts: Fraunces (display) · IBM Plex Sans (body) · JetBrains Mono.
+   All fonts OFL / Apache 2.0 — free to use and redistribute.
+
+   Fonts are loaded via <link> tags in
+     src/layouts/MarketingLayout.astro
+     src/components/override-components/Head.astro
+   — NOT via @import here. CSS @import ordering is fragile inside
+   layer stacks; direct <link> loading is simpler and cacheable.
+   ============================================================ */
+
+/* All @imports must come first — no @layer declaration above them —
+   because starlight-tailwind's inlined content contains Tailwind v4
+   at-rules (@custom-variant, @theme, @layer base { ... }) which
+   PostCSS treats as "statements" and will then reject a subsequent
+   @import with "@import must precede all other statements". */
+
+@import "tailwindcss";
+@import "@astrojs/starlight-tailwind";
+
 @layer base, starlight, theme, components, utilities;
 
-@import "@astrojs/starlight-tailwind";
-@import "tailwindcss/theme.css" layer(theme);
-@import "tailwindcss/utilities.css" layer(utilities);
+/* base.css · navigation.css · components.css · button.css are loaded
+   separately via Starlight customCss (astro.config.mjs) and the
+   MarketingLayout <style> block — not via @import here, because Vite's
+   Tailwind v4 pipeline silently drops local @imports inside this file. */
 
 @plugin "../tailwind-plugin/tw-theme";
 @plugin "../tailwind-plugin/tw-bs-grid";
 
+/* ============================================================
+   OKLCH token system
+   All neutrals are tinted toward the brand hue (~240°) so the
+   entire UI reads as one cohesive piece rather than neutral gray.
+   ============================================================ */
+
 :root {
-  --sl-color-accent-low: color-mix(in srgb, var(--color-primary), #000 90%);
-  --sl-color-accent: var(--color-primary);
-  --sl-color-accent-high: color-mix(in srgb, var(--color-primary), #fff 70%);
+  /* ── Brand ── logo-derived, do not replace ── */
+  --brand-200: oklch(0.89 0.03 215);   /* logo aqua #C9E1E5 */
+  --brand-300: oklch(0.82 0.05 225);
+  --brand-400: oklch(0.75 0.08 230);
+  --brand-500: oklch(0.68 0.09 235);   /* logo primary #5CA3CA */
+  --brand-600: oklch(0.60 0.10 238);
+  --brand-700: oklch(0.52 0.10 240);
+  --brand-800: oklch(0.42 0.08 244);
 
-  --sl-color-white: var(--color-light);
-  --sl-color-gray-1: color-mix(
-    in srgb,
-    var(--color-dark) 6%,
-    var(--color-light) 94%
-  ); /* #eeeeee */
-  --sl-color-gray-2: color-mix(
-    in srgb,
-    var(--color-dark) 24%,
-    var(--color-light) 76%
-  ); /* #c2c2c2 */
-  --sl-color-gray-3: color-mix(
-    in srgb,
-    var(--color-dark) 45%,
-    var(--color-light) 55%
-  ); /* #8b8b8b */
-  --sl-color-gray-4: color-mix(
-    in srgb,
-    var(--color-dark) 65%,
-    var(--color-light) 35%
-  ); /* #585858 */
-  --sl-color-gray-5: color-mix(
-    in srgb,
-    var(--color-dark) 78%,
-    var(--color-light) 22%
-  ); /* #383838 */
-  --sl-color-gray-6: color-mix(
-    in srgb,
-    var(--color-dark) 85%,
-    var(--color-light) 15%
-  ); /* #272727 */
+  /* ── Dark-mode neutrals (tinted cool near-black) ── */
+  --ink-950: oklch(0.12 0.012 240);    /* page background */
+  --ink-900: oklch(0.16 0.014 240);    /* elevated surface */
+  --ink-850: oklch(0.20 0.014 238);    /* card / sidebar */
+  --ink-800: oklch(0.26 0.012 235);    /* hairline */
+  --ink-700: oklch(0.38 0.010 230);    /* muted text */
+  --ink-600: oklch(0.50 0.010 230);
+  --ink-500: oklch(0.62 0.008 230);    /* secondary text */
+  --ink-400: oklch(0.72 0.009 225);
+  --ink-300: oklch(0.82 0.010 225);    /* primary body text */
+  --ink-200: oklch(0.90 0.010 222);
+  --ink-100: oklch(0.95 0.010 220);    /* headings */
+  --ink-050: oklch(0.98 0.008 218);
 
-  /* color-dark: #040404 */
-  --sl-color-black: var(--color-dark);
-  --sl-sidebar-width: 320px;
-  --sl-color-hairline: color-mix(
-    in srgb,
-    var(--sl-color-white) 10%,
-    transparent
-  );
-  --sl-color-hairline-light:#252525;
+  /* ── Light-mode neutrals (warm near-white w/ breath of aqua) ── */
+  --paper-50:  oklch(0.985 0.005 215);
+  --paper-100: oklch(0.965 0.006 215);
+  --paper-200: oklch(0.935 0.008 218);  /* hairline */
+  --paper-300: oklch(0.88 0.010 220);
+  --paper-500: oklch(0.62 0.010 228);   /* secondary text */
+  --paper-700: oklch(0.44 0.011 232);   /* muted text */
+  --paper-800: oklch(0.32 0.013 236);
+  --paper-900: oklch(0.22 0.014 240);   /* body text */
+  --paper-950: oklch(0.14 0.016 242);   /* headings */
+
+  /* ── Typography stack ──
+     Two fonts, zero ambiguity:
+       --font-sans — IBM Plex Sans for ALL text and headings
+       --font-mono — JetBrains Mono only for code, eyebrows, metadata
+     --font-display is aliased to --font-sans so legacy .font-display
+     class declarations keep working but no longer switch face. */
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-display: var(--font-sans);
+  --font-primary: var(--font-sans);
+
+  /* ── Fluid type scale (single source of truth) ──
+     Apply via the semantic tokens below rather than hand-rolling
+     clamp() on every heading. Scale tuned for IBM Plex Sans 500. */
+  --text-display: clamp(2.75rem, 5.5vw, 4rem);    /* hero h1, max headline */
+  --text-h1:      clamp(2.25rem, 4.2vw, 3.25rem); /* page headlines, major section h2 */
+  --text-h2:      clamp(1.75rem, 3.2vw, 2.5rem);  /* editorial section headlines */
+  --text-h3:      clamp(1.125rem, 1.4vw, 1.375rem); /* card titles, pillar titles */
+  --text-lead:    clamp(1.0625rem, 1.3vw, 1.1875rem); /* decks, leads */
+  --text-prose:   1.0625rem;                       /* long-form prose (17px) */
+  --text-body:    0.9375rem;                       /* cards, secondary prose (15px) */
+  --text-meta:    0.8125rem;                       /* mono cites, file labels (13px) */
+  --text-micro:   0.75rem;                         /* eyebrows, most mono labels (12px) */
+  --text-label:   0.6875rem;                       /* status chips, numbered markers (11px) */
+
+  /* Tracking */
+  --track-display: -0.035em;
+  --track-h1:      -0.028em;
+  --track-h2:      -0.022em;
+  --track-h3:      -0.015em;
+  --track-body:    0;
+  --track-eyebrow: 0.1em;
+
+  /* Line-heights */
+  --lh-display: 1.02;
+  --lh-h1:      1.05;
+  --lh-h2:      1.1;
+  --lh-h3:      1.25;
+  --lh-body:    1.6;
+  --lh-prose:   1.65;
+
+  /* ── Surface layers (canonical card / panel backgrounds) ── */
+  --surface-1: color-mix(in oklch, var(--ink-900) 40%, var(--ink-950));
+  --surface-2: color-mix(in oklch, var(--ink-900) 65%, var(--ink-950));
+  --surface-3: color-mix(in oklch, var(--ink-900) 92%, var(--ink-950));
+
+  /* Hairline that tints toward brand on hover (used by cards, frames) */
+  --hairline-brand: color-mix(in oklch, var(--brand-500) 40%, var(--sl-color-hairline));
+
+  /* Header height — used for sticky offsets, anchor scroll padding */
+  --header-height: 56px;
+
+  /* ── Marketing frame — single source of truth for max-width
+     Applied to .hero-frame, .ed-frame, .page-intro-frame--wide.
+     Keep in sync with docs layout visual width so marketing pages
+     don't appear narrower than documentation pages. */
+  --marketing-max: 88rem;
+  --marketing-pad: clamp(1.25rem, 4vw, 2.5rem);
+
+  /* Light-mode CTA primary — appears in 18 places as a literal */
+  --brand-cta-light: oklch(0.42 0.11 240);
+  --brand-cta-light-hover: oklch(0.36 0.11 242);
+  --brand-accent-light: oklch(0.45 0.10 240);
+
+  /* ── Starlight accent bridge (dark default) ── */
+  --sl-color-accent-low: oklch(0.22 0.05 238);
+  --sl-color-accent: var(--brand-500);
+  --sl-color-accent-high: var(--brand-200);
+
+  --sl-color-white: var(--ink-100);
+  --sl-color-gray-1: var(--ink-200);
+  --sl-color-gray-2: var(--ink-300);
+  --sl-color-gray-3: var(--ink-500);
+  --sl-color-gray-4: var(--ink-700);
+  --sl-color-gray-5: var(--ink-800);
+  --sl-color-gray-6: var(--ink-900);
+  --sl-color-gray-7: var(--ink-950);
+  --sl-color-black: var(--ink-950);
+
+  --sl-color-hairline: var(--ink-800);
+  --sl-color-hairline-light: var(--ink-800);
+  --sl-color-hairline-shade: var(--ink-850);
+
+  --sl-color-bg: var(--ink-950);
+  --sl-color-bg-nav: var(--ink-950);
+  --sl-color-bg-sidebar: var(--ink-950);
+  --sl-color-bg-inline-code: var(--ink-900);
+  --sl-color-bg-accent: color-mix(in oklch, var(--brand-500) 14%, transparent);
+
+  --sl-color-text: var(--ink-300);
+  --sl-color-text-accent: var(--brand-200);
+  --sl-color-text-invert: var(--ink-950);
+
+  /* ── Starlight typography bridge ── */
+  --sl-font: var(--font-sans);
+  --sl-font-mono: var(--font-mono);
+  --sl-sidebar-width: 17rem;
 }
 
-/* Light mode colors. */
+/* ── Light mode overrides ── */
 :root[data-theme="light"] {
-  --sl-color-accent-low: color-mix(
-    in srgb,
-    var(--color-lightmode-primary),
-    #fff 70%
-  );
-  --sl-color-accent: var(--color-lightmode-primary);
-  --sl-color-accent-high: color-mix(
-    in srgb,
-    var(--color-lightmode-primary),
-    #000 90%
-  );
-  /* color-lightmode-light: #181818 */
-  --sl-color-white: var(--color-lightmode-light);
-  --sl-color-gray-1: color-mix(
-    in srgb,
-    var(--color-lightmode-dark) 15%,
-    var(--color-lightmode-light) 85%
-  ); /* #272727 */
-  --sl-color-gray-2: color-mix(
-    in srgb,
-    var(--color-lightmode-dark) 22%,
-    var(--color-lightmode-light) 78%
-  ); /* #383838 */
-  --sl-color-gray-3: color-mix(
-    in srgb,
-    var(--color-lightmode-dark) 35%,
-    var(--color-lightmode-light) 65%
-  ); /* #585858 */
-  --sl-color-gray-4: color-mix(
-    in srgb,
-    var(--color-lightmode-dark) 55%,
-    var(--color-lightmode-light) 45%
-  ); /* #8b8b8b */
-  --sl-color-gray-5: color-mix(
-    in srgb,
-    var(--color-lightmode-dark) 76%,
-    var(--color-lightmode-light) 24%
-  ); /* #c2c2c2 */
-  --sl-color-gray-6: color-mix(
-    in srgb,
-    var(--color-lightmode-dark) 94%,
-    var(--color-lightmode-light) 6%
-  ); /* #eeeeee */
-  --sl-color-gray-7: color-mix(
-    in srgb,
-    var(--color-lightmode-dark) 96%,
-    var(--color-lightmode-light) 4%
-  ); /* #f6f6f6 */
+  --sl-color-accent-low: color-mix(in oklch, var(--brand-500) 12%, var(--paper-50));
+  --sl-color-accent: oklch(0.55 0.11 240);      /* darker cut of brand for AA contrast */
+  --sl-color-accent-high: oklch(0.38 0.10 242);
 
+  --sl-color-white: var(--paper-950);
+  --sl-color-gray-1: var(--paper-900);
+  --sl-color-gray-2: var(--paper-800);
+  --sl-color-gray-3: var(--paper-700);
+  --sl-color-gray-4: var(--paper-500);
+  --sl-color-gray-5: var(--paper-300);
+  --sl-color-gray-6: var(--paper-200);
+  --sl-color-gray-7: var(--paper-100);
+  --sl-color-black: var(--paper-50);
 
-  --sl-color-black: var(--color-lightmode-dark);
+  --sl-color-hairline: var(--paper-200);
+  --sl-color-hairline-light: var(--paper-200);
+  --sl-color-hairline-shade: var(--paper-300);
+
+  --sl-color-bg: var(--paper-50);
+  --sl-color-bg-nav: var(--paper-50);
+  --sl-color-bg-sidebar: var(--paper-50);
+  --sl-color-bg-inline-code: var(--paper-100);
+
+  --sl-color-text: var(--paper-900);
+  --sl-color-text-accent: oklch(0.45 0.10 240);
+  --sl-color-text-invert: var(--paper-50);
 }
 
-@theme {
-  --color-primary-gradient: linear-gradient(
-    35.65deg,
-    #0F3353 -10.94%,
-    var(--color-primary) 61.04%,
-    #81D4E8 133.01%
-  );
-}
+/* ============================================================
+   Base element defaults
+   These are intentionally declared directly in global.css (not
+   imported from base.css) so they always apply regardless of
+   how the downstream @imports resolve.
+   ============================================================ */
 
-/* Smooth theme transitions */
-body {
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* Smooth scrolling */
 html {
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-/* Selection color */
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11"; /* IBM Plex Sans stylistic tweaks */
+  font-variation-settings: normal;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Tailwind v4 strips `background` / `color` / `margin` / `min-height`
+   from unqualified `html` and `body` rules at compile time. Using a
+   class-qualified selector bypasses that preflight dedup. */
+:where(html):root,
+html:where([data-theme]) {
+  background-color: var(--sl-color-bg) !important;
+  color: var(--sl-color-text) !important;
+}
+
+html:where([data-theme]) body,
+:root body {
+  background-color: var(--sl-color-bg) !important;
+  color: var(--sl-color-text) !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  line-height: 1.65;
+}
+
+/* Legacy class — Fraunces has been removed from the font stack, so
+   .font-display now only tightens tracking for headline-sized text.
+   Use the --text-* tokens for sizing; this class is kept to avoid
+   a sweeping rename across page-level class lists. */
+.font-display {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: var(--track-display);
+  font-variation-settings: normal;
+}
+
+.font-mono, code, pre, kbd, samp {
+  font-family: var(--font-mono);
+}
+
+/* Editorial eyebrow label — small uppercase mono label used above
+   section titles. Used as <span class="eyebrow">KNOW</span>. */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  font-weight: 500;
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--brand-300);
+  line-height: 1.45;
+}
+
+:root[data-theme="light"] .eyebrow {
+  color: oklch(0.45 0.10 240);
+}
+
+/* Selection */
 ::selection {
-  background: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  background: color-mix(in oklch, var(--brand-500) 28%, transparent);
+  color: var(--ink-050);
 }
 
-/* Custom scrollbar */
+:root[data-theme="light"] ::selection {
+  color: var(--paper-950);
+}
+
+/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--sl-color-gray-3) 50%, transparent);
-  border-radius: 3px;
+  background: color-mix(in oklch, var(--ink-800) 80%, transparent);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--sl-color-gray-3);
+  background: color-mix(in oklch, var(--brand-500) 40%, var(--ink-800));
+  background-clip: content-box;
+  border: 2px solid transparent;
 }
-
-/* Firefox scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--sl-color-gray-3) 50%, transparent) transparent;
+  scrollbar-color: color-mix(in oklch, var(--ink-800) 80%, transparent) transparent;
+}
+
+:root[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--paper-300) 90%, transparent);
+  background-clip: content-box;
+  border: 2px solid transparent;
+}
+
+/* Respect reduced-motion everywhere. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+   Legacy token aliases
+   Keep these so existing components don't break before the
+   Phase 3 rewrite. They resolve to the new OKLCH scale.
+   ============================================================ */
+
+:root {
+  --color-primary: var(--brand-500);
+  --color-primary-soft: var(--brand-200);
+  --color-body: var(--ink-950);
+  --color-light: var(--ink-100);
+  --color-dark: var(--ink-950);
+  --color-text: var(--ink-500);
+
+  /* Restrained primary gradient — narrow brand range only,
+     retained solely because existing components reference it. */
+  --color-primary-gradient: linear-gradient(
+    135deg,
+    var(--brand-600) 0%,
+    var(--brand-400) 100%
+  );
+}
+
+:root[data-theme="light"] {
+  --color-primary: oklch(0.55 0.11 240);
+  --color-lightmode-primary: oklch(0.55 0.11 240);
+  --color-lightmode-body: var(--paper-50);
+  --color-lightmode-light: var(--paper-950);
+  --color-lightmode-dark: var(--paper-50);
+  --color-lightmode-text: var(--paper-900);
+
+  /* Light-mode surface remap */
+  --surface-1: var(--paper-50);
+  --surface-2: var(--paper-100);
+  --surface-3: var(--paper-200);
+  --hairline-brand: color-mix(in oklch, var(--brand-500) 30%, var(--paper-200));
 }
 
 @import "./base.css";
 @import "./navigation.css";
 @import "./components.css";
 @import "./button.css";
-

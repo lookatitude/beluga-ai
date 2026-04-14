@@ -26,6 +26,63 @@ export default defineConfig({
   image: {
     service: { entrypoint: "astro/assets/services/noop" },
   },
+  // Permanent redirects for the IA cutover. Marketing URLs from the
+  // pre-rebuild site map to their new destinations. Docs redirects
+  // land in a later phase when the content tree is migrated.
+  redirects: {
+    // ── Marketing redirects (Phase 3) ─────────────────────────
+    "/about": "/community/",
+    "/integrations": "/providers/",
+    "/features": "/product/",
+    "/features/agents": "/product/#build",
+    "/features/llm": "/product/#build",
+    "/features/tools": "/product/#build",
+    "/features/orchestration": "/product/#build",
+    "/features/rag": "/product/#know",
+    "/features/memory": "/product/#know",
+    "/features/voice": "/product/#voice",
+    "/features/guardrails": "/product/#ship",
+    "/features/observability": "/product/#ship",
+    "/features/protocols": "/product/#protocols",
+
+    // ── Docs IA cutover (Phase 4) ─────────────────────────────
+    // getting-started → start
+    "/docs/getting-started": "/docs/start/",
+    "/docs/getting-started/overview": "/docs/start/",
+    "/docs/getting-started/installation": "/docs/start/installation/",
+    "/docs/getting-started/quick-start": "/docs/start/quick-start/",
+
+    // cookbook → recipes
+    "/docs/cookbook": "/docs/recipes/",
+
+    // architecture split between concepts and reference
+    "/docs/architecture": "/docs/reference/architecture/overview/",
+    "/docs/architecture/concepts": "/docs/concepts/",
+    "/docs/architecture/packages": "/docs/reference/architecture/packages/",
+    "/docs/architecture/providers": "/docs/reference/architecture/providers/",
+    "/docs/architecture/architecture": "/docs/reference/architecture/overview/",
+
+    // providers → reference/providers
+    "/docs/providers": "/docs/reference/providers/",
+
+    // api-reference → reference/api
+    "/docs/api-reference": "/docs/reference/api/",
+
+    // reports → contributing/project-reports
+    "/docs/reports": "/docs/contributing/",
+    "/docs/reports/changelog": "/docs/contributing/project-reports/changelog/",
+    "/docs/reports/security": "/docs/contributing/project-reports/security/",
+    "/docs/reports/code-quality": "/docs/contributing/project-reports/code-quality/",
+
+    // tutorials dissolved into guides
+    "/docs/tutorials": "/docs/guides/",
+
+    // use-cases dissolved into guides
+    "/docs/use-cases": "/docs/guides/",
+
+    // integrations consolidated under guides/production/integrations
+    "/docs/integrations": "/docs/guides/production/integrations/",
+  },
   markdown: {
     rehypePlugins: [rehypeMermaid],
   },
@@ -36,21 +93,25 @@ export default defineConfig({
       social: social.main || [],
       locales,
       sidebar: sidebar.main || [],
+      // Use our marketing-layout /404 (src/pages/404.astro) instead of
+      // Starlight's built-in one, so a 404 keeps the same chrome as
+      // the rest of the site.
+      disable404Route: true,
       customCss: ["./src/styles/global.css"],
       expressiveCode: {
         themes: ['github-dark-default', 'github-light-default'],
         styleOverrides: {
-          borderRadius: '1rem',
-          borderColor: 'color-mix(in srgb, var(--sl-color-white) 8%, transparent)',
-          codeFontFamily: '"SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace',
+          borderRadius: '0.5rem',
+          borderColor: 'var(--sl-color-hairline)',
+          codeFontFamily: 'var(--font-mono)',
           codeFontSize: '0.8125rem',
-          codeLineHeight: '1.75',
+          codeLineHeight: '1.7',
           codePaddingBlock: '1.25rem',
           codePaddingInline: '1.5rem',
           codeBackground: ({ theme }) =>
             theme.type === 'dark'
-              ? 'color-mix(in srgb, #151515 95%, transparent)'
-              : 'color-mix(in srgb, #f8f8f8 95%, white)',
+              ? 'color-mix(in oklch, var(--ink-900) 92%, var(--ink-950))'
+              : 'var(--paper-100)',
           frames: {
             shadowColor: 'transparent',
           },

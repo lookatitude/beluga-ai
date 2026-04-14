@@ -10,6 +10,17 @@ head:
 
 Deploy Beluga agents as production-grade HTTP services with built-in resilience, configuration hot-reload, multi-tenant support, and container-ready architecture. The deployment patterns described here separate your agent logic from the HTTP framework, resilience policies, and infrastructure concerns, so each layer can be changed independently.
 
+The same agent code runs in all four deployment modes — the choice is operational, not architectural.
+
+```mermaid
+graph TD
+  A[Agent code]
+  A --> L[Library mode]
+  A --> D[Docker mode]
+  A --> K[Kubernetes mode]
+  A --> T[Temporal mode]
+```
+
 ## HTTP Server Adapters
 
 The `server` package provides the `ServerAdapter` interface that decouples agent logic from HTTP frameworks. This means the same agent works with `net/http`, Gin, Fiber, Echo, Chi, gRPC, or Connect without changing a single line of agent code. You choose the HTTP framework that matches your team's preferences and existing infrastructure, and the adapter handles the translation between HTTP requests and agent invocations.
@@ -393,6 +404,108 @@ func main() {
 	log.Println("Shutdown complete")
 }
 ```
+
+## Sessions
+
+A session holds conversation history, metadata, artifacts, and an optional TTL. Sessions are opaque to the agent — it sees messages, not the session object, which lets you swap `SessionService` implementations without changing agent code.
+
+```mermaid
+graph LR
+  Create[Client: new session] --> Load[Session loaded or created]
+  Load --> Turn[Turn 1]
+  Turn --> Save[Session.Save]
+  Save --> Turn2[Turn 2]
+  Turn2 --> TTL{TTL expired?}
+  TTL -->|no| Turn
+  TTL -->|yes| Exp[Expire & clear]
+  Save --> Clear[Explicit Clear]
+  Clear --> End[Session end]
+```
+
+## Library mode
+
+Import Beluga as a Go library. Agent runs in-process with no network and no session service (or an in-memory one).
+
+```mermaid
+graph LR
+  User[User code] --> B[import beluga-ai]
+  B --> Agent[Agent in-process]
+```
+
+Use for CLIs, desktop apps, embedded tools, and unit tests. Zero infrastructure.
+
+## Docker mode
+
+Wrap a `Runner` in a container, add Redis for sessions and NATS for the event bus, and compose them.
+
+```mermaid
+graph TD
+  subgraph Host[Docker host]
+    R[Beluga runner container]
+    Redis[Redis]
+    NATS[NATS]
+  end
+  Client --> R
+  R --> Redis
+  R --> NATS
+  R --> LLM[External LLM API]
+```
+
+Use for single-tenant SaaS, internal tools, and small-to-medium production without a Kubernetes cluster.
+
+## Kubernetes mode
+
+Define an `Agent` custom resource. The Beluga operator reconciles it into a Deployment, Service, HPA, NetworkPolicy, and ServiceMonitor.
+
+```mermaid
+graph TD
+  CR[Agent CRD] --> Op[Beluga Operator]
+  Op --> Dep[Deployment]
+  Op --> Svc[Service]
+  Op --> HPA[HorizontalPodAutoscaler]
+  Op --> NP[NetworkPolicy]
+  Op --> SM[ServiceMonitor]
+  Dep --> Pod1[Runner pod 1]
+  Dep --> Pod2[Runner pod 2]
+  Dep --> Pod3[Runner pod N]
+  Pod1 --> Card[/.well-known/agent.json]
+```
+
+Use for multi-tenant or high-volume production with autoscaling needs.
+
+## Temporal mode
+
+The Runner hands the agent loop off to a Temporal workflow. Each activity (LLM call, tool execute) is recorded in Temporal's event log and survives process restarts.
+
+```mermaid
+graph LR
+  Client --> Runner[Runner]
+  Runner --> TC[Temporal cluster]
+  TC --> W[Temporal worker · Beluga agent]
+  W --> LLM
+  W --> Tool
+  TC --> EL[Event log · persistent]
+```
+
+Use for long-running or human-in-the-loop workflows. See [DOC-16 — Durable Workflows](../../../../architecture/16-durable-workflows.md).
+
+## Picking a mode
+
+```mermaid
+graph TD
+  Start[What's your deployment context?]
+  Start --> Emb[Embedded in another app]
+  Start --> Small[Small/medium production, single host]
+  Start --> Big[Multi-node production]
+  Start --> Long[Long-running / HITL]
+
+  Emb --> Lib[Library]
+  Small --> Dock[Docker]
+  Big --> K8s[Kubernetes]
+  Long --> Temp[Temporal]
+```
+
+These modes are not mutually exclusive. A large deployment might run most agents in Kubernetes and a subset in Temporal for long-running research tasks — same agent code, different runners.
 
 ## Production Checklist
 

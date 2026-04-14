@@ -65,116 +65,66 @@ const is404 = Astro.locals.starlightRoute?.id === "404";
 <style>
   @layer starlight.core {
     h1 {
-      font-size: 7rem !important;
-      line-height: 6.5rem !important;
-      letter-spacing: -4px;
+      font-family: var(--font-sans);
+      font-size: var(--text-display) !important;
+      line-height: var(--lh-display) !important;
+      letter-spacing: var(--track-display);
+      font-weight: 500;
       color: var(--sl-color-white);
+      max-width: 18ch;
+      margin-inline: auto;
+      text-wrap: balance;
     }
 
-    /* Search container with glassmorphism */
+    /* Solid search container — no glass, no shadow */
     .search-container {
-      width: 90%;
+      width: 100%;
+      max-width: 42rem;
       margin: auto;
-      border: 1px solid
-        color-mix(in srgb, var(--sl-color-white) 10%, transparent);
-      background: color-mix(in srgb, var(--sl-color-white) 4%, transparent);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+      border: 1px solid var(--sl-color-hairline);
+      background: var(--surface-1);
+      border-radius: 0.5rem;
+    }
+
+    :root[data-theme="light"] .search-container {
+      background: var(--paper-100);
     }
 
     .badges {
-      background-color: color-mix(
-        in srgb,
-        var(--sl-color-white) 3%,
-        transparent
-      );
+      background: transparent;
     }
 
-    /* Badge styling: slightly larger, hover scale */
     .badge {
-      background: color-mix(in srgb, var(--sl-color-white) 7%, transparent);
-      font-size: 14.5px;
-      transition: background 0.25s ease, transform 0.25s ease;
+      background: transparent;
+      border: 1px solid var(--sl-color-hairline);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      transition: border-color 0.2s ease, color 0.15s ease;
     }
     .badge:hover {
-      background: color-mix(in srgb, var(--sl-color-white) 15%, transparent);
-      transform: scale(1.05);
+      border-color: color-mix(in oklch, var(--brand-500) 50%, var(--sl-color-hairline));
     }
 
-    /* Logo container with glow pseudo-element */
     .hero-logo {
       display: flex;
       justify-content: center;
-      position: relative;
     }
-    .hero-logo::before {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 320px;
-      height: 320px;
-      transform: translate(-50%, -50%);
-      background: radial-gradient(
-        circle,
-        rgba(92, 163, 202, 0.35) 0%,
-        rgba(15, 51, 83, 0.15) 50%,
-        transparent 70%
-      );
-      border-radius: 50%;
-      animation: glow-pulse 4s ease-in-out infinite;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    /* Logo image with float animation */
     .hero-logo-img {
-      width: 360px;
-      height: 360px;
-      filter: drop-shadow(0 0 30px rgba(92, 163, 202, 0.3));
-      position: relative;
-      z-index: 1;
-      animation: float 5s ease-in-out infinite;
+      width: clamp(180px, 28vw, 260px);
+      height: auto;
     }
 
-    @keyframes glow-pulse {
-      0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
-      50% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.05); }
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
+    @media (prefers-reduced-motion: no-preference) {
+      .hero-logo-img {
+        transition: transform 0.4s ease;
+      }
     }
 
     @media (max-width: 940px) {
       h1 {
-        font-size: 3.5rem !important;
-        line-height: 3.5rem !important;
-        letter-spacing: -2px;
-      }
-      .hero-logo-img {
-        width: 240px;
-        height: 240px;
-      }
-      .hero-logo::before {
-        width: 220px;
-        height: 220px;
-      }
-      .search-container {
-        width: 100%;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .hero-logo-img {
-        width: 180px;
-        height: 180px;
-      }
-      .hero-logo::before {
-        width: 160px;
-        height: 160px;
+        font-size: clamp(2rem, 8vw, 3rem) !important;
       }
     }
   }

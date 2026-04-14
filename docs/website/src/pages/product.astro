@@ -1,0 +1,323 @@
+---
+import MarketingLayout from "@/layouts/MarketingLayout.astro";
+import EditorialSection from "@/components/marketing/EditorialSection.astro";
+import CodeProof from "@/components/marketing/CodeProof.astro";
+
+const buildCode = `import (
+    _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
+    "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/tool"
+)
+
+model, _ := llm.New("anthropic", llm.Config{Model: "claude-sonnet-4-6"})
+
+researchAgent, _ := agent.New(ctx,
+    agent.WithLLM(model),
+    agent.WithPersona("senior researcher, cites sources"),
+    agent.WithPlanner("react"),
+    agent.WithTools(tool.Must(tool.HTTPFetch()), tool.Must(tool.MarkdownParser())),
+)
+
+stream, _ := researchAgent.Stream(ctx, "summarise streaming-first patterns in Beluga")
+for ev, err := range stream.Range {
+    if err != nil { break }
+    ev.Render()
+}`;
+
+const knowCode = `import (
+    "github.com/lookatitude/beluga-ai/rag/retriever"
+    "github.com/lookatitude/beluga-ai/rag/vectorstore"
+    _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/pgvector"
+    _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/openai"
+)
+
+store, _ := vectorstore.New("pgvector", vectorstore.Config{
+    DSN:       "postgres://beluga@db:5432/kb",
+    Dimension: 1536,
+})
+
+// Hybrid retrieval: BM25 + dense vector, fused with RRF.
+hybrid := retriever.Hybrid(
+    retriever.BM25(store, retriever.WithK(40)),
+    retriever.Dense(store, retriever.WithK(40)),
+    retriever.RRF(60),
+)
+
+docs, err := hybrid.Retrieve(ctx, "how does crash-durable workflow replay work?")`;
+
+const shipCode = `// Resilience + observability + safety compose on the same interface.
+// Read outside-in: guardrails wrap tracing wraps rate-limit wraps retry.
+safeModel := llm.ApplyMiddleware(base,
+    llm.WithGuardrails(pipeline),     // input + output + tool guards
+    llm.WithTracing(),                // gen_ai.* OTel spans at every boundary
+    llm.WithRateLimit(60, 150000),    // 60 req/min, 150k tok/min
+    llm.WithRetry(3),                 // respects core.IsRetryable()
+    llm.WithCostTracking(costCenter),
+)`;
+
+const voiceCode = `import (
+    "github.com/lookatitude/beluga-ai/voice"
+    _ "github.com/lookatitude/beluga-ai/voice/stt/providers/deepgram"
+    _ "github.com/lookatitude/beluga-ai/voice/tts/providers/cartesia"
+    _ "github.com/lookatitude/beluga-ai/voice/vad/providers/silero"
+    _ "github.com/lookatitude/beluga-ai/voice/transport/providers/livekit"
+)
+
+pipeline, _ := voice.NewPipeline(voice.Config{
+    Transport: "livekit",
+    VAD:       "silero",
+    STT:       "deepgram",
+    LLM:       model,
+    TTS:       "cartesia",
+})
+
+// Frame-based — pipeline.Run handles barge-in, turn detection,
+// and sub-800ms glass-to-glass latency.
+pipeline.Run(ctx)`;
+
+const protocolCode = `import (
+    "github.com/lookatitude/beluga-ai/protocol/mcp"
+    "github.com/lookatitude/beluga-ai/runtime"
+)
+
+runner, _ := runtime.NewRunner(runtime.Config{
+    Agent: myAgent,
+    Expose: runtime.ExposeAll{
+        MCP:   mcp.Server(":8080"),    // Model Context Protocol
+        A2A:   true,                   // /.well-known/agent.json
+        REST:  ":3000",                // REST + SSE streaming
+        GRPC:  ":50051",               // protobuf contracts
+    },
+})
+runner.Serve(ctx)`;
+
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: "Product — Beluga AI",
+  description: "A complete agent stack organized around Build, Know, and Ship.",
+  url: "https://beluga-ai.org/product/",
+});
+---
+
+<MarketingLayout
+  title="Product"
+  description="A complete agent stack organized around Build, Know, and Ship — agent runtime, LLM abstraction, RAG, voice, memory, tools, orchestration, guardrails, observability, protocols."
+  jsonLd={jsonLd}
+>
+  <!-- P1 · Intro -->
+  <section class="page-intro">
+    <div class="page-intro-frame">
+      <span class="eyebrow">PRODUCT</span>
+      <h1 class="page-headline">What Beluga can do.</h1>
+      <p class="page-deck">
+        A complete agent stack organized around three concerns.
+        <em>Build</em> is where agents come from.
+        <em>Know</em> is what agents remember and retrieve.
+        <em>Ship</em> is how agents behave in production.
+      </p>
+      <nav class="pi-jump" aria-label="Jump to section">
+        <a href="#build">Build</a>
+        <a href="#know">Know</a>
+        <a href="#ship">Ship</a>
+        <a href="#voice">Voice</a>
+        <a href="#protocols">Protocols</a>
+      </nav>
+    </div>
+  </section>
+
+  <!-- P2 · Build -->
+  <EditorialSection
+    eyebrow="BUILD"
+    headline="Agents that reason, act, and recover."
+    headlineFont="display"
+    deck="The runtime runs a Plan → Act → Observe → Replan loop on every turn. Eight planning strategies share one Planner interface — swap them with a config change. LLM calls route across 22 providers with a unified ChatModel. Tools are any Go function wrapped with a schema. Handoffs between agents are auto-generated tools."
+    layout="split"
+    cite={{ label: "Agent anatomy", href: "/docs/concepts/extensibility/" }}
+    class="section-build"
+  >
+    <CodeProof
+      code={buildCode}
+      lang="go"
+      title="examples/research-agent.go"
+      caption={`ReAct planner with two tools, streamed to the caller. Swap WithPlanner("react") for "lats", "tot", or "moa" without touching the rest.`}
+      cite={{ label: "The eight reasoning strategies", href: "/docs/guides/capabilities/agents/" }}
+    />
+  </EditorialSection>
+
+  <div id="build" class="anchor-offset"></div>
+
+  <!-- P3 · Know -->
+  <EditorialSection
+    eyebrow="KNOW"
+    headline="Memory that persists. Retrieval that finds the right thing."
+    headlineFont="display"
+    deck="Three-tier memory — working, recall, archival — with graph-store support. RAG uses hybrid retrieval: BM25, dense vector, and graph traversal, fused with Reciprocal Rank Fusion. Strategies include CRAG, Adaptive RAG, HyDE, and GraphRAG. Thirteen vector-store backends, nine embedding providers, eight memory stores."
+    layout="split"
+    bleed
+    cite={{ label: "RAG pipeline guide", href: "/docs/guides/capabilities/rag/" }}
+  >
+    <CodeProof
+      code={knowCode}
+      lang="go"
+      title="examples/hybrid-retrieval.go"
+      caption="BM25 + dense vector retrieval fused with RRF — the recommended default for most knowledge bases."
+    />
+  </EditorialSection>
+
+  <div id="know" class="anchor-offset"></div>
+
+  <!-- P4 · Ship -->
+  <EditorialSection
+    eyebrow="SHIP"
+    headline="Production defaults, not production afterthoughts."
+    headlineFont="display"
+    deck="The guard pipeline runs three stages — Input, Output, Tool — around every LLM interaction. Circuit breakers, rate limits, and retry are middleware on the same interface as your LLM call. OTel GenAI spans emit from 17 packages at every boundary. Durable workflows replay from an event log. Cost tracking attributes every token to a team."
+    layout="split"
+    cite={{ label: "Production defaults — observability, resilience, durability", href: "/docs/guides/production/" }}
+  >
+    <CodeProof
+      code={shipCode}
+      lang="go"
+      title="main.go · wrapping a model for production"
+      caption="Five lines of middleware around base is the difference between a demo and a system you page on."
+    />
+  </EditorialSection>
+
+  <div id="ship" class="anchor-offset"></div>
+
+  <!-- P5 · Voice -->
+  <EditorialSection
+    eyebrow="VOICE"
+    headline="Frame-based voice, built in."
+    headlineFont="display"
+    deck="STT → LLM → TTS as a typed pipeline. Six STT providers, seven TTS providers, three speech-to-speech providers. LiveKit, Daily, and Pipecat transports. Silero and WebRTC VAD. No other Go agent framework includes this."
+    layout="split"
+    bleed
+    cite={{ label: "Voice pipeline guide", href: "/docs/guides/capabilities/voice/" }}
+  >
+    <CodeProof
+      code={voiceCode}
+      lang="go"
+      title="examples/voice-agent.go"
+    />
+  </EditorialSection>
+
+  <div id="voice" class="anchor-offset"></div>
+
+  <!-- P6 · Protocols -->
+  <EditorialSection
+    eyebrow="PROTOCOLS"
+    headline="Agents meet the network."
+    headlineFont="display"
+    deck="Expose the same Agent over MCP for tools, A2A for inter-agent discovery, REST/SSE for streaming clients, gRPC for low-latency internal calls, or WebSocket for bidirectional voice. Pick one or ship them all — the Runner is the deployment boundary, not the agent."
+    layout="split"
+    cite={{ label: "Protocol layer guide", href: "/docs/guides/production/" }}
+  >
+    <CodeProof
+      code={protocolCode}
+      lang="go"
+      title="examples/runner.go"
+    />
+  </EditorialSection>
+
+  <div id="protocols" class="anchor-offset"></div>
+
+  <!-- Final CTA -->
+  <section class="product-cta">
+    <div class="pc-frame">
+      <h2 class="font-display">Everything you just read is open source.</h2>
+      <p>MIT licensed. 110 providers. Zero paid tiers.</p>
+      <div class="pc-actions">
+        <a href="/docs/start/quick-start/" class="btn btn-primary">Read the quickstart</a>
+        <a href="/compare/" class="btn btn-ghost">Compare with alternatives →</a>
+      </div>
+    </div>
+  </section>
+</MarketingLayout>
+
+<style>
+  /* .page-intro / .page-intro-frame / .page-headline / .page-deck
+     and .eyebrow live in components.css. */
+
+  /* Page-specific deck embellishment — lets <em> inside the deck
+     read as a load-bearing keyword without italicising. */
+  .page-intro .page-deck em {
+    font-style: normal;
+    color: var(--sl-color-white);
+    font-weight: 500;
+  }
+
+  /* Jump nav */
+  .pi-jump {
+    display: flex;
+    gap: 1.75rem;
+    margin-top: 1.5rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    flex-wrap: wrap;
+  }
+  .pi-jump a {
+    color: var(--sl-color-gray-3);
+    text-decoration: none;
+    padding-bottom: 0.125rem;
+    border-bottom: 1px solid transparent;
+    transition: color 0.15s ease, border-color 0.2s ease;
+  }
+  .pi-jump a:hover {
+    color: var(--brand-300);
+    border-bottom-color: var(--brand-300);
+  }
+
+  /* Anchor offset so in-page links land below the sticky header */
+  .anchor-offset {
+    display: block;
+    height: 1px;
+    margin-top: -5rem;
+    padding-top: 5rem;
+    visibility: hidden;
+  }
+
+  /* Final CTA */
+  .product-cta {
+    padding-block: clamp(5rem, 10vw, 8rem);
+    border-top: 1px solid var(--sl-color-hairline);
+  }
+  .pc-frame {
+    max-width: 52rem;
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  .pc-frame h2 {
+    font-family: var(--font-sans);
+    font-size: var(--text-h1);
+    line-height: var(--lh-h1);
+    letter-spacing: var(--track-h1);
+    font-weight: 500;
+    color: var(--sl-color-white);
+    margin: 0;
+    max-width: 18ch;
+    text-wrap: balance;
+  }
+  .pc-frame p {
+    font-size: var(--text-lead);
+    line-height: var(--lh-body);
+    color: var(--sl-color-gray-2);
+    margin: 0;
+  }
+  .pc-actions {
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  /* .btn / .btn-primary / .btn-ghost live in components.css */
+</style>

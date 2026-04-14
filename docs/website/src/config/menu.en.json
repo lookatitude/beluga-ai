@@ -1,35 +1,18 @@
 {
   "main": [
-    { "name": "About", "url": "/about/" },
-    {
-      "name": "Features",
-      "url": "/features/",
-      "hasChildren": true,
-      "megaMenu": true,
-      "children": [
-        { "name": "Agent Runtime", "url": "/features/agents/" },
-        { "name": "LLM Providers", "url": "/features/llm/" },
-        { "name": "RAG Pipeline", "url": "/features/rag/" },
-        { "name": "Voice Pipeline", "url": "/features/voice/" },
-        { "name": "Orchestration", "url": "/features/orchestration/" },
-        { "name": "Memory Systems", "url": "/features/memory/" },
-        { "name": "Tools & MCP", "url": "/features/tools/" },
-        { "name": "Guardrails", "url": "/features/guardrails/" },
-        { "name": "Observability", "url": "/features/observability/" },
-        { "name": "Protocols", "url": "/features/protocols/" }
-      ]
-    },
-    { "name": "Integrations", "url": "/integrations/" },
+    { "name": "Product", "url": "/product/" },
+    { "name": "Docs", "url": "/docs/start/" },
+    { "name": "Providers", "url": "/providers/" },
+    { "name": "Recipes", "url": "/docs/recipes/" },
     { "name": "Enterprise", "url": "/enterprise/" },
-    { "name": "Compare", "url": "/compare/" },
     { "name": "Community", "url": "/community/" }
   ],
   "footer": {
     "framework": {
       "title": "Framework",
       "links": [
-        { "name": "Features", "url": "/features/" },
-        { "name": "Integrations", "url": "/integrations/" },
+        { "name": "Product", "url": "/product/" },
+        { "name": "Providers", "url": "/providers/" },
         { "name": "Compare", "url": "/compare/" },
         { "name": "Enterprise", "url": "/enterprise/" }
       ]
@@ -37,10 +20,11 @@
     "docs": {
       "title": "Docs",
       "links": [
-        { "name": "Getting Started", "url": "/docs/getting-started/overview/" },
+        { "name": "Start", "url": "/docs/start/" },
+        { "name": "Concepts", "url": "/docs/concepts/" },
         { "name": "Guides", "url": "/docs/guides/" },
-        { "name": "API Reference", "url": "/docs/api-reference/" },
-        { "name": "Cookbook", "url": "/docs/cookbook/" }
+        { "name": "Recipes", "url": "/docs/recipes/" },
+        { "name": "Reference", "url": "/docs/reference/" }
       ]
     },
     "community": {
@@ -55,7 +39,8 @@
     "info": {
       "title": "Info",
       "links": [
-        { "name": "About", "url": "/about/" }
+        { "name": "Community", "url": "/community/" },
+        { "name": "License — MIT", "url": "https://github.com/lookatitude/beluga-ai/blob/main/LICENSE" }
       ]
     }
   }

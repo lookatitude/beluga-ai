@@ -2,6 +2,12 @@
 import MarketingHeader from "@/components/MarketingHeader.astro";
 import MarketingFooter from "@/components/MarketingFooter.astro";
 
+// Import global.css as a side-effect so Vite processes it once as a
+// dedicated CSS entrypoint. Importing via JS avoids the "@import must
+// precede" warnings that Astro's scoped <style> block triggers when it
+// re-processes global.css through PostCSS per-layout.
+import "@/styles/global.css";
+
 interface Props {
   title: string;
   description: string;
@@ -33,12 +39,15 @@ const fullTitle = title === "Beluga AI" ? title : `${title} | Beluga AI`;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-    <!-- Fonts -->
+    <!-- Critical base rules (not processed by Tailwind) -->
+    <link rel="stylesheet" href="/theme-base.css" />
+
+    <!-- Typography: IBM Plex Sans (text+headings) · JetBrains Mono (code). -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
     />
 
     <!-- SEO -->
@@ -72,11 +81,10 @@ const fullTitle = title === "Beluga AI" ? title : `${title} | Beluga AI`;
     <!-- JSON-LD -->
     {jsonLd && <script type="application/ld+json" set:html={jsonLd} />}
 
-    <!-- Styles -->
-    <style>
-      @import "tailwindcss";
-      @import "../styles/global.css";
-    </style>
+    <!-- global.css is imported via the frontmatter as a JS side-effect
+         so Astro treats it as a dedicated CSS entrypoint and doesn't
+         re-process it through a scoped <style> block. -->
+
 
     <!-- Prevent flash of wrong theme -->
     <script is:inline>
@@ -93,9 +101,7 @@ const fullTitle = title === "Beluga AI" ? title : `${title} | Beluga AI`;
     </script>
   </head>
 
-  <body
-    class="min-h-screen bg-lightmode-body text-lightmode-text dark:bg-body dark:text-text font-primary antialiased"
-  >
+  <body class="beluga-marketing">
     <MarketingHeader />
     <main>
       <slot />

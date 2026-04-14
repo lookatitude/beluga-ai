@@ -1,0 +1,201 @@
+---
+/**
+ * CodeProof — a code sample with caption and source citation.
+ *
+ * Every technical claim on this site should ship next to one of these:
+ * a runnable Go snippet and a link back to the file that proves it.
+ * The frame is intentionally understated — thin hairline, no shadow,
+ * no glass — so that the code carries the weight.
+ *
+ * Uses Astro's built-in <Code> which renders at build time via Shiki,
+ * so there is zero runtime JS cost.
+ */
+import { Code } from "astro:components";
+
+interface Props {
+  /** The raw code string. Full imports, real error handling, no ellipses. */
+  code: string;
+  /** Language. Defaults to go. */
+  lang?:
+    | "go"
+    | "typescript"
+    | "javascript"
+    | "bash"
+    | "json"
+    | "yaml"
+    | "toml"
+    | "rust";
+  /** One-line lead above the frame. Describes the *why*, not the what. */
+  caption?: string;
+  /** File name or package path shown in the frame chrome. */
+  title?: string;
+  /** Optional link to the canonical source file. */
+  cite?: { label: string; href: string };
+  /** Whether to draw the frame chrome. Default true. */
+  frame?: boolean;
+  /** Extra class for per-page tuning when unavoidable. */
+  class?: string;
+}
+
+const {
+  code,
+  lang = "go",
+  caption,
+  title,
+  cite,
+  frame = true,
+  class: className = "",
+} = Astro.props;
+---
+
+<figure class:list={["code-proof", !frame && "code-proof-naked", className]}>
+  {caption && <figcaption class="cp-caption">{caption}</figcaption>}
+
+  <div class="cp-frame">
+    {title && (
+      <div class="cp-title">
+        <span class="cp-dot" aria-hidden="true"></span>
+        <span class="cp-title-text">{title}</span>
+      </div>
+    )}
+
+    <div class="cp-code">
+      <Code
+        code={code}
+        lang={lang}
+        themes={{ light: "github-light-default", dark: "github-dark-default" }}
+        defaultColor={false}
+      />
+    </div>
+  </div>
+
+  {cite && (
+    <a class="cp-cite" href={cite.href}>
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M2 7h7M6 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M10.5 2.5H12v1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+      </svg>
+      <span>{cite.label}</span>
+    </a>
+  )}
+</figure>
+
+<style>
+  .code-proof {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .cp-caption {
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    font-weight: 500;
+    color: var(--sl-color-gray-2);
+    line-height: 1.45;
+    margin: 0;
+  }
+
+  .cp-frame {
+    position: relative;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.5rem;
+    background: var(--surface-3);
+    overflow: hidden;
+  }
+
+  :global([data-theme="light"]) .cp-frame {
+    background: var(--paper-100);
+  }
+
+  .code-proof-naked .cp-frame {
+    border: none;
+    background: transparent;
+    border-radius: 0;
+  }
+
+  /* File-path header bar */
+  .cp-title {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.625rem 1rem;
+    border-bottom: 1px solid var(--sl-color-hairline);
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--sl-color-gray-3);
+    background: color-mix(in oklch, var(--ink-950) 50%, transparent);
+  }
+
+  :global([data-theme="light"]) .cp-title {
+    background: color-mix(in oklch, var(--paper-200) 30%, transparent);
+  }
+
+  .cp-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--brand-500);
+    flex-shrink: 0;
+  }
+
+  /* Shiki dual-theme — each token ships with --shiki-light and
+     --shiki-dark CSS variables. We apply the right variable per mode. */
+  .cp-code :global(pre) {
+    margin: 0;
+    padding: 1.25rem 1.25rem 1.25rem 1.5rem;
+    background: transparent !important;
+    font-family: var(--font-mono) !important;
+    font-size: var(--text-meta);
+    line-height: 1.7;
+    overflow-x: auto;
+    color: var(--shiki-dark);
+  }
+
+  .cp-code :global(pre code) {
+    font-family: var(--font-mono) !important;
+    background: transparent !important;
+    padding: 0 !important;
+    border: 0 !important;
+    font-weight: 400;
+    color: var(--shiki-dark);
+  }
+
+  .cp-code :global(pre code span) {
+    color: var(--shiki-dark);
+  }
+
+  :global(html[data-theme="light"]) .cp-code :global(pre),
+  :global(html[data-theme="light"]) .cp-code :global(pre code),
+  :global(html[data-theme="light"]) .cp-code :global(pre code span) {
+    color: var(--shiki-light);
+  }
+
+  /* Cite link under the frame */
+  .cp-cite {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    font-weight: 500;
+    color: var(--sl-color-gray-3);
+    text-decoration: none;
+    padding: 0.125rem 0;
+    border-bottom: 1px solid transparent;
+    transition: color 0.15s ease, border-color 0.2s ease;
+    width: fit-content;
+  }
+  .cp-cite:hover {
+    color: var(--brand-200);
+    border-bottom-color: var(--brand-200);
+  }
+  .cp-cite:focus-visible {
+    outline: 2px solid var(--brand-500);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+</style>

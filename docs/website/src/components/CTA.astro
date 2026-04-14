@@ -20,7 +20,7 @@ const { title, description, enable, fill_button, outline_button } =
         {fill_button?.enable && (
           <Button
             label={fill_button.label || "Get Started"}
-            link={fill_button.link || "/docs/getting-started/overview/"}
+            link={fill_button.link || "/docs/start/"}
             variant="primary"
           />
         )}
@@ -28,7 +28,7 @@ const { title, description, enable, fill_button, outline_button } =
           <Button
             label={outline_button.label || "Get a live demo"}
             link={
-              outline_button.link || "/docs/getting-started/overview/"
+              outline_button.link || "/docs/start/"
             }
             variant="outline-primary"
           />
@@ -42,7 +42,7 @@ const { title, description, enable, fill_button, outline_button } =
   /* Ensure background image is visible in light mode */
   :global([data-theme="light"]) .cta-container {
     background-blend-mode: multiply;
-    background-color: #f9fafb; /* Light background color */
+    background-color: var(--paper-100);
   }
 
   /* Dark mode styling */

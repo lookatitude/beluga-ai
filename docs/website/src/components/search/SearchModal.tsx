@@ -4,11 +4,11 @@ import { useKeyboardNavigation } from "./useKeyboardNavigation";
 import { useRecentSearches } from "./useRecentSearches";
 
 const QUICK_LINKS = [
-  { label: "Getting Started", url: "/docs/getting-started/overview/" },
-  { label: "API Reference", url: "/docs/api-reference/" },
-  { label: "Providers", url: "/docs/providers/" },
-  { label: "Architecture", url: "/docs/architecture/" },
-  { label: "Tutorials", url: "/docs/tutorials/" },
+  { label: "Start", url: "/docs/start/" },
+  { label: "Concepts", url: "/docs/concepts/" },
+  { label: "Guides", url: "/docs/guides/" },
+  { label: "Recipes", url: "/docs/recipes/" },
+  { label: "Reference", url: "/docs/reference/" },
 ];
 
 export default function SearchModal() {

@@ -111,7 +111,7 @@ The review process is intentionally sequential: automated checks first, then hum
 
 ### What Reviewers Look For
 
-Reviewers evaluate changes against the framework's consistency guarantees and the patterns described in the [Architecture documentation](/docs/architecture/). In a framework with 19 registries that all follow the same contract, consistency is as important as correctness:
+Reviewers evaluate changes against the framework's consistency guarantees and the patterns described in the [Architecture documentation](/docs/reference/architecture/overview/). In a framework with 19 registries that all follow the same contract, consistency is as important as correctness:
 
 - Correctness and test coverage
 - Adherence to [Code Style](/docs/contributing/code-style/) and project patterns (registry, middleware, hooks)

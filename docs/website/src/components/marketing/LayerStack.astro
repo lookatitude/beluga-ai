@@ -1,0 +1,181 @@
+---
+/**
+ * LayerStack — the 7-layer Beluga architecture, rendered in HTML/CSS.
+ * Not an SVG — the layers respond to tokens, adapt to light/dark, and
+ * stay legible at any size. Each layer is a row with its number,
+ * name, and the packages that live there.
+ *
+ * Used on the homepage, /product, and the architecture concepts page.
+ */
+
+const layers = [
+  { n: "07", name: "Application", tag: "Your code", items: ["CLI · API server · LiveKit handler · K8s CRDs"] },
+  { n: "06", name: "Agent runtime", tag: "Plan → Act → Observe → Replan", items: ["Runner · Agent · Executor · Planner · Team"] },
+  { n: "05", name: "Orchestration", tag: "Multi-agent coordination", items: ["Supervisor · Handoff · Scatter-Gather · Pipeline · Blackboard · Router"] },
+  { n: "04", name: "Protocol gateway", tag: "Where agents meet the network", items: ["MCP · A2A · REST/SSE · gRPC · WebSocket"] },
+  { n: "03", name: "Capability layer", tag: "What agents can do", items: ["LLM · Tools · Memory · RAG · Voice · Guard · Prompt · Eval · Cache · HITL"] },
+  { n: "02", name: "Cross-cutting", tag: "Concerns applied uniformly", items: ["Resilience · Auth · Audit · Cost · State · Sandbox · Workflow"] },
+  { n: "01", name: "Foundation", tag: "Zero external deps beyond stdlib + OTel", items: ["core · schema · config · o11y"] },
+];
+---
+
+<div class="layer-stack" role="img" aria-label="Beluga AI seven-layer architecture">
+  {layers.map((layer, i) => (
+    <div class="layer" style={`--i: ${i};`}>
+      <div class="layer-marker">
+        <span class="layer-n">{layer.n}</span>
+      </div>
+      <div class="layer-body">
+        <div class="layer-head">
+          <h3 class="layer-name">{layer.name}</h3>
+          <span class="layer-tag">{layer.tag}</span>
+        </div>
+        <p class="layer-items">{layer.items[0]}</p>
+      </div>
+    </div>
+  ))}
+  <div class="layer-rule" aria-hidden="true"></div>
+  <p class="layer-caption">
+    Layer <span>N</span> depends only on layers <span>1 … N−1</span>.
+    No upward imports. No hidden global state. No runtime reflection.
+  </p>
+</div>
+
+<style>
+  .layer-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+    max-width: 56rem;
+  }
+
+  .layer {
+    display: grid;
+    grid-template-columns: 4.5rem 1fr;
+    gap: 1.25rem;
+    padding: 1.125rem 0 1.125rem 0;
+    border-bottom: 1px solid var(--sl-color-hairline);
+    position: relative;
+    opacity: 0;
+    transform: translateY(4px);
+    animation: layer-in 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+    animation-delay: calc(var(--i) * 60ms);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .layer {
+      opacity: 1;
+      transform: none;
+      animation: none;
+    }
+  }
+
+  @keyframes layer-in {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .layer:first-child {
+    border-top: 1px solid var(--sl-color-hairline);
+  }
+
+  .layer-marker {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-start;
+    padding-top: 0.125rem;
+  }
+
+  .layer-n {
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    color: var(--sl-color-gray-3);
+  }
+
+  .layer-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .layer-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.875rem;
+    flex-wrap: wrap;
+  }
+
+  .layer-name {
+    font-family: var(--font-sans);
+    font-size: var(--text-prose);
+    font-weight: 600;
+    color: var(--sl-color-white);
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .layer-tag {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--brand-300);
+  }
+
+  :global([data-theme="light"]) .layer-tag {
+    color: oklch(0.45 0.10 240);
+  }
+
+  .layer-items {
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: 1.5;
+    color: var(--sl-color-gray-2);
+    margin: 0;
+  }
+
+  /* The foundation layer (01) reads as the structural ground —
+     slightly stronger treatment visually. */
+  .layer:last-of-type {
+    padding-bottom: 1.5rem;
+  }
+  .layer:last-of-type .layer-n {
+    color: var(--brand-300);
+  }
+
+  .layer-rule {
+    display: none;
+  }
+
+  .layer-caption {
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: 1.5;
+    color: var(--sl-color-gray-3);
+    margin: 1.5rem 0 0;
+    max-width: 44rem;
+  }
+
+  .layer-caption span {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    color: var(--brand-300);
+    padding: 0 0.125rem;
+  }
+
+  :global([data-theme="light"]) .layer-caption span {
+    color: oklch(0.45 0.10 240);
+  }
+
+  @media (max-width: 640px) {
+    .layer {
+      grid-template-columns: 3rem 1fr;
+      gap: 0.875rem;
+    }
+  }
+</style>

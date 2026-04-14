@@ -42,7 +42,8 @@
       "Bash(pwd:*)",
       "Bash(mkdir:*)",
       "Bash(tree:*)",
-      "Bash(.claude/hooks/wiki-query.sh:*)"
+      "Bash(.claude/hooks/wiki-query.sh:*)",
+      "Bash(sonar:*)"
     ],
     "deny": [
       "Bash(rm -rf /:*)",
@@ -53,8 +54,7 @@
       "Bash(curl * | sh:*)",
       "Bash(wget * | bash:*)",
       "Bash(wget * | sh:*)",
-      "Bash(eval:*)",
-      "Bash(:(){:|:&};:)"
+      "Bash(eval:*)"
     ]
   },
   "hooks": {
@@ -75,7 +75,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Check if this bash command is safe for a Go project. Block if it: deletes files outside the project, modifies system files, installs packages globally without user intent, runs curl/wget piped to shell, uses force flags on git destructively (push --force to main, reset --hard without cause), or could leak credentials. Allow standard Go toolchain commands, git read operations, file inspection, and .claude/hooks/ scripts. Command: $ARGUMENTS",
+            "prompt": "Check if this bash command is safe for a Go project. Block if it: deletes files outside the project, modifies system files, installs packages globally without user intent, runs curl/wget piped to shell, uses force flags on git destructively (push --force to main, reset --hard without cause), or could leak credentials. Allow standard Go toolchain commands, git read operations, file inspection, .claude/hooks/ scripts, and sonar/sonarqube-cli commands (sonar auth, sonar integrate, sonar self-update, etc.). Command: $ARGUMENTS",
             "model": "claude-haiku-4-5-20251001",
             "timeout": 10
           }
