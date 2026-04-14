@@ -231,8 +231,11 @@ jobs:
           FILE_COUNT=$(find bundle/godoc -type f | wc -l)
           echo "Generated ${FILE_COUNT} godoc files"
 
-      - name: Prepare reports with Astro frontmatter
+      - name: Copy raw reports
         run: |
+          # Raw bodies only — no frontmatter. The website repo owns the
+          # frontmatter (SEO metadata, Starlight options) and splices
+          # these bodies into its existing report stubs at build time.
           mkdir -p bundle/reports
 
           for f in CHANGELOG.md SECURITY.md CODE-QUALITY.md; do
@@ -242,22 +245,7 @@ jobs:
             fi
 
             slug=$(basename "$f" .md | tr '[:upper:]' '[:lower:]' | tr '_' '-')
-
-            case "$slug" in
-              changelog)    title="Changelog" ;;
-              security)     title="Security" ;;
-              code-quality) title="Code Quality" ;;
-              *)            title="$slug" ;;
-            esac
-
-            {
-              echo "---"
-              echo "title: ${title}"
-              echo "---"
-              echo ""
-              cat "$f"
-            } > "bundle/reports/${slug}.md"
-
+            cp "$f" "bundle/reports/${slug}.md"
             echo "Prepared reports/${slug}.md"
           done
 
