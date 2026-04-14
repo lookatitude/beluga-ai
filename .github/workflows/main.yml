@@ -400,7 +400,7 @@ jobs:
 
       - name: Trigger release workflow
         if: steps.bump.outputs.skip != 'true'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             await github.rest.actions.createWorkflowDispatch({
