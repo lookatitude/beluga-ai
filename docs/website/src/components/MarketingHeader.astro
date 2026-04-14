@@ -181,11 +181,14 @@ const currentPath = Astro.url.pathname;
   }
 
   .marketing-header-inner {
-    max-width: 1400px;
+    /* Match the docs content container (.container, .content-panel .sl-container
+       in components.css) so the logo aligns with the sidebar start and the
+       docs button aligns with the right edge of the content area. */
+    max-width: 1740px;
     margin: 0 auto;
     display: flex;
     align-items: center;
-    padding: 0.625rem 1.5rem;
+    padding: 0.625rem 1rem;
     gap: 0.5rem;
   }
 
