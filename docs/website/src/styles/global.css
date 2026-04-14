@@ -91,6 +91,13 @@
   /* Header height — used for sticky offsets, anchor scroll padding */
   --header-height: 56px;
 
+  /* ── Marketing frame — single source of truth for max-width
+     Applied to .hero-frame, .ed-frame, .page-intro-frame--wide.
+     Keep in sync with docs layout visual width so marketing pages
+     don't appear narrower than documentation pages. */
+  --marketing-max: 88rem;
+  --marketing-pad: clamp(1.25rem, 4vw, 2.5rem);
+
   /* Light-mode CTA primary — appears in 18 places as a literal */
   --brand-cta-light: oklch(0.42 0.11 240);
   --brand-cta-light-hover: oklch(0.36 0.11 242);

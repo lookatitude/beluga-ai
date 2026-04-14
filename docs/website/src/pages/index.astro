@@ -234,16 +234,16 @@ const jsonLd = JSON.stringify({
     eyebrow="110 PROVIDERS · 19 CATEGORIES"
     headline="One import. Fully wired."
     deck="Every provider registers itself in init(). Import for side-effect, call llm.New or vectorstore.New — middleware, hooks, and metrics attach without a line of wiring."
-    layout="split"
     cite={{ label: "Browse the full catalog", href: "/providers/" }}
   >
-    <CodeProof
-      code={providerCode}
-      lang="go"
-      title="main.go"
-    />
+    <div class="provider-grid">
+      <CodeProof
+        code={providerCode}
+        lang="go"
+        title="main.go"
+      />
 
-    <table class="provider-index">
+      <table class="provider-index">
       <thead>
         <tr>
           <th scope="col">Category</th>
@@ -261,6 +261,7 @@ const jsonLd = JSON.stringify({
         ))}
       </tbody>
     </table>
+    </div>
   </EditorialSection>
 
   <!-- H5 · Durability moment -->
@@ -268,15 +269,16 @@ const jsonLd = JSON.stringify({
     eyebrow="CRASH-DURABLE"
     headline="Agents that survive restarts."
     deck="Durable workflows are a first-class concern, not a plugin. Replay from an event log so a redeploy, a pod restart, or a machine failure does not lose progress."
-    layout="split"
     bleed
   >
-    <CodeProof
-      code={workflowCode}
-      lang="go"
-      title="workflow/resume.go"
-      cite={{ label: "Workflow durability guide", href: "/docs/guides/production/workflow-durability/" }}
-    />
+    <div class="durability-code">
+      <CodeProof
+        code={workflowCode}
+        lang="go"
+        title="workflow/resume.go"
+        cite={{ label: "Workflow durability guide", href: "/docs/guides/production/workflow-durability/" }}
+      />
+    </div>
   </EditorialSection>
 
   <!-- H6 · Final CTA -->
@@ -299,9 +301,9 @@ const jsonLd = JSON.stringify({
   }
 
   .hero-frame {
-    max-width: 76rem;
+    max-width: var(--marketing-max);
     margin-inline: auto;
-    padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+    padding-inline: var(--marketing-pad);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: clamp(2.5rem, 5vw, 4rem);
@@ -472,13 +474,30 @@ const jsonLd = JSON.stringify({
     }
   }
 
+  /* Provider section — code above, table below full-width */
+  .provider-grid {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2.5rem, 4vw, 3.5rem);
+  }
+
+  .provider-grid :global(.code-proof) {
+    max-width: 56rem;
+  }
+
+  /* Durability section — constrain code width so it doesn't stretch
+     edge-to-edge across the full marketing frame */
+  .durability-code {
+    max-width: 56rem;
+  }
+
   /* Provider index table */
   .provider-index {
     width: 100%;
     border-collapse: collapse;
     font-family: var(--font-sans);
     font-size: 0.875rem;
-    margin-top: 1.5rem;
+    margin-top: 0;
   }
 
   .provider-index th,
