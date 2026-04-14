@@ -2,17 +2,32 @@
 
 All notable changes to Beluga AI are documented here.
 
-## [2.8.4] - 2026-04-14
+## [2.8.5] - 2026-04-14
 
-### Documentation
+### Miscellaneous
 
-- **wiki**: Capture C-006 docs-audit correction
+- **deps**: Bump actions/github-script from 8 to 9
+- **deps**: Bump peter-evans/repository-dispatch from 3 to 4
+- **release**: Update CHANGELOG.md for v2.8.4 [skip ci]
+
+## [2.8.5] - 2026-04-14
 
 ### Miscellaneous
 
 - **claude**: Loosen over-paranoid PreToolUse safety prompts
 - **release**: Update CHANGELOG.md for v2.8.3 [skip ci]
+- Split docs/website into its own repo
+- **deps**: Bump the go-minor-patch group with 3 updates
 
+### Release
+
+- Ship raw report bodies in docs-bundle
+
+## [2.8.4] - 2026-04-14
+
+### Documentation
+
+- **wiki**: Capture C-006 docs-audit correction
 
 ## [2.8.3] - 2026-04-14
 
