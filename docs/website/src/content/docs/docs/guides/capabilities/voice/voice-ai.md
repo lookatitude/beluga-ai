@@ -14,9 +14,19 @@ The `voice` package provides a **frame-based processing pipeline** for building 
 
 ## Architecture
 
+The cascading pipeline connects microphone audio through a chain of `FrameProcessor` stages, each transforming an `iter.Seq2[Frame, error]` stream.
+
 ```mermaid
 graph LR
-  A["Transport\n(WebSocket / LiveKit)"] --> B[VAD] --> C[STT] --> D[LLM] --> E[TTS] --> F["Transport\n(audio out)"]
+  Mic[Microphone] --> Transport[Transport.AudioIn]
+  Transport --> VAD[Voice Activity Detector]
+  VAD --> STT[Speech-to-Text]
+  STT --> LLM[LLM]
+  LLM --> TTS[Text-to-Speech]
+  TTS --> TransportOut[Transport.AudioOut]
+  TransportOut --> Spk[Speaker]
+  LLM -.ToolCall.-> Tool
+  Tool -.Observation.-> LLM
 ```
 
 Three pipeline modes offer different trade-offs between latency and capability:

@@ -10,6 +10,17 @@ head:
 
 Deploy Beluga agents as production-grade HTTP services with built-in resilience, configuration hot-reload, multi-tenant support, and container-ready architecture. The deployment patterns described here separate your agent logic from the HTTP framework, resilience policies, and infrastructure concerns, so each layer can be changed independently.
 
+The same agent code runs in all four deployment modes — the choice is operational, not architectural.
+
+```mermaid
+graph TD
+  A[Agent code]
+  A --> L[Library mode]
+  A --> D[Docker mode]
+  A --> K[Kubernetes mode]
+  A --> T[Temporal mode]
+```
+
 ## HTTP Server Adapters
 
 The `server` package provides the `ServerAdapter` interface that decouples agent logic from HTTP frameworks. This means the same agent works with `net/http`, Gin, Fiber, Echo, Chi, gRPC, or Connect without changing a single line of agent code. You choose the HTTP framework that matches your team's preferences and existing infrastructure, and the adapter handles the translation between HTTP requests and agent invocations.

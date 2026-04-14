@@ -35,6 +35,20 @@ Each stage is a separate package with its own interface, registry, and providers
 | `rag/vectorstore` | `VectorStore` | Store and search embeddings |
 | `rag/retriever` | `Retriever` | Find relevant documents |
 
+## Ingestion
+
+Documents flow through a linear chain: load, split, optionally contextualize, embed, then index into both a vector store and a BM25 index in parallel.
+
+```mermaid
+graph LR
+  Src[Source document] --> L[Loader]
+  L --> S[Splitter]
+  S --> Ctx[Contextualizer · optional]
+  Ctx --> E[Embedder]
+  E --> V[VectorStore]
+  S --> BM[BM25 index]
+```
+
 ## Document Loading
 
 The first step in any RAG pipeline is getting your data into a structured format. Document loaders read content from various sources — files, URLs, APIs — and produce `schema.Document` values with both content and metadata. The registry pattern means you can add new loader types (databases, cloud storage, custom APIs) without modifying existing code.
@@ -231,6 +245,20 @@ results, err := store.Search(ctx, queryVec, 10,
 | Turbopuffer | `rag/vectorstore/providers/turbopuffer` | Serverless |
 
 ## Retriever
+
+Hybrid retrieval combines BM25 keyword matching with dense vector search, fusing the two ranked lists via Reciprocal Rank Fusion before a cross-encoder reranker selects the final top-K documents.
+
+```mermaid
+graph LR
+  Q[Query] --> BM[BM25 retrieve ~200]
+  Q --> Emb[Embed query]
+  Emb --> Dense[Dense retrieve ~100]
+  BM --> RRF[RRF fusion]
+  Dense --> RRF
+  RRF --> Rerank[Cross-encoder reranker]
+  Rerank --> Top[Top 10]
+  Top --> LLM
+```
 
 The `Retriever` interface abstracts the search step, decoupling your application from specific vector store implementations and search strategies. Retrievers can combine multiple backends, apply reranking, or implement advanced strategies like CRAG and HyDE. This abstraction is where the most impactful RAG quality improvements happen — choosing the right retrieval strategy often matters more than choosing the right embedding model.
 

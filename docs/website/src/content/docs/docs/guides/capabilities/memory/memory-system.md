@@ -24,13 +24,20 @@ The memory system is organized into tiers that mirror a computer's memory hierar
 | **Graph** | Entity-relationship knowledge | Relational index (structured connections) | Unlimited |
 
 ```mermaid
-graph TB
-  subgraph LLM Context
-    Core["Core Memory (always)\nPersona + User blocks"]
-    Recall["Recall Results (recent)\nRecent conversation turns"]
-    Archival["Archival Results (search)\nRetrieved long-term docs"]
+graph TD
+  subgraph Working[Working memory · session-scoped]
+    W1[Buffer: last N messages]
+    W2[Window: sliding token window]
   end
-  Core --> Recall --> Archival
+  subgraph Recall[Recall memory · cross-session]
+    R1[Summaries of prior conversations]
+    R2[Extracted entities]
+  end
+  subgraph Archival[Archival memory · permanent]
+    A1[Vector-indexed semantic store]
+  end
+  Working -->|promotion on session end| Recall
+  Recall -->|promotion when compacted| Archival
 ```
 
 ## The Memory Interface

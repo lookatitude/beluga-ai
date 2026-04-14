@@ -19,78 +19,74 @@ Go:      1.23+ (uses iter.Seq2 for streaming)
 
 ## Package Map
 
+Imports flow downward only — a package in Layer N may import from Layers 1…N−1 but never upward.
+
 ```mermaid
-graph TB
-    subgraph foundation [Foundation — zero external deps]
-        core
-        schema
-        config
-        o11y
-    end
+graph TD
+  subgraph L7[Layer 7 · Application]
+    cmd[cmd/]
+    examples[examples/]
+    ops[ops/ · CLIs]
+  end
 
-    subgraph capability [Capability — AI primitives]
-        llm
-        tool
-        memory
-        rag
-        agent
-        voice
-    end
+  subgraph L6[Layer 6 · Agent runtime]
+    agent[agent/]
+    runtime[runtime/]
+    orchestration[orchestration/]
+  end
 
-    subgraph orchestration [Orchestration]
-        orch["orchestration"]
-        workflow
-    end
+  subgraph L5[Layer 5 · Orchestration-specific]
+    handoff[orchestration/handoff]
+    supervisor[orchestration/supervisor]
+    scatter[orchestration/scatter-gather]
+  end
 
-    subgraph infrastructure [Infrastructure — cross-cutting]
-        guard
-        resilience
-        cache
-        auth
-        hitl
-        eval
-        state
-        prompt
-        cost
-        audit
-    end
+  subgraph L4[Layer 4 · Protocol]
+    protocol[protocol/]
+    server[server/]
+  end
 
-    subgraph runtime_layer [Runtime Layer]
-        runtime
-    end
+  subgraph L3[Layer 3 · Capability]
+    llm[llm/]
+    tool[tool/]
+    memory[memory/]
+    rag[rag/]
+    voice[voice/]
+    guard[guard/]
+    prompt[prompt/]
+    cache[cache/]
+    eval[eval/]
+    hitl[hitl/]
+  end
 
-    subgraph protocols [Protocols & Servers]
-        protocol
-        server
-    end
+  subgraph L2[Layer 2 · Cross-cutting]
+    resilience[resilience/]
+    auth[auth/]
+    audit[audit/]
+    cost[cost/]
+    state[state/]
+    workflow[workflow/]
+  end
 
-    subgraph deployment [Deployment]
-        deploy
-        k8s["k8s/operator"]
-    end
+  subgraph L1[Layer 1 · Foundation]
+    core[core/]
+    schema[schema/]
+    config[config/]
+    o11y[o11y/]
+  end
 
-    core --> schema
-    llm --> core & schema & config
-    tool --> schema
-    memory --> schema & config & rag
-    rag --> schema & config
-    agent --> llm & tool & memory & schema
-    voice --> llm & schema
-    orch --> agent & core
-    workflow --> core & schema
-    guard --> schema
-    resilience --> core
-    cache --> schema
-    auth --> core
-    hitl --> schema
-    eval --> schema & llm & agent
-    state --> core
-    prompt --> schema
-    cost --> core
-    audit --> core
-    runtime --> agent & cost & audit & orch
-    protocol --> agent & tool & schema
-    server --> protocol
+  subgraph External[Outside the tree]
+    k8s[k8s/]
+  end
+
+  L7 --> L6
+  L6 --> L5
+  L5 --> L4
+  L4 --> L3
+  L3 --> L2
+  L2 --> L1
+  L6 -.may use.-> L3
+  L3 -.may use.-> L1
 ```
 
 ## Directory Structure

@@ -25,3 +25,16 @@ and come back here when you hit a concept that needs grounding.
 
 Start with **Core Primitives** if you are new to the framework. The other four
 pages can be read in any order.
+
+## The agent runtime loop
+
+Every agent execution follows the same Plan → Act → Observe → Replan cycle until the planner signals completion.
+
+```mermaid
+graph LR
+  Plan[Planner.Plan] --> Act[Execute Action]
+  Act --> Obs[Observe result]
+  Obs --> Replan[Planner.Replan]
+  Replan --> Plan
+  Replan --> Done[ActionFinish]
+```

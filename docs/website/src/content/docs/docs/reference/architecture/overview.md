@@ -117,6 +117,61 @@ Beluga makes deliberate choices that differentiate it from other agentic framewo
 
 - **Frame-based voice pipeline** — Individual `FrameProcessor` stages (VAD, STT, LLM, TTS) compose into cascading, S2S, or hybrid pipelines. Transports (LiveKit, Daily) are pluggable. The frame-based design enables sub-second latency by processing audio incrementally rather than waiting for complete utterances.
 
+## Lifecycle of a request
+
+The following diagram traces a single text-chat request from user input through every layer — guards, memory, the Plan→Act→Observe loop, tool execution, and response streaming.
+
+```mermaid
+sequenceDiagram
+  actor U as User
+  participant R as Runner
+  participant P as Plugin chain
+  participant G as Guard
+  participant CM as ContextManager
+  participant Mem as Memory
+  participant PB as PromptBuilder
+  participant Ex as Executor
+  participant Pl as Planner
+  participant L as LLM
+  participant T as Tool
+  participant H as HITL
+
+  U->>R: Runner.Run(req)
+  R->>R: Load/create session
+  R->>P: BeforeTurn chain
+  P-->>R: (possibly modified input)
+  R->>G: Guard.Input
+  G-->>R: approved
+  R->>CM: ContextManager.Fit
+  R->>Mem: Memory.Load
+  Mem-->>R: working + recall + archival
+  R->>PB: PromptBuilder.Build
+  PB-->>R: prompt
+
+  R->>Ex: Agent.Stream
+  loop Plan → Act → Observe → Replan
+    Ex->>Pl: Planner.Plan(state)
+    Pl-->>Ex: []Action
+    Ex->>L: LLM.Stream
+    L-->>Ex: EventData (tokens)
+    alt ToolCall event
+      L-->>Ex: EventToolCall
+      Ex->>G: Guard.Tool
+      Ex->>H: HITL.Check
+      H-->>Ex: approved
+      Ex->>T: Tool.Execute
+      T-->>Ex: ToolResult
+      Ex->>Pl: Planner.Replan
+    end
+  end
+
+  Ex-->>R: final events
+  R->>G: Guard.Output
+  R->>P: AfterTurn chain
+  R->>Mem: Memory.Save
+  R-->>U: SSE/WS stream
+```
+
 ## Documents
 
 Dive deeper into the architecture through these focused documents:
