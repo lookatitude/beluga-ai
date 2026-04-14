@@ -5,7 +5,7 @@ go 1.25.7
 require (
 	github.com/a2aproject/a2a-go v0.3.13
 	github.com/alicebob/miniredis/v2 v2.37.0
-	github.com/anthropics/anthropic-sdk-go v1.35.1
+	github.com/anthropics/anthropic-sdk-go v1.36.0
 	github.com/asg017/sqlite-vec-go-bindings v0.1.6
 	github.com/aws/aws-sdk-go-v2 v1.41.5
 	github.com/aws/aws-sdk-go-v2/config v1.32.14
@@ -24,14 +24,14 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.42
 	github.com/mendableai/firecrawl-go v1.0.0
 	github.com/modelcontextprotocol/go-sdk v1.5.0
-	github.com/nats-io/nats.go v1.50.0
+	github.com/nats-io/nats.go v1.51.0
 	github.com/neo4j/neo4j-go-driver/v5 v5.28.4
 	github.com/openai/openai-go v1.12.0
 	github.com/pashagolub/pgxmock/v4 v4.9.0
 	github.com/pgvector/pgvector-go v0.3.0
 	github.com/redis/go-redis/v9 v9.18.0
 	github.com/stretchr/testify v1.11.1
-	go.mongodb.org/mongo-driver/v2 v2.5.0
+	go.mongodb.org/mongo-driver/v2 v2.5.1
 	go.opentelemetry.io/otel v1.43.0
 	go.opentelemetry.io/otel/metric v1.43.0
 	go.opentelemetry.io/otel/sdk v1.43.0
