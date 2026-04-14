@@ -275,7 +275,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send repository_dispatch to beluga-website
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@v4
         with:
           # Requires a PAT (repo scope) stored as WEBSITE_DISPATCH_TOKEN
           # in this repo's secrets. GITHUB_TOKEN cannot dispatch across repos.
