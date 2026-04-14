@@ -147,19 +147,30 @@ const {
     max-width: 100%;
   }
 
-  .ed-layout-split .ed-body {
+  /* True side-by-side: header occupies col 1, body col 2.
+     The .ed-frame itself becomes the grid container so header
+     and body align on the same row at the desktop breakpoint. */
+  .ed-layout-split .ed-frame {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: clamp(1.5rem, 3vw, 3rem);
+    gap: clamp(2rem, 4vw, 3.5rem);
+    align-items: start;
   }
 
-  @media (min-width: 900px) {
-    .ed-layout-split .ed-header {
-      grid-column: 1 / 2;
+  .ed-layout-split .ed-header {
+    margin-bottom: 0;
+  }
+
+  @media (min-width: 960px) {
+    .ed-layout-split .ed-frame {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
     }
-    .ed-layout-split .ed-body {
-      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-      align-items: start;
+    .ed-layout-split .ed-header {
+      position: sticky;
+      top: calc(var(--header-height) + 2rem);
+    }
+    .ed-layout-split .ed-cite {
+      grid-column: 1 / -1;
     }
   }
 

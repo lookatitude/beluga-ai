@@ -147,6 +147,7 @@ const jsonLd = JSON.stringify({
     headline="Seven layers. One import path."
     headlineFont="display"
     deck="From Foundation primitives to your application code, each layer depends only on the layers below it. Downward arrows only. If you find an upward import, it's a bug."
+    layout="split"
     cite={{ label: "Read the concepts", href: "/docs/concepts/" }}
   >
     <LayerStack />
@@ -229,56 +230,66 @@ const jsonLd = JSON.stringify({
     </div>
   </EditorialSection>
 
-  <!-- H4 · Provider breadth -->
+  <!-- H4 · Provider breadth — split: text left, code right -->
   <EditorialSection
     eyebrow="110 PROVIDERS · 19 CATEGORIES"
     headline="One import. Fully wired."
     deck="Every provider registers itself in init(). Import for side-effect, call llm.New or vectorstore.New — middleware, hooks, and metrics attach without a line of wiring."
-    cite={{ label: "Browse the full catalog", href: "/providers/" }}
+    layout="split"
   >
-    <div class="provider-grid">
-      <CodeProof
-        code={providerCode}
-        lang="go"
-        title="main.go"
-      />
-
-      <table class="provider-index">
-      <thead>
-        <tr>
-          <th scope="col">Category</th>
-          <th scope="col">Count</th>
-          <th scope="col">Providers</th>
-        </tr>
-      </thead>
-      <tbody>
-        {providerRows.map(([cat, count, providers]) => (
-          <tr>
-            <th scope="row">{cat}</th>
-            <td class="pi-count">{count}</td>
-            <td class="pi-list">{providers}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-    </div>
+    <CodeProof
+      code={providerCode}
+      lang="go"
+      title="main.go"
+    />
   </EditorialSection>
 
-  <!-- H5 · Durability moment -->
+  <!-- H4b · Full provider catalog table — full-width below the split -->
+  <section class="provider-catalog">
+    <div class="provider-catalog-frame">
+      <table class="provider-index">
+        <thead>
+          <tr>
+            <th scope="col">Category</th>
+            <th scope="col">Count</th>
+            <th scope="col">Providers</th>
+          </tr>
+        </thead>
+        <tbody>
+          {providerRows.map(([cat, count, providers]) => (
+            <tr>
+              <th scope="row">{cat}</th>
+              <td class="pi-count">{count}</td>
+              <td class="pi-list">{providers}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <footer class="provider-catalog-cite">
+        <a href="/providers/">
+          Browse the full catalog
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+      </footer>
+    </div>
+  </section>
+
+  <!-- H5 · Durability moment — split: text left, code right -->
   <EditorialSection
     eyebrow="CRASH-DURABLE"
     headline="Agents that survive restarts."
     deck="Durable workflows are a first-class concern, not a plugin. Replay from an event log so a redeploy, a pod restart, or a machine failure does not lose progress."
+    layout="split"
     bleed
   >
-    <div class="durability-code">
-      <CodeProof
-        code={workflowCode}
-        lang="go"
-        title="workflow/resume.go"
-        cite={{ label: "Workflow durability guide", href: "/docs/guides/production/workflow-durability/" }}
-      />
-    </div>
+    <CodeProof
+      code={workflowCode}
+      lang="go"
+      title="workflow/resume.go"
+      cite={{ label: "Workflow durability guide", href: "/docs/guides/production/workflow-durability/" }}
+    />
   </EditorialSection>
 
   <!-- H6 · Final CTA -->
@@ -474,21 +485,41 @@ const jsonLd = JSON.stringify({
     }
   }
 
-  /* Provider section — code above, table below full-width */
-  .provider-grid {
-    display: flex;
-    flex-direction: column;
-    gap: clamp(2.5rem, 4vw, 3.5rem);
+  /* Provider catalog — full-width table below the split header section */
+  .provider-catalog {
+    padding-block: 0 clamp(4rem, 8vw, 7rem);
   }
-
-  .provider-grid :global(.code-proof) {
-    max-width: 56rem;
+  .provider-catalog-frame {
+    max-width: var(--marketing-max);
+    margin-inline: auto;
+    padding-inline: var(--marketing-pad);
   }
-
-  /* Durability section — constrain code width so it doesn't stretch
-     edge-to-edge across the full marketing frame */
-  .durability-code {
-    max-width: 56rem;
+  .provider-catalog-cite {
+    margin-top: clamp(2rem, 3vw, 3rem);
+  }
+  .provider-catalog-cite a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--sl-color-text-accent);
+    text-decoration: none;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid transparent;
+    transition: color 0.15s ease, border-color 0.2s ease;
+  }
+  .provider-catalog-cite a:hover {
+    color: var(--brand-200);
+    border-bottom-color: var(--brand-200);
+  }
+  .provider-catalog-cite a svg {
+    transition: transform 0.2s ease;
+  }
+  .provider-catalog-cite a:hover svg {
+    transform: translateX(2px);
   }
 
   /* Provider index table */
