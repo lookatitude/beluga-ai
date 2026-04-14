@@ -188,6 +188,20 @@ ttsProcessor := tts.AsFrameProcessor(engine, tts.WithVoice("rachel"))
 | Smallest | `voice/tts/providers/smallest` | Lightweight |
 | Groq | `voice/tts/providers/groq` | Fast synthesis |
 
+## Speech-to-speech mode
+
+A single bidirectional model handles audio in, audio out, and tool calls. Lower latency than cascading (no STT/TTS round trips), more expensive per call. Tool calls are intercepted on the wire.
+
+```mermaid
+graph LR
+  Mic[Microphone] --> Transport[Transport.AudioIn]
+  Transport <--> S2S[S2S model, e.g. OpenAI Realtime]
+  S2S --> TransportOut[Transport.AudioOut]
+  TransportOut --> Spk[Speaker]
+  S2S -.ToolCall.-> Tool
+  Tool -.Observation.-> S2S
+```
+
 ## Speech-to-Speech (S2S)
 
 Speech-to-Speech models process audio natively — they take audio input and produce audio output without an intermediate text stage. This eliminates the latency of separate STT and TTS steps, achieving response times as low as 300ms. The trade-off is that S2S models are currently available from fewer providers and do not support text-based tool calls. Use S2S when latency is the primary concern and tool use is not required.
@@ -286,6 +300,19 @@ vad := voice.NewVAD(voice.VADConfig{
 | Silero | Neural network | High |
 | WebRTC | Energy-based | Fast, lower accuracy |
 
+## Transports
+
+All transport providers implement the same `Transport` interface. Internally each keeps a buffered channel fed by its read loop and exposes it via an `iter.Seq2` closure.
+
+```mermaid
+graph TD
+  LK[LiveKit] --> Trans[Transport interface]
+  WebRTC[WebRTC] --> Trans
+  WS[WebSocket audio] --> Trans
+  Loc[Local microphone] --> Trans
+  Trans --> Pipe[Pipeline]
+```
+
 ## Transport Layer
 
 The transport layer handles the connection between the voice pipeline and the end user. It manages audio encoding/decoding, network protocols, and session lifecycle. Transports are pluggable providers, so the same pipeline logic works whether the user connects via a WebSocket from a browser, a WebRTC session through LiveKit, or a telephony integration through Daily.
@@ -325,6 +352,20 @@ defer lk.Close()
 | LiveKit | `voice/transport/providers/livekit` | WebRTC SFU |
 | Daily | `voice/transport/providers/daily` | WebRTC platform |
 | Pipecat | `voice/transport/providers/pipecat` | Pipeline framework |
+
+## Hybrid mode
+
+Start in S2S (low latency). If the turn involves many tool calls or long reasoning, switch to the cascade (lower cost, better for tool-heavy workloads). The switch policy is a pluggable `FrameProcessor`.
+
+```mermaid
+graph TD
+  Input[Audio input] --> Detect{Policy: heavy tool use expected?}
+  Detect -->|no| S2S[S2S path]
+  Detect -->|yes| Cascade[Cascading path]
+  S2S --> Out[Audio output]
+  Cascade --> Out
+  S2S -.switch trigger.-> Cascade
+```
 
 ## Hybrid Pipeline
 

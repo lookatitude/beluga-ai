@@ -89,6 +89,29 @@ Three states: **Closed** (normal, calls pass through), **Open** (fail fast witho
 
 Circuit breakers operate per-instance, not per-process. Wrapping the same base provider in two different middleware chains gives two independent breakers — useful when one chain has lower latency budget than another.
 
+## Hedged requests
+
+Fire a parallel fallback request if the primary is still running at `hedge_delay`. Whichever finishes first wins; the other is cancelled. Cuts P99 latency at up to 2× the base cost for calls that exceed the delay.
+
+```mermaid
+sequenceDiagram
+  participant C as Caller
+  participant P as Primary
+  participant F as Fallback
+  C->>P: request
+  Note over C: wait hedge_delay (e.g. 500ms)
+  C->>F: fallback request
+  alt Primary responds first
+    P-->>C: result
+    C->>F: cancel
+  else Fallback responds first
+    F-->>C: result
+    C->>P: cancel
+  end
+```
+
+Best for search and retrieval where median latency is low but the tail is long.
+
 ## Composing with other middleware
 
 Resilience composes with observability, guardrails, and cost tracking. Read outside-in:

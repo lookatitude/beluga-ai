@@ -8,6 +8,22 @@ head:
       content: "Beluga AI, Go, tutorial, human-in-the-loop, approval, hitl, confidence-based, safety"
 ---
 
+A durable workflow can pause for an external signal — a human approval — and resume exactly where it left off when the signal arrives. The worker goes idle (no CPU, no memory beyond the event log) until the signal arrives.
+
+```mermaid
+sequenceDiagram
+  participant W as Workflow
+  participant API as External API
+  participant H as Human
+  W->>W: request approval
+  W->>W: wait for signal
+  Note over W: hours pass. Worker idle.
+  H->>API: approve via UI
+  API->>W: send signal approved=true
+  W->>W: resume
+  W->>W: continue with approval
+```
+
 Autonomous agents are powerful, but some actions -- transferring money, deleting data, sending emails to customers -- require a human "sanity check." Full automation is appropriate for low-risk, read-only operations, but high-stakes or irreversible actions need human oversight. The `hitl` package provides a `Manager` interface that routes interaction requests through configurable `ApprovalPolicy` rules, auto-approving low-risk actions while escalating uncertain or dangerous operations. This approach gives you the efficiency of automation where it is safe, with the safety of human review where it is needed.
 
 ## What You Will Build

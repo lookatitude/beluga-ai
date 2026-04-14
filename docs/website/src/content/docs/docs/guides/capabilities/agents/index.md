@@ -49,6 +49,23 @@ graph LR
 | LATS | 20–100 | Deep reasoning, math proofs, code synthesis |
 | Mixture-of-Agents | 10–50 | Diverse perspectives, final ensemble |
 
+## Composing agents
+
+`BaseAgent` is an embeddable struct — every agent type derives from it. The type hierarchy shows the available subtypes:
+
+```mermaid
+graph TD
+  BA[BaseAgent]
+  BA --> LLM[LLMAgent: planner-driven]
+  BA --> Seq[SequentialAgent]
+  BA --> Par[ParallelAgent]
+  BA --> Loop[LoopAgent]
+  BA --> Cust[CustomAgent: full control]
+  BA --> Team[TeamAgent: orchestrated children]
+```
+
+`LLMAgent` drives the Plan/Act/Observe loop via a planner. `SequentialAgent`, `ParallelAgent`, and `LoopAgent` are deterministic workflow agents with no LLM reasoning. `CustomAgent` gives you full `Stream` control. `TeamAgent` delegates to an `OrchestrationPattern` to coordinate children.
+
 ## Picking a strategy
 
 Use this decision tree to select the least expensive strategy that meets your quality bar.

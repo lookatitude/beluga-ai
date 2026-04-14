@@ -12,6 +12,16 @@ Single agents work well for focused, self-contained problems. But real-world tas
 
 Beluga AI provides three coordination patterns that address different tradeoffs between control, flexibility, and coupling. Choosing the right pattern depends on whether you need deterministic routing, dynamic goal decomposition, or fully decoupled event-driven communication.
 
+Beluga agents discover and delegate to each other via the A2A protocol. Every agent exposes an `AgentCard` at `/.well-known/agent.json`.
+
+```mermaid
+graph LR
+  A[Agent A] -->|discover| Card[/.well-known/agent.json]
+  Card -->|capabilities| A
+  A -->|task submit| B[Agent B]
+  B -->|streaming results via SSE| A
+```
+
 ## What You'll Learn
 
 This guide covers:

@@ -19,6 +19,16 @@ An MCP server that exposes Beluga `Tool` implementations, MCP resources, and pro
 - Familiarity with the `tool` package and `FuncTool`
 - Basic understanding of JSON-RPC 2.0
 
+Beluga exposes tools, resources, and prompts to any MCP client — including Claude Desktop, Cursor, and Zed — via Streamable HTTP.
+
+```mermaid
+graph LR
+  MCPc[MCP client e.g. Claude Desktop] -->|streamable HTTP| MCPs[Beluga MCP server]
+  MCPs --> T[Beluga tools]
+  MCPs --> R[Beluga resources]
+  MCPs --> P[Beluga prompts]
+```
+
 ## Core Concepts
 
 ### MCP Server

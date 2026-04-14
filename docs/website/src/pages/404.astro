@@ -8,6 +8,7 @@ import MarketingLayout from "@/layouts/MarketingLayout.astro";
   robots="noindex, nofollow"
 >
   <section class="nf">
+    <div class="nf-backdrop" aria-hidden="true">404</div>
     <div class="page-intro-frame">
       <span class="eyebrow">HTTP 404</span>
       <h1 class="page-headline">
@@ -59,10 +60,35 @@ import MarketingLayout from "@/layouts/MarketingLayout.astro";
 
 <style>
   .nf {
+    position: relative;
     padding-block: clamp(6rem, 12vw, 10rem);
     min-height: calc(100vh - 12rem);
     display: flex;
     align-items: center;
+    overflow: hidden;
+  }
+  .nf-backdrop {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -55%);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: clamp(18rem, 38vw, 32rem);
+    line-height: 0.85;
+    letter-spacing: -0.05em;
+    color: color-mix(in oklch, var(--brand-500) 6%, transparent);
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+    white-space: nowrap;
+  }
+  :root[data-theme="light"] .nf-backdrop {
+    color: color-mix(in oklch, oklch(0.42 0.11 240) 5%, transparent);
+  }
+  .nf .page-intro-frame {
+    position: relative;
+    z-index: 1;
   }
   /* .page-intro-frame / .page-headline / .page-deck / .eyebrow live
      in components.css. The .nf-* extras below cover the 404 list. */

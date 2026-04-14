@@ -447,6 +447,23 @@ func main() {
 }
 ```
 
+## CRAG
+
+CRAG (Corrective Retrieval-Augmented Generation) adds a relevance evaluator that scores retrieved documents against the query. If the score falls below a threshold, the query is rewritten or the pipeline falls back to web search.
+
+```mermaid
+graph LR
+  Q[Query] --> R[Retrieve]
+  R --> Eval[Relevance evaluator]
+  Eval -->|good| LLM
+  Eval -->|mixed| Rewrite[Query rewrite]
+  Rewrite --> R
+  Eval -->|bad| Web[Web search fallback]
+  Web --> LLM
+```
+
+CRAG is a registered `Retriever` strategy — enable it with a one-line config change: `retriever.New("crag", cfg)`. See [DOC-10 — RAG Pipeline](../../../../../architecture/10-rag-pipeline.md#crag--corrective-retrieval) for the full list of pluggable strategies (HyDE, Adaptive RAG, Parent-document retrieval).
+
 ## Retriever Hooks
 
 Beluga AI uses the hooks pattern across all subsystems for lifecycle observation without wrapping. Retriever hooks let you log queries, measure latency, audit which documents were retrieved, and track reranking behavior. Hooks are optional function fields — any nil hook is simply skipped, so you only pay for the observation you need.

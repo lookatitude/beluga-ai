@@ -158,6 +158,46 @@ err := graphMem.Save(ctx,
 )
 ```
 
+## Loading memory
+
+On each turn, composite memory fetches from all three tiers in parallel, merges results (deduplicating and ranking by relevance), and returns a single combined context. The agent sees one list, not three.
+
+```mermaid
+sequenceDiagram
+  participant A as Agent
+  participant C as Composite
+  participant W as Working
+  participant R as Recall
+  participant V as Archival
+  A->>C: Load(query)
+  par parallel fetch
+    C->>W: recent messages
+    C->>R: relevant summaries + entities
+    C->>V: top-K semantic matches
+  end
+  W-->>C: recent
+  R-->>C: summaries
+  V-->>C: vectors
+  C->>C: merge + rank
+  C-->>A: merged context
+```
+
+## Agent-controlled memory
+
+Beluga injects memory tools so the agent can update its own memory during reasoning — the MemGPT pattern. The agent treats memory like any other tool.
+
+```mermaid
+graph LR
+  LLM[LLM] --> Think[Reasoning loop]
+  Think --> Tool[core_memory_update]
+  Tool --> WM[Working memory updated]
+  Think --> AS[archival_search]
+  AS --> VM[Vector matches]
+  VM --> Think
+```
+
+Available memory tools: `core_memory_update`, `recall_search`, `archival_search`, `archival_insert`. Active management is why agents with this pattern produce coherent long-term conversations.
+
 ## Composite Memory
 
 In practice, agents need all memory tiers working together. Composite memory combines Core, Recall, Archival, and Graph into a single `Memory` implementation that dispatches operations to the appropriate tier. When you save a conversation turn, it is persisted to Recall for history, analyzed for archival-worthy facts, and scanned for entity relationships. When you load context for a query, composite memory aggregates results from all tiers into a unified context.

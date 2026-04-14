@@ -375,6 +375,39 @@ func (t *ApprovedTool) Execute(ctx context.Context, input map[string]any) (*tool
 }
 ```
 
+## Capability-based access
+
+Each tool declares a required capability. Each tenant has a set of granted capabilities. Default is deny — if the grant set does not contain the requirement, the tool call is rejected with a 403.
+
+```mermaid
+graph TD
+  Req[Request] --> Auth[Extract identity]
+  Auth --> Caps[Capability matrix]
+  Caps -->|required| Check[Check required capability]
+  Check -->|granted| Allow[Proceed]
+  Check -->|denied| Deny[Reject with 403]
+```
+
+This model is simpler than RBAC and avoids permission explosion: no roles, just capabilities. See [DOC-13 — Security Model](../../../../architecture/13-security-model.md) for configuration.
+
+## Defense in depth
+
+Any single layer can fail. Defense in depth means an attacker must defeat all layers to succeed.
+
+```mermaid
+graph TD
+  Layer1[1 · Input guards: reject malicious]
+  Layer2[2 · Spotlighting: frame untrusted data]
+  Layer3[3 · Capability check: can this tool run?]
+  Layer4[4 · Schema validation: are the args well-formed?]
+  Layer5[5 · Resource limits: allowlists]
+  Layer6[6 · HITL: human review for high-risk]
+  Layer7[7 · Output guards: scrub before return]
+  Layer8[8 · Audit: log everything]
+
+  Layer1 --> Layer2 --> Layer3 --> Layer4 --> Layer5 --> Layer6 --> Layer7 --> Layer8
+```
+
 ## Next Steps
 
 - [Building Your First Agent](/docs/guides/first-agent/) — Agent fundamentals

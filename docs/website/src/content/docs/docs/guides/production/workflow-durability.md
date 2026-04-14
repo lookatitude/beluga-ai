@@ -95,6 +95,21 @@ for event, err := range wf.Events(ctx) {
 }
 ```
 
+## Agent loop as activities
+
+Each step of the Plan → Act → Observe loop is a durable activity. Crashes between steps are transparent — the loop resumes from the last recorded activity.
+
+```mermaid
+graph LR
+  subgraph WF[Durable Workflow]
+    P[Plan activity] --> A[Action activity]
+    A --> O[Observe activity]
+    O --> R{Continue?}
+    R -->|yes| P
+    R -->|no| End[Finish]
+  end
+```
+
 ## What you do not need to do
 
 You do not need to implement application-level checkpointing. You do not need to design idempotent step handlers — Beluga's executor records the result of each step before returning to the workflow function. You do not need to choose between durable and non-durable agents at design time — the same `Agent` interface works in both modes.

@@ -207,6 +207,21 @@ Source: [`core/stream.go:94-108`](https://github.com/lookatitude/beluga-ai/blob/
 
 Pure closure — no goroutines, no buffering.
 
+## Event propagation
+
+Events flow from the LLM outward through the executor to hooks, plugins, and the client.
+
+```mermaid
+graph LR
+  L[LLM] --> Ev[Event stream]
+  Ev --> Ex[Executor]
+  Ex --> Hk[Hooks OnToolCall/OnToolResult]
+  Ex --> Pl[Plugin AfterTurn]
+  Ex --> C[Client]
+```
+
+Five `EventType`s propagate: `EventData` (text chunk), `EventToolCall`, `EventToolResult`, `EventDone`, and `EventError`. Hooks see tool events; plugins see the full turn; the client receives data and terminal events. See [DOC-04 — Data Flow](../../../../architecture/04-data-flow.md#event-propagation) for the complete description.
+
 ## Backpressure
 
 Backpressure in `iter.Seq2` is structural: when the consumer does not call

@@ -14,6 +14,16 @@ Standard HTTP metrics (request count, latency, error rate) miss the AI-specific 
 
 Implementing monitoring dashboards with OpenTelemetry, Prometheus, and Grafana provides real-time insights into these AI-specific metrics alongside standard application health indicators.
 
+Every log line, metric sample, and trace span shares the same `trace_id` and `span_id`, enabling one-click navigation from a latency spike in Grafana to its distributed trace.
+
+```mermaid
+graph TD
+  T[Trace · agent.invoke span] --> ID[trace_id + span_id]
+  L[Log line] --> ID
+  M[Metric sample] --> ID
+  ID --> Backend[Unified query in observability backend]
+```
+
 ## Solution Architecture
 
 Beluga AI provides built-in OpenTelemetry integration through the `o11y/` package, using GenAI semantic conventions (`gen_ai.*` attributes) for standardized metric naming. Applications export metrics to an OpenTelemetry Collector, which forwards them to Prometheus for storage and Grafana for visualization. Because all Beluga AI components emit metrics through the same OTel pipeline, a single dashboard can show end-to-end request flow from HTTP ingress through agent execution to LLM response.

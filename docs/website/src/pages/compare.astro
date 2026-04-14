@@ -2,7 +2,8 @@
 import MarketingLayout from "@/layouts/MarketingLayout.astro";
 import EditorialSection from "@/components/marketing/EditorialSection.astro";
 
-type Cell = { value: string; note?: string };
+type Coverage = 1 | 2 | 3;
+type Cell = { value: string; note?: string; coverage?: Coverage };
 
 type Row = {
   dimension: string;
@@ -13,7 +14,7 @@ type Row = {
   langchainPy: Cell;
 };
 
-const NA: Cell = { value: "not included", note: "not a built-in concern" };
+const NA: Cell = { value: "not included", note: "not a built-in concern", coverage: 1 };
 
 const rows: Row[] = [
   {
@@ -26,39 +27,39 @@ const rows: Row[] = [
   },
   {
     dimension: "Streaming primitive",
-    beluga: { value: "iter.Seq2[T, error]", note: "range-over-func, no channels" },
-    langchainGo: { value: "channels" },
-    adkGo: { value: "channels" },
-    eino: { value: "channels" },
-    langchainPy: { value: "async iterators" },
+    beluga: { value: "iter.Seq2[T, error]", note: "range-over-func, no channels", coverage: 3 },
+    langchainGo: { value: "channels", coverage: 2 },
+    adkGo: { value: "channels", coverage: 2 },
+    eino: { value: "channels", coverage: 2 },
+    langchainPy: { value: "async iterators", coverage: 2 },
   },
   {
     dimension: "Reasoning strategies",
-    beluga: { value: "8 built-in", note: "ReAct · Reflexion · Self-Discover · Mind-Map · ToT · GoT · LATS · MoA" },
-    langchainGo: { value: "ReAct only" },
-    adkGo: { value: "ReAct · Sequential" },
-    eino: { value: "ReAct · Plan-and-Execute" },
-    langchainPy: { value: "ReAct · many via LangGraph" },
+    beluga: { value: "8 built-in", note: "ReAct · Reflexion · Self-Discover · Mind-Map · ToT · GoT · LATS · MoA", coverage: 3 },
+    langchainGo: { value: "ReAct only", coverage: 1 },
+    adkGo: { value: "ReAct · Sequential", coverage: 1 },
+    eino: { value: "ReAct · Plan-and-Execute", coverage: 2 },
+    langchainPy: { value: "ReAct · many via LangGraph", coverage: 3 },
   },
   {
     dimension: "Built-in OTel GenAI spans",
-    beluga: { value: "17 packages", note: "gen_ai.* conventions, per-boundary" },
-    langchainGo: { value: "not included" },
-    adkGo: { value: "partial", note: "runtime spans only" },
-    eino: { value: "partial" },
-    langchainPy: { value: "community plugin", note: "not first-party" },
+    beluga: { value: "17 packages", note: "gen_ai.* conventions, per-boundary", coverage: 3 },
+    langchainGo: { value: "not included", coverage: 1 },
+    adkGo: { value: "partial", note: "runtime spans only", coverage: 2 },
+    eino: { value: "partial", coverage: 2 },
+    langchainPy: { value: "community plugin", note: "not first-party", coverage: 1 },
   },
   {
     dimension: "Durable workflow (built-in)",
-    beluga: { value: "workflow/ + 6 backends", note: "temporal · inngest · dapr · nats · kafka · inmemory" },
+    beluga: { value: "workflow/ + 6 backends", note: "temporal · inngest · dapr · nats · kafka · inmemory", coverage: 3 },
     langchainGo: NA,
     adkGo: NA,
     eino: NA,
-    langchainPy: { value: "LangGraph checkpointing", note: "Postgres / SQLite" },
+    langchainPy: { value: "LangGraph checkpointing", note: "Postgres / SQLite", coverage: 2 },
   },
   {
     dimension: "Voice pipeline (built-in)",
-    beluga: { value: "frame-based, 16+ providers", note: "STT · TTS · S2S · VAD · transport" },
+    beluga: { value: "frame-based, 16+ providers", note: "STT · TTS · S2S · VAD · transport", coverage: 3 },
     langchainGo: NA,
     adkGo: NA,
     eino: NA,
@@ -66,11 +67,11 @@ const rows: Row[] = [
   },
   {
     dimension: "Provider integrations",
-    beluga: { value: "110 providers · 19 categories", note: "llm · embedding · vectorstore · voice · guard · workflow · observability" },
-    langchainGo: { value: "~30", note: "mostly llm + vectorstore" },
-    adkGo: { value: "~15" },
-    eino: { value: "~40", note: "strong LLM coverage" },
-    langchainPy: { value: "hundreds", note: "largest ecosystem" },
+    beluga: { value: "110 providers · 19 categories", note: "llm · embedding · vectorstore · voice · guard · workflow · observability", coverage: 3 },
+    langchainGo: { value: "~30", note: "mostly llm + vectorstore", coverage: 2 },
+    adkGo: { value: "~15", coverage: 1 },
+    eino: { value: "~40", note: "strong LLM coverage", coverage: 2 },
+    langchainPy: { value: "hundreds", note: "largest ecosystem", coverage: 3 },
   },
   {
     dimension: "License",
@@ -150,31 +151,34 @@ const jsonLd = JSON.stringify({
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr>
-                <th scope="row" class="cmp-dim">{r.dimension}</th>
-                <td class="cmp-beluga">
-                  <span class="cmp-val">{r.beluga.value}</span>
-                  {r.beluga.note && <span class="cmp-note">{r.beluga.note}</span>}
+            {rows.map((r) => {
+              const renderCell = (cell: Cell, isBeluga = false) => (
+                <td class={isBeluga ? "cmp-beluga" : undefined}>
+                  <span class="cmp-val">{cell.value}</span>
+                  {cell.coverage && (
+                    <span
+                      class={`cmp-coverage cmp-cov-${cell.coverage}`}
+                      aria-label={`Coverage: ${cell.coverage} of 3`}
+                    >
+                      <span class="cmp-dot" data-on={cell.coverage >= 1}>●</span>
+                      <span class="cmp-dot" data-on={cell.coverage >= 2}>●</span>
+                      <span class="cmp-dot" data-on={cell.coverage >= 3}>●</span>
+                    </span>
+                  )}
+                  {cell.note && <span class="cmp-note">{cell.note}</span>}
                 </td>
-                <td>
-                  <span class="cmp-val">{r.langchainGo.value}</span>
-                  {r.langchainGo.note && <span class="cmp-note">{r.langchainGo.note}</span>}
-                </td>
-                <td>
-                  <span class="cmp-val">{r.adkGo.value}</span>
-                  {r.adkGo.note && <span class="cmp-note">{r.adkGo.note}</span>}
-                </td>
-                <td>
-                  <span class="cmp-val">{r.eino.value}</span>
-                  {r.eino.note && <span class="cmp-note">{r.eino.note}</span>}
-                </td>
-                <td>
-                  <span class="cmp-val">{r.langchainPy.value}</span>
-                  {r.langchainPy.note && <span class="cmp-note">{r.langchainPy.note}</span>}
-                </td>
-              </tr>
-            ))}
+              );
+              return (
+                <tr>
+                  <th scope="row" class="cmp-dim">{r.dimension}</th>
+                  {renderCell(r.beluga, true)}
+                  {renderCell(r.langchainGo)}
+                  {renderCell(r.adkGo)}
+                  {renderCell(r.eino)}
+                  {renderCell(r.langchainPy)}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -373,6 +377,33 @@ const jsonLd = JSON.stringify({
     display: block;
     color: var(--sl-color-white);
     font-weight: 500;
+  }
+
+  .cmp-coverage {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    margin-top: 0.375rem;
+    font-size: 0.5625rem;
+    line-height: 1;
+    letter-spacing: 0.05em;
+    font-family: var(--font-mono);
+  }
+  .cmp-dot {
+    color: var(--sl-color-gray-4);
+    transition: color 0.15s ease;
+  }
+  .cmp-dot[data-on="true"] {
+    color: var(--brand-300);
+  }
+  :global([data-theme="light"]) .cmp-dot[data-on="true"] {
+    color: oklch(0.45 0.10 240);
+  }
+  .cmp-beluga .cmp-dot[data-on="true"] {
+    color: var(--brand-200);
+  }
+  :global([data-theme="light"]) .cmp-beluga .cmp-dot[data-on="true"] {
+    color: oklch(0.40 0.12 240);
   }
 
   .cmp-note {

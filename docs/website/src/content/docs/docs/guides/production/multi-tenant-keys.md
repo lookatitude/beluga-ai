@@ -8,6 +8,18 @@ head:
       content: "API key management, multi-tenant security, key rotation, AES encryption, tenant isolation, Beluga AI, Go, SaaS security"
 ---
 
+Tenant ID lives in `context.Context` via `core.WithTenant(ctx, "acme")`. Every component that touches data reads the tenant and scopes accordingly — memory, rate limits, cost tracking, and audit are all isolated by tenant without any per-call configuration.
+
+```mermaid
+graph TD
+  Ctx[context.Context]
+  Ctx --> Tenant[WithTenant: 'acme']
+  Tenant --> Mem[Memory scoped by tenant]
+  Tenant --> Rate[Rate limits per tenant]
+  Tenant --> Cost[Cost tracking per tenant]
+  Tenant --> Audit[Audit log tagged with tenant]
+```
+
 B2B SaaS platforms that expose LLM capabilities to customers face a compound security challenge. Each tenant needs their own API key with isolated access, custom rate limits, and specific feature permissions. The naive approach — storing keys in plaintext config files or environment variables — breaks down quickly: plaintext keys in logs expose credentials, shared rate limits let one tenant starve others, and manual rotation means keys persist months after employees leave.
 
 The deeper problem is operational: with thousands of tenants, key lifecycle management (provisioning, rotation, revocation, expiration) must be automated. Manual processes don't scale, and any delay in revoking a compromised key extends the exposure window.

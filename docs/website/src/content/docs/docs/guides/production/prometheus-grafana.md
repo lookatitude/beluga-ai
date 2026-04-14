@@ -10,6 +10,17 @@ head:
 
 Observability is essential for production AI applications. While traces show individual request flows, metrics provide aggregate visibility — request rates, error rates, token consumption, and latency distributions. These aggregate views reveal patterns that traces alone cannot: gradual latency degradation, increasing error rates from a specific provider, or token consumption trends that affect cost forecasting. Beluga AI's observability layer is built on OpenTelemetry, making it straightforward to export metrics to Prometheus and visualize them in Grafana.
 
+Three export paths ship out of the box. The OTel SDK aggregates in memory; an exporter decides the destination.
+
+```mermaid
+graph LR
+  App[Beluga app] --> SDK[OTel SDK]
+  SDK --> Exp[Exporter]
+  Exp --> OTLP[OTLP → Jaeger/Tempo/etc.]
+  Exp --> Prom[Prometheus scrape]
+  Exp --> Stdout[stdout JSON]
+```
+
 ## What You Will Build
 
 A metrics pipeline that exports Beluga AI metrics to Prometheus and displays them in Grafana dashboards, covering token usage, latency, and error rates.

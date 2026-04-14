@@ -8,6 +8,19 @@ head:
       content: "Beluga AI, Go, tutorial, OpenTelemetry, tracing, GenAI conventions, Jaeger, distributed tracing"
 ---
 
+The `o11y` interface is backend-agnostic. Swap the underlying adapter without changing any application code.
+
+```mermaid
+graph TD
+  I[o11y interface]
+  I --> OTel[OTel adapter · default]
+  I --> Slog[stdlib slog adapter]
+  I --> Noop[no-op adapter · for tests]
+  OTel --> Jaeger
+  OTel --> Grafana[Grafana stack]
+  OTel --> Datadog
+```
+
 Metrics tell you what happened (error rate increased). Traces tell you why (Agent A called Tool B, which timed out calling API C). In complex AI workflows with multiple LLM calls, tool invocations, and retrieval steps, distributed tracing is essential for debugging and performance analysis. Without traces, diagnosing a slow agent requires guessing which of its many internal operations caused the delay.
 
 Beluga AI uses the OpenTelemetry GenAI semantic conventions (`gen_ai.*` attribute namespace) for LLM observability. These conventions are an emerging standard that ensures consistent attribute naming across providers, making it possible to build dashboards and alerts that work regardless of which LLM provider is in use.

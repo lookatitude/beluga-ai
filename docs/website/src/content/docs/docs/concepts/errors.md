@@ -13,6 +13,20 @@ middleware needs to know whether to retry, not just that something failed. A
 string error cannot carry that signal reliably across package boundaries.
 A typed `ErrorCode` can.
 
+Two error paths coexist at runtime: application errors (tool failures, bad schemas) become `Observation`s that the planner can recover from; infrastructure errors (network blips, rate limits) are intercepted by middleware and retried transparently.
+
+```mermaid
+graph TD
+  Tool[Tool.Execute fails] --> Err[core.Error + ErrorCode]
+  Err --> Obs[Observation with error]
+  Obs --> Replan[Planner.Replan]
+  Replan --> Try2[Try a different tool or strategy]
+
+  LLM[LLM transient error] --> MW[Middleware retry]
+  MW --> Retry[Exponential backoff]
+  Retry --> LLM
+```
+
 ## `ErrorCode` — the classification
 
 Source: [`core/errors.go:12-39`](https://github.com/lookatitude/beluga-ai/blob/main/core/errors.go#L12-L39)

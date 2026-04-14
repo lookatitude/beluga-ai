@@ -319,6 +319,20 @@ type Memory interface {
 
 **Stores**: inmemory, redis, postgres, mongodb, sqlite, neo4j, memgraph, dragonfly.
 
+The `Memory` interface delegates to two sub-interfaces — `MessageStore` for conversation history and `GraphStore` for entity relationships — each with independent provider registries.
+
+```mermaid
+graph TD
+  M[Memory interface]
+  M --> MS[MessageStore interface]
+  MS --> InMem[inmemory provider]
+  MS --> Redis[redis provider]
+  MS --> PG[postgres provider]
+  MS --> SQL[sqlite provider]
+  M --> Graph[GraphStore interface]
+  Graph --> Neo4j[neo4j provider]
+```
+
 ### rag/
 
 The RAG pipeline. 5 subpackages with independent registries. The pipeline is decomposed into discrete stages — loading, splitting, embedding, storing, and retrieving — each with its own interface and provider ecosystem. This decomposition means you can swap any stage independently: use a different embedding provider without changing your vector store, or add a new retrieval strategy without modifying how documents are loaded.
@@ -351,6 +365,17 @@ graph LR
 | `splitter/` | `TextSplitter` | Split | recursive, markdown, token |
 
 Each subpackage has its own `Register()`, `New()`, `List()`.
+
+`Retriever` is the consumer-facing interface. `Embedder` and `VectorStore` are implementation details of a retriever — your agent code calls `retriever.Retrieve(ctx, query)` and does not depend on which embedding model or vector index sits beneath it.
+
+```mermaid
+graph TD
+  U[User code] --> Ret[Retriever interface]
+  Ret --> Emb[Embedder interface]
+  Ret --> VS[VectorStore interface]
+  Emb --> EmbProv[embedding providers]
+  VS --> VSProv[vectorstore providers]
+```
 
 ### agent/
 
@@ -443,7 +468,20 @@ The runtime layer provides the lifecycle management layer that sits between agen
 
 ### runtime/
 
-Agent lifecycle management: Runner, Team composition, Plugin system, Session management, and WorkerPool.
+Agent lifecycle management: Runner, Team composition, Plugin system, Session management, and WorkerPool. The Runner is the deployment boundary — one agent (or team) plus all cross-cutting infrastructure.
+
+```mermaid
+graph TD
+  R[Runner]
+  R --> A[Agent or Team]
+  R --> Ses[SessionService]
+  R --> Art[ArtifactService]
+  R --> Plug[Plugin chain]
+  R --> GP[GuardPipeline]
+  R --> Bus[EventBus]
+  R --> Met[Metrics]
+  R --> WP[WorkerPool]
+```
 
 **Key types**:
 
@@ -1101,6 +1139,27 @@ sequenceDiagram
     Agent->>LLM: Generate(ctx, system + docs + query)
     LLM-->>Agent: Answer grounded in documents
 ```
+
+## Prohibited dependencies
+
+Some import paths are explicitly forbidden. Violations reverse the dependency direction and break the layering rule.
+
+```mermaid
+graph TD
+  CoreBad[core/] -.NO.-> LLM[llm/]
+  Schema[schema/] -.NO.-> Tool[tool/]
+  Any[any package] -.NO.-> K8s[k8s/]
+  Tool2[tool/] -.NO.-> Agent[agent/]
+  LLM2[llm/] -.NO.-> Memory[memory/]
+```
+
+- `core/` → `llm/`: foundation cannot depend on a capability layer.
+- `schema/` → anything above Layer 1: wire types only.
+- Any package → `k8s/`: Kubernetes is an overlay, not a dependency.
+- `tool/` → `agent/`: tools are invoked by agents, not the reverse.
+- Cross-capability imports in Layer 3: `llm/`, `memory/`, `voice/` do not import each other.
+
+Run `/arch-validate all` to detect violations. See [DOC-18](../../../../architecture/18-package-dependency-map.md) for the full enforcement guide.
 
 ## Statistics
 

@@ -172,6 +172,50 @@ sequenceDiagram
   R-->>U: SSE/WS stream
 ```
 
+## Turn execution
+
+The Runner's per-turn sequence — from session load through plugin chain to agent and back — is simpler than the full lifecycle above. This is the canonical shape of `Runner.Run`.
+
+```mermaid
+sequenceDiagram
+  participant C as Client
+  participant R as Runner
+  participant Ses as SessionService
+  participant P as Plugin chain
+  participant A as Agent
+  C->>R: Run(req)
+  R->>Ses: LoadOrCreate(sessionID)
+  Ses-->>R: Session
+  R->>P: BeforeTurn(session, input)
+  P-->>R: modified input
+  R->>A: Stream(ctx, input)
+  A-->>R: events
+  R->>P: AfterTurn(session, events)
+  P-->>R: post-processing
+  R->>Ses: Save(session)
+  R-->>C: stream
+```
+
+## Protocol gateway
+
+One Runner exposes its agent over multiple protocols simultaneously. All protocols route to the same `Agent.Stream` call internally.
+
+```mermaid
+graph TD
+  Runner[Runner] --> Rest[REST/SSE endpoint]
+  Runner --> A2A[A2A endpoint + AgentCard]
+  Runner --> MCP[MCP endpoint]
+  Runner --> WS[WebSocket endpoint]
+  Runner --> GRPC[gRPC endpoint]
+  Rest --> A[Agent.Stream]
+  A2A --> A
+  MCP --> A
+  WS --> A
+  GRPC --> A
+```
+
+See [DOC-12 — Protocol Layer](../../../../architecture/12-protocol-layer.md) for configuration details.
+
 ## Documents
 
 Dive deeper into the architecture through these focused documents:
