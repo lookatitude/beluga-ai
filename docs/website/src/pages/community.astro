@@ -8,24 +8,28 @@ const channels = [
     url: "https://github.com/lookatitude/beluga-ai",
     desc: "Source, issues, discussions, releases. File bugs, read the code, send PRs.",
     meta: "github.com/lookatitude/beluga-ai",
+    icon: "github",
   },
   {
     name: "GitHub Discussions",
     url: "https://github.com/lookatitude/beluga-ai/discussions",
     desc: "Roadmap input, feature RFCs, async Q&A. The primary long-form channel.",
     meta: "long-form, public, searchable",
+    icon: "discussions",
   },
   {
     name: "Discord",
     url: "https://github.com/lookatitude/beluga-ai/discussions",
     desc: "Real-time chat, show-and-tell, release announcements. Link published at v2 launch.",
     meta: "coming with v2 launch",
+    icon: "discord",
   },
   {
     name: "Blog",
     url: "#",
     desc: "Release notes, architecture deep-dives, migration notes. First post ships with v2.",
     meta: "coming soon",
+    icon: "blog",
   },
 ];
 
@@ -51,13 +55,13 @@ const jsonLd = JSON.stringify({
   jsonLd={jsonLd}
 >
   <!-- Intro -->
-  <section class="com-intro">
-    <div class="com-frame">
+  <section class="page-intro">
+    <div class="page-intro-frame">
       <span class="eyebrow">COMMUNITY</span>
-      <h1 class="com-headline font-display">
+      <h1 class="page-headline">
         Built in the open. Moved by the people who use it.
       </h1>
-      <p class="com-deck">
+      <p class="page-deck">
         Go teams building AI products face a real choice: Python interop,
         fragile bindings, or incomplete libraries. Beluga is the answer
         built entirely in Go — testable, deployable, reasoned about with
@@ -113,12 +117,41 @@ const jsonLd = JSON.stringify({
     <div class="channel-list">
       {channels.map((c) => (
         <a href={c.url} class="channel" rel="noopener">
-          <div class="channel-head">
-            <span class="channel-name">{c.name}</span>
-            <span class="channel-meta">{c.meta}</span>
+          <div class="channel-icon" aria-hidden="true">
+            {c.icon === "github" && (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+              </svg>
+            )}
+            {c.icon === "discussions" && (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
+              </svg>
+            )}
+            {c.icon === "discord" && (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="12" r="1.4" fill="currentColor" />
+                <circle cx="15" cy="12" r="1.4" fill="currentColor" />
+                <path d="M7.5 8.5c1.5-.7 3-1 4.5-1s3 .3 4.5 1M16.5 15.5c-1.5.7-3 1-4.5 1s-3-.3-4.5-1" />
+                <path d="M5 17c-.5 0-1-.4-1.2-.9l-1.7-7C1.8 7.7 2.4 7 3.3 7l3.4-.5M19 17c.5 0 1-.4 1.2-.9l1.7-7c.3-1.4-.3-2.1-1.2-2.1L17.3 6.5" />
+              </svg>
+            )}
+            {c.icon === "blog" && (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19V5a2 2 0 012-2h9l5 5v11a2 2 0 01-2 2H6a2 2 0 01-2-2z" />
+                <path d="M14 3v6h6" />
+                <path d="M8 13h8M8 17h5" />
+              </svg>
+            )}
           </div>
-          <p class="channel-desc">{c.desc}</p>
-          <span class="channel-arrow">→</span>
+          <div class="channel-body">
+            <div class="channel-head">
+              <span class="channel-name">{c.name}</span>
+              <span class="channel-meta">{c.meta}</span>
+            </div>
+            <p class="channel-desc">{c.desc}</p>
+          </div>
+          <span class="channel-arrow" aria-hidden="true">→</span>
         </a>
       ))}
     </div>
@@ -180,7 +213,7 @@ const jsonLd = JSON.stringify({
 
   <!-- License -->
   <section class="com-license">
-    <div class="com-frame">
+    <div class="page-intro-frame">
       <h2 class="font-display">MIT. That's it.</h2>
       <p>
         Use Beluga in a closed-source product. Fork it. Rewrite it. We ask
@@ -196,40 +229,8 @@ const jsonLd = JSON.stringify({
 </MarketingLayout>
 
 <style>
-  .com-intro {
-    padding-block: clamp(5rem, 11vw, 8.5rem) clamp(2.5rem, 5vw, 3.5rem);
-  }
-  .com-frame {
-    max-width: 58rem;
-    margin-inline: auto;
-    padding-inline: clamp(1.25rem, 4vw, 2.5rem);
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  .com-intro .eyebrow {
-    color: var(--brand-300);
-  }
-  :global([data-theme="light"]) .com-intro .eyebrow {
-    color: oklch(0.45 0.10 240);
-  }
-  .com-headline {
-    font-size: clamp(2.25rem, 5vw, 4rem);
-    line-height: 1.02;
-    letter-spacing: -0.03em;
-    font-weight: 500;
-    color: var(--sl-color-white);
-    margin: 0.5rem 0 0;
-    max-width: 18ch;
-    font-variation-settings: "opsz" 144, "SOFT" 30;
-  }
-  .com-deck {
-    font-size: clamp(1.0625rem, 1.3vw, 1.1875rem);
-    line-height: 1.6;
-    color: var(--sl-color-gray-2);
-    max-width: 60ch;
-    margin: 0;
-  }
+  /* .page-intro / .page-intro-frame / .page-headline / .page-deck
+     and .eyebrow now live in components.css. */
 
   /* Why Go columns */
   .why-grid {
@@ -288,13 +289,37 @@ const jsonLd = JSON.stringify({
   }
   .channel {
     position: relative;
-    display: block;
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    gap: 1rem;
     padding: 1.25rem 1.5rem;
     border: 1px solid var(--sl-color-hairline);
     border-radius: 0.5rem;
     background: color-mix(in oklch, var(--ink-950) 60%, transparent);
     text-decoration: none;
-    transition: border-color 0.2s ease, background 0.2s ease;
+    transition: border-color 0.2s ease, background 0.2s ease, color 0.15s ease;
+    color: var(--sl-color-gray-3);
+  }
+  .channel:hover {
+    color: var(--brand-200);
+  }
+  :global([data-theme="light"]) .channel:hover {
+    color: oklch(0.42 0.11 240);
+  }
+  .channel-icon {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 0.125rem;
+  }
+  .channel-icon svg {
+    color: inherit;
+  }
+  .channel-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 0;
   }
   .channel:hover {
     border-color: color-mix(in oklch, var(--brand-500) 40%, var(--sl-color-hairline));
@@ -311,7 +336,7 @@ const jsonLd = JSON.stringify({
     align-items: baseline;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 0.5rem;
+    padding-right: 2rem;
   }
   .channel-name {
     font-family: var(--font-sans);
@@ -319,6 +344,10 @@ const jsonLd = JSON.stringify({
     font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--sl-color-white);
+    transition: color 0.15s ease;
+  }
+  .channel:hover .channel-name {
+    color: inherit;
   }
   .channel-meta {
     font-family: var(--font-mono);

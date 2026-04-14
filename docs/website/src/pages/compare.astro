@@ -96,13 +96,13 @@ const jsonLd = JSON.stringify({
   jsonLd={jsonLd}
 >
   <!-- Intro -->
-  <section class="cmp-intro">
-    <div class="cmp-frame">
+  <section class="page-intro">
+    <div class="page-intro-frame">
       <span class="eyebrow">COMPARE</span>
-      <h1 class="cmp-headline font-display">
+      <h1 class="page-headline">
         An honest comparison.
       </h1>
-      <p class="cmp-deck">
+      <p class="page-deck">
         Every cell below is verifiable — not a taste rating. Where a
         competitor has a genuine strength, it is acknowledged. Where a
         capability is missing, we say "not included" rather than a dash or
@@ -111,7 +111,7 @@ const jsonLd = JSON.stringify({
         any decision — public docs drift fast.
       </p>
       <p class="cmp-meta">
-        <span>Updated</span> 2026-04-12 ·
+        <span>Updated</span> 2026-04-14 ·
         <span>Beluga version</span> v2 ·
         <span>Source</span>
         <a href="https://github.com/lookatitude/beluga-ai/tree/main/docs">docs/</a>
@@ -121,7 +121,7 @@ const jsonLd = JSON.stringify({
 
   <!-- Table -->
   <section class="cmp-table-section">
-    <div class="cmp-frame cmp-frame-wide">
+    <div class="page-intro-frame page-intro-frame--wide">
       <div class="cmp-scroll">
         <table class="cmp-table">
           <thead>
@@ -217,7 +217,7 @@ const jsonLd = JSON.stringify({
 
   <!-- CTA -->
   <section class="cmp-cta">
-    <div class="cmp-frame">
+    <div class="page-intro-frame">
       <h2 class="font-display">Still evaluating?</h2>
       <p>
         Read the architecture. Every claim in the table above traces back
@@ -232,45 +232,8 @@ const jsonLd = JSON.stringify({
 </MarketingLayout>
 
 <style>
-  .cmp-intro {
-    padding-block: clamp(5rem, 11vw, 8.5rem) clamp(2.5rem, 5vw, 3.5rem);
-  }
-  .cmp-frame {
-    max-width: 58rem;
-    margin-inline: auto;
-    padding-inline: clamp(1.25rem, 4vw, 2.5rem);
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  .cmp-frame-wide {
-    max-width: 80rem;
-  }
-
-  .cmp-intro .eyebrow {
-    color: var(--brand-300);
-  }
-  :global([data-theme="light"]) .cmp-intro .eyebrow {
-    color: oklch(0.45 0.10 240);
-  }
-
-  .cmp-headline {
-    font-size: clamp(2.5rem, 5.5vw, 4.5rem);
-    line-height: 1;
-    letter-spacing: -0.035em;
-    font-weight: 500;
-    color: var(--sl-color-white);
-    margin: 0.5rem 0 0;
-    font-variation-settings: "opsz" 144, "SOFT" 30;
-  }
-
-  .cmp-deck {
-    font-size: clamp(1.0625rem, 1.3vw, 1.1875rem);
-    line-height: 1.6;
-    color: var(--sl-color-gray-2);
-    max-width: 60ch;
-    margin: 0;
-  }
+  /* .page-intro / .page-intro-frame / .page-headline / .page-deck
+     and .eyebrow live in components.css. */
 
   .cmp-flag {
     color: var(--brand-200);
@@ -480,7 +443,7 @@ const jsonLd = JSON.stringify({
     padding-block: clamp(4rem, 9vw, 7rem);
     border-top: 1px solid var(--sl-color-hairline);
   }
-  .cmp-cta .cmp-frame {
+  .cmp-cta .page-intro-frame {
     align-items: flex-start;
   }
   .cmp-cta h2 {

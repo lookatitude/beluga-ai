@@ -10,16 +10,17 @@ exist, and what breaks when they are ignored.
 
 ## What the context carries
 
-In a Beluga application, a single `context.Context` propagates four distinct
+In a Beluga application, a single `context.Context` propagates five distinct
 concerns through the call stack:
 
-```
-context.Context
-├── Cancellation signal    (context.WithTimeout, context.WithCancel)
-├── OTel trace + span      (otel.ContextWithSpan, trace.SpanFromContext)
-├── Tenant ID              (core.WithTenant → core.GetTenant)
-└── Session / request IDs  (core.WithSessionID → core.GetSessionID)
-                            (core.WithRequestID → core.GetRequestID)
+```mermaid
+graph TD
+  Ctx[context.Context]
+  Ctx --> Cancel[Cancellation]
+  Ctx --> Otel[OTel trace + span]
+  Ctx --> Tenant[Tenant ID]
+  Ctx --> Session[Session ID]
+  Ctx --> Auth[Auth claims]
 ```
 
 Each concern uses a separate, unexported context key type so packages cannot

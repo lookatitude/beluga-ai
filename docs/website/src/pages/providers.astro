@@ -35,11 +35,11 @@ const jsonLd = JSON.stringify({
   description={`${total} providers across ${categories.length} categories — search and filter by name or category.`}
   jsonLd={jsonLd}
 >
-  <section class="cat-intro">
-    <div class="cat-frame">
+  <section class="page-intro">
+    <div class="page-intro-frame">
       <span class="eyebrow">PROVIDERS</span>
-      <h1 class="cat-headline font-display">{total} providers. {categories.length} categories.</h1>
-      <p class="cat-deck">
+      <h1 class="page-headline">{total} providers. {categories.length} categories.</h1>
+      <p class="page-deck">
         Every provider registers itself in <code>init()</code>. Import for
         side-effect, call <code>&lt;pkg&gt;.New</code> — middleware, hooks,
         and metrics attach automatically. Search by name or filter by
@@ -49,7 +49,7 @@ const jsonLd = JSON.stringify({
   </section>
 
   <section class="cat-controls">
-    <div class="cat-frame cat-frame-wide">
+    <div class="page-intro-frame page-intro-frame--wide">
       <div class="cat-search-row">
         <label class="cat-search">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -82,7 +82,7 @@ const jsonLd = JSON.stringify({
   </section>
 
   <section class="cat-grid-section">
-    <div class="cat-frame cat-frame-wide">
+    <div class="page-intro-frame page-intro-frame--wide">
       <div class="cat-grid" id="cat-grid">
         {providers.map((p) => (
           <a
@@ -110,7 +110,7 @@ const jsonLd = JSON.stringify({
   </section>
 
   <section class="cat-cta">
-    <div class="cat-frame">
+    <div class="page-intro-frame">
       <h2 class="font-display">Adding your own?</h2>
       <p>
         The <a href="/docs/concepts/extensibility/">four-ring extensibility pattern</a>
@@ -190,40 +190,10 @@ const jsonLd = JSON.stringify({
 </script>
 
 <style>
-  /* Intro */
-  .cat-intro {
-    padding-block: clamp(5rem, 11vw, 8.5rem) clamp(2rem, 4vw, 3rem);
-  }
-  .cat-frame {
-    max-width: 58rem;
-    margin-inline: auto;
-    padding-inline: clamp(1.25rem, 4vw, 2.5rem);
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  .cat-frame-wide { max-width: 80rem; }
+  /* .page-intro / .page-intro-frame / .page-headline / .page-deck
+     and .eyebrow live in components.css. */
 
-  .cat-intro .eyebrow { color: var(--brand-300); }
-  :root[data-theme="light"] .cat-intro .eyebrow { color: oklch(0.45 0.10 240); }
-
-  .cat-headline {
-    font-size: clamp(2.25rem, 5vw, 4rem);
-    line-height: 1;
-    letter-spacing: -0.035em;
-    font-weight: 500;
-    color: var(--sl-color-white);
-    margin: 0.5rem 0 0;
-    font-variation-settings: "opsz" 144, "SOFT" 30;
-  }
-  .cat-deck {
-    font-size: clamp(1.0625rem, 1.3vw, 1.1875rem);
-    line-height: 1.6;
-    color: var(--sl-color-gray-2);
-    max-width: 60ch;
-    margin: 0;
-  }
-  .cat-deck code {
+  .page-deck code {
     font-family: var(--font-mono);
     font-size: 0.88em;
     color: var(--brand-200);

@@ -20,8 +20,16 @@ The guard system uses a defense-in-depth strategy with three validation stages, 
 
 ```mermaid
 graph LR
-  A[User Input] --> B["Input Guards"] --> C[LLM] --> D["Output Guards"] --> E[Response]
-  C --> F[Tool Call] --> G["Tool Guards"] --> H[Execute]
+  In[Request] --> GI[Guard.Input]
+  GI -->|approve| Agent[Agent]
+  Agent -->|ToolCall| GT[Guard.Tool]
+  GT -->|approve| Tool[Tool.Execute]
+  Tool --> Agent
+  Agent --> GO[Guard.Output]
+  GO -->|approve| Response
+  GI -->|block| Err[Error]
+  GT -->|block| Err
+  GO -->|block| Err
 ```
 
 | Stage | Validates | Purpose |

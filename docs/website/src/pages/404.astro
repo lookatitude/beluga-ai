@@ -8,12 +8,12 @@ import MarketingLayout from "@/layouts/MarketingLayout.astro";
   robots="noindex, nofollow"
 >
   <section class="nf">
-    <div class="nf-frame">
+    <div class="page-intro-frame">
       <span class="eyebrow">HTTP 404</span>
-      <h1 class="nf-headline font-display">
+      <h1 class="page-headline">
         That path doesn't exist.
       </h1>
-      <p class="nf-deck">
+      <p class="page-deck">
         The page may have moved during the documentation reorganization, or
         the URL is misspelled. Try one of these — all load cleanly in both
         themes.
@@ -64,38 +64,8 @@ import MarketingLayout from "@/layouts/MarketingLayout.astro";
     display: flex;
     align-items: center;
   }
-  .nf-frame {
-    max-width: 58rem;
-    width: 100%;
-    margin-inline: auto;
-    padding-inline: clamp(1.25rem, 4vw, 2.5rem);
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-  .nf .eyebrow {
-    color: var(--brand-300);
-  }
-  :root[data-theme="light"] .nf .eyebrow {
-    color: oklch(0.45 0.10 240);
-  }
-  .nf-headline {
-    font-size: clamp(2.5rem, 6vw, 4.5rem);
-    line-height: 1;
-    letter-spacing: -0.035em;
-    font-weight: 500;
-    color: var(--sl-color-white);
-    margin: 0;
-    max-width: 18ch;
-    font-variation-settings: "opsz" 144, "SOFT" 30;
-  }
-  .nf-deck {
-    font-size: clamp(1.0625rem, 1.3vw, 1.1875rem);
-    line-height: 1.6;
-    color: var(--sl-color-gray-2);
-    max-width: 58ch;
-    margin: 0 0 1rem;
-  }
+  /* .page-intro-frame / .page-headline / .page-deck / .eyebrow live
+     in components.css. The .nf-* extras below cover the 404 list. */
 
   .nf-list {
     list-style: none;

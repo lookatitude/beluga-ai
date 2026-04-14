@@ -11,6 +11,7 @@ const capabilities = [
     pkg: "auth/",
     docHref: "/docs/reference/api/infrastructure/",
     docLabel: "auth package reference",
+    icon: "key",
   },
   {
     label: "02",
@@ -19,6 +20,7 @@ const capabilities = [
     pkg: "audit/",
     docHref: "/docs/reference/api/infrastructure/",
     docLabel: "audit package reference",
+    icon: "ledger",
   },
   {
     label: "03",
@@ -27,6 +29,7 @@ const capabilities = [
     pkg: "cost/",
     docHref: "/docs/guides/production/observability/",
     docLabel: "cost + observability guide",
+    icon: "gauge",
   },
   {
     label: "04",
@@ -35,6 +38,7 @@ const capabilities = [
     pkg: "guard/",
     docHref: "/docs/guides/production/safety-and-guards/",
     docLabel: "safety and guards guide",
+    icon: "shield",
   },
   {
     label: "05",
@@ -43,6 +47,7 @@ const capabilities = [
     pkg: "workflow/",
     docHref: "/docs/guides/production/workflow-durability/",
     docLabel: "workflow durability guide",
+    icon: "clockwork",
   },
   {
     label: "06",
@@ -51,6 +56,7 @@ const capabilities = [
     pkg: "o11y/",
     docHref: "/docs/guides/production/observability/",
     docLabel: "observability guide",
+    icon: "eye",
   },
 ];
 
@@ -85,13 +91,13 @@ const jsonLd = JSON.stringify({
   jsonLd={jsonLd}
 >
   <!-- Intro -->
-  <section class="ent-intro">
-    <div class="ent-frame">
+  <section class="page-intro">
+    <div class="page-intro-frame">
       <span class="eyebrow">ENTERPRISE</span>
-      <h1 class="ent-headline font-display">
+      <h1 class="page-headline">
         The concerns that aren't optional at scale.
       </h1>
-      <p class="ent-deck">
+      <p class="page-deck">
         Beluga is the same open-source framework you use for a prototype,
         plus six operational capabilities that become load-bearing the
         moment agents leave a single laptop. No separate paid edition.
@@ -114,6 +120,47 @@ const jsonLd = JSON.stringify({
       {capabilities.map((c) => (
         <article class="cap-row">
           <span class="cap-label">{c.label}</span>
+          <div class="cap-icon" aria-hidden="true">
+            {c.icon === "key" && (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="8" cy="14" r="4" />
+                <path d="M11 11l9-9" />
+                <path d="M16 6l3 3" />
+              </svg>
+            )}
+            {c.icon === "ledger" && (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 4h11a2 2 0 012 2v14H7a2 2 0 01-2-2V4z" />
+                <path d="M9 8h6M9 12h6M9 16h4" />
+              </svg>
+            )}
+            {c.icon === "gauge" && (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 14a8 8 0 1116 0" />
+                <path d="M12 14l4-4" />
+                <circle cx="12" cy="14" r="1" fill="currentColor" />
+              </svg>
+            )}
+            {c.icon === "shield" && (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3l8 3v6c0 4.5-3.5 8.5-8 9-4.5-.5-8-4.5-8-9V6l8-3z" />
+                <path d="M9 12l2 2 4-4" />
+              </svg>
+            )}
+            {c.icon === "clockwork" && (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" />
+                <path d="M3 12h2M19 12h2M12 3v2M12 19v2" />
+              </svg>
+            )}
+            {c.icon === "eye" && (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            )}
+          </div>
           <div class="cap-body">
             <h3 class="cap-title">{c.title}</h3>
             <p class="cap-desc">{c.desc}</p>
@@ -169,7 +216,7 @@ const jsonLd = JSON.stringify({
 
   <!-- Inquiry -->
   <section id="inquiry" class="ent-inquiry">
-    <div class="ent-frame">
+    <div class="page-intro-frame">
       <span class="eyebrow">ENTERPRISE INQUIRY</span>
       <h2 class="font-display">What you get when you file.</h2>
       <p class="ent-inquiry-body">
@@ -219,41 +266,9 @@ const jsonLd = JSON.stringify({
 </MarketingLayout>
 
 <style>
-  .ent-intro {
-    padding-block: clamp(5rem, 11vw, 8.5rem) clamp(2.5rem, 5vw, 3.5rem);
-  }
-  .ent-frame {
-    max-width: 58rem;
-    margin-inline: auto;
-    padding-inline: clamp(1.25rem, 4vw, 2.5rem);
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-  .ent-intro .eyebrow {
-    color: var(--brand-300);
-  }
-  :global([data-theme="light"]) .ent-intro .eyebrow {
-    color: oklch(0.45 0.10 240);
-  }
+  /* .page-intro / .page-intro-frame / .page-headline / .page-deck
+     and .eyebrow live in components.css. */
 
-  .ent-headline {
-    font-size: clamp(2.5rem, 5.4vw, 4.5rem);
-    line-height: 1;
-    letter-spacing: -0.035em;
-    font-weight: 500;
-    color: var(--sl-color-white);
-    margin: 0.5rem 0 0;
-    max-width: 16ch;
-    font-variation-settings: "opsz" 144, "SOFT" 30;
-  }
-  .ent-deck {
-    font-size: clamp(1.0625rem, 1.3vw, 1.1875rem);
-    line-height: 1.6;
-    color: var(--sl-color-gray-2);
-    max-width: 58ch;
-    margin: 0;
-  }
   .ent-cta-top {
     display: flex;
     gap: 1.25rem;
@@ -270,11 +285,36 @@ const jsonLd = JSON.stringify({
   }
   .cap-row {
     display: grid;
-    grid-template-columns: 3.5rem 1fr;
-    gap: 1.5rem;
+    grid-template-columns: 2.75rem 2.5rem 1fr;
+    gap: 1.25rem;
     padding-block: 1.75rem;
     border-top: 1px solid var(--sl-color-hairline);
     max-width: 68rem;
+  }
+  .cap-icon {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding-top: 0.125rem;
+    color: var(--brand-300);
+    transition: color 0.15s ease;
+  }
+  :global([data-theme="light"]) .cap-icon {
+    color: oklch(0.42 0.11 240);
+  }
+  .cap-row:hover .cap-icon {
+    color: var(--brand-200);
+  }
+  @media (max-width: 640px) {
+    .cap-row {
+      grid-template-columns: 2.25rem 1fr;
+      gap: 0.875rem;
+    }
+    .cap-icon {
+      grid-column: 1 / 3;
+      grid-row: 1;
+      padding-top: 0;
+    }
   }
   .cap-row:last-child {
     border-bottom: 1px solid var(--sl-color-hairline);
@@ -356,13 +396,8 @@ const jsonLd = JSON.stringify({
   :global([data-theme="light"]) .ent-inquiry {
     background: color-mix(in oklch, var(--paper-100) 70%, var(--paper-50));
   }
-  .ent-inquiry .eyebrow {
-    color: var(--brand-300);
-  }
-  :global([data-theme="light"]) .ent-inquiry .eyebrow {
-    color: oklch(0.45 0.10 240);
-  }
   .ent-inquiry h2 {
+    font-family: var(--font-display);
     font-size: clamp(2rem, 4.2vw, 3.25rem);
     line-height: 1.02;
     letter-spacing: -0.03em;
