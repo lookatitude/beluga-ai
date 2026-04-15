@@ -15,7 +15,7 @@ set -euo pipefail
 CLAUDE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 REPO_ROOT="$(cd "$CLAUDE_DIR/.." && pwd)"
 WIKI_DIR="$REPO_ROOT/.wiki"
-VALID_AGENTS="coordinator architect researcher developer-go developer-web reviewer-qa reviewer-security docs-writer marketeer notion-syncer"
+VALID_AGENTS="coordinator architect researcher developer-go reviewer-qa reviewer-security docs-writer"
 
 # Validate agent name against allowlist
 validate_agent_name() {

@@ -64,16 +64,15 @@ before commit. See `.claude/rules/go-packages.md` for gosec focus areas.
 | `/qa-review $PATH` | Standalone QA review |
 | `/doc-check $PATH` | Verify examples compile and docs match current API |
 | `/document $TARGET` | Write package docs, tutorials, API reference |
-| `/promote $FEATURE` | Blog + social + release note |
-| `/blog $TOPIC` | Technical blog post |
 | `/dependency-audit` | gosec + govulncheck + update safe deps |
-| `/new-feature $DESC` | Composite pipeline: plan → develop → security-review → document → promote |
+| `/new-feature $DESC` | Composite pipeline: plan → develop → security-review → document |
 | `/learn $DESCRIPTION` | Capture a correction into `.wiki/corrections.md` |
 | `/wiki-learn [$PATH\|all]` | Extract patterns and architecture from the codebase into `.wiki/` |
 | `/arch-validate $PACKAGE` | Validate code against architecture invariants |
 | `/arch-update $CHANGE` | Update architecture docs + ADRs after significant changes |
-| `/notion-sync` | Mirror docs/ to Notion + update tracking dashboard |
 | `/status` | Package health snapshot |
+
+Marketing and content commands (`/promote`, `/blog`) and `/notion-sync` live in the website and workspace repos respectively — see `beluga-website/.claude/commands/` and `beluga.git/.claude/commands/`. Framework-side `/new-feature` no longer chains into promotion; promotion happens independently in the website repo when content is ready.
 
 ## Architecture references
 
@@ -89,12 +88,11 @@ before commit. See `.claude/rules/go-packages.md` for gosec focus areas.
 - **architect** — designs interfaces, writes ADRs, validates invariants
 - **researcher** — evidence gathering, never implements
 - **developer-go** — Red/Green TDD Go implementation
-- **developer-web** — Astro/Starlight website
 - **reviewer-qa** — validates acceptance criteria, read-only
 - **reviewer-security** — 2 clean passes required, read-only
 - **docs-writer** — package docs, tutorials, API reference
-- **marketeer** — blog, release notes, social content
-- **notion-syncer** — Notion sync and tracking dashboard
+
+Website (`developer-web`, `marketeer`) and Notion (`notion-publisher` in website, `notion-syncer` in workspace) agents live in their respective sibling repos. They are reachable when this repo is checked out inside the multi-repo Beluga workspace, but not invoked by framework commands.
 
 ## Learning pipeline
 
