@@ -2,6 +2,16 @@
 
 All notable changes to Beluga AI are documented here.
 
+## [2.8.6] - 2026-04-15
+
+### Documentation
+
+- **claude**: Link framework to workspace knowledge layer
+
+### Miscellaneous
+
+- **release**: Update CHANGELOG.md for v2.8.5 [skip ci]
+
 ## [2.8.5] - 2026-04-14
 
 ### Miscellaneous
