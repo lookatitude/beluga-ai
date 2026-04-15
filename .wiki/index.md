@@ -2,7 +2,7 @@
 
 **Last Scanned:** 2026-04-11
 
-This wiki documents canonical architectural patterns, package structure, and invariants across the Beluga AI v2 Go codebase.
+This wiki documents canonical architectural patterns, package structure, and invariants across the Beluga AI v2 Go codebase. **Scope: framework-local.** It only covers the framework's Go code and its design invariants — anything cross-repo (release flow fan-out, website content coordination, examples orchestration, shared ops incidents) lives in the workspace wiki at `../../.wiki/index.md`, which is visible when this repo is checked out inside the multi-repo Beluga workspace.
 
 ## Patterns
 
