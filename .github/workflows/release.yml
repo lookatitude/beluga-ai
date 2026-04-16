@@ -77,7 +77,10 @@ jobs:
             exit 0
           fi
 
-          CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r "${GITHUB_SHA}")
+          # Use first-parent diff instead of diff-tree. For merge commits,
+          # diff-tree combined diff omits files matching either parent, which
+          # causes releases to be silently skipped (see incident 2026-04-15).
+          CHANGED_FILES=$(git diff --name-only "${GITHUB_SHA}^" "${GITHUB_SHA}" 2>/dev/null || true)
 
           if [ -z "${CHANGED_FILES}" ]; then
             echo "No changed files detected in tagged commit; skipping release."
@@ -151,7 +154,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
+          # Use the tag (not the branch) as checkout ref — the tag is the
+          # release source of truth. inputs.ref defaults to main which can
+          # drift past the tag after CHANGELOG PRs merge (incident 2026-04-15).
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
           fetch-depth: 0
 
       - uses: actions/setup-go@v6
