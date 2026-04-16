@@ -24,6 +24,6 @@
     {"id": "batch5-docs", "package": "docs/", "status": "completed", "merged": true},
     {"id": "batch5-notion", "package": "notion", "status": "completed", "merged": true}
   ],
-  "learningsCount": {"arch-analyst": 0, "implementer": 0, "reviewer": 0, "doc-writer": 0, "notion-syncer": 0},
+  "learningsCount": {"arch-analyst": 0, "implementer": 0, "reviewer": 0, "doc-writer": 0},
   "lastUpdated": "2026-04-07T23:30:00Z"
 }
