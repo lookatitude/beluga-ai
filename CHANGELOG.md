@@ -2,6 +2,13 @@
 
 All notable changes to Beluga AI are documented here.
 
+## [2.8.7] - 2026-04-16
+
+### Miscellaneous
+
+- **release**: Update CHANGELOG.md for v2.8.6 [skip ci]
+- **claude**: Evict website and notion-marketing orphans
+
 ## [2.8.6] - 2026-04-15
 
 ### Documentation
