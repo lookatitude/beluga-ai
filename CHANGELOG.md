@@ -2,6 +2,30 @@
 
 All notable changes to Beluga AI are documented here.
 
+## [2.9.0] - 2026-04-18
+
+### Bug Fixes
+
+- **ci**: Handle merge commits in release filter + fix goreleaser checkout ref
+- **claude**: Address framework review findings
+
+### Documentation
+
+- **claude**: Document Linear-integrated branch naming in branch-discipline
+- **claude**: Architect can invoke /consult for specialist escape hatch (A2)
+- **claude**: Developer-go can invoke /consult for specialist escape hatch (A2)
+- Document /consult command in framework CLAUDE.md (A2)
+
+### Features
+
+- **ci**: Wire dispatch-examples into release workflow
+- **claude**: Extend /develop with Linear MCP pre-flight and label-derived branch naming
+- **claude**: Add /consult command for workspace specialist escape hatch (A2)
+
+### Miscellaneous
+
+- **release**: Update CHANGELOG.md for v2.8.7 [skip ci]
+
 ## [2.8.7] - 2026-04-16
 
 ### Miscellaneous
