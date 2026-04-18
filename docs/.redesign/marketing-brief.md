@@ -298,10 +298,12 @@ No grid of 11 icons. The three groups below are the navigation.
 
 ### Competitors to include
 
-1. **LangChainGo** — the direct Go peer; Go developers will land here first as a reference point. `.wiki/competitors/langchaingo.md`.
-2. **Google ADK-Go** — Go SDK, enterprise pedigree; will appear in the same evaluation shortlists. `.wiki/competitors/adk-go.md`.
-3. **Eino (ByteDance/cloudwego)** — active Go framework with growing traction. `.wiki/competitors/eino.md`.
+1. **LangChainGo** — the direct Go peer; Go developers will land here first as a reference point.
+2. **Google ADK-Go** — Go SDK, enterprise pedigree; will appear in the same evaluation shortlists.
+3. **Eino (ByteDance/cloudwego)** — active Go framework with growing traction.
 4. **LangChain/LangGraph (Python)** — the most common prior art for Go engineers who have tried Python first; relevant for framing the language-choice argument.
+
+> Competitor intel is sourced research-on-demand via WebSearch; the prior `.wiki/competitors/` stubs were retired in 2026-04-18 (sub-project B knowledge-layer cleanup) because they drifted faster than they could be maintained.
 
 Exclude Mastra (Node.js), CrewAI (Python), Pydantic AI (Python) — different language target, different evaluation context. A Go engineer choosing between Beluga and Mastra has already decided on Go.
 
@@ -310,11 +312,11 @@ Exclude Mastra (Node.js), CrewAI (Python), Pydantic AI (Python) — different la
 | Dimension | Source |
 |---|---|
 | Primary language | Observable |
-| Streaming primitive | `.wiki/competitors/langchaingo.md`; `docs/architecture/01-overview.md` |
+| Streaming primitive | `docs/architecture/01-overview.md` (Beluga); WebSearch (competitors) |
 | Reasoning strategies (count) | `docs/architecture/06-reasoning-strategies.md` |
 | Built-in OTel GenAI spans | `docs/architecture/14-observability.md` |
-| Durable workflow (built-in) | `docs/architecture/16-durable-workflows.md`; `.wiki/competitors/adk-go.md` |
-| Voice pipeline (built-in) | `docs/architecture/11-voice-pipeline.md`; `.wiki/competitors/*.md` |
+| Durable workflow (built-in) | `docs/architecture/16-durable-workflows.md` (Beluga); WebSearch (competitors) |
+| Voice pipeline (built-in) | `docs/architecture/11-voice-pipeline.md` (Beluga); WebSearch (competitors) |
 | Provider integrations (count) | `docs/reference/providers.md` |
 | License | Observable |
 
