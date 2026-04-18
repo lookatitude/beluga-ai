@@ -18,7 +18,7 @@ Linear-integrated branch-naming convention introduced in A1.
 When work is tracked via a Linear sub-issue:
 
 - Branch name format: `<type>/loo-NN-<short-slug>` where:
-  - `<type>` is derived from Linear labels: `Feature` → `feat/`, `Bug` → `fix/`, `Improvement` → `refactor/`, `documentation` → `docs/`, otherwise `chore/`
+  - `<type>` is derived from Linear labels: `Feature` → `feat/`, `Bug` → `fix/`, `Improvement` → `refactor/`, otherwise `chore/` (workspace `/plan-feature` does not apply a `documentation` label — doc-only changes flow through to `chore/`)
   - `loo-NN` is the Linear sub-issue ID (lowercase, matches auto-link behavior)
   - `<short-slug>` is a 3-5 word kebab-case summary of the sub-issue title
 - Example: sub-issue `LOO-43 "Implement cmd/beluga/ cobra scaffold"` labeled `Feature, layer:framework` → `feat/loo-43-beluga-cli-foundation`

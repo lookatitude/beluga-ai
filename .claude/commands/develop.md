@@ -42,8 +42,7 @@ From the sub-issue's labels, pick the branch prefix. Mapping (matches workspace 
 - `Feature` label → `feat/`
 - `Bug` label → `fix/`
 - `Improvement` label → `refactor/`
-- `documentation` label → `docs/`
-- Otherwise → `chore/`
+- Otherwise → `chore/` (workspace `/plan-feature` deliberately does NOT create a `documentation` type label for doc-only changes — they flow through untyped to `chore/`)
 
 Branch name: `<prefix>/loo-NN-<short-slug>` where `<short-slug>` is a 3-5 word kebab-case summary of the sub-issue title. Linear auto-links via the `loo-NN` portion regardless of prefix.
 

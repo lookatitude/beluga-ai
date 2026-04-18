@@ -1,6 +1,6 @@
 ---
 name: consult
-description: Escape hatch for framework agents (or humans) to bounce a design question to a workspace specialist mid-implementation. Produces a citable consultation artifact in framework/docs/consultations/.
+description: Escape hatch for framework agents (or humans) to bounce a design question to a workspace specialist mid-implementation. Produces a citable consultation artifact in docs/consultations/ (framework-relative).
 ---
 
 Consult: $ARGUMENTS
@@ -35,14 +35,14 @@ The specialist agents live in the workspace repo at `../.claude/agents/<name>.md
 
 - The question from $ARGUMENTS
 - The context gathered in step 2
-- The instruction: "Produce a consultation response at framework/docs/consultations/<YYYY-MM-DD>-<feature-slug>-<specialist>.md. Use your standard output format (Question / Analysis / Recommendation / Tradeoffs / Risks / Sources)."
+- The instruction: "Produce a consultation response at `docs/consultations/<YYYY-MM-DD>-<feature-slug>-<specialist>.md` (relative to the framework repo root — this command runs with framework/ as cwd). Use your standard output format (Question / Analysis / Recommendation / Tradeoffs / Risks / Sources)."
 
-The specialist's normal output path is `research/briefs/<slug>/specialist-<name>.md`; consultations use a different path (`framework/docs/consultations/`) so they coexist with specialist design-time inputs without overwriting.
+The specialist's normal output path is `research/briefs/<slug>/specialist-<name>.md`; consultations use a different path (framework-relative `docs/consultations/`) so they coexist with specialist design-time inputs without overwriting.
 
 ### 4. Verify the file was produced
 
 ```bash
-ls framework/docs/consultations/<YYYY-MM-DD>-*-<specialist>.md
+ls docs/consultations/<YYYY-MM-DD>-*-<specialist>.md
 ```
 
 If not produced: report the specialist failed and include their output for manual capture.
@@ -50,7 +50,7 @@ If not produced: report the specialist failed and include their output for manua
 ### 5. Print the path + one-sentence summary
 
 ```
-Consulted <specialist-name>. Response at framework/docs/consultations/<YYYY-MM-DD>-<slug>-<specialist>.md.
+Consulted <specialist-name>. Response at docs/consultations/<YYYY-MM-DD>-<slug>-<specialist>.md (framework-relative).
 Summary: <first line of the Recommendation section>
 
 Cite this in your PR description or commit message so reviewers can find it.
@@ -71,4 +71,4 @@ Cite this in your PR description or commit message so reviewers can find it.
 
 ## On consultation cleanup
 
-Consultations persist in `framework/docs/consultations/`. They're citable history — do not clean them up after a feature ships. If the directory grows unwieldy later, a policy can be defined then.
+Consultations persist in `docs/consultations/` (framework-relative). They're citable history — do not clean them up after a feature ships. If the directory grows unwieldy later, a policy can be defined then.
