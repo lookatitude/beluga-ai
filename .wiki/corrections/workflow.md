@@ -1,0 +1,21 @@
+# Corrections — Workflow
+
+Scope: coordinator + agent-workflow findings — retrieval protocol, worktree awareness, docs-only task routing.
+
+See [README.md](./README.md) for format + promotion-pipeline rules.
+
+---
+
+### C-008 | 2026-04-12 | docs-writer | worktree-awareness
+**Symptom:** When running inside a git worktree at `.claude/worktrees/agent-ada144bd/`, Write tool calls used absolute paths rooted at the main repository (`/home/miguelp/Projects/lookatitude/beluga-ai/`) instead of the worktree. Files were written to the main checkout, not to the branch being prepared. `git status` in the worktree showed "nothing to commit" despite apparent file edits.
+**Root cause:** The agent's working directory (`pwd`) was the worktree, but absolute paths were explicitly constructed using the known main repo root. The Write tool honors the path given without inferring which git worktree should be active.
+**Correction:** When operating in a git worktree, always derive the base path from `pwd` (which returns the worktree root), not from any hardcoded repo root. Verify with `git status` in the worktree after every Write/Edit call to confirm the file is tracked.
+**Prevention rule:** In any worktree session, run `git status --short` after the first Write/Edit to confirm modified files appear. If `git status` is clean after a write, the write landed in the wrong tree.
+**Confidence:** HIGH — reproducible; discovered by checking `git status` which was clean despite edits.
+
+### C-016 | 2026-04-12 | coordinator | retrieval-protocol · docs-only tasks
+**Symptom:** A pure-documentation task (cataloguing 78 mermaid diagrams across 18 architecture docs for website placement) skipped the 3-step retrieval protocol — went directly to grep + Read without first consulting `.wiki/index.md` or running `.claude/hooks/wiki-query.sh`. The stop-hook reviewer flagged this as a retrieval protocol miss.
+**Root cause:** Retrieval protocol is perceived as code-only ("why would I check invariants for a docs task?"). But documentation tasks are the *most* prone to drift because they lack compile-time feedback, and the wiki contains corrections (C-012, C-013) that directly alter the output. In this case, querying the wiki surfaced: (a) `.wiki/architecture/package-map.md` is stale for the observability sweep, meaning the span-hierarchy diagram's target page should cite DOC-14 not the wiki; (b) five diagrams anchor directly to invariants in `.wiki/architecture/invariants.md`, which changes how their captions should be written.
+**Correction:** Retrieval protocol is mandatory for *any* task that touches `docs/architecture/` or references `file:line` anchors, regardless of whether code is being written.
+**Prevention rule:** Amend `.claude/rules/documentation.md` § "Sources to consult before writing" to make the 3-step protocol explicit and ordered: (1) `.wiki/index.md`, (2) `bash .claude/hooks/wiki-query.sh <topic>`, (3) targeted `.wiki/patterns/*.md` or `.wiki/architecture/*.md` files. Only then fall through to grep/Read on `docs/`.
+**Confidence:** HIGH — empirically confirmed: post-hoc wiki query surfaced C-012 and C-013 which each changed specific cells in the output report.
