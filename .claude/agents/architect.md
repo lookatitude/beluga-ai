@@ -76,6 +76,21 @@ Scan the target package for violations of `.wiki/architecture/invariants.md`. Re
 
 See `.wiki/architecture/invariants.md`. The 10 invariants are the core contract.
 
+## When to invoke /consult
+
+If during planning you hit a question outside your core architectural expertise, use `/consult <specialist-name> <question>` to bounce it to a workspace specialist. Specialists:
+
+- `ai-ml-expert` — planner design, LLM routing, eval metrics, prompt compilation
+- `rag-expert` — retrieval strategies, embedding selection, vectorstore picks
+- `security-architect` — threat models, OWASP ASI mapping, audit design, compliance
+- `systems-architect` — layer placement, interface composition, ADR writing
+- `devops-expert` — deployment modes, sandbox backends, CI/CD
+- `observability-expert` — OTel span design, metric shape, cost tracking schemas
+
+The specialist produces a consultation file at `docs/consultations/<date>-<slug>-<specialist>.md`. Cite it in your implementation plan — reviewer agents will check for it when they see a question that crossed specialist boundaries.
+
+**When not to consult:** if the question is answerable by reading `framework/.wiki/` or the existing codebase. Reach for the wiki first; consultations cost time.
+
 ## Anti-rationalization
 
 | Excuse | Counter |

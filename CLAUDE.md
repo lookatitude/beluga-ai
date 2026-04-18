@@ -60,6 +60,7 @@ before commit. See `.claude/rules/go-packages.md` for gosec focus areas.
 |---|---|
 | `/plan $FEATURE` | Architect + Researcher design loop → implementation plan with acceptance criteria |
 | `/develop $TASK` | Developer-go Red/Green TDD → QA review → fix loop |
+| `/consult <specialist> <question>` | Bounce a design question to a workspace specialist mid-flow; produces citable consultation in `docs/consultations/`. |
 | `/security-review $PATH` | 2 consecutive clean passes required |
 | `/qa-review $PATH` | Standalone QA review |
 | `/doc-check $PATH` | Verify examples compile and docs match current API |
