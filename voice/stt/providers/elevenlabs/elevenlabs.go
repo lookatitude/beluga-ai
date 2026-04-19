@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/voice/stt"
+	"github.com/lookatitude/beluga-ai/v2/voice/stt"
 )
 
 const (

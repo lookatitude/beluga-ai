@@ -33,9 +33,9 @@ import (
     "context"
     "fmt"
 
-    "github.com/lookatitude/beluga-ai/agent"
-    "github.com/lookatitude/beluga-ai/llm"
-    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+    "github.com/lookatitude/beluga-ai/v2/agent"
+    "github.com/lookatitude/beluga-ai/v2/llm"
+    _ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
 )
 
 func main() {
@@ -90,7 +90,7 @@ Competitor comparison: ADK-Go — 1 documented strategy (source: `github.com/goo
 Durable workflows with crash recovery, signal/query, activity retry, and HITL pause are first-class features, not add-ons. The `DurableExecutor` interface (`workflow/workflow.go:52-65`) ships with providers for in-memory (dev), NATS, Kafka, Temporal, Dapr, and Inngest. Agents do not change code when the executor backend changes.
 
 ```go
-import "github.com/lookatitude/beluga-ai/workflow"
+import "github.com/lookatitude/beluga-ai/v2/workflow"
 
 // workflow/workflow.go:52-65 — the full interface:
 // type DurableExecutor interface {
@@ -128,8 +128,8 @@ Beluga's `voice/` layer implements a full real-time voice pipeline with VAD, cas
 import (
     "context"
 
-    "github.com/lookatitude/beluga-ai/voice/s2s"
-    _ "github.com/lookatitude/beluga-ai/voice/s2s/providers/openai"
+    "github.com/lookatitude/beluga-ai/v2/voice/s2s"
+    _ "github.com/lookatitude/beluga-ai/v2/voice/s2s/providers/openai"
 )
 
 func streamVoice(ctx context.Context, transport AudioTransport) error {
@@ -193,8 +193,8 @@ Every extensible package follows the same contract: Interface (≤4 methods) →
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/llm"
-    _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
+    "github.com/lookatitude/beluga-ai/v2/llm"
+    _ "github.com/lookatitude/beluga-ai/v2/llm/providers/anthropic"
 )
 
 // The same four-ring shape applies to llm, tool, memory, rag, voice, guard, workflow...

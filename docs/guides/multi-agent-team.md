@@ -27,15 +27,15 @@ package main
 import (
     "context"
 
-    "github.com/lookatitude/beluga-ai/agent"
-    "github.com/lookatitude/beluga-ai/llm"
-    "github.com/lookatitude/beluga-ai/orchestration"
-    "github.com/lookatitude/beluga-ai/runtime"
-    "github.com/lookatitude/beluga-ai/tool"
+    "github.com/lookatitude/beluga-ai/v2/agent"
+    "github.com/lookatitude/beluga-ai/v2/llm"
+    "github.com/lookatitude/beluga-ai/v2/orchestration"
+    "github.com/lookatitude/beluga-ai/v2/runtime"
+    "github.com/lookatitude/beluga-ai/v2/tool"
 
-    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
-    _ "github.com/lookatitude/beluga-ai/tool/builtin/websearch"
-    _ "github.com/lookatitude/beluga-ai/tool/builtin/arxiv"
+    _ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
+    _ "github.com/lookatitude/beluga-ai/v2/tool/builtin/websearch"
+    _ "github.com/lookatitude/beluga-ai/v2/tool/builtin/arxiv"
 )
 
 func main() {

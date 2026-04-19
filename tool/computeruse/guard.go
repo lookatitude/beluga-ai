@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // checkURLOp identifies the guard.CheckURL operation in error codes.

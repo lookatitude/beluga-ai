@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/v2/agent"
 )
 
 // PoolEntry associates an agent with its declared capabilities and

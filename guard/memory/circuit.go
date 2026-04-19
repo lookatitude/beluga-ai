@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/resilience"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/resilience"
 )
 
 // InterAgentCircuitBreaker manages per-agent-pair circuit breakers that

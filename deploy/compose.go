@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // serviceNameRe matches safe Docker Compose service names.

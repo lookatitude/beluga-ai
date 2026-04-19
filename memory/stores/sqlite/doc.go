@@ -8,7 +8,7 @@
 //	import (
 //	    "database/sql"
 //	    _ "modernc.org/sqlite"
-//	    "github.com/lookatitude/beluga-ai/memory/stores/sqlite"
+//	    "github.com/lookatitude/beluga-ai/v2/memory/stores/sqlite"
 //	)
 //
 //	db, err := sql.Open("sqlite", ":memory:")

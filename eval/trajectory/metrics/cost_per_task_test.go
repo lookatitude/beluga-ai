@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/eval/trajectory"
+	"github.com/lookatitude/beluga-ai/v2/eval/trajectory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

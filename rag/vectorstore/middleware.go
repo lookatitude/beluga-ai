@@ -3,7 +3,7 @@ package vectorstore
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // Middleware wraps a VectorStore to add cross-cutting behaviour.

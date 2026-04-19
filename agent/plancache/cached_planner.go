@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // CachedPlanner wraps an agent.Planner to add plan caching. On Plan(), it

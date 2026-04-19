@@ -5,7 +5,7 @@ import (
 	"iter"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/v2/tool"
 )
 
 // wrappedAgent is a middleware-created wrapper that records calls.

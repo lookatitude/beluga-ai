@@ -130,7 +130,7 @@ A `Memory` implementation can swap its underlying `MessageStore` without changin
 Same registry pattern as [DOC-03](./03-extensibility-patterns.md):
 
 ```go
-import _ "github.com/lookatitude/beluga-ai/memory/stores/redis"
+import _ "github.com/lookatitude/beluga-ai/v2/memory/stores/redis"
 
 store, _ := memory.NewMessageStore("redis", memory.Config{Addr: "redis:6379"})
 mem := memory.NewComposite(store, vectorStore, graphStore)

@@ -19,7 +19,7 @@
 // pattern. Import the adapter package to register it, then create instances
 // via server.New:
 //
-//	import _ "github.com/lookatitude/beluga-ai/server/adapters/gin"
+//	import _ "github.com/lookatitude/beluga-ai/v2/server/adapters/gin"
 //
 //	adapter, err := server.New("gin", server.Config{
 //	    ReadTimeout:  10 * time.Second,

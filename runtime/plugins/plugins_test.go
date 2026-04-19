@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/audit"
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/cost"
-	"github.com/lookatitude/beluga-ai/runtime"
-	"github.com/lookatitude/beluga-ai/runtime/plugins"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/audit"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/cost"
+	"github.com/lookatitude/beluga-ai/v2/runtime"
+	"github.com/lookatitude/beluga-ai/v2/runtime/plugins"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // ---------------------------------------------------------------------------

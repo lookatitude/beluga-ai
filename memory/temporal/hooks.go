@@ -3,7 +3,7 @@ package temporal
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/memory"
+	"github.com/lookatitude/beluga-ai/v2/memory"
 )
 
 // Hooks provides optional callback functions for temporal memory operations.

@@ -174,8 +174,8 @@ import (
     "context"
     "errors"
 
-    "github.com/lookatitude/beluga-ai/core"
-    "github.com/lookatitude/beluga-ai/tool"
+    "github.com/lookatitude/beluga-ai/v2/core"
+    "github.com/lookatitude/beluga-ai/v2/tool"
 )
 
 func (t *weatherTool) Execute(ctx context.Context, input map[string]any) (*tool.Result, error) {

@@ -3,7 +3,7 @@ package agentic
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/guard"
+	"github.com/lookatitude/beluga-ai/v2/guard"
 )
 
 // AgenticPipeline combines multiple agentic guards into a single validation

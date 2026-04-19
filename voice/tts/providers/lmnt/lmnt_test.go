@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lookatitude/beluga-ai/voice/tts"
+	"github.com/lookatitude/beluga-ai/v2/voice/tts"
 )
 
 func TestNew(t *testing.T) {

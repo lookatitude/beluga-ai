@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // Compile-time check that InMemoryStore satisfies Store.

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 func TestNewSelfDiscoverPlanner(t *testing.T) {

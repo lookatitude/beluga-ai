@@ -5,7 +5,7 @@
 // The adapter registers itself as "fiber" in the server registry via init().
 // Import this package to make the adapter available:
 //
-//	import _ "github.com/lookatitude/beluga-ai/server/adapters/fiber"
+//	import _ "github.com/lookatitude/beluga-ai/v2/server/adapters/fiber"
 //
 //	adapter, err := server.New("fiber", server.Config{})
 //	if err != nil {

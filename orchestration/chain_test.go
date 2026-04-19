@@ -7,7 +7,7 @@ import (
 	"iter"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // mockRunnable is a test double for core.Runnable.

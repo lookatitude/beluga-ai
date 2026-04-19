@@ -14,7 +14,7 @@
 // The provider registers itself as "cohere" via init(). Import the package
 // for side effects to make it available through the llm registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/cohere"
+//	import _ "github.com/lookatitude/beluga-ai/v2/llm/providers/cohere"
 //
 // # Usage
 //

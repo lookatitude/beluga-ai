@@ -93,6 +93,6 @@
 //
 // # Related packages
 //
-//   - [github.com/lookatitude/beluga-ai/runtime/plugins] — AuditPlugin
-//   - [github.com/lookatitude/beluga-ai/cost] — cost tracking
+//   - [github.com/lookatitude/beluga-ai/v2/runtime/plugins] — AuditPlugin
+//   - [github.com/lookatitude/beluga-ai/v2/cost] — cost tracking
 package audit

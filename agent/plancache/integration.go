@@ -1,7 +1,7 @@
 package plancache
 
 import (
-	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/v2/agent"
 )
 
 // WrapPlanner is a convenience helper that wraps an agent.Planner with plan

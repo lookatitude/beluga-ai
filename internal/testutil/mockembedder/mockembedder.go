@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/rag/embedding"
+	"github.com/lookatitude/beluga-ai/v2/rag/embedding"
 )
 
 // Compile-time interface check

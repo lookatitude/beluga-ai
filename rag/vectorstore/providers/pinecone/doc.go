@@ -5,7 +5,7 @@
 //
 // The provider registers as "pinecone" in the vectorstore registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/pinecone"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/vectorstore/providers/pinecone"
 //
 //	store, err := vectorstore.New("pinecone", config.ProviderConfig{
 //	    APIKey:  "your-api-key",

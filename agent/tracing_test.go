@@ -6,9 +6,9 @@ import (
 	"iter"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/o11y"
-	"github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/o11y"
+	"github.com/lookatitude/beluga-ai/v2/tool"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 

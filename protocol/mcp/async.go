@@ -8,7 +8,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // AsyncStatus represents the current state of an asynchronous operation.

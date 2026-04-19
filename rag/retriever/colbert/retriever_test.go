@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/rag/embedding"
-	"github.com/lookatitude/beluga-ai/rag/retriever"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/rag/embedding"
+	"github.com/lookatitude/beluga-ai/v2/rag/retriever"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // mockMultiVectorEmbedder is a test double for embedding.MultiVectorEmbedder.

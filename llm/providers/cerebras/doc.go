@@ -10,7 +10,7 @@
 // The provider registers itself as "cerebras" via init(). Import the package
 // for side effects to make it available through the llm registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/cerebras"
+//	import _ "github.com/lookatitude/beluga-ai/v2/llm/providers/cerebras"
 //
 // # Usage
 //

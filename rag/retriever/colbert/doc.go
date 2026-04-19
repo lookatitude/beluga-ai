@@ -25,7 +25,7 @@
 // The retriever is registered as "colbert" with the retriever registry. Import
 // this package with a blank import to make it available:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/retriever/colbert"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/retriever/colbert"
 //
 // # Usage
 //

@@ -3,8 +3,8 @@ package credential
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/auth"
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/auth"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // CredentialMiddleware returns an auth.Middleware that enforces credential-based

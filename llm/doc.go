@@ -19,7 +19,7 @@
 // Providers register themselves via init() so that importing a provider
 // package is sufficient to make it available through the registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+//	import _ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
 //
 //	model, err := llm.New("openai", cfg)
 //

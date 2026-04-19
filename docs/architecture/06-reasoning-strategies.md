@@ -166,7 +166,7 @@ Planner-specific state. ToT stores the branch tree. LATS stores node values. Sel
 package myplanner
 
 import (
-    "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/v2/agent"
 )
 
 func init() {
@@ -231,7 +231,7 @@ graph LR
 ```go
 import (
     "context"
-    "github.com/lookatitude/beluga-ai/agent/plancache"
+    "github.com/lookatitude/beluga-ai/v2/agent/plancache"
 )
 
 cached, err := plancache.WrapPlanner(myPlanner,

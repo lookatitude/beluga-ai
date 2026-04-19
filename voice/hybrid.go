@@ -5,7 +5,7 @@ import (
 	"iter"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // PipelineMode identifies the active mode in a hybrid pipeline.

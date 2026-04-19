@@ -133,7 +133,7 @@ graph LR
 
 ### Why this, not config files
 
-Before `init()`-based registration, every framework had a YAML or TOML "providers list" that shipped alongside the library and had to be updated by hand. Go's `init()` + import graph lets registration happen transparently: you import `_ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"` and the provider is available. No config, no runtime errors from typos in names.
+Before `init()`-based registration, every framework had a YAML or TOML "providers list" that shipped alongside the library and had to be updated by hand. Go's `init()` + import graph lets registration happen transparently: you import `_ "github.com/lookatitude/beluga-ai/v2/llm/providers/anthropic"` and the provider is available. No config, no runtime errors from typos in names.
 
 See [Provider Registration pattern](../patterns/registry-factory.md) and [`.wiki/patterns/provider-registration.md`](../../.wiki/patterns/provider-registration.md).
 
@@ -263,7 +263,7 @@ A complete wire-up looks like this:
 
 ```go
 // import the provider for its init() side-effect
-import _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
+import _ "github.com/lookatitude/beluga-ai/v2/llm/providers/anthropic"
 
 func buildModel() (llm.Model, error) {
     // Ring 2 — registry lookup

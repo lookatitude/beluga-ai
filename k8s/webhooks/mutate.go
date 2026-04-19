@@ -1,7 +1,7 @@
 package webhooks
 
 import (
-	"github.com/lookatitude/beluga-ai/k8s/operator"
+	"github.com/lookatitude/beluga-ai/v2/k8s/operator"
 )
 
 const (

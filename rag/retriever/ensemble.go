@@ -4,8 +4,8 @@ import (
 	"context"
 	"sort"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // Fuser combines multiple result sets into a single ranked list.

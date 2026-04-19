@@ -7,8 +7,8 @@ import (
 	"iter"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/voice"
-	"github.com/lookatitude/beluga-ai/voice/transport"
+	"github.com/lookatitude/beluga-ai/v2/voice"
+	"github.com/lookatitude/beluga-ai/v2/voice/transport"
 )
 
 var _ transport.AudioTransport = (*Transport)(nil) // compile-time interface check

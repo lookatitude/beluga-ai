@@ -3,7 +3,7 @@ package vectorstore
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // SearchStrategy defines the distance metric used for similarity search.

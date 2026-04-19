@@ -5,7 +5,7 @@
 //
 // The provider registers as "milvus" in the vectorstore registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/milvus"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/vectorstore/providers/milvus"
 //
 //	store, err := vectorstore.New("milvus", config.ProviderConfig{
 //	    BaseURL: "http://localhost:19530",

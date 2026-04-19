@@ -7,7 +7,7 @@ Source: [`cmd/beluga/`](../../cmd/beluga/).
 ## Installation
 
 ```bash
-go install github.com/lookatitude/beluga-ai/cmd/beluga@latest
+go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@latest
 ```
 
 Pre-built binaries for linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, and windows/amd64 are attached to each GitHub release along with a `checksums.txt` (sha256). The build matrix is defined in [`.goreleaser.yml`](../../.goreleaser.yml).

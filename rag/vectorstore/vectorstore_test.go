@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/config"
-	"github.com/lookatitude/beluga-ai/rag/vectorstore"
-	_ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/inmemory"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
+	_ "github.com/lookatitude/beluga-ai/v2/rag/vectorstore/providers/inmemory"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 func TestRegistry(t *testing.T) {

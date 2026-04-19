@@ -3,7 +3,7 @@ package tool
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // MCPServerInfo describes an MCP server and the tools it provides.

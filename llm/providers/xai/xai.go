@@ -1,9 +1,9 @@
 package xai
 
 import (
-	"github.com/lookatitude/beluga-ai/config"
-	"github.com/lookatitude/beluga-ai/internal/openaicompat"
-	"github.com/lookatitude/beluga-ai/llm"
+	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/internal/openaicompat"
+	"github.com/lookatitude/beluga-ai/v2/llm"
 )
 
 const defaultBaseURL = "https://api.x.ai/v1"

@@ -35,7 +35,7 @@
 //
 // Record token usage and query totals:
 //
-//	import "github.com/lookatitude/beluga-ai/cost"
+//	import "github.com/lookatitude/beluga-ai/v2/cost"
 //
 //	tracker, err := cost.New("inmemory", cost.Config{MaxEntries: 100_000})
 //	if err != nil {
@@ -95,7 +95,7 @@
 //
 // # Related packages
 //
-//   - [github.com/lookatitude/beluga-ai/runtime/plugins] — CostTracking plugin
-//   - [github.com/lookatitude/beluga-ai/audit] — audit logging
-//   - [github.com/lookatitude/beluga-ai/o11y] — OpenTelemetry metrics
+//   - [github.com/lookatitude/beluga-ai/v2/runtime/plugins] — CostTracking plugin
+//   - [github.com/lookatitude/beluga-ai/v2/audit] — audit logging
+//   - [github.com/lookatitude/beluga-ai/v2/o11y] — OpenTelemetry metrics
 package cost

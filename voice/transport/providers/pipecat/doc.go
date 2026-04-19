@@ -7,7 +7,7 @@
 // This package registers itself as "pipecat" with the transport registry.
 // Import it with a blank identifier to enable:
 //
-//	import _ "github.com/lookatitude/beluga-ai/voice/transport/providers/pipecat"
+//	import _ "github.com/lookatitude/beluga-ai/v2/voice/transport/providers/pipecat"
 //
 // # Usage
 //

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // Reconciler defines the reconciliation interface for Beluga AI custom resources.

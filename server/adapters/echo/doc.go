@@ -5,7 +5,7 @@
 // The adapter registers itself as "echo" in the server registry via init().
 // Import this package to make the adapter available:
 //
-//	import _ "github.com/lookatitude/beluga-ai/server/adapters/echo"
+//	import _ "github.com/lookatitude/beluga-ai/v2/server/adapters/echo"
 //
 //	adapter, err := server.New("echo", server.Config{})
 //	if err != nil {

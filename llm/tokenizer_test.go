@@ -3,7 +3,7 @@ package llm
 import (
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 func TestSimpleTokenizer_Count(t *testing.T) {

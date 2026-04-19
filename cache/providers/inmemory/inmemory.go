@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/cache"
+	"github.com/lookatitude/beluga-ai/v2/cache"
 )
 
 func init() {

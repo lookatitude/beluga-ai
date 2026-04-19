@@ -11,7 +11,7 @@
 // This package registers itself as "livekit" with the transport registry.
 // Import it with a blank identifier to enable:
 //
-//	import _ "github.com/lookatitude/beluga-ai/voice/transport/providers/livekit"
+//	import _ "github.com/lookatitude/beluga-ai/v2/voice/transport/providers/livekit"
 //
 // # Usage
 //

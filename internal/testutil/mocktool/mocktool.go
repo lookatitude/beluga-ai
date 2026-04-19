@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // MockTool is a configurable mock for the Tool interface.

@@ -1,6 +1,6 @@
 package plancache
 
-import "github.com/lookatitude/beluga-ai/core"
+import "github.com/lookatitude/beluga-ai/v2/core"
 
 const (
 	// ErrCacheOp is the error code for plan cache operation failures.

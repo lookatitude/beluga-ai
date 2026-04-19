@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/runtime/sleeptime"
+	"github.com/lookatitude/beluga-ai/v2/runtime/sleeptime"
 )
 
 // ContradictionResolverTask detects and resolves contradictions in session

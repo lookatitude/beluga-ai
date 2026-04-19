@@ -57,7 +57,7 @@ func main() {
 	fmt.Println()
 	fmt.Println("# Reference: Providers")
 	fmt.Println()
-	fmt.Println("Every extensible package in Beluga follows the same registry model: a provider implements a small interface (1-4 methods), registers itself via `init()`, and becomes available at runtime through `Register` / `New` / `List`. Import a provider's package for its side-effect (`import _ \"github.com/lookatitude/beluga-ai/llm/providers/openai\"`) and call `llm.New(\"openai\", cfg)` to get a fully wired instance with middleware, hooks, and tracing attached.")
+	fmt.Println("Every extensible package in Beluga follows the same registry model: a provider implements a small interface (1-4 methods), registers itself via `init()`, and becomes available at runtime through `Register` / `New` / `List`. Import a provider's package for its side-effect (`import _ \"github.com/lookatitude/beluga-ai/v2/llm/providers/openai\"`) and call `llm.New(\"openai\", cfg)` to get a fully wired instance with middleware, hooks, and tracing attached.")
 	fmt.Println()
 	fmt.Println("To add your own provider to any category below, follow the [Provider Template](../patterns/provider-template.md) pattern and the step-by-step [Custom Provider guide](../guides/custom-provider.md). The five-part recipe (implement the interface, write a factory, register in `init()`, write table-driven tests, document in godoc) applies identically to every category listed here.")
 	fmt.Println()

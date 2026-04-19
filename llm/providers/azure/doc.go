@@ -12,7 +12,7 @@
 // The provider registers itself as "azure" via init(). Import the package
 // for side effects to make it available through the llm registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/azure"
+//	import _ "github.com/lookatitude/beluga-ai/v2/llm/providers/azure"
 //
 // # Usage
 //

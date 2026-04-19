@@ -7,8 +7,8 @@ import (
 	"math/rand/v2"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/internal/httpclient"
-	"github.com/lookatitude/beluga-ai/o11y"
+	"github.com/lookatitude/beluga-ai/v2/internal/httpclient"
+	"github.com/lookatitude/beluga-ai/v2/o11y"
 )
 
 // Exporter implements o11y.TraceExporter for Arize Phoenix.

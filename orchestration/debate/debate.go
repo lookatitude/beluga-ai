@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/internal/hookutil"
+	"github.com/lookatitude/beluga-ai/v2/internal/hookutil"
 )
 
 // DebateState captures the full state of a debate at any point during execution.

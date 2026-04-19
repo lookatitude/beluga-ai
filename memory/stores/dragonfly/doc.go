@@ -4,7 +4,7 @@
 //
 // # Usage
 //
-//	import "github.com/lookatitude/beluga-ai/memory/stores/dragonfly"
+//	import "github.com/lookatitude/beluga-ai/v2/memory/stores/dragonfly"
 //
 //	client := goredis.NewClient(&goredis.Options{Addr: "localhost:6379"})
 //	store, err := dragonfly.New(dragonfly.Config{

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/runtime/sleeptime"
+	"github.com/lookatitude/beluga-ai/v2/runtime/sleeptime"
 )
 
 // MemoryReorgTask consolidates old conversation turns during idle periods.

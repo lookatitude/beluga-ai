@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/cache"
+	"github.com/lookatitude/beluga-ai/v2/cache"
 )
 
 func newTestCache(ttl time.Duration, maxSize int) *InMemoryCache {

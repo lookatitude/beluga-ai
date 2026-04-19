@@ -15,5 +15,5 @@
 // The package registers itself as "structured" in the retriever registry.
 // Import it for side effects:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/retriever/structured"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/retriever/structured"
 package structured

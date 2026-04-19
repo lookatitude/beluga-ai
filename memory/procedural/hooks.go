@@ -3,7 +3,7 @@ package procedural
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // Hooks provides optional callback functions for procedural memory operations.

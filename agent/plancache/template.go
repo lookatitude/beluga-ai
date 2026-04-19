@@ -3,7 +3,7 @@ package plancache
 import (
 	"time"
 
-	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/v2/agent"
 )
 
 // Template is a cached plan that records the sequence of actions taken for a

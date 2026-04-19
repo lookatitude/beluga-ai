@@ -33,9 +33,9 @@ import (
     "context"
     "fmt"
 
-    "github.com/lookatitude/beluga-ai/core"
-    "github.com/lookatitude/beluga-ai/llm"
-    "github.com/lookatitude/beluga-ai/schema"
+    "github.com/lookatitude/beluga-ai/v2/core"
+    "github.com/lookatitude/beluga-ai/v2/llm"
+    "github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // compile-time interface check
@@ -104,8 +104,8 @@ import (
     "context"
     "testing"
 
-    "github.com/lookatitude/beluga-ai/llm"
-    "github.com/lookatitude/beluga-ai/schema"
+    "github.com/lookatitude/beluga-ai/v2/llm"
+    "github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 func TestProvider_Generate(t *testing.T) {
@@ -162,7 +162,7 @@ func TestRegistration(t *testing.T) {
 User code consumes it:
 
 ```go
-import _ "github.com/lookatitude/beluga-ai/llm/providers/echo"
+import _ "github.com/lookatitude/beluga-ai/v2/llm/providers/echo"
 
 p, err := llm.New("echo", llm.Config{"prefix": "bot>"})
 ```

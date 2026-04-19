@@ -13,7 +13,7 @@ You need runtime discovery of pluggable components without introducing import cy
 - **Compile-time registration via build tags.** Works but requires users to know the right tags. Rejected for usability.
 - **Reflection-based discovery.** Fragile, slow to start, and makes tooling hard. Rejected.
 
-`init()`-based registration is the Go-idiomatic answer: the import graph is the source of truth. If you import `_ "github.com/lookatitude/beluga-ai/llm/providers/openai"`, the provider is registered. No config, no ceremony.
+`init()`-based registration is the Go-idiomatic answer: the import graph is the source of truth. If you import `_ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"`, the provider is registered. No config, no ceremony.
 
 ## How it works
 
@@ -71,7 +71,7 @@ Provider registration from `llm/providers/anthropic/anthropic.go:19-23`:
 ```go
 package anthropic
 
-import "github.com/lookatitude/beluga-ai/llm"
+import "github.com/lookatitude/beluga-ai/v2/llm"
 
 func init() {
     if err := llm.Register("anthropic", newFactory()); err != nil {
@@ -181,7 +181,7 @@ And an implementation:
 // cipher/providers/aesgcm/aesgcm.go
 package aesgcm
 
-import "github.com/lookatitude/beluga-ai/cipher"
+import "github.com/lookatitude/beluga-ai/v2/cipher"
 
 func init() {
     if err := cipher.Register("aes-gcm", newFactory()); err != nil {
@@ -202,7 +202,7 @@ func newFactory() cipher.Factory {
 User code:
 
 ```go
-import _ "github.com/lookatitude/beluga-ai/cipher/providers/aesgcm"
+import _ "github.com/lookatitude/beluga-ai/v2/cipher/providers/aesgcm"
 
 c, err := cipher.New("aes-gcm", key)
 if err != nil {

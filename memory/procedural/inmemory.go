@@ -5,8 +5,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // InMemoryStore is a thread-safe, map-based skill store for testing and

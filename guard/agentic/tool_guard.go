@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/guard"
+	"github.com/lookatitude/beluga-ai/v2/guard"
 )
 
 // Compile-time check.

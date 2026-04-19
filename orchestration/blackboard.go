@@ -7,8 +7,8 @@ import (
 	"maps"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // TerminationFunc decides whether the blackboard has reached a terminal state.

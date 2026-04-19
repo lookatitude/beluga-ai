@@ -1,6 +1,6 @@
 package contract
 
-import "github.com/lookatitude/beluga-ai/schema"
+import "github.com/lookatitude/beluga-ai/v2/schema"
 
 // Option configures a Contract during construction.
 type Option func(*schema.Contract)

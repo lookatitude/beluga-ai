@@ -6,7 +6,7 @@
 //
 // The provider registers as "google" in the embedding registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/google"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/embedding/providers/google"
 //
 //	emb, err := embedding.New("google", config.ProviderConfig{
 //	    APIKey: "...",

@@ -16,7 +16,7 @@
 //
 // # Installation
 //
-//	go install github.com/lookatitude/beluga-ai/cmd/beluga@latest
+//	go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@latest
 //
 // Release binaries for linux/amd64, linux/arm64, darwin/amd64, darwin/arm64,
 // and windows/amd64 are attached to each GitHub release with a sha256

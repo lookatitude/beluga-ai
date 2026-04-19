@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/eval"
-	"github.com/lookatitude/beluga-ai/llm"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/eval"
+	"github.com/lookatitude/beluga-ai/v2/llm"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 const hallucinationPrompt = `You are an evaluation judge. Given a question, context documents, and an answer, detect whether the answer contains fabricated or hallucinated information that is not supported by the context or commonly known facts.

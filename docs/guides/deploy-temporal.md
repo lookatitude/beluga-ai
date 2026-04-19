@@ -39,13 +39,13 @@ import (
     "log"
     "time"
 
-    "github.com/lookatitude/beluga-ai/agent"
-    "github.com/lookatitude/beluga-ai/llm"
-    "github.com/lookatitude/beluga-ai/runtime"
-    "github.com/lookatitude/beluga-ai/workflow"
+    "github.com/lookatitude/beluga-ai/v2/agent"
+    "github.com/lookatitude/beluga-ai/v2/llm"
+    "github.com/lookatitude/beluga-ai/v2/runtime"
+    "github.com/lookatitude/beluga-ai/v2/workflow"
 
-    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
-    _ "github.com/lookatitude/beluga-ai/workflow/backends/temporal"
+    _ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
+    _ "github.com/lookatitude/beluga-ai/v2/workflow/backends/temporal"
 )
 
 func main() {
@@ -91,9 +91,9 @@ package main
 
 import (
     "context"
-    "github.com/lookatitude/beluga-ai/core"
-    "github.com/lookatitude/beluga-ai/hitl"
-    "github.com/lookatitude/beluga-ai/tool"
+    "github.com/lookatitude/beluga-ai/v2/core"
+    "github.com/lookatitude/beluga-ai/v2/hitl"
+    "github.com/lookatitude/beluga-ai/v2/tool"
 )
 
 type deleteUserTool struct {

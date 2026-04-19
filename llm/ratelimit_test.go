@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 func TestWithProviderLimits_Generate_PassesThrough(t *testing.T) {

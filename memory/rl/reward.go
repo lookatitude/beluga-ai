@@ -3,7 +3,7 @@ package rl
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // RewardFunc computes per-step rewards for an episode. The returned slice

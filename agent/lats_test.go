@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 func TestMCTSNode_UCTScore_Unvisited(t *testing.T) {

@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
-	"github.com/lookatitude/beluga-ai/internal/httpclient"
-	"github.com/lookatitude/beluga-ai/voice/stt"
+	"github.com/lookatitude/beluga-ai/v2/internal/httpclient"
+	"github.com/lookatitude/beluga-ai/v2/voice/stt"
 )
 
 const (

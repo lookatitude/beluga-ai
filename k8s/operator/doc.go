@@ -35,6 +35,6 @@
 // # No External Dependencies
 //
 // This package imports only the Go standard library and
-// github.com/lookatitude/beluga-ai/core. It must never be imported by core
+// github.com/lookatitude/beluga-ai/v2/core. It must never be imported by core
 // library packages.
 package operator

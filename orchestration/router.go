@@ -4,7 +4,7 @@ import (
 	"context"
 	"iter"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // ClassifierFunc classifies an input and returns a route name.

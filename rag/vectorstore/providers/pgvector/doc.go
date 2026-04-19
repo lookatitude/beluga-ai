@@ -6,7 +6,7 @@
 //
 // The provider registers as "pgvector" in the vectorstore registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/pgvector"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/vectorstore/providers/pgvector"
 //
 //	store, err := vectorstore.New("pgvector", config.ProviderConfig{
 //	    BaseURL: "postgres://user:pass@localhost:5432/db",

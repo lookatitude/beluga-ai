@@ -17,7 +17,7 @@ description: Documentation writing patterns for Beluga AI v2. Use when creating 
 ## Rules
 
 - Every concept needs a code example.
-- Examples must compile with full import paths (`github.com/lookatitude/beluga-ai/...`).
+- Examples must compile with full import paths (`github.com/lookatitude/beluga-ai/v2/...`).
 - Handle errors explicitly — never `_` for error returns.
 - No marketing language, filler words, or emojis.
 - Professional, active voice, present tense, imperative for instructions.

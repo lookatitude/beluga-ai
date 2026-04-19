@@ -9,13 +9,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/config"
-	"github.com/lookatitude/beluga-ai/llm"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/llm"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 
 	// Import backend providers so llm.New("together", ...) etc. work in tests.
-	_ "github.com/lookatitude/beluga-ai/llm/providers/fireworks"
-	_ "github.com/lookatitude/beluga-ai/llm/providers/together"
+	_ "github.com/lookatitude/beluga-ai/v2/llm/providers/fireworks"
+	_ "github.com/lookatitude/beluga-ai/v2/llm/providers/together"
 )
 
 func mockResponse(content string) string {

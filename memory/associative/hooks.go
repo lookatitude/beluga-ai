@@ -3,8 +3,8 @@ package associative
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/internal/hookutil"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/internal/hookutil"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // Hooks provides optional callback functions for associative memory lifecycle

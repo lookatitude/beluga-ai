@@ -1,8 +1,8 @@
 package contract
 
 import (
-	"github.com/lookatitude/beluga-ai/internal/jsonutil"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/internal/jsonutil"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // New creates a new Contract with the given name and options.

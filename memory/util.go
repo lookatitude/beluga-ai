@@ -3,7 +3,7 @@ package memory
 import (
 	"strings"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // extractMessageText extracts concatenated text from a message's content parts.

@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/auth"
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/auth"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // --- AgentCredential tests ---

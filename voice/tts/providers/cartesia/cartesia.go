@@ -8,8 +8,8 @@ import (
 	"iter"
 	"net/http"
 
-	"github.com/lookatitude/beluga-ai/internal/httpclient"
-	"github.com/lookatitude/beluga-ai/voice/tts"
+	"github.com/lookatitude/beluga-ai/v2/internal/httpclient"
+	"github.com/lookatitude/beluga-ai/v2/voice/tts"
 )
 
 const (

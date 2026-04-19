@@ -3,8 +3,8 @@ package agent
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/internal/hookutil"
-	"github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/v2/internal/hookutil"
+	"github.com/lookatitude/beluga-ai/v2/tool"
 )
 
 // Hooks provides optional callback functions invoked at various points

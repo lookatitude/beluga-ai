@@ -5,7 +5,7 @@
 //
 // # Usage
 //
-//	import "github.com/lookatitude/beluga-ai/memory/stores/neo4j"
+//	import "github.com/lookatitude/beluga-ai/v2/memory/stores/neo4j"
 //
 //	store, err := neo4j.New(neo4j.Config{
 //	    URI:      "neo4j://localhost:7687",

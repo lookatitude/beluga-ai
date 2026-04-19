@@ -8,7 +8,7 @@
 //
 // The provider registers as "firecrawl" in the loader registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/loader/providers/firecrawl"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/loader/providers/firecrawl"
 //
 //	l, err := loader.New("firecrawl", config.ProviderConfig{
 //	    APIKey: "fc-...",

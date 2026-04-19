@@ -7,7 +7,7 @@ import (
 	"go/token"
 	"strings"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // CodeExecutor defines the interface for executing dynamically generated tool code.

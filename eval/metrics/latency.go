@@ -3,8 +3,8 @@ package metrics
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/eval"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/eval"
 )
 
 // DefaultMaxLatencyMs is the default maximum latency in milliseconds used for

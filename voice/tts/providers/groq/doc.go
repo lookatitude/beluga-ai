@@ -6,7 +6,7 @@
 // This package registers itself as "groq" with the tts registry. Import it
 // with a blank identifier to enable:
 //
-//	import _ "github.com/lookatitude/beluga-ai/voice/tts/providers/groq"
+//	import _ "github.com/lookatitude/beluga-ai/v2/voice/tts/providers/groq"
 //
 // # Usage
 //

@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // RevokerHooks provides optional callbacks for auto-revocation events.

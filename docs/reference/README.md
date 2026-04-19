@@ -15,4 +15,4 @@ Stable API surface. Use these when you need to look something up, not when you'r
 - **Canonical code examples** → [`.wiki/patterns/`](../../.wiki/patterns/).
 - **Package map with file:line anchors** → [`.wiki/architecture/package-map.md`](../../.wiki/architecture/package-map.md).
 - **Architectural invariants with source pointers** → [`.wiki/architecture/invariants.md`](../../.wiki/architecture/invariants.md).
-- **Godoc for exported symbols** → `go doc github.com/lookatitude/beluga-ai/<package>`.
+- **Godoc for exported symbols** → `go doc github.com/lookatitude/beluga-ai/v2/<package>`.

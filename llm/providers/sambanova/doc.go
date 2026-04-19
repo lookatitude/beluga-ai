@@ -10,7 +10,7 @@
 // The provider registers itself as "sambanova" via init(). Import the package
 // for side effects to make it available through the llm registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/sambanova"
+//	import _ "github.com/lookatitude/beluga-ai/v2/llm/providers/sambanova"
 //
 // # Usage
 //

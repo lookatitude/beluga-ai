@@ -5,7 +5,7 @@
 //
 // The provider registers as "weaviate" in the vectorstore registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/weaviate"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/vectorstore/providers/weaviate"
 //
 //	store, err := vectorstore.New("weaviate", config.ProviderConfig{
 //	    BaseURL: "http://localhost:8080",

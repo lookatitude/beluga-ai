@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/eval/trajectory"
-	"github.com/lookatitude/beluga-ai/internal/testutil/mockllm"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/eval/trajectory"
+	"github.com/lookatitude/beluga-ai/v2/internal/testutil/mockllm"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

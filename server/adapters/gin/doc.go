@@ -5,7 +5,7 @@
 // The adapter registers itself as "gin" in the server registry via init().
 // Import this package to make the adapter available:
 //
-//	import _ "github.com/lookatitude/beluga-ai/server/adapters/gin"
+//	import _ "github.com/lookatitude/beluga-ai/v2/server/adapters/gin"
 //
 //	adapter, err := server.New("gin", server.Config{})
 //	if err != nil {

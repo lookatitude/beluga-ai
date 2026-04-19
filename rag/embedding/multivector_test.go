@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/v2/config"
 )
 
 func TestMultiVectorRegistry(t *testing.T) {

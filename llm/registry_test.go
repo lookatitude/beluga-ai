@@ -3,7 +3,7 @@ package llm
 import (
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/v2/config"
 )
 
 func TestRegisterAndNew(t *testing.T) {

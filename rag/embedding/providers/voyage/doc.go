@@ -6,7 +6,7 @@
 //
 // The provider registers as "voyage" in the embedding registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/voyage"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/embedding/providers/voyage"
 //
 //	emb, err := embedding.New("voyage", config.ProviderConfig{
 //	    APIKey: "...",

@@ -39,7 +39,7 @@
 // Providers register via [Register] in their init() function and are created
 // with [New]. Use [List] to discover available providers.
 //
-//	import _ "github.com/lookatitude/beluga-ai/voice/s2s/providers/openai"
+//	import _ "github.com/lookatitude/beluga-ai/v2/voice/s2s/providers/openai"
 //
 //	engine, err := s2s.New("openai_realtime", s2s.Config{Voice: "alloy"})
 //	session, err := engine.Start(ctx)

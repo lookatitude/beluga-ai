@@ -5,9 +5,9 @@ import (
 	"iter"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/internal/hookutil"
-	"github.com/lookatitude/beluga-ai/voice"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/internal/hookutil"
+	"github.com/lookatitude/beluga-ai/v2/voice"
 )
 
 // TranscriptEvent represents a transcription result from a streaming STT

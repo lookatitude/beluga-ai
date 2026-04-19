@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/o11y"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/o11y"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 

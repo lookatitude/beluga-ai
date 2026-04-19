@@ -6,7 +6,7 @@
 // This package registers itself as "lmnt" with the tts registry. Import it
 // with a blank identifier to enable:
 //
-//	import _ "github.com/lookatitude/beluga-ai/voice/tts/providers/lmnt"
+//	import _ "github.com/lookatitude/beluga-ai/v2/voice/tts/providers/lmnt"
 //
 // # Usage
 //

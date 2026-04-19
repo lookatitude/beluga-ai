@@ -6,7 +6,7 @@
 //
 // The provider registers as "notion" in the loader registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/loader/providers/notion"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/loader/providers/notion"
 //
 //	l, err := loader.New("notion", config.ProviderConfig{
 //	    APIKey: "ntn_...",

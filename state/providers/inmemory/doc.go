@@ -5,7 +5,7 @@
 // The store registers itself under the name "inmemory" via init(), so it can
 // be created through the state registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/state/providers/inmemory"
+//	import _ "github.com/lookatitude/beluga-ai/v2/state/providers/inmemory"
 //
 //	store, err := state.New("inmemory", state.Config{})
 //

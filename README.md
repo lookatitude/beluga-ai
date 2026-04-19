@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://pkg.go.dev/github.com/lookatitude/beluga-ai"><img src="https://pkg.go.dev/badge/github.com/lookatitude/beluga-ai.svg" alt="Go Reference"></a>
-  <a href="https://goreportcard.com/report/github.com/lookatitude/beluga-ai"><img src="https://goreportcard.com/badge/github.com/lookatitude/beluga-ai" alt="Go Report Card"></a>
+  <a href="https://pkg.go.dev/github.com/lookatitude/beluga-ai/v2"><img src="https://pkg.go.dev/badge/github.com/lookatitude/beluga-ai/v2.svg" alt="Go Reference"></a>
+  <a href="https://goreportcard.com/report/github.com/lookatitude/beluga-ai/v2"><img src="https://goreportcard.com/badge/github.com/lookatitude/beluga-ai/v2" alt="Go Report Card"></a>
   <img src="https://img.shields.io/badge/go-%3E%3D1.23-blue" alt="Go Version">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/architecture-7--layer-orange" alt="Architecture">
@@ -122,12 +122,12 @@ import (
     "fmt"
     "os"
 
-    "github.com/lookatitude/beluga-ai/agent"
-    "github.com/lookatitude/beluga-ai/config"
-    "github.com/lookatitude/beluga-ai/llm"
-    "github.com/lookatitude/beluga-ai/tool"
+    "github.com/lookatitude/beluga-ai/v2/agent"
+    "github.com/lookatitude/beluga-ai/v2/config"
+    "github.com/lookatitude/beluga-ai/v2/llm"
+    "github.com/lookatitude/beluga-ai/v2/tool"
 
-    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+    _ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
 )
 
 func main() {
@@ -194,18 +194,18 @@ func main() {
 ## Installation
 
 ```bash
-go get github.com/lookatitude/beluga-ai@latest
+go get github.com/lookatitude/beluga-ai/v2@latest
 ```
 
 Import only the providers you need — they self-register via `init()`:
 
 ```go
 import (
-    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
-    _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
-    _ "github.com/lookatitude/beluga-ai/llm/providers/gemini"
-    _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/openai"
-    _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/pgvector"
+    _ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
+    _ "github.com/lookatitude/beluga-ai/v2/llm/providers/anthropic"
+    _ "github.com/lookatitude/beluga-ai/v2/llm/providers/gemini"
+    _ "github.com/lookatitude/beluga-ai/v2/rag/embedding/providers/openai"
+    _ "github.com/lookatitude/beluga-ai/v2/rag/vectorstore/providers/pgvector"
 )
 ```
 

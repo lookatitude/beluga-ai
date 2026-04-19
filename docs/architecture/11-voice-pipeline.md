@@ -150,7 +150,7 @@ Internally each provider (livekit, daily, pipecat, websocket) keeps a buffered `
 Transports register in the usual way:
 
 ```go
-import _ "github.com/lookatitude/beluga-ai/voice/transport/livekit"
+import _ "github.com/lookatitude/beluga-ai/v2/voice/transport/livekit"
 
 tp, _ := voice.NewTransport("livekit", voice.Config{Room: "agent-123"})
 ```

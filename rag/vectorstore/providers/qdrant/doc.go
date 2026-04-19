@@ -6,7 +6,7 @@
 //
 // The provider registers as "qdrant" in the vectorstore registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/qdrant"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/vectorstore/providers/qdrant"
 //
 //	store, err := vectorstore.New("qdrant", config.ProviderConfig{
 //	    BaseURL: "http://localhost:6333",

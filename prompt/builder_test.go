@@ -3,7 +3,7 @@ package prompt
 import (
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 func TestBuilder_Build_FullOrder(t *testing.T) {

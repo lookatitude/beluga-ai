@@ -3,7 +3,7 @@ package tool
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/o11y"
+	"github.com/lookatitude/beluga-ai/v2/o11y"
 )
 
 // WithTracing returns middleware that wraps a Tool with OTel spans following

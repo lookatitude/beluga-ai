@@ -7,7 +7,7 @@
 //
 // The provider registers as "mongodb" in the vectorstore registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/mongodb"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/vectorstore/providers/mongodb"
 //
 //	store, err := vectorstore.New("mongodb", config.ProviderConfig{
 //	    BaseURL: "https://data.mongodb-api.com/app/<app-id>/endpoint/data/v1",

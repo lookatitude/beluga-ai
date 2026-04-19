@@ -7,9 +7,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/internal/httputil"
-	"github.com/lookatitude/beluga-ai/server"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/internal/httputil"
+	"github.com/lookatitude/beluga-ai/v2/server"
 )
 
 // Adapter implements server.ServerAdapter using the Chi router.

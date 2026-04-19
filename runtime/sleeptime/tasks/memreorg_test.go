@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/runtime/sleeptime"
+	"github.com/lookatitude/beluga-ai/v2/runtime/sleeptime"
 )
 
 func TestMemoryReorgTask_Name(t *testing.T) {

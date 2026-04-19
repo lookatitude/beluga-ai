@@ -5,7 +5,7 @@
 //
 // The provider registers as "elasticsearch" in the vectorstore registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/elasticsearch"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/vectorstore/providers/elasticsearch"
 //
 //	store, err := vectorstore.New("elasticsearch", config.ProviderConfig{
 //	    BaseURL: "http://localhost:9200",

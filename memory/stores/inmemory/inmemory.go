@@ -5,8 +5,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/memory"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/memory"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // MessageStore is an in-memory implementation of memory.MessageStore.

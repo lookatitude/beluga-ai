@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/runtime"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/runtime"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // DefaultMaxHeuristics is the maximum number of heuristics injected per turn.

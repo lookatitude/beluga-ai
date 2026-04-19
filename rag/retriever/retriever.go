@@ -3,8 +3,8 @@ package retriever
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/internal/hookutil"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/internal/hookutil"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // Retriever searches for documents relevant to a query. Implementations must

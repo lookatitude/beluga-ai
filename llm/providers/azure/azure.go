@@ -3,10 +3,10 @@ package azure
 import (
 	"net/http"
 
-	"github.com/lookatitude/beluga-ai/config"
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/internal/openaicompat"
-	"github.com/lookatitude/beluga-ai/llm"
+	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/internal/openaicompat"
+	"github.com/lookatitude/beluga-ai/v2/llm"
 	"github.com/openai/openai-go/option"
 )
 

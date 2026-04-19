@@ -8,7 +8,7 @@
 //
 // The provider registers as "unstructured" in the loader registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/loader/providers/unstructured"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/loader/providers/unstructured"
 //
 //	l, err := loader.New("unstructured", config.ProviderConfig{
 //	    APIKey:  "key-...",

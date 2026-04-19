@@ -13,8 +13,8 @@ import (
 	"google.golang.org/grpc/encoding"
 	"google.golang.org/grpc/status"
 
-	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/server"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/server"
 )
 
 // InvokeRequest is the gRPC invoke request.

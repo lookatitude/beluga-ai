@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/v2/agent"
 )
 
 // AGUIHandler serves agents via the AG-UI protocol, providing a standardized

@@ -6,8 +6,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/config"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // TextSplitter splits text content into smaller chunks. Implementations

@@ -13,9 +13,9 @@
 //	    "context"
 //	    "fmt"
 //
-//	    "github.com/lookatitude/beluga-ai/runtime"
-//	    "github.com/lookatitude/beluga-ai/runtime/plugins"
-//	    "github.com/lookatitude/beluga-ai/schema"
+//	    "github.com/lookatitude/beluga-ai/v2/runtime"
+//	    "github.com/lookatitude/beluga-ai/v2/runtime/plugins"
+//	    "github.com/lookatitude/beluga-ai/v2/schema"
 //	)
 //
 //	runner := runtime.NewRunner(myAgent,
@@ -87,7 +87,7 @@
 //	    return err // return nil to suppress the error
 //	}
 //
-// See package [github.com/lookatitude/beluga-ai/runtime/plugins] for built-in
+// See package [github.com/lookatitude/beluga-ai/v2/runtime/plugins] for built-in
 // plugin implementations.
 //
 // # Session

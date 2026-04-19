@@ -7,7 +7,7 @@
 // This package registers itself as "deepgram" with the stt registry. Import
 // it with a blank identifier to enable:
 //
-//	import _ "github.com/lookatitude/beluga-ai/voice/stt/providers/deepgram"
+//	import _ "github.com/lookatitude/beluga-ai/v2/voice/stt/providers/deepgram"
 //
 // # Usage
 //

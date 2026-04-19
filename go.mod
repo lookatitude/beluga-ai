@@ -1,4 +1,4 @@
-module github.com/lookatitude/beluga-ai
+module github.com/lookatitude/beluga-ai/v2
 
 go 1.25.7
 

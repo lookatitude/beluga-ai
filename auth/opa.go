@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // OPAPolicy implements authorization via an external Open Policy Agent (OPA)

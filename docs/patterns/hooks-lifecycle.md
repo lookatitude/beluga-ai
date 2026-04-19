@@ -120,8 +120,8 @@ package myhooks
 import (
     "context"
     "sync/atomic"
-    "github.com/lookatitude/beluga-ai/core"
-    "github.com/lookatitude/beluga-ai/tool"
+    "github.com/lookatitude/beluga-ai/v2/core"
+    "github.com/lookatitude/beluga-ai/v2/tool"
 )
 
 type CostTracker struct {

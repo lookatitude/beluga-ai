@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lookatitude/beluga-ai/state"
-	"github.com/lookatitude/beluga-ai/state/providers/inmemory"
+	"github.com/lookatitude/beluga-ai/v2/state"
+	"github.com/lookatitude/beluga-ai/v2/state/providers/inmemory"
 )
 
 func newTestBlackboard(opts ...Option) (*Blackboard, func()) {

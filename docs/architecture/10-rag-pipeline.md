@@ -99,7 +99,7 @@ The default hybrid retriever produces a **single vector per document** at indexi
 import (
     "context"
 
-    "github.com/lookatitude/beluga-ai/rag/retriever/colbert"
+    "github.com/lookatitude/beluga-ai/v2/rag/retriever/colbert"
 )
 
 idx := colbert.NewInMemoryIndex()
@@ -142,7 +142,7 @@ At **retrieval time**, `RAPTORRetriever` flattens the tree — all nodes across 
 import (
     "context"
 
-    "github.com/lookatitude/beluga-ai/rag/retriever/raptor"
+    "github.com/lookatitude/beluga-ai/v2/rag/retriever/raptor"
 )
 
 // Build the tree once at ingestion time.
@@ -189,7 +189,7 @@ For data that lives in relational databases or graph stores, vector similarity o
 import (
     "context"
 
-    "github.com/lookatitude/beluga-ai/rag/retriever/structured"
+    "github.com/lookatitude/beluga-ai/v2/rag/retriever/structured"
 )
 
 schemaInfo := structured.SchemaInfo{

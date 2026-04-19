@@ -6,7 +6,7 @@
 //
 // The provider registers as "vespa" in the vectorstore registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/vespa"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/vectorstore/providers/vespa"
 //
 //	store, err := vectorstore.New("vespa", config.ProviderConfig{
 //	    BaseURL: "http://localhost:8080",

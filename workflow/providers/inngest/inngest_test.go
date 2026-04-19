@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/workflow"
+	"github.com/lookatitude/beluga-ai/v2/workflow"
 )
 
 // mockServer creates an httptest server that simulates the Inngest API.

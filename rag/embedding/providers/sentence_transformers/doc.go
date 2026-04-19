@@ -6,7 +6,7 @@
 //
 // The provider registers as "sentence_transformers" in the embedding registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/sentence_transformers"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/embedding/providers/sentence_transformers"
 //
 //	emb, err := embedding.New("sentence_transformers", config.ProviderConfig{
 //	    APIKey: "hf_...",

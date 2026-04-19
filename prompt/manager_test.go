@@ -3,7 +3,7 @@ package prompt
 import (
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // inMemoryManager is a test implementation of PromptManager backed by an

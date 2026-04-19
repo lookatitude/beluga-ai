@@ -5,7 +5,7 @@
 // The adapter registers itself as "huma" in the server registry via init().
 // Import this package to make the adapter available:
 //
-//	import _ "github.com/lookatitude/beluga-ai/server/adapters/huma"
+//	import _ "github.com/lookatitude/beluga-ai/v2/server/adapters/huma"
 //
 //	adapter, err := server.New("huma", server.Config{
 //	    Extra: map[string]any{
