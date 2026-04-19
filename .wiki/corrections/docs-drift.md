@@ -34,7 +34,6 @@ See [README.md](./README.md) for format + promotion-pipeline rules.
 4. **When arch-validate or any sweep discovers a count/inventory fact** (e.g., "22/22 LLM providers auto-register"), the sweep's follow-up tasks must include a diff against `docs/reference/*` to propagate. Add a step to the `/arch-validate` command checklist.
 
 **Confidence:** HIGH for all five findings — each backed by concrete file reads and grep verification against the current tree (`llm/registry.go`, `tool/{tool,hooks,middleware}.go`, `agent/base.go`, directory listings of `llm/providers/`, `rag/vectorstore/providers/`, `rag/embedding/providers/`, `cmd/`, `website/` absence, `agent/codeact` worktree-only presence).
-**Confidence:** HIGH for all five findings — each backed by concrete file reads and grep verification against the current tree (`llm/registry.go`, `tool/{tool,hooks,middleware}.go`, `agent/base.go`, directory listings of `llm/providers/`, `rag/vectorstore/providers/`, `rag/embedding/providers/`, `cmd/`, `website/` absence, `agent/codeact` worktree-only presence).
 
 ### C-007 | 2026-04-12 | docs-writer | docs/feature-status
 **Symptom:** When writing a feature-status page describing "Planned" features, the doc-writer used `gh pr view N --json state` to determine whether features existed in `main`. All five PRs returned `"state":"MERGED"`. The doc-writer initially assumed this confirmed the feature was not in `main` (via prior context from the task), but the evidence was contradictory and required clarification.
