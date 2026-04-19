@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"os"
 	"os/exec"
@@ -235,6 +236,96 @@ func TestVersionCommand(t *testing.T) {
 			t.Errorf("version stdout missing %q; got:\n%s", want, out)
 		}
 	}
+}
+
+// --- providers subcommand (T6) ---
+
+// TestProvidersCommand_Human asserts the default text output contains all
+// seven curated providers plus the memory built-ins (core/recall/archival/
+// composite, registered by memory/*.go), exit 0, stderr empty.
+func TestProvidersCommand_Human(t *testing.T) {
+	out, errBuf, code := executeArgs([]string{"providers"})
+	if code != 0 {
+		t.Fatalf("providers: want exit 0, got %d; stderr=%s", code, errBuf)
+	}
+	if errBuf != "" {
+		t.Errorf("providers: stderr must be empty on success, got: %s", errBuf)
+	}
+	// Curated providers (the blank imports from cmd/beluga/providers).
+	for _, want := range []string{"anthropic", "ollama", "openai", "inmemory"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("providers: stdout missing curated %q; got:\n%s", want, out)
+		}
+	}
+	// Category headers.
+	for _, want := range []string{"llm", "embedding", "vectorstore", "memory"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("providers: stdout missing category %q; got:\n%s", want, out)
+		}
+	}
+}
+
+// TestProvidersCommand_JSON asserts `--output json` emits a parseable
+// JSON array with the four canonical categories in the documented order,
+// stderr empty, exit 0.
+func TestProvidersCommand_JSON(t *testing.T) {
+	out, errBuf, code := executeArgs([]string{"--output", "json", "providers"})
+	if code != 0 {
+		t.Fatalf("providers --output json: want exit 0, got %d; stderr=%s", code, errBuf)
+	}
+	if errBuf != "" {
+		t.Errorf("providers --output json: stderr must be empty on success, got: %s", errBuf)
+	}
+
+	var cats []struct {
+		Category  string   `json:"category"`
+		Providers []string `json:"providers"`
+	}
+	if err := json.Unmarshal([]byte(out), &cats); err != nil {
+		t.Fatalf("providers --output json: stdout is not valid JSON: %v\ngot:\n%s", err, out)
+	}
+	if len(cats) != 4 {
+		t.Fatalf("providers --output json: want 4 categories, got %d", len(cats))
+	}
+	wantOrder := []string{"llm", "embedding", "vectorstore", "memory"}
+	for i, want := range wantOrder {
+		if cats[i].Category != want {
+			t.Errorf("providers --output json: category[%d] = %q, want %q", i, cats[i].Category, want)
+		}
+	}
+
+	// Spot-check that llm contains anthropic and vectorstore contains inmemory.
+	byCat := map[string][]string{}
+	for _, c := range cats {
+		byCat[c.Category] = c.Providers
+	}
+	if !containsString(byCat["llm"], "anthropic") {
+		t.Errorf("providers --output json: llm missing anthropic; got %v", byCat["llm"])
+	}
+	if !containsString(byCat["vectorstore"], "inmemory") {
+		t.Errorf("providers --output json: vectorstore missing inmemory; got %v", byCat["vectorstore"])
+	}
+}
+
+// TestProvidersCommand_UnsupportedFormat asserts an unrecognised --output
+// value returns a non-zero exit with the "unsupported output format" error.
+func TestProvidersCommand_UnsupportedFormat(t *testing.T) {
+	_, errBuf, code := executeArgs([]string{"--output", "yaml", "providers"})
+	if code != 1 {
+		t.Errorf("providers --output yaml: want exit 1, got %d", code)
+	}
+	if !strings.Contains(errBuf, "unsupported output format") {
+		t.Errorf("providers --output yaml: stderr missing expected error; got: %s", errBuf)
+	}
+}
+
+func containsString(haystack []string, needle string) bool {
+	for _, s := range haystack {
+		if s == needle {
+			return true
+		}
+	}
+	return false
 }
 
 // --- Root-level dispatch tests (replaces the pre-T2 TestRun_* set) ---

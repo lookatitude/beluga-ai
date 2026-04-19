@@ -30,6 +30,7 @@ func newRootCmd() *cobra.Command {
 
 	root.AddCommand(
 		newVersionCmd(),
+		newProvidersCmd(),
 		newInitCmd(),
 		newDevCmd(),
 		newTestCmd(),
