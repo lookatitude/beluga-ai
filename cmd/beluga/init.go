@@ -1,25 +1,44 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/spf13/cobra"
 )
 
-func cmdInit(args []string) error {
-	fs := flag.NewFlagSet("init", flag.ExitOnError)
-	name := fs.String("name", "", "project name (default: current directory name)")
-	dir := fs.String("dir", ".", "project directory")
-	if err := fs.Parse(args); err != nil {
-		return fmt.Errorf("parse flags: %w", err)
+// newInitCmd returns the cobra subcommand for `beluga init`. Flag names are
+// preserved from the pre-cobra CLI: --name, --dir.
+func newInitCmd() *cobra.Command {
+	var (
+		name string
+		dir  string
+	)
+	cmd := &cobra.Command{
+		Use:           "init [flags]",
+		Short:         "Initialize a new Beluga AI project",
+		Args:          cobra.NoArgs,
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return runInit(name, dir)
+		},
 	}
+	cmd.Flags().StringVar(&name, "name", "", "project name (default: current directory name)")
+	cmd.Flags().StringVar(&dir, "dir", ".", "project directory")
+	return cmd
+}
 
+// runInit executes the init workflow with pre-parsed flag values. Extracted
+// from the RunE body so tests can exercise the behaviour directly without a
+// cobra command tree.
+func runInit(name, dir string) error {
 	// Resolve to an absolute, cleaned path and require it to be rooted under
 	// the current working directory. This defeats both relative (`../..`) and
 	// absolute (`/tmp/../etc/passwd`) traversal attempts.
-	cleanDir, err := filepath.Abs(filepath.Clean(*dir))
+	cleanDir, err := filepath.Abs(filepath.Clean(dir))
 	if err != nil {
 		return fmt.Errorf("resolve directory: %w", err)
 	}
@@ -33,11 +52,11 @@ func cmdInit(args []string) error {
 	}
 	rel, err := filepath.Rel(base, cleanDir)
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
-		return fmt.Errorf("path traversal not allowed: %q", *dir)
+		return fmt.Errorf("path traversal not allowed: %q", dir)
 	}
 
-	if *name == "" {
-		*name = filepath.Base(cleanDir)
+	if name == "" {
+		name = filepath.Base(cleanDir)
 	}
 
 	// Create project structure.
@@ -66,7 +85,7 @@ func cmdInit(args []string) error {
     "model": "gpt-4o"
   }
 }
-`, *name)
+`, name)
 
 	if err := os.WriteFile(configPath, []byte(configContent), 0600); err != nil {
 		return fmt.Errorf("write config: %w", err)
@@ -95,13 +114,13 @@ func main() {
 	}
 	fmt.Println(result)
 }
-`, *name)
+`, name)
 
 	if err := os.WriteFile(mainPath, []byte(mainContent), 0600); err != nil {
 		return fmt.Errorf("write main.go: %w", err)
 	}
 
-	fmt.Printf("Initialized Beluga AI project %q in %s\n", *name, cleanDir)
+	fmt.Printf("Initialized Beluga AI project %q in %s\n", name, cleanDir)
 	fmt.Println("  agents/       - agent definitions")
 	fmt.Println("  tools/        - custom tools")
 	fmt.Println("  config/       - configuration files")
