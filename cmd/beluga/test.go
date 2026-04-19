@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -10,21 +9,6 @@ import (
 
 	"github.com/spf13/cobra"
 )
-
-// newTestCmd is a T2 adapter that delegates to cmdTest. T3 replaces this with
-// a native cobra RunE that uses pflag directly.
-func newTestCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:                "test [flags]",
-		Short:              "Run agent tests",
-		SilenceUsage:       true,
-		SilenceErrors:      true,
-		DisableFlagParsing: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmdTest(args)
-		},
-	}
-}
 
 // validPkgPattern restricts -pkg values to conservative Go package path
 // patterns to prevent smuggling additional `go test` flags via the argument.
@@ -36,7 +20,7 @@ var validPkgPattern = regexp.MustCompile(`^[A-Za-z0-9_./\-]+(\.\.\.)?$`)
 // through to the caller.
 var execCommand = func(stdout, stderr io.Writer, name string, args ...string) *exec.Cmd {
 	// #nosec G204 -- name is always an absolute path resolved via exec.LookPath("go")
-	// in cmdTest, and args are validated (verbose/race are bool flags, pkg is
+	// in runTest, and args are validated (verbose/race are bool flags, pkg is
 	// checked against validPkgPattern). No shell is involved.
 	c := exec.Command(name, args...) //nolint:gosec // G204: see nosec justification above
 	c.Stdout = stdout
@@ -47,18 +31,34 @@ var execCommand = func(stdout, stderr io.Writer, name string, args ...string) *e
 // lookPath is indirected so tests can stub binary resolution.
 var lookPath = exec.LookPath
 
-func cmdTest(args []string) error {
-	fs := flag.NewFlagSet("test", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	verbose := fs.Bool("v", false, "verbose test output")
-	race := fs.Bool("race", false, "enable race detector")
-	pkg := fs.String("pkg", "./...", "packages to test")
-	if err := fs.Parse(args); err != nil {
-		return fmt.Errorf("parse flags: %w", err)
+// newTestCmd returns the cobra subcommand for `beluga test`. Flag names are
+// preserved from the pre-cobra CLI: --verbose (short -v), --race, --pkg.
+func newTestCmd() *cobra.Command {
+	var (
+		verbose bool
+		race    bool
+		pkg     string
+	)
+	cmd := &cobra.Command{
+		Use:           "test [flags]",
+		Short:         "Run agent tests",
+		Args:          cobra.NoArgs,
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return runTest(verbose, race, pkg)
+		},
 	}
+	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "verbose test output")
+	cmd.Flags().BoolVar(&race, "race", false, "enable race detector")
+	cmd.Flags().StringVar(&pkg, "pkg", "./...", "packages to test")
+	return cmd
+}
 
-	if !validPkgPattern.MatchString(*pkg) {
-		return fmt.Errorf("invalid package pattern: %q", *pkg)
+// runTest executes the test workflow with pre-parsed flag values.
+func runTest(verbose, race bool, pkg string) error {
+	if !validPkgPattern.MatchString(pkg) {
+		return fmt.Errorf("invalid package pattern: %q", pkg)
 	}
 
 	// Resolve `go` to an absolute path so execution does not depend on the
@@ -72,13 +72,13 @@ func cmdTest(args []string) error {
 	}
 
 	goArgs := []string{"test"}
-	if *verbose {
+	if verbose {
 		goArgs = append(goArgs, "-v")
 	}
-	if *race {
+	if race {
 		goArgs = append(goArgs, "-race")
 	}
-	goArgs = append(goArgs, *pkg)
+	goArgs = append(goArgs, pkg)
 
 	fmt.Printf("Running: %s %v\n", goBin, goArgs)
 

@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
 // executeArgs runs the cobra root with the given args and returns captured
@@ -28,14 +30,27 @@ func executeArgs(args []string) (stdout, stderr string, code int) {
 	return out.String(), errBuf.String(), code
 }
 
+// executeSubcommand runs a single subcommand in isolation (no root). Useful
+// for direct subcommand tests that don't need root-level flag parsing.
+func executeSubcommand(cmd *cobra.Command, args []string) error {
+	cmd.SetArgs(args)
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+	cmd.SilenceUsage = true
+	cmd.SilenceErrors = true
+	return cmd.Execute()
+}
+
+// --- Per-subcommand tests (migrate from direct cmdInit/cmdDev/… calls) ---
+
 func TestCmdInit(t *testing.T) {
 	dir := t.TempDir()
 	t.Chdir(dir)
 	projDir := filepath.Join(dir, "myproject")
 
-	err := cmdInit([]string{"-name", "test-project", "-dir", projDir})
+	err := executeSubcommand(newInitCmd(), []string{"--name", "test-project", "--dir", projDir})
 	if err != nil {
-		t.Fatalf("cmdInit: %v", err)
+		t.Fatalf("newInitCmd: %v", err)
 	}
 
 	// Verify directories were created.
@@ -80,8 +95,8 @@ func TestCmdInit_DefaultName(t *testing.T) {
 	t.Chdir(dir)
 	projDir := filepath.Join(dir, "derived-name")
 
-	if err := cmdInit([]string{"-dir", projDir}); err != nil {
-		t.Fatalf("cmdInit: %v", err)
+	if err := executeSubcommand(newInitCmd(), []string{"--dir", projDir}); err != nil {
+		t.Fatalf("newInitCmd: %v", err)
 	}
 	data, err := os.ReadFile(filepath.Join(projDir, "config", "agent.json"))
 	if err != nil {
@@ -94,7 +109,7 @@ func TestCmdInit_DefaultName(t *testing.T) {
 
 func TestCmdInit_PathTraversal(t *testing.T) {
 	t.Chdir(t.TempDir())
-	err := cmdInit([]string{"-dir", "/tmp/../etc/passwd"})
+	err := executeSubcommand(newInitCmd(), []string{"--dir", "/tmp/../etc/passwd"})
 	if err == nil {
 		t.Error("expected error for absolute path traversal")
 	}
@@ -105,16 +120,16 @@ func TestCmdInit_PathTraversal(t *testing.T) {
 
 func TestCmdInit_RelativeTraversal(t *testing.T) {
 	t.Chdir(t.TempDir())
-	err := cmdInit([]string{"-dir", "../escape"})
+	err := executeSubcommand(newInitCmd(), []string{"--dir", "../escape"})
 	if err == nil {
 		t.Error("expected error for relative path traversal")
 	}
 }
 
 func TestCmdDev(t *testing.T) {
-	err := cmdDev([]string{"-port", "9090"})
+	err := executeSubcommand(newDevCmd(), []string{"--port", "9090"})
 	if err != nil {
-		t.Errorf("cmdDev: %v", err)
+		t.Errorf("newDevCmd: %v", err)
 	}
 }
 
@@ -131,7 +146,7 @@ func TestCmdDeploy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.target, func(t *testing.T) {
-			err := cmdDeploy([]string{"-target", tt.target})
+			err := executeSubcommand(newDeployCmd(), []string{"--target", tt.target})
 			if tt.wantErr && err == nil {
 				t.Error("expected error")
 			}
@@ -143,14 +158,14 @@ func TestCmdDeploy(t *testing.T) {
 }
 
 func TestCmdTest_InvalidPkgPattern(t *testing.T) {
-	err := cmdTest([]string{"-pkg", "./... -exec evil"})
+	err := executeSubcommand(newTestCmd(), []string{"--pkg", "./... -exec evil"})
 	if err == nil || !strings.Contains(err.Error(), "invalid package pattern") {
 		t.Errorf("expected invalid package pattern error, got: %v", err)
 	}
 }
 
 func TestCmdTest_ParseError(t *testing.T) {
-	err := cmdTest([]string{"--nope"})
+	err := executeSubcommand(newTestCmd(), []string{"--nope"})
 	if err == nil {
 		t.Error("expected parse error")
 	}
@@ -161,7 +176,7 @@ func TestCmdTest_LookPathFailure(t *testing.T) {
 	defer func() { lookPath = orig }()
 	lookPath = func(string) (string, error) { return "", exec.ErrNotFound }
 
-	err := cmdTest([]string{"-pkg", "./..."})
+	err := executeSubcommand(newTestCmd(), []string{"--pkg", "./..."})
 	if err == nil || !strings.Contains(err.Error(), "locate go toolchain") {
 		t.Errorf("expected toolchain lookup error, got: %v", err)
 	}
@@ -180,8 +195,8 @@ func TestCmdTest_Success(t *testing.T) {
 		return exec.Command("/bin/sh", "-c", "exit 0")
 	}
 
-	if err := cmdTest([]string{"-v", "-race", "-pkg", "./..."}); err != nil {
-		t.Errorf("cmdTest: %v", err)
+	if err := executeSubcommand(newTestCmd(), []string{"-v", "--race", "--pkg", "./..."}); err != nil {
+		t.Errorf("newTestCmd: %v", err)
 	}
 }
 
@@ -197,7 +212,7 @@ func TestCmdTest_RunFailure(t *testing.T) {
 		return exec.Command("/bin/sh", "-c", "exit 1")
 	}
 
-	if err := cmdTest([]string{"-pkg", "./..."}); err == nil {
+	if err := executeSubcommand(newTestCmd(), []string{"--pkg", "./..."}); err == nil {
 		t.Error("expected non-zero exit error")
 	}
 }
@@ -229,28 +244,28 @@ func TestRoot_UnknownCommand(t *testing.T) {
 func TestRoot_Init(t *testing.T) {
 	dir := t.TempDir()
 	t.Chdir(dir)
-	_, errBuf, code := executeArgs([]string{"init", "-name", "runtest", "-dir", filepath.Join(dir, "p")})
+	_, errBuf, code := executeArgs([]string{"init", "--name", "runtest", "--dir", filepath.Join(dir, "p")})
 	if code != 0 {
 		t.Errorf("want exit 0, got %d; stderr=%s", code, errBuf)
 	}
 }
 
 func TestRoot_Dev(t *testing.T) {
-	_, errBuf, code := executeArgs([]string{"dev", "-port", "7777"})
+	_, errBuf, code := executeArgs([]string{"dev", "--port", "7777"})
 	if code != 0 {
 		t.Errorf("want exit 0, got %d; stderr=%s", code, errBuf)
 	}
 }
 
 func TestRoot_Deploy(t *testing.T) {
-	_, errBuf, code := executeArgs([]string{"deploy", "-target", "docker"})
+	_, errBuf, code := executeArgs([]string{"deploy", "--target", "docker"})
 	if code != 0 {
 		t.Errorf("want exit 0, got %d; stderr=%s", code, errBuf)
 	}
 }
 
 func TestRoot_DeployError(t *testing.T) {
-	_, errBuf, code := executeArgs([]string{"deploy", "-target", "nope"})
+	_, errBuf, code := executeArgs([]string{"deploy", "--target", "nope"})
 	if code != 1 {
 		t.Errorf("want exit 1, got %d", code)
 	}
@@ -271,7 +286,7 @@ func TestRoot_Test(t *testing.T) {
 		return exec.Command("/bin/sh", "-c", "exit 0")
 	}
 
-	_, errBuf, code := executeArgs([]string{"test", "-pkg", "./..."})
+	_, errBuf, code := executeArgs([]string{"test", "--pkg", "./..."})
 	if code != 0 {
 		t.Errorf("want exit 0, got %d; stderr=%s", code, errBuf)
 	}
