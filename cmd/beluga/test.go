@@ -7,7 +7,24 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+
+	"github.com/spf13/cobra"
 )
+
+// newTestCmd is a T2 adapter that delegates to cmdTest. T3 replaces this with
+// a native cobra RunE that uses pflag directly.
+func newTestCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:                "test [flags]",
+		Short:              "Run agent tests",
+		SilenceUsage:       true,
+		SilenceErrors:      true,
+		DisableFlagParsing: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmdTest(args)
+		},
+	}
+}
 
 // validPkgPattern restricts -pkg values to conservative Go package path
 // patterns to prevent smuggling additional `go test` flags via the argument.

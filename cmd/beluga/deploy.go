@@ -3,7 +3,24 @@ package main
 import (
 	"flag"
 	"fmt"
+
+	"github.com/spf13/cobra"
 )
+
+// newDeployCmd is a T2 adapter that delegates to cmdDeploy. T3 replaces this
+// with a native cobra RunE that uses pflag directly.
+func newDeployCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:                "deploy [flags]",
+		Short:              "Generate deployment artifacts",
+		SilenceUsage:       true,
+		SilenceErrors:      true,
+		DisableFlagParsing: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmdDeploy(args)
+		},
+	}
+}
 
 func cmdDeploy(args []string) error {
 	fs := flag.NewFlagSet("deploy", flag.ExitOnError)

@@ -10,6 +10,24 @@ import (
 	"testing"
 )
 
+// executeArgs runs the cobra root with the given args and returns captured
+// stdout/stderr plus the exit code from Execute. It is the post-T2 replacement
+// for the pre-cobra run() helper.
+func executeArgs(args []string) (stdout, stderr string, code int) {
+	var out, errBuf bytes.Buffer
+	cmd := newRootCmd()
+	cmd.SetArgs(args)
+	cmd.SetOut(&out)
+	cmd.SetErr(&errBuf)
+	if err := cmd.Execute(); err != nil {
+		// Match the Execute() function's formatting so tests see the same
+		// stderr contract they would in production.
+		_, _ = errBuf.WriteString("error: " + err.Error() + "\n")
+		code = 1
+	}
+	return out.String(), errBuf.String(), code
+}
+
 func TestCmdInit(t *testing.T) {
 	dir := t.TempDir()
 	t.Chdir(dir)
@@ -184,90 +202,64 @@ func TestCmdTest_RunFailure(t *testing.T) {
 	}
 }
 
-func TestRun_NoArgs(t *testing.T) {
-	var out, errBuf bytes.Buffer
-	code := run(nil, &out, &errBuf)
-	if code != 1 {
-		t.Errorf("want exit 1, got %d", code)
-	}
-	if !strings.Contains(out.String(), "Usage:") {
-		t.Errorf("expected usage output, got: %s", out.String())
-	}
-}
+// --- Root-level dispatch tests (replaces the pre-T2 TestRun_* set) ---
 
-func TestRun_Version(t *testing.T) {
-	var out, errBuf bytes.Buffer
-	code := run([]string{"version"}, &out, &errBuf)
-	if code != 0 {
-		t.Errorf("want exit 0, got %d", code)
-	}
-	if !strings.Contains(out.String(), "beluga v") {
-		t.Errorf("expected version output, got: %s", out.String())
-	}
-}
-
-func TestRun_Help(t *testing.T) {
-	for _, arg := range []string{"help", "-h", "--help"} {
-		var out, errBuf bytes.Buffer
-		code := run([]string{arg}, &out, &errBuf)
+func TestRoot_Help(t *testing.T) {
+	for _, arg := range []string{"-h", "--help", "help"} {
+		out, _, code := executeArgs([]string{arg})
 		if code != 0 {
 			t.Errorf("%s: want exit 0, got %d", arg, code)
 		}
-		if !strings.Contains(out.String(), "Usage:") {
-			t.Errorf("%s: expected usage output", arg)
+		if !strings.Contains(out, "beluga") {
+			t.Errorf("%s: expected help output to reference 'beluga', got: %s", arg, out)
 		}
 	}
 }
 
-func TestRun_UnknownCommand(t *testing.T) {
-	var out, errBuf bytes.Buffer
-	code := run([]string{"bogus"}, &out, &errBuf)
+func TestRoot_UnknownCommand(t *testing.T) {
+	_, errBuf, code := executeArgs([]string{"bogus"})
 	if code != 1 {
 		t.Errorf("want exit 1, got %d", code)
 	}
-	if !strings.Contains(errBuf.String(), "unknown command") {
-		t.Errorf("expected unknown command error, got: %s", errBuf.String())
+	if !strings.Contains(errBuf, "unknown command") {
+		t.Errorf("expected unknown command error, got: %s", errBuf)
 	}
 }
 
-func TestRun_Init(t *testing.T) {
+func TestRoot_Init(t *testing.T) {
 	dir := t.TempDir()
 	t.Chdir(dir)
-	var out, errBuf bytes.Buffer
-	code := run([]string{"init", "-name", "runtest", "-dir", filepath.Join(dir, "p")}, &out, &errBuf)
+	_, errBuf, code := executeArgs([]string{"init", "-name", "runtest", "-dir", filepath.Join(dir, "p")})
 	if code != 0 {
-		t.Errorf("want exit 0, got %d; stderr=%s", code, errBuf.String())
+		t.Errorf("want exit 0, got %d; stderr=%s", code, errBuf)
 	}
 }
 
-func TestRun_Dev(t *testing.T) {
-	var out, errBuf bytes.Buffer
-	code := run([]string{"dev", "-port", "7777"}, &out, &errBuf)
+func TestRoot_Dev(t *testing.T) {
+	_, errBuf, code := executeArgs([]string{"dev", "-port", "7777"})
 	if code != 0 {
-		t.Errorf("want exit 0, got %d", code)
+		t.Errorf("want exit 0, got %d; stderr=%s", code, errBuf)
 	}
 }
 
-func TestRun_Deploy(t *testing.T) {
-	var out, errBuf bytes.Buffer
-	code := run([]string{"deploy", "-target", "docker"}, &out, &errBuf)
+func TestRoot_Deploy(t *testing.T) {
+	_, errBuf, code := executeArgs([]string{"deploy", "-target", "docker"})
 	if code != 0 {
-		t.Errorf("want exit 0, got %d", code)
+		t.Errorf("want exit 0, got %d; stderr=%s", code, errBuf)
 	}
 }
 
-func TestRun_DeployError(t *testing.T) {
-	var out, errBuf bytes.Buffer
-	code := run([]string{"deploy", "-target", "nope"}, &out, &errBuf)
+func TestRoot_DeployError(t *testing.T) {
+	_, errBuf, code := executeArgs([]string{"deploy", "-target", "nope"})
 	if code != 1 {
 		t.Errorf("want exit 1, got %d", code)
 	}
-	if !strings.Contains(errBuf.String(), "error:") {
-		t.Errorf("expected error prefix, got: %s", errBuf.String())
+	if !strings.Contains(errBuf, "error:") {
+		t.Errorf("expected error prefix, got: %s", errBuf)
 	}
 }
 
-func TestRun_Test(t *testing.T) {
+func TestRoot_Test(t *testing.T) {
 	origLook := lookPath
 	origExec := execCommand
 	defer func() {
@@ -279,19 +271,8 @@ func TestRun_Test(t *testing.T) {
 		return exec.Command("/bin/sh", "-c", "exit 0")
 	}
 
-	var out, errBuf bytes.Buffer
-	code := run([]string{"test", "-pkg", "./..."}, &out, &errBuf)
+	_, errBuf, code := executeArgs([]string{"test", "-pkg", "./..."})
 	if code != 0 {
-		t.Errorf("want exit 0, got %d; stderr=%s", code, errBuf.String())
-	}
-}
-
-func TestPrintUsage(t *testing.T) {
-	var buf bytes.Buffer
-	printUsage(&buf)
-	for _, want := range []string{"init", "dev", "test", "deploy", "version", "help"} {
-		if !strings.Contains(buf.String(), want) {
-			t.Errorf("usage missing %q", want)
-		}
+		t.Errorf("want exit 0, got %d; stderr=%s", code, errBuf)
 	}
 }

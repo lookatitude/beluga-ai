@@ -3,7 +3,24 @@ package main
 import (
 	"flag"
 	"fmt"
+
+	"github.com/spf13/cobra"
 )
+
+// newDevCmd is a T2 adapter that delegates to cmdDev. T3 replaces this with a
+// native cobra RunE that uses pflag directly.
+func newDevCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:                "dev [flags]",
+		Short:              "Start development server",
+		SilenceUsage:       true,
+		SilenceErrors:      true,
+		DisableFlagParsing: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmdDev(args)
+		},
+	}
+}
 
 func cmdDev(args []string) error {
 	fs := flag.NewFlagSet("dev", flag.ExitOnError)

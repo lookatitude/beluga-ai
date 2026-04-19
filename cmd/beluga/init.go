@@ -6,7 +6,24 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/spf13/cobra"
 )
+
+// newInitCmd is a T2 adapter that delegates to cmdInit. T3 replaces this with
+// a native cobra RunE that uses pflag directly.
+func newInitCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:                "init [flags]",
+		Short:              "Initialize a new Beluga AI project",
+		SilenceUsage:       true,
+		SilenceErrors:      true,
+		DisableFlagParsing: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmdInit(args)
+		},
+	}
+}
 
 func cmdInit(args []string) error {
 	fs := flag.NewFlagSet("init", flag.ExitOnError)
