@@ -23,9 +23,7 @@ When working on cross-repo concerns (release flow fan-out, website dispatch, sha
 
 ## Branch + PR discipline (MANDATORY)
 
-1. **Never commit to `main`.** Every change — code, docs, tests — starts with `git checkout -b <type>/<short-desc>` where `<type>` is `fix`, `feat`, `refactor`, `docs`, or `chore`.
-2. Every branch ends with `gh pr create`. CI runs gosec, golangci-lint, govulncheck, SonarCloud, Snyk, Trivy, CodeQL, unit + integration tests. Wait for green before merge.
-3. Verify `git branch --show-current` ≠ `main` before any `git commit`.
+See [`.claude/rules/branch-discipline.md`](.claude/rules/branch-discipline.md) — mandatory; enforced at the Quality Gates section of [`.claude/rules/workflow.md`](.claude/rules/workflow.md).
 
 ## Pre-commit verification gate (MANDATORY)
 

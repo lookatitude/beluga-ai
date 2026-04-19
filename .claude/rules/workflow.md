@@ -34,9 +34,8 @@ alwaysApply: true
 ## Quality Gates
 
 ### Branch discipline (MANDATORY, every change)
-- Every code change starts with `git checkout -b <branch>` — **never commit to `main`**
-- Every branch ends with `gh pr create` — **never merge directly to `main`**
-- Verify `git branch --show-current` is not `main` before any `git commit`
+
+See [`branch-discipline.md`](./branch-discipline.md) for branch + PR rules and Linear-integrated naming (`<type>/loo-NN-<slug>`).
 
 ### Before commit (MANDATORY, every commit — not just before push)
 Run the full suite locally BEFORE `git commit`. Only commit when all pass:
