@@ -2,6 +2,16 @@
 
 All notable changes to Beluga AI are documented here.
 
+## [2.10.1] - 2026-04-19
+
+### Bug Fixes
+
+- Rewrite module path to github.com/lookatitude/beluga-ai/v2
+
+### Miscellaneous
+
+- **release**: Update CHANGELOG.md for v2.10.0 [skip ci]
+
 ## [2.10.0] - 2026-04-19
 
 ### Bug Fixes
