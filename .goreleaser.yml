@@ -1,7 +1,45 @@
 version: 2
 
 builds:
-  - skip: true # Library — no binary builds
+  - id: beluga-cli
+    main: ./cmd/beluga
+    binary: beluga
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      # Windows/arm64 has no GitHub Actions runner without a self-hosted box;
+      # deferred to S3. See specialist-devops-expert.md Q2.
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X github.com/lookatitude/beluga-ai/cmd/beluga/internal/version.Version={{.Version}}
+      - -X github.com/lookatitude/beluga-ai/cmd/beluga/internal/version.Commit={{.Commit}}
+      - -X github.com/lookatitude/beluga-ai/cmd/beluga/internal/version.Date={{.Date}}
+
+archives:
+  - id: beluga-cli-archive
+    ids:
+      - beluga-cli
+    name_template: "beluga_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
 
 changelog:
   sort: asc
