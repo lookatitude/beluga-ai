@@ -7,6 +7,7 @@ Stable API surface. Use these when you need to look something up, not when you'r
 - [Interfaces](./interfaces.md) — every public interface, one page. Grouped by layer.
 - [Configuration](./configuration.md) — all config structs, environment variables, and their defaults.
 - [Providers](./providers.md) — catalog of every provider category with registration examples.
+- [CLI](./cli.md) — the `beluga` command-line tool: subcommands, flags, install.
 - [Glossary](./glossary.md) — terms, abbreviations, and concept definitions.
 
 ## Where else to look
