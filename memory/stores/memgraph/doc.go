@@ -4,7 +4,7 @@
 //
 // # Usage
 //
-//	import "github.com/lookatitude/beluga-ai/memory/stores/memgraph"
+//	import "github.com/lookatitude/beluga-ai/v2/memory/stores/memgraph"
 //
 //	store, err := memgraph.New(memgraph.Config{
 //	    URI:      "bolt://localhost:7687",

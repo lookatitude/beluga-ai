@@ -85,7 +85,7 @@ func TestTokenUsage_WithInMemoryReader(t *testing.T) {
 	// Set up in-memory reader to verify metrics are recorded
 	reader := sdkmetric.NewManualReader()
 	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
-	meter = provider.Meter("github.com/lookatitude/beluga-ai/o11y")
+	meter = provider.Meter("github.com/lookatitude/beluga-ai/v2/o11y")
 
 	// Reset instruments to use new meter
 	meterOnce = sync.Once{}
@@ -106,7 +106,7 @@ func TestTokenUsage_WithInMemoryReader(t *testing.T) {
 func TestOperationDuration_WithInMemoryReader(t *testing.T) {
 	reader := sdkmetric.NewManualReader()
 	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
-	meter = provider.Meter("github.com/lookatitude/beluga-ai/o11y")
+	meter = provider.Meter("github.com/lookatitude/beluga-ai/v2/o11y")
 
 	meterOnce = sync.Once{}
 	meterErr = nil
@@ -123,7 +123,7 @@ func TestOperationDuration_WithInMemoryReader(t *testing.T) {
 func TestCost_WithInMemoryReader(t *testing.T) {
 	reader := sdkmetric.NewManualReader()
 	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
-	meter = provider.Meter("github.com/lookatitude/beluga-ai/o11y")
+	meter = provider.Meter("github.com/lookatitude/beluga-ai/v2/o11y")
 
 	meterOnce = sync.Once{}
 	meterErr = nil
@@ -140,7 +140,7 @@ func TestCost_WithInMemoryReader(t *testing.T) {
 func TestCounter_WithInMemoryReader(t *testing.T) {
 	reader := sdkmetric.NewManualReader()
 	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
-	meter = provider.Meter("github.com/lookatitude/beluga-ai/o11y")
+	meter = provider.Meter("github.com/lookatitude/beluga-ai/v2/o11y")
 
 	ctx := context.Background()
 	Counter(ctx, "custom.counter.test", 77)
@@ -154,7 +154,7 @@ func TestCounter_WithInMemoryReader(t *testing.T) {
 func TestHistogram_WithInMemoryReader(t *testing.T) {
 	reader := sdkmetric.NewManualReader()
 	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
-	meter = provider.Meter("github.com/lookatitude/beluga-ai/o11y")
+	meter = provider.Meter("github.com/lookatitude/beluga-ai/v2/o11y")
 
 	ctx := context.Background()
 	Histogram(ctx, "custom.histogram.test", 3.14159)

@@ -3,9 +3,9 @@ package orchestration
 import (
 	"strings"
 
-	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/agent/contract"
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/agent/contract"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // ValidatePipelineContracts checks that the contracts of agents in a pipeline

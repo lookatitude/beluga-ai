@@ -5,7 +5,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/v2/config"
 )
 
 // Factory creates a VectorStore from a ProviderConfig. Each provider registers

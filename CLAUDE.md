@@ -1,6 +1,6 @@
 # Beluga AI v2
 
-Go-native agentic AI framework. `github.com/lookatitude/beluga-ai`. Go 1.23+. Streaming via `iter.Seq2[T, error]`.
+Go-native agentic AI framework. `github.com/lookatitude/beluga-ai/v2`. Go 1.23+. Streaming via `iter.Seq2[T, error]`.
 
 ## Project scope
 

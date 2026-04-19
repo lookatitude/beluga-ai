@@ -1,7 +1,7 @@
 package prompt
 
 import (
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // TemplateInfo holds summary information about a registered template.

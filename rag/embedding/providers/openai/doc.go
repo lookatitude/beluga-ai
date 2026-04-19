@@ -5,7 +5,7 @@
 //
 // The provider registers as "openai" in the embedding registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/openai"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/embedding/providers/openai"
 //
 //	emb, err := embedding.New("openai", config.ProviderConfig{
 //	    APIKey: "sk-...",

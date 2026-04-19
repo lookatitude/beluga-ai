@@ -7,7 +7,7 @@
 //
 // The provider registers as "cloudstorage" in the loader registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/loader/providers/cloudstorage"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/loader/providers/cloudstorage"
 //
 //	l, err := loader.New("cloudstorage", config.ProviderConfig{
 //	    APIKey: "your-access-key",

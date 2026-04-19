@@ -11,7 +11,7 @@ Every code block below has been compile-verified against the current tree using 
 ```bash
 mkdir first-agent && cd first-agent
 go mod init example.com/first-agent
-go get github.com/lookatitude/beluga-ai@latest
+go get github.com/lookatitude/beluga-ai/v2@latest
 ```
 
 Beluga requires Go 1.23 or newer (streaming uses `iter.Seq2`, introduced in the 1.23 stdlib).
@@ -27,7 +27,7 @@ export OPENAI_API_KEY=sk-...
 The provider is wired up by a single blank import:
 
 ```go
-import _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+import _ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
 ```
 
 That import triggers the provider's `init()` which calls `llm.Register("openai", ...)`. After that, `llm.New("openai", cfg)` will resolve. See [`llm/providers/openai/openai.go`](../../llm/providers/openai/openai.go) and [`llm/registry.go`](../../llm/registry.go) for the exact registration pattern.
@@ -47,12 +47,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/config"
-	"github.com/lookatitude/beluga-ai/llm"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/llm"
 
 	// Register the OpenAI provider via init().
-	_ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+	_ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
 )
 
 func main() {
@@ -119,8 +119,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/tool"
 )
 
 // CalculatorInput is the typed input schema for the calculator tool.
@@ -176,7 +176,7 @@ Wire the tool into the agent by adding one option to the `agent.New` call in `ma
 	)
 ```
 
-Add `"github.com/lookatitude/beluga-ai/tool"` to the imports of `main.go`. The default planner is `react`, so the LLM will see the tool's schema, decide to call it, receive the observation, and continue.
+Add `"github.com/lookatitude/beluga-ai/v2/tool"` to the imports of `main.go`. The default planner is `react`, so the LLM will see the tool's schema, decide to call it, receive the observation, and continue.
 
 ## 5. Stream events
 
@@ -193,12 +193,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/config"
-	"github.com/lookatitude/beluga-ai/llm"
-	"github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/llm"
+	"github.com/lookatitude/beluga-ai/v2/tool"
 
-	_ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+	_ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
 )
 
 func RunStreaming() {
@@ -262,7 +262,7 @@ You composed three layers of the framework: Layer 3 (`llm`, `tool`) provided the
 
 ## Common mistakes
 
-- **`provider "openai" not found`** — you forgot the blank import `_ "github.com/lookatitude/beluga-ai/llm/providers/openai"`. Without it, `init()` never runs and the registry is empty.
+- **`provider "openai" not found`** — you forgot the blank import `_ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"`. Without it, `init()` never runs and the registry is empty.
 - **Passing a `map[string]any` to `llm.New`** — `llm.New` takes `config.ProviderConfig`, a struct. Use the named fields (`Provider`, `APIKey`, `Model`).
 - **Calling `agent.NewLLMAgent`** — that constructor does not exist. Use `agent.New(id, opts...)`.
 - **Using a `for _, ev := range stream.Range` loop** — the stream is `iter.Seq2[Event, error]`. Range over it with two variables: `for event, err := range a.Stream(ctx, input)`.

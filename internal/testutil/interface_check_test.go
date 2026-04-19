@@ -1,12 +1,12 @@
 package testutil
 
 import (
-	"github.com/lookatitude/beluga-ai/internal/testutil/mockembedder"
-	"github.com/lookatitude/beluga-ai/internal/testutil/mockstore"
-	"github.com/lookatitude/beluga-ai/internal/testutil/mockworkflow"
-	"github.com/lookatitude/beluga-ai/rag/embedding"
-	"github.com/lookatitude/beluga-ai/rag/vectorstore"
-	"github.com/lookatitude/beluga-ai/workflow"
+	"github.com/lookatitude/beluga-ai/v2/internal/testutil/mockembedder"
+	"github.com/lookatitude/beluga-ai/v2/internal/testutil/mockstore"
+	"github.com/lookatitude/beluga-ai/v2/internal/testutil/mockworkflow"
+	"github.com/lookatitude/beluga-ai/v2/rag/embedding"
+	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
+	"github.com/lookatitude/beluga-ai/v2/workflow"
 )
 
 // Compile-time interface checks to ensure mocks implement their target interfaces.

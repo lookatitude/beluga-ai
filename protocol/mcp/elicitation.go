@@ -3,7 +3,7 @@ package mcp
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // ElicitationType identifies the kind of user input to request.

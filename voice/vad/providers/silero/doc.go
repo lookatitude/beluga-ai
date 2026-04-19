@@ -12,7 +12,7 @@
 // This package registers itself as "silero" with the voice VAD registry. Import
 // it with a blank identifier to enable:
 //
-//	import _ "github.com/lookatitude/beluga-ai/voice/vad/providers/silero"
+//	import _ "github.com/lookatitude/beluga-ai/v2/voice/vad/providers/silero"
 //
 // # Usage
 //

@@ -36,10 +36,10 @@
 // Dedicated mock implementations for core interfaces are available in
 // sub-packages:
 //
-//   - [github.com/lookatitude/beluga-ai/internal/testutil/mockllm] — mock ChatModel
-//   - [github.com/lookatitude/beluga-ai/internal/testutil/mocktool] — mock Tool
-//   - [github.com/lookatitude/beluga-ai/internal/testutil/mockmemory] — mock Memory
-//   - [github.com/lookatitude/beluga-ai/internal/testutil/mockembedder] — mock Embedder
-//   - [github.com/lookatitude/beluga-ai/internal/testutil/mockstore] — mock VectorStore
-//   - [github.com/lookatitude/beluga-ai/internal/testutil/mockworkflow] — mock WorkflowStore
+//   - [github.com/lookatitude/beluga-ai/v2/internal/testutil/mockllm] — mock ChatModel
+//   - [github.com/lookatitude/beluga-ai/v2/internal/testutil/mocktool] — mock Tool
+//   - [github.com/lookatitude/beluga-ai/v2/internal/testutil/mockmemory] — mock Memory
+//   - [github.com/lookatitude/beluga-ai/v2/internal/testutil/mockembedder] — mock Embedder
+//   - [github.com/lookatitude/beluga-ai/v2/internal/testutil/mockstore] — mock VectorStore
+//   - [github.com/lookatitude/beluga-ai/v2/internal/testutil/mockworkflow] — mock WorkflowStore
 package testutil

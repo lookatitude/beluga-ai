@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // maxOAuthResponseSize is the maximum size of an OAuth token response body (1 MB).

@@ -1,7 +1,7 @@
 package prompt
 
 import (
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // Builder constructs a prompt message sequence in cache-optimal order.

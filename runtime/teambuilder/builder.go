@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/runtime"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/runtime"
 )
 
 // TeamBuilder composes runtime.Team instances dynamically by selecting agents

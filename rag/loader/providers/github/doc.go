@@ -6,7 +6,7 @@
 //
 // The provider registers as "github" in the loader registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/loader/providers/github"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/loader/providers/github"
 //
 //	l, err := loader.New("github", config.ProviderConfig{
 //	    APIKey: "ghp_...",

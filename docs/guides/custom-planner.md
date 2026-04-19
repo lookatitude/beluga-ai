@@ -38,9 +38,9 @@ package budget
 import (
     "context"
 
-    "github.com/lookatitude/beluga-ai/agent"
-    "github.com/lookatitude/beluga-ai/core"
-    "github.com/lookatitude/beluga-ai/cost"
+    "github.com/lookatitude/beluga-ai/v2/agent"
+    "github.com/lookatitude/beluga-ai/v2/core"
+    "github.com/lookatitude/beluga-ai/v2/cost"
 )
 
 var _ agent.Planner = (*Planner)(nil)
@@ -158,8 +158,8 @@ import (
     "context"
     "testing"
 
-    "github.com/lookatitude/beluga-ai/agent"
-    "github.com/lookatitude/beluga-ai/core"
+    "github.com/lookatitude/beluga-ai/v2/agent"
+    "github.com/lookatitude/beluga-ai/v2/core"
 )
 
 type fakePlanner struct {

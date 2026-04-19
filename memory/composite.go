@@ -3,9 +3,9 @@ package memory
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/config"
-	"github.com/lookatitude/beluga-ai/memory/procedural"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/memory/procedural"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // CompositeOption configures a CompositeMemory.

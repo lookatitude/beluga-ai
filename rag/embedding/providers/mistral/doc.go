@@ -6,7 +6,7 @@
 //
 // The provider registers as "mistral" in the embedding registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/mistral"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/embedding/providers/mistral"
 //
 //	emb, err := embedding.New("mistral", config.ProviderConfig{
 //	    APIKey: "...",

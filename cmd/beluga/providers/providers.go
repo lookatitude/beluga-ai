@@ -11,11 +11,11 @@
 package providers
 
 import (
-	_ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
-	_ "github.com/lookatitude/beluga-ai/llm/providers/ollama"
-	_ "github.com/lookatitude/beluga-ai/llm/providers/openai"
-	_ "github.com/lookatitude/beluga-ai/memory/stores/inmemory"
-	_ "github.com/lookatitude/beluga-ai/rag/embedding/providers/ollama"
-	_ "github.com/lookatitude/beluga-ai/rag/embedding/providers/openai"
-	_ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/inmemory"
+	_ "github.com/lookatitude/beluga-ai/v2/llm/providers/anthropic"
+	_ "github.com/lookatitude/beluga-ai/v2/llm/providers/ollama"
+	_ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
+	_ "github.com/lookatitude/beluga-ai/v2/memory/stores/inmemory"
+	_ "github.com/lookatitude/beluga-ai/v2/rag/embedding/providers/ollama"
+	_ "github.com/lookatitude/beluga-ai/v2/rag/embedding/providers/openai"
+	_ "github.com/lookatitude/beluga-ai/v2/rag/vectorstore/providers/inmemory"
 )

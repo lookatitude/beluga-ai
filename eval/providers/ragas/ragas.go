@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/eval"
-	"github.com/lookatitude/beluga-ai/internal/httpclient"
+	"github.com/lookatitude/beluga-ai/v2/eval"
+	"github.com/lookatitude/beluga-ai/v2/internal/httpclient"
 )
 
 // Metric implements eval.Metric for RAGAS evaluation.

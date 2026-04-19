@@ -6,7 +6,7 @@
 //
 // The provider registers as "cohere" in the embedding registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/cohere"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/embedding/providers/cohere"
 //
 //	emb, err := embedding.New("cohere", config.ProviderConfig{
 //	    APIKey: "...",

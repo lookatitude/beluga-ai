@@ -1,6 +1,6 @@
 package orchestration
 
-import "github.com/lookatitude/beluga-ai/core"
+import "github.com/lookatitude/beluga-ai/v2/core"
 
 // Middleware wraps a core.Runnable to add cross-cutting behaviour.
 // Middlewares are composed via ApplyMiddleware and applied outside-in

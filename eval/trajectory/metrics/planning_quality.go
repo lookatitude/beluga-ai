@@ -3,7 +3,7 @@ package metrics
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/eval/trajectory"
+	"github.com/lookatitude/beluga-ai/v2/eval/trajectory"
 )
 
 func init() {

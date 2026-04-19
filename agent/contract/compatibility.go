@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // CompatibilityError describes a single incompatibility between two agent

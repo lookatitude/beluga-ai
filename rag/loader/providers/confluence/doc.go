@@ -5,7 +5,7 @@
 //
 // The provider registers as "confluence" in the loader registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/loader/providers/confluence"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/loader/providers/confluence"
 //
 //	l, err := loader.New("confluence", config.ProviderConfig{
 //	    APIKey:  "your-api-token",

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/v2/tool"
 )
 
 // simpleTool is a minimal tool.Tool for testing.

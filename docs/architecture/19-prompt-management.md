@@ -89,8 +89,8 @@ Usage:
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/prompt"
-    promptfile "github.com/lookatitude/beluga-ai/prompt/providers/file"
+    "github.com/lookatitude/beluga-ai/v2/prompt"
+    promptfile "github.com/lookatitude/beluga-ai/v2/prompt/providers/file"
 )
 
 base, err := promptfile.NewFileManager("/etc/prompts")
@@ -188,9 +188,9 @@ import (
     "fmt"
     "log"
 
-    "github.com/lookatitude/beluga-ai/prompt"
-    promptfile "github.com/lookatitude/beluga-ai/prompt/providers/file"
-    "github.com/lookatitude/beluga-ai/schema"
+    "github.com/lookatitude/beluga-ai/v2/prompt"
+    promptfile "github.com/lookatitude/beluga-ai/v2/prompt/providers/file"
+    "github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 func main() {
@@ -225,9 +225,9 @@ import (
     "fmt"
     "log"
 
-    "github.com/lookatitude/beluga-ai/prompt"
-    promptfile "github.com/lookatitude/beluga-ai/prompt/providers/file"
-    "github.com/lookatitude/beluga-ai/schema"
+    "github.com/lookatitude/beluga-ai/v2/prompt"
+    promptfile "github.com/lookatitude/beluga-ai/v2/prompt/providers/file"
+    "github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 func main() {

@@ -3,7 +3,7 @@ package teambuilder
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/v2/agent"
 )
 
 // Hooks provides optional callbacks for observing and augmenting team

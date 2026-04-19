@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lookatitude/beluga-ai/k8s/operator"
+	"github.com/lookatitude/beluga-ai/v2/k8s/operator"
 )
 
 // validPlanners is the set of recognised planner values for an Agent CRD.

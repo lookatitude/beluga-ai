@@ -6,7 +6,7 @@
 //
 // The provider registers as "jina" in the embedding registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/jina"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/embedding/providers/jina"
 //
 //	emb, err := embedding.New("jina", config.ProviderConfig{
 //	    APIKey: "...",

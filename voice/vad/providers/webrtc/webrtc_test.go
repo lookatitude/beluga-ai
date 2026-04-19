@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lookatitude/beluga-ai/voice"
+	"github.com/lookatitude/beluga-ai/v2/voice"
 )
 
 // generatePCM creates 16-bit PCM audio with a sine wave at the given amplitude.

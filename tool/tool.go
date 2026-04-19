@@ -3,7 +3,7 @@ package tool
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // Tool is the interface that all tools implement. A tool has a name, description,

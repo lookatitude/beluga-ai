@@ -5,7 +5,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // Effect specifies whether a rule allows or denies access.

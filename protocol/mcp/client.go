@@ -8,9 +8,9 @@ import (
 	"net/url"
 	"sync/atomic"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/schema"
-	"github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/schema"
+	"github.com/lookatitude/beluga-ai/v2/tool"
 )
 
 // MCPClient connects to a remote MCP server over Streamable HTTP transport.

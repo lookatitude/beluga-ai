@@ -6,7 +6,7 @@
 //
 // The provider registers as "gdrive" in the loader registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/loader/providers/gdrive"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/loader/providers/gdrive"
 //
 //	l, err := loader.New("gdrive", config.ProviderConfig{
 //	    APIKey: "your-api-key-or-oauth-token",

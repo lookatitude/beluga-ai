@@ -5,7 +5,7 @@
 // The adapter registers itself as "connect" in the server registry via init().
 // Import this package to make the adapter available:
 //
-//	import _ "github.com/lookatitude/beluga-ai/server/adapters/connect"
+//	import _ "github.com/lookatitude/beluga-ai/v2/server/adapters/connect"
 //
 //	adapter, err := server.New("connect", server.Config{})
 //	if err != nil {

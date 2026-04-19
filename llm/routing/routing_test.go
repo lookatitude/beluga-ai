@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 func TestHeuristicClassifier(t *testing.T) {

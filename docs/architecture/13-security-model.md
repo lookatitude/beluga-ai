@@ -191,7 +191,7 @@ import (
     "fmt"
     "time"
 
-    "github.com/lookatitude/beluga-ai/guard/agentic"
+    "github.com/lookatitude/beluga-ai/v2/guard/agentic"
 )
 
 pipeline := agentic.NewAgenticPipeline(
@@ -263,7 +263,7 @@ import (
 	"context"
 	"fmt"
 
-	guardmem "github.com/lookatitude/beluga-ai/guard/memory"
+	guardmem "github.com/lookatitude/beluga-ai/v2/guard/memory"
 )
 
 guard := guardmem.NewMemoryGuard(
@@ -294,7 +294,7 @@ This prevents a compromised write path from injecting unsigned content that woul
 import (
     "os"
 
-    guardmem "github.com/lookatitude/beluga-ai/guard/memory"
+    guardmem "github.com/lookatitude/beluga-ai/v2/guard/memory"
 )
 
 sigMiddleware, err := guardmem.NewSignedMemoryMiddleware([]byte(os.Getenv("MEMORY_HMAC_KEY")))
@@ -355,8 +355,8 @@ import (
     "log/slog"
     "time"
 
-    "github.com/lookatitude/beluga-ai/agent"
-    "github.com/lookatitude/beluga-ai/guard/degradation"
+    "github.com/lookatitude/beluga-ai/v2/agent"
+    "github.com/lookatitude/beluga-ai/v2/guard/degradation"
 )
 
 monitor := degradation.NewSecurityMonitor(

@@ -10,8 +10,8 @@ import (
 	"sync"
 
 	"github.com/coder/websocket"
-	"github.com/lookatitude/beluga-ai/schema"
-	"github.com/lookatitude/beluga-ai/voice/s2s"
+	"github.com/lookatitude/beluga-ai/v2/schema"
+	"github.com/lookatitude/beluga-ai/v2/voice/s2s"
 )
 
 const (

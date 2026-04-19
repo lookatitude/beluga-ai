@@ -24,7 +24,7 @@ var (
 )
 
 func init() {
-	meter = otel.Meter("github.com/lookatitude/beluga-ai/o11y")
+	meter = otel.Meter("github.com/lookatitude/beluga-ai/v2/o11y")
 }
 
 // initInstruments lazily creates the pre-defined metric instruments. This is
@@ -81,7 +81,7 @@ func initInstruments() error {
 // the default global meter provider is used.
 func InitMeter(serviceName string) error {
 	meter = otel.Meter(
-		"github.com/lookatitude/beluga-ai/o11y",
+		"github.com/lookatitude/beluga-ai/v2/o11y",
 		metric.WithInstrumentationAttributes(
 			attribute.String("service.name", serviceName),
 		),

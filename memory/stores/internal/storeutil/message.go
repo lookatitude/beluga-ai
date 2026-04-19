@@ -1,7 +1,7 @@
 // Package storeutil provides shared types and helpers for memory store implementations.
 package storeutil
 
-import "github.com/lookatitude/beluga-ai/schema"
+import "github.com/lookatitude/beluga-ai/v2/schema"
 
 // StoredPart represents a serialised content part.
 type StoredPart struct {

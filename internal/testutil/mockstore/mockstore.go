@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/rag/vectorstore"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // Compile-time interface check

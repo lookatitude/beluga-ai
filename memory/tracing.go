@@ -3,8 +3,8 @@ package memory
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/o11y"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/o11y"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // WithTracing returns middleware that wraps a Memory with OTel spans following

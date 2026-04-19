@@ -31,14 +31,14 @@ type page struct {
 
 // packageGroup is a package or set of packages included on one page.
 type packageGroup struct {
-	ImportPath string // e.g. "github.com/lookatitude/beluga-ai/core"
+	ImportPath string // e.g. "github.com/lookatitude/beluga-ai/v2/core"
 	PkgName    string // e.g. "core"
 	DocComment string // raw godoc comment text from doc.go
 	IsProvider bool   // whether this is a provider sub-package
 }
 
 const (
-	modulePath = "github.com/lookatitude/beluga-ai"
+	modulePath = "github.com/lookatitude/beluga-ai/v2"
 	outputDir  = "docs/website/src/content/docs/api-reference"
 )
 

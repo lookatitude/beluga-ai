@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/v2/agent"
 )
 
 // InvokeRequest is the JSON body for invoke endpoints.

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/memory"
+	"github.com/lookatitude/beluga-ai/v2/memory"
 )
 
 // ConflictResolver determines how to handle temporal conflicts between relations.

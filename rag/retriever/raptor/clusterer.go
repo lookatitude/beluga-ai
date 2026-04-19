@@ -6,7 +6,7 @@ import (
 	"math/rand/v2" //#nosec G404 -- non-crypto randomness for K-means++ initialization; seed is a reproducibility feature
 	"sort"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // Clusterer groups embedding vectors into clusters. Each returned cluster is a

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/internal/httputil"
-	"github.com/lookatitude/beluga-ai/server"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/internal/httputil"
+	"github.com/lookatitude/beluga-ai/v2/server"
 )
 
 // Adapter implements server.ServerAdapter using Connect-Go over net/http.

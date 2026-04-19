@@ -4,7 +4,7 @@ import (
 	"crypto/ed25519"
 	"encoding/base64"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // ServerIdentity describes an MCP server's identity and verifiable credentials.

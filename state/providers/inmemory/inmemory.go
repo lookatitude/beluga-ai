@@ -6,7 +6,7 @@ import (
 	"iter"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/state"
+	"github.com/lookatitude/beluga-ai/v2/state"
 )
 
 func init() {

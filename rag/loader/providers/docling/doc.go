@@ -8,7 +8,7 @@
 //
 // The provider registers as "docling" in the loader registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/loader/providers/docling"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/loader/providers/docling"
 //
 //	l, err := loader.New("docling", config.ProviderConfig{
 //	    BaseURL: "http://localhost:5001",

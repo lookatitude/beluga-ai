@@ -4,7 +4,7 @@
 //
 // # Usage
 //
-//	import "github.com/lookatitude/beluga-ai/memory/stores/mongodb"
+//	import "github.com/lookatitude/beluga-ai/v2/memory/stores/mongodb"
 //
 //	store, err := mongodb.New(mongodb.Config{
 //	    Collection: client.Database("beluga").Collection("messages"),

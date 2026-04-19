@@ -3,7 +3,7 @@ package webhooks
 import (
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/k8s/operator"
+	"github.com/lookatitude/beluga-ai/v2/k8s/operator"
 )
 
 // validAgent returns a fully-populated AgentResource that passes all validation.

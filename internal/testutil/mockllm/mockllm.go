@@ -5,7 +5,7 @@ import (
 	"iter"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // GenerateOption mirrors the llm.GenerateOption type so this package does not

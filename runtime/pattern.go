@@ -6,7 +6,7 @@ import (
 	"context"
 	"iter"
 
-	"github.com/lookatitude/beluga-ai/agent"
+	"github.com/lookatitude/beluga-ai/v2/agent"
 )
 
 // OrchestrationPattern defines how a Team coordinates its member agents.

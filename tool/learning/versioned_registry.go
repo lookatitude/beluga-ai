@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/tool"
 )
 
 // VersionRecord is an immutable record of a tool version in the registry.

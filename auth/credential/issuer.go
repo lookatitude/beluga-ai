@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // CredentialIssuer manages the lifecycle of agent credentials. Implementations

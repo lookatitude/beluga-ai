@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/protocol/mcp"
-	"github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/v2/protocol/mcp"
+	"github.com/lookatitude/beluga-ai/v2/tool"
 )
 
 // mockMCPClient implements MCPClientInterface for testing.

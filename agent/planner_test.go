@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/schema"
-	"github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/v2/schema"
+	"github.com/lookatitude/beluga-ai/v2/tool"
 )
 
 func TestActionType_Constants(t *testing.T) {

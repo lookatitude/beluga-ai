@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // SelfModelStore persists and retrieves self-models across sessions.

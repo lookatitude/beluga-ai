@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
-	"github.com/lookatitude/beluga-ai/voice"
+	"github.com/lookatitude/beluga-ai/v2/voice"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

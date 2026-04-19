@@ -4,9 +4,9 @@ import (
 	"context"
 	"iter"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/internal/hookutil"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/internal/hookutil"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // Transcriber is a local interface for speech-to-text processors.

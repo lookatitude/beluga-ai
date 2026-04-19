@@ -7,7 +7,7 @@
 // This package registers itself as "elevenlabs" with the stt registry. Import
 // it with a blank identifier to enable:
 //
-//	import _ "github.com/lookatitude/beluga-ai/voice/stt/providers/elevenlabs"
+//	import _ "github.com/lookatitude/beluga-ai/v2/voice/stt/providers/elevenlabs"
 //
 // # Usage
 //

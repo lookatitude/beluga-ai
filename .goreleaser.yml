@@ -20,9 +20,9 @@ builds:
         goarch: arm64
     ldflags:
       - -s -w
-      - -X github.com/lookatitude/beluga-ai/cmd/beluga/internal/version.Version={{.Version}}
-      - -X github.com/lookatitude/beluga-ai/cmd/beluga/internal/version.Commit={{.Commit}}
-      - -X github.com/lookatitude/beluga-ai/cmd/beluga/internal/version.Date={{.Date}}
+      - -X github.com/lookatitude/beluga-ai/v2/cmd/beluga/internal/version.Version={{.Version}}
+      - -X github.com/lookatitude/beluga-ai/v2/cmd/beluga/internal/version.Commit={{.Commit}}
+      - -X github.com/lookatitude/beluga-ai/v2/cmd/beluga/internal/version.Date={{.Date}}
 
 archives:
   - id: beluga-cli-archive

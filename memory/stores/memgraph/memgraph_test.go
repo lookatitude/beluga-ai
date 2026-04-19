@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/memory"
+	"github.com/lookatitude/beluga-ai/v2/memory"
 	"github.com/stretchr/testify/assert"
 )
 

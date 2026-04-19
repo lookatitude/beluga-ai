@@ -7,7 +7,7 @@
 //
 // # Usage
 //
-//	import "github.com/lookatitude/beluga-ai/memory/stores/postgres"
+//	import "github.com/lookatitude/beluga-ai/v2/memory/stores/postgres"
 //
 //	store, err := postgres.New(postgres.Config{
 //	    DB:    pgxConn,       // *pgx.Conn, pgxpool.Pool, or pgxmock

@@ -4,7 +4,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // Config holds the configuration passed to a Tracker factory when creating a

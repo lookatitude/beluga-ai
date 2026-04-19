@@ -6,7 +6,7 @@
 // This package registers itself as "groq" with the stt registry. Import it
 // with a blank identifier to enable:
 //
-//	import _ "github.com/lookatitude/beluga-ai/voice/stt/providers/groq"
+//	import _ "github.com/lookatitude/beluga-ai/v2/voice/stt/providers/groq"
 //
 // # Usage
 //

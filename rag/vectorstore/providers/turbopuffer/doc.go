@@ -5,7 +5,7 @@
 //
 // The provider registers as "turbopuffer" in the vectorstore registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/turbopuffer"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/vectorstore/providers/turbopuffer"
 //
 //	store, err := vectorstore.New("turbopuffer", config.ProviderConfig{
 //	    APIKey: "...",

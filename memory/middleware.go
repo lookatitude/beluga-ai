@@ -3,7 +3,7 @@ package memory
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // Middleware wraps a Memory to add cross-cutting behavior.

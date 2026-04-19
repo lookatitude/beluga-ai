@@ -5,7 +5,7 @@
 // The adapter registers itself as "chi" in the server registry via init().
 // Import this package to make the adapter available:
 //
-//	import _ "github.com/lookatitude/beluga-ai/server/adapters/chi"
+//	import _ "github.com/lookatitude/beluga-ai/v2/server/adapters/chi"
 //
 //	adapter, err := server.New("chi", server.Config{})
 //	if err != nil {

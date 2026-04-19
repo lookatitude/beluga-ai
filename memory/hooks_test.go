@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 func TestComposeHooks_Empty(t *testing.T) {

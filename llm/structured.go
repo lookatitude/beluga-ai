@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/internal/jsonutil"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/internal/jsonutil"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // StructuredOutput wraps a ChatModel to produce typed Go values. It generates

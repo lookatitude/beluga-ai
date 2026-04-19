@@ -37,7 +37,7 @@ Write clear, enterprise-grade documentation for developers evaluating or integra
 ## Code example rules
 
 - Every example must compile. Verify with `go build` on a throwaway file.
-- Full imports (`github.com/lookatitude/beluga-ai/...`).
+- Full imports (`github.com/lookatitude/beluga-ai/v2/...`).
 - Handle errors explicitly — never `_` for error returns.
 - No pseudocode in reference docs.
 

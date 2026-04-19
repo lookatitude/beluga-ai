@@ -6,7 +6,7 @@
 // The adapter registers itself as "grpc" in the server registry via init().
 // Import this package to make the adapter available:
 //
-//	import _ "github.com/lookatitude/beluga-ai/server/adapters/grpc"
+//	import _ "github.com/lookatitude/beluga-ai/v2/server/adapters/grpc"
 //
 //	adapter, err := server.New("grpc", server.Config{})
 //	if err != nil {

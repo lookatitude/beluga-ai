@@ -3,7 +3,7 @@ package memory
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // MemoryGuard orchestrates multiple AnomalyDetectors in a pipeline to detect

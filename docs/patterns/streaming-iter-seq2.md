@@ -153,7 +153,7 @@ package paginated
 import (
     "context"
     "io"
-    "github.com/lookatitude/beluga-ai/core"
+    "github.com/lookatitude/beluga-ai/v2/core"
 )
 
 type Page struct {

@@ -19,7 +19,7 @@
 //
 // # Usage
 //
-//	import "github.com/lookatitude/beluga-ai/agent/codeact"
+//	import "github.com/lookatitude/beluga-ai/v2/agent/codeact"
 //
 //	a := codeact.NewCodeActAgent("solver",
 //	    codeact.WithAgentLLM(model),

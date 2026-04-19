@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/eval"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/eval"
 )
 
 // batchOptions holds configuration for BatchJudge.

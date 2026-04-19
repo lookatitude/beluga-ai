@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lookatitude/beluga-ai/workflow"
+	"github.com/lookatitude/beluga-ai/v2/workflow"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 )

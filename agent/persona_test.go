@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 func assertPersonaMessage(t *testing.T, msg *schema.SystemMessage, wantParts []string, dontWant []string) {

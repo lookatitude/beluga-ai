@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/lookatitude/beluga-ai/llm"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/llm"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // Predictor produces a fast prediction for a given input.

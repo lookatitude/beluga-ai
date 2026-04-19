@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/v2/tool"
 )
 
 func TestDefaultConfig(t *testing.T) {

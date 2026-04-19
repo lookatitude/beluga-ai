@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/workflow"
+	"github.com/lookatitude/beluga-ai/v2/workflow"
 )
 
 // mockStateClient is an in-memory mock of the StateClient interface.

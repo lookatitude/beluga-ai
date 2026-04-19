@@ -15,7 +15,7 @@
 //
 // Import for side-effect registration, then create via the cache registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/cache/providers/inmemory"
+//	import _ "github.com/lookatitude/beluga-ai/v2/cache/providers/inmemory"
 //
 //	c, err := cache.New("inmemory", cache.Config{
 //	    TTL:     5 * time.Minute,

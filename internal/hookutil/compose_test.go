@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/internal/hookutil"
+	"github.com/lookatitude/beluga-ai/v2/internal/hookutil"
 )
 
 // testHook is a simple hook struct used across tests.

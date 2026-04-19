@@ -4,7 +4,7 @@ import (
 	"context"
 	"iter"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // Edge represents a directed connection between two nodes in a Graph.

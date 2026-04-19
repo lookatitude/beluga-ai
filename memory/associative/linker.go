@@ -3,7 +3,7 @@ package associative
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // LinkManager finds the top-k most similar notes for a given note and creates

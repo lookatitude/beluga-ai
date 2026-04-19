@@ -7,7 +7,7 @@
 // This package registers itself as "daily" with the transport registry. Import
 // it with a blank identifier to enable:
 //
-//	import _ "github.com/lookatitude/beluga-ai/voice/transport/providers/daily"
+//	import _ "github.com/lookatitude/beluga-ai/v2/voice/transport/providers/daily"
 //
 // # Usage
 //

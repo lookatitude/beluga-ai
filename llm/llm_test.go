@@ -6,7 +6,7 @@ import (
 	"iter"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 func TestChatModel_InterfaceCompliance(t *testing.T) {

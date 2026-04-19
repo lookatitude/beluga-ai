@@ -87,6 +87,6 @@
 //
 // # Related packages
 //
-//   - [github.com/lookatitude/beluga-ai/k8s/operator] — Kubernetes CRD operator
-//   - [github.com/lookatitude/beluga-ai/runtime] — agent lifecycle management
+//   - [github.com/lookatitude/beluga-ai/v2/k8s/operator] — Kubernetes CRD operator
+//   - [github.com/lookatitude/beluga-ai/v2/runtime] — agent lifecycle management
 package deploy

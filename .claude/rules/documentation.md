@@ -18,7 +18,7 @@ alwaysApply: false
 ## Code example requirements
 
 - All Go examples must compile. Verify with `go build` on a throwaway file.
-- Full imports with module path `github.com/lookatitude/beluga-ai/...`.
+- Full imports with module path `github.com/lookatitude/beluga-ai/v2/...`.
 - Handle errors explicitly — never `_` for error returns.
 - No pseudocode in reference docs.
 

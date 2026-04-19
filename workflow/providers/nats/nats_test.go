@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lookatitude/beluga-ai/workflow"
+	"github.com/lookatitude/beluga-ai/v2/workflow"
 	natspkg "github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 )

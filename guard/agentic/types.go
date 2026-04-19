@@ -1,6 +1,6 @@
 package agentic
 
-import "github.com/lookatitude/beluga-ai/guard"
+import "github.com/lookatitude/beluga-ai/v2/guard"
 
 // AgenticRisk identifies one of the OWASP Top 10 risks for agentic applications.
 type AgenticRisk string

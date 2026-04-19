@@ -57,7 +57,7 @@ func New(opts ...Option) *Thing { o := defaults(); for _, opt := range opts { op
 func init() {
     llm.Register("openai", func(cfg llm.ProviderConfig) (llm.ChatModel, error) { return New(cfg) })
 }
-// Users import: import _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+// Users import: import _ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
 ```
 
 ## Rules

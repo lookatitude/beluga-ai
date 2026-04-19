@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/tool"
 )
 
 // mockAgent implements agent.Agent for testing.

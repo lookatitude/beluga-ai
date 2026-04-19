@@ -110,7 +110,7 @@ func (s *otelSpan) SetStatus(code StatusCode, msg string) {
 var tracer trace.Tracer
 
 func init() {
-	tracer = otel.Tracer("github.com/lookatitude/beluga-ai/o11y")
+	tracer = otel.Tracer("github.com/lookatitude/beluga-ai/v2/o11y")
 }
 
 // StartSpan creates a new OTel span with the given name and attributes.
@@ -186,7 +186,7 @@ func InitTracer(serviceName string, opts ...TracerOption) (func(), error) {
 
 	tp := sdktrace.NewTracerProvider(tpOpts...)
 	otel.SetTracerProvider(tp)
-	tracer = tp.Tracer("github.com/lookatitude/beluga-ai/o11y")
+	tracer = tp.Tracer("github.com/lookatitude/beluga-ai/v2/o11y")
 
 	shutdown := func() {
 		_ = tp.Shutdown(context.Background())

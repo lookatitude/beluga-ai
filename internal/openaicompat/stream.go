@@ -3,7 +3,7 @@ package openaicompat
 import (
 	"iter"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/packages/ssestream"
 )

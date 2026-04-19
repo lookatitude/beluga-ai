@@ -225,7 +225,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/hitl"
+	"github.com/lookatitude/beluga-ai/v2/hitl"
 )
 
 func main() {

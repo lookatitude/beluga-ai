@@ -4,8 +4,8 @@ import (
 	"context"
 	"iter"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/orchestration"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/orchestration"
 )
 
 // Middleware wraps a core.Runnable to add cross-cutting behavior specific

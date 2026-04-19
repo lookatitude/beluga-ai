@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // SessionState represents the current state of a voice session.

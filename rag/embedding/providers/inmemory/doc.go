@@ -7,7 +7,7 @@
 //
 // The provider registers as "inmemory" in the embedding registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/inmemory"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/embedding/providers/inmemory"
 //
 //	emb, err := embedding.New("inmemory", config.ProviderConfig{})
 //

@@ -8,7 +8,7 @@
 //
 // # Usage
 //
-//	import "github.com/lookatitude/beluga-ai/memory/stores/redis"
+//	import "github.com/lookatitude/beluga-ai/v2/memory/stores/redis"
 //
 //	client := goredis.NewClient(&goredis.Options{Addr: "localhost:6379"})
 //	store, err := redis.New(redis.Config{

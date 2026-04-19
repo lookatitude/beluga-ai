@@ -4,7 +4,7 @@ import (
 	"context"
 	"iter"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // ChatModel is the primary interface for interacting with language models.

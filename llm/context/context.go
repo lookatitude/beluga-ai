@@ -6,8 +6,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // ContextStep is a single step in the context engineering pipeline.

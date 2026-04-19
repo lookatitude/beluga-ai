@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // Metric is the interface that all evaluation metrics implement.

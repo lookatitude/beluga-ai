@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/lookatitude/beluga-ai/eval"
+	"github.com/lookatitude/beluga-ai/v2/eval"
 )
 
 // defaultToxicKeywords is the default list of keywords indicating toxic content.

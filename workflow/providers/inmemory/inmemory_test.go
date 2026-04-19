@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/workflow"
+	"github.com/lookatitude/beluga-ai/v2/workflow"
 )
 
 func TestStore_SaveAndLoad(t *testing.T) {

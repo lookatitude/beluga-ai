@@ -1,7 +1,7 @@
 package replay
 
 import (
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // DivergenceType identifies the kind of divergence between original and

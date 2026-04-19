@@ -3,7 +3,7 @@ package plancache
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/internal/hookutil"
+	"github.com/lookatitude/beluga-ai/v2/internal/hookutil"
 )
 
 // Hooks provides optional callback functions invoked during plan cache

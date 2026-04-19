@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // Role groups a set of permissions under a name. Roles are assigned to subjects

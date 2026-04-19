@@ -201,7 +201,7 @@ type ComplexityScorer interface {
 ```go
 import (
     "context"
-    "github.com/lookatitude/beluga-ai/agent/cognitive"
+    "github.com/lookatitude/beluga-ai/v2/agent/cognitive"
 )
 
 a, err := cognitive.New("router", fastAgent, deepAgent,

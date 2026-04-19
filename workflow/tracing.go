@@ -3,7 +3,7 @@ package workflow
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/o11y"
+	"github.com/lookatitude/beluga-ai/v2/o11y"
 )
 
 // attrWorkflowID is the span attribute key for the workflow instance ID.

@@ -5,7 +5,7 @@
 //
 // The provider registers as "chroma" in the vectorstore registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/chroma"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/vectorstore/providers/chroma"
 //
 //	store, err := vectorstore.New("chroma", config.ProviderConfig{
 //	    BaseURL: "http://localhost:8000",

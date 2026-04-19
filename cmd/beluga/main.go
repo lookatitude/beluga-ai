@@ -7,7 +7,7 @@ import (
 
 	// Side-effect import: triggers init() registration for the curated set of
 	// providers shipped with the beluga CLI. See cmd/beluga/providers.
-	_ "github.com/lookatitude/beluga-ai/cmd/beluga/providers"
+	_ "github.com/lookatitude/beluga-ai/v2/cmd/beluga/providers"
 )
 
 func main() { os.Exit(Execute(os.Stdout, os.Stderr)) }

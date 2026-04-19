@@ -3,7 +3,7 @@ package cost
 import (
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // BudgetAlert monitors cumulative evaluation cost and fires a callback when

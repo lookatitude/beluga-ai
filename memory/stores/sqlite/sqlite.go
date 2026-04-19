@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/memory"
-	"github.com/lookatitude/beluga-ai/memory/stores/internal/storeutil"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/memory"
+	"github.com/lookatitude/beluga-ai/v2/memory/stores/internal/storeutil"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // validTableName matches SQL identifiers: letter/underscore followed by

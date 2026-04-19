@@ -63,11 +63,11 @@ import (
     "fmt"
     "log"
 
-    _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
-    "github.com/lookatitude/beluga-ai/config"
-    "github.com/lookatitude/beluga-ai/eval"
-    "github.com/lookatitude/beluga-ai/eval/metrics"
-    "github.com/lookatitude/beluga-ai/llm"
+    _ "github.com/lookatitude/beluga-ai/v2/llm/providers/anthropic"
+    "github.com/lookatitude/beluga-ai/v2/config"
+    "github.com/lookatitude/beluga-ai/v2/eval"
+    "github.com/lookatitude/beluga-ai/v2/eval/metrics"
+    "github.com/lookatitude/beluga-ai/v2/llm"
 )
 
 func main() {
@@ -139,11 +139,11 @@ import (
     "fmt"
     "log"
 
-    _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
-    "github.com/lookatitude/beluga-ai/config"
-    "github.com/lookatitude/beluga-ai/eval"
-    "github.com/lookatitude/beluga-ai/eval/judge"
-    "github.com/lookatitude/beluga-ai/llm"
+    _ "github.com/lookatitude/beluga-ai/v2/llm/providers/anthropic"
+    "github.com/lookatitude/beluga-ai/v2/config"
+    "github.com/lookatitude/beluga-ai/v2/eval"
+    "github.com/lookatitude/beluga-ai/v2/eval/judge"
+    "github.com/lookatitude/beluga-ai/v2/llm"
 )
 
 func main() {
@@ -251,10 +251,10 @@ import (
     "fmt"
     "log"
 
-    _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
-    "github.com/lookatitude/beluga-ai/config"
-    "github.com/lookatitude/beluga-ai/eval/simulation"
-    "github.com/lookatitude/beluga-ai/llm"
+    _ "github.com/lookatitude/beluga-ai/v2/llm/providers/anthropic"
+    "github.com/lookatitude/beluga-ai/v2/config"
+    "github.com/lookatitude/beluga-ai/v2/eval/simulation"
+    "github.com/lookatitude/beluga-ai/v2/llm"
 )
 
 func main() {
@@ -394,7 +394,7 @@ The three provider packages each implement `eval.Metric` by forwarding to an ext
 Sends a single `EvalSample` to a Ragas API endpoint. Metric names: `faithfulness`, `answer_relevancy`, `context_precision`, `context_recall`. Returned metric name is prefixed `ragas_<metric>`. Default base URL `http://localhost:8080` for a self-hosted instance.
 
 ```go
-import "github.com/lookatitude/beluga-ai/eval/providers/ragas"
+import "github.com/lookatitude/beluga-ai/v2/eval/providers/ragas"
 
 m, err := ragas.New(
     ragas.WithBaseURL("http://ragas-svc:8080"),
@@ -407,7 +407,7 @@ m, err := ragas.New(
 Sends to the Braintrust Cloud Evaluation API at `https://api.braintrust.dev/v1/score`. Requires `WithAPIKey`. Groups results under a `WithProjectName`. Metric name is prefixed `braintrust_<metric>`.
 
 ```go
-import "github.com/lookatitude/beluga-ai/eval/providers/braintrust"
+import "github.com/lookatitude/beluga-ai/v2/eval/providers/braintrust"
 
 m, err := braintrust.New(
     braintrust.WithAPIKey(os.Getenv("BRAINTRUST_API_KEY")),
@@ -421,7 +421,7 @@ m, err := braintrust.New(
 Sends to the DeepEval API. Default base URL `http://localhost:8080` for a self-hosted instance; cloud endpoint configurable via `WithBaseURL`. Returns an error if `evaluateResponse.Success` is false (the service itself considers the evaluation failed). Metric name is prefixed `deepeval_<metric>`.
 
 ```go
-import "github.com/lookatitude/beluga-ai/eval/providers/deepeval"
+import "github.com/lookatitude/beluga-ai/v2/eval/providers/deepeval"
 
 m, err := deepeval.New(
     deepeval.WithBaseURL("https://app.confident-ai.com"),
@@ -450,11 +450,11 @@ import (
     "fmt"
     "time"
 
-    _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
-    "github.com/lookatitude/beluga-ai/config"
-    "github.com/lookatitude/beluga-ai/eval"
-    "github.com/lookatitude/beluga-ai/eval/metrics"
-    "github.com/lookatitude/beluga-ai/llm"
+    _ "github.com/lookatitude/beluga-ai/v2/llm/providers/anthropic"
+    "github.com/lookatitude/beluga-ai/v2/config"
+    "github.com/lookatitude/beluga-ai/v2/eval"
+    "github.com/lookatitude/beluga-ai/v2/eval/metrics"
+    "github.com/lookatitude/beluga-ai/v2/llm"
 )
 
 func runQualityGate(datasetPath string) error {

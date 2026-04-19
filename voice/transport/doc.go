@@ -23,7 +23,7 @@
 // Providers register via [Register] in their init() function and are created
 // with [New]. Use [List] to discover available providers.
 //
-//	import _ "github.com/lookatitude/beluga-ai/voice/transport"
+//	import _ "github.com/lookatitude/beluga-ai/v2/voice/transport"
 //
 //	t, err := transport.New("websocket", transport.Config{URL: "ws://..."})
 //	frames, err := t.Recv(ctx)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // Middleware wraps a Tool and returns a new Tool with added behavior.

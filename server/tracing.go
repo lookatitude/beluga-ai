@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/o11y"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/o11y"
 )
 
 // WithTracing returns middleware that wraps a ServerAdapter with OTel spans

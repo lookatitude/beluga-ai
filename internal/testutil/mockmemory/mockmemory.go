@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // MockMemory is an in-memory mock of the memory.Memory interface.

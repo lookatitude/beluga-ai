@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/llm"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/llm"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 const analyzePrompt = "Describe what you see in this screenshot. Focus on interactive elements (buttons, links, text fields, menus) and their positions. Be concise."

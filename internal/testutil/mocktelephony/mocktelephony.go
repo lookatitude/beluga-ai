@@ -6,7 +6,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/voice/telephony"
+	"github.com/lookatitude/beluga-ai/v2/voice/telephony"
 )
 
 // InMemoryEndpoint is a test implementation of telephony.SIPEndpoint. It

@@ -6,8 +6,8 @@ import (
 	"iter"
 	"strings"
 
-	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // HandoffOrchestrator manages peer-to-peer agent transfers. When an agent

@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // WorkflowStatus represents the lifecycle state of a workflow execution.

@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/config"
-	"github.com/lookatitude/beluga-ai/rag/loader"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/rag/loader"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 func init() {

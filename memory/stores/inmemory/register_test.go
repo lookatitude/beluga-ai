@@ -3,9 +3,9 @@ package inmemory_test
 import (
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/config"
-	"github.com/lookatitude/beluga-ai/memory"
-	_ "github.com/lookatitude/beluga-ai/memory/stores/inmemory"
+	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/memory"
+	_ "github.com/lookatitude/beluga-ai/v2/memory/stores/inmemory"
 )
 
 // TestInmemoryRegistered verifies the blank import side-effect: the "inmemory"

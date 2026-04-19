@@ -5,7 +5,7 @@ import (
 	"io"
 	"iter"
 
-	"github.com/lookatitude/beluga-ai/voice"
+	"github.com/lookatitude/beluga-ai/v2/voice"
 )
 
 // AudioTransport is the interface for bidirectional audio I/O between clients

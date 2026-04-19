@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // opExecute is the operation name used in error codes emitted by code executors.

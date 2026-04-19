@@ -3,7 +3,7 @@ package retriever
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // Middleware wraps a Retriever to add cross-cutting behaviour such as

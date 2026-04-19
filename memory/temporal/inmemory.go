@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/memory"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/memory"
 )
 
 // InMemoryStore is a thread-safe in-memory implementation of memory.TemporalGraphStore.

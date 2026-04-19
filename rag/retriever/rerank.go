@@ -3,8 +3,8 @@ package retriever
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // Reranker re-scores a set of documents for relevance to a query. Cross-encoder

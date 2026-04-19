@@ -21,7 +21,7 @@
 // Providers register via [Register] in their init() function and are created
 // with [New]. Use [List] to discover available providers.
 //
-//	import _ "github.com/lookatitude/beluga-ai/voice/tts/providers/elevenlabs"
+//	import _ "github.com/lookatitude/beluga-ai/v2/voice/tts/providers/elevenlabs"
 //
 //	engine, err := tts.New("elevenlabs", tts.Config{Voice: "rachel"})
 //	audio, err := engine.Synthesize(ctx, "Hello, world!")

@@ -4,8 +4,8 @@ import (
 	"context"
 	"iter"
 
-	"github.com/lookatitude/beluga-ai/schema"
-	"github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/v2/schema"
+	"github.com/lookatitude/beluga-ai/v2/tool"
 )
 
 // AgentMetadata exposes an agent's static identity and composition. Consumers

@@ -270,7 +270,7 @@ The interfaces in this reference are stable. For the most current view (with `fi
 
 ```bash
 .claude/hooks/wiki-query.sh <interface-name>
-go doc github.com/lookatitude/beluga-ai/<package>
+go doc github.com/lookatitude/beluga-ai/v2/<package>
 ```
 
 ## Related

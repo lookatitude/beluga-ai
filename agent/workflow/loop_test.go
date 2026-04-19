@@ -6,8 +6,8 @@ import (
 	"iter"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/tool"
 )
 
 // loopMockAgent is a mock agent for loop tests.

@@ -7,7 +7,7 @@
 //
 // The provider registers as "ollama" in the embedding registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/ollama"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/embedding/providers/ollama"
 //
 //	emb, err := embedding.New("ollama", config.ProviderConfig{
 //	    BaseURL: "http://localhost:11434",

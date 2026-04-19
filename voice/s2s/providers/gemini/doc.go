@@ -7,7 +7,7 @@
 // This package registers itself as "gemini_live" with the s2s registry. Import
 // it with a blank identifier to enable:
 //
-//	import _ "github.com/lookatitude/beluga-ai/voice/s2s/providers/gemini"
+//	import _ "github.com/lookatitude/beluga-ai/v2/voice/s2s/providers/gemini"
 //
 // # Usage
 //

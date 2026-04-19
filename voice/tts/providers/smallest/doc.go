@@ -7,7 +7,7 @@
 // This package registers itself as "smallest" with the tts registry. Import it
 // with a blank identifier to enable:
 //
-//	import _ "github.com/lookatitude/beluga-ai/voice/tts/providers/smallest"
+//	import _ "github.com/lookatitude/beluga-ai/v2/voice/tts/providers/smallest"
 //
 // # Usage
 //

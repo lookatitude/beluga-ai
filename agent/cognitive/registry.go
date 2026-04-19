@@ -4,7 +4,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // ScorerConfig holds configuration for creating a ComplexityScorer via the

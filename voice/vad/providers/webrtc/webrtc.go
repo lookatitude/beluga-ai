@@ -6,7 +6,7 @@ import (
 	"math"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/voice"
+	"github.com/lookatitude/beluga-ai/v2/voice"
 )
 
 const (

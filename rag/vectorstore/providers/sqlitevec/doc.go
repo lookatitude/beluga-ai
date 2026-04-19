@@ -11,7 +11,7 @@
 //
 // The provider registers as "sqlitevec" in the vectorstore registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/sqlitevec"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/vectorstore/providers/sqlitevec"
 //
 //	store, err := vectorstore.New("sqlitevec", config.ProviderConfig{
 //	    BaseURL: "/path/to/database.db",

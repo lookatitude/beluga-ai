@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/eval/trajectory"
-	"github.com/lookatitude/beluga-ai/llm"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/eval/trajectory"
+	"github.com/lookatitude/beluga-ai/v2/llm"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 const trajectoryFaithfulnessPrompt = `You are an evaluation judge assessing whether an agent's trajectory faithfully follows a logical path to answer the given input.

@@ -6,7 +6,7 @@
 //
 // The provider registers as "inmemory" in the vectorstore registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/inmemory"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/vectorstore/providers/inmemory"
 //
 //	store, err := vectorstore.New("inmemory", config.ProviderConfig{})
 //

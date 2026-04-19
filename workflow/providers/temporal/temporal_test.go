@@ -14,7 +14,7 @@ import (
 	"go.temporal.io/sdk/testsuite"
 	temporalworkflow "go.temporal.io/sdk/workflow"
 
-	"github.com/lookatitude/beluga-ai/workflow"
+	"github.com/lookatitude/beluga-ai/v2/workflow"
 )
 
 // mockEncodedValue implements converter.EncodedValue for testing.

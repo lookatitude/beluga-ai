@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/prompt"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/v2/prompt"
+	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
 // FileManager implements prompt.PromptManager by loading templates from

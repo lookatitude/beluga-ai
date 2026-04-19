@@ -6,7 +6,7 @@ import (
 	"iter"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // ErrOwnershipDenied is returned when a non-owner attempts to write to a

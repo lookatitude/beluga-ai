@@ -6,7 +6,7 @@
 //
 // The provider registers as "redis" in the vectorstore registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/redis"
+//	import _ "github.com/lookatitude/beluga-ai/v2/rag/vectorstore/providers/redis"
 //
 //	store, err := vectorstore.New("redis", config.ProviderConfig{
 //	    BaseURL: "localhost:6379",

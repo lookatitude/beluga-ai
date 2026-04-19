@@ -10,7 +10,7 @@
 // The provider registers itself as "deepseek" via init(). Import the package
 // for side effects to make it available through the llm registry:
 //
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/deepseek"
+//	import _ "github.com/lookatitude/beluga-ai/v2/llm/providers/deepseek"
 //
 // # Usage
 //

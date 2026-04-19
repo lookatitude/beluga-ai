@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // QueryExecutor runs a database query and returns its results.

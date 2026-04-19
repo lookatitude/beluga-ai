@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/internal/httpclient"
-	"github.com/lookatitude/beluga-ai/schema"
-	"github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/v2/internal/httpclient"
+	"github.com/lookatitude/beluga-ai/v2/schema"
+	"github.com/lookatitude/beluga-ai/v2/tool"
 )
 
 // Client connects to the Composio API for tool discovery and execution.

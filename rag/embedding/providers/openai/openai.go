@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lookatitude/beluga-ai/config"
-	"github.com/lookatitude/beluga-ai/rag/embedding"
+	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/rag/embedding"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
