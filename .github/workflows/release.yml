@@ -173,6 +173,56 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
+  # T9 of DX-1 S1: verify `go install github.com/lookatitude/beluga-ai/cmd/beluga@<tag>`
+  # resolves via the Go module proxy post-tag. The proxy (proxy.golang.org)
+  # has a 30-60s indexing lag; we absorb that with a sleep.
+  #
+  # continue-on-error is deliberate for S1: AC1 is an informational gate
+  # (hard-blocking would couple releases to proxy availability). A failure
+  # here surfaces as a visible warning in the release run UI without
+  # gating docs-bundle / dispatch-* jobs.
+  smoke-install:
+    name: Smoke-test go install @tag
+    needs: [release]
+    if: |
+      always() &&
+      needs.release.result == 'success'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Wait for module proxy to index the new tag
+        run: |
+          echo "Sleeping 30s to give proxy.golang.org time to index ${RELEASE_TAG}"
+          sleep 30
+
+      - name: go install from the pushed tag
+        run: |
+          set -euo pipefail
+          go install "github.com/lookatitude/beluga-ai/cmd/beluga@${RELEASE_TAG}"
+          echo "Installed beluga to $(go env GOPATH)/bin/beluga"
+          ls -l "$(go env GOPATH)/bin/beluga"
+
+      - name: Assert version output contains the released tag
+        run: |
+          set -euo pipefail
+          BIN="$(go env GOPATH)/bin/beluga"
+          OUT="$("$BIN" version)"
+          echo "$OUT"
+          # Strip leading 'v' from tag — goreleaser sets .Version to the tag
+          # without the v prefix, and the version package stores exactly that.
+          EXPECTED="${RELEASE_TAG#v}"
+          if ! echo "$OUT" | grep -Fq "$EXPECTED"; then
+            echo "ERROR: beluga version output does not contain ${EXPECTED}"
+            exit 1
+          fi
+          echo "OK: beluga version contains ${EXPECTED}"
+
   # Build the docs bundle (godoc HTML + generated reports with frontmatter)
   # and upload it as a release asset. The beluga-website repo downloads
   # docs-bundle.tar.gz from the latest release as part of its build.
