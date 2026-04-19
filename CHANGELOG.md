@@ -2,6 +2,40 @@
 
 All notable changes to Beluga AI are documented here.
 
+## [2.10.0] - 2026-04-19
+
+### Bug Fixes
+
+- **ci**: Align go.mod and release.yml to go 1.25.7 (CI runner) [LOO-142]
+- **memory**: Register "inmemory" as a Memory via blank-import init [LOO-142]
+
+### Documentation
+
+- Document beluga CLI (Layer 7 app) and six subcommands
+- **consultations**: Capture LOO-142 security + QA review artifacts
+
+### Features
+
+- **cli**: T2 — add cobra root + DisableFlagParsing adapters for init/dev/test/deploy [LOO-142]
+- **cli**: T3 — migrate init/dev/test/deploy to native cobra RunE + pflag [LOO-142]
+- **cli**: Add beluga version subcommand with ldflags+build-info fallback
+- **cli**: Curated 7-provider blank imports for beluga CLI
+- **cli**: Add beluga providers subcommand with --output json
+- **o11y**: Add BootstrapFromEnv skeleton for S3+ OTel wiring
+
+### Miscellaneous
+
+- **release**: Update CHANGELOG.md for v2.9.1 [skip ci]
+- **cli**: T1 — bump Go toolchain to 1.25.9 for DX-1 S1 [LOO-142]
+
+### Build
+
+- **goreleaser**: Enable 5-target binary builds, archives, and checksums
+
+### Ci
+
+- **release**: Add smoke-install job verifying go install @tag post-release
+
 ## [2.9.1] - 2026-04-19
 
 ### Miscellaneous
