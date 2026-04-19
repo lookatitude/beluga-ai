@@ -28,10 +28,8 @@ func newRootCmd() *cobra.Command {
 	root.PersistentFlags().StringVarP(&output, "output", "o", "",
 		`output format for machine-readable commands (e.g. "json")`)
 
-	// T2: wire existing init/dev/test/deploy as adapter subcommands that
-	// delegate to the pre-cobra cmdInit/cmdDev/cmdTest/cmdDeploy functions.
-	// T3 replaces these with native cobra RunE + pflag subcommands.
 	root.AddCommand(
+		newVersionCmd(),
 		newInitCmd(),
 		newDevCmd(),
 		newTestCmd(),

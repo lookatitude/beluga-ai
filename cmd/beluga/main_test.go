@@ -217,6 +217,26 @@ func TestCmdTest_RunFailure(t *testing.T) {
 	}
 }
 
+// --- version subcommand (T4) ---
+
+// TestVersionCommand asserts that `beluga version` prints:
+//   - a line containing "beluga " followed by the resolved framework version
+//   - a line containing "go1." (from runtime.Version())
+//   - a line starting with "providers:" listing the four category counts
+//
+// These three substrings are the verifiable surface for AC2.
+func TestVersionCommand(t *testing.T) {
+	out, _, code := executeArgs([]string{"version"})
+	if code != 0 {
+		t.Fatalf("version: want exit 0, got %d", code)
+	}
+	for _, want := range []string{"beluga ", "go1.", "providers:"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("version stdout missing %q; got:\n%s", want, out)
+		}
+	}
+}
+
 // --- Root-level dispatch tests (replaces the pre-T2 TestRun_* set) ---
 
 func TestRoot_Help(t *testing.T) {
