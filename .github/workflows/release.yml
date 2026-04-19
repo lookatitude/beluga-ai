@@ -19,7 +19,7 @@ on:
         default: "main"
 
 env:
-  GO_VERSION: "1.25.9"
+  GO_VERSION: "1.25.7"
 
 jobs:
   create-tag:
