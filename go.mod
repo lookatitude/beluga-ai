@@ -1,6 +1,6 @@
 module github.com/lookatitude/beluga-ai
 
-go 1.25.7
+go 1.25.9
 
 require (
 	github.com/a2aproject/a2a-go v0.3.13
