@@ -2,6 +2,18 @@
 
 All notable changes to Beluga AI are documented here.
 
+## [2.9.1] - 2026-04-19
+
+### Miscellaneous
+
+- **release**: Update CHANGELOG.md for v2.9.0 [skip ci]
+- **.wiki**: Remove stale artifacts (VALIDATION_REPORT, competitor stubs, empty drafts dir)
+
+### Refactoring
+
+- **.wiki**: Split corrections.md by category (preserves C-NNN IDs)
+- **.claude**: Consolidate branch discipline — branch-discipline.md is canonical; workflow.md + CLAUDE.md point to it
+
 ## [2.9.0] - 2026-04-18
 
 ### Bug Fixes
