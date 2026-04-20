@@ -97,22 +97,16 @@ jobs:
           go test ./...
 
       - name: gitleaks scan (YOUR_*_HERE pattern must not trip high-confidence)
-        uses: gitleaks/gitleaks-action@v2
+        # Scoped gitleaks scan of the scaffolded project directory.
+        # The gitleaks-action@v2 scans the PR diff from the repo root,
+        # which is not what we want here — we want to confirm the
+        # SCAFFOLDED project's .env.example doesn't trip high-confidence
+        # rules. Pinned version; scope limited to /tmp/scaffold-test.
+        # See specialist-security-architect §Q4: YOUR_OPENAI_API_KEY_HERE
+        # is the gitleaks-safe sentinel.
         env:
-          GITLEAKS_CONFIG: ""
-        with:
-          config-path: ""
-        continue-on-error: false
-        # Scope: only the generated project, not the checkout.
-        # gitleaks-action reads GITHUB_WORKSPACE by default; we pass
-        # a path arg to restrict scanning to the scaffolded tree.
-        # See specialist-security-architect §Q4: the YOUR_OPENAI_API_KEY_HERE
-        # sentinel is the gitleaks-safe pattern.
-
-      - name: Gitleaks (manual fallback — scope to /tmp/scaffold-test)
-        # Belt-and-braces. If the action above runs against the wrong
-        # path, this step scans the scaffolded project directly.
+          GITLEAKS_VERSION: "8.24.3"
         run: |
-          curl -sSfL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_linux_x64.tar.gz \
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
             | tar -xz -C /tmp
           /tmp/gitleaks detect --source /tmp/scaffold-test/testproject --no-git --redact --exit-code 1
