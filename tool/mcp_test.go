@@ -26,7 +26,6 @@ func newTestServer(t *testing.T, handlers map[string]func(json.RawMessage) (any,
 
 	var sessionID string
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Handle DELETE for Close.
 		if r.Method == http.MethodDelete {
 			w.WriteHeader(http.StatusOK)
 			return
@@ -38,57 +37,56 @@ func newTestServer(t *testing.T, handlers map[string]func(json.RawMessage) (any,
 			return
 		}
 
-		// Apply response header customizers.
 		for _, fn := range opts {
 			fn(w.Header())
 		}
 
-		// If a sessionID was set, always send it back.
-		if sessionID != "" {
-			w.Header().Set("Mcp-Session-Id", sessionID)
-		}
+		applySessionHeader(w, &sessionID, req.Method)
+		dispatchRPC(w, r, req, handlers)
+	}))
+}
 
-		// For initialize, set a session ID.
-		if req.Method == "initialize" {
-			sessionID = "test-session-id"
-			w.Header().Set("Mcp-Session-Id", sessionID)
-		}
+// applySessionHeader manages the test session ID and sets the Mcp-Session-Id
+// response header when appropriate.
+func applySessionHeader(w http.ResponseWriter, sessionID *string, method string) {
+	if *sessionID != "" {
+		w.Header().Set("Mcp-Session-Id", *sessionID)
+	}
+	if method == "initialize" {
+		*sessionID = "test-session-id"
+		w.Header().Set("Mcp-Session-Id", *sessionID)
+	}
+}
 
-		// Notifications have no ID; just 200 OK.
-		if req.ID == 0 {
-			w.Header().Set("Content-Type", "application/json")
-			resp := jsonrpcResponse{JSONRPC: "2.0"}
-			json.NewEncoder(w).Encode(resp)
-			return
-		}
+// dispatchRPC routes a JSON-RPC request to the appropriate handler and writes
+// the JSON response. Notifications (ID==0) are acknowledged with an empty result.
+func dispatchRPC(w http.ResponseWriter, _ *http.Request, req jsonrpcRequest, handlers map[string]func(json.RawMessage) (any, *rpcError)) {
+	w.Header().Set("Content-Type", "application/json")
 
-		handler, ok := handlers[req.Method]
-		if !ok {
-			w.Header().Set("Content-Type", "application/json")
-			resp := jsonrpcResponse{
-				JSONRPC: "2.0",
-				ID:      req.ID,
-				Error:   &rpcError{Code: -32601, Message: "method not found"},
-			}
-			json.NewEncoder(w).Encode(resp)
-			return
-		}
+	if req.ID == 0 {
+		json.NewEncoder(w).Encode(jsonrpcResponse{JSONRPC: "2.0"}) //nolint:errcheck
+		return
+	}
 
-		raw, _ := json.Marshal(req.Params)
-		result, rpcErr := handler(raw)
-
-		w.Header().Set("Content-Type", "application/json")
-		resp := jsonrpcResponse{
+	handler, ok := handlers[req.Method]
+	if !ok {
+		json.NewEncoder(w).Encode(jsonrpcResponse{ //nolint:errcheck
 			JSONRPC: "2.0",
 			ID:      req.ID,
-			Error:   rpcErr,
-		}
-		if result != nil {
-			b, _ := json.Marshal(result)
-			resp.Result = b
-		}
-		json.NewEncoder(w).Encode(resp)
-	}))
+			Error:   &rpcError{Code: -32601, Message: "method not found"},
+		})
+		return
+	}
+
+	raw, _ := json.Marshal(req.Params)
+	result, rpcErr := handler(raw)
+
+	resp := jsonrpcResponse{JSONRPC: "2.0", ID: req.ID, Error: rpcErr}
+	if result != nil {
+		b, _ := json.Marshal(result)
+		resp.Result = b
+	}
+	json.NewEncoder(w).Encode(resp) //nolint:errcheck
 }
 
 // defaultHandlers provides initialize and tools/list handlers suitable for
