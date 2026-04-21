@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beluga.ai/schemas/eval-dataset.v1.json",
+  "title": "Beluga eval dataset",
+  "description": "Dataset file consumed by `beluga eval`. Mirrors eval.Dataset with optional multi-turn (Turns) and trajectory (ExpectedTools) extensions introduced in DX-1 Slice 4.",
+  "type": "object",
+  "required": ["samples"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Human-readable dataset identifier. Defaults to the filename stem when empty."
+    },
+    "samples": {
+      "type": "array",
+      "description": "Ordered list of evaluation samples.",
+      "items": { "$ref": "#/$defs/sample" }
+    }
+  },
+  "$defs": {
+    "sample": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Input": {
+          "type": "string",
+          "description": "Original prompt or question handed to the agent."
+        },
+        "Output": {
+          "type": "string",
+          "description": "Populated by the agent at eval time. May be empty in source datasets."
+        },
+        "ExpectedOutput": {
+          "type": "string",
+          "description": "Ground-truth reference answer. Empty values disable the exact_match metric for this sample."
+        },
+        "RetrievedDocs": {
+          "type": "array",
+          "description": "Optional RAG context documents carried for RAG-specific metrics.",
+          "items": { "type": "object" }
+        },
+        "Metadata": {
+          "type": "object",
+          "description": "Arbitrary key/value pairs consumed by metrics (e.g., latency_ms, input_tokens, cost_usd). The CLI injects latency_ms when the child does not.",
+          "additionalProperties": true
+        },
+        "Turns": {
+          "type": "array",
+          "description": "Multi-turn history for trajectory evaluation. Backward-compatible S4 extension.",
+          "items": { "$ref": "#/$defs/turn" }
+        },
+        "ExpectedTools": {
+          "type": "array",
+          "description": "Ordered names of tools a correct trajectory must invoke. Backward-compatible S4 extension.",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "turn": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Role": {
+          "type": "string",
+          "enum": ["user", "assistant", "tool", "system"]
+        },
+        "Content": { "type": "string" },
+        "ToolCalls": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      }
+    }
+  }
+}
