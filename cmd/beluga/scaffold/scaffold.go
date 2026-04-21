@@ -59,11 +59,11 @@ type Options struct {
 }
 
 // projectNameRegex implements the allowlist from the brief Decision #7 /
-// specialist-security-architect §Q1. The alternation permits names between
-// 2 and 64 characters, all lowercase letters/digits/hyphens, starting with
-// a letter and ending with an alphanumeric character. The second branch
-// covers the minimum 2-character case (e.g. "ab") because the first branch
-// requires a middle segment.
+// specialist-security-architect §Q1. The pattern matches names between 2
+// and 64 characters, all lowercase letters/digits/hyphens, starting with a
+// letter and ending with an alphanumeric character. The {0,62} quantifier
+// in the middle segment permits zero middle characters, covering the
+// minimum 2-character case (e.g. "ab") without a separate branch.
 var projectNameRegex = regexp.MustCompile(`^[a-z][a-z0-9-]{0,62}[a-z0-9]$`)
 
 // windowsReservedNames is the case-insensitive blocklist applied as a

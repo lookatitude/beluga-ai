@@ -102,11 +102,19 @@ jobs:
         # which is not what we want here — we want to confirm the
         # SCAFFOLDED project's .env.example doesn't trip high-confidence
         # rules. Pinned version; scope limited to /tmp/scaffold-test.
+        # Tarball verified against the SHA256 checksum published with the
+        # release before extraction — prevents execution of a substituted
+        # binary if the release page is compromised.
         # See specialist-security-architect §Q4: YOUR_OPENAI_API_KEY_HERE
         # is the gitleaks-safe sentinel.
         env:
           GITLEAKS_VERSION: "8.24.3"
         run: |
-          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
-            | tar -xz -C /tmp
+          set -euo pipefail
+          tarball="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+          curl -sSfL "${base}/${tarball}" -o "/tmp/${tarball}"
+          curl -sSfL "${base}/gitleaks_${GITLEAKS_VERSION}_checksums.txt" -o /tmp/gitleaks_checksums.txt
+          (cd /tmp && grep " ${tarball}\$" gitleaks_checksums.txt | sha256sum -c -)
+          tar -xzf "/tmp/${tarball}" -C /tmp
           /tmp/gitleaks detect --source /tmp/scaffold-test/testproject --no-git --redact --exit-code 1

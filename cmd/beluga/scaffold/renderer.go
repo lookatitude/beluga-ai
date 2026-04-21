@@ -19,16 +19,11 @@ import (
 // builtinTemplatesFS holds the embedded template tree. The //go:embed
 // directive lives here (not in a cobra command file) so the cobra layer
 // stays free of embed concerns and the templates subtree travels with the
-// scaffolder package.
+// scaffolder package. templates_builtin.go in the same package accesses
+// this variable directly; there is no accessor.
 //
 //go:embed all:templates
 var builtinTemplatesFS embed.FS
-
-// BuiltinTemplatesFS is an accessor exported for templates_builtin.go's
-// init() — it cannot reach the unexported variable from the same package
-// via code generation, but keeping this accessor avoids ad-hoc re-embedding
-// from other files in the package.
-func BuiltinTemplatesFS() embed.FS { return builtinTemplatesFS }
 
 // applyTemplate substitutes every __BELUGA_<FIELD>__ sentinel in src with
 // the corresponding field of vars. The substitution order is fixed (fields

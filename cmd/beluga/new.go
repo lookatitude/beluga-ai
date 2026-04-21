@@ -174,9 +174,16 @@ func writeComponentFiles(projectRoot, snake, sourceBody, testBody string) error 
 		}
 	}
 
-	for path, body := range map[string]string{srcPath: sourceBody, testPath: testBody} {
-		formatted, fmtErr := format.Source([]byte(body))
+	// Ordered pairs (not a map) so writes happen deterministically: if the
+	// second write fails we roll the first back to avoid leaving a
+	// half-scaffolded project that would then refuse both names on re-run.
+	type filePair struct{ path, body string }
+	pairs := []filePair{{srcPath, sourceBody}, {testPath, testBody}}
+	var written []string
+	for _, fp := range pairs {
+		formatted, fmtErr := format.Source([]byte(fp.body))
 		if fmtErr != nil {
+			rollbackWrites(written)
 			return fmt.Errorf(
 				"beluga: generated source has a syntax error — this is a bug in the scaffolder, please report it at github.com/lookatitude/beluga-ai/issues (details: %w)",
 				fmtErr)
@@ -184,7 +191,8 @@ func writeComponentFiles(projectRoot, snake, sourceBody, testBody string) error 
 		// Parse the formatted bytes to catch any structural problem the
 		// format pass lets through silently.
 		fset := token.NewFileSet()
-		if _, parseErr := parser.ParseFile(fset, filepath.Base(path), formatted, parser.AllErrors); parseErr != nil {
+		if _, parseErr := parser.ParseFile(fset, filepath.Base(fp.path), formatted, parser.AllErrors); parseErr != nil {
+			rollbackWrites(written)
 			return fmt.Errorf(
 				"beluga: generated source failed to parse — this is a bug in the scaffolder (details: %w)",
 				parseErr)
@@ -192,11 +200,22 @@ func writeComponentFiles(projectRoot, snake, sourceBody, testBody string) error 
 		// 0o644 is intentional: generated stubs are user-editable Go
 		// source, not secret-bearing. path is constructed inside the
 		// detected project root under a validated PascalCase identifier.
-		if err := os.WriteFile(path, formatted, 0o644); err != nil { // #nosec G306 -- scaffolded user-editable source file
-			return fmt.Errorf("beluga: write %q: %w", path, err)
+		if err := os.WriteFile(fp.path, formatted, 0o644); err != nil { // #nosec G306 -- scaffolded user-editable source file
+			rollbackWrites(written)
+			return fmt.Errorf("beluga: write %q: %w", fp.path, err)
 		}
+		written = append(written, fp.path)
 	}
 	return nil
+}
+
+// rollbackWrites best-effort deletes any files written during a partial
+// component scaffold so a subsequent re-run isn't blocked by the
+// "<path> already exists" guard.
+func rollbackWrites(paths []string) {
+	for _, p := range paths {
+		_ = os.Remove(p)
+	}
 }
 
 // runNewComponent is the shared body of all three `beluga new <kind>`
