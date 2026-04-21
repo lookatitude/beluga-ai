@@ -140,7 +140,7 @@ func (v *VAD) computeSpeechProbability(audio []byte) float64 {
 	var sumSquares float64
 	var maxAbs float64
 	for i := range numSamples {
-		sample := int16(binary.LittleEndian.Uint16(audio[i*2 : i*2+2]))
+		sample := int16(binary.LittleEndian.Uint16(audio[i*2 : i*2+2])) // #nosec G115 -- PCM audio: uint16→int16 reinterpretation is intentional
 		val := float64(sample)
 		sumSquares += val * val
 		abs := val

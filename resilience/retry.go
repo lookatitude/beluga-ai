@@ -155,7 +155,7 @@ func jitter(d time.Duration) time.Duration {
 		return d
 	}
 	// factor in [0.75, 1.25)
-	factor := 0.75 + rand.Float64()*0.5
+	factor := 0.75 + rand.Float64()*0.5 // #nosec G404 -- retry jitter is not security-sensitive
 	ns := float64(d.Nanoseconds()) * factor
 	// Guard against overflow.
 	if ns > math.MaxInt64 {

@@ -60,7 +60,7 @@ func (fm *FileManager) load() error {
 		}
 
 		path := filepath.Join(fm.dir, entry.Name())
-		data, err := os.ReadFile(path)
+		data, err := os.ReadFile(path) // #nosec G304 -- path constructed from directory listing, not user input
 		if err != nil {
 			return fmt.Errorf("prompt/file: reading %q: %w", path, err)
 		}

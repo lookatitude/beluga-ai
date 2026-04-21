@@ -101,9 +101,13 @@ func (e *Engine) uploadAudio(ctx context.Context, audio []byte, language string)
 		return "", fmt.Errorf("gladia: write audio: %w", err)
 	}
 	if language != "" {
-		w.WriteField("language", language)
+		if err := w.WriteField("language", language); err != nil {
+			return "", fmt.Errorf("gladia: write language field: %w", err)
+		}
 	}
-	w.Close()
+	if err := w.Close(); err != nil {
+		return "", fmt.Errorf("gladia: close multipart writer: %w", err)
+	}
 
 	uploadReq, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		e.baseURL+"/upload", &buf)
@@ -187,10 +191,10 @@ func (e *Engine) pollTranscription(ctx context.Context, resultURL string) (strin
 
 		var result transcriptionResult
 		if err := json.NewDecoder(pollResp.Body).Decode(&result); err != nil {
-			pollResp.Body.Close()
+			_ = pollResp.Body.Close()
 			return "", fmt.Errorf("gladia: decode result: %w", err)
 		}
-		pollResp.Body.Close()
+		_ = pollResp.Body.Close()
 
 		if result.Status == "done" {
 			return result.Result.Transcription.FullTranscript, nil

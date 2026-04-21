@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"path/filepath"
 )
 
 // Dataset is a named collection of evaluation samples.
@@ -16,7 +17,8 @@ type Dataset struct {
 
 // LoadDataset reads a dataset from a JSON file at the given path.
 func LoadDataset(path string) (*Dataset, error) {
-	data, err := os.ReadFile(path)
+	path = filepath.Clean(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- path cleaned above
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +35,7 @@ func (d *Dataset) Save(path string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0o644)
+	return os.WriteFile(path, data, 0o600)
 }
 
 // Augmenter generates additional evaluation samples from an existing sample.

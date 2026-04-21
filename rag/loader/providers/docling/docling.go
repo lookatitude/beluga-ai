@@ -103,7 +103,8 @@ func (l *Loader) loadFromURL(ctx context.Context, source string) ([]schema.Docum
 }
 
 func (l *Loader) loadFromFile(ctx context.Context, source string) ([]schema.Document, error) {
-	f, err := os.Open(source)
+	source = filepath.Clean(source)
+	f, err := os.Open(source) // #nosec G304 -- path cleaned above; document loaders accept file paths by design
 	if err != nil {
 		return nil, fmt.Errorf("docling: open file: %w", err)
 	}
@@ -137,7 +138,7 @@ func (l *Loader) loadFromFile(ctx context.Context, source string) ([]schema.Docu
 }
 
 func (l *Loader) doRequest(_ context.Context, req *http.Request, source string) ([]schema.Document, error) {
-	resp, err := l.client.Do(req)
+	resp, err := l.client.Do(req) // #nosec G704 -- URL is the configured Docling API endpoint; source is the document reference in the JSON body, not the HTTP target
 	if err != nil {
 		return nil, fmt.Errorf("docling: request: %w", err)
 	}

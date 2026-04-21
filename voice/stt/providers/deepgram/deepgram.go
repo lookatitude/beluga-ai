@@ -269,7 +269,7 @@ func (e *Engine) sendAudioStream(ctx context.Context, conn *websocket.Conn, audi
 		}
 	}
 	// Signal end of stream with close message.
-	conn.Write(ctx, websocket.MessageText, []byte(`{"type": "CloseStream"}`))
+	_ = conn.Write(ctx, websocket.MessageText, []byte(`{"type": "CloseStream"}`)) // #nosec G104 -- best-effort terminate; connection cleanup continues regardless
 }
 
 // TranscribeStream converts a streaming audio source to transcript events

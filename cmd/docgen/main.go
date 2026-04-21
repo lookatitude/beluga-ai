@@ -65,7 +65,7 @@ func main() {
 
 	// Write output
 	outDir := filepath.Join(root, outputDir)
-	if err := os.MkdirAll(outDir, 0o755); err != nil {
+	if err := os.MkdirAll(outDir, 0o750); err != nil {
 		fmt.Fprintf(os.Stderr, "error creating output dir: %v\n", err)
 		os.Exit(1)
 	}
@@ -73,7 +73,7 @@ func main() {
 	for _, p := range pages {
 		content := renderPage(p)
 		path := filepath.Join(outDir, p.Filename)
-		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 			fmt.Fprintf(os.Stderr, "error writing %s: %v\n", path, err)
 			os.Exit(1)
 		}
@@ -83,7 +83,7 @@ func main() {
 	// Write index page
 	indexContent := renderIndex(pages)
 	indexPath := filepath.Join(outDir, "index.md")
-	if err := os.WriteFile(indexPath, []byte(indexContent), 0o644); err != nil {
+	if err := os.WriteFile(indexPath, []byte(indexContent), 0o600); err != nil {
 		fmt.Fprintf(os.Stderr, "error writing index: %v\n", err)
 		os.Exit(1)
 	}

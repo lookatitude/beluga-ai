@@ -67,7 +67,7 @@ func decodeSamples(audio []byte) []int16 {
 	numSamples := len(audio) / 2
 	samples := make([]int16, numSamples)
 	for i := range numSamples {
-		samples[i] = int16(binary.LittleEndian.Uint16(audio[i*2 : i*2+2]))
+		samples[i] = int16(binary.LittleEndian.Uint16(audio[i*2 : i*2+2])) // #nosec G115 -- PCM audio: uint16→int16 reinterpretation is intentional
 	}
 	return samples
 }
