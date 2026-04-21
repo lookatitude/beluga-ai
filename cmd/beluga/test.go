@@ -46,7 +46,7 @@ func newTestCmd() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runTest(verbose, race, pkg)
+			return runTest(cmd.OutOrStdout(), cmd.ErrOrStderr(), verbose, race, pkg)
 		},
 	}
 	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "verbose test output")
@@ -66,8 +66,12 @@ var canonicalTestEnv = []string{
 	"OTEL_SDK_DISABLED=true",
 }
 
-// runTest executes the test workflow with pre-parsed flag values.
-func runTest(verbose, race bool, pkg string) error {
+// runTest executes the test workflow with pre-parsed flag values. stdout
+// and stderr are the writers the child `go test` process inherits, and
+// are also where the "Running: ..." banner is emitted — threaded from
+// the cobra command so tests can capture output instead of bypassing
+// cobra's writer plumbing via os.Stdout/os.Stderr directly.
+func runTest(stdout, stderr io.Writer, verbose, race bool, pkg string) error {
 	if !validPkgPattern.MatchString(pkg) {
 		return fmt.Errorf("invalid package pattern: %q", pkg)
 	}
@@ -91,9 +95,9 @@ func runTest(verbose, race bool, pkg string) error {
 	}
 	goArgs = append(goArgs, pkg)
 
-	fmt.Printf("Running: %s %v\n", goBin, goArgs)
+	fmt.Fprintf(stdout, "Running: %s %v\n", goBin, goArgs)
 
-	cmd := execCommand(os.Stdout, os.Stderr, goBin, goArgs...)
+	cmd := execCommand(stdout, stderr, goBin, goArgs...)
 	cmd.Env = append(os.Environ(), canonicalTestEnv...)
 	return cmd.Run()
 }

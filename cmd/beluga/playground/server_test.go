@@ -202,6 +202,50 @@ func TestServer_StaticIndexServed(t *testing.T) {
 	}
 }
 
+// TestServer_EventsReplaysRingOnConnect exercises the ring-replay branch
+// of handleEvents: a subscriber that connects AFTER spans and stderr
+// have already been pushed must receive them via writeSSE in the
+// connect-time replay loop, not the live broadcast path.
+func TestServer_EventsReplaysRingOnConnect(t *testing.T) {
+	t.Parallel()
+	s := newTestServer(t)
+
+	s.SpanSink() <- SpanEvent{Name: "replay.span", DurationMs: 9, Status: "ok"}
+	s.StderrSink() <- StderrLine{Bytes: []byte("replay.stderr\n")}
+
+	// Wait for the fanout goroutine to land both events in the rings.
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		if s.spans.len() >= 1 && s.stderr.len() >= 1 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("rings never populated before replay test opened /events")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://"+s.Addr()+"/events", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	got := readUntilEvent(t, resp.Body, "stderr", 2*time.Second)
+	if !strings.Contains(got, "replay.span") {
+		t.Errorf("replay missing span payload: %q", got)
+	}
+	// StderrLine.Bytes marshals as base64-encoded JSON, so check the
+	// event frame itself (not the decoded payload).
+	if !strings.Contains(got, "event: stderr") {
+		t.Errorf("replay missing stderr frame: %q", got)
+	}
+}
+
 func TestServer_RingBufferEvictsOldestSpan(t *testing.T) {
 	t.Parallel()
 	s, err := New(Config{MaxSpans: 3})

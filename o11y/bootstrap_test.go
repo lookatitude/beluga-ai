@@ -131,6 +131,39 @@ func TestBootstrapFromEnv_UserOptionOverridesEnv(t *testing.T) {
 	}
 }
 
+// TestBootstrapFromEnv_WithSpanExporter_OverridesOTELDisabled pins the
+// precedence rule from the BootstrapFromEnv docstring: an explicit
+// WithSpanExporter supplied via opts beats OTEL_SDK_DISABLED. A prior
+// implementation checked the env var first and returned noopShutdown
+// before applying opts, which silently dropped user-supplied exporters.
+func TestBootstrapFromEnv_WithSpanExporter_OverridesOTELDisabled(t *testing.T) {
+	t.Setenv("OTEL_SDK_DISABLED", "true")
+	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "")
+	t.Setenv("BELUGA_OTEL_STDOUT", "")
+
+	recorder := tracetest.NewInMemoryExporter()
+	shutdown, err := BootstrapFromEnv(
+		context.Background(),
+		"beluga-test",
+		WithSpanExporter(recorder),
+		WithSyncExport(),
+	)
+	if err != nil {
+		t.Fatalf("BootstrapFromEnv: unexpected error: %v", err)
+	}
+	if shutdown == nil {
+		t.Fatal("BootstrapFromEnv: shutdown is nil")
+	}
+	defer shutdown()
+
+	_, span := StartSpan(context.Background(), "bootstrap.override", nil)
+	span.End()
+
+	if got := len(recorder.GetSpans()); got != 1 {
+		t.Fatalf("recorder captured %d spans, want 1 — OTEL_SDK_DISABLED suppressed a user-supplied WithSpanExporter", got)
+	}
+}
+
 // envTruthy is trivial; a small table-driven test pins the allowed set.
 func TestEnvTruthy(t *testing.T) {
 	cases := []struct {

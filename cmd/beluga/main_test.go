@@ -358,6 +358,37 @@ func TestCmdTest_CanonicalEnv(t *testing.T) {
 	}
 }
 
+// TestCmdTest_BannerUsesCobraWriter asserts that the "Running: ..." banner
+// is written to the cobra command's configured stdout (via cmd.OutOrStdout),
+// not directly to os.Stdout. A prior implementation used fmt.Printf, which
+// bypassed cobra's writer plumbing and made test capture awkward.
+func TestCmdTest_BannerUsesCobraWriter(t *testing.T) {
+	origLook := lookPath
+	origExec := execCommand
+	defer func() {
+		lookPath = origLook
+		execCommand = origExec
+	}()
+	lookPath = func(string) (string, error) { return "/usr/bin/true", nil }
+	execCommand = func(stdout, stderr io.Writer, name string, args ...string) *exec.Cmd {
+		return exec.Command("/bin/sh", "-c", "exit 0")
+	}
+
+	var out, errBuf bytes.Buffer
+	cmd := newTestCmd()
+	cmd.SetArgs([]string{"--pkg", "./..."})
+	cmd.SetOut(&out)
+	cmd.SetErr(&errBuf)
+	cmd.SilenceUsage = true
+	cmd.SilenceErrors = true
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if !strings.Contains(out.String(), "Running: /usr/bin/true") {
+		t.Errorf("banner missing from cobra stdout; got stdout=%q stderr=%q", out.String(), errBuf.String())
+	}
+}
+
 func TestCmdTest_RunFailure(t *testing.T) {
 	origLook := lookPath
 	origExec := execCommand

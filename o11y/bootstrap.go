@@ -29,16 +29,18 @@ import (
 // TracerOption values (sampler, sync-export) compose with env-derived
 // exporter selection.
 func BootstrapFromEnv(ctx context.Context, serviceName string, opts ...TracerOption) (func(), error) {
-	if envTruthy(os.Getenv("OTEL_SDK_DISABLED")) {
-		return noopShutdown, nil
-	}
-
 	cfg := &tracerConfig{}
 	for _, opt := range opts {
 		opt(cfg)
 	}
 
+	// User-supplied WithSpanExporter wins unconditionally — the docstring
+	// contract promises this precedence so tests can pin an in-memory
+	// recorder even when the ambient env would otherwise disable the SDK.
 	if cfg.exporter == nil {
+		if envTruthy(os.Getenv("OTEL_SDK_DISABLED")) {
+			return noopShutdown, nil
+		}
 		switch {
 		case os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT") != "":
 			exp, err := otlptracehttp.New(ctx)

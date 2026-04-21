@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"os/exec"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -39,6 +40,25 @@ func newChildCmd(ctx context.Context, binPath string, env []string, stdin io.Rea
 	return cmd
 }
 
+// generateConsoleCtrlEvent caches the kernel32 DLL handle and the
+// GenerateConsoleCtrlEvent procedure pointer for the lifetime of the
+// process. Loading kernel32 per call — which the original implementation
+// did — is wasteful and rules out any optimisation at the syscall
+// boundary; sync.OnceValue makes the cache trivially goroutine-safe.
+// A nil return means the DLL or proc lookup failed; callers must guard
+// against it before calling into the proc.
+var generateConsoleCtrlEvent = sync.OnceValue(func() *syscall.Proc {
+	dll, err := syscall.LoadDLL("kernel32.dll")
+	if err != nil {
+		return nil
+	}
+	proc, err := dll.FindProc("GenerateConsoleCtrlEvent")
+	if err != nil {
+		return nil
+	}
+	return proc
+})
+
 // signalProcessGroup delivers CTRL_BREAK_EVENT to the child's process
 // group. The generic signal argument is accepted for parity with the
 // unix implementation but is ignored — Windows consoles only support
@@ -47,18 +67,13 @@ func signalProcessGroup(cmd *exec.Cmd, _ syscall.Signal) error {
 	if cmd == nil || cmd.Process == nil {
 		return errors.New("signalProcessGroup: process not started")
 	}
-	dll, err := syscall.LoadDLL("kernel32.dll")
-	if err != nil {
-		return err
+	proc := generateConsoleCtrlEvent()
+	if proc == nil {
+		return errors.New("signalProcessGroup: kernel32.GenerateConsoleCtrlEvent unavailable")
 	}
-	defer func() { _ = dll.Release() }()
-	proc, err := dll.FindProc("GenerateConsoleCtrlEvent")
-	if err != nil {
-		return err
-	}
-	r1, _, err := proc.Call(uintptr(ctrlBreakEvent), uintptr(cmd.Process.Pid))
+	r1, _, callErr := proc.Call(uintptr(ctrlBreakEvent), uintptr(cmd.Process.Pid))
 	if r1 == 0 {
-		return err
+		return callErr
 	}
 	return nil
 }
