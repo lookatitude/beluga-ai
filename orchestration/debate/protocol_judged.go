@@ -10,7 +10,7 @@ import (
 
 // Compile-time check.
 var (
-	_ Protocol  = (*JudgedProtocol)(nil)
+	_ Protocol        = (*JudgedProtocol)(nil)
 	_ TwoPassProtocol = (*JudgedProtocol)(nil)
 )
 

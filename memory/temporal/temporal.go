@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	opResolveConflicts  = "temporal.resolve_conflicts"
-	entityTypeMessage   = "message"
-	propKeyRole         = "role"
-	propKeyText         = "text"
+	opResolveConflicts = "temporal.resolve_conflicts"
+	entityTypeMessage  = "message"
+	propKeyRole        = "role"
+	propKeyText        = "text"
 )
 
 // TemporalMemory wraps a TemporalGraphStore to provide a Memory-compatible interface

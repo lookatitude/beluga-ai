@@ -17,8 +17,8 @@ const (
 	opAddTemporalRelation = "temporal.add_temporal_relation"
 	opInvalidateRelation  = "temporal.invalidate_relation"
 
-	errFromToEmpty   = "from and to entity IDs must not be empty"
-	errRelTypeEmpty  = "relation type must not be empty"
+	errFromToEmpty  = "from and to entity IDs must not be empty"
+	errRelTypeEmpty = "relation type must not be empty"
 )
 
 // InMemoryStore is a thread-safe in-memory implementation of memory.TemporalGraphStore.
