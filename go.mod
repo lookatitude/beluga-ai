@@ -14,6 +14,7 @@ require (
 	github.com/coder/websocket v1.8.14
 	github.com/cohere-ai/cohere-go/v2 v2.18.0
 	github.com/danielgtaylor/huma/v2 v2.37.3
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/gage-technologies/mistral-go v1.1.0
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-chi/chi/v5 v5.2.5
