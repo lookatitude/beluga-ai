@@ -54,17 +54,18 @@ Point your editor's JSON-Schema setting at that file to get autocomplete and val
 
 ## 2. Run the mock-mode smoke eval
 
-The scaffolded `Makefile` ships an `eval-ci` target that pins the five canonical env vars for a deterministic, zero-cost smoke:
+The scaffolded `Makefile` ships an `eval-ci` target that pins the five canonical env vars for a deterministic, zero-cost smoke. It invokes the `beluga` binary on PATH (same convention as `beluga dev` / `beluga run` / `beluga test`), so install the CLI once per environment first — `go install` inside your project picks the beluga version pinned by your `go.mod`:
 
 ```bash
+go install github.com/lookatitude/beluga-ai/v2/cmd/beluga
 make eval-ci
 ```
 
-Which expands to:
+`make eval-ci` expands to:
 
 ```bash
 BELUGA_LLM_PROVIDER=mock BELUGA_DETERMINISTIC=1 BELUGA_SEED=42 OTEL_SDK_DISABLED=true \
-  go run github.com/lookatitude/beluga-ai/v2/cmd/beluga eval .beluga/eval.smoke.json
+  beluga eval .beluga/eval.smoke.json
 ```
 
 What happens under the hood:
@@ -171,10 +172,12 @@ eval-real:
     - uses: actions/setup-go@v5
       with:
         go-version-file: go.mod
+    - name: Install beluga CLI
+      run: go install github.com/lookatitude/beluga-ai/v2/cmd/beluga
     - name: Run real-provider eval
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      run: go run github.com/lookatitude/beluga-ai/v2/cmd/beluga eval --max-rows 20 --max-cost 5.00 .beluga/eval.smoke.json
+      run: beluga eval --max-rows 20 --max-cost 5.00 .beluga/eval.smoke.json
 ```
 
 The template's structure — `if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'` plus `secrets.OPENAI_API_KEY` — is the opt-in gate. Tier-1 stays the only evaluation on PRs until Tier-2 is explicitly uncommented; a GitHub Actions `schedule:` trigger alone is not an opt-in gate because it still runs without human review.
@@ -182,10 +185,12 @@ The template's structure — `if: github.event_name == 'workflow_dispatch' || gi
 For PR-check annotations, pass `--format junit` and wire `dorny/test-reporter`:
 
 ```yaml
+- name: Install beluga CLI
+  run: go install github.com/lookatitude/beluga-ai/v2/cmd/beluga
 - name: Run make eval-ci with junit
   run: |
     BELUGA_LLM_PROVIDER=mock BELUGA_DETERMINISTIC=1 BELUGA_SEED=42 OTEL_SDK_DISABLED=true \
-      go run github.com/lookatitude/beluga-ai/v2/cmd/beluga eval --format junit .beluga/eval.smoke.json
+      beluga eval --format junit .beluga/eval.smoke.json
 - uses: dorny/test-reporter@v1
   if: always()
   with:
@@ -210,7 +215,7 @@ The framework-layer eval runner emits OTel spans per the [OpenTelemetry GenAI `g
 - **Editing `Turns` and expecting a real provider to respect them.** `Turns` is consumed only by the mock LLM provider to derive fixtures. Real-provider runs ignore the field — the agent calls the real model and the model decides which tools to invoke. Test trajectories with the mock; measure quality with the real provider.
 - **Setting `--parallel > 1` with `BELUGA_LLM_PROVIDER=mock`.** Per-row exec isolation keeps each row's mock queue independent (each row is a fresh process), so the CLI's default of `--parallel 1` is about preserving deterministic report ordering, not avoiding queue contamination. Still — keep it at `1` in mock mode unless you have a specific reason; the brief's `specialist-ai-ml-expert.md` §Q4 covers the design tradeoff.
 - **Using `exact_match` as the quality gate on real-provider runs.** LLM sampling produces paraphrases that `exact_match` scores as 0. For real-provider quality gating, the LLM-judge metric family (reserved for S4.5) is the right tool; until then, use real-provider runs for observability only and gate CI on the mock smoke.
-- **Pointing `go run ./cmd/beluga` inside the scaffolded project.** The scaffolded project's `go.mod` declares `github.com/lookatitude/beluga-ai/v2` as a `require`, so the correct invocation is `go run github.com/lookatitude/beluga-ai/v2/cmd/beluga eval …` (module path). `./cmd/beluga` is the framework-internal path and is not resolvable from a scaffolded project.
+- **Running `go run github.com/.../cmd/beluga eval` inside the scaffolded project.** That invocation forces the scaffolded project's `go.sum` to resolve every transitive dependency of the full CLI (fsnotify, cobra, every provider), which `go mod tidy` on your project does not pull in. Instead, install the binary into your PATH — `go install github.com/lookatitude/beluga-ai/v2/cmd/beluga` from within your project picks the beluga version pinned by your `go.mod` — then call `beluga eval …`. `make eval-ci` uses the PATH-resolved binary by design.
 - **Running `beluga eval` against a pre-v2.13 scaffolded project.** Projects scaffolded before the DX-1 S4 changes lack the `BELUGA_ENV=eval` branch in `main.go`. The CLI rejects any child whose first stdout line is not the `{"beluga_eval_protocol":1}` probe within 5 seconds — add the branch manually (copy from the current template) or re-scaffold.
 
 ## Related reading

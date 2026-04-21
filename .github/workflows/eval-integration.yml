@@ -83,13 +83,30 @@ jobs:
           cd /tmp/eval-test/testproject
           go mod tidy
 
+      - name: Install in-tree beluga CLI on PATH
+        # The scaffolded `make eval-ci` target expects `beluga` on PATH
+        # (matches `beluga dev`/`beluga run`/`beluga test`) rather than
+        # `go run <modpath>` — the latter requires the scaffolded
+        # project's go.sum to carry transitive-dep entries for every
+        # package the full CLI imports (fsnotify, cobra, every provider),
+        # which a tidy'd user-project go.sum does not include.
+        # setup-go ensures $HOME/go/bin is on PATH; copy the already-
+        # built /tmp/beluga there so `make eval-ci` picks it up without
+        # re-resolving modules.
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/go/bin"
+          cp /tmp/beluga "$HOME/go/bin/beluga"
+          command -v beluga
+          beluga version || true
+
       - name: Run make eval-ci
         # The scaffolded `make eval-ci` target pins the 5 canonical env
         # vars (BELUGA_LLM_PROVIDER=mock, BELUGA_DETERMINISTIC=1,
         # BELUGA_SEED=42, OTEL_SDK_DISABLED=true) and runs
-        # `go run github.com/lookatitude/beluga-ai/v2/cmd/beluga eval
-        # .beluga/eval.smoke.json`. Exit 0 is a precondition for the
-        # threshold assertions below.
+        # `beluga eval .beluga/eval.smoke.json` against the PATH-
+        # resolved binary installed above. Exit 0 is a precondition
+        # for the threshold assertions below.
         run: |
           set -euo pipefail
           cd /tmp/eval-test/testproject

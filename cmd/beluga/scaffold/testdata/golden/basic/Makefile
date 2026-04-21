@@ -31,12 +31,19 @@ check: build test lint
 # to keep the eval child's stdout clean (the IPC payload is JSON on
 # stdout; a stdout OTel exporter would corrupt it). See framework
 # docs/reference/cli.md for the canonical eval env contract.
+#
+# Requires the `beluga` binary on PATH. Install once (versioned to your
+# go.mod via the current module):
+#   go install github.com/lookatitude/beluga-ai/v2/cmd/beluga
+# `go run github.com/.../cmd/beluga` would force a resolved go.sum entry
+# for every transitive dep of the full CLI (fsnotify, cobra, every
+# provider) — which a scaffolded project's tidy'd go.sum does not carry.
 eval-ci:
 	BELUGA_LLM_PROVIDER=mock \
 	BELUGA_DETERMINISTIC=1 \
 	BELUGA_SEED=42 \
 	OTEL_SDK_DISABLED=true \
-	go run github.com/lookatitude/beluga-ai/v2/cmd/beluga eval .beluga/eval.smoke.json
+	beluga eval .beluga/eval.smoke.json
 
 # security runs gosec and govulncheck. They are not in `check` by default
 # because gosec can be chatty on new projects; wire them into CI when you

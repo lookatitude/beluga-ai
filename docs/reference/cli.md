@@ -221,14 +221,17 @@ See [`cmd/beluga/scaffold/templates/basic/.beluga/eval.yaml.tmpl`](../../cmd/bel
 
 Passing `--format junit` additionally writes `<report>.junit.xml` alongside (a single `<testsuite>` wrapping every sample; per-row `exec_error` or `exact_match=0` become `<failure>` children), consumable by [`dorny/test-reporter`](https://github.com/dorny/test-reporter) for PR-check annotations. Source: [`cmd/beluga/eval/render.go`](../../cmd/beluga/eval/render.go).
 
-**CI integration.** The scaffolded `Makefile` ships an `eval-ci` target that pins the five canonical env vars so CI gets deterministic, mock-provider pass/fail signal without API keys:
+**CI integration.** The scaffolded `Makefile` ships an `eval-ci` target that pins the five canonical env vars so CI gets deterministic, mock-provider pass/fail signal without API keys. The target invokes the `beluga` binary on PATH — matching the convention of `beluga dev` / `beluga run` / `beluga test` — so install it once per environment:
 
 ```
+go install github.com/lookatitude/beluga-ai/v2/cmd/beluga
 BELUGA_LLM_PROVIDER=mock BELUGA_DETERMINISTIC=1 BELUGA_SEED=42 OTEL_SDK_DISABLED=true \
-  go run github.com/lookatitude/beluga-ai/v2/cmd/beluga eval .beluga/eval.smoke.json
+  beluga eval .beluga/eval.smoke.json
 ```
 
-The scaffolded `ci.yml` gates every PR on `make eval-ci` via the Tier-1 `eval-smoke` job and uploads `eval-report.json` as a workflow artefact. A commented Tier-2 template exposes the real-provider opt-in; the template structure is the opt-in gate — Tier-1 stays the only mandatory evaluation on PRs until Tier-2 is explicitly enabled. See [Evaluation guide](../guides/evaluation.md) for the full CI tier model.
+Running from inside your scaffolded project, `go install` picks the beluga version pinned by your `go.mod`, keeping the CLI and framework in lockstep. `go run github.com/.../cmd/beluga eval ...` does **not** work: it requires the project's `go.sum` to carry checksums for every transitive dependency of the full CLI (fsnotify, cobra, every provider) that `go mod tidy` on your project does not pull in.
+
+The scaffolded `ci.yml` gates every PR on `make eval-ci` via the Tier-1 `eval-smoke` job (which installs `beluga` via `go install` before calling `make eval-ci`) and uploads `eval-report.json` as a workflow artefact. A commented Tier-2 template exposes the real-provider opt-in; the template structure is the opt-in gate — Tier-1 stays the only mandatory evaluation on PRs until Tier-2 is explicitly enabled. See [Evaluation guide](../guides/evaluation.md) for the full CI tier model.
 
 **Observability.** When `OTEL_SDK_DISABLED` is not set, the framework-layer eval runner emits spans per the OpenTelemetry GenAI `gen_ai.evaluation.*` semantic convention: an `eval.run` span wraps the full CLI invocation, an `eval.row` child span wraps each dataset row, and per-metric scores attach as `gen_ai.evaluation.result` events on the row span. The aggregated `beluga.eval.metric.score` Histogram is emitted with two label dimensions — `beluga.eval.metric_name` and `beluga.eval.dataset` — **never** `row_id` or `row_index` (cardinality rule). The `beluga.eval.run_id` OTel resource attribute is the join key across traces + metrics + JSON artefact. See [DOC-14 Observability](../architecture/14-observability.md).
 
