@@ -194,7 +194,7 @@ func retryDelay(resp *http.Response, baseBackoff time.Duration, attempt int) tim
 	// Exponential backoff with jitter.
 	exp := math.Pow(2, float64(attempt))
 	base := time.Duration(float64(baseBackoff) * exp)
-	jitter := time.Duration(rand.Int64N(int64(base)/2 + 1))
+	jitter := time.Duration(rand.Int64N(int64(base)/2 + 1)) // #nosec G404 -- HTTP retry jitter is not security-sensitive
 	return base + jitter
 }
 
@@ -254,7 +254,7 @@ func decodeJSONResponse[T any](resp *http.Response) (T, error, bool) {
 // Returns the error and whether the caller should retry.
 func handleErrorResponse(ctx context.Context, c *Client, resp *http.Response, attempt int) (error, bool) {
 	respBody, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	_ = resp.Body.Close() // #nosec G104 -- close error in error-handling path is not actionable
 
 	if isRetryable(resp.StatusCode) && attempt < c.retries {
 		if waitForRetry(ctx, resp, c.backoff, attempt) {

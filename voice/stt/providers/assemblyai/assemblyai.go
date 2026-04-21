@@ -185,10 +185,10 @@ func (e *Engine) pollTranscript(ctx context.Context, txResult transcriptResponse
 		}
 
 		if err := json.NewDecoder(pollResp.Body).Decode(&txResult); err != nil {
-			pollResp.Body.Close()
+			_ = pollResp.Body.Close()
 			return "", fmt.Errorf("assemblyai: decode poll response: %w", err)
 		}
-		pollResp.Body.Close()
+		_ = pollResp.Body.Close()
 	}
 
 	if txResult.Status == "error" {
@@ -318,7 +318,7 @@ func (e *Engine) sendAudioStream(ctx context.Context, conn *websocket.Conn, audi
 		}
 	}
 	// Signal end of stream.
-	conn.Write(ctx, websocket.MessageText, []byte(`{"terminate_session": true}`))
+	_ = conn.Write(ctx, websocket.MessageText, []byte(`{"terminate_session": true}`)) // #nosec G104 -- best-effort terminate; connection cleanup continues regardless
 }
 
 // TranscribeStream converts streaming audio to transcript events
