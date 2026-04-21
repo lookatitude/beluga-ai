@@ -27,11 +27,16 @@ type EventBus interface {
 	Subscribe(ctx context.Context, topic string, handler func(AgentEvent)) (Subscription, error)
 }
 
-// Subscription represents an active event subscription.
-type Subscription interface {
+// Unsubscriber represents an active event subscription that can be cancelled.
+type Unsubscriber interface {
 	// Unsubscribe removes this subscription.
 	Unsubscribe() error
 }
+
+// Subscription is an alias for Unsubscriber kept for backwards compatibility.
+//
+// Deprecated: Use Unsubscriber instead.
+type Subscription = Unsubscriber
 
 // InMemoryBus is an in-process EventBus implementation using channels.
 type InMemoryBus struct {

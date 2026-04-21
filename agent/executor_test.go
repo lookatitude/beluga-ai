@@ -372,6 +372,7 @@ func TestExecutor_Run_Hooks_OnStartOnEnd(t *testing.T) {
 
 	e := NewExecutor(WithExecutorPlanner(p))
 	for range e.Run(context.Background(), "hello", "agent-1", nil, nil, hooks) {
+		// intentional no-op: we only care about hook side-effects
 	}
 
 	if startInput != "hello" {
@@ -464,6 +465,7 @@ func TestExecutor_Run_Hooks_BeforeAfterPlan(t *testing.T) {
 
 	e := NewExecutor(WithExecutorPlanner(p))
 	for range e.Run(context.Background(), "test", "agent-1", nil, nil, hooks) {
+		// intentional no-op: we only care about hook side-effects
 	}
 
 	if len(order) != 2 || order[0] != "before_plan" || order[1] != "after_plan" {
@@ -510,6 +512,7 @@ func TestExecutor_Run_Hooks_OnToolCallAndResult(t *testing.T) {
 
 	e := NewExecutor(WithExecutorPlanner(p))
 	for range e.Run(context.Background(), "test", "agent-1", []tool.Tool{testTool}, nil, hooks) {
+		// intentional no-op: we only care about hook side-effects
 	}
 
 	if toolCallName != "test-tool" {
@@ -699,6 +702,7 @@ func TestExecutor_Run_ReplanAfterFirstIteration(t *testing.T) {
 	e := NewExecutor(WithExecutorPlanner(p))
 
 	for range e.Run(context.Background(), "test", "agent-1", nil, nil, Hooks{}) {
+		// intentional no-op: we only care about side-effects tracked via closures
 	}
 
 	if planCalls != 1 {
@@ -739,6 +743,7 @@ func TestExecutor_Run_buildMessages_MultipleObservations(t *testing.T) {
 	e := NewExecutor(WithExecutorPlanner(p))
 
 	for range e.Run(context.Background(), "test", "agent-1", []tool.Tool{testTool}, nil, Hooks{}) {
+		// intentional no-op: observationCount is tracked via the planner closure
 	}
 
 	if observationCount < 2 {

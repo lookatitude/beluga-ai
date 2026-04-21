@@ -161,7 +161,7 @@ func (cp *CachedPlanner) planAndCache(ctx context.Context, state agent.PlannerSt
 
 		// Enforce max templates per agent.
 		if err := cp.enforceMaxTemplates(ctx, agentID); err == nil {
-			if saveErr := cp.store.Save(ctx, tmpl); saveErr == nil {
+			if cp.store.Save(ctx, tmpl) == nil {
 				if cp.opts.hooks.OnTemplateExtracted != nil {
 					cp.opts.hooks.OnTemplateExtracted(ctx, tmpl)
 				}

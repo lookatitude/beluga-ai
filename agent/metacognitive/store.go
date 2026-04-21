@@ -9,6 +9,9 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
+// errAgentIDRequired is the canonical error message for a missing agent ID.
+const errAgentIDRequired = "agent ID must not be empty"
+
 // SelfModelStore persists and retrieves self-models across sessions.
 type SelfModelStore interface {
 	// Load retrieves the self-model for the given agent ID.
@@ -47,7 +50,7 @@ func (s *InMemoryStore) Load(ctx context.Context, agentID string) (*SelfModel, e
 		return nil, err
 	}
 	if agentID == "" {
-		return nil, core.NewError("metacognitive.store.load", core.ErrInvalidInput, "agent ID must not be empty", nil)
+		return nil, core.NewError("metacognitive.store.load", core.ErrInvalidInput, errAgentIDRequired, nil)
 	}
 
 	s.mu.RLock()
@@ -71,7 +74,7 @@ func (s *InMemoryStore) Save(ctx context.Context, model *SelfModel) error {
 		return core.NewError("metacognitive.store.save", core.ErrInvalidInput, "model must not be nil", nil)
 	}
 	if model.AgentID == "" {
-		return core.NewError("metacognitive.store.save", core.ErrInvalidInput, "agent ID must not be empty", nil)
+		return core.NewError("metacognitive.store.save", core.ErrInvalidInput, errAgentIDRequired, nil)
 	}
 
 	s.mu.Lock()
@@ -89,7 +92,7 @@ func (s *InMemoryStore) SearchHeuristics(ctx context.Context, agentID, query str
 		return nil, err
 	}
 	if agentID == "" {
-		return nil, core.NewError("metacognitive.store.search", core.ErrInvalidInput, "agent ID must not be empty", nil)
+		return nil, core.NewError("metacognitive.store.search", core.ErrInvalidInput, errAgentIDRequired, nil)
 	}
 	if k <= 0 {
 		return nil, nil
@@ -104,8 +107,7 @@ func (s *InMemoryStore) SearchHeuristics(ctx context.Context, agentID, query str
 		return nil, nil
 	}
 
-	queryLower := strings.ToLower(query)
-	terms := strings.Fields(queryLower)
+	terms := strings.Fields(strings.ToLower(query))
 	if len(terms) == 0 {
 		// No query terms; return most useful heuristics.
 		top := s.topByUtility(m.Heuristics, k)
@@ -113,30 +115,20 @@ func (s *InMemoryStore) SearchHeuristics(ctx context.Context, agentID, query str
 		return top, nil
 	}
 
-	type scored struct {
-		idx   int
-		h     Heuristic
-		score float64
-	}
+	return s.scoreAndSelectLocked(m, terms, k), nil
+}
 
-	var results []scored
-	for i, h := range m.Heuristics {
-		contentLower := strings.ToLower(h.Content)
-		taskLower := strings.ToLower(h.TaskType)
-		matches := 0
-		for _, term := range terms {
-			if strings.Contains(contentLower, term) || strings.Contains(taskLower, term) {
-				matches++
-			}
-		}
-		if matches > 0 {
-			utility := h.Utility
-			if utility <= 0 {
-				utility = 0.1
-			}
-			results = append(results, scored{idx: i, h: h, score: float64(matches) * utility})
-		}
-	}
+// heuristicScore holds a scoring result used internally during search.
+type heuristicScore struct {
+	idx   int
+	score float64
+}
+
+// scoreAndSelectLocked scores heuristics against the given terms, sorts by
+// score descending, bumps UsageCount for each selected entry, and returns the
+// top k. Caller must hold s.mu in write mode.
+func (s *InMemoryStore) scoreAndSelectLocked(m *SelfModel, terms []string, k int) []Heuristic {
+	results := computeHeuristicScores(m.Heuristics, terms)
 
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].score > results[j].score
@@ -148,10 +140,39 @@ func (s *InMemoryStore) SearchHeuristics(ctx context.Context, agentID, query str
 		// statistics remain accurate across Search calls.
 		m.Heuristics[results[i].idx].UsageCount++
 		// Return a copy that reflects the updated UsageCount.
-		h := m.Heuristics[results[i].idx]
-		out = append(out, h)
+		out = append(out, m.Heuristics[results[i].idx])
 	}
-	return out, nil
+	return out
+}
+
+// computeHeuristicScores returns scored entries for heuristics that match at
+// least one query term. The score is matches * utility (utility floored at 0.1).
+func computeHeuristicScores(hs []Heuristic, terms []string) []heuristicScore {
+	var results []heuristicScore
+	for i, h := range hs {
+		contentLower := strings.ToLower(h.Content)
+		taskLower := strings.ToLower(h.TaskType)
+		matches := countTermMatches(terms, contentLower, taskLower)
+		if matches > 0 {
+			utility := h.Utility
+			if utility <= 0 {
+				utility = 0.1
+			}
+			results = append(results, heuristicScore{idx: i, score: float64(matches) * utility})
+		}
+	}
+	return results
+}
+
+// countTermMatches returns how many terms appear in either content or taskType.
+func countTermMatches(terms []string, content, taskType string) int {
+	matches := 0
+	for _, term := range terms {
+		if strings.Contains(content, term) || strings.Contains(taskType, term) {
+			matches++
+		}
+	}
+	return matches
 }
 
 // bumpUsageCountLocked increments UsageCount for every heuristic present in
