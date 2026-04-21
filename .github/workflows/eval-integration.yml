@@ -1,0 +1,132 @@
+name: Eval Integration
+
+# Linux-only end-to-end smoke for `beluga eval`. The job scaffolds the
+# `basic` template into /tmp, points its go.mod at the in-tree
+# framework, then runs the scaffolded `make eval-ci` target against the
+# bundled 3-row mock-fixture dataset (.beluga/eval.smoke.json). The job
+# asserts: (1) exit 0, (2) eval-report.json written to the project root,
+# (3) the populated report has run_id + 3 samples + zero row errors,
+# (4) aggregate exact_match >= 0.999 so the pass-rate gate trips on any
+# regression in the mock-provider trajectory replay.
+#
+# Budget: under 90s cold cache (brief §specialist-devops-expert §Q1
+# names <30s as the scaffolded-project budget; the framework-side CI
+# adds a `go build` + scaffold + `go mod tidy` on top and still fits
+# comfortably inside 90s).
+#
+# OS coverage: Linux only. Eval runs in-process with no fsnotify, no
+# HTTP listener, and no subprocess lifecycle beyond the shared binary-
+# exec pattern — `filepath.Join` handles the only OS-specific risk
+# (path separator). See brief §specialist-devops-expert §Q5.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "cmd/beluga/**"
+      - "eval/**"
+      - "llm/providers/mock/**"
+      - ".github/workflows/eval-integration.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "cmd/beluga/**"
+      - "eval/**"
+      - "llm/providers/mock/**"
+      - ".github/workflows/eval-integration.yml"
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: "1.25.7"
+  # Pin the toolchain to the setup-go version; prevents Go from fetching
+  # a newer toolchain mid-build and producing platform-dependent output.
+  GOTOOLCHAIN: local
+
+jobs:
+  eval-smoke:
+    name: beluga eval smoke (mock provider)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Build beluga CLI
+        run: go build -o /tmp/beluga ./cmd/beluga
+
+      - name: Scaffold basic project
+        run: |
+          mkdir -p /tmp/eval-test
+          cd /tmp/eval-test
+          /tmp/beluga init --template basic testproject
+
+      - name: Point generated go.mod at in-tree framework
+        # Mirrors scaffold-integration.yml's replace-directive safety
+        # net: covers the future tagged-release case where the
+        # scaffolder emits `require v2.x.y` and go mod tidy would need
+        # network access to the module proxy.
+        run: |
+          cd /tmp/eval-test/testproject
+          go mod edit -replace github.com/lookatitude/beluga-ai/v2=${{ github.workspace }}
+
+      - name: go mod tidy
+        run: |
+          cd /tmp/eval-test/testproject
+          go mod tidy
+
+      - name: Run make eval-ci
+        # The scaffolded `make eval-ci` target pins the 5 canonical env
+        # vars (BELUGA_LLM_PROVIDER=mock, BELUGA_DETERMINISTIC=1,
+        # BELUGA_SEED=42, OTEL_SDK_DISABLED=true) and runs
+        # `go run github.com/lookatitude/beluga-ai/v2/cmd/beluga eval
+        # .beluga/eval.smoke.json`. Exit 0 is a precondition for the
+        # threshold assertions below.
+        run: |
+          set -euo pipefail
+          cd /tmp/eval-test/testproject
+          make eval-ci | tee /tmp/eval.out
+
+      - name: Assert eval-report.json smoke thresholds
+        # Structural + threshold checks on the populated report. The
+        # bundled fixture is 3 rows, all expected to score exact_match
+        # = 1.0 via the FixturesFromTurns-derived mock trajectory.
+        # Any regression (wiring change, mock drift, scaffolded main.go
+        # drift) trips one of the asserts below and fails the job.
+        run: |
+          set -euo pipefail
+          cd /tmp/eval-test/testproject
+          test -f eval-report.json || { echo "FAIL: eval-report.json missing"; exit 1; }
+          python3 - <<'PY'
+          import json, sys
+          with open("eval-report.json") as f:
+              rep = json.load(f)
+          run_id = rep.get("run_id") or ""
+          samples = rep.get("samples") or []
+          aggregate = rep.get("aggregate") or {}
+          errors = rep.get("errors") or []
+          exact_match = aggregate.get("exact_match")
+          print(f"run_id={run_id!r} samples={len(samples)} "
+                f"aggregate.exact_match={exact_match} errors={len(errors)}")
+          assert run_id, "FAIL: missing run_id"
+          assert len(samples) == 3, f"FAIL: expected 3 samples, got {len(samples)}"
+          assert len(errors) == 0, f"FAIL: {len(errors)} row error(s): {errors}"
+          assert exact_match is not None, "FAIL: aggregate.exact_match absent"
+          assert exact_match >= 0.999, f"FAIL: pass-rate {exact_match} below 0.999"
+          PY
+
+      - name: Upload eval-report.json artefact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report-smoke
+          path: /tmp/eval-test/testproject/eval-report.json
+          if-no-files-found: warn
