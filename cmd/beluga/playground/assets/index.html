@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>beluga dev — playground</title>
+<meta name="referrer" content="same-origin">
+<style>
+body { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; margin: 0; padding: 16px; background: #0b0d0f; color: #d6d8da; }
+h1 { font-size: 14px; margin: 0 0 12px; letter-spacing: 0.04em; text-transform: uppercase; color: #8a8f94; }
+.panel { background: #111418; border: 1px solid #1e2329; border-radius: 6px; margin-bottom: 16px; overflow: hidden; }
+.panel header { padding: 10px 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #8a8f94; background: #0f1216; border-bottom: 1px solid #1e2329; display: flex; justify-content: space-between; }
+.panel header .count { color: #5a6066; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { text-align: left; padding: 6px 12px; border-bottom: 1px solid #181c22; }
+th { color: #5a6066; font-weight: 500; }
+td.name { color: #d6d8da; }
+td.model { color: #77a7e2; }
+td.tokens { color: #a6bf95; text-align: right; font-variant-numeric: tabular-nums; }
+td.dur { color: #d6d8da; text-align: right; font-variant-numeric: tabular-nums; }
+td.status-ok { color: #4ea66b; }
+td.status-err { color: #d66a6a; }
+pre.stderr { margin: 0; padding: 12px; font-size: 12px; max-height: 300px; overflow-y: auto; color: #a2a7ab; white-space: pre-wrap; word-break: break-all; }
+.kpi { display: flex; gap: 24px; padding: 12px; }
+.kpi .cell .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #5a6066; }
+.kpi .cell .value { font-size: 20px; font-variant-numeric: tabular-nums; color: #d6d8da; }
+</style>
+</head>
+<body>
+<h1>beluga dev — playground</h1>
+
+<section class="panel">
+  <header><span>Traces</span><span class="count" id="span-count">0</span></header>
+  <table id="span-table">
+    <thead><tr><th>Name</th><th>Model</th><th>Tokens (in/out)</th><th>Duration</th><th>Status</th></tr></thead>
+    <tbody id="span-body"></tbody>
+  </table>
+</section>
+
+<section class="panel">
+  <header><span>Tokens &amp; cost</span><span class="count" id="restart-count">restart 0</span></header>
+  <div class="kpi">
+    <div class="cell"><div class="label">Input tokens</div><div class="value" id="kpi-in">0</div></div>
+    <div class="cell"><div class="label">Output tokens</div><div class="value" id="kpi-out">0</div></div>
+    <div class="cell"><div class="label">Spans</div><div class="value" id="kpi-spans">0</div></div>
+  </div>
+</section>
+
+<section class="panel">
+  <header><span>stderr tail</span><span class="count">last 100 batches</span></header>
+  <pre class="stderr" id="stderr"></pre>
+</section>
+
+<script>
+(() => {
+  const spanBody = document.getElementById('span-body');
+  const spanCount = document.getElementById('span-count');
+  const kpiIn = document.getElementById('kpi-in');
+  const kpiOut = document.getElementById('kpi-out');
+  const kpiSpans = document.getElementById('kpi-spans');
+  const restartCount = document.getElementById('restart-count');
+  const stderrEl = document.getElementById('stderr');
+
+  const spans = [];
+  let totalIn = 0, totalOut = 0, lastRestart = 0;
+
+  function renderSpan(ev) {
+    spans.unshift(ev);
+    if (spans.length > 50) spans.pop();
+    totalIn += (ev.input_tokens || 0);
+    totalOut += (ev.output_tokens || 0);
+    if (ev.restart_seq > lastRestart) lastRestart = ev.restart_seq;
+
+    const tr = document.createElement('tr');
+    const statusClass = ev.status === 'error' ? 'status-err' : 'status-ok';
+    tr.innerHTML =
+      '<td class="name"></td>' +
+      '<td class="model"></td>' +
+      '<td class="tokens"></td>' +
+      '<td class="dur"></td>' +
+      '<td class="' + statusClass + '"></td>';
+    tr.children[0].textContent = ev.name || '';
+    tr.children[1].textContent = ev.model || '';
+    tr.children[2].textContent = ((ev.input_tokens || 0) + ' / ' + (ev.output_tokens || 0));
+    tr.children[3].textContent = (ev.duration_ms || 0) + ' ms';
+    tr.children[4].textContent = ev.status || 'ok';
+    spanBody.insertBefore(tr, spanBody.firstChild);
+    while (spanBody.children.length > 50) spanBody.removeChild(spanBody.lastChild);
+
+    spanCount.textContent = spans.length;
+    kpiIn.textContent = totalIn.toLocaleString();
+    kpiOut.textContent = totalOut.toLocaleString();
+    kpiSpans.textContent = spans.length;
+    restartCount.textContent = 'restart ' + lastRestart;
+  }
+
+  function renderStderr(ev) {
+    if (!ev || !ev.bytes) return;
+    const decoded = atob(ev.bytes);
+    stderrEl.textContent += decoded;
+    const lines = stderrEl.textContent.split('\n');
+    if (lines.length > 200) {
+      stderrEl.textContent = lines.slice(lines.length - 200).join('\n');
+    }
+    stderrEl.scrollTop = stderrEl.scrollHeight;
+  }
+
+  const source = new EventSource('/events');
+  source.addEventListener('span', e => { try { renderSpan(JSON.parse(e.data)); } catch (_) {} });
+  source.addEventListener('stderr', e => { try { renderStderr(JSON.parse(e.data)); } catch (_) {} });
+})();
+</script>
+</body>
+</html>

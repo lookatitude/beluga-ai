@@ -1,4 +1,4 @@
-.PHONY: build test lint check security
+.PHONY: build test test-ci lint check security
 
 # Release binaries: copy from framework's own .goreleaser.yml when you
 # need tagged release automation (https://goreleaser.com).
@@ -7,6 +7,17 @@ build:
 	go build ./...
 
 test:
+	go test -race ./...
+
+# test-ci is the deterministic dev-loop test target. It pins the mock LLM
+# provider, a fixed RNG seed, and disables OTel exports so a `beluga test`
+# invocation (and CI) produces the same output regardless of environment.
+# See framework docs/reference/cli.md for the canonical env contract.
+test-ci:
+	BELUGA_LLM_PROVIDER=mock \
+	BELUGA_DETERMINISTIC=1 \
+	BELUGA_SEED=42 \
+	OTEL_SDK_DISABLED=true \
 	go test -race ./...
 
 lint:

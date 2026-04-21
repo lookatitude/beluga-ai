@@ -86,10 +86,6 @@ func (m *mockChatModel) Stream(ctx context.Context, msgs []schema.Message, opts 
 	return m.MockChatModel.Stream(ctx, msgs)
 }
 
-func (m *mockChatModel) BindTools(tools []schema.ToolDefinition) llm.ChatModel {
-	return &mockChatModel{m.MockChatModel.BindTools(tools)}
-}
-
 // --- SafetyGuard tests ---
 
 func TestSafetyGuard_CheckURL(t *testing.T) {
