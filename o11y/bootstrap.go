@@ -2,42 +2,84 @@ package o11y
 
 import (
 	"context"
+	"fmt"
 	"os"
+
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 )
 
 // BootstrapFromEnv configures the global OTel tracer provider from the
 // standard OTEL_* environment variables and returns a shutdown function.
 //
-// S1 ships this as a skeleton: no S1 subcommand invokes it. S3+ subcommands
-// (beluga run, beluga dev, beluga eval) will call it from their RunE. It
-// lives in o11y/ (not cmd/) so application developers writing their own
-// main.go can reuse the same one-call bootstrap.
+// Resolution order (first match wins):
 //
-// Behaviour (target contract, partially realised in S3+):
-//   - If OTEL_EXPORTER_OTLP_ENDPOINT is set, the SDK's auto-configuration
-//     dials an OTLP exporter.
-//   - If BELUGA_OTEL_STDOUT=1 is set and no OTLP endpoint, fall back to a
-//     stdout JSON exporter (useful for local debugging).
-//   - Otherwise, no exporter is attached; spans become no-ops silently.
+//  1. Explicit WithSpanExporter(...) in opts overrides everything below.
+//  2. OTEL_SDK_DISABLED truthy → no exporter attached; spans are no-ops.
+//     Truthy values: "1", "true" (case-insensitive), "yes".
+//  3. OTEL_EXPORTER_OTLP_ENDPOINT set → OTLP/HTTP exporter. The SDK reads
+//     OTEL_EXPORTER_OTLP_HEADERS, OTEL_EXPORTER_OTLP_TIMEOUT, etc. directly.
+//  4. BELUGA_OTEL_STDOUT truthy → pretty-printed stdout JSON exporter.
+//     Intended for local `beluga dev` debugging — never for production.
+//  5. Default: no exporter; spans are silent no-ops.
 //
-// The returned shutdown function is always safe to call (nil-safe and
-// idempotent). A non-nil error means SDK initialisation failed — callers
-// should log and continue rather than hard-fail.
-//
-// Additional TracerOption values override the env-derived configuration
-// and compose with the existing WithSpanExporter / WithSampler /
-// WithSyncExport options in tracer.go.
-func BootstrapFromEnv(ctx context.Context, serviceName string, opts ...TracerOption) (shutdown func(), err error) {
-	_ = ctx
-	_ = serviceName
+// The shutdown function is always non-nil and safe to call. A non-nil
+// error means SDK initialisation failed (e.g. malformed endpoint) —
+// callers should log and continue rather than hard-fail. Additional
+// TracerOption values (sampler, sync-export) compose with env-derived
+// exporter selection.
+func BootstrapFromEnv(ctx context.Context, serviceName string, opts ...TracerOption) (func(), error) {
+	if envTruthy(os.Getenv("OTEL_SDK_DISABLED")) {
+		return noopShutdown, nil
+	}
 
-	// S1 skeleton: read env to validate the contract compiles; do not attach
-	// an exporter. S3+ will wire the real OTLP exporter behind these env vars.
-	_ = os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
-	_ = os.Getenv("BELUGA_OTEL_STDOUT")
+	cfg := &tracerConfig{}
+	for _, opt := range opts {
+		opt(cfg)
+	}
 
-	_ = opts // reserved; composes with existing tracerConfig in S3+.
+	if cfg.exporter == nil {
+		switch {
+		case os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT") != "":
+			exp, err := otlptracehttp.New(ctx)
+			if err != nil {
+				return noopShutdown, fmt.Errorf("o11y: OTLP HTTP exporter: %w", err)
+			}
+			cfg.exporter = exp
+		case envTruthy(os.Getenv("BELUGA_OTEL_STDOUT")):
+			exp, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
+			if err != nil {
+				return noopShutdown, fmt.Errorf("o11y: stdout exporter: %w", err)
+			}
+			cfg.exporter = exp
+		}
+	}
 
-	// Nil-safe, idempotent no-op. Callers always `defer shutdown()`.
-	return func() { /* S1 skeleton: no exporter to shut down */ }, nil
+	if cfg.exporter == nil {
+		return noopShutdown, nil
+	}
+
+	finalOpts := []TracerOption{WithSpanExporter(cfg.exporter)}
+	if cfg.syncExport {
+		finalOpts = append(finalOpts, WithSyncExport())
+	}
+	if cfg.sampler != nil {
+		finalOpts = append(finalOpts, WithSampler(cfg.sampler))
+	}
+	return InitTracer(serviceName, finalOpts...)
+}
+
+// noopShutdown is the sentinel returned whenever bootstrap elects not to
+// attach an exporter. Callers always `defer shutdown()`.
+func noopShutdown() {}
+
+// envTruthy reports whether an environment variable's value should be
+// treated as true. Matches the conservative set the OTel spec uses for
+// OTEL_SDK_DISABLED.
+func envTruthy(v string) bool {
+	switch v {
+	case "1", "true", "TRUE", "True", "yes", "YES":
+		return true
+	}
+	return false
 }
