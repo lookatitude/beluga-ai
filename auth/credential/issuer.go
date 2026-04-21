@@ -11,6 +11,8 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
+const opCredentialIssue = "credential.issue" // #nosec G101 -- operation name, not a credential
+
 // CredentialIssuer manages the lifecycle of agent credentials. Implementations
 // must be safe for concurrent use.
 type CredentialIssuer interface {
@@ -81,10 +83,10 @@ func NewInMemoryIssuer(opts ...IssuerOption) *InMemoryIssuer {
 // issuer's default TTL is used.
 func (iss *InMemoryIssuer) Issue(_ context.Context, agentID string, permissions []string, ttl time.Duration) (*AgentCredential, error) {
 	if agentID == "" {
-		return nil, core.NewError("credential.issue", core.ErrInvalidInput, "agent ID must not be empty", nil)
+		return nil, core.NewError(opCredentialIssue, core.ErrInvalidInput, "agent ID must not be empty", nil)
 	}
 	if len(permissions) == 0 {
-		return nil, core.NewError("credential.issue", core.ErrInvalidInput, "permissions must not be empty", nil)
+		return nil, core.NewError(opCredentialIssue, core.ErrInvalidInput, "permissions must not be empty", nil)
 	}
 
 	if ttl <= 0 {
@@ -93,7 +95,7 @@ func (iss *InMemoryIssuer) Issue(_ context.Context, agentID string, permissions 
 
 	id, err := generateID()
 	if err != nil {
-		return nil, core.NewError("credential.issue", core.ErrAuth, "failed to generate credential ID", err)
+		return nil, core.NewError(opCredentialIssue, core.ErrAuth, "failed to generate credential ID", err)
 	}
 
 	now := time.Now()
@@ -110,7 +112,7 @@ func (iss *InMemoryIssuer) Issue(_ context.Context, agentID string, permissions 
 	defer iss.mu.Unlock()
 
 	if len(iss.store) >= iss.opts.maxCredentials {
-		return nil, core.NewError("credential.issue", core.ErrBudgetExhausted, "credential store is full", nil)
+		return nil, core.NewError(opCredentialIssue, core.ErrBudgetExhausted, "credential store is full", nil)
 	}
 
 	iss.store[id] = cred

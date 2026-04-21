@@ -17,20 +17,20 @@ type FeatureExtractor interface {
 	Extract(ctx context.Context, mem memory.Memory, input, output schema.Message) (PolicyFeatures, error)
 }
 
-// SizedMemory is an optional capability interface: memories that can
+// Sizer is an optional capability interface: memories that can
 // report their current total entry count. The DefaultFeatureExtractor
 // uses Size() when available so that HeuristicPolicy can make informed
 // ActionDelete decisions based on MaxStoreSize.
-type SizedMemory interface {
+type Sizer interface {
 	Size(ctx context.Context) (int, error)
 }
 
-// DeletableMemory is an optional capability interface: memories that
+// Deleter is an optional capability interface: memories that
 // support granular entry deletion by ID. PolicyMemory routes ActionDelete
 // through this interface when available. Memories that do not implement
 // it cause ActionDelete to return an error explaining the missing
 // capability.
-type DeletableMemory interface {
+type Deleter interface {
 	Delete(ctx context.Context, id string) error
 }
 
@@ -38,14 +38,14 @@ type DeletableMemory interface {
 type Option func(*policyOpts)
 
 type policyOpts struct {
-	policy    MemoryPolicy
+	policy    Decider
 	hooks     Hooks
 	extractor FeatureExtractor
 	collector *TrajectoryCollector
 }
 
-// WithPolicy sets the MemoryPolicy used for action decisions.
-func WithPolicy(p MemoryPolicy) Option {
+// WithPolicy sets the Decider used for action decisions.
+func WithPolicy(p Decider) Option {
 	return func(o *policyOpts) { o.policy = p }
 }
 
@@ -96,76 +96,89 @@ func New(inner memory.Memory, opts ...Option) *PolicyMemory {
 // messages, runs the policy to decide an action, invokes any hooks, and
 // routes to the appropriate underlying memory operation.
 func (m *PolicyMemory) Save(ctx context.Context, input, output schema.Message) error {
-	// Extract features.
 	features, err := m.opts.extractor.Extract(ctx, m.inner, input, output)
 	if err != nil {
 		return err
 	}
 
-	// Run policy.
 	action, confidence, err := m.opts.policy.Decide(ctx, features)
 	if err != nil {
 		return err
 	}
 
-	// Invoke OnDecision hook.
-	if m.opts.hooks.OnDecision != nil {
-		if err := m.opts.hooks.OnDecision(ctx, features, action, confidence); err != nil {
-			return err
-		}
+	if err := m.invokeDecisionHook(ctx, features, action, confidence); err != nil {
+		return err
 	}
 
-	// Record step if collector is set.
 	if m.opts.collector != nil {
 		m.opts.collector.RecordStep(features, action, confidence)
 	}
 
-	// Route action.
+	return m.routeAction(ctx, action, input, output)
+}
+
+// invokeDecisionHook calls the OnDecision hook if one is configured.
+func (m *PolicyMemory) invokeDecisionHook(ctx context.Context, features PolicyFeatures, action MemoryAction, confidence float64) error {
+	if m.opts.hooks.OnDecision == nil {
+		return nil
+	}
+	return m.opts.hooks.OnDecision(ctx, features, action, confidence)
+}
+
+// routeAction dispatches the policy decision to the appropriate memory operation.
+func (m *PolicyMemory) routeAction(ctx context.Context, action MemoryAction, input, output schema.Message) error {
 	switch action {
 	case ActionAdd:
 		return m.inner.Save(ctx, input, output)
 	case ActionUpdate:
-		// Update semantics: delete the closest existing entry (when the
-		// backing store supports deletion) and save the new pair in its
-		// place. If the backing store is not DeletableMemory, we fall
-		// back to Save — which will create a duplicate — and return an
-		// error so callers can detect the semantic gap.
-		if del, ok := m.inner.(DeletableMemory); ok {
-			if id, lookupErr := m.closestEntryID(ctx, output); lookupErr == nil && id != "" {
-				if derr := del.Delete(ctx, id); derr != nil {
-					return derr
-				}
-			}
-			return m.inner.Save(ctx, input, output)
-		}
-		return core.NewError(
-			"rl.policy_memory.update",
-			core.ErrInvalidInput,
-			"ActionUpdate requires inner memory to implement DeletableMemory",
-			nil,
-		)
+		return m.applyUpdate(ctx, input, output)
 	case ActionDelete:
-		if del, ok := m.inner.(DeletableMemory); ok {
-			id, lookupErr := m.closestEntryID(ctx, output)
-			if lookupErr != nil {
-				return lookupErr
-			}
-			if id == "" {
-				return nil
-			}
-			return del.Delete(ctx, id)
-		}
-		return core.NewError(
-			"rl.policy_memory.delete",
-			core.ErrInvalidInput,
-			"ActionDelete requires inner memory to implement DeletableMemory",
-			nil,
-		)
-	case ActionNoop:
-		return nil
+		return m.applyDelete(ctx, output)
 	default:
 		return nil
 	}
+}
+
+// applyUpdate deletes the closest existing entry and saves the new pair.
+// If the backing store does not implement Deleter, an error is returned.
+func (m *PolicyMemory) applyUpdate(ctx context.Context, input, output schema.Message) error {
+	del, ok := m.inner.(Deleter)
+	if !ok {
+		return core.NewError(
+			"rl.policy_memory.update",
+			core.ErrInvalidInput,
+			"ActionUpdate requires inner memory to implement Deleter",
+			nil,
+		)
+	}
+	if id, lookupErr := m.closestEntryID(ctx, output); lookupErr == nil && id != "" {
+		if derr := del.Delete(ctx, id); derr != nil {
+			return derr
+		}
+	}
+	return m.inner.Save(ctx, input, output)
+}
+
+// applyDelete removes the closest existing entry via the Deleter interface.
+// If the backing store does not implement Deleter, an error is returned.
+func (m *PolicyMemory) applyDelete(ctx context.Context, output schema.Message) error {
+	del, ok := m.inner.(Deleter)
+	if !ok {
+		return core.NewError(
+			"rl.policy_memory.delete",
+			core.ErrInvalidInput,
+			"ActionDelete requires inner memory to implement Deleter",
+			nil,
+		)
+	}
+	id, err := m.closestEntryID(ctx, output)
+	if err != nil {
+		return err
+	}
+	if id == "" {
+		return nil
+	}
+	return del.Delete(ctx, id)
 }
 
 // closestEntryID looks up the single most-similar entry to the output

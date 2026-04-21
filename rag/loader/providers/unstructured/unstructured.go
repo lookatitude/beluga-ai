@@ -83,7 +83,8 @@ func (l *Loader) Load(ctx context.Context, source string) ([]schema.Document, er
 
 // uploadAndParse uploads a file to the Unstructured API and decodes the response.
 func (l *Loader) uploadAndParse(ctx context.Context, source string) ([]element, error) {
-	f, err := os.Open(source)
+	source = filepath.Clean(source)
+	f, err := os.Open(source) // #nosec G304 -- path cleaned above; document loaders accept file paths by design
 	if err != nil {
 		return nil, fmt.Errorf("unstructured: open file: %w", err)
 	}

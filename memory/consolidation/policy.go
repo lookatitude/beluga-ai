@@ -5,9 +5,9 @@ import (
 	"time"
 )
 
-// ConsolidationPolicy evaluates a set of records and returns a decision for
+// Evaluator evaluates a set of records and returns a decision for
 // each one. Implementations must be safe for concurrent use.
-type ConsolidationPolicy interface {
+type Evaluator interface {
 	// Evaluate scores the given records and returns a decision (keep, prune,
 	// or compress) for each record. The returned slice must have the same
 	// length as the input.
@@ -34,7 +34,7 @@ type ThresholdPolicy struct {
 }
 
 // Compile-time interface check.
-var _ ConsolidationPolicy = (*ThresholdPolicy)(nil)
+var _ Evaluator = (*ThresholdPolicy)(nil)
 
 // NewThresholdPolicy creates a ThresholdPolicy with the default threshold of
 // 0.25, no compression, and default weights.
@@ -83,7 +83,7 @@ type FrequencyPolicy struct {
 }
 
 // Compile-time interface check.
-var _ ConsolidationPolicy = (*FrequencyPolicy)(nil)
+var _ Evaluator = (*FrequencyPolicy)(nil)
 
 // NewFrequencyPolicy creates a FrequencyPolicy with a default TTL of 30 days.
 func NewFrequencyPolicy() *FrequencyPolicy {
@@ -118,15 +118,15 @@ func (p *FrequencyPolicy) Evaluate(ctx context.Context, records []Record) ([]Dec
 // CompositePolicy applies multiple policies in sequence. A more severe action
 // from any policy wins (Prune > Compress > Keep).
 type CompositePolicy struct {
-	policies []ConsolidationPolicy
+	policies []Evaluator
 }
 
 // Compile-time interface check.
-var _ ConsolidationPolicy = (*CompositePolicy)(nil)
+var _ Evaluator = (*CompositePolicy)(nil)
 
 // NewCompositePolicy creates a policy that combines the given policies.
 // An empty composite always returns ActionKeep for all records.
-func NewCompositePolicy(policies ...ConsolidationPolicy) *CompositePolicy {
+func NewCompositePolicy(policies ...Evaluator) *CompositePolicy {
 	return &CompositePolicy{policies: policies}
 }
 

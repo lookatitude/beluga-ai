@@ -6,16 +6,16 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
-// RewardFunc computes per-step rewards for an episode. The returned slice
+// Rewarder computes per-step rewards for an episode. The returned slice
 // must have the same length as episode.Steps. Implementations map task-level
 // outcomes to step-level credit assignments.
-type RewardFunc interface {
+type Rewarder interface {
 	// Compute returns a reward value for each step in the episode.
 	// Positive rewards encourage the action; negative rewards discourage it.
 	Compute(ctx context.Context, episode Episode) ([]float64, error)
 }
 
-// SimpleReward implements RewardFunc with a binary success/failure model.
+// SimpleReward implements Rewarder with a binary success/failure model.
 // If the episode outcome is truthy (bool true or numeric > 0), every step
 // receives SuccessReward; otherwise every step receives FailureReward.
 type SimpleReward struct {
@@ -34,7 +34,7 @@ func NewSimpleReward() *SimpleReward {
 	}
 }
 
-// Compute implements RewardFunc. It interprets the episode outcome as a
+// Compute implements Rewarder. It interprets the episode outcome as a
 // boolean or numeric success signal and assigns uniform rewards to all steps.
 func (r *SimpleReward) Compute(_ context.Context, episode Episode) ([]float64, error) {
 	if len(episode.Steps) == 0 {
@@ -84,4 +84,4 @@ func interpretOutcome(outcome any) (bool, error) {
 }
 
 // Compile-time interface check.
-var _ RewardFunc = (*SimpleReward)(nil)
+var _ Rewarder = (*SimpleReward)(nil)

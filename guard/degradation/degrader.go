@@ -13,12 +13,12 @@ import (
 )
 
 // RuntimeDegrader enforces autonomy level restrictions on agent execution.
-// It queries a SecurityMonitor for severity, evaluates a DegradationPolicy,
+// It queries a SecurityMonitor for severity, evaluates a PolicyEvaluator,
 // and applies the resulting autonomy level as constraints on the wrapped
 // agent. RuntimeDegrader is safe for concurrent use.
 type RuntimeDegrader struct {
 	monitor   *SecurityMonitor
-	policy    DegradationPolicy
+	policy    PolicyEvaluator
 	hooks     Hooks
 	allowlist map[string]bool
 	logger    *slog.Logger
@@ -60,7 +60,7 @@ func WithLogger(l *slog.Logger) DegraderOption {
 
 // NewRuntimeDegrader creates a RuntimeDegrader that uses the given monitor
 // and policy to determine and enforce autonomy levels.
-func NewRuntimeDegrader(monitor *SecurityMonitor, policy DegradationPolicy, opts ...DegraderOption) *RuntimeDegrader {
+func NewRuntimeDegrader(monitor *SecurityMonitor, policy PolicyEvaluator, opts ...DegraderOption) *RuntimeDegrader {
 	o := degraderOptions{
 		logger: slog.Default(),
 	}

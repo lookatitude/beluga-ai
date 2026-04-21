@@ -17,7 +17,7 @@ var _ core.Runnable = (*DebateOrchestrator)(nil)
 // debateOptions holds configuration for a DebateOrchestrator.
 type debateOptions struct {
 	maxRounds  int
-	protocol   DebateProtocol
+	protocol   Protocol
 	detector   ConvergenceDetector
 	hooks      Hooks
 	synthesize bool
@@ -46,7 +46,7 @@ func WithMaxRounds(n int) Option {
 }
 
 // WithProtocol sets the debate protocol.
-func WithProtocol(p DebateProtocol) Option {
+func WithProtocol(p Protocol) Option {
 	return func(o *debateOptions) {
 		if p != nil {
 			o.protocol = p

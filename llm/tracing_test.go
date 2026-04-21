@@ -157,7 +157,7 @@ func TestWithTracing_PassthroughMethods(t *testing.T) {
 		t.Errorf("ModelID() = %q, want %q", got, "gpt-test")
 	}
 	// BindTools returns a new ChatModel; the passthrough just forwards.
-	if bound := wrapped.BindTools(nil); bound == nil {
+	if wrapped.BindTools(nil) == nil {
 		t.Error("BindTools(nil) = nil, want non-nil")
 	}
 }

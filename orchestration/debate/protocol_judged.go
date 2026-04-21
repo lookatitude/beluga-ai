@@ -10,12 +10,12 @@ import (
 
 // Compile-time check.
 var (
-	_ DebateProtocol  = (*JudgedProtocol)(nil)
+	_ Protocol        = (*JudgedProtocol)(nil)
 	_ TwoPassProtocol = (*JudgedProtocol)(nil)
 )
 
 func init() {
-	RegisterProtocol("judged", func(cfg map[string]any) (DebateProtocol, error) {
+	RegisterProtocol("judged", func(cfg map[string]any) (Protocol, error) {
 		judgeID, _ := cfg["judge_id"].(string)
 		return NewJudgedProtocol(judgeID), nil
 	})

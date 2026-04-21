@@ -9,6 +9,8 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
+const opPoolRegister = "teambuilder.pool.register"
+
 // AgentPool is a thread-safe registry of candidate agents with their
 // capabilities and performance metrics. It serves as the source of
 // agents for dynamic team formation.
@@ -35,13 +37,13 @@ func NewAgentPool(opts ...PoolOption) *AgentPool {
 // Returns an error if the agent is nil or already registered.
 func (p *AgentPool) Register(a agent.Agent, capabilities ...string) error {
 	if a == nil {
-		return core.NewError("teambuilder.pool.register", core.ErrInvalidInput,
+		return core.NewError(opPoolRegister, core.ErrInvalidInput,
 			"agent must not be nil", nil)
 	}
 
 	id := a.ID()
 	if id == "" {
-		return core.NewError("teambuilder.pool.register", core.ErrInvalidInput,
+		return core.NewError(opPoolRegister, core.ErrInvalidInput,
 			"agent must have a non-empty ID", nil)
 	}
 
@@ -49,7 +51,7 @@ func (p *AgentPool) Register(a agent.Agent, capabilities ...string) error {
 	defer p.mu.Unlock()
 
 	if _, exists := p.entries[id]; exists {
-		return core.NewError("teambuilder.pool.register", core.ErrInvalidInput,
+		return core.NewError(opPoolRegister, core.ErrInvalidInput,
 			fmt.Sprintf("agent %q is already registered", id), nil)
 	}
 

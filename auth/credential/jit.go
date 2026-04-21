@@ -8,6 +8,8 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
+const opCredentialJITIssue = "credential.jit.issue" // #nosec G101 -- operation name, not a credential
+
 // PermissionNarrower is a function that narrows a set of requested permissions
 // to the minimum required set. It returns the narrowed permissions and an error
 // if the requested permissions are not allowed.
@@ -65,27 +67,27 @@ func NewJITProvider(issuer CredentialIssuer, opts ...JITOption) *JITProvider {
 // before issuance.
 func (p *JITProvider) Issue(ctx context.Context, agentID string, requested []string) (*AgentCredential, error) {
 	if agentID == "" {
-		return nil, core.NewError("credential.jit.issue", core.ErrInvalidInput, "agent ID must not be empty", nil)
+		return nil, core.NewError(opCredentialJITIssue, core.ErrInvalidInput, "agent ID must not be empty", nil)
 	}
 	if len(requested) == 0 {
-		return nil, core.NewError("credential.jit.issue", core.ErrInvalidInput, "requested permissions must not be empty", nil)
+		return nil, core.NewError(opCredentialJITIssue, core.ErrInvalidInput, "requested permissions must not be empty", nil)
 	}
 
 	permissions := requested
 	if p.opts.narrower != nil {
 		narrowed, err := p.opts.narrower(agentID, requested)
 		if err != nil {
-			return nil, core.NewError("credential.jit.issue", core.ErrAuth, "permission narrowing failed", err)
+			return nil, core.NewError(opCredentialJITIssue, core.ErrAuth, "permission narrowing failed", err)
 		}
 		if len(narrowed) == 0 {
-			return nil, core.NewError("credential.jit.issue", core.ErrAuth, "all requested permissions were denied", nil)
+			return nil, core.NewError(opCredentialJITIssue, core.ErrAuth, "all requested permissions were denied", nil)
 		}
 		permissions = narrowed
 	}
 
 	cred, err := p.issuer.Issue(ctx, agentID, permissions, p.opts.ttl)
 	if err != nil {
-		return nil, fmt.Errorf("credential.jit.issue: %w", err)
+		return nil, fmt.Errorf("%s: %w", opCredentialJITIssue, err)
 	}
 
 	if cred.Metadata == nil {

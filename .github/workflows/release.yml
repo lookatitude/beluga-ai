@@ -35,8 +35,10 @@ jobs:
           fetch-depth: 0
 
       - name: Validate version format
+        env:
+          TAG: ${{ inputs.tag }}
         run: |
-          V="${{ inputs.tag }}"
+          V="${TAG}"
           if ! echo "$V" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "Error: version must match vMAJOR.MINOR.PATCH (e.g. v2.1.1)"
             exit 1
@@ -44,14 +46,16 @@ jobs:
           echo "Version format OK: $V"
 
       - name: Check tag does not already exist
+        env:
+          TAG: ${{ inputs.tag }}
         run: |
-          if git rev-parse "${{ inputs.tag }}" >/dev/null 2>&1; then
-            echo "Tag ${{ inputs.tag }} already exists — skipping creation (likely pushed by main.yml)"
+          if git rev-parse "${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} already exists — skipping creation (likely pushed by main.yml)"
           else
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git tag -a "${{ inputs.tag }}" -m "Release ${{ inputs.tag }}"
-            git push origin "${{ inputs.tag }}"
+            git tag -a "${TAG}" -m "Release ${TAG}"
+            git push origin "${TAG}"
           fi
 
   changes:
@@ -69,10 +73,12 @@ jobs:
 
       - name: Determine whether release should run
         id: filter
+        env:
+          TAG: ${{ inputs.tag }}
         run: |
           # Manual/dispatched: always run release (tag was explicitly requested)
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "Release requested for ${{ inputs.tag }}."
+            echo "Release requested for ${TAG}."
             echo "release_needed=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi

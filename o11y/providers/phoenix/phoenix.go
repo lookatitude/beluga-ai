@@ -2,9 +2,9 @@ package phoenix
 
 import (
 	"context"
+	cryptorand "crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"math/rand/v2"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/v2/internal/httpclient"
@@ -174,11 +174,11 @@ func (e *Exporter) Flush(ctx context.Context) error {
 	return nil
 }
 
-// randomHex generates a random hex string of n bytes.
+// randomHex generates a cryptographically random hex string of n bytes.
 func randomHex(n int) string {
 	b := make([]byte, n)
-	for i := range b {
-		b[i] = byte(rand.IntN(256))
+	if _, err := cryptorand.Read(b); err != nil {
+		panic(fmt.Sprintf("phoenix: failed to generate random bytes: %v", err))
 	}
 	return hex.EncodeToString(b)
 }

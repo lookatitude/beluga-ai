@@ -7,6 +7,11 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
+const (
+	opReconcileAgent = "operator.reconcileAgent"
+	opReconcileTeam  = "operator.reconcileTeam"
+)
+
 // Reconciler defines the reconciliation interface for Beluga AI custom resources.
 // Implementations compute the desired Kubernetes resource state from a CRD
 // and return it as plain Go structs — they never call the Kubernetes API directly.
@@ -100,7 +105,7 @@ func (r *DefaultReconciler) ReconcileAgent(ctx context.Context, agent *AgentReso
 		return nil, ctx.Err()
 	}
 	if agent == nil {
-		return nil, core.NewError("operator.reconcileAgent", core.ErrInvalidInput, "agent must not be nil", nil)
+		return nil, core.NewError(opReconcileAgent, core.ErrInvalidInput, "agent must not be nil", nil)
 	}
 	if err := validateAgentSpec(agent); err != nil {
 		return nil, err
@@ -142,7 +147,7 @@ func (r *DefaultReconciler) ReconcileTeam(ctx context.Context, team *TeamResourc
 		return nil, ctx.Err()
 	}
 	if team == nil {
-		return nil, core.NewError("operator.reconcileTeam", core.ErrInvalidInput, "team must not be nil", nil)
+		return nil, core.NewError(opReconcileTeam, core.ErrInvalidInput, "team must not be nil", nil)
 	}
 	if err := validateTeamSpec(team); err != nil {
 		return nil, err
@@ -179,7 +184,7 @@ func (r *DefaultReconciler) ReconcileTeam(ctx context.Context, team *TeamResourc
 func validateAgentSpec(agent *AgentResource) error {
 	if agent.Spec.ModelRef == "" && agent.Spec.ModelConfig == nil {
 		return core.NewError(
-			"operator.reconcileAgent",
+			opReconcileAgent,
 			core.ErrInvalidInput,
 			fmt.Sprintf("agent %q: ModelRef must not be empty when ModelConfig is not provided", agent.Meta.Name),
 			nil,
@@ -187,7 +192,7 @@ func validateAgentSpec(agent *AgentResource) error {
 	}
 	if agent.Spec.MaxIterations < 0 {
 		return core.NewError(
-			"operator.reconcileAgent",
+			opReconcileAgent,
 			core.ErrInvalidInput,
 			fmt.Sprintf("agent %q: MaxIterations must not be negative", agent.Meta.Name),
 			nil,
@@ -200,7 +205,7 @@ func validateAgentSpec(agent *AgentResource) error {
 func validateTeamSpec(team *TeamResource) error {
 	if len(team.Spec.Members) == 0 {
 		return core.NewError(
-			"operator.reconcileTeam",
+			opReconcileTeam,
 			core.ErrInvalidInput,
 			fmt.Sprintf("team %q: Members must not be empty", team.Meta.Name),
 			nil,
@@ -210,7 +215,7 @@ func validateTeamSpec(team *TeamResource) error {
 	for i, m := range team.Spec.Members {
 		if m.Name == "" {
 			return core.NewError(
-				"operator.reconcileTeam",
+				opReconcileTeam,
 				core.ErrInvalidInput,
 				fmt.Sprintf("team %q: member[%d].Name must not be empty", team.Meta.Name, i),
 				nil,
@@ -218,7 +223,7 @@ func validateTeamSpec(team *TeamResource) error {
 		}
 		if _, dup := seen[m.Name]; dup {
 			return core.NewError(
-				"operator.reconcileTeam",
+				opReconcileTeam,
 				core.ErrInvalidInput,
 				fmt.Sprintf("team %q: duplicate member name %q", team.Meta.Name, m.Name),
 				nil,

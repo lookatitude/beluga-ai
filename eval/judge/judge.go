@@ -29,6 +29,9 @@ clarity: 1.0
 
 Respond with scores for ALL criteria, one per line.`
 
+// judgeNewOp is the operation name used in errors from NewJudgeMetric.
+const judgeNewOp = "judge.new"
+
 // Compile-time interface check.
 var _ eval.Metric = (*JudgeMetric)(nil)
 
@@ -85,13 +88,13 @@ func NewJudgeMetric(opts ...JudgeOption) (*JudgeMetric, error) {
 		opt(&o)
 	}
 	if o.model == nil {
-		return nil, core.NewError("judge.new", core.ErrInvalidInput, "model is required", nil)
+		return nil, core.NewError(judgeNewOp, core.ErrInvalidInput, "model is required", nil)
 	}
 	if o.rubric == nil {
-		return nil, core.NewError("judge.new", core.ErrInvalidInput, "rubric is required", nil)
+		return nil, core.NewError(judgeNewOp, core.ErrInvalidInput, "rubric is required", nil)
 	}
 	if err := o.rubric.Validate(); err != nil {
-		return nil, core.NewError("judge.new", core.ErrInvalidInput, "invalid rubric", err)
+		return nil, core.NewError(judgeNewOp, core.ErrInvalidInput, "invalid rubric", err)
 	}
 	return &JudgeMetric{opts: o}, nil
 }

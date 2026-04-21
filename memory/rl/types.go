@@ -31,7 +31,7 @@ type Episode struct {
 	// Steps is the ordered sequence of decisions in this episode.
 	Steps []Step
 
-	// Outcome holds task-level success information used by RewardFunc.
+	// Outcome holds task-level success information used by Rewarder.
 	// For example, a boolean success flag or a numeric score.
 	Outcome any
 

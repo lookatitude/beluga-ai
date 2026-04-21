@@ -5,16 +5,16 @@ import (
 	"math"
 )
 
-// MemoryPolicy decides which memory action to take given the current
+// Decider decides which memory action to take given the current
 // observation features. Implementations range from rule-based heuristics
 // to trained neural network models.
-type MemoryPolicy interface {
+type Decider interface {
 	// Decide selects a MemoryAction and returns a confidence score in [0, 1].
 	// The confidence indicates how certain the policy is about the chosen action.
 	Decide(ctx context.Context, features PolicyFeatures) (MemoryAction, float64, error)
 }
 
-// HeuristicPolicy is a rule-based MemoryPolicy that uses similarity thresholds
+// HeuristicPolicy is a rule-based Decider that uses similarity thresholds
 // and memory state to choose actions. It serves as a reasonable baseline and
 // fallback when no trained model is available.
 type HeuristicPolicy struct {
@@ -45,7 +45,7 @@ func NewHeuristicPolicy() *HeuristicPolicy {
 	}
 }
 
-// Decide implements MemoryPolicy using rule-based heuristics.
+// Decide implements Decider using rule-based heuristics.
 //
 // Decision logic:
 //   - If MaxSimilarity < AddThreshold: ActionAdd (novel content)
@@ -89,4 +89,4 @@ func clampConfidence(c float64) float64 {
 }
 
 // Compile-time interface check.
-var _ MemoryPolicy = (*HeuristicPolicy)(nil)
+var _ Decider = (*HeuristicPolicy)(nil)

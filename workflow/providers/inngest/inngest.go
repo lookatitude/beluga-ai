@@ -86,7 +86,7 @@ func (s *Store) Save(ctx context.Context, state workflow.WorkflowState) error {
 		return fmt.Errorf("inngest/save: request: %w", err)
 	}
 	defer resp.Body.Close()
-	io.Copy(io.Discard, resp.Body)
+	_, _ = io.Copy(io.Discard, resp.Body)
 
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("inngest/save: status %d", resp.StatusCode)
@@ -120,7 +120,7 @@ func (s *Store) Load(ctx context.Context, workflowID string) (*workflow.Workflow
 		return nil, nil
 	}
 	if resp.StatusCode >= 400 {
-		io.Copy(io.Discard, resp.Body)
+		_, _ = io.Copy(io.Discard, resp.Body)
 		return nil, fmt.Errorf("inngest/load: status %d", resp.StatusCode)
 	}
 
@@ -165,7 +165,7 @@ func (s *Store) Delete(ctx context.Context, workflowID string) error {
 		return fmt.Errorf("inngest/delete: request: %w", err)
 	}
 	defer resp.Body.Close()
-	io.Copy(io.Discard, resp.Body)
+	_, _ = io.Copy(io.Discard, resp.Body)
 
 	// 404 is acceptable for delete.
 	if resp.StatusCode >= 400 && resp.StatusCode != http.StatusNotFound {

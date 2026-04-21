@@ -12,6 +12,15 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
+const (
+	opAdd    = "associative.store.add"
+	opGet    = "associative.store.get"
+	opUpdate = "associative.store.update"
+	opDelete = "associative.store.delete"
+
+	errNoteNotFound = "note %q not found"
+)
+
 // NoteStore is the persistence interface for notes in associative memory.
 // All methods must be safe for concurrent use.
 type NoteStore interface {
@@ -59,17 +68,17 @@ func NewInMemoryNoteStore() *InMemoryNoteStore {
 // Add stores a new note. Returns an error if a note with the same ID exists.
 func (s *InMemoryNoteStore) Add(_ context.Context, note *schema.Note) error {
 	if note == nil {
-		return core.NewError("associative.store.add", core.ErrInvalidInput, "note is nil", nil)
+		return core.NewError(opAdd, core.ErrInvalidInput, "note is nil", nil)
 	}
 	if note.ID == "" {
-		return core.NewError("associative.store.add", core.ErrInvalidInput, "note ID is empty", nil)
+		return core.NewError(opAdd, core.ErrInvalidInput, "note ID is empty", nil)
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, exists := s.notes[note.ID]; exists {
-		return core.NewError("associative.store.add", core.ErrInvalidInput,
+		return core.NewError(opAdd, core.ErrInvalidInput,
 			fmt.Sprintf("note %q already exists", note.ID), nil)
 	}
 
@@ -84,8 +93,8 @@ func (s *InMemoryNoteStore) Get(_ context.Context, id string) (*schema.Note, err
 
 	note, ok := s.notes[id]
 	if !ok {
-		return nil, core.NewError("associative.store.get", core.ErrNotFound,
-			fmt.Sprintf("note %q not found", id), nil)
+		return nil, core.NewError(opGet, core.ErrNotFound,
+			fmt.Sprintf(errNoteNotFound, id), nil)
 	}
 	return copyNote(note), nil
 }
@@ -93,15 +102,15 @@ func (s *InMemoryNoteStore) Get(_ context.Context, id string) (*schema.Note, err
 // Update replaces a note in the store.
 func (s *InMemoryNoteStore) Update(_ context.Context, note *schema.Note) error {
 	if note == nil {
-		return core.NewError("associative.store.update", core.ErrInvalidInput, "note is nil", nil)
+		return core.NewError(opUpdate, core.ErrInvalidInput, "note is nil", nil)
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, ok := s.notes[note.ID]; !ok {
-		return core.NewError("associative.store.update", core.ErrNotFound,
-			fmt.Sprintf("note %q not found", note.ID), nil)
+		return core.NewError(opUpdate, core.ErrNotFound,
+			fmt.Sprintf(errNoteNotFound, note.ID), nil)
 	}
 
 	s.notes[note.ID] = copyNote(note)
@@ -114,8 +123,8 @@ func (s *InMemoryNoteStore) Delete(_ context.Context, id string) error {
 	defer s.mu.Unlock()
 
 	if _, ok := s.notes[id]; !ok {
-		return core.NewError("associative.store.delete", core.ErrNotFound,
-			fmt.Sprintf("note %q not found", id), nil)
+		return core.NewError(opDelete, core.ErrNotFound,
+			fmt.Sprintf(errNoteNotFound, id), nil)
 	}
 
 	delete(s.notes, id)

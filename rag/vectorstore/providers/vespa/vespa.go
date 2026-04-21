@@ -213,7 +213,7 @@ func (s *Store) Delete(ctx context.Context, ids []string) error {
 		if err != nil {
 			return fmt.Errorf("vespa: delete %q: %w", id, err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		if resp.StatusCode >= 400 {
 			return fmt.Errorf("vespa: delete %q returned %d", id, resp.StatusCode)

@@ -62,7 +62,7 @@ func (e *Embedder) hashToVector(text string) []float32 {
 	vec := make([]float32, e.dims)
 
 	h := fnv.New64a()
-	h.Write([]byte(text))
+	_, _ = h.Write([]byte(text)) // #nosec G104 -- hash.Hash.Write never returns an error
 	seed := h.Sum64()
 
 	// Use the seed to generate deterministic float values.
@@ -71,7 +71,7 @@ func (e *Embedder) hashToVector(text string) []float32 {
 		b := make([]byte, 8)
 		binary.LittleEndian.PutUint64(b, seed^uint64(i)*2654435761)
 		h2 := fnv.New32a()
-		h2.Write(b)
+		_, _ = h2.Write(b) // #nosec G104 -- hash.Hash.Write never returns an error
 		bits := h2.Sum32()
 		// Map to [-1, 1] range.
 		vec[i] = float32(bits)/float32(math.MaxUint32)*2 - 1

@@ -311,44 +311,67 @@ func validateNumericBounds(field reflect.Value, sf reflect.StructField, fieldNam
 		return nil
 	}
 
-	var val float64
-	switch field.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		val = float64(field.Int())
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		val = float64(field.Uint())
-	case reflect.Float32, reflect.Float64:
-		val = field.Float()
-	default:
+	val, ok := numericFieldValue(field)
+	if !ok {
 		return nil // min/max only apply to numeric types
 	}
 
-	if minStr != "" {
-		minVal, err := strconv.ParseFloat(minStr, 64)
-		if err != nil {
-			return core.Errorf(core.ErrInvalidInput, "config: invalid min tag %q on field %s: %w", minStr, fieldName, err)
-		}
-		if val < minVal {
-			return &ValidationError{
-				Field:   fieldName,
-				Message: fmt.Sprintf("value %v is less than minimum %v", val, minVal),
-			}
+	if err := checkMinBound(val, minStr, fieldName); err != nil {
+		return err
+	}
+	return checkMaxBound(val, maxStr, fieldName)
+}
+
+// numericFieldValue extracts the float64 representation of a numeric field.
+// Returns (0, false) for non-numeric kinds.
+func numericFieldValue(field reflect.Value) (float64, bool) {
+	switch field.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return float64(field.Int()), true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return float64(field.Uint()), true
+	case reflect.Float32, reflect.Float64:
+		return field.Float(), true
+	default:
+		return 0, false
+	}
+}
+
+// checkMinBound validates that val is >= the parsed minStr bound.
+// Returns nil when minStr is empty.
+func checkMinBound(val float64, minStr, fieldName string) error {
+	if minStr == "" {
+		return nil
+	}
+	minVal, err := strconv.ParseFloat(minStr, 64)
+	if err != nil {
+		return core.Errorf(core.ErrInvalidInput, "config: invalid min tag %q on field %s: %w", minStr, fieldName, err)
+	}
+	if val < minVal {
+		return &ValidationError{
+			Field:   fieldName,
+			Message: fmt.Sprintf("value %v is less than minimum %v", val, minVal),
 		}
 	}
+	return nil
+}
 
-	if maxStr != "" {
-		maxVal, err := strconv.ParseFloat(maxStr, 64)
-		if err != nil {
-			return core.Errorf(core.ErrInvalidInput, "config: invalid max tag %q on field %s: %w", maxStr, fieldName, err)
-		}
-		if val > maxVal {
-			return &ValidationError{
-				Field:   fieldName,
-				Message: fmt.Sprintf("value %v is greater than maximum %v", val, maxVal),
-			}
+// checkMaxBound validates that val is <= the parsed maxStr bound.
+// Returns nil when maxStr is empty.
+func checkMaxBound(val float64, maxStr, fieldName string) error {
+	if maxStr == "" {
+		return nil
+	}
+	maxVal, err := strconv.ParseFloat(maxStr, 64)
+	if err != nil {
+		return core.Errorf(core.ErrInvalidInput, "config: invalid max tag %q on field %s: %w", maxStr, fieldName, err)
+	}
+	if val > maxVal {
+		return &ValidationError{
+			Field:   fieldName,
+			Message: fmt.Sprintf("value %v is greater than maximum %v", val, maxVal),
 		}
 	}
-
 	return nil
 }
 
@@ -397,33 +420,57 @@ func setFieldFromString(field reflect.Value, s string) bool {
 	switch field.Kind() {
 	case reflect.String:
 		field.SetString(s)
+		return true
 	case reflect.Bool:
-		b, err := strconv.ParseBool(s)
-		if err != nil {
-			return false
-		}
-		field.SetBool(b)
+		return setBoolField(field, s)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		n, err := strconv.ParseInt(s, 10, 64)
-		if err != nil {
-			return false
-		}
-		field.SetInt(n)
+		return setIntField(field, s)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		n, err := strconv.ParseUint(s, 10, 64)
-		if err != nil {
-			return false
-		}
-		field.SetUint(n)
+		return setUintField(field, s)
 	case reflect.Float32, reflect.Float64:
-		f, err := strconv.ParseFloat(s, 64)
-		if err != nil {
-			return false
-		}
-		field.SetFloat(f)
+		return setFloatField(field, s)
 	default:
 		return false
 	}
+}
+
+// setBoolField parses s as a boolean and sets field. Returns false on parse error.
+func setBoolField(field reflect.Value, s string) bool {
+	b, err := strconv.ParseBool(s)
+	if err != nil {
+		return false
+	}
+	field.SetBool(b)
+	return true
+}
+
+// setIntField parses s as a signed integer and sets field. Returns false on parse error.
+func setIntField(field reflect.Value, s string) bool {
+	n, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return false
+	}
+	field.SetInt(n)
+	return true
+}
+
+// setUintField parses s as an unsigned integer and sets field. Returns false on parse error.
+func setUintField(field reflect.Value, s string) bool {
+	n, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		return false
+	}
+	field.SetUint(n)
+	return true
+}
+
+// setFloatField parses s as a float and sets field. Returns false on parse error.
+func setFloatField(field reflect.Value, s string) bool {
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return false
+	}
+	field.SetFloat(f)
 	return true
 }
 
@@ -435,20 +482,30 @@ func toEnvName(name string) string {
 	runes := []rune(name)
 	var b strings.Builder
 	for i, r := range runes {
-		if i > 0 && r >= 'A' && r <= 'Z' {
-			prev := runes[i-1]
-			// Insert underscore before an uppercase letter if:
-			// - previous char is lowercase (camelCase boundary), OR
-			// - previous char is uppercase AND next char is lowercase (end of acronym, e.g. "URL" -> keep, "URLs" -> "UR_Ls" isn't desired, but "URLParser" -> "URL_PARSER")
-			if prev >= 'a' && prev <= 'z' {
-				b.WriteByte('_')
-			} else if prev >= 'A' && prev <= 'Z' && i+1 < len(runes) && runes[i+1] >= 'a' && runes[i+1] <= 'z' {
-				b.WriteByte('_')
-			}
+		if needsUnderscore(runes, i, r) {
+			b.WriteByte('_')
 		}
 		b.WriteRune(r)
 	}
 	return strings.ToUpper(b.String())
+}
+
+// needsUnderscore reports whether an underscore separator should be inserted
+// before the rune at position i. Inserts at camelCase boundaries and at the
+// end of acronym runs (e.g. "URLParser" → "URL_PARSER").
+func needsUnderscore(runes []rune, i int, r rune) bool {
+	if i == 0 || r < 'A' || r > 'Z' {
+		return false
+	}
+	prev := runes[i-1]
+	// camelCase boundary: lowercase → uppercase
+	if prev >= 'a' && prev <= 'z' {
+		return true
+	}
+	// End of acronym: e.g. "URLParser" — previous is uppercase, next is lowercase
+	return prev >= 'A' && prev <= 'Z' &&
+		i+1 < len(runes) &&
+		runes[i+1] >= 'a' && runes[i+1] <= 'z'
 }
 
 // ValidationError represents a validation failure for a specific field.

@@ -8,6 +8,10 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/eval/metrics"
 )
 
+// errMissingMetadataKeyFmt is the format string used when a required metadata
+// key is absent from an EvalSample.
+const errMissingMetadataKeyFmt = "cost: missing metadata key %q"
+
 // Compile-time interface check.
 var _ eval.Metric = (*CostMetric)(nil)
 
@@ -168,7 +172,7 @@ func (c *CostMetric) ComputeRawCost(sample eval.EvalSample) (float64, error) {
 func (c *CostMetric) computeCost(sample eval.EvalSample) (float64, error) {
 	modelRaw, ok := sample.Metadata["model"]
 	if !ok {
-		return 0, core.Errorf(core.ErrInvalidInput, "cost: missing metadata key %q", "model")
+		return 0, core.Errorf(core.ErrInvalidInput, errMissingMetadataKeyFmt, "model")
 	}
 	model, ok := modelRaw.(string)
 	if !ok {
@@ -182,7 +186,7 @@ func (c *CostMetric) computeCost(sample eval.EvalSample) (float64, error) {
 
 	inputRaw, ok := sample.Metadata["input_tokens"]
 	if !ok {
-		return 0, core.Errorf(core.ErrInvalidInput, "cost: missing metadata key %q", "input_tokens")
+		return 0, core.Errorf(core.ErrInvalidInput, errMissingMetadataKeyFmt, "input_tokens")
 	}
 	inputTokens, err := toFloat64(inputRaw)
 	if err != nil {
@@ -191,7 +195,7 @@ func (c *CostMetric) computeCost(sample eval.EvalSample) (float64, error) {
 
 	outputRaw, ok := sample.Metadata["output_tokens"]
 	if !ok {
-		return 0, core.Errorf(core.ErrInvalidInput, "cost: missing metadata key %q", "output_tokens")
+		return 0, core.Errorf(core.ErrInvalidInput, errMissingMetadataKeyFmt, "output_tokens")
 	}
 	outputTokens, err := toFloat64(outputRaw)
 	if err != nil {

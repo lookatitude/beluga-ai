@@ -76,15 +76,9 @@ func LevelCapabilities(level AutonomyLevel) Capabilities {
 			CanWrite:         false,
 			CanRespond:       true,
 		}
-	case Sequestered:
-		return Capabilities{
-			CanExecuteTools:  false,
-			ToolsAllowlisted: false,
-			CanWrite:         false,
-			CanRespond:       false,
-		}
 	default:
-		// Unknown levels are treated as sequestered for safety.
+		// Sequestered and unknown levels are treated as fully isolated for
+		// safety: no tools, no writes, no responses.
 		return Capabilities{
 			CanExecuteTools:  false,
 			ToolsAllowlisted: false,
