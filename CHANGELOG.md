@@ -2,25 +2,25 @@
 
 All notable changes to Beluga AI are documented here.
 
-## [Unreleased]
+## [2.12.0] - 2026-04-21
 
 ### Features
 
-- **cli**: `beluga run` builds a scaffolded project, execs the resulting binary, forwards SIGINT/SIGTERM with a 3s grace-to-SIGKILL escalation, and exits with the child's exit code. `--` passthrough forwards argv to the child. (LOO-151, DX-1 S3)
-- **cli**: `beluga dev` watches the project with fsnotify, debounces rebuilds at 500ms, and serves a loopback-only (`127.0.0.1`) playground UI with spans/stderr/cost panels. `--playground` accepts `off`, `0` (ephemeral), or an explicit port. (LOO-151, DX-1 S3)
-- **cli**: `beluga test` pins `BELUGA_ENV=test`, `BELUGA_LLM_PROVIDER=mock`, and `OTEL_SDK_DISABLED=true` in the `go test` child so scaffolded projects run offline with deterministic fixtures. (LOO-151, DX-1 S3)
-- **llm/providers/mock**: New `mock` LLM provider with a FIFO fixture queue and a deterministic `ActionFinish` fallback on exhaustion, so ReAct planners terminate cleanly under test without deadlocking. Registered via blank import. (LOO-151, DX-1 S3)
-- **o11y**: `BootstrapFromEnv` promoted from skeleton to working implementation. Resolution order: explicit `WithSpanExporter` > `OTEL_SDK_DISABLED` > `OTEL_EXPORTER_OTLP_ENDPOINT` (OTLP/HTTP) > `BELUGA_OTEL_STDOUT` (pretty-printed stdout) > no-op. Idempotent shutdown. (LOO-151, DX-1 S3)
-- **scaffold**: `beluga init --template basic` now emits a `main.go` that calls `o11y.BootstrapFromEnv` at startup and wraps its agent in `agent.ApplyMiddleware(..., agent.WithTracing())`. `.env.example` sets `BELUGA_OTEL_STDOUT=1` for first-run tracing. `Makefile` gains a `test-ci` target wired to the canonical test env. (LOO-151, DX-1 S3)
+- **cli**: Beluga run/dev/test dev loop + mock LLM + real o11y bootstrap (LOO-151, DX-1 S3) (#324)
 
-### Ci
+### Miscellaneous
 
-- **devloop-integration**: New workflow exercising `beluga run` across Linux × macOS × Windows on two fixtures (current shape + v2.11.0 back-compat) plus a Linux-only `beluga dev` smoke that asserts a file edit triggers a child rebuild and restart. Triggered on changes to `cmd/beluga/**`, `llm/providers/mock/**`, `o11y/**`. (LOO-151, DX-1 S3)
+- **release**: Update CHANGELOG.md for v2.11.0 [skip ci] (#320)
+
+## [2.11.1] - 2026-04-21
 
 ### Documentation
 
-- **cli reference**: Document `beluga run`, rewrite `beluga dev` and `beluga test` with full flag tables, signal semantics, env contract, and mock-provider routing. (LOO-151, DX-1 S3)
-- **guides**: New `dev-loop.md` walkthrough — scaffold → run → edit-save-restart → test, end-to-end with no API key. (LOO-151, DX-1 S3)
+- Capture PR #314 + PR #318 pre-push hardening learnings (#321)
+
+### Miscellaneous
+
+- **deps**: Bump the aws-sdk group with 4 updates (#315)
 
 ## [2.11.0] - 2026-04-21
 
