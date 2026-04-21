@@ -39,5 +39,5 @@ func BootstrapFromEnv(ctx context.Context, serviceName string, opts ...TracerOpt
 	_ = opts // reserved; composes with existing tracerConfig in S3+.
 
 	// Nil-safe, idempotent no-op. Callers always `defer shutdown()`.
-	return func() {}, nil
+	return func() { /* S1 skeleton: no exporter to shut down */ }, nil
 }
