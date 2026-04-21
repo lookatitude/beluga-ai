@@ -32,3 +32,62 @@ jobs:
 
       - name: Make check
         run: make check
+
+  # eval-smoke is the Tier-1 evaluation gate — every PR runs the
+  # scaffolded agent against .beluga/eval.smoke.json with the mock LLM
+  # provider so no API keys or paid calls are required. Target budget
+  # is <30s cold-cache. The eval-report.json artefact is uploaded for
+  # downstream tools (dorny/test-reporter, Braintrust push) to consume.
+  eval-smoke:
+    name: eval smoke (mock provider)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          check-latest: false
+          cache: true
+
+      - name: Make eval-ci
+        run: make eval-ci
+
+      - name: Upload eval report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: eval-report.json
+          if-no-files-found: warn
+
+  # Tier-2 real-provider eval template (opt-in).
+  # Uncomment + configure with a provider secret to enable a scheduled or
+  # manual-dispatch run against a real LLM. The template is opt-in by
+  # structure — Tier 1 (eval-smoke above) stays the only evaluation
+  # gate on PRs until this job is explicitly enabled.
+  #
+  # eval-real:
+  #   name: eval full (real provider)
+  #   runs-on: ubuntu-latest
+  #   # Trigger only on manual dispatch or nightly schedule, never on PR
+  #   # — real-provider eval makes paid API calls and must be controlled.
+  #   if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-go@v5
+  #       with:
+  #         go-version-file: go.mod
+  #         cache: true
+  #     - name: Run real-provider eval
+  #       env:
+  #         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  #       run: go run github.com/lookatitude/beluga-ai/v2/cmd/beluga eval --max-rows 20 --max-cost 5.00 .beluga/eval.smoke.json
+  #     - name: Upload eval report
+  #       if: always()
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: eval-report-real
+  #         path: eval-report.json
