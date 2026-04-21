@@ -1,0 +1,176 @@
+name: Devloop Integration
+
+# Validates the `beluga run` / `beluga dev` developer-loop end-to-end on
+# every supported OS (Linux, macOS, Windows) against two fixture project
+# shapes:
+#
+#   run-fixture  — current v2.12+ scaffold shape: o11y.BootstrapFromEnv
+#                  + agent.ApplyMiddleware(..., agent.WithTracing()).
+#   v211-fixture — v2.11.0 scaffold shape (brief Risk 7 back-compat):
+#                  no o11y bootstrap, no tracing middleware. Guarantees
+#                  `beluga run/dev` work on projects that pre-date the
+#                  DX-1 S3 scaffold changes.
+#
+# Both fixtures use the mock LLM provider so the jobs can execute
+# offline with no API key. Each fixture prints the literal marker
+# "FIXTURE_RAN:" on a successful agent.Invoke call; the jobs grep for
+# that marker to assert the scaffolded binary actually ran to
+# completion (exit 0 alone is not enough: a silent no-op would also
+# exit 0). The dev-smoke job additionally touches main.go and asserts
+# the marker appears at least twice, proving the watcher-rebuild-
+# restart path works.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "cmd/beluga/**"
+      - "llm/providers/mock/**"
+      - "o11y/**"
+      - ".github/workflows/devloop-integration.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "cmd/beluga/**"
+      - "llm/providers/mock/**"
+      - "o11y/**"
+      - ".github/workflows/devloop-integration.yml"
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: "1.25.7"
+  # Pin the toolchain to the setup-go version; prevents Go from fetching
+  # a newer toolchain mid-build and producing platform-dependent output.
+  GOTOOLCHAIN: local
+
+jobs:
+  beluga-run:
+    name: beluga run / ${{ matrix.os }} / ${{ matrix.fixture }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        fixture: [run-fixture, v211-fixture]
+    env:
+      # Go appends .exe on Windows when the target filename has no
+      # extension; make it explicit so downstream shell steps can
+      # invoke the binary by the same name on every OS.
+      BELUGA_BIN: bin/beluga${{ matrix.os == 'windows-latest' && '.exe' || '' }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Build beluga CLI
+        run: go build -o "${{ env.BELUGA_BIN }}" ./cmd/beluga
+
+      - name: Sync fixture go.sum with in-tree framework
+        # The fixture's go.mod uses a RELATIVE replace directive pointing
+        # at the repo root (../../../../..). `go mod tidy` reconciles
+        # the fixture's go.sum with whatever indirect deps the current
+        # framework tree drags in — keeping the fixture portable across
+        # framework dependency bumps without having to manually
+        # regenerate its go.sum on every upstream change.
+        run: |
+          cd cmd/beluga/devloop/testdata/${{ matrix.fixture }}
+          go mod tidy
+
+      - name: beluga run on ${{ matrix.fixture }}
+        run: |
+          set -euo pipefail
+          cd cmd/beluga/devloop/testdata/${{ matrix.fixture }}
+          # Forward stdout so CI logs show the FIXTURE_RAN line; capture
+          # it simultaneously so the grep below can assert the marker
+          # is present. `exit 0` alone would be satisfied by the binary
+          # silently short-circuiting, so the marker check is required.
+          "$GITHUB_WORKSPACE/${{ env.BELUGA_BIN }}" run --project-root . | tee run.out
+          grep -q "^FIXTURE_RAN:" run.out || {
+            echo "FAIL: 'FIXTURE_RAN:' marker missing from run.out"
+            exit 1
+          }
+
+  beluga-dev-smoke:
+    name: beluga dev smoke (ubuntu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Build beluga CLI
+        run: go build -o bin/beluga ./cmd/beluga
+
+      - name: Sync fixture go.sum with in-tree framework
+        run: |
+          cd cmd/beluga/devloop/testdata/run-fixture
+          go mod tidy
+
+      - name: beluga dev smoke — start, edit, verify restart, shutdown
+        # Linux-only because the smoke relies on POSIX signal semantics
+        # (SIGTERM to the supervisor triggers its grace-period shutdown).
+        # Windows has its own signal handling path (exec_windows.go) and
+        # is covered by the `beluga run` matrix above; extending this
+        # smoke to Windows requires PowerShell-side process management
+        # and is a future enhancement (tracked as an S3.5 follow-up).
+        run: |
+          set -euo pipefail
+          cd cmd/beluga/devloop/testdata/run-fixture
+
+          # Start the dev supervisor in the background. --playground=off
+          # avoids binding a port on the runner (which may conflict with
+          # other jobs on hosted runners) and keeps stderr clean.
+          "$GITHUB_WORKSPACE/bin/beluga" dev --project-root . --playground=off \
+            > dev.out 2> dev.err &
+          DEVPID=$!
+          echo "dev supervisor pid: $DEVPID"
+
+          # Wait for initial build + first child run. 10s is generous;
+          # cold-cache CI builds of a single main.go complete in ~2s.
+          sleep 10
+
+          # Append a line to main.go. `touch` alone writes only atime
+          # / mtime via utimes, which fsnotify may not report as Write
+          # on all kernels; `>> file` guarantees a Write event.
+          echo "// dev-smoke edit $(date +%s%N)" >> main.go
+
+          # Debounce window (500ms) + rebuild + second child run.
+          sleep 10
+
+          # Request graceful shutdown; supervisor has a 3s grace before
+          # escalating to SIGKILL on the child, so allow up to 8s to
+          # observe exit.
+          kill -TERM "$DEVPID" 2>/dev/null || true
+          for _ in 1 2 3 4 5 6 7 8; do
+            if ! kill -0 "$DEVPID" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          kill -KILL "$DEVPID" 2>/dev/null || true
+          wait "$DEVPID" 2>/dev/null || true
+
+          echo "---stdout---"; cat dev.out || true
+          echo "---stderr---"; cat dev.err || true
+
+          fixture_runs=$(grep -c "^FIXTURE_RAN:" dev.out || true)
+          fixture_runs=${fixture_runs:-0}
+          echo "FIXTURE_RAN count: $fixture_runs"
+          if [ "$fixture_runs" -lt 2 ]; then
+            echo "FAIL: expected >=2 FIXTURE_RAN (initial + post-edit restart), got $fixture_runs"
+            exit 1
+          fi
