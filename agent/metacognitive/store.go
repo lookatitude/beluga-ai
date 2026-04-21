@@ -98,9 +98,8 @@ func (s *InMemoryStore) SearchHeuristics(ctx context.Context, agentID, query str
 		return nil, nil
 	}
 
-	// Use a full Lock so we can safely bump UsageCount on matched heuristics.
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	m, ok := s.models[agentID]
 	if !ok || len(m.Heuristics) == 0 {
@@ -109,13 +108,10 @@ func (s *InMemoryStore) SearchHeuristics(ctx context.Context, agentID, query str
 
 	terms := strings.Fields(strings.ToLower(query))
 	if len(terms) == 0 {
-		// No query terms; return most useful heuristics.
-		top := s.topByUtility(m.Heuristics, k)
-		bumpUsageCountLocked(m, top)
-		return top, nil
+		return s.topByUtility(m.Heuristics, k), nil
 	}
 
-	return s.scoreAndSelectLocked(m, terms, k), nil
+	return scoreAndSelect(m.Heuristics, terms, k), nil
 }
 
 // heuristicScore holds a scoring result used internally during search.
@@ -124,11 +120,10 @@ type heuristicScore struct {
 	score float64
 }
 
-// scoreAndSelectLocked scores heuristics against the given terms, sorts by
-// score descending, bumps UsageCount for each selected entry, and returns the
-// top k. Caller must hold s.mu in write mode.
-func (s *InMemoryStore) scoreAndSelectLocked(m *SelfModel, terms []string, k int) []Heuristic {
-	results := computeHeuristicScores(m.Heuristics, terms)
+// scoreAndSelect scores heuristics against the given terms and returns the
+// top k ordered by score descending.
+func scoreAndSelect(hs []Heuristic, terms []string, k int) []Heuristic {
+	results := computeHeuristicScores(hs, terms)
 
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].score > results[j].score
@@ -136,11 +131,7 @@ func (s *InMemoryStore) scoreAndSelectLocked(m *SelfModel, terms []string, k int
 
 	out := make([]Heuristic, 0, k)
 	for i := 0; i < len(results) && i < k; i++ {
-		// Increment usage count on the stored heuristic so retrieval
-		// statistics remain accurate across Search calls.
-		m.Heuristics[results[i].idx].UsageCount++
-		// Return a copy that reflects the updated UsageCount.
-		out = append(out, m.Heuristics[results[i].idx])
+		out = append(out, hs[results[i].idx])
 	}
 	return out
 }
@@ -173,20 +164,6 @@ func countTermMatches(terms []string, content, taskType string) int {
 		}
 	}
 	return matches
-}
-
-// bumpUsageCountLocked increments UsageCount for every heuristic present in
-// selected. Caller must hold s.mu in write mode.
-func bumpUsageCountLocked(m *SelfModel, selected []Heuristic) {
-	byID := make(map[string]struct{}, len(selected))
-	for _, h := range selected {
-		byID[h.ID] = struct{}{}
-	}
-	for i := range m.Heuristics {
-		if _, ok := byID[m.Heuristics[i].ID]; ok {
-			m.Heuristics[i].UsageCount++
-		}
-	}
 }
 
 // topByUtility returns the top k heuristics sorted by utility descending.
