@@ -11,6 +11,7 @@ import (
 
 	"github.com/lookatitude/beluga-ai/v2/config"
 	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/eval"
 	"github.com/lookatitude/beluga-ai/v2/llm"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
@@ -269,6 +270,39 @@ func (m *ChatModel) buildMessage(fx Fixture, idx int) *schema.AIMessage {
 	}
 	msg.ToolCalls = assignToolCallIDs(fx.ToolCalls, idx)
 	return msg
+}
+
+// FixturesFromTurns derives a mock-provider fixture queue from an
+// eval.Turn trajectory. Only assistant turns are converted; user, tool,
+// and system turns are skipped because the mock replays the LLM side of
+// a conversation, not the user or the tool outputs. For each assistant
+// turn the helper emits one Fixture carrying the turn's Content and a
+// defensive copy of its ToolCalls, preserving trajectory order so
+// replaying the fixture queue reproduces the original assistant outputs.
+//
+// Use with WithFixtures to seed a deterministic mock from a recorded
+// trajectory in scaffolded eval branches, e.g.:
+//
+//	mock.New(cfg, mock.WithFixtures(mock.FixturesFromTurns(sample.Turns)))
+func FixturesFromTurns(turns []eval.Turn) []Fixture {
+	if len(turns) == 0 {
+		return nil
+	}
+	out := make([]Fixture, 0, len(turns))
+	for _, t := range turns {
+		if t.Role != "assistant" {
+			continue
+		}
+		fx := Fixture{Content: t.Content}
+		if len(t.ToolCalls) > 0 {
+			fx.ToolCalls = append([]schema.ToolCall(nil), t.ToolCalls...)
+		}
+		out = append(out, fx)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 // assignToolCallIDs returns a defensive copy of calls with missing IDs
