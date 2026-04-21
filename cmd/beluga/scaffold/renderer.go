@@ -25,6 +25,16 @@ import (
 //go:embed all:templates
 var builtinTemplatesFS embed.FS
 
+// dotBelugaDir is the name of the Beluga project metadata directory
+// (contains project.yaml and related config) in both embedded templates
+// and scaffolded output.
+const dotBelugaDir = ".beluga"
+
+// goModFilename is the canonical Go module file. Referenced when
+// post-processing generated go.mod and when detecting project/workspace
+// roots from go.mod content.
+const goModFilename = "go.mod"
+
 // applyTemplate substitutes every __BELUGA_<FIELD>__ sentinel in src with
 // the corresponding field of vars. The substitution order is fixed (fields
 // are listed alphabetically) so output is deterministic across runs —
@@ -68,32 +78,14 @@ func applyTemplate(src string, vars ScaffoldVars) string {
 // returns *core.Error with ErrInvalidInput before writing any file. The
 // error message names --force so CLI tests can match Success Criterion 7.
 func renderFS(ctx context.Context, fsys fs.FS, targetDir string, vars ScaffoldVars, force bool) error {
-	// Target-directory three-state policy.
-	info, statErr := os.Stat(targetDir)
-	switch {
-	case os.IsNotExist(statErr):
-		// Non-existent — we will create it and proceed.
-	case statErr != nil:
-		return fmt.Errorf("beluga: stat target directory %q: %w", targetDir, statErr)
-	case !info.IsDir():
-		return core.Errorf(core.ErrInvalidInput,
-			"beluga: target %q exists but is not a directory", targetDir)
-	default:
-		entries, err := os.ReadDir(targetDir)
-		if err != nil {
-			return fmt.Errorf("beluga: read target directory %q: %w", targetDir, err)
-		}
-		if len(entries) > 0 && !force {
-			return core.Errorf(core.ErrInvalidInput,
-				"beluga: target directory %q is not empty; use --force to overwrite individual files",
-				targetDir)
-		}
+	if err := validateTargetDir(targetDir, force); err != nil {
+		return err
 	}
 
 	// Ensure root exists before walking. 0o755 is intentional: this is a
 	// user-editable project directory scaffolded for the invoking user,
 	// not a secret-bearing path. The .beluga/ subdirectory drops to 0o750
-	// as a defence in depth; see renderFS's walk below.
+	// as a defence in depth; see renderWalkEntry.
 	if err := os.MkdirAll(targetDir, 0o755); err != nil { // #nosec G301 -- user-editable scaffolded project root
 		return fmt.Errorf("beluga: mkdir target %q: %w", targetDir, err)
 	}
@@ -108,87 +100,128 @@ func renderFS(ctx context.Context, fsys fs.FS, targetDir string, vars ScaffoldVa
 		if relPath == "." {
 			return nil
 		}
-		// Substitute sentinels in the PATH as well as the file content so
-		// templates can rename files per-project if ever needed. None of
-		// the S2 templates rely on this, but it's cheap and future-proof.
-		renderedRel := applyTemplate(relPath, vars)
-		// Strip .tmpl suffix from every segment, not just the final one,
-		// so nested dirs like ".beluga/project.yaml.tmpl" write correctly.
-		renderedRel = stripTmplSuffixes(renderedRel)
-		outPath := filepath.Join(targetDir, renderedRel)
-
-		if d.IsDir() {
-			perm := os.FileMode(0o755)
-			if strings.HasPrefix(renderedRel, ".beluga") {
-				perm = 0o750
-			}
-			if err := os.MkdirAll(outPath, perm); err != nil {
-				return fmt.Errorf("beluga: mkdir %q: %w", outPath, err)
-			}
-			return nil
-		}
-
-		raw, err := fs.ReadFile(fsys, relPath)
-		if err != nil {
-			return fmt.Errorf("beluga: read template %q: %w", relPath, err)
-		}
-		rendered := applyTemplate(string(raw), vars)
-
-		// go.mod receives (devel)-version post-processing. We operate on
-		// the rendered string before the .go format gate because go.mod
-		// is not a .go file and must not go through go/format.Source.
-		base := filepath.Base(outPath)
-		if base == "go.mod" {
-			var postErr error
-			rendered, postErr = postProcessGoMod(rendered, vars)
-			if postErr != nil {
-				return postErr
-			}
-		}
-
-		// go/format.Source gate on any file that will live on disk as a
-		// .go source file. This catches substitution bugs before the
-		// invalid Go reaches the user's disk.
-		if strings.HasSuffix(outPath, ".go") {
-			formatted, fmtErr := format.Source([]byte(rendered))
-			if fmtErr != nil {
-				return fmt.Errorf(
-					"beluga: generated source has a syntax error — this is a bug in the scaffolder, please report it at github.com/lookatitude/beluga-ai/issues (details: %w)",
-					fmtErr)
-			}
-			rendered = string(formatted)
-		}
-
-		// Ensure parent directory exists (needed for nested template
-		// entries when fs.WalkDir yields files before their parent dir).
-		parentPerm := os.FileMode(0o755)
-		if strings.Contains(renderedRel, string(filepath.Separator)+".beluga") ||
-			strings.HasPrefix(renderedRel, ".beluga") {
-			parentPerm = 0o750
-		}
-		if err := os.MkdirAll(filepath.Dir(outPath), parentPerm); err != nil {
-			return fmt.Errorf("beluga: mkdir %q: %w", filepath.Dir(outPath), err)
-		}
-
-		// Write file: O_CREATE|O_WRONLY|O_TRUNC so --force overwrites.
-		// Without --force we already rejected a non-empty target above.
-		// 0o644 is intentional: scaffolded source files must be readable
-		// and editable by the invoking user; they are not secret-bearing.
-		// outPath is built from a validated project name and template
-		// contents embedded via //go:embed, so G304 does not apply.
-		f, err := os.OpenFile(outPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644) // #nosec G302,G304 -- scaffolded user-readable file from embedded template tree
-		if err != nil {
-			return fmt.Errorf("beluga: open %q: %w", outPath, err)
-		}
-		if _, writeErr := f.Write([]byte(rendered)); writeErr != nil {
-			_ = f.Close()
-			return fmt.Errorf("beluga: write %q: %w", outPath, writeErr)
-		}
-		if closeErr := f.Close(); closeErr != nil {
-			return fmt.Errorf("beluga: close %q: %w", outPath, closeErr)
-		}
-		return nil
+		return renderWalkEntry(fsys, relPath, d, targetDir, vars)
 	})
+}
+
+// validateTargetDir enforces the three-state target-directory policy:
+// non-existent → proceed; exists as dir + empty → proceed; exists as dir +
+// non-empty → require --force; exists as non-directory → reject.
+func validateTargetDir(targetDir string, force bool) error {
+	info, statErr := os.Stat(targetDir)
+	switch {
+	case os.IsNotExist(statErr):
+		return nil
+	case statErr != nil:
+		return fmt.Errorf("beluga: stat target directory %q: %w", targetDir, statErr)
+	case !info.IsDir():
+		return core.Errorf(core.ErrInvalidInput,
+			"beluga: target %q exists but is not a directory", targetDir)
+	}
+	entries, err := os.ReadDir(targetDir)
+	if err != nil {
+		return fmt.Errorf("beluga: read target directory %q: %w", targetDir, err)
+	}
+	if len(entries) > 0 && !force {
+		return core.Errorf(core.ErrInvalidInput,
+			"beluga: target directory %q is not empty; use --force to overwrite individual files",
+			targetDir)
+	}
+	return nil
+}
+
+// renderWalkEntry renders a single embedded-FS entry into targetDir,
+// applying sentinel substitution, .tmpl stripping, go.mod postprocessing,
+// and the .go format gate. Returns nil for "." (caller skips root).
+func renderWalkEntry(fsys fs.FS, relPath string, d fs.DirEntry, targetDir string, vars ScaffoldVars) error {
+	// Substitute sentinels in the PATH as well as the file content so
+	// templates can rename files per-project if ever needed. None of
+	// the S2 templates rely on this, but it's cheap and future-proof.
+	renderedRel := applyTemplate(relPath, vars)
+	// Strip .tmpl suffix from every segment so nested dirs like
+	// ".beluga/project.yaml.tmpl" write correctly.
+	renderedRel = stripTmplSuffixes(renderedRel)
+	outPath := filepath.Join(targetDir, renderedRel)
+
+	if d.IsDir() {
+		return mkdirWithBelugaPerm(outPath, renderedRel)
+	}
+	return writeTemplatedFile(fsys, relPath, outPath, renderedRel, vars)
+}
+
+// mkdirWithBelugaPerm creates a scaffolded directory, using 0o750 for any
+// path under the .beluga/ metadata tree and 0o755 elsewhere.
+func mkdirWithBelugaPerm(outPath, renderedRel string) error {
+	perm := os.FileMode(0o755)
+	if strings.HasPrefix(renderedRel, dotBelugaDir) {
+		perm = 0o750
+	}
+	if err := os.MkdirAll(outPath, perm); err != nil {
+		return fmt.Errorf("beluga: mkdir %q: %w", outPath, err)
+	}
+	return nil
+}
+
+// writeTemplatedFile reads one template, renders it, applies format/gate
+// postprocessing, ensures the parent directory exists, and writes the
+// final bytes to outPath. Split out of renderFS to keep its walker
+// closure readable and its cognitive complexity bounded.
+func writeTemplatedFile(fsys fs.FS, relPath, outPath, renderedRel string, vars ScaffoldVars) error {
+	raw, err := fs.ReadFile(fsys, relPath)
+	if err != nil {
+		return fmt.Errorf("beluga: read template %q: %w", relPath, err)
+	}
+	rendered := applyTemplate(string(raw), vars)
+
+	// go.mod receives (devel)-version post-processing before any format
+	// gate because go.mod is not Go source.
+	if filepath.Base(outPath) == goModFilename {
+		var postErr error
+		rendered, postErr = postProcessGoMod(rendered, vars)
+		if postErr != nil {
+			return postErr
+		}
+	}
+
+	// go/format.Source gate on any .go file to catch substitution bugs
+	// before invalid Go reaches disk.
+	if strings.HasSuffix(outPath, ".go") {
+		formatted, fmtErr := format.Source([]byte(rendered))
+		if fmtErr != nil {
+			return fmt.Errorf(
+				"beluga: generated source has a syntax error — this is a bug in the scaffolder, please report it at github.com/lookatitude/beluga-ai/issues (details: %w)",
+				fmtErr)
+		}
+		rendered = string(formatted)
+	}
+
+	// Ensure parent directory exists (needed for nested template entries
+	// when fs.WalkDir yields files before their parent dir).
+	parentPerm := os.FileMode(0o755)
+	if strings.Contains(renderedRel, string(filepath.Separator)+dotBelugaDir) ||
+		strings.HasPrefix(renderedRel, dotBelugaDir) {
+		parentPerm = 0o750
+	}
+	if err := os.MkdirAll(filepath.Dir(outPath), parentPerm); err != nil {
+		return fmt.Errorf("beluga: mkdir %q: %w", filepath.Dir(outPath), err)
+	}
+
+	// 0o644 is intentional: scaffolded source files must be readable
+	// and editable by the invoking user; they are not secret-bearing.
+	// outPath is built from a validated project name and template
+	// contents embedded via //go:embed, so G304 does not apply.
+	f, err := os.OpenFile(outPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644) // #nosec G302,G304 -- scaffolded user-readable file from embedded template tree
+	if err != nil {
+		return fmt.Errorf("beluga: open %q: %w", outPath, err)
+	}
+	if _, writeErr := f.Write([]byte(rendered)); writeErr != nil {
+		_ = f.Close()
+		return fmt.Errorf("beluga: write %q: %w", outPath, writeErr)
+	}
+	if closeErr := f.Close(); closeErr != nil {
+		return fmt.Errorf("beluga: close %q: %w", outPath, closeErr)
+	}
+	return nil
 }
 
 // stripTmplSuffixes removes the ".tmpl" suffix from every path segment so
@@ -259,7 +292,7 @@ func detectProjectRoot(startDir string) (string, error) {
 		return "", fmt.Errorf("beluga: resolve startDir: %w", err)
 	}
 	for {
-		if hasBelugaProject(dir) && goModRequiresBeluga(filepath.Join(dir, "go.mod")) {
+		if hasBelugaProject(dir) && goModRequiresBeluga(filepath.Join(dir, goModFilename)) {
 			return dir, nil
 		}
 		parent := filepath.Dir(dir)
@@ -282,7 +315,7 @@ func detectWorkspaceRoot(startDir string) (string, error) {
 		return "", fmt.Errorf("beluga: resolve startDir: %w", err)
 	}
 	for {
-		if goModDeclaresFramework(filepath.Join(dir, "go.mod")) {
+		if goModDeclaresFramework(filepath.Join(dir, goModFilename)) {
 			return dir, nil
 		}
 		parent := filepath.Dir(dir)
@@ -297,7 +330,7 @@ func detectWorkspaceRoot(startDir string) (string, error) {
 
 // hasBelugaProject reports whether .beluga/project.yaml exists in dir.
 func hasBelugaProject(dir string) bool {
-	info, err := os.Stat(filepath.Join(dir, ".beluga", "project.yaml"))
+	info, err := os.Stat(filepath.Join(dir, dotBelugaDir, "project.yaml"))
 	return err == nil && !info.IsDir()
 }
 

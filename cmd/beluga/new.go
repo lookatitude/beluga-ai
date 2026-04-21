@@ -68,20 +68,8 @@ func validateComponentName(name string) error {
 func toSnakeCase(name string) string {
 	var b strings.Builder
 	for i, r := range name {
-		if i > 0 && r >= 'A' && r <= 'Z' {
-			// Lowercase prev was lower → new word. Also, uppercase run
-			// followed by a lowercase char starts a new word at the
-			// boundary uppercase.
-			prev := rune(name[i-1])
-			next := rune(0)
-			if i+1 < len(name) {
-				next = rune(name[i+1])
-			}
-			prevLower := prev >= 'a' && prev <= 'z'
-			nextLower := next >= 'a' && next <= 'z'
-			if prevLower || (nextLower && prev >= 'A' && prev <= 'Z') {
-				b.WriteByte('_')
-			}
+		if needsSnakeBoundary(name, i, r) {
+			b.WriteByte('_')
 		}
 		if r >= 'A' && r <= 'Z' {
 			b.WriteRune(r + ('a' - 'A'))
@@ -90,6 +78,28 @@ func toSnakeCase(name string) string {
 		}
 	}
 	return b.String()
+}
+
+// needsSnakeBoundary reports whether an underscore should be inserted
+// before name[i] during PascalCase→snake_case conversion. Extracted from
+// toSnakeCase to keep that function's cognitive complexity bounded.
+func needsSnakeBoundary(name string, i int, r rune) bool {
+	if i == 0 || r < 'A' || r > 'Z' {
+		return false
+	}
+	prev := rune(name[i-1])
+	prevLower := prev >= 'a' && prev <= 'z'
+	if prevLower {
+		return true
+	}
+	// Uppercase run followed by a lowercase char starts a new word at
+	// the boundary uppercase (e.g. "HTTPServer" → "http_server").
+	var next rune
+	if i+1 < len(name) {
+		next = rune(name[i+1])
+	}
+	nextLower := next >= 'a' && next <= 'z'
+	return nextLower && prev >= 'A' && prev <= 'Z'
 }
 
 // detectProjectPackage reads <projectRoot>/go.mod and returns the Go package
@@ -104,33 +114,40 @@ func detectProjectPackage(projectRoot string) string {
 	}
 	for _, line := range strings.Split(string(data), "\n") {
 		trimmed := strings.TrimSpace(line)
-		if strings.HasPrefix(trimmed, "module ") {
-			modulePath := strings.TrimSpace(strings.TrimPrefix(trimmed, "module "))
-			// Strip optional comment suffix.
-			if idx := strings.Index(modulePath, "//"); idx >= 0 {
-				modulePath = strings.TrimSpace(modulePath[:idx])
-			}
-			last := modulePath
-			if idx := strings.LastIndex(modulePath, "/"); idx >= 0 {
-				last = modulePath[idx+1:]
-			}
-			// Strip a trailing /vN version suffix ("myproj/v2" → "myproj").
-			if matched, _ := regexp.MatchString(`^v\d+$`, last); matched {
-				trimmedMod := strings.TrimSuffix(modulePath, "/"+last)
-				if idx := strings.LastIndex(trimmedMod, "/"); idx >= 0 {
-					last = trimmedMod[idx+1:]
-				} else {
-					last = trimmedMod
-				}
-			}
-			pkg := sanitizePackageName(last)
-			if pkg == "" {
-				return "main"
-			}
+		if !strings.HasPrefix(trimmed, "module ") {
+			continue
+		}
+		if pkg := packageNameFromModuleLine(trimmed); pkg != "" {
 			return pkg
 		}
+		return "main"
 	}
 	return "main"
+}
+
+// packageNameFromModuleLine extracts the package identifier for scaffolded
+// stubs from a "module <path>" line: strips any // comment, takes the last
+// path segment, drops a trailing /vN major-version suffix, and sanitises
+// the result into a valid Go identifier. Returns "" when nothing usable
+// survives sanitisation.
+func packageNameFromModuleLine(moduleLine string) string {
+	modulePath := strings.TrimSpace(strings.TrimPrefix(moduleLine, "module "))
+	if idx := strings.Index(modulePath, "//"); idx >= 0 {
+		modulePath = strings.TrimSpace(modulePath[:idx])
+	}
+	last := modulePath
+	if idx := strings.LastIndex(modulePath, "/"); idx >= 0 {
+		last = modulePath[idx+1:]
+	}
+	// Strip a trailing /vN version suffix ("myproj/v2" → "myproj").
+	if matched, _ := regexp.MatchString(`^v\d+$`, last); matched {
+		trimmedMod := strings.TrimSuffix(modulePath, "/"+last)
+		last = trimmedMod
+		if idx := strings.LastIndex(trimmedMod, "/"); idx >= 0 {
+			last = trimmedMod[idx+1:]
+		}
+	}
+	return sanitizePackageName(last)
 }
 
 // sanitizePackageName reduces an arbitrary module-path final segment to a

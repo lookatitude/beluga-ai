@@ -56,24 +56,33 @@ func TestValidateProjectName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateProjectName(tt.input)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("ValidateProjectName(%q) err = %v, wantErr %v", tt.input, err, tt.wantErr)
-			}
-			if !tt.wantErr {
-				return
-			}
-			var coreErr *core.Error
-			if !errors.As(err, &coreErr) {
-				t.Fatalf("ValidateProjectName(%q): expected *core.Error, got %T: %v", tt.input, err, err)
-			}
-			if coreErr.Code != core.ErrInvalidInput {
-				t.Errorf("ValidateProjectName(%q): code = %v, want %v", tt.input, coreErr.Code, core.ErrInvalidInput)
-			}
-			if tt.wantMsgContains != "" && !strings.Contains(err.Error(), tt.wantMsgContains) {
-				t.Errorf("ValidateProjectName(%q): error %q must contain %q", tt.input, err.Error(), tt.wantMsgContains)
-			}
+			assertValidateProjectName(t, tt.input, tt.wantErr, tt.wantMsgContains)
 		})
+	}
+}
+
+// assertValidateProjectName runs ValidateProjectName and asserts that the
+// outcome, core.Error code, and message substring match expectations.
+// Extracted from TestValidateProjectName so the per-case body stays below
+// the cognitive-complexity ceiling.
+func assertValidateProjectName(t *testing.T, input string, wantErr bool, wantMsgContains string) {
+	t.Helper()
+	err := ValidateProjectName(input)
+	if (err != nil) != wantErr {
+		t.Fatalf("ValidateProjectName(%q) err = %v, wantErr %v", input, err, wantErr)
+	}
+	if !wantErr {
+		return
+	}
+	var coreErr *core.Error
+	if !errors.As(err, &coreErr) {
+		t.Fatalf("ValidateProjectName(%q): expected *core.Error, got %T: %v", input, err, err)
+	}
+	if coreErr.Code != core.ErrInvalidInput {
+		t.Errorf("ValidateProjectName(%q): code = %v, want %v", input, coreErr.Code, core.ErrInvalidInput)
+	}
+	if wantMsgContains != "" && !strings.Contains(err.Error(), wantMsgContains) {
+		t.Errorf("ValidateProjectName(%q): error %q must contain %q", input, err.Error(), wantMsgContains)
 	}
 }
 
