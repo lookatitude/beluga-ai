@@ -7,7 +7,7 @@
 // debate. Agents contribute responses each round, and a [ConvergenceDetector]
 // determines when the debate has reached a consensus or should stop.
 //
-// Different debate styles are supported via the [DebateProtocol] interface:
+// Different debate styles are supported via the [Protocol] interface:
 //   - [RoundRobinProtocol]: All agents speak each round with full context.
 //   - [AdversarialProtocol]: Agents are assigned pro/con roles.
 //   - [JudgedProtocol]: One agent acts as judge evaluating others.
