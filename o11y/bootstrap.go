@@ -73,7 +73,12 @@ func BootstrapFromEnv(ctx context.Context, serviceName string, opts ...TracerOpt
 
 // noopShutdown is the sentinel returned whenever bootstrap elects not to
 // attach an exporter. Callers always `defer shutdown()`.
-func noopShutdown() {}
+func noopShutdown() {
+	// Intentionally empty: with no exporter attached there is nothing to
+	// flush, drain, or release on shutdown — this sentinel exists only
+	// so callers can unconditionally `defer shutdown()` without a nil
+	// check.
+}
 
 // envTruthy reports whether an environment variable's value should be
 // treated as true. Matches the conservative set the OTel spec uses for

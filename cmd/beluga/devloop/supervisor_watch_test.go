@@ -21,51 +21,79 @@ import (
 func TestAddRecursive_SkipsHiddenAndVendor(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	dirs := []string{
+	mkdirs(t, root, []string{
 		"pkg/a",
 		"pkg/b/nested",
 		".git/objects",
 		".idea/inspectionProfiles",
 		"vendor/dep1",
 		"node_modules/foo",
-	}
-	for _, d := range dirs {
-		if err := os.MkdirAll(filepath.Join(root, d), 0o750); err != nil {
-			t.Fatalf("mkdir %s: %v", d, err)
-		}
-	}
-	w, err := fsnotify.NewWatcher()
-	if err != nil {
-		t.Fatalf("NewWatcher: %v", err)
-	}
-	defer func() { _ = w.Close() }()
+	})
 
+	w := newWatcher(t)
 	if err := addRecursive(w, root); err != nil {
 		t.Fatalf("addRecursive: %v", err)
 	}
+	watched := watchedRelPaths(w, root)
 
-	watched := map[string]bool{}
-	for _, p := range w.WatchList() {
-		rel, err := filepath.Rel(root, p)
-		if err != nil {
-			continue
-		}
-		watched[rel] = true
-	}
 	// Expected: root, pkg, pkg/a, pkg/b, pkg/b/nested.
-	for _, want := range []string{".", "pkg", filepath.Join("pkg", "a"), filepath.Join("pkg", "b"), filepath.Join("pkg", "b", "nested")} {
+	wantAll := []string{".", "pkg", filepath.Join("pkg", "a"), filepath.Join("pkg", "b"), filepath.Join("pkg", "b", "nested")}
+	for _, want := range wantAll {
 		if !watched[want] {
 			t.Errorf("addRecursive: missing watched dir %q (got %v)", want, keysOf(watched))
 		}
 	}
 	// Disallowed: anything under .git, .idea, vendor, node_modules.
 	for got := range watched {
-		for _, bad := range []string{".git", ".idea", "vendor", "node_modules"} {
-			if got == bad || strings.HasPrefix(got, bad+string(os.PathSeparator)) {
-				t.Errorf("addRecursive: unexpectedly watched %q (under %q)", got, bad)
-			}
+		if bad := underForbidden(got, []string{".git", ".idea", "vendor", "node_modules"}); bad != "" {
+			t.Errorf("addRecursive: unexpectedly watched %q (under %q)", got, bad)
 		}
 	}
+}
+
+// mkdirs creates each relative path under root or fatals the test.
+func mkdirs(t *testing.T, root string, dirs []string) {
+	t.Helper()
+	for _, d := range dirs {
+		if err := os.MkdirAll(filepath.Join(root, d), 0o750); err != nil {
+			t.Fatalf("mkdir %s: %v", d, err)
+		}
+	}
+}
+
+// newWatcher returns a fresh fsnotify.Watcher registered for cleanup.
+func newWatcher(t *testing.T) *fsnotify.Watcher {
+	t.Helper()
+	w, err := fsnotify.NewWatcher()
+	if err != nil {
+		t.Fatalf("NewWatcher: %v", err)
+	}
+	t.Cleanup(func() { _ = w.Close() })
+	return w
+}
+
+// watchedRelPaths materialises w.WatchList() as a set of paths relative
+// to root so test assertions can be path-independent.
+func watchedRelPaths(w *fsnotify.Watcher, root string) map[string]bool {
+	out := map[string]bool{}
+	for _, p := range w.WatchList() {
+		if rel, err := filepath.Rel(root, p); err == nil {
+			out[rel] = true
+		}
+	}
+	return out
+}
+
+// underForbidden returns the first forbidden prefix that path lies under,
+// or "" if path is not under any of them. Keeping the "under?" check in
+// one helper flattens the nested for/for/if structure in the caller.
+func underForbidden(path string, forbidden []string) string {
+	for _, bad := range forbidden {
+		if path == bad || strings.HasPrefix(path, bad+string(os.PathSeparator)) {
+			return bad
+		}
+	}
+	return ""
 }
 
 func keysOf[V any](m map[string]V) []string {
