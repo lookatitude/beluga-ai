@@ -24,7 +24,7 @@ type mockMemory struct {
 	deletable   bool
 }
 
-// deletableMemory wraps mockMemory and implements DeletableMemory. It is
+// deletableMemory wraps mockMemory and implements Deleter. It is
 // used to exercise PolicyMemory action routing that depends on optional
 // delete capability.
 type deletableMemory struct{ *mockMemory }
@@ -55,7 +55,7 @@ func (m *mockMemory) Clear(_ context.Context) error {
 	return nil
 }
 
-// mockPolicy is a test double for MemoryPolicy.
+// mockPolicy is a test double for Decider.
 type mockPolicy struct {
 	action     MemoryAction
 	confidence float64
@@ -138,7 +138,7 @@ func TestPolicyMemory_Save_ActionDelete_NotDeletable(t *testing.T) {
 	pm := New(mem, WithPolicy(policy))
 	err := pm.Save(context.Background(), newInput(), newOutput())
 	if err == nil {
-		t.Fatal("expected error when memory does not implement DeletableMemory")
+		t.Fatal("expected error when memory does not implement Deleter")
 	}
 }
 
@@ -169,7 +169,7 @@ func TestPolicyMemory_Save_ActionUpdate_NotDeletable(t *testing.T) {
 	pm := New(mem, WithPolicy(policy))
 	err := pm.Save(context.Background(), newInput(), newOutput())
 	if err == nil {
-		t.Fatal("expected error when memory does not implement DeletableMemory")
+		t.Fatal("expected error when memory does not implement Deleter")
 	}
 }
 

@@ -12,6 +12,15 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/memory"
 )
 
+const (
+	opAddRelation         = "temporal.add_relation"
+	opAddTemporalRelation = "temporal.add_temporal_relation"
+	opInvalidateRelation  = "temporal.invalidate_relation"
+
+	errFromToEmpty   = "from and to entity IDs must not be empty"
+	errRelTypeEmpty  = "relation type must not be empty"
+)
+
 // InMemoryStore is a thread-safe in-memory implementation of memory.TemporalGraphStore.
 // It stores entities and relations in maps protected by a sync.RWMutex and supports
 // all temporal query operations.
@@ -43,30 +52,46 @@ func (s *InMemoryStore) AddEntity(ctx context.Context, entity memory.Entity) err
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if existing, ok := s.entities[entity.ID]; ok {
-		// Preserve original creation time.
-		if entity.CreatedAt.IsZero() {
-			entity.CreatedAt = existing.CreatedAt
-		}
-		// Merge properties.
-		if existing.Properties != nil && entity.Properties != nil {
-			merged := make(map[string]any, len(existing.Properties)+len(entity.Properties))
-			for k, v := range existing.Properties {
-				merged[k] = v
-			}
-			for k, v := range entity.Properties {
-				merged[k] = v
-			}
-			entity.Properties = merged
-		} else if entity.Properties == nil {
-			entity.Properties = existing.Properties
-		}
-	} else if entity.CreatedAt.IsZero() {
-		entity.CreatedAt = time.Now()
-	}
-
+	entity = s.mergeEntity(entity)
 	s.entities[entity.ID] = entity
 	return nil
+}
+
+// mergeEntity merges the given entity with any existing entity of the same ID.
+// It preserves the original creation time and merges properties maps.
+// The caller must hold s.mu.Lock().
+func (s *InMemoryStore) mergeEntity(entity memory.Entity) memory.Entity {
+	existing, ok := s.entities[entity.ID]
+	if !ok {
+		if entity.CreatedAt.IsZero() {
+			entity.CreatedAt = time.Now()
+		}
+		return entity
+	}
+	if entity.CreatedAt.IsZero() {
+		entity.CreatedAt = existing.CreatedAt
+	}
+	entity.Properties = mergeProperties(existing.Properties, entity.Properties)
+	return entity
+}
+
+// mergeProperties merges src into dst, returning a new combined map.
+// If incoming is nil, existing is returned unchanged.
+func mergeProperties(existing, incoming map[string]any) map[string]any {
+	if existing == nil || incoming == nil {
+		if incoming == nil {
+			return existing
+		}
+		return incoming
+	}
+	merged := make(map[string]any, len(existing)+len(incoming))
+	for k, v := range existing {
+		merged[k] = v
+	}
+	for k, v := range incoming {
+		merged[k] = v
+	}
+	return merged
 }
 
 // AddRelation creates a directed relationship between two entities. Both entities
@@ -76,20 +101,20 @@ func (s *InMemoryStore) AddRelation(ctx context.Context, from, to, relation stri
 		return err
 	}
 	if from == "" || to == "" {
-		return core.NewError("temporal.add_relation", core.ErrInvalidInput, "from and to entity IDs must not be empty", nil)
+		return core.NewError(opAddRelation, core.ErrInvalidInput, errFromToEmpty, nil)
 	}
 	if relation == "" {
-		return core.NewError("temporal.add_relation", core.ErrInvalidInput, "relation type must not be empty", nil)
+		return core.NewError(opAddRelation, core.ErrInvalidInput, errRelTypeEmpty, nil)
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, ok := s.entities[from]; !ok {
-		return core.NewError("temporal.add_relation", core.ErrNotFound, fmt.Sprintf("source entity %q not found", from), nil)
+		return core.NewError(opAddRelation, core.ErrNotFound, fmt.Sprintf("source entity %q not found", from), nil)
 	}
 	if _, ok := s.entities[to]; !ok {
-		return core.NewError("temporal.add_relation", core.ErrNotFound, fmt.Sprintf("target entity %q not found", to), nil)
+		return core.NewError(opAddRelation, core.ErrNotFound, fmt.Sprintf("target entity %q not found", to), nil)
 	}
 
 	if props == nil {
@@ -121,23 +146,23 @@ func (s *InMemoryStore) AddTemporalRelation(ctx context.Context, rel memory.Rela
 		return err
 	}
 	if rel.From == "" || rel.To == "" {
-		return core.NewError("temporal.add_temporal_relation", core.ErrInvalidInput, "from and to entity IDs must not be empty", nil)
+		return core.NewError(opAddTemporalRelation, core.ErrInvalidInput, errFromToEmpty, nil)
 	}
 	if rel.Type == "" {
-		return core.NewError("temporal.add_temporal_relation", core.ErrInvalidInput, "relation type must not be empty", nil)
+		return core.NewError(opAddTemporalRelation, core.ErrInvalidInput, errRelTypeEmpty, nil)
 	}
 	if rel.ValidAt.IsZero() {
-		return core.NewError("temporal.add_temporal_relation", core.ErrInvalidInput, "ValidAt must not be zero", nil)
+		return core.NewError(opAddTemporalRelation, core.ErrInvalidInput, "ValidAt must not be zero", nil)
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, ok := s.entities[rel.From]; !ok {
-		return core.NewError("temporal.add_temporal_relation", core.ErrNotFound, fmt.Sprintf("source entity %q not found", rel.From), nil)
+		return core.NewError(opAddTemporalRelation, core.ErrNotFound, fmt.Sprintf("source entity %q not found", rel.From), nil)
 	}
 	if _, ok := s.entities[rel.To]; !ok {
-		return core.NewError("temporal.add_temporal_relation", core.ErrNotFound, fmt.Sprintf("target entity %q not found", rel.To), nil)
+		return core.NewError(opAddTemporalRelation, core.ErrNotFound, fmt.Sprintf("target entity %q not found", rel.To), nil)
 	}
 
 	if rel.Properties == nil {
@@ -219,44 +244,67 @@ func (s *InMemoryStore) Neighbors(ctx context.Context, entityID string, depth in
 	var resultRelations []memory.Relation
 
 	for d := 0; d < depth && len(frontier) > 0; d++ {
-		var nextFrontier []string
-		for _, nodeID := range frontier {
-			for _, rel := range s.relations {
-				if rel.ExpiredAt != nil {
-					continue
-				}
-				var neighborID string
-				if rel.From == nodeID {
-					neighborID = rel.To
-				} else if rel.To == nodeID {
-					neighborID = rel.From
-				} else {
-					continue
-				}
-				// Dedup relations across frontier levels using Properties["id"].
-				if relID, ok := rel.Properties["id"].(string); ok && relID != "" {
-					if relSeen[relID] {
-						// already recorded this relation
-					} else {
-						relSeen[relID] = true
-						resultRelations = append(resultRelations, rel)
-					}
-				} else {
-					resultRelations = append(resultRelations, rel)
-				}
-				if !visited[neighborID] {
-					visited[neighborID] = true
-					if e, ok := s.entities[neighborID]; ok {
-						resultEntities = append(resultEntities, e)
-						nextFrontier = append(nextFrontier, neighborID)
-					}
-				}
-			}
-		}
-		frontier = nextFrontier
+		frontier, resultEntities, resultRelations = s.expandFrontier(
+			frontier, visited, relSeen, resultEntities, resultRelations,
+		)
 	}
 
 	return resultEntities, resultRelations, nil
+}
+
+// expandFrontier performs one BFS level expansion, returning the next frontier
+// and updated result slices.
+func (s *InMemoryStore) expandFrontier(
+	frontier []string,
+	visited map[string]bool,
+	relSeen map[string]bool,
+	resultEntities []memory.Entity,
+	resultRelations []memory.Relation,
+) ([]string, []memory.Entity, []memory.Relation) {
+	var nextFrontier []string
+	for _, nodeID := range frontier {
+		for _, rel := range s.relations {
+			if rel.ExpiredAt != nil {
+				continue
+			}
+			neighborID := neighborOf(rel, nodeID)
+			if neighborID == "" {
+				continue
+			}
+			resultRelations = deduplicateRelation(rel, relSeen, resultRelations)
+			if !visited[neighborID] {
+				visited[neighborID] = true
+				if e, ok := s.entities[neighborID]; ok {
+					resultEntities = append(resultEntities, e)
+					nextFrontier = append(nextFrontier, neighborID)
+				}
+			}
+		}
+	}
+	return nextFrontier, resultEntities, resultRelations
+}
+
+// neighborOf returns the neighbor entity ID from a relation given a focal node.
+// Returns an empty string if the node is not part of the relation.
+func neighborOf(rel memory.Relation, nodeID string) string {
+	if rel.From == nodeID {
+		return rel.To
+	}
+	if rel.To == nodeID {
+		return rel.From
+	}
+	return ""
+}
+
+// deduplicateRelation appends rel to results only if it has not been seen before.
+func deduplicateRelation(rel memory.Relation, seen map[string]bool, results []memory.Relation) []memory.Relation {
+	if relID, ok := rel.Properties["id"].(string); ok && relID != "" {
+		if seen[relID] {
+			return results
+		}
+		seen[relID] = true
+	}
+	return append(results, rel)
 }
 
 // QueryAsOf returns entities and relations that were valid at the specified time.
@@ -280,12 +328,18 @@ func (s *InMemoryStore) QueryAsOf(ctx context.Context, query string, validTime t
 	defer s.mu.RUnlock()
 
 	q := strings.ToLower(query)
-	var entities []memory.Entity
-	var relations []memory.Relation
+	entities := s.filterEntitiesAsOf(q, validTime)
+	relations := s.filterRelationsAsOf(q, validTime, qopts.Limit)
 
+	return entities, relations, nil
+}
+
+// filterEntitiesAsOf returns entities that existed at validTime matching the query.
+func (s *InMemoryStore) filterEntitiesAsOf(q string, validTime time.Time) []memory.Entity {
+	var entities []memory.Entity
 	for _, e := range s.entities {
 		if !e.CreatedAt.IsZero() && e.CreatedAt.After(validTime) {
-			continue // entity did not exist at validTime
+			continue
 		}
 		if q == "" || strings.Contains(strings.ToLower(e.Type), q) ||
 			strings.Contains(strings.ToLower(e.ID), q) ||
@@ -293,22 +347,26 @@ func (s *InMemoryStore) QueryAsOf(ctx context.Context, query string, validTime t
 			entities = append(entities, e)
 		}
 	}
+	return entities
+}
 
+// filterRelationsAsOf returns relations valid at validTime matching the query, up to limit.
+func (s *InMemoryStore) filterRelationsAsOf(q string, validTime time.Time, limit int) []memory.Relation {
+	var relations []memory.Relation
 	for _, r := range s.relations {
 		if r.ExpiredAt != nil {
-			continue // system-expired
+			continue
 		}
 		if !r.ValidAt.After(validTime) && (r.InvalidAt == nil || r.InvalidAt.After(validTime)) {
 			if q == "" || strings.Contains(strings.ToLower(r.Type), q) {
 				relations = append(relations, r)
-				if len(relations) >= qopts.Limit {
+				if len(relations) >= limit {
 					break
 				}
 			}
 		}
 	}
-
-	return entities, relations, nil
+	return relations
 }
 
 // InvalidateRelation marks a relation as no longer valid. The relation is identified
@@ -319,10 +377,10 @@ func (s *InMemoryStore) InvalidateRelation(ctx context.Context, relationID strin
 		return err
 	}
 	if relationID == "" {
-		return core.NewError("temporal.invalidate_relation", core.ErrInvalidInput, "relation ID must not be empty", nil)
+		return core.NewError(opInvalidateRelation, core.ErrInvalidInput, "relation ID must not be empty", nil)
 	}
 	if invalidAt.IsZero() {
-		return core.NewError("temporal.invalidate_relation", core.ErrInvalidInput, "invalidAt must not be zero", nil)
+		return core.NewError(opInvalidateRelation, core.ErrInvalidInput, "invalidAt must not be zero", nil)
 	}
 
 	s.mu.Lock()
@@ -342,7 +400,7 @@ func (s *InMemoryStore) InvalidateRelation(ctx context.Context, relationID strin
 		}
 	}
 
-	return core.NewError("temporal.invalidate_relation", core.ErrNotFound, fmt.Sprintf("relation %q not found", relationID), nil)
+	return core.NewError(opInvalidateRelation, core.ErrNotFound, fmt.Sprintf("relation %q not found", relationID), nil)
 }
 
 // History returns all versions of relations between two entities, including

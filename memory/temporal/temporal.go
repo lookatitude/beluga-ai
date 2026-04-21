@@ -10,6 +10,13 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
+const (
+	opResolveConflicts  = "temporal.resolve_conflicts"
+	entityTypeMessage   = "message"
+	propKeyRole         = "role"
+	propKeyText         = "text"
+)
+
 // TemporalMemory wraps a TemporalGraphStore to provide a Memory-compatible interface
 // with bi-temporal knowledge graph capabilities. It supports saving conversation turns
 // as graph entities/relations, loading relevant context, and querying the graph as
@@ -50,16 +57,16 @@ func (tm *TemporalMemory) Save(ctx context.Context, input, output schema.Message
 
 	inputEntity := memory.Entity{
 		ID:         fmt.Sprintf("msg-input-%d", now.UnixNano()),
-		Type:       "message",
-		Properties: map[string]any{"role": string(input.GetRole()), "text": inputText},
+		Type:       entityTypeMessage,
+		Properties: map[string]any{propKeyRole: string(input.GetRole()), propKeyText: inputText},
 		CreatedAt:  now,
 		Summary:    truncate(inputText, 200),
 	}
 
 	outputEntity := memory.Entity{
 		ID:         fmt.Sprintf("msg-output-%d", now.UnixNano()),
-		Type:       "message",
-		Properties: map[string]any{"role": string(output.GetRole()), "text": outputText},
+		Type:       entityTypeMessage,
+		Properties: map[string]any{propKeyRole: string(output.GetRole()), propKeyText: outputText},
 		CreatedAt:  now,
 		Summary:    truncate(outputText, 200),
 	}
@@ -97,7 +104,7 @@ func (tm *TemporalMemory) Load(ctx context.Context, query string) ([]schema.Mess
 	var msgs []schema.Message
 	for _, result := range results {
 		for _, entity := range result.Entities {
-			if entity.Type != "message" {
+			if entity.Type != entityTypeMessage {
 				continue
 			}
 			msg := entityToMessage(entity)
@@ -127,7 +134,7 @@ func (tm *TemporalMemory) LoadAt(ctx context.Context, query string, validTime ti
 
 	var msgs []schema.Message
 	for _, entity := range entities {
-		if entity.Type != "message" {
+		if entity.Type != entityTypeMessage {
 			continue
 		}
 		msg := entityToMessage(entity)
@@ -198,21 +205,12 @@ func (tm *TemporalMemory) ResolveConflicts(ctx context.Context, newRelation *mem
 		return nil, err
 	}
 	if newRelation == nil {
-		return nil, core.NewError("temporal.resolve_conflicts", core.ErrInvalidInput, "newRelation must not be nil", nil)
+		return nil, core.NewError(opResolveConflicts, core.ErrInvalidInput, "newRelation must not be nil", nil)
 	}
 
-	// Get history of relations between these entities.
-	candidates, err := tm.store.History(ctx, newRelation.From, newRelation.To)
+	sameType, err := tm.samTypeHistory(ctx, newRelation)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "temporal: resolve_conflicts history: %w", err)
-	}
-
-	// Filter to only same-type relations as candidates.
-	var sameType []memory.Relation
-	for _, c := range candidates {
-		if c.Type == newRelation.Type {
-			sameType = append(sameType, c)
-		}
+		return nil, err
 	}
 
 	invalidated, err := tm.resolver.Resolve(ctx, newRelation, sameType)
@@ -220,32 +218,62 @@ func (tm *TemporalMemory) ResolveConflicts(ctx context.Context, newRelation *mem
 		return nil, core.Errorf(core.ErrProviderDown, "temporal: resolve_conflicts: %w", err)
 	}
 
-	// Apply invalidations to the store. Silently skipping a candidate here
-	// would desync the in-memory invalidated slice from the underlying store,
-	// so missing or malformed identifiers must surface as errors.
-	for _, inv := range invalidated {
-		id, ok := inv.Properties["id"]
-		if !ok {
-			return nil, core.NewError("temporal.resolve_conflicts", core.ErrInvalidInput, "invalidated relation missing Properties[\"id\"]", nil)
-		}
-		relID, ok := id.(string)
-		if !ok {
-			return nil, core.NewError("temporal.resolve_conflicts", core.ErrInvalidInput, "invalidated relation Properties[\"id\"] is not a string", nil)
-		}
-		if inv.InvalidAt == nil {
-			continue
-		}
-		if err := tm.store.InvalidateRelation(ctx, relID, *inv.InvalidAt); err != nil {
-			return nil, core.Errorf(core.ErrProviderDown, "temporal: apply invalidation: %w", err)
-		}
+	if err := tm.applyInvalidations(ctx, invalidated); err != nil {
+		return nil, err
 	}
 
-	// Fire hook.
 	if tm.hooks.OnConflictResolved != nil && len(invalidated) > 0 {
 		tm.hooks.OnConflictResolved(ctx, invalidated, *newRelation)
 	}
 
 	return invalidated, nil
+}
+
+// samTypeHistory retrieves the history of relations between the new relation's
+// entities and filters to the same relation type.
+func (tm *TemporalMemory) samTypeHistory(ctx context.Context, newRelation *memory.Relation) ([]memory.Relation, error) {
+	candidates, err := tm.store.History(ctx, newRelation.From, newRelation.To)
+	if err != nil {
+		return nil, core.Errorf(core.ErrProviderDown, "temporal: resolve_conflicts history: %w", err)
+	}
+	var sameType []memory.Relation
+	for _, c := range candidates {
+		if c.Type == newRelation.Type {
+			sameType = append(sameType, c)
+		}
+	}
+	return sameType, nil
+}
+
+// applyInvalidations applies each invalidated relation to the store.
+// Missing or malformed identifiers surface as errors to prevent store desync.
+func (tm *TemporalMemory) applyInvalidations(ctx context.Context, invalidated []memory.Relation) error {
+	for _, inv := range invalidated {
+		relID, err := extractRelationID(inv)
+		if err != nil {
+			return err
+		}
+		if inv.InvalidAt == nil {
+			continue
+		}
+		if err := tm.store.InvalidateRelation(ctx, relID, *inv.InvalidAt); err != nil {
+			return core.Errorf(core.ErrProviderDown, "temporal: apply invalidation: %w", err)
+		}
+	}
+	return nil
+}
+
+// extractRelationID returns the relation ID string from Properties["id"].
+func extractRelationID(rel memory.Relation) (string, error) {
+	id, ok := rel.Properties["id"]
+	if !ok {
+		return "", core.NewError(opResolveConflicts, core.ErrInvalidInput, "invalidated relation missing Properties[\"id\"]", nil)
+	}
+	relID, ok := id.(string)
+	if !ok {
+		return "", core.NewError(opResolveConflicts, core.ErrInvalidInput, "invalidated relation Properties[\"id\"] is not a string", nil)
+	}
+	return relID, nil
 }
 
 // Store returns the underlying TemporalGraphStore for direct access to graph operations.
@@ -255,8 +283,8 @@ func (tm *TemporalMemory) Store() memory.TemporalGraphStore {
 
 // entityToMessage converts a message entity back to a schema.Message.
 func entityToMessage(entity memory.Entity) schema.Message {
-	text, _ := entity.Properties["text"].(string)
-	role, _ := entity.Properties["role"].(string)
+	text, _ := entity.Properties[propKeyText].(string)
+	role, _ := entity.Properties[propKeyRole].(string)
 
 	switch schema.Role(role) {
 	case schema.RoleHuman:
