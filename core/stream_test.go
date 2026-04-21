@@ -453,13 +453,13 @@ func testFlowControllerTryAcquireWhenFull(t *testing.T) {
 	}
 
 	// TryAcquire should fail when full.
-	if ok := fc.TryAcquire(); ok {
+	if fc.TryAcquire() {
 		t.Error("TryAcquire() = true, want false (flow controller is full)")
 	}
 
 	// After release, TryAcquire should succeed.
 	fc.Release()
-	if ok := fc.TryAcquire(); !ok {
+	if !fc.TryAcquire() {
 		t.Error("TryAcquire() = false, want true (capacity available)")
 	}
 
@@ -470,10 +470,10 @@ func testFlowControllerTryAcquireWhenAvailable(t *testing.T) {
 	fc := NewFlowController(3)
 
 	// TryAcquire should succeed when capacity is available.
-	if ok := fc.TryAcquire(); !ok {
+	if !fc.TryAcquire() {
 		t.Error("TryAcquire() = false, want true")
 	}
-	if ok := fc.TryAcquire(); !ok {
+	if !fc.TryAcquire() {
 		t.Error("TryAcquire() = false, want true")
 	}
 

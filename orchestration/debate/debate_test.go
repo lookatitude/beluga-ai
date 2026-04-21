@@ -934,9 +934,9 @@ func (w *middlewareWrapper) Stream(ctx context.Context, input any, opts ...core.
 var (
 	_ core.Runnable       = (*DebateOrchestrator)(nil)
 	_ core.Runnable       = (*GeneratorEvaluator)(nil)
-	_ DebateProtocol      = (*RoundRobinProtocol)(nil)
-	_ DebateProtocol      = (*AdversarialProtocol)(nil)
-	_ DebateProtocol      = (*JudgedProtocol)(nil)
+	_ Protocol            = (*RoundRobinProtocol)(nil)
+	_ Protocol            = (*AdversarialProtocol)(nil)
+	_ Protocol            = (*JudgedProtocol)(nil)
 	_ ConvergenceDetector = (*StabilityDetector)(nil)
 	_ ConvergenceDetector = (*AgreementDetector)(nil)
 	_ ConvergenceDetector = (*MaxRoundsDetector)(nil)

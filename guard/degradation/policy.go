@@ -5,9 +5,9 @@ import (
 	"sort"
 )
 
-// DegradationPolicy evaluates a severity score and determines the
+// PolicyEvaluator evaluates a severity score and determines the
 // appropriate autonomy level for agent operation.
-type DegradationPolicy interface {
+type PolicyEvaluator interface {
 	// Evaluate maps a severity score in [0.0, 1.0] to an AutonomyLevel.
 	Evaluate(severity float64) AutonomyLevel
 }
@@ -40,14 +40,14 @@ type LevelThresholds struct {
 	Sequestered float64
 }
 
-// ThresholdPolicy is a DegradationPolicy that maps severity ranges to
+// ThresholdPolicy is a PolicyEvaluator that maps severity ranges to
 // autonomy levels using configurable thresholds.
 type ThresholdPolicy struct {
 	thresholds LevelThresholds
 }
 
 // Compile-time interface check.
-var _ DegradationPolicy = (*ThresholdPolicy)(nil)
+var _ PolicyEvaluator = (*ThresholdPolicy)(nil)
 
 // PolicyOption configures a ThresholdPolicy.
 type PolicyOption func(*ThresholdPolicy)

@@ -22,7 +22,7 @@
 //
 // # Degradation Policy
 //
-// DegradationPolicy maps severity scores to autonomy levels. The built-in
+// PolicyEvaluator maps severity scores to autonomy levels. The built-in
 // ThresholdPolicy uses configurable severity thresholds for each level
 // transition.
 //
@@ -30,7 +30,7 @@
 //
 // RuntimeDegrader is an agent.Middleware that intercepts agent invocations
 // and enforces the current autonomy level. It queries the SecurityMonitor
-// for the current severity, evaluates the DegradationPolicy, and applies
+// for the current severity, evaluates the PolicyEvaluator, and applies
 // the appropriate restrictions before delegating to the wrapped agent.
 //
 // # Usage

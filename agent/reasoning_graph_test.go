@@ -27,25 +27,30 @@ func TestReasoningGraph_AddNode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			g := NewReasoningGraph()
 			id := g.AddNode(tt.nodeType, tt.content, tt.score, nil)
-
-			if id == "" {
-				t.Fatal("expected non-empty ID")
-			}
-
-			node := g.GetNode(id)
-			if node == nil {
-				t.Fatal("expected node to be retrievable")
-			}
-			if node.Type != tt.wantType {
-				t.Errorf("got type %q, want %q", node.Type, tt.wantType)
-			}
-			if node.Content != tt.content {
-				t.Errorf("got content %q, want %q", node.Content, tt.content)
-			}
-			if node.Score < 0 || node.Score > 1 {
-				t.Errorf("score %f out of [0,1] range", node.Score)
-			}
+			assertNodeProperties(t, g, id, tt.content, tt.wantType)
 		})
+	}
+}
+
+// assertNodeProperties verifies that the node with the given ID exists in the
+// graph and has the expected type, content, and a clamped score in [0, 1].
+func assertNodeProperties(t *testing.T, g *ReasoningGraph, id, wantContent string, wantType NodeType) {
+	t.Helper()
+	if id == "" {
+		t.Fatal("expected non-empty ID")
+	}
+	node := g.GetNode(id)
+	if node == nil {
+		t.Fatal("expected node to be retrievable")
+	}
+	if node.Type != wantType {
+		t.Errorf("got type %q, want %q", node.Type, wantType)
+	}
+	if node.Content != wantContent {
+		t.Errorf("got content %q, want %q", node.Content, wantContent)
+	}
+	if node.Score < 0 || node.Score > 1 {
+		t.Errorf("score %f out of [0,1] range", node.Score)
 	}
 }
 
@@ -278,7 +283,7 @@ func TestReasoningGraph_NodeCount_EdgeCount(t *testing.T) {
 
 func TestReasoningGraph_GetNode_NotFound(t *testing.T) {
 	g := NewReasoningGraph()
-	if n := g.GetNode("nonexistent"); n != nil {
+	if g.GetNode("nonexistent") != nil {
 		t.Error("expected nil for nonexistent node")
 	}
 }

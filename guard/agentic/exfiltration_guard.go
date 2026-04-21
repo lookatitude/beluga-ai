@@ -56,6 +56,8 @@ type ExfiltrationOption func(*DataExfiltrationGuard)
 func WithPIIPattern(category, pattern string) ExfiltrationOption {
 	compiled, err := regexp.Compile(pattern)
 	if err != nil {
+		// Intentional no-op: silently discard patterns that fail to compile so
+		// callers are not forced to handle the error at option-apply time.
 		return func(*DataExfiltrationGuard) {}
 	}
 	return func(g *DataExfiltrationGuard) {
@@ -141,56 +143,20 @@ func (g *DataExfiltrationGuard) Validate(ctx context.Context, input guard.GuardI
 
 	content := input.Content
 
-	// Content length check.
-	if g.maxContentLength > 0 && len(content) > g.maxContentLength {
-		return guard.GuardResult{
-			Allowed:   false,
-			Reason:    fmt.Sprintf("content length %d exceeds maximum %d", len(content), g.maxContentLength),
-			GuardName: g.Name(),
-		}, nil
+	if r, blocked := g.checkLength(content); blocked {
+		return r, nil
 	}
 
-	// Decode URL-encoded content for deeper inspection.
-	decoded := content
-	if g.scanURLEncoding {
-		if d, err := url.QueryUnescape(content); err == nil && d != content {
-			decoded = d
-		}
+	decoded := g.decodeURL(content)
+
+	if r, blocked := g.checkPII(content, decoded); blocked {
+		return r, nil
 	}
 
-	// Also try to extract string values from JSON arguments.
-	textToScan := []string{content}
-	if decoded != content {
-		textToScan = append(textToScan, decoded)
-	}
-	textToScan = append(textToScan, extractJSONStrings(content)...)
-
-	// PII scan.
-	for _, text := range textToScan {
-		for _, p := range g.piiPatterns {
-			if p.pattern.MatchString(text) {
-				return guard.GuardResult{
-					Allowed:   false,
-					Reason:    fmt.Sprintf("potential %s detected in content", p.category),
-					GuardName: g.Name(),
-				}, nil
-			}
-		}
+	if r, blocked := g.checkURLExfiltration(content); blocked {
+		return r, nil
 	}
 
-	// URL exfiltration check.
-	if g.blockURLs {
-		if blocked, reason := g.checkURLs(content); blocked {
-			return guard.GuardResult{
-				Allowed:   false,
-				Reason:    reason,
-				GuardName: g.Name(),
-			}, nil
-		}
-	}
-
-	// URL-encoding detection: flag content that looks percent-encoded and
-	// differs when decoded (potential data hiding).
 	if g.scanURLEncoding && decoded != content && containsPercentEncoding(content) {
 		return guard.GuardResult{
 			Allowed:   false,
@@ -200,6 +166,70 @@ func (g *DataExfiltrationGuard) Validate(ctx context.Context, input guard.GuardI
 	}
 
 	return guard.GuardResult{Allowed: true}, nil
+}
+
+// checkLength returns a blocked result when content exceeds the configured
+// maximum. A zero maxContentLength means no limit.
+func (g *DataExfiltrationGuard) checkLength(content string) (guard.GuardResult, bool) {
+	if g.maxContentLength > 0 && len(content) > g.maxContentLength {
+		return guard.GuardResult{
+			Allowed:   false,
+			Reason:    fmt.Sprintf("content length %d exceeds maximum %d", len(content), g.maxContentLength),
+			GuardName: g.Name(),
+		}, true
+	}
+	return guard.GuardResult{}, false
+}
+
+// decodeURL returns the URL-decoded form of content when scanURLEncoding is
+// enabled and the decoded form differs from the original. Otherwise it returns
+// content unchanged.
+func (g *DataExfiltrationGuard) decodeURL(content string) string {
+	if g.scanURLEncoding {
+		if d, err := url.QueryUnescape(content); err == nil && d != content {
+			return d
+		}
+	}
+	return content
+}
+
+// checkPII scans all candidate texts (raw content, decoded content, and JSON
+// string values) for PII patterns.
+func (g *DataExfiltrationGuard) checkPII(content, decoded string) (guard.GuardResult, bool) {
+	candidates := []string{content}
+	if decoded != content {
+		candidates = append(candidates, decoded)
+	}
+	candidates = append(candidates, extractJSONStrings(content)...)
+
+	for _, text := range candidates {
+		for _, p := range g.piiPatterns {
+			if p.pattern.MatchString(text) {
+				return guard.GuardResult{
+					Allowed:   false,
+					Reason:    fmt.Sprintf("potential %s detected in content", p.category),
+					GuardName: g.Name(),
+				}, true
+			}
+		}
+	}
+	return guard.GuardResult{}, false
+}
+
+// checkURLExfiltration blocks outbound URLs when the guard is configured to
+// do so.
+func (g *DataExfiltrationGuard) checkURLExfiltration(content string) (guard.GuardResult, bool) {
+	if !g.blockURLs {
+		return guard.GuardResult{}, false
+	}
+	if blocked, reason := g.checkURLs(content); blocked {
+		return guard.GuardResult{
+			Allowed:   false,
+			Reason:    reason,
+			GuardName: g.Name(),
+		}, true
+	}
+	return guard.GuardResult{}, false
 }
 
 // checkURLs scans content for URLs and blocks those pointing to domains not

@@ -8,9 +8,9 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
-// DebateProtocol determines how agents participate in each round of a debate.
+// Protocol determines how agents participate in each round of a debate.
 // Implementations return a map of agent ID to prompt string for each round.
-type DebateProtocol interface {
+type Protocol interface {
 	// NextRound returns the prompts to send to each agent for the next round.
 	// The keys are agent IDs, the values are the formatted prompts.
 	NextRound(ctx context.Context, state DebateState) (map[string]string, error)
@@ -19,14 +19,14 @@ type DebateProtocol interface {
 // TwoPassProtocol is an optional interface implemented by protocols that
 // require a second evaluation pass after participant contributions are
 // collected for the current round. Protocols that do not need to see the
-// current round's contributions should implement only DebateProtocol.
+// current round's contributions should implement only Protocol.
 //
 // The orchestrator runs NextRound first, collects all responses into the
 // partial Round, then calls FollowUp with the in-progress round. Returned
 // prompts are dispatched to the listed agents and their responses are
 // appended to the same Round's Contributions slice.
 type TwoPassProtocol interface {
-	DebateProtocol
+	Protocol
 	// FollowUp is called after the first-pass responses for the current
 	// round have been collected. The implementation may inspect
 	// currentRound.Contributions to build prompts for a second pass
@@ -35,15 +35,15 @@ type TwoPassProtocol interface {
 	FollowUp(ctx context.Context, state DebateState, currentRound Round) (map[string]string, error)
 }
 
-// ProtocolFactory creates a DebateProtocol from a configuration map.
-type ProtocolFactory func(cfg map[string]any) (DebateProtocol, error)
+// ProtocolFactory creates a Protocol from a configuration map.
+type ProtocolFactory func(cfg map[string]any) (Protocol, error)
 
 var (
 	protocolMu       sync.RWMutex
 	protocolRegistry = make(map[string]ProtocolFactory)
 )
 
-// RegisterProtocol registers a named DebateProtocol factory.
+// RegisterProtocol registers a named Protocol factory.
 // This should be called from init().
 func RegisterProtocol(name string, f ProtocolFactory) {
 	protocolMu.Lock()
@@ -51,8 +51,8 @@ func RegisterProtocol(name string, f ProtocolFactory) {
 	protocolRegistry[name] = f
 }
 
-// NewProtocol creates a DebateProtocol by name from the registry.
-func NewProtocol(name string, cfg map[string]any) (DebateProtocol, error) {
+// NewProtocol creates a Protocol by name from the registry.
+func NewProtocol(name string, cfg map[string]any) (Protocol, error) {
 	protocolMu.RLock()
 	f, ok := protocolRegistry[name]
 	protocolMu.RUnlock()

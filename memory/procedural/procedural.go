@@ -12,6 +12,8 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
+const errSkillIDRequired = "procedural: skill ID is required"
+
 // ProceduralMemory is the 4th memory tier in the MemGPT model, providing
 // storage and semantic retrieval of procedural knowledge (how-to skills).
 // It uses vector embeddings for similarity search over skill descriptions
@@ -56,7 +58,7 @@ func (p *ProceduralMemory) SaveSkill(ctx context.Context, skill *schema.Skill) e
 		return core.Errorf(core.ErrInvalidInput, "procedural: skill must not be nil")
 	}
 	if skill.ID == "" {
-		return core.Errorf(core.ErrInvalidInput, "procedural: skill ID is required")
+		return core.Errorf(core.ErrInvalidInput, errSkillIDRequired)
 	}
 	if skill.Name == "" {
 		return core.Errorf(core.ErrInvalidInput, "procedural: skill name is required")
@@ -148,7 +150,7 @@ func (p *ProceduralMemory) UpdateSkill(ctx context.Context, skill *schema.Skill)
 		return core.Errorf(core.ErrInvalidInput, "procedural: skill must not be nil")
 	}
 	if skill.ID == "" {
-		return core.Errorf(core.ErrInvalidInput, "procedural: skill ID is required")
+		return core.Errorf(core.ErrInvalidInput, errSkillIDRequired)
 	}
 
 	// Fetch old version for hook.
@@ -204,7 +206,7 @@ func (p *ProceduralMemory) UpdateSkill(ctx context.Context, skill *schema.Skill)
 // DeleteSkill removes a skill from the vector store by its ID.
 func (p *ProceduralMemory) DeleteSkill(ctx context.Context, id string) error {
 	if id == "" {
-		return core.Errorf(core.ErrInvalidInput, "procedural: skill ID is required")
+		return core.Errorf(core.ErrInvalidInput, errSkillIDRequired)
 	}
 	return p.vs.Delete(ctx, []string{skillDocID(id)})
 }
@@ -226,7 +228,7 @@ func (p *ProceduralMemory) DeleteSkill(ctx context.Context, id string) error {
 // auxiliary key-value index.
 func (p *ProceduralMemory) GetSkill(ctx context.Context, id string) (*schema.Skill, error) {
 	if id == "" {
-		return nil, core.Errorf(core.ErrInvalidInput, "procedural: skill ID is required")
+		return nil, core.Errorf(core.ErrInvalidInput, errSkillIDRequired)
 	}
 
 	// Use a zero vector to search, then filter by ID.

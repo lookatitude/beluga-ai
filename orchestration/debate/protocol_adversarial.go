@@ -9,10 +9,10 @@ import (
 )
 
 // Compile-time check.
-var _ DebateProtocol = (*AdversarialProtocol)(nil)
+var _ Protocol = (*AdversarialProtocol)(nil)
 
 func init() {
-	RegisterProtocol("adversarial", func(_ map[string]any) (DebateProtocol, error) {
+	RegisterProtocol("adversarial", func(_ map[string]any) (Protocol, error) {
 		return NewAdversarialProtocol(), nil
 	})
 }

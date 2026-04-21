@@ -19,9 +19,9 @@ type ContextStep interface {
 	Name() string
 }
 
-// ContextPipeline orchestrates a sequence of ContextSteps to prepare
+// Executor orchestrates a sequence of ContextSteps to prepare
 // optimal LLM context.
-type ContextPipeline interface {
+type Executor interface {
 	// Execute runs all pipeline steps in order.
 	Execute(ctx gocontext.Context, input PipelineInput) (PipelineOutput, error)
 }
@@ -91,7 +91,7 @@ type DefaultPipeline struct {
 	opts pipelineOptions
 }
 
-var _ ContextPipeline = (*DefaultPipeline)(nil)
+var _ Executor = (*DefaultPipeline)(nil)
 
 // NewPipeline creates a context pipeline with the given options.
 func NewPipeline(opts ...Option) *DefaultPipeline {
@@ -195,7 +195,7 @@ func estimateTokens(items []ContextItem) int {
 	return total
 }
 
-// PipelineBuilder fluently constructs a ContextPipeline.
+// PipelineBuilder fluently constructs a Executor.
 type PipelineBuilder struct {
 	opts []Option
 }
@@ -205,28 +205,30 @@ func NewBuilder() *PipelineBuilder {
 	return &PipelineBuilder{}
 }
 
-// WithRetrieve adds a retrieve step.
-func (b *PipelineBuilder) WithRetrieve(step ContextStep) *PipelineBuilder {
+// addStep appends a pipeline step option and returns the builder for chaining.
+func (b *PipelineBuilder) addStep(step ContextStep) *PipelineBuilder {
 	b.opts = append(b.opts, WithStep(step))
 	return b
+}
+
+// WithRetrieve adds a retrieve step.
+func (b *PipelineBuilder) WithRetrieve(step ContextStep) *PipelineBuilder {
+	return b.addStep(step)
 }
 
 // WithRank adds a ranking step.
 func (b *PipelineBuilder) WithRank(step ContextStep) *PipelineBuilder {
-	b.opts = append(b.opts, WithStep(step))
-	return b
+	return b.addStep(step)
 }
 
 // WithFilter adds a filtering step.
 func (b *PipelineBuilder) WithFilter(step ContextStep) *PipelineBuilder {
-	b.opts = append(b.opts, WithStep(step))
-	return b
+	return b.addStep(step)
 }
 
 // WithStructure adds a structuring step.
 func (b *PipelineBuilder) WithStructure(step ContextStep) *PipelineBuilder {
-	b.opts = append(b.opts, WithStep(step))
-	return b
+	return b.addStep(step)
 }
 
 // SetMaxTokens sets the token budget.

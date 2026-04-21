@@ -23,7 +23,7 @@ const (
 type workerOptions struct {
 	interval           time.Duration
 	maxRecordsPerCycle int
-	policy             ConsolidationPolicy
+	policy             Evaluator
 	compressor         Compressor
 	hooks              Hooks
 }
@@ -43,7 +43,7 @@ func WithInterval(d time.Duration) Option {
 }
 
 // WithPolicy sets the consolidation policy used to evaluate records.
-func WithPolicy(p ConsolidationPolicy) Option {
+func WithPolicy(p Evaluator) Option {
 	return func(o *workerOptions) { o.policy = p }
 }
 
@@ -117,12 +117,10 @@ func (w *Worker) Start(ctx context.Context) error {
 		return core.Errorf(core.ErrInvalidInput, "consolidation: worker already running")
 	}
 
-	// The worker daemon runs until Stop() is explicitly called. The ctx
-	// parameter is only valid for Start initialisation; we derive the loop
-	// context from context.Background() so request-scoped or timed
-	// contexts cannot prematurely terminate the background loop.
-	_ = ctx
-	loopCtx, cancel := context.WithCancel(context.Background())
+	// The worker daemon runs until Stop() is explicitly called. We derive
+	// the loop context from ctx so that parent context cancellation is
+	// respected during shutdown.
+	loopCtx, cancel := context.WithCancel(ctx)
 	w.cancel = cancel
 	w.done = make(chan struct{})
 	w.running = true
@@ -244,8 +242,16 @@ func (w *Worker) runCycle(ctx context.Context) CycleMetrics {
 		return metrics
 	}
 
-	var toPrune []Record
-	var toCompress []Record
+	toPrune, toCompress := w.partitionDecisions(decisions)
+	toPrune = w.applyCompression(ctx, &metrics, toCompress, toPrune)
+	w.applyPrune(ctx, &metrics, toPrune)
+
+	metrics.CycleEnd = time.Now()
+	return metrics
+}
+
+// partitionDecisions splits decisions into records to prune and records to compress.
+func (w *Worker) partitionDecisions(decisions []Decision) (toPrune, toCompress []Record) {
 	for _, d := range decisions {
 		switch d.Action {
 		case ActionPrune:
@@ -254,48 +260,53 @@ func (w *Worker) runCycle(ctx context.Context) CycleMetrics {
 			toCompress = append(toCompress, d.Record)
 		}
 	}
+	return toPrune, toCompress
+}
 
-	// Compress records if a compressor is available; otherwise prune them.
-	if len(toCompress) > 0 {
-		if w.opts.compressor != nil {
-			compressed, err := w.opts.compressor.Compress(ctx, toCompress)
-			if err != nil {
-				metrics.Errors = append(metrics.Errors, core.Errorf(core.ErrProviderDown, "compress: %w", err))
-				// Fall back to pruning on compression failure.
-				toPrune = append(toPrune, toCompress...)
-			} else {
-				if err := w.store.UpdateRecords(ctx, compressed); err != nil {
-					metrics.Errors = append(metrics.Errors, core.Errorf(core.ErrProviderDown, "update compressed: %w", err))
-				} else {
-					metrics.RecordsCompressed = len(compressed)
-					if w.opts.hooks.OnCompressed != nil {
-						w.opts.hooks.OnCompressed(toCompress, compressed)
-					}
-				}
-			}
-		} else {
-			toPrune = append(toPrune, toCompress...)
-		}
+// applyCompression compresses records when a compressor is available; otherwise they
+// are added to toPrune. Returns the updated toPrune slice.
+func (w *Worker) applyCompression(ctx context.Context, metrics *CycleMetrics, toCompress, toPrune []Record) []Record {
+	if len(toCompress) == 0 {
+		return toPrune
+	}
+	if w.opts.compressor == nil {
+		return append(toPrune, toCompress...)
 	}
 
-	// Prune records.
-	if len(toPrune) > 0 {
-		ids := make([]string, len(toPrune))
-		for i, r := range toPrune {
-			ids[i] = r.ID
-		}
-		if err := w.store.DeleteRecords(ctx, ids); err != nil {
-			metrics.Errors = append(metrics.Errors, core.Errorf(core.ErrProviderDown, "delete: %w", err))
-		} else {
-			metrics.RecordsPruned = len(toPrune)
-			if w.opts.hooks.OnPruned != nil {
-				w.opts.hooks.OnPruned(toPrune)
-			}
-		}
+	compressed, err := w.opts.compressor.Compress(ctx, toCompress)
+	if err != nil {
+		metrics.Errors = append(metrics.Errors, core.Errorf(core.ErrProviderDown, "compress: %w", err))
+		return append(toPrune, toCompress...)
 	}
 
-	metrics.CycleEnd = time.Now()
-	return metrics
+	if err := w.store.UpdateRecords(ctx, compressed); err != nil {
+		metrics.Errors = append(metrics.Errors, core.Errorf(core.ErrProviderDown, "update compressed: %w", err))
+	} else {
+		metrics.RecordsCompressed = len(compressed)
+		if w.opts.hooks.OnCompressed != nil {
+			w.opts.hooks.OnCompressed(toCompress, compressed)
+		}
+	}
+	return toPrune
+}
+
+// applyPrune deletes the given records from the store and updates metrics.
+func (w *Worker) applyPrune(ctx context.Context, metrics *CycleMetrics, toPrune []Record) {
+	if len(toPrune) == 0 {
+		return
+	}
+	ids := make([]string, len(toPrune))
+	for i, r := range toPrune {
+		ids[i] = r.ID
+	}
+	if err := w.store.DeleteRecords(ctx, ids); err != nil {
+		metrics.Errors = append(metrics.Errors, core.Errorf(core.ErrProviderDown, "delete: %w", err))
+	} else {
+		metrics.RecordsPruned = len(toPrune)
+		if w.opts.hooks.OnPruned != nil {
+			w.opts.hooks.OnPruned(toPrune)
+		}
+	}
 }
 
 // jitter returns a random duration in [0, max) using crypto/rand.

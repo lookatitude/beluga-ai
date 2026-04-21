@@ -9,10 +9,10 @@ import (
 )
 
 // Compile-time check.
-var _ DebateProtocol = (*RoundRobinProtocol)(nil)
+var _ Protocol = (*RoundRobinProtocol)(nil)
 
 func init() {
-	RegisterProtocol("roundrobin", func(_ map[string]any) (DebateProtocol, error) {
+	RegisterProtocol("roundrobin", func(_ map[string]any) (Protocol, error) {
 		return NewRoundRobinProtocol(), nil
 	})
 }

@@ -65,6 +65,8 @@ func WithHooks(h Hooks) BuilderOption {
 	}
 }
 
+const opBuild = "teambuilder.build"
+
 // NewTeamBuilder creates a TeamBuilder backed by the given pool. If no
 // selector is configured, KeywordSelector is used as the default.
 func NewTeamBuilder(pool *AgentPool, opts ...BuilderOption) *TeamBuilder {
@@ -85,113 +87,154 @@ func NewTeamBuilder(pool *AgentPool, opts ...BuilderOption) *TeamBuilder {
 // no agents are selected, or the selector fails.
 func (tb *TeamBuilder) Build(ctx context.Context, task string) (*runtime.Team, error) {
 	if tb.pool == nil {
-		return nil, core.NewError("teambuilder.build", core.ErrInvalidInput,
+		return nil, core.NewError(opBuild, core.ErrInvalidInput,
 			"agent pool must not be nil", nil)
 	}
-
 	if task == "" {
-		return nil, core.NewError("teambuilder.build", core.ErrInvalidInput,
+		return nil, core.NewError(opBuild, core.ErrInvalidInput,
 			"task must not be empty", nil)
 	}
 
 	candidates := tb.pool.List()
 	if len(candidates) == 0 {
-		return nil, core.NewError("teambuilder.build", core.ErrNotFound,
+		return nil, core.NewError(opBuild, core.ErrNotFound,
 			"agent pool is empty", nil)
 	}
 
-	// Prefer ScoredSelector when the selector supports it so hook consumers
-	// receive the real relevance score rather than a positional estimate.
-	var (
-		selected []PoolEntry
-		scores   []float64 // parallel to selected; nil if selector is not scored
-	)
-	if scorer, ok := tb.selector.(ScoredSelector); ok {
-		scoredEntries, err := scorer.SelectScored(ctx, task, candidates)
-		if err != nil {
-			if tb.hooks.OnSelectionFailed != nil {
-				tb.hooks.OnSelectionFailed(ctx, task, err)
-			}
-			return nil, core.NewError("teambuilder.build", core.ErrToolFailed,
-				"agent selection failed", err)
-		}
-		selected = make([]PoolEntry, len(scoredEntries))
-		scores = make([]float64, len(scoredEntries))
-		for i, e := range scoredEntries {
-			selected[i] = e.Entry
-			scores[i] = e.Score
-		}
-	} else {
-		var err error
-		selected, err = tb.selector.Select(ctx, task, candidates)
-		if err != nil {
-			if tb.hooks.OnSelectionFailed != nil {
-				tb.hooks.OnSelectionFailed(ctx, task, err)
-			}
-			return nil, core.NewError("teambuilder.build", core.ErrToolFailed,
-				"agent selection failed", err)
-		}
-	}
-
-	if len(selected) == 0 {
-		err := core.NewError("teambuilder.build", core.ErrNotFound,
-			fmt.Sprintf("no suitable agents found for task: %s", truncate(task, 100)), nil)
-		if tb.hooks.OnSelectionFailed != nil {
-			tb.hooks.OnSelectionFailed(ctx, task, err)
-		}
+	selected, scores, err := tb.runSelection(ctx, task, candidates)
+	if err != nil {
 		return nil, err
 	}
 
 	// Apply maxAgents limit.
-	if tb.maxAgents > 0 && len(selected) > tb.maxAgents {
-		selected = selected[:tb.maxAgents]
-		if scores != nil {
-			scores = scores[:tb.maxAgents]
-		}
-	}
+	selected, scores = tb.applyAgentLimit(selected, scores)
 
-	// Fire OnAgentSelected hooks with the real score when the selector is a
-	// ScoredSelector, or a positional approximation derived from rank as a
-	// fallback for plain Selector implementations that do not expose scores.
-	if tb.hooks.OnAgentSelected != nil {
-		for i, entry := range selected {
-			var score float64
-			if scores != nil {
-				score = scores[i]
-			} else {
-				score = 1.0 - float64(i)*0.1
-				if score < 0.1 {
-					score = 0.1
-				}
-			}
-			tb.hooks.OnAgentSelected(ctx, task, entry, score)
-		}
-	}
+	tb.fireAgentSelectedHooks(ctx, task, selected, scores)
 
-	// Extract agents from selected entries.
-	agents := make([]agent.Agent, len(selected))
-	for i, e := range selected {
-		agents[i] = e.Agent
-	}
+	agents := entriesToAgents(selected)
+	team := runtime.NewTeam(tb.buildTeamOptions(agents)...)
 
-	// Build team options.
-	teamOpts := []runtime.TeamOption{
-		runtime.WithTeamID(tb.teamID),
-		runtime.WithAgents(agents...),
-	}
-
-	if tb.pattern != nil {
-		teamOpts = append(teamOpts, runtime.WithPattern(tb.pattern(agents)))
-	}
-
-	team := runtime.NewTeam(teamOpts...)
-
-	// Fire OnTeamFormed hook.
 	if tb.hooks.OnTeamFormed != nil {
 		tb.hooks.OnTeamFormed(ctx, task, agents)
 	}
 
 	return team, nil
+}
+
+// runSelection executes the configured selector and returns the selected
+// entries with their scores (nil scores when a plain Selector is used).
+func (tb *TeamBuilder) runSelection(ctx context.Context, task string, candidates []PoolEntry) ([]PoolEntry, []float64, error) {
+	if scorer, ok := tb.selector.(ScoredSelector); ok {
+		return tb.runScoredSelection(ctx, task, candidates, scorer)
+	}
+	return tb.runPlainSelection(ctx, task, candidates)
+}
+
+// runScoredSelection uses a ScoredSelector to select and rank agents.
+func (tb *TeamBuilder) runScoredSelection(ctx context.Context, task string, candidates []PoolEntry, scorer ScoredSelector) ([]PoolEntry, []float64, error) {
+	scoredEntries, err := scorer.SelectScored(ctx, task, candidates)
+	if err != nil {
+		if tb.hooks.OnSelectionFailed != nil {
+			tb.hooks.OnSelectionFailed(ctx, task, err)
+		}
+		return nil, nil, core.NewError(opBuild, core.ErrToolFailed,
+			"agent selection failed", err)
+	}
+
+	selected := make([]PoolEntry, len(scoredEntries))
+	scores := make([]float64, len(scoredEntries))
+	for i, e := range scoredEntries {
+		selected[i] = e.Entry
+		scores[i] = e.Score
+	}
+
+	if err := tb.checkNonEmpty(ctx, task, selected); err != nil {
+		return nil, nil, err
+	}
+	return selected, scores, nil
+}
+
+// runPlainSelection uses a plain Selector (without scores) to select agents.
+func (tb *TeamBuilder) runPlainSelection(ctx context.Context, task string, candidates []PoolEntry) ([]PoolEntry, []float64, error) {
+	selected, err := tb.selector.Select(ctx, task, candidates)
+	if err != nil {
+		if tb.hooks.OnSelectionFailed != nil {
+			tb.hooks.OnSelectionFailed(ctx, task, err)
+		}
+		return nil, nil, core.NewError(opBuild, core.ErrToolFailed,
+			"agent selection failed", err)
+	}
+
+	if err := tb.checkNonEmpty(ctx, task, selected); err != nil {
+		return nil, nil, err
+	}
+	return selected, nil, nil
+}
+
+// checkNonEmpty returns an error (and fires the hook) when selected is empty.
+func (tb *TeamBuilder) checkNonEmpty(ctx context.Context, task string, selected []PoolEntry) error {
+	if len(selected) > 0 {
+		return nil
+	}
+	err := core.NewError(opBuild, core.ErrNotFound,
+		fmt.Sprintf("no suitable agents found for task: %s", truncate(task, 100)), nil)
+	if tb.hooks.OnSelectionFailed != nil {
+		tb.hooks.OnSelectionFailed(ctx, task, err)
+	}
+	return err
+}
+
+// applyAgentLimit trims selected and scores to tb.maxAgents when a limit is set.
+func (tb *TeamBuilder) applyAgentLimit(selected []PoolEntry, scores []float64) ([]PoolEntry, []float64) {
+	if tb.maxAgents <= 0 || len(selected) <= tb.maxAgents {
+		return selected, scores
+	}
+	selected = selected[:tb.maxAgents]
+	if scores != nil {
+		scores = scores[:tb.maxAgents]
+	}
+	return selected, scores
+}
+
+// fireAgentSelectedHooks fires OnAgentSelected for each selected entry.
+// When scores is nil (plain Selector), a positional approximation is used.
+func (tb *TeamBuilder) fireAgentSelectedHooks(ctx context.Context, task string, selected []PoolEntry, scores []float64) {
+	if tb.hooks.OnAgentSelected == nil {
+		return
+	}
+	for i, entry := range selected {
+		var score float64
+		if scores != nil {
+			score = scores[i]
+		} else {
+			score = 1.0 - float64(i)*0.1
+			if score < 0.1 {
+				score = 0.1
+			}
+		}
+		tb.hooks.OnAgentSelected(ctx, task, entry, score)
+	}
+}
+
+// buildTeamOptions assembles the runtime.TeamOption slice for the new team.
+func (tb *TeamBuilder) buildTeamOptions(agents []agent.Agent) []runtime.TeamOption {
+	opts := []runtime.TeamOption{
+		runtime.WithTeamID(tb.teamID),
+		runtime.WithAgents(agents...),
+	}
+	if tb.pattern != nil {
+		opts = append(opts, runtime.WithPattern(tb.pattern(agents)))
+	}
+	return opts
+}
+
+// entriesToAgents extracts the Agent from each PoolEntry.
+func entriesToAgents(entries []PoolEntry) []agent.Agent {
+	agents := make([]agent.Agent, len(entries))
+	for i, e := range entries {
+		agents[i] = e.Agent
+	}
+	return agents
 }
 
 // truncate shortens a string to maxLen runes (not bytes), appending "..." if

@@ -112,6 +112,15 @@ type dagNode struct {
 	deps  []int // indices of nodes that must complete before this one
 }
 
+// dagExecState groups the mutable scheduling state used during DAG execution.
+// Passing it as a single value reduces parameter counts on inner functions.
+type dagExecState struct {
+	mu         *sync.Mutex
+	ready      *[]int
+	inDegree   []int
+	dependents [][]int
+}
+
 // executeWithDAG builds a dependency graph from call argument references, then
 // executes nodes level by level, running each level's members in parallel.
 func (e *ToolDAGExecutor) executeWithDAG(ctx context.Context, calls []schema.ToolCall, registry *tool.Registry, results []*tool.Result) {
@@ -140,35 +149,34 @@ func (e *ToolDAGExecutor) executeWithDAG(ctx context.Context, calls []schema.Too
 		}
 	}
 
-	var mu sync.Mutex
+	state := dagExecState{
+		mu:         &sync.Mutex{},
+		ready:      &ready,
+		inDegree:   inDegree,
+		dependents: dependents,
+	}
+
 	completed := 0
 	total := len(nodes)
 
 	for completed < total {
 		if ctx.Err() != nil {
-			for _, n := range nodes {
-				if results[n.index] == nil {
-					// Use n.index (position in the original calls slice), not the
-					// loop variable i (position in the nodes slice), which may differ
-					// when the DAG reorders nodes.
-					results[n.index] = cancelledResult()
-				}
-			}
+			cancelPendingNodes(nodes, results)
 			return
 		}
 
-		mu.Lock()
-		batch := make([]int, len(ready))
-		copy(batch, ready)
-		ready = ready[:0]
-		mu.Unlock()
+		state.mu.Lock()
+		batch := make([]int, len(*state.ready))
+		copy(batch, *state.ready)
+		*state.ready = (*state.ready)[:0]
+		state.mu.Unlock()
 
 		if len(batch) == 0 {
 			// Cycle or other issue — break to avoid deadlock.
 			break
 		}
 
-		e.runBatch(ctx, batch, nodes, registry, results, &mu, &ready, inDegree, dependents)
+		e.runBatch(ctx, batch, nodes, registry, results, state)
 		completed += len(batch)
 	}
 
@@ -181,17 +189,14 @@ func (e *ToolDAGExecutor) executeWithDAG(ctx context.Context, calls []schema.Too
 }
 
 // runBatch executes the nodes in batch in parallel (bounded by maxConcurrency),
-// then updates ready with any nodes that become unblocked.
+// then updates the ready queue with any nodes that become unblocked.
 func (e *ToolDAGExecutor) runBatch(
 	ctx context.Context,
 	batch []int,
 	nodes []dagNode,
 	registry *tool.Registry,
 	results []*tool.Result,
-	mu *sync.Mutex,
-	ready *[]int,
-	inDegree []int,
-	dependents [][]int,
+	st dagExecState,
 ) {
 	sem := make(chan struct{}, e.maxConcurrency)
 	var wg sync.WaitGroup
@@ -201,14 +206,7 @@ func (e *ToolDAGExecutor) runBatch(
 
 		if ctx.Err() != nil {
 			results[n.index] = cancelledResult()
-			mu.Lock()
-			for _, dep := range dependents[nodeIdx] {
-				inDegree[dep]--
-				if inDegree[dep] == 0 {
-					*ready = append(*ready, dep)
-				}
-			}
-			mu.Unlock()
+			unblockDependents(nodeIdx, st)
 			continue
 		}
 
@@ -220,19 +218,36 @@ func (e *ToolDAGExecutor) runBatch(
 			defer func() { <-sem }()
 
 			results[nd.index] = runOneTool(ctx, nd.call, registry)
-
-			mu.Lock()
-			for _, dep := range dependents[ni] {
-				inDegree[dep]--
-				if inDegree[dep] == 0 {
-					*ready = append(*ready, dep)
-				}
-			}
-			mu.Unlock()
+			unblockDependents(ni, st)
 		}(nodeIdx, n)
 	}
 
 	wg.Wait()
+}
+
+// unblockDependents decrements the in-degree of each node that depends on
+// nodeIdx and appends any newly ready nodes to the ready queue.
+func unblockDependents(nodeIdx int, st dagExecState) {
+	st.mu.Lock()
+	for _, dep := range st.dependents[nodeIdx] {
+		st.inDegree[dep]--
+		if st.inDegree[dep] == 0 {
+			*st.ready = append(*st.ready, dep)
+		}
+	}
+	st.mu.Unlock()
+}
+
+// cancelPendingNodes fills every nil result slot with a cancelled result.
+func cancelPendingNodes(nodes []dagNode, results []*tool.Result) {
+	for _, n := range nodes {
+		if results[n.index] == nil {
+			// Use n.index (position in the original calls slice), not the
+			// loop variable position in the nodes slice, which may differ
+			// when the DAG reorders nodes.
+			results[n.index] = cancelledResult()
+		}
+	}
 }
 
 // buildDAG converts a flat slice of tool calls into dagNodes, detecting
