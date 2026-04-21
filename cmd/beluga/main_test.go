@@ -44,86 +44,156 @@ func executeSubcommand(cmd *cobra.Command, args []string) error {
 
 // --- Per-subcommand tests (migrate from direct cmdInit/cmdDev/… calls) ---
 
-func TestCmdInit(t *testing.T) {
+// TestCmdInit_PositionalName is the happy path: a bare `beluga init <name>`
+// from a clean working directory writes the full basic template, with the
+// three anchor files (go.mod, main.go, .beluga/project.yaml) produced and
+// main.go containing the Layer 7 canonical shape.
+func TestCmdInit_PositionalName(t *testing.T) {
 	dir := t.TempDir()
 	t.Chdir(dir)
-	projDir := filepath.Join(dir, "myproject")
 
-	err := executeSubcommand(newInitCmd(), []string{"--name", "test-project", "--dir", projDir})
-	if err != nil {
+	if err := executeSubcommand(newInitCmd(), []string{"my-project"}); err != nil {
 		t.Fatalf("newInitCmd: %v", err)
 	}
 
-	// Verify directories were created.
-	for _, sub := range []string{"agents", "tools", "config"} {
-		path := filepath.Join(projDir, sub)
-		info, err := os.Stat(path)
-		if err != nil {
-			t.Errorf("directory %s not created: %v", sub, err)
-			continue
-		}
-		if !info.IsDir() {
-			t.Errorf("%s is not a directory", sub)
+	projDir := filepath.Join(dir, "my-project")
+	for _, anchor := range []string{
+		"go.mod",
+		"main.go",
+		filepath.Join(".beluga", "project.yaml"),
+		".env.example",
+		".gitignore",
+		"Dockerfile",
+		"Makefile",
+		filepath.Join(".github", "workflows", "ci.yml"),
+	} {
+		if _, err := os.Stat(filepath.Join(projDir, anchor)); err != nil {
+			t.Errorf("expected %s to exist: %v", anchor, err)
 		}
 	}
 
-	// Verify config file.
-	configPath := filepath.Join(projDir, "config", "agent.json")
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		t.Fatalf("read config: %v", err)
-	}
-	if len(data) == 0 {
-		t.Error("config file is empty")
-	}
-	if !strings.Contains(string(data), "test-project-agent") {
-		t.Errorf("config missing agent id: %s", data)
-	}
-
-	// Verify main.go.
-	mainPath := filepath.Join(projDir, "main.go")
-	data, err = os.ReadFile(mainPath)
+	mainBytes, err := os.ReadFile(filepath.Join(projDir, "main.go"))
 	if err != nil {
 		t.Fatalf("read main.go: %v", err)
 	}
-	if len(data) == 0 {
-		t.Error("main.go is empty")
+	if !strings.Contains(string(mainBytes), `llm.New("openai"`) {
+		t.Errorf("main.go missing llm.New call; got:\n%s", mainBytes)
+	}
+	if !strings.Contains(string(mainBytes), `/llm/providers/openai`) {
+		t.Errorf("main.go missing openai blank import; got:\n%s", mainBytes)
+	}
+	// Project-name derivation into agent id — brief Decision #4.
+	if !strings.Contains(string(mainBytes), `agent.New("my-project-agent"`) {
+		t.Errorf("main.go should name agent from project name; got:\n%s", mainBytes)
 	}
 }
 
-func TestCmdInit_DefaultName(t *testing.T) {
+// TestCmdInit_RejectBadName exercises the allowlist regex +
+// Windows-reserved-name blocklist at the cobra entry point. Each of these
+// must exit non-zero with an error message naming the validation rule.
+func TestCmdInit_RejectBadName(t *testing.T) {
 	dir := t.TempDir()
 	t.Chdir(dir)
-	projDir := filepath.Join(dir, "derived-name")
 
-	if err := executeSubcommand(newInitCmd(), []string{"--dir", projDir}); err != nil {
+	cases := []struct {
+		name  string
+		input string
+	}{
+		{"path traversal", "../evil"},
+		{"leading hyphen", "-badstart"},
+		{"contains space", "My Project"},
+		{"windows reserved", "con"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Prefix "--" so cobra treats the input as a positional
+			// argument even when it starts with "-". Real users typing
+			// `beluga init -badstart` hit the same cobra flag-parsing
+			// error, which is acceptable (it still rejects the name);
+			// this test targets the validator path specifically.
+			err := executeSubcommand(newInitCmd(), []string{"--", tc.input})
+			if err == nil {
+				t.Fatalf("expected rejection for %q, got nil", tc.input)
+			}
+			if !strings.Contains(err.Error(), "allowed pattern") &&
+				!strings.Contains(err.Error(), "reserved") {
+				t.Errorf("error must name validation rule; got: %v", err)
+			}
+		})
+	}
+}
+
+// TestCmdInit_ForceOverwrite validates Success Criterion 7: a non-empty
+// target directory exits non-zero with a message containing --force, and
+// the --force flag permits the overwrite.
+func TestCmdInit_ForceOverwrite(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
+
+	projDir := filepath.Join(dir, "dup-target")
+	if err := os.MkdirAll(projDir, 0o750); err != nil {
+		t.Fatalf("mkdir target: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(projDir, "stale.txt"), []byte("hi"), 0o644); err != nil {
+		t.Fatalf("seed stale: %v", err)
+	}
+
+	err := executeSubcommand(newInitCmd(), []string{"dup-target"})
+	if err == nil {
+		t.Fatalf("expected rejection of non-empty target without --force")
+	}
+	if !strings.Contains(err.Error(), "--force") {
+		t.Errorf("error must mention --force (Success Criterion 7); got: %v", err)
+	}
+
+	// With --force the command succeeds and the stale file survives
+	// (we only overwrite template-produced files, not the whole tree).
+	if err := executeSubcommand(newInitCmd(), []string{"--force", "dup-target"}); err != nil {
+		t.Fatalf("--force init: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(projDir, "stale.txt")); err != nil {
+		t.Errorf("--force should not delete unrelated files; stale.txt: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(projDir, "main.go")); err != nil {
+		t.Errorf("--force should have written main.go; got: %v", err)
+	}
+}
+
+// TestCmdInit_DevelVersion simulates a (devel)-build invocation inside a
+// framework checkout. It synthesises a fake workspace root (a go.mod whose
+// module path is the framework module) and chdirs into a nested directory
+// so detectWorkspaceRoot finds it. Asserts the generated go.mod carries a
+// replace directive pointing at the detected root and contains no literal
+// "v(devel)" token. Brief Risk #12 / Decision #12.
+func TestCmdInit_DevelVersion(t *testing.T) {
+	root := t.TempDir()
+	// Fake the framework checkout: a go.mod with the framework module path.
+	if err := os.WriteFile(filepath.Join(root, "go.mod"),
+		[]byte("module github.com/lookatitude/beluga-ai/v2\n\ngo 1.25\n"), 0o644); err != nil {
+		t.Fatalf("seed framework go.mod: %v", err)
+	}
+	// Nested cwd so detectWorkspaceRoot has to ancestor-walk.
+	nested := filepath.Join(root, "sub", "nested")
+	if err := os.MkdirAll(nested, 0o750); err != nil {
+		t.Fatalf("mkdir nested: %v", err)
+	}
+	t.Chdir(nested)
+
+	if err := executeSubcommand(newInitCmd(), []string{"devel-project"}); err != nil {
 		t.Fatalf("newInitCmd: %v", err)
 	}
-	data, err := os.ReadFile(filepath.Join(projDir, "config", "agent.json"))
+	goMod, err := os.ReadFile(filepath.Join(nested, "devel-project", "go.mod"))
 	if err != nil {
-		t.Fatalf("read config: %v", err)
+		t.Fatalf("read go.mod: %v", err)
 	}
-	if !strings.Contains(string(data), "derived-name-agent") {
-		t.Errorf("expected default name to derive from dir, got: %s", data)
+	// The test binary always runs with version.Get() == "(devel)" (no
+	// ldflags injection) so the replace-directive branch MUST fire —
+	// and it must NOT leave a literal "v(devel)" token behind.
+	if strings.Contains(string(goMod), "v(devel)") {
+		t.Errorf("go.mod must not contain v(devel); got:\n%s", goMod)
 	}
-}
-
-func TestCmdInit_PathTraversal(t *testing.T) {
-	t.Chdir(t.TempDir())
-	err := executeSubcommand(newInitCmd(), []string{"--dir", "/tmp/../etc/passwd"})
-	if err == nil {
-		t.Error("expected error for absolute path traversal")
-	}
-	if err != nil && !strings.Contains(err.Error(), "path traversal") {
-		t.Errorf("expected path traversal error, got: %v", err)
-	}
-}
-
-func TestCmdInit_RelativeTraversal(t *testing.T) {
-	t.Chdir(t.TempDir())
-	err := executeSubcommand(newInitCmd(), []string{"--dir", "../escape"})
-	if err == nil {
-		t.Error("expected error for relative path traversal")
+	if !strings.Contains(string(goMod), "replace github.com/lookatitude/beluga-ai/v2") {
+		t.Errorf("go.mod must contain replace directive for (devel) build; got:\n%s", goMod)
 	}
 }
 
@@ -355,7 +425,7 @@ func TestRoot_UnknownCommand(t *testing.T) {
 func TestRoot_Init(t *testing.T) {
 	dir := t.TempDir()
 	t.Chdir(dir)
-	_, errBuf, code := executeArgs([]string{"init", "--name", "runtest", "--dir", filepath.Join(dir, "p")})
+	_, errBuf, code := executeArgs([]string{"init", "runtest"})
 	if code != 0 {
 		t.Errorf("want exit 0, got %d; stderr=%s", code, errBuf)
 	}

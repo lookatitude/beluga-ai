@@ -1,0 +1,121 @@
+name: Scaffold Integration
+
+# Validates the `beluga init` scaffolder end-to-end: build the CLI,
+# scaffold the `basic` template into /tmp, point the generated go.mod
+# at the in-tree framework via a replace directive, then run
+# `go mod tidy && go build ./... && go vet ./...` on the generated
+# project. The job exists because the scaffolder's output is only
+# meaningful if it compiles — unit tests exercise the renderer in
+# isolation, this job exercises the full pipeline.
+#
+# Budget: under 90 seconds on cold cache (brief §Success-criterion 12).
+# Parallel to _ci-checks.yml so it does not gate regular PR checks.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "cmd/beluga/**"
+      - ".github/workflows/scaffold-integration.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "cmd/beluga/**"
+      - ".github/workflows/scaffold-integration.yml"
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: "1.25.7"
+  GOTOOLCHAIN: local
+
+jobs:
+  scaffold:
+    name: Scaffold + build ${{ matrix.template }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        template: [basic]
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Build beluga CLI
+        run: go build -o /tmp/beluga ./cmd/beluga
+
+      - name: Scaffold ${{ matrix.template }} project
+        run: |
+          mkdir -p /tmp/scaffold-test
+          cd /tmp/scaffold-test
+          /tmp/beluga init --template ${{ matrix.template }} testproject
+
+      - name: Point generated go.mod at in-tree framework
+        # The scaffolder's (devel)-version handling already emits a
+        # replace directive when the CLI is built without a release pin
+        # (the default in CI). This explicit edit is a safety net for
+        # the future tagged-release case where the scaffolder would
+        # write require v2.x.y and go mod tidy would need network
+        # access to the module proxy.
+        run: |
+          cd /tmp/scaffold-test/testproject
+          go mod edit -replace github.com/lookatitude/beluga-ai/v2=${{ github.workspace }}
+
+      - name: go mod tidy
+        run: |
+          cd /tmp/scaffold-test/testproject
+          go mod tidy
+
+      - name: go build ./...
+        run: |
+          cd /tmp/scaffold-test/testproject
+          go build ./...
+
+      - name: go vet ./...
+        run: |
+          cd /tmp/scaffold-test/testproject
+          go vet ./...
+
+      - name: Scaffold stubs (agent + tool + planner)
+        # Exercises the `beluga new` path end-to-end: generated stubs must
+        # compile and their placeholder tests must exit 0 (t.Skip) on the
+        # scaffolded project. This catches the package-collision and
+        # malformed-test-import regressions that unit tests miss because
+        # they inspect files in isolation rather than round-tripping
+        # them through `go build ./...`.
+        run: |
+          cd /tmp/scaffold-test/testproject
+          /tmp/beluga new agent SmokeAgent
+          /tmp/beluga new tool SmokeTool
+          /tmp/beluga new planner SmokePlanner
+          go build ./...
+          go test ./...
+
+      - name: gitleaks scan (YOUR_*_HERE pattern must not trip high-confidence)
+        # Scoped gitleaks scan of the scaffolded project directory.
+        # The gitleaks-action@v2 scans the PR diff from the repo root,
+        # which is not what we want here — we want to confirm the
+        # SCAFFOLDED project's .env.example doesn't trip high-confidence
+        # rules. Pinned version; scope limited to /tmp/scaffold-test.
+        # Tarball verified against the SHA256 checksum published with the
+        # release before extraction — prevents execution of a substituted
+        # binary if the release page is compromised.
+        # See specialist-security-architect §Q4: YOUR_OPENAI_API_KEY_HERE
+        # is the gitleaks-safe sentinel.
+        env:
+          GITLEAKS_VERSION: "8.24.3"
+        run: |
+          set -euo pipefail
+          tarball="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+          # --proto '=https' refuses any redirect to plain HTTP.
+          curl --proto '=https' --tlsv1.2 -sSfL "${base}/${tarball}" -o "/tmp/${tarball}"
+          curl --proto '=https' --tlsv1.2 -sSfL "${base}/gitleaks_${GITLEAKS_VERSION}_checksums.txt" -o /tmp/gitleaks_checksums.txt
+          (cd /tmp && grep " ${tarball}\$" gitleaks_checksums.txt | sha256sum -c -)
+          tar -xzf "/tmp/${tarball}" -C /tmp
+          /tmp/gitleaks detect --source /tmp/scaffold-test/testproject --no-git --redact --exit-code 1

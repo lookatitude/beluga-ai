@@ -54,6 +54,9 @@ __debug_bin*
 *.bak
 
 tmp/
+# Scaffold integration test scratch dirs (created by cmd/beluga tests
+# inside the framework root; t.Cleanup removes them but SIGKILL leaks).
+tmp-integration-*/
 
 # Local Go build cache and Claude worktrees (never commit)
 .cache/

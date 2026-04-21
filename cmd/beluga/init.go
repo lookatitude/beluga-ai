@@ -5,126 +5,80 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
+
+	"github.com/lookatitude/beluga-ai/v2/cmd/beluga/internal/version"
+	"github.com/lookatitude/beluga-ai/v2/cmd/beluga/scaffold"
 )
 
-// newInitCmd returns the cobra subcommand for `beluga init`. Flag names are
-// preserved from the pre-cobra CLI: --name, --dir.
+// newInitCmd returns the cobra subcommand for `beluga init <project-name>`.
+// S2 replaces the S1 stub wholesale — the positional argument + three flags
+// (--template, --module, --force) drive the scaffolder directly. See
+// docs/consultations/2026-04-20-loo-149-architect-plan.md §T7 for the
+// rationale for a full replacement rather than an incremental migration.
 func newInitCmd() *cobra.Command {
 	var (
-		name string
-		dir  string
+		template   string
+		modulePath string
+		force      bool
 	)
 	cmd := &cobra.Command{
-		Use:           "init [flags]",
-		Short:         "Initialize a new Beluga AI project",
-		Args:          cobra.NoArgs,
+		Use:   "init <project-name>",
+		Short: "Initialize a new Beluga AI project",
+		Long: "Initialize a new Beluga AI project from a named template.\n\n" +
+			"The project name must be lowercase letters, digits, and hyphens (2-64 chars),\n" +
+			"starting with a letter and ending with a letter or digit.",
+		Args:          cobra.ExactArgs(1),
 		SilenceUsage:  true,
 		SilenceErrors: true,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runInit(name, dir)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			projectName := args[0]
+
+			if err := scaffold.ValidateProjectName(projectName); err != nil {
+				return err
+			}
+			if modulePath != "" {
+				if err := scaffold.ValidateModulePath(modulePath); err != nil {
+					return err
+				}
+			} else {
+				modulePath = "example.com/" + projectName
+			}
+
+			cwd, err := os.Getwd()
+			if err != nil {
+				return fmt.Errorf("resolve working directory: %w", err)
+			}
+			targetDir := filepath.Join(cwd, projectName)
+
+			opts := scaffold.Options{
+				ProjectName:   projectName,
+				Template:      template,
+				ModulePath:    modulePath,
+				TargetDir:     targetDir,
+				Force:         force,
+				BelugaVersion: version.Get(),
+				ScaffoldedAt:  time.Now().UTC(),
+			}
+
+			if err := scaffold.Scaffold(cmd.Context(), opts); err != nil {
+				return err
+			}
+
+			out := cmd.OutOrStdout()
+			_, _ = fmt.Fprintf(out, "Initialized Beluga AI project %q in %s\n", projectName, targetDir)
+			_, _ = fmt.Fprintf(out, "Next: cd %s && export OPENAI_API_KEY=... && go run .\n", projectName)
+			return nil
 		},
 	}
-	cmd.Flags().StringVar(&name, "name", "", "project name (default: current directory name)")
-	cmd.Flags().StringVar(&dir, "dir", ".", "project directory")
+	names := scaffold.DefaultRegistry().Names()
+	cmd.Flags().StringVar(&template, "template", "basic",
+		"template name (available: "+strings.Join(names, ", ")+")")
+	cmd.Flags().StringVar(&modulePath, "module", "",
+		"Go module path (default: example.com/<project-name>)")
+	cmd.Flags().BoolVar(&force, "force", false,
+		"overwrite existing files in a non-empty target directory")
 	return cmd
-}
-
-// runInit executes the init workflow with pre-parsed flag values. Extracted
-// from the RunE body so tests can exercise the behaviour directly without a
-// cobra command tree.
-func runInit(name, dir string) error {
-	// Resolve to an absolute, cleaned path and require it to be rooted under
-	// the current working directory. This defeats both relative (`../..`) and
-	// absolute (`/tmp/../etc/passwd`) traversal attempts.
-	cleanDir, err := filepath.Abs(filepath.Clean(dir))
-	if err != nil {
-		return fmt.Errorf("resolve directory: %w", err)
-	}
-	cwd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("resolve working directory: %w", err)
-	}
-	base, err := filepath.Abs(cwd)
-	if err != nil {
-		return fmt.Errorf("resolve working directory: %w", err)
-	}
-	rel, err := filepath.Rel(base, cleanDir)
-	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
-		return fmt.Errorf("path traversal not allowed: %q", dir)
-	}
-
-	if name == "" {
-		name = filepath.Base(cleanDir)
-	}
-
-	// Create project structure.
-	dirs := []string{
-		filepath.Join(cleanDir, "agents"),
-		filepath.Join(cleanDir, "tools"),
-		filepath.Join(cleanDir, "config"),
-	}
-
-	for _, d := range dirs {
-		if err := os.MkdirAll(d, 0750); err != nil {
-			return fmt.Errorf("create directory %s: %w", d, err)
-		}
-	}
-
-	// Write config file.
-	configPath := filepath.Join(cleanDir, "config", "agent.json")
-	configContent := fmt.Sprintf(`{
-  "id": "%s-agent",
-  "persona": {
-    "role": "Assistant",
-    "goal": "Help users with their tasks"
-  },
-  "model": {
-    "provider": "openai",
-    "model": "gpt-4o"
-  }
-}
-`, name)
-
-	if err := os.WriteFile(configPath, []byte(configContent), 0600); err != nil {
-		return fmt.Errorf("write config: %w", err)
-	}
-
-	// Write main.go.
-	mainPath := filepath.Join(cleanDir, "main.go")
-	mainContent := fmt.Sprintf(`package main
-
-import (
-	"context"
-	"fmt"
-	"log"
-
-	"github.com/lookatitude/beluga-ai/v2/agent"
-)
-
-func main() {
-	a := agent.New("%s-agent",
-		agent.WithPersona(agent.Persona{Role: "Assistant"}),
-	)
-
-	result, err := a.Invoke(context.Background(), "Hello!")
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(result)
-}
-`, name)
-
-	if err := os.WriteFile(mainPath, []byte(mainContent), 0600); err != nil {
-		return fmt.Errorf("write main.go: %w", err)
-	}
-
-	fmt.Printf("Initialized Beluga AI project %q in %s\n", name, cleanDir)
-	fmt.Println("  agents/       - agent definitions")
-	fmt.Println("  tools/        - custom tools")
-	fmt.Println("  config/       - configuration files")
-	fmt.Println("  main.go       - entry point")
-
-	return nil
 }

@@ -1,0 +1,5 @@
+schema-version: 1
+name: sample
+template: basic
+beluga-version: v2.10.1
+scaffolded-at: 2026-04-20T00:00:00Z
