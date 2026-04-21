@@ -93,10 +93,18 @@ func TestScaffoldBasic_GoFormat(t *testing.T) {
 	if !strings.Contains(string(data), "/llm/providers/openai") {
 		t.Errorf("golden main.go should blank-import openai provider")
 	}
-	// OTel-omission audit: none of the reserved substrings must appear.
-	for _, forbidden := range []string{"o11y", "BootstrapFromEnv", "OTEL_", "BELUGA_OTEL"} {
-		if strings.Contains(string(data), forbidden) {
-			t.Errorf("golden main.go must not contain %q (brief Decision #15 / Risk #8)", forbidden)
+	// Scaffolded projects must bootstrap o11y and attach the agent-tracing
+	// middleware so the first `beluga dev`/`beluga run` invocation lights
+	// up spans end-to-end (DX-1 S3 brief, decision reversal in Phase 5).
+	for _, required := range []string{
+		`"github.com/lookatitude/beluga-ai/v2/o11y"`,
+		"o11y.BootstrapFromEnv(",
+		"defer shutdown()",
+		"agent.ApplyMiddleware(",
+		"agent.WithTracing()",
+	} {
+		if !strings.Contains(string(data), required) {
+			t.Errorf("golden main.go missing %q (scaffold must wire o11y + tracing)", required)
 		}
 	}
 }
