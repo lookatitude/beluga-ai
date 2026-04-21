@@ -8,7 +8,7 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
-const opCredentialJITIssue = "credential.jit.issue"
+const opCredentialJITIssue = "credential.jit.issue" // #nosec G101 -- operation name, not a credential
 
 // PermissionNarrower is a function that narrows a set of requested permissions
 // to the minimum required set. It returns the narrowed permissions and an error

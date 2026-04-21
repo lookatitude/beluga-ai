@@ -11,7 +11,7 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
-const opCredentialIssue = "credential.issue"
+const opCredentialIssue = "credential.issue" // #nosec G101 -- operation name, not a credential
 
 // CredentialIssuer manages the lifecycle of agent credentials. Implementations
 // must be safe for concurrent use.
