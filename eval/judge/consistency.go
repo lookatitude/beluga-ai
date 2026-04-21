@@ -10,6 +10,9 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/llm"
 )
 
+// consistencyNewOp is the operation name used in errors from NewConsistencyChecker.
+const consistencyNewOp = "judge.consistency.new"
+
 // consistencyOptions holds configuration for ConsistencyChecker.
 type consistencyOptions struct {
 	rubric   *Rubric
@@ -87,13 +90,13 @@ func NewConsistencyChecker(opts ...ConsistencyOption) (*ConsistencyChecker, erro
 		opt(&o)
 	}
 	if len(o.models) == 0 {
-		return nil, core.NewError("judge.consistency.new", core.ErrInvalidInput, "at least one model is required", nil)
+		return nil, core.NewError(consistencyNewOp, core.ErrInvalidInput, "at least one model is required", nil)
 	}
 	if o.rubric == nil {
-		return nil, core.NewError("judge.consistency.new", core.ErrInvalidInput, "rubric is required", nil)
+		return nil, core.NewError(consistencyNewOp, core.ErrInvalidInput, "rubric is required", nil)
 	}
 	if err := o.rubric.Validate(); err != nil {
-		return nil, core.NewError("judge.consistency.new", core.ErrInvalidInput, "invalid rubric", err)
+		return nil, core.NewError(consistencyNewOp, core.ErrInvalidInput, "invalid rubric", err)
 	}
 	return &ConsistencyChecker{opts: o}, nil
 }
