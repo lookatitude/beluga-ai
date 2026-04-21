@@ -5,14 +5,11 @@ import (
 	"iter"
 	"sync"
 
+	"github.com/lookatitude/beluga-ai/v2/llm"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
-// GenerateOption mirrors the llm.GenerateOption type so this package does not
-// import the llm package (avoiding circular dependencies).
-type GenerateOption func(any)
-
-// MockChatModel is a configurable mock for the ChatModel interface.
+// MockChatModel is a configurable mock for the llm.ChatModel interface.
 // It records all Generate calls and can return preset responses, errors,
 // or streaming chunks.
 type MockChatModel struct {
@@ -27,6 +24,8 @@ type MockChatModel struct {
 	generateCalls int
 	lastMessages  []schema.Message
 }
+
+var _ llm.ChatModel = (*MockChatModel)(nil)
 
 // Option configures a MockChatModel.
 type Option func(*MockChatModel)
@@ -72,7 +71,7 @@ func WithModelID(id string) Option {
 
 // Generate returns the configured response or error. It records the call
 // and the messages for later inspection.
-func (m *MockChatModel) Generate(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) (*schema.AIMessage, error) {
+func (m *MockChatModel) Generate(ctx context.Context, msgs []schema.Message, opts ...llm.GenerateOption) (*schema.AIMessage, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -93,7 +92,7 @@ func (m *MockChatModel) Generate(ctx context.Context, msgs []schema.Message, opt
 
 // Stream returns an iter.Seq2 that yields the configured stream chunks.
 // If an error is configured, the first yield returns that error.
-func (m *MockChatModel) Stream(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) iter.Seq2[schema.StreamChunk, error] {
+func (m *MockChatModel) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.GenerateOption) iter.Seq2[schema.StreamChunk, error] {
 	m.mu.Lock()
 	m.generateCalls++
 	m.lastMessages = make([]schema.Message, len(msgs))
@@ -119,9 +118,11 @@ func (m *MockChatModel) Stream(ctx context.Context, msgs []schema.Message, opts 
 	}
 }
 
-// BindTools returns a new MockChatModel with the given tools recorded.
-// The returned mock shares the same response/error configuration.
-func (m *MockChatModel) BindTools(tools []schema.ToolDefinition) *MockChatModel {
+// BindTools returns a new MockChatModel with the given tools recorded,
+// typed as llm.ChatModel so the mock composes with any consumer of the
+// interface. The returned mock shares the same response/error
+// configuration as the receiver but starts with its own call counter.
+func (m *MockChatModel) BindTools(tools []schema.ToolDefinition) llm.ChatModel {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

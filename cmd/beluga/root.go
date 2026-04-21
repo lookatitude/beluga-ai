@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -33,6 +34,7 @@ func newRootCmd() *cobra.Command {
 		newProvidersCmd(),
 		newInitCmd(),
 		newNewCmd(),
+		newRunCmd(),
 		newDevCmd(),
 		newTestCmd(),
 		newDeployCmd(),
@@ -48,6 +50,15 @@ func Execute(stdout, stderr io.Writer) int {
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	if err := cmd.Execute(); err != nil {
+		// `beluga run` forwards the child's exit code via runExitError;
+		// other commands fall through to the generic exit 1.
+		var re *runExitError
+		if errors.As(err, &re) {
+			if re.err != nil {
+				_, _ = fmt.Fprintf(stderr, "error: %s\n", re.err.Error())
+			}
+			return re.ExitCode()
+		}
 		// cobra's SilenceErrors means we own the stderr write.
 		_, _ = fmt.Fprintf(stderr, "error: %s\n", err.Error())
 		return 1

@@ -5,6 +5,7 @@ Task-oriented how-to documents. Each guide assumes you've read [Architecture Ove
 ## Getting started
 
 - [Build Your First Agent](./first-agent.md) — a working LLM agent in under 5 minutes.
+- [Dev Loop](./dev-loop.md) — `beluga run`, `beluga dev`, and `beluga test` end-to-end, no API key required.
 
 ## Extending the framework
 
@@ -21,6 +22,7 @@ Task-oriented how-to documents. Each guide assumes you've read [Architecture Ove
 ## Which guide do I need?
 
 - **I just want to see it work.** → [First Agent](./first-agent.md).
+- **I want a hot-rebuild loop with a deterministic backend.** → [Dev Loop](./dev-loop.md).
 - **I want to use my own LLM.** → [Custom Provider](./custom-provider.md).
 - **My agent needs a reasoning style not in the box.** → [Custom Planner](./custom-planner.md).
 - **I have two agents that should talk to each other.** → [Multi-Agent Team](./multi-agent-team.md).

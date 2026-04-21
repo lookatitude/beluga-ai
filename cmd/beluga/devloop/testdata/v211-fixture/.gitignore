@@ -1,0 +1,4 @@
+# Compiled fixture binaries (produced by `go build ./...` in this dir
+# or by `beluga run` dropping its build output here). Never commit.
+v211fixture
+v211fixture.exe

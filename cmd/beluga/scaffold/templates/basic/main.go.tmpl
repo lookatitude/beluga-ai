@@ -24,6 +24,7 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/config"
 	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/llm"
+	"github.com/lookatitude/beluga-ai/v2/o11y"
 	"github.com/lookatitude/beluga-ai/v2/tool"
 
 	// Register the __BELUGA_PROVIDER_NAME__ provider via init().
@@ -63,6 +64,16 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
+	// Wire OTel tracing from the environment. Safe to call unconditionally:
+	// OTEL_EXPORTER_OTLP_ENDPOINT selects OTLP HTTP; BELUGA_OTEL_STDOUT=1
+	// selects pretty stdout (see .env.example); OTEL_SDK_DISABLED=true
+	// short-circuits to a no-op. Shutdown flushes pending spans at exit.
+	shutdown, err := o11y.BootstrapFromEnv(ctx, "__BELUGA_PROJECT_NAME__")
+	if err != nil {
+		log.Fatalf("o11y.BootstrapFromEnv: %v", err)
+	}
+	defer shutdown()
+
 	model, err := llm.New("__BELUGA_PROVIDER_NAME__", config.ProviderConfig{
 		Provider: "__BELUGA_PROVIDER_NAME__",
 		APIKey:   apiKey,
@@ -72,16 +83,19 @@ func main() {
 		log.Fatalf("llm.New: %v", err)
 	}
 
-	a := agent.New("__BELUGA_AGENT_NAME__",
-		agent.WithLLM(model),
-		agent.WithPersona(agent.Persona{
-			Role:      "helpful assistant",
-			Goal:      "answer questions accurately",
-			Backstory: "You are concise and direct. When asked to echo something, always use the echo tool.",
-			Traits:    []string{"concise", "accurate"},
-		}),
-		agent.WithTools([]tool.Tool{newEchoTool()}),
-		// agent.WithPlannerName("reflexion"), // see: docs/architecture/06-reasoning-strategies.md
+	a := agent.ApplyMiddleware(
+		agent.New("__BELUGA_AGENT_NAME__",
+			agent.WithLLM(model),
+			agent.WithPersona(agent.Persona{
+				Role:      "helpful assistant",
+				Goal:      "answer questions accurately",
+				Backstory: "You are concise and direct. When asked to echo something, always use the echo tool.",
+				Traits:    []string{"concise", "accurate"},
+			}),
+			agent.WithTools([]tool.Tool{newEchoTool()}),
+			// agent.WithPlannerName("reflexion"), // see: docs/architecture/06-reasoning-strategies.md
+		),
+		agent.WithTracing(),
 	)
 
 	answer, err := a.Invoke(ctx, "Please echo: hello world")

@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"os/exec"
@@ -10,12 +12,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/lookatitude/beluga-ai/v2/cmd/beluga/devloop"
 	"github.com/spf13/cobra"
 )
 
 // executeArgs runs the cobra root with the given args and returns captured
-// stdout/stderr plus the exit code from Execute. It is the post-T2 replacement
-// for the pre-cobra run() helper.
+// stdout/stderr plus the exit code from Execute. It mirrors the production
+// Execute() helper's handling of runExitError so tests see the same exit-code
+// contract as the shipped binary.
 func executeArgs(args []string) (stdout, stderr string, code int) {
 	var out, errBuf bytes.Buffer
 	cmd := newRootCmd()
@@ -23,10 +27,16 @@ func executeArgs(args []string) (stdout, stderr string, code int) {
 	cmd.SetOut(&out)
 	cmd.SetErr(&errBuf)
 	if err := cmd.Execute(); err != nil {
-		// Match the Execute() function's formatting so tests see the same
-		// stderr contract they would in production.
-		_, _ = errBuf.WriteString("error: " + err.Error() + "\n")
-		code = 1
+		var re *runExitError
+		if errors.As(err, &re) {
+			if re.err != nil {
+				_, _ = errBuf.WriteString("error: " + re.err.Error() + "\n")
+			}
+			code = re.ExitCode()
+		} else {
+			_, _ = errBuf.WriteString("error: " + err.Error() + "\n")
+			code = 1
+		}
 	}
 	return out.String(), errBuf.String(), code
 }
@@ -197,10 +207,47 @@ func TestCmdInit_DevelVersion(t *testing.T) {
 	}
 }
 
-func TestCmdDev(t *testing.T) {
+func TestCmdDev_UnknownFlagRejected(t *testing.T) {
+	// The legacy --port flag was removed in favour of --playground; the
+	// cobra layer must reject it rather than silently accept.
 	err := executeSubcommand(newDevCmd(), []string{"--port", "9090"})
-	if err != nil {
-		t.Errorf("newDevCmd: %v", err)
+	if err == nil {
+		t.Error("expected cobra to reject removed --port flag")
+	}
+}
+
+func TestCmdDev_BadPlaygroundFlag(t *testing.T) {
+	origRun := devloopRun
+	defer func() { devloopRun = origRun }()
+	devloopRun = func(_ context.Context, _ devloop.Config) error { return nil }
+
+	err := executeSubcommand(newDevCmd(), []string{"--playground", "not-a-port"})
+	if err == nil || !strings.Contains(err.Error(), "invalid --playground") {
+		t.Errorf("expected --playground validation error, got: %v", err)
+	}
+}
+
+func TestCmdDev_PlaygroundOff(t *testing.T) {
+	// With --playground=off, the command must not attempt to start the
+	// UI server at all; a stubbed devloopRun lets us confirm the config
+	// is built without any sink wiring.
+	origRun := devloopRun
+	defer func() { devloopRun = origRun }()
+	var captured devloop.Config
+	devloopRun = func(_ context.Context, cfg devloop.Config) error {
+		captured = cfg
+		return nil
+	}
+	if err := executeSubcommand(newDevCmd(), []string{"--playground", "off"}); err != nil {
+		t.Fatalf("dev --playground off: %v", err)
+	}
+	if captured.OnRestart != nil {
+		t.Error("--playground=off should leave OnRestart nil")
+	}
+	for _, e := range captured.ExtraEnv {
+		if strings.HasPrefix(e, "BELUGA_PLAYGROUND_URL=") {
+			t.Errorf("--playground=off must not set BELUGA_PLAYGROUND_URL; got %q", e)
+		}
 	}
 }
 
@@ -268,6 +315,77 @@ func TestCmdTest_Success(t *testing.T) {
 
 	if err := executeSubcommand(newTestCmd(), []string{"-v", "--race", "--pkg", "./..."}); err != nil {
 		t.Errorf("newTestCmd: %v", err)
+	}
+}
+
+// TestCmdTest_CanonicalEnv verifies that `beluga test` injects the
+// BELUGA_ENV=test / BELUGA_LLM_PROVIDER=mock / OTEL_SDK_DISABLED=true
+// triple into the child `go test` env. Asserting on cmd.Env is the
+// only way to check this without running real tests.
+func TestCmdTest_CanonicalEnv(t *testing.T) {
+	origLook := lookPath
+	origExec := execCommand
+	defer func() {
+		lookPath = origLook
+		execCommand = origExec
+	}()
+	lookPath = func(string) (string, error) { return "/usr/bin/true", nil }
+
+	var cmdRef *exec.Cmd
+	execCommand = func(stdout, stderr io.Writer, name string, args ...string) *exec.Cmd {
+		c := exec.Command("/bin/sh", "-c", "exit 0")
+		cmdRef = c
+		return c
+	}
+
+	if err := executeSubcommand(newTestCmd(), []string{"--pkg", "./..."}); err != nil {
+		t.Fatalf("newTestCmd: %v", err)
+	}
+	if cmdRef == nil {
+		t.Fatal("execCommand stub never invoked")
+	}
+	for _, want := range []string{"BELUGA_ENV=test", "BELUGA_LLM_PROVIDER=mock", "OTEL_SDK_DISABLED=true"} {
+		found := false
+		for _, e := range cmdRef.Env {
+			if e == want {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("canonical env missing %q; got: %v", want, cmdRef.Env)
+		}
+	}
+}
+
+// TestCmdTest_BannerUsesCobraWriter asserts that the "Running: ..." banner
+// is written to the cobra command's configured stdout (via cmd.OutOrStdout),
+// not directly to os.Stdout. A prior implementation used fmt.Printf, which
+// bypassed cobra's writer plumbing and made test capture awkward.
+func TestCmdTest_BannerUsesCobraWriter(t *testing.T) {
+	origLook := lookPath
+	origExec := execCommand
+	defer func() {
+		lookPath = origLook
+		execCommand = origExec
+	}()
+	lookPath = func(string) (string, error) { return "/usr/bin/true", nil }
+	execCommand = func(stdout, stderr io.Writer, name string, args ...string) *exec.Cmd {
+		return exec.Command("/bin/sh", "-c", "exit 0")
+	}
+
+	var out, errBuf bytes.Buffer
+	cmd := newTestCmd()
+	cmd.SetArgs([]string{"--pkg", "./..."})
+	cmd.SetOut(&out)
+	cmd.SetErr(&errBuf)
+	cmd.SilenceUsage = true
+	cmd.SilenceErrors = true
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if !strings.Contains(out.String(), "Running: /usr/bin/true") {
+		t.Errorf("banner missing from cobra stdout; got stdout=%q stderr=%q", out.String(), errBuf.String())
 	}
 }
 
@@ -432,9 +550,57 @@ func TestRoot_Init(t *testing.T) {
 }
 
 func TestRoot_Dev(t *testing.T) {
-	_, errBuf, code := executeArgs([]string{"dev", "--port", "7777"})
+	origRun := devloopRun
+	defer func() { devloopRun = origRun }()
+	devloopRun = func(_ context.Context, _ devloop.Config) error { return nil }
+
+	_, errBuf, code := executeArgs([]string{"dev", "--playground", "off"})
 	if code != 0 {
 		t.Errorf("want exit 0, got %d; stderr=%s", code, errBuf)
+	}
+}
+
+func TestRoot_Run(t *testing.T) {
+	origRun := devloopRun
+	origExit := devloopExitCode
+	defer func() {
+		devloopRun = origRun
+		devloopExitCode = origExit
+	}()
+	var captured devloop.Config
+	devloopRun = func(_ context.Context, cfg devloop.Config) error {
+		captured = cfg
+		return nil
+	}
+	devloopExitCode = func(error) int { return 0 }
+
+	_, errBuf, code := executeArgs([]string{"run", "--", "one", "two"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d; stderr=%s", code, errBuf)
+	}
+	if got := captured.ChildArgs; len(got) != 2 || got[0] != "one" || got[1] != "two" {
+		t.Errorf("ChildArgs after --: got %v, want [one two]", got)
+	}
+	if captured.Watch {
+		t.Error("run should use Watch=false")
+	}
+}
+
+func TestRoot_Run_ForwardsChildExitCode(t *testing.T) {
+	origRun := devloopRun
+	origExit := devloopExitCode
+	defer func() {
+		devloopRun = origRun
+		devloopExitCode = origExit
+	}()
+	devloopRun = func(_ context.Context, _ devloop.Config) error {
+		return errors.New("child died")
+	}
+	devloopExitCode = func(error) int { return 42 }
+
+	_, _, code := executeArgs([]string{"run"})
+	if code != 42 {
+		t.Errorf("run should mirror child exit code; got %d want 42", code)
 	}
 }
 

@@ -9,10 +9,8 @@
 //
 // [MockChatModel] provides configurable Generate and Stream methods with
 // canned responses, error injection, streaming chunks, and call tracking.
-//
-// Note: MockChatModel.BindTools returns *MockChatModel (not llm.ChatModel),
-// so tests that need the llm.ChatModel interface should define a local mock
-// or use a type assertion.
+// It satisfies the llm.ChatModel interface directly, so tests can use it
+// wherever a llm.ChatModel is expected without an adapter.
 //
 // Create a mock with functional options:
 //
