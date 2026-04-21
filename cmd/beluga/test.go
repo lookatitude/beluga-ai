@@ -55,6 +55,17 @@ func newTestCmd() *cobra.Command {
 	return cmd
 }
 
+// canonicalTestEnv is the fixed set of env vars `beluga test` injects
+// into the `go test` child. They opt the scaffolded project into
+// mock-provider routing and deterministic golden regen — the
+// equivalent of manually setting BELUGA_ENV=test before invoking
+// `go test`, but without relying on the user to remember it.
+var canonicalTestEnv = []string{
+	"BELUGA_ENV=test",
+	"BELUGA_LLM_PROVIDER=mock",
+	"OTEL_SDK_DISABLED=true",
+}
+
 // runTest executes the test workflow with pre-parsed flag values.
 func runTest(verbose, race bool, pkg string) error {
 	if !validPkgPattern.MatchString(pkg) {
@@ -83,5 +94,6 @@ func runTest(verbose, race bool, pkg string) error {
 	fmt.Printf("Running: %s %v\n", goBin, goArgs)
 
 	cmd := execCommand(os.Stdout, os.Stderr, goBin, goArgs...)
+	cmd.Env = append(os.Environ(), canonicalTestEnv...)
 	return cmd.Run()
 }

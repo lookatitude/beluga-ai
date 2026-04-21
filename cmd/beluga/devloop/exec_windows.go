@@ -25,10 +25,12 @@ const ctrlBreakEvent = 1
 // newChildCmd constructs the exec.Cmd for a compiled project binary on
 // windows. CREATE_NEW_PROCESS_GROUP lets the supervisor deliver a
 // CTRL_BREAK_EVENT to the child without also hitting itself.
-func newChildCmd(ctx context.Context, binPath string, env []string, stdin io.Reader, stdout, stderr io.Writer) *exec.Cmd {
+func newChildCmd(ctx context.Context, binPath string, env []string, stdin io.Reader, stdout, stderr io.Writer, args ...string) *exec.Cmd {
 	// #nosec G204 -- binPath is the absolute temp-file path produced
 	// by BuildBinary; it is never directly supplied by a remote caller.
-	cmd := exec.CommandContext(ctx, binPath) //nolint:gosec // G204: see nosec justification above
+	// args are caller-supplied argv tail (passthrough from `beluga
+	// run -- ...`), never shell-interpreted.
+	cmd := exec.CommandContext(ctx, binPath, args...) //nolint:gosec // G204: see nosec justification above
 	cmd.Env = env
 	cmd.Stdin = stdin
 	cmd.Stdout = stdout

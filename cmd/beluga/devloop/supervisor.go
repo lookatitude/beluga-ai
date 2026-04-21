@@ -89,7 +89,7 @@ func (s *supervisor) runOnce(ctx context.Context) error {
 	}
 	defer removeIfExists(bin.OutputPath)
 
-	child := newChildCmd(ctx, bin.OutputPath, s.baseEnv, os.Stdin, s.cfg.Stdout, s.cfg.Stderr)
+	child := newChildCmd(ctx, bin.OutputPath, s.baseEnv, os.Stdin, s.cfg.Stdout, s.cfg.Stderr, s.cfg.ChildArgs...)
 	if err := child.Start(); err != nil {
 		return fmt.Errorf("start child: %w", err)
 	}
@@ -194,7 +194,7 @@ func (s *supervisor) startChild(ctx context.Context) (*exec.Cmd, <-chan error, s
 	if err != nil {
 		return nil, nil, "", err
 	}
-	child := newChildCmd(ctx, bin.OutputPath, s.baseEnv, os.Stdin, s.cfg.Stdout, s.cfg.Stderr)
+	child := newChildCmd(ctx, bin.OutputPath, s.baseEnv, os.Stdin, s.cfg.Stdout, s.cfg.Stderr, s.cfg.ChildArgs...)
 	if err := child.Start(); err != nil {
 		removeIfExists(bin.OutputPath)
 		return nil, nil, "", fmt.Errorf("start child: %w", err)

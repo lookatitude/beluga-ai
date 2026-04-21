@@ -35,6 +35,11 @@ type Config struct {
 	// entry for a given key wins.
 	ExtraEnv []string
 
+	// ChildArgs is the argv tail passed to the compiled child binary,
+	// after any cobra `--` separator. The binary path itself is always
+	// argv[0]; ChildArgs populates argv[1:].
+	ChildArgs []string
+
 	// Stdout and Stderr are the writers the child inherits. They must
 	// not be nil — the cobra layer passes os.Stdout / os.Stderr.
 	Stdout io.Writer

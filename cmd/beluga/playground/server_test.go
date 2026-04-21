@@ -44,7 +44,11 @@ func TestServer_BindsLoopbackOnly(t *testing.T) {
 func TestServer_SnapshotEmpty(t *testing.T) {
 	t.Parallel()
 	s := newTestServer(t)
-	resp, err := http.Get("http://" + s.Addr() + "/snapshot")
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://"+s.Addr()+"/snapshot", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +86,11 @@ func TestServer_SnapshotIncludesPushedEvents(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	resp, err := http.Get("http://" + s.Addr() + "/snapshot")
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://"+s.Addr()+"/snapshot", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,7 +114,7 @@ func TestServer_EventsStream(t *testing.T) {
 	t.Parallel()
 	s := newTestServer(t)
 
-	req, err := http.NewRequest(http.MethodGet, "http://"+s.Addr()+"/events", nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://"+s.Addr()+"/events", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +143,7 @@ func TestServer_EventsStream(t *testing.T) {
 func TestServer_EventsRejectsCrossOrigin(t *testing.T) {
 	t.Parallel()
 	s := newTestServer(t)
-	req, err := http.NewRequest(http.MethodGet, "http://"+s.Addr()+"/events", nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://"+s.Addr()+"/events", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +162,10 @@ func TestServer_EventsRejectsCrossOrigin(t *testing.T) {
 func TestServer_EventsRejectsPostFromUnknownOrigin(t *testing.T) {
 	t.Parallel()
 	s := newTestServer(t)
-	req, _ := http.NewRequest(http.MethodPost, "http://"+s.Addr()+"/events", nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "http://"+s.Addr()+"/events", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	req.Header.Set("Sec-Fetch-Site", "same-origin")
 	req.Header.Set("Origin", "http://evil.example")
 	resp, err := http.DefaultClient.Do(req)
@@ -170,7 +181,11 @@ func TestServer_EventsRejectsPostFromUnknownOrigin(t *testing.T) {
 func TestServer_StaticIndexServed(t *testing.T) {
 	t.Parallel()
 	s := newTestServer(t)
-	resp, err := http.Get("http://" + s.Addr() + "/")
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://"+s.Addr()+"/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
