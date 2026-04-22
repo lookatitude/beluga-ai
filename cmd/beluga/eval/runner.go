@@ -159,8 +159,6 @@ func Run(ctx context.Context, cfg *CLIConfig, stdout, stderr io.Writer) (*Report
 			Skipped:     skipped,
 			DryRun:      true,
 		}
-		fmt.Fprintf(stdout, "dry-run: %d rows queued (capped from %d), row_timeout=%s\n",
-			len(samples), len(ds.Samples), cfg.RowTimeout)
 		report.Duration = time.Since(started)
 		return report, nil
 	}
@@ -284,21 +282,68 @@ func execOneRow(ctx context.Context, binary string, cfg *CLIConfig, sample eval.
 		sample eval.EvalSample
 		err    error
 	}
-	results := make(chan readOutcome, 1)
+	// The scanner is shared between the probe and payload phases — the
+	// scan cursor must advance past the probe line before payload reads
+	// kick off, and bufio.Scanner is not safe across goroutines, so both
+	// phases run in the same goroutine that signals completion via two
+	// channels. probeCh fires as soon as the first line is parsed (or
+	// errored) so the caller can bound it at DefaultProtocolProbeTimeout
+	// without penalising cold-start provider latency on the payload.
+	sc := bufio.NewScanner(stdoutPipe)
+	sc.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
+	probeCh := make(chan error, 1)
+	sampleCh := make(chan readOutcome, 1)
 	go func() {
-		out, err := readProtocolAndSample(stdoutPipe)
-		results <- readOutcome{out, err}
+		if err := readProtocolProbe(sc); err != nil {
+			probeCh <- err
+			return
+		}
+		probeCh <- nil
+		out, err := readPopulatedSample(sc)
+		sampleCh <- readOutcome{out, err}
 	}()
 
+	// Probe phase — bounded by DefaultProtocolProbeTimeout (S4 Risk 7:
+	// users on a pre-eval scaffold must see a fast, actionable error
+	// instead of waiting out the full row timeout).
+	probeTimer := time.NewTimer(DefaultProtocolProbeTimeout)
+	defer probeTimer.Stop()
+	select {
+	case err := <-probeCh:
+		if err != nil {
+			_ = stdoutPipe.Close()
+			_ = cmd.Wait()
+			return sample, err
+		}
+	case <-probeTimer.C:
+		// The child is alive but silent — closing stdout alone would
+		// leave cmd.Wait() blocked on the process until rowCtx fires.
+		// Kill the process explicitly so the probe timeout actually
+		// bounds wall-clock for pre-eval scaffolds (Risk 7).
+		_ = stdoutPipe.Close()
+		if cmd.Process != nil {
+			_ = cmd.Process.Kill()
+		}
+		_ = cmd.Wait()
+		return sample, fmt.Errorf("no protocol probe within %s — re-scaffold with `beluga init` or add the BELUGA_ENV=eval branch manually", DefaultProtocolProbeTimeout)
+	case <-ctx.Done():
+		// exec.CommandContext kills the child on ctx.Done, so cmd.Wait()
+		// returns promptly without an explicit Kill.
+		_ = stdoutPipe.Close()
+		_ = cmd.Wait()
+		return sample, ctx.Err()
+	}
+
+	// Payload phase — bounded by the remaining row ctx.
 	var rr readOutcome
 	select {
-	case rr = <-results:
+	case rr = <-sampleCh:
 	case <-ctx.Done():
 		// Force the reader to unblock by closing the stdout pipe — any
 		// grandchild holding the fd will simply get EPIPE on its next
-		// write. cmd.WaitDelay below ensures Wait() still returns.
+		// write. cmd.WaitDelay above ensures Wait() still returns.
 		_ = stdoutPipe.Close()
-		rr = <-results
+		rr = <-sampleCh
 		if rr.err == nil {
 			rr.err = ctx.Err()
 		}
@@ -326,24 +371,45 @@ func execOneRow(ctx context.Context, binary string, cfg *CLIConfig, sample eval.
 
 // readProtocolAndSample consumes the child's stdout: first line MUST
 // be the protocol probe; the next non-empty line MUST be the populated
-// sample JSON. Any deviation is returned as a typed error so callers
-// can distinguish "project not scaffolded for eval" from "child
-// crashed mid-response".
+// sample JSON. It is the in-process helper used by table-driven unit
+// tests; the live exec path uses [readProtocolProbe] and
+// [readPopulatedSample] directly so each phase can be bounded by its
+// own timeout.
 func readProtocolAndSample(r io.Reader) (eval.EvalSample, error) {
-	var empty eval.EvalSample
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
+	if err := readProtocolProbe(sc); err != nil {
+		return eval.EvalSample{}, err
+	}
+	return readPopulatedSample(sc)
+}
+
+// readProtocolProbe consumes the first line of the scanner and checks
+// it against the expected {"beluga_eval_protocol":1} envelope. Any
+// deviation is returned as a typed error so callers can distinguish
+// "project not scaffolded for eval" from "child crashed mid-response".
+// The scanner must be buffered by the caller to survive realistic
+// populated-sample sizes.
+func readProtocolProbe(sc *bufio.Scanner) error {
 	if !sc.Scan() {
 		if err := sc.Err(); err != nil {
-			return empty, fmt.Errorf("read protocol probe: %w", err)
+			return fmt.Errorf("read protocol probe: %w", err)
 		}
-		return empty, fmt.Errorf("no output from child — project may not have the BELUGA_ENV=eval branch; re-scaffold or add manually")
+		return fmt.Errorf("no output from child — project may not have the BELUGA_ENV=eval branch; re-scaffold or add manually")
 	}
 	var probe protocolProbe
 	if err := json.Unmarshal(sc.Bytes(), &probe); err != nil || probe.BelugaEvalProtocol != ProtocolVersion {
-		return empty, fmt.Errorf("child did not emit eval protocol probe on first line (expected %q, got %q)",
+		return fmt.Errorf("child did not emit eval protocol probe on first line (expected %q, got %q)",
 			fmt.Sprintf(`{"beluga_eval_protocol":%d}`, ProtocolVersion), sc.Text())
 	}
+	return nil
+}
+
+// readPopulatedSample consumes the next non-empty line and decodes it
+// into an eval.EvalSample. It is meant to run after
+// [readProtocolProbe] has advanced the scanner past the probe line.
+func readPopulatedSample(sc *bufio.Scanner) (eval.EvalSample, error) {
+	var empty eval.EvalSample
 	var payload eval.EvalSample
 	for sc.Scan() {
 		line := sc.Bytes()

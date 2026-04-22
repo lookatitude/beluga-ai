@@ -27,9 +27,13 @@ func sampleReport(t *testing.T) *Report {
 				Scores: map[string]float64{"exact_match": 1.0, "latency": 0.85},
 			},
 			{
+				// Single-metric row: isFailedByExactMatch only fires
+				// when exact_match is the sole metric recorded (see
+				// render.go:isFailedByExactMatch). Mixed-metric rows
+				// defer to the JSON report for pass/fail judgement.
 				Index: 1, RowID: "run0123456789ab-0001",
 				Input: "capital of Spain?", Output: "Lisbon", Expected: "Madrid",
-				Scores: map[string]float64{"exact_match": 0.0, "latency": 0.82},
+				Scores: map[string]float64{"exact_match": 0.0},
 			},
 			{
 				Index: 2, RowID: "run0123456789ab-0002",

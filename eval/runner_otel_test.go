@@ -45,21 +45,27 @@ func installSpanRecorder(t *testing.T) *tracetest.InMemoryExporter {
 
 // installMetricReader swaps the eval package's meter for an in-memory reader
 // and resets the histogram registration so the next record goes through the
-// reader. Restores global state on test cleanup.
+// reader. Mutations to evalMeter and evalMetricScoreInst run under
+// evalMetricScoreMu to match the read path in metricScoreHistogram — without
+// the lock, any future t.Parallel() on these tests would race with a live
+// metric record path. Restores global state on test cleanup.
 func installMetricReader(t *testing.T) *sdkmetric.ManualReader {
 	t.Helper()
 	reader := sdkmetric.NewManualReader()
 	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
 
+	evalMetricScoreMu.Lock()
 	prevMeter := evalMeter
 	prevInst := evalMetricScoreInst
-
 	evalMeter = provider.Meter("github.com/lookatitude/beluga-ai/v2/eval")
 	evalMetricScoreInst = nil
+	evalMetricScoreMu.Unlock()
 
 	t.Cleanup(func() {
+		evalMetricScoreMu.Lock()
 		evalMeter = prevMeter
 		evalMetricScoreInst = prevInst
+		evalMetricScoreMu.Unlock()
 		_ = provider.Shutdown(context.Background())
 	})
 	return reader

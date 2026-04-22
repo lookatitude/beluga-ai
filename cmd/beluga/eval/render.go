@@ -213,12 +213,13 @@ func junitTestcaseName(s SampleReport) string {
 }
 
 // isFailedByExactMatch returns true when exact_match is the only
-// correctness metric present and the sample scored 0. Other metrics
-// (latency, LLM-judge) are not treated as pass/fail here because their
-// thresholds are context-specific and surface via the JSON report.
+// metric recorded for the sample and it scored 0. Mixed-metric runs
+// (e.g., exact_match + latency, exact_match + LLM-judge) are not
+// treated as pass/fail here because their thresholds are context-
+// specific and surface via the JSON report.
 func isFailedByExactMatch(s SampleReport) bool {
 	v, ok := s.Scores["exact_match"]
-	return ok && v == 0
+	return ok && v == 0 && len(s.Scores) == 1
 }
 
 // scoresAsProperties renders metric scores in deterministic order for

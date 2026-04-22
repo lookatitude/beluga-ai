@@ -131,13 +131,18 @@ func TestRun_DryRun_NoBuildOrExec(t *testing.T) {
 	}
 	require.NoError(t, cfg.ApplyDefaults())
 
-	var stdout bytes.Buffer
-	report, err := Run(context.Background(), cfg, &stdout, io.Discard)
+	report, err := Run(context.Background(), cfg, io.Discard, io.Discard)
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	assert.True(t, report.DryRun)
 	assert.Equal(t, "smoke", report.DatasetName)
 	assert.Empty(t, report.Samples)
+
+	// The CLI sends the report through RenderText (see cmd/beluga/eval.go);
+	// the DryRun branch is the single canonical source for the "dry-run"
+	// stdout line — Run() itself no longer prints it.
+	var stdout bytes.Buffer
+	require.NoError(t, RenderText(&stdout, report))
 	assert.Contains(t, stdout.String(), "dry-run")
 }
 
@@ -339,6 +344,55 @@ func TestRun_RespectsRowTimeout(t *testing.T) {
 	require.Len(t, report.Samples, 1)
 	assert.NotEmpty(t, report.Samples[0].Error, "timed-out row must record an error")
 	assert.Less(t, elapsed, 30*time.Second, "row timeout must bound wall-clock")
+}
+
+// A child that emits no probe (e.g., a pre-eval v2.12.0 binary, or a
+// child that crashes before printing anything) must trip
+// DefaultProtocolProbeTimeout (5s) rather than blocking until
+// RowTimeout (30s default). Without this bound, users on a pre-eval
+// scaffold see a 30s hang before the actionable re-scaffold error
+// surfaces (S4 brief Risk 7).
+func TestRun_ProtocolProbeTimeout_BoundsNoProbeChild(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("fake-binary runner test is posix-only")
+	}
+	dir := t.TempDir()
+	binaryPath := filepath.Join(dir, "no-probe-beluga-app")
+
+	ds := eval.Dataset{Samples: []eval.EvalSample{{Input: "q", ExpectedOutput: "a"}}}
+	path := writeDataset(t, dir, ds)
+
+	installBuilder(t, stubBuilder(binaryPath))
+	// Binary that never emits the probe line and blocks indefinitely.
+	// Without the probe-phase timeout, execOneRow would block until
+	// RowTimeout (30s) rather than surfacing within 5s.
+	require.NoError(t, os.WriteFile(binaryPath, []byte("#!/bin/sh\nsleep 60\n"), 0o700)) //nolint:gosec // G306: test-only fake binary
+	installExec(t, func(ctx context.Context, name string, args ...string) *exec.Cmd {
+		// #nosec G204 -- test-only binary written above.
+		return exec.CommandContext(ctx, name, args...)
+	})
+
+	cfg := &CLIConfig{
+		Dataset:     path,
+		ProjectRoot: dir,
+		// Deliberately much larger than DefaultProtocolProbeTimeout so
+		// a failure to wire the probe timeout would surface as a
+		// 30s-elapsed assertion failure rather than a false positive.
+		RowTimeout: 30 * time.Second,
+	}
+	require.NoError(t, cfg.ApplyDefaults())
+
+	start := time.Now()
+	report, err := Run(context.Background(), cfg, io.Discard, io.Discard)
+	elapsed := time.Since(start)
+	require.NoError(t, err, "per-row probe-timeout failures are row-level, not run-level")
+	require.Len(t, report.Samples, 1)
+	assert.NotEmpty(t, report.Samples[0].Error, "no-probe child must produce a row error")
+	assert.Contains(t, strings.Join(report.Errors, "|"), "protocol probe",
+		"error message must attribute the failure to the probe timeout, not the row timeout")
+	// 5s probe timeout + 2s cmd.WaitDelay buffer for grandchild reaping.
+	assert.Less(t, elapsed, DefaultProtocolProbeTimeout+5*time.Second,
+		"probe timeout must bound wall-clock well below RowTimeout")
 }
 
 func TestNewRunID_HexAndStable(t *testing.T) {
