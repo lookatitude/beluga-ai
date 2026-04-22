@@ -7,6 +7,12 @@ Develop: $ARGUMENTS
 
 $ARGUMENTS should be a Linear sub-issue ID (e.g., `LOO-43`) created by `/plan-feature` in the workspace. For work not tracked in Linear (small fixes, exploration), pass a brief path instead: `/develop research/briefs/<slug>.md` — then most of the Linear-specific steps below are skipped and the agents work from the brief alone.
 
+## Claude 4.x chain notes
+
+- **Acceptance criteria:** Treat the brief’s Framework tasks as a **literal** checklist—each item done or explicitly deferred with cause.
+- **Reviewer prompts:** Security and QA reviewers should cite criteria by bullet, not loose paraphrase.
+- **Docs:** Tech docs shipped in `docs/` are part of “done” when the brief says so—don’t rely on implicit completion.
+
 ## Pre-flight (Linear-integrated)
 
 ### 1. Fetch the sub-issue from Linear
