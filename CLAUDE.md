@@ -93,6 +93,10 @@ Marketing and content commands (`/promote`, `/blog`) and `/notion-sync` live in 
 
 Website (`developer-web`, `marketeer`) and Notion (`notion-publisher` in website, `notion-syncer` in workspace) agents live in their respective sibling repos. They are reachable when this repo is checked out inside the multi-repo Beluga workspace, but not invoked by framework commands.
 
+## Claude 4.x agent prompts
+
+Agents under `.claude/agents/` include a **Prompting baseline (Claude 4.x)** section aligned with Anthropic’s migration-era guidance for **instructions** (not Go runtime defaults): literal acceptance criteria, concise defaults, tool use when it reduces error, and delegation only when the workspace or command explicitly requires isolation. Prefer stating **Done when …** in plans and reviews so downstream agents (and humans) do not have to infer scope.
+
 ## Learning pipeline
 
 Per-agent `.claude/agents/<name>/rules/` (automatic, fast) → `.wiki/corrections.md` (curated) → `.claude/rules/<file>.md` (enforced) → `CLAUDE.md` (always-loaded, human-approved).
