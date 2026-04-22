@@ -187,7 +187,17 @@ func stripInlineComment(raw string) string {
 // override earlier ones for duplicate keys. The returned slice is safe
 // to pass to exec.Cmd.Env.
 func MergeEnv(base, loaded, extras []string) []string {
-	order := make([]string, 0, len(base)+len(loaded)+len(extras))
+	// Clamp the cap hint via int64 + a conservative upper bound so the
+	// sum can never overflow a native int (CodeQL go/allocation-size-
+	// overflow). 1<<20 env entries is already five orders of magnitude
+	// beyond any real system; `append` will grow the slice past that
+	// clamp on the unreachable-in-practice hot path.
+	const mergeEnvCapLimit = 1 << 20
+	capHint := int64(len(base)) + int64(len(loaded)) + int64(len(extras))
+	if capHint > mergeEnvCapLimit {
+		capHint = mergeEnvCapLimit
+	}
+	order := make([]string, 0, int(capHint))
 	idx := make(map[string]int)
 	add := func(entry string) {
 		key, _, ok := strings.Cut(entry, "=")
