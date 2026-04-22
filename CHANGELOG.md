@@ -2,21 +2,15 @@
 
 All notable changes to Beluga AI are documented here.
 
-## [Unreleased]
+## [2.13.0] - 2026-04-22
 
 ### Features
 
-- **cli**: `beluga eval` — dataset-driven agent evaluation with exec-once-per-row IPC, mock-mode smoke evals, and `eval-report.json` CI artefact (LOO-154, DX-1 S4)
-- **eval**: `EvalSample.Turns` + `EvalSample.ExpectedTools` backward-compatible schema extensions for multi-turn trajectories and tool-use evaluation (LOO-154)
-- **eval**: OTel GenAI `gen_ai.evaluation.*` span/event emission on `eval.run` + `eval.row` spans with `beluga.eval.metric.score` Histogram and `beluga.eval.run_id` resource attribute for cross-signal join (LOO-154)
-- **llm/providers/mock**: `FixturesFromTurns` helper derives a mock fixture queue from `eval.Turn` trajectories so scaffolded smoke evals replay deterministically without API keys (LOO-154)
-- **scaffold**: `.beluga/eval.yaml` + `.beluga/eval.smoke.json` templates, `make eval-ci` Makefile target, Tier-1 `eval-smoke` CI job + commented Tier-2 real-provider template in the scaffolded `ci.yml` (LOO-154)
-- **ci**: `eval-integration.yml` — Linux-only framework CI that scaffolds the `basic` template, runs `make eval-ci`, and asserts aggregate pass-rate thresholds on the populated `eval-report.json` (LOO-154)
+- DX-1 S4 — beluga eval CLI + scaffolded eval branch [LOO-154] (#326)
 
-### Documentation
+### Miscellaneous
 
-- **guides**: `docs/guides/evaluation.md` — task-oriented "eval your first agent" walkthrough (LOO-154)
-- **reference**: `docs/reference/cli.md` — add `beluga eval` subcommand section covering flags, IPC contract, dataset schema, config file, reports, CI integration, and observability (LOO-154)
+- **release**: Update CHANGELOG.md for v2.12.0 [skip ci] (#323)
 
 ## [2.12.0] - 2026-04-21
 
