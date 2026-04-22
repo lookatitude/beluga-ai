@@ -279,6 +279,107 @@ func TestDataset_WithEmptyRetrievedDocs(t *testing.T) {
 	assert.Empty(t, loaded.Samples[0].RetrievedDocs)
 }
 
+func TestDataset_BackwardCompat_LoadPreS4JSON(t *testing.T) {
+	// A v2.12.x-shaped dataset file that predates the Turns / ExpectedTools
+	// fields must still load cleanly. The new fields default to their zero
+	// values (nil slices) without error.
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "pre-s4.json")
+
+	preS4 := []byte(`{
+  "name": "pre-s4-dataset",
+  "samples": [
+    {
+      "Input": "What is the capital of France?",
+      "Output": "Paris",
+      "ExpectedOutput": "Paris",
+      "RetrievedDocs": null,
+      "Metadata": {"latency_ms": 42.0}
+    }
+  ]
+}`)
+
+	require.NoError(t, os.WriteFile(path, preS4, 0o600))
+
+	ds, err := eval.LoadDataset(path)
+	require.NoError(t, err)
+	require.NotNil(t, ds)
+	require.Len(t, ds.Samples, 1)
+
+	s := ds.Samples[0]
+	assert.Equal(t, "Paris", s.Output)
+	assert.Equal(t, "Paris", s.ExpectedOutput)
+	assert.Equal(t, 42.0, s.Metadata["latency_ms"])
+	assert.Nil(t, s.Turns, "Turns defaults to nil when absent from pre-S4 JSON")
+	assert.Nil(t, s.ExpectedTools, "ExpectedTools defaults to nil when absent from pre-S4 JSON")
+}
+
+func TestDataset_Schema_TurnsAndExpectedToolsRoundTrip(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "s4.json")
+
+	original := eval.Dataset{
+		Name: "s4-trajectory",
+		Samples: []eval.EvalSample{
+			{
+				Input:          "What is the weather in Paris?",
+				Output:         "Sunny, 22C",
+				ExpectedOutput: "Sunny, 22C",
+				ExpectedTools:  []string{"weather_lookup"},
+				Turns: []eval.Turn{
+					{Role: "user", Content: "What is the weather in Paris?"},
+					{
+						Role: "assistant",
+						ToolCalls: []schema.ToolCall{
+							{ID: "call-1", Name: "weather_lookup", Arguments: `{"city":"Paris"}`},
+						},
+					},
+					{Role: "tool", Content: "Sunny, 22C"},
+					{Role: "assistant", Content: "Sunny, 22C"},
+				},
+			},
+		},
+	}
+
+	require.NoError(t, original.Save(path))
+
+	loaded, err := eval.LoadDataset(path)
+	require.NoError(t, err)
+	require.Len(t, loaded.Samples, 1)
+
+	got := loaded.Samples[0]
+	assert.Equal(t, []string{"weather_lookup"}, got.ExpectedTools)
+	require.Len(t, got.Turns, 4)
+	assert.Equal(t, "user", got.Turns[0].Role)
+	assert.Equal(t, "assistant", got.Turns[1].Role)
+	require.Len(t, got.Turns[1].ToolCalls, 1)
+	assert.Equal(t, "weather_lookup", got.Turns[1].ToolCalls[0].Name)
+	assert.Equal(t, "tool", got.Turns[2].Role)
+	assert.Equal(t, "Sunny, 22C", got.Turns[2].Content)
+}
+
+func TestDataset_Schema_OmitemptyPreservesPreS4Wire(t *testing.T) {
+	// Saving a sample that does NOT set Turns / ExpectedTools must not emit
+	// those keys, so v2.12.x consumers that tolerate only the old schema keep
+	// working against v2.13.0-produced artefacts.
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "old-shape.json")
+
+	ds := eval.Dataset{
+		Name: "old-shape",
+		Samples: []eval.EvalSample{
+			{Input: "q", Output: "a", ExpectedOutput: "a"},
+		},
+	}
+
+	require.NoError(t, ds.Save(path))
+	raw, err := os.ReadFile(path)
+	require.NoError(t, err)
+
+	assert.NotContains(t, string(raw), "Turns", "Turns must be omitted when empty")
+	assert.NotContains(t, string(raw), "ExpectedTools", "ExpectedTools must be omitted when empty")
+}
+
 func TestDataset_LargeSampleCount(t *testing.T) {
 	tmpDir := t.TempDir()
 	path := filepath.Join(tmpDir, "large.json")

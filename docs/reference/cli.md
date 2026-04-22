@@ -1,6 +1,6 @@
 # Reference: CLI
 
-The `beluga` command-line tool is the reference Layer 7 application shipped with the framework. It is a cobra-based CLI with seven subcommands: `version`, `providers`, `init`, `run`, `dev`, `test`, and `deploy`.
+The `beluga` command-line tool is the reference Layer 7 application shipped with the framework. It is a cobra-based CLI with eight subcommands: `version`, `providers`, `init`, `run`, `dev`, `test`, `eval`, and `deploy`.
 
 Source: [`cmd/beluga/`](../../cmd/beluga/).
 
@@ -130,6 +130,113 @@ Run agent tests via `go test`. Resolves the toolchain via `exec.LookPath("go")` 
 
 Source: `canonicalTestEnv` in [`cmd/beluga/test.go`](../../cmd/beluga/test.go). Tests can assert the exact values via `os.Environ()` if they need to distinguish a `beluga test` run from a bare `go test`.
 
+### `beluga eval`
+
+Run dataset-driven evaluations against the scaffolded agent. `beluga eval` builds the user binary via the same `devloop.BuildBinary` pipeline as `beluga run`, then exec's it **once per dataset row** with the row handed in through the `BELUGA_EVAL_SAMPLE_JSON` environment variable. The child populates the sample and emits it back on stdout; the parent scores each configured metric, renders a stdout summary table, writes `eval-report.json` to the project root, and exits with the aggregate pass/fail code.
+
+```bash
+beluga eval .beluga/eval.smoke.json
+```
+
+| Flag | Default | Purpose |
+|---|---|---|
+| `--project-root` | `.` | Directory containing `go.mod` + `.beluga/project.yaml`. Resolved via `filepath.Abs`. |
+| `--dataset` | — | Dataset JSON path (defaults to the positional argument). |
+| `--config` | `<project-root>/.beluga/eval.yaml` | Config file path. Flag values override YAML; YAML overrides defaults. |
+| `--metric` | — | Metric name (repeatable). Overrides any `metrics:` list in the config. Built-in names: `exact_match`, `latency`. |
+| `--row-timeout` | `30s` | Mandatory per-row subprocess wall-clock cap. Framework security rule — every external call must have a timeout. |
+| `--max-rows` | `0` (no cap) | Execute only the first N rows. Useful for partial runs and incremental gating. |
+| `--parallel` | `1` | Worker-pool size for per-row subprocess dispatch. Keep at `1` in mock mode — the mock fixture queue is shared across callers and a higher value causes cross-contamination. |
+| `--dry-run` | `false` | Print the planned run (row count, row_timeout) without launching subprocesses. |
+| `--format` | — | Additive output format alongside the default JSON report. Currently only `junit` (writes `<report>.junit.xml` for `dorny/test-reporter`). |
+| `--eval-provider` | — | Reserved for S4.5. Braintrust/DeepEval/RAGAS provider dispatch. |
+| `--judge-model` | — | Reserved for S4.5. LLM-judge model name. |
+| `--max-cost` | — | Reserved for S4.5. Hard-cap total USD cost across rows. |
+
+**IPC contract.** The CLI never imports user code. Instead it exec's the scaffolded binary once per dataset row with the following environment:
+
+| Key | Purpose |
+|---|---|
+| `BELUGA_ENV=eval` | Dispatches the scaffolded `main.go` to its eval-mode branch (`runEvalMode()`). |
+| `BELUGA_EVAL_SAMPLE_JSON` | JSON-encoded `eval.EvalSample` carrying `Input`, `ExpectedOutput`, `Turns`, `ExpectedTools`, `Metadata`. |
+| `BELUGA_EVAL_RUN_ID` | Run-scoped UUID-v4 that matches the `run_id` field in `eval-report.json` and the `beluga.eval.run_id` OTel resource attribute, so downstream aggregation tools can join traces + metrics + CLI artefact. |
+| `BELUGA_EVAL_ROW_ID` | Row-scoped UUID-v4 surfaced as the `row_id` field in the report and the `beluga.eval.row_id` span attribute. |
+
+The child must emit `{"beluga_eval_protocol":1}` as its first stdout line (the protocol probe) followed by the populated `eval.EvalSample` JSON. The CLI rejects any child whose first line is not the probe within 5s, directing the user to re-scaffold the project or add the `BELUGA_ENV=eval` branch manually. Source: `ProtocolVersion` in [`cmd/beluga/eval/runner.go`](../../cmd/beluga/eval/runner.go).
+
+**Dataset schema.** The dataset file format is a backward-compatible extension of `eval.Dataset`:
+
+```json
+{
+  "name": "my-smoke",
+  "samples": [
+    {
+      "Input": "Please echo: hello",
+      "ExpectedOutput": "hello",
+      "Turns": [
+        {"Role": "assistant", "ToolCalls": [{"ID": "call_1", "Name": "echo", "Arguments": "{\"message\":\"hello\"}"}]},
+        {"Role": "tool", "Content": "hello"},
+        {"Role": "assistant", "Content": "hello"}
+      ],
+      "ExpectedTools": ["echo"]
+    }
+  ]
+}
+```
+
+The `Turns` and `ExpectedTools` fields are the S4 additions and are optional — pre-existing `{Input, ExpectedOutput}` datasets continue to work unchanged. The canonical JSON Schema is embedded in the binary; dump it with:
+
+```bash
+beluga eval schema > eval-dataset.schema.json
+```
+
+Source: [`cmd/beluga/eval/schema.json`](../../cmd/beluga/eval/schema.json).
+
+**Config file (`.beluga/eval.yaml`).** Optional YAML config mapped to `[]eval.RunnerOption`; flag values always win over YAML, YAML always wins over built-in defaults.
+
+```yaml
+metrics:
+  - exact_match
+  - latency
+row_timeout: 30s
+parallel: 1
+```
+
+See [`cmd/beluga/scaffold/templates/basic/.beluga/eval.yaml.tmpl`](../../cmd/beluga/scaffold/templates/basic/.beluga/eval.yaml.tmpl) for the scaffolded default. Any flag listed above is representable as the corresponding lowercase YAML key.
+
+**Reports.** Every run writes `eval-report.json` at `<project-root>/eval-report.json` (stable location for CI artefact upload). The report is structurally:
+
+```json
+{
+  "run_id": "…uuid-v4…",
+  "dataset": "my-smoke",
+  "dataset_path": ".beluga/eval.smoke.json",
+  "started_at": "2026-04-22T…",
+  "duration": "…",
+  "samples": [{"index": 0, "row_id": "…", "input": "…", "output": "…", "scores": {"exact_match": 1.0, "latency": …}}],
+  "aggregate": {"exact_match": 1.0, "latency": …},
+  "errors": []
+}
+```
+
+Passing `--format junit` additionally writes `<report>.junit.xml` alongside (a single `<testsuite>` wrapping every sample; per-row `exec_error` or `exact_match=0` become `<failure>` children), consumable by [`dorny/test-reporter`](https://github.com/dorny/test-reporter) for PR-check annotations. Source: [`cmd/beluga/eval/render.go`](../../cmd/beluga/eval/render.go).
+
+**CI integration.** The scaffolded `Makefile` ships an `eval-ci` target that pins the five canonical env vars so CI gets deterministic, mock-provider pass/fail signal without API keys. The target invokes the `beluga` binary on PATH — matching the convention of `beluga dev` / `beluga run` / `beluga test` — so install it once per environment:
+
+```
+go install github.com/lookatitude/beluga-ai/v2/cmd/beluga
+BELUGA_LLM_PROVIDER=mock BELUGA_DETERMINISTIC=1 BELUGA_SEED=42 OTEL_SDK_DISABLED=true \
+  beluga eval .beluga/eval.smoke.json
+```
+
+Running from inside your scaffolded project, `go install` picks the beluga version pinned by your `go.mod`, keeping the CLI and framework in lockstep. `go run github.com/.../cmd/beluga eval ...` does **not** work: it requires the project's `go.sum` to carry checksums for every transitive dependency of the full CLI (fsnotify, cobra, every provider) that `go mod tidy` on your project does not pull in.
+
+The scaffolded `ci.yml` gates every PR on `make eval-ci` via the Tier-1 `eval-smoke` job (which installs `beluga` via `go install` before calling `make eval-ci`) and uploads `eval-report.json` as a workflow artefact. A commented Tier-2 template exposes the real-provider opt-in; the template structure is the opt-in gate — Tier-1 stays the only mandatory evaluation on PRs until Tier-2 is explicitly enabled. See [Evaluation guide](../guides/evaluation.md) for the full CI tier model.
+
+**Observability.** When `OTEL_SDK_DISABLED` is not set, the framework-layer eval runner emits spans per the OpenTelemetry GenAI `gen_ai.evaluation.*` semantic convention: an `eval.run` span wraps the full CLI invocation, an `eval.row` child span wraps each dataset row, and per-metric scores attach as `gen_ai.evaluation.result` events on the row span. The aggregated `beluga.eval.metric.score` Histogram is emitted with two label dimensions — `beluga.eval.metric_name` and `beluga.eval.dataset` — **never** `row_id` or `row_index` (cardinality rule). The `beluga.eval.run_id` OTel resource attribute is the join key across traces + metrics + JSON artefact. See [DOC-14 Observability](../architecture/14-observability.md).
+
+Source: [`cmd/beluga/eval/`](../../cmd/beluga/eval/), [`cmd/beluga/eval.go`](../../cmd/beluga/eval.go).
+
 ### `beluga deploy`
 
 Generate deployment artifacts. S1 is a stub — prints what would be written without creating files.
@@ -149,6 +256,7 @@ To build a binary with a different provider set, write your own `main` package a
 ## Related
 
 - [Dev-loop guide](../guides/dev-loop.md) — task-oriented walkthrough of `beluga run` + `beluga dev` + `beluga test`.
+- [Evaluation guide](../guides/evaluation.md) — task-oriented walkthrough of `beluga eval` from hand-authored dataset to CI gating.
 - [Providers catalog](./providers.md) — every registered provider across categories.
 - [Architecture Overview — Layer 7](../architecture/01-overview.md#layer-7--application) — where the CLI fits in the stack.
 - [Goreleaser config](../../.goreleaser.yml) — the release build matrix.

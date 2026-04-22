@@ -1,0 +1,50 @@
+{
+  "name": "__BELUGA_PROJECT_NAME__-smoke",
+  "samples": [
+    {
+      "Input": "Please echo: hello",
+      "ExpectedOutput": "hello",
+      "Turns": [
+        {
+          "Role": "assistant",
+          "ToolCalls": [
+            {"ID": "call_1", "Name": "echo", "Arguments": "{\"message\":\"hello\"}"}
+          ]
+        },
+        {"Role": "tool", "Content": "hello"},
+        {"Role": "assistant", "Content": "hello"}
+      ],
+      "ExpectedTools": ["echo"]
+    },
+    {
+      "Input": "Please echo: world",
+      "ExpectedOutput": "world",
+      "Turns": [
+        {
+          "Role": "assistant",
+          "ToolCalls": [
+            {"ID": "call_1", "Name": "echo", "Arguments": "{\"message\":\"world\"}"}
+          ]
+        },
+        {"Role": "tool", "Content": "world"},
+        {"Role": "assistant", "Content": "world"}
+      ],
+      "ExpectedTools": ["echo"]
+    },
+    {
+      "Input": "Please echo: beluga",
+      "ExpectedOutput": "beluga",
+      "Turns": [
+        {
+          "Role": "assistant",
+          "ToolCalls": [
+            {"ID": "call_1", "Name": "echo", "Arguments": "{\"message\":\"beluga\"}"}
+          ]
+        },
+        {"Role": "tool", "Content": "beluga"},
+        {"Role": "assistant", "Content": "beluga"}
+      ],
+      "ExpectedTools": ["echo"]
+    }
+  ]
+}

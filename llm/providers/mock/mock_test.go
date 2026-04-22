@@ -11,6 +11,7 @@ import (
 
 	"github.com/lookatitude/beluga-ai/v2/config"
 	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/eval"
 	"github.com/lookatitude/beluga-ai/v2/llm"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
@@ -344,6 +345,115 @@ func TestFixturesFile_BadPathReturnsError(t *testing.T) {
 	var coreErr *core.Error
 	if !errors.As(err, &coreErr) || coreErr.Code != core.ErrInvalidInput {
 		t.Fatalf("error = %v, want core.ErrInvalidInput", err)
+	}
+}
+
+func TestFixturesFromTurns_EmptyAndNil(t *testing.T) {
+	t.Parallel()
+
+	if got := FixturesFromTurns(nil); got != nil {
+		t.Fatalf("FixturesFromTurns(nil)=%v want nil", got)
+	}
+	if got := FixturesFromTurns([]eval.Turn{}); got != nil {
+		t.Fatalf("FixturesFromTurns(empty)=%v want nil", got)
+	}
+}
+
+func TestFixturesFromTurns_SkipsNonAssistantTurns(t *testing.T) {
+	t.Parallel()
+
+	turns := []eval.Turn{
+		{Role: "user", Content: "hi"},
+		{Role: "system", Content: "you are a bot"},
+		{Role: "tool", Content: `{"result":"ok"}`},
+	}
+	if got := FixturesFromTurns(turns); len(got) != 0 {
+		t.Fatalf("FixturesFromTurns(non-assistant-only)=%v want empty", got)
+	}
+}
+
+func TestFixturesFromTurns_ToolCallThenText(t *testing.T) {
+	t.Parallel()
+
+	turns := []eval.Turn{
+		{Role: "user", Content: "what's the weather?"},
+		{Role: "assistant", ToolCalls: []schema.ToolCall{
+			{ID: "call_1", Name: "get_weather", Arguments: `{"city":"Lisbon"}`},
+		}},
+		{Role: "tool", Content: `{"temp":"22C"}`},
+		{Role: "assistant", Content: "It's 22°C in Lisbon."},
+	}
+
+	got := FixturesFromTurns(turns)
+	if len(got) != 2 {
+		t.Fatalf("FixturesFromTurns: got %d fixtures, want 2 (one per assistant turn)", len(got))
+	}
+	if len(got[0].ToolCalls) != 1 {
+		t.Fatalf("fixture[0].ToolCalls=%d want 1", len(got[0].ToolCalls))
+	}
+	if got[0].ToolCalls[0].Name != "get_weather" {
+		t.Fatalf("fixture[0].ToolCalls[0].Name=%q want get_weather", got[0].ToolCalls[0].Name)
+	}
+	if got[0].Content != "" {
+		t.Fatalf("fixture[0].Content=%q want empty (tool-call turn)", got[0].Content)
+	}
+	if got[1].Content != "It's 22°C in Lisbon." {
+		t.Fatalf("fixture[1].Content=%q want final assistant text", got[1].Content)
+	}
+	if len(got[1].ToolCalls) != 0 {
+		t.Fatalf("fixture[1].ToolCalls=%v want empty", got[1].ToolCalls)
+	}
+}
+
+func TestFixturesFromTurns_DrivesMockReplay(t *testing.T) {
+	t.Parallel()
+
+	turns := []eval.Turn{
+		{Role: "user", Content: "q"},
+		{Role: "assistant", ToolCalls: []schema.ToolCall{
+			{ID: "call_a", Name: "search", Arguments: `{"q":"beluga"}`},
+		}},
+		{Role: "tool", Content: "result"},
+		{Role: "assistant", Content: "final"},
+	}
+
+	m, err := New(config.ProviderConfig{}, WithFixtures(FixturesFromTurns(turns)))
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	ctx := context.Background()
+
+	first, err := m.Generate(ctx, nil)
+	if err != nil {
+		t.Fatalf("Generate #1: %v", err)
+	}
+	if len(first.ToolCalls) != 1 || first.ToolCalls[0].Name != "search" {
+		t.Fatalf("Generate #1 ToolCalls=%v want [search]", first.ToolCalls)
+	}
+
+	second, err := m.Generate(ctx, nil)
+	if err != nil {
+		t.Fatalf("Generate #2: %v", err)
+	}
+	if second.Text() != "final" {
+		t.Fatalf("Generate #2 Text=%q want final", second.Text())
+	}
+}
+
+func TestFixturesFromTurns_DefensiveCopy(t *testing.T) {
+	t.Parallel()
+
+	original := []schema.ToolCall{{ID: "c", Name: "orig"}}
+	turns := []eval.Turn{{Role: "assistant", ToolCalls: original}}
+
+	got := FixturesFromTurns(turns)
+	if len(got) != 1 || len(got[0].ToolCalls) != 1 {
+		t.Fatalf("unexpected fixture shape: %+v", got)
+	}
+	// Mutate caller's slice — the helper must have copied.
+	original[0].Name = "mutated"
+	if got[0].ToolCalls[0].Name != "orig" {
+		t.Fatalf("fixture ToolCalls aliased caller slice: got Name=%q", got[0].ToolCalls[0].Name)
 	}
 }
 

@@ -15,6 +15,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -23,7 +24,9 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/agent"
 	"github.com/lookatitude/beluga-ai/v2/config"
 	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/eval"
 	"github.com/lookatitude/beluga-ai/v2/llm"
+	"github.com/lookatitude/beluga-ai/v2/llm/providers/mock"
 	"github.com/lookatitude/beluga-ai/v2/o11y"
 	"github.com/lookatitude/beluga-ai/v2/tool"
 
@@ -53,7 +56,33 @@ func newEchoTool() tool.Tool {
 	)
 }
 
+// newAgent constructs the __BELUGA_AGENT_NAME__ agent with its persona and
+// tools. Shared by the normal `beluga run` path and the `BELUGA_ENV=eval`
+// branch so both trajectories exercise the same wiring.
+func newAgent(model llm.ChatModel) agent.Agent {
+	return agent.New("__BELUGA_AGENT_NAME__",
+		agent.WithLLM(model),
+		agent.WithPersona(agent.Persona{
+			Role:      "helpful assistant",
+			Goal:      "answer questions accurately",
+			Backstory: "You are concise and direct. When asked to echo something, always use the echo tool.",
+			Traits:    []string{"concise", "accurate"},
+		}),
+		agent.WithTools([]tool.Tool{newEchoTool()}),
+		// agent.WithPlannerName("reflexion"), // see: docs/architecture/06-reasoning-strategies.md
+	)
+}
+
 func main() {
+	// BELUGA_ENV=eval dispatches the per-row exec-once IPC from
+	// `beluga eval` — the parent hands us a single EvalSample via env var,
+	// we populate Output + latency_ms and emit the sample back on stdout.
+	// The normal `beluga run` / `beluga dev` flow skips this branch.
+	if os.Getenv("BELUGA_ENV") == "eval" {
+		runEvalMode()
+		return
+	}
+
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
 		log.Fatal("OPENAI_API_KEY is not set.\n" +
@@ -83,20 +112,7 @@ func main() {
 		log.Fatalf("llm.New: %v", err)
 	}
 
-	a := agent.ApplyMiddleware(
-		agent.New("__BELUGA_AGENT_NAME__",
-			agent.WithLLM(model),
-			agent.WithPersona(agent.Persona{
-				Role:      "helpful assistant",
-				Goal:      "answer questions accurately",
-				Backstory: "You are concise and direct. When asked to echo something, always use the echo tool.",
-				Traits:    []string{"concise", "accurate"},
-			}),
-			agent.WithTools([]tool.Tool{newEchoTool()}),
-			// agent.WithPlannerName("reflexion"), // see: docs/architecture/06-reasoning-strategies.md
-		),
-		agent.WithTracing(),
-	)
+	a := agent.ApplyMiddleware(newAgent(model), agent.WithTracing())
 
 	answer, err := a.Invoke(ctx, "Please echo: hello world")
 	if err != nil {
@@ -104,4 +120,83 @@ func main() {
 	}
 
 	fmt.Println(answer)
+}
+
+// runEvalMode handles the BELUGA_ENV=eval branch. `beluga eval` dispatches
+// one process per dataset row with BELUGA_EVAL_SAMPLE_JSON carrying the
+// input sample; we populate the sample's Output + Metadata and emit it
+// back as JSON on stdout. The parent CLI joins runID/rowID from env vars.
+//
+// Stdout contract: the first line is the protocol probe
+// `{"beluga_eval_protocol":1}`; the second line is the populated
+// EvalSample JSON. OTel bootstrap is intentionally skipped here — the
+// parent owns the eval.run / eval.row spans, and a stdout exporter on the
+// child would corrupt the IPC payload. Export wiring happens in
+// `make eval-ci` via OTEL_SDK_DISABLED=true.
+func runEvalMode() {
+	payload := os.Getenv("BELUGA_EVAL_SAMPLE_JSON")
+	if payload == "" {
+		log.Fatal("BELUGA_EVAL_SAMPLE_JSON is empty; run via `beluga eval`")
+	}
+	var sample eval.EvalSample
+	if err := json.Unmarshal([]byte(payload), &sample); err != nil {
+		log.Fatalf("decode BELUGA_EVAL_SAMPLE_JSON: %v", err)
+	}
+
+	// Protocol probe MUST be the first line on stdout — the parent
+	// scanner rejects any child whose first line fails to match.
+	if _, err := fmt.Fprintln(os.Stdout, `{"beluga_eval_protocol":1}`); err != nil {
+		log.Fatalf("write probe: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	model, err := buildEvalModel(sample)
+	if err != nil {
+		log.Fatalf("build eval model: %v", err)
+	}
+
+	a := newAgent(model)
+
+	started := time.Now()
+	answer, err := a.Invoke(ctx, sample.Input)
+	elapsed := time.Since(started)
+	if err != nil {
+		log.Fatalf("agent.Invoke: %v", err)
+	}
+
+	sample.Output = answer
+	if sample.Metadata == nil {
+		sample.Metadata = map[string]any{}
+	}
+	sample.Metadata["latency_ms"] = float64(elapsed.Milliseconds())
+
+	if err := json.NewEncoder(os.Stdout).Encode(sample); err != nil {
+		log.Fatalf("encode sample: %v", err)
+	}
+}
+
+// buildEvalModel picks the LLM backend for eval mode.
+// BELUGA_LLM_PROVIDER=mock seeds a mock provider with fixtures derived
+// from sample.Turns so `make eval-ci` replays a recorded assistant
+// trajectory deterministically without API keys; any other value falls
+// through to the configured __BELUGA_PROVIDER_NAME__ provider.
+func buildEvalModel(sample eval.EvalSample) (llm.ChatModel, error) {
+	if os.Getenv("BELUGA_LLM_PROVIDER") == "mock" {
+		return mock.New(
+			config.ProviderConfig{Provider: "mock", Model: "__BELUGA_MODEL_NAME__"},
+			mock.WithFixtures(mock.FixturesFromTurns(sample.Turns)),
+		)
+	}
+	apiKey := os.Getenv("OPENAI_API_KEY")
+	if apiKey == "" {
+		return nil, core.Errorf(core.ErrInvalidInput,
+			"OPENAI_API_KEY is not set (required for real-provider eval)")
+	}
+	return llm.New("__BELUGA_PROVIDER_NAME__", config.ProviderConfig{
+		Provider: "__BELUGA_PROVIDER_NAME__",
+		APIKey:   apiKey,
+		Model:    "__BELUGA_MODEL_NAME__",
+	})
 }

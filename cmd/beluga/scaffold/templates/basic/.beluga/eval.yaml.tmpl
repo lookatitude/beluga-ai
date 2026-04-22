@@ -1,0 +1,22 @@
+# beluga eval configuration for __BELUGA_PROJECT_NAME__.
+# Flag values passed to `beluga eval` beat the values in this file;
+# unset fields fall back to the CLI built-in defaults. See
+# framework/docs/reference/cli.md for the full schema.
+
+# Metrics to run per row. `exact_match` compares Output to
+# ExpectedOutput verbatim; `latency` reports the per-row wall-clock
+# populated into Metadata["latency_ms"]. Both work with the mock
+# provider so the default smoke eval needs zero API keys.
+metrics:
+  - exact_match
+  - latency
+
+# Per-row subprocess wall-clock cap. The CLI enforces a mandatory
+# default of 30s when this field is absent (framework security rule:
+# every external call must have a timeout).
+row_timeout: 30s
+
+# Worker-pool size for parallel row dispatch. Keep at 1 when using the
+# mock provider — its fixture queue is shared across callers and a
+# higher value causes cross-contamination between rows.
+parallel: 1

@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	"github.com/lookatitude/beluga-ai/v2/o11y"
 )
 
 // Hooks provides optional callback functions invoked during evaluation.
@@ -78,12 +80,24 @@ func WithHooks(hooks Hooks) RunnerOption {
 	}
 }
 
+// WithDatasetName attaches the dataset identifier that is emitted as the
+// beluga.eval.dataset attribute on the eval.run and eval.row spans and as a
+// label dimension on the beluga.eval.metric.score Histogram. Empty names are
+// accepted and emitted unchanged — callers must set this when the metric
+// aggregation label matters.
+func WithDatasetName(name string) RunnerOption {
+	return func(r *EvalRunner) {
+		r.datasetName = name
+	}
+}
+
 // EvalRunner runs a set of metrics against a dataset of samples.
 type EvalRunner struct {
-	metrics []Metric
-	dataset []EvalSample
-	cfg     Config
-	hooks   Hooks
+	metrics     []Metric
+	dataset     []EvalSample
+	datasetName string
+	cfg         Config
+	hooks       Hooks
 }
 
 // NewRunner creates a new EvalRunner with the given options.
@@ -101,7 +115,8 @@ func NewRunner(opts ...RunnerOption) *EvalRunner {
 
 // Run executes all configured metrics against all samples and returns
 // an aggregate report. Samples are evaluated with the configured
-// concurrency level.
+// concurrency level. The entire run is wrapped in an eval.run span; each
+// sample in an eval.row child span.
 func (r *EvalRunner) Run(ctx context.Context) (*EvalReport, error) {
 	if r.cfg.Timeout > 0 {
 		var cancel context.CancelFunc
@@ -109,8 +124,13 @@ func (r *EvalRunner) Run(ctx context.Context) (*EvalReport, error) {
 		defer cancel()
 	}
 
+	ctx, runSpan := startRunSpan(ctx, r.datasetName, len(r.dataset), len(r.metrics))
+	defer runSpan.End()
+
 	if r.hooks.BeforeRun != nil {
 		if err := r.hooks.BeforeRun(ctx, r.dataset); err != nil {
+			runSpan.RecordError(err)
+			runSpan.SetStatus(o11y.StatusError, err.Error())
 			return nil, err
 		}
 	}
@@ -155,6 +175,15 @@ func (r *EvalRunner) Run(ctx context.Context) (*EvalReport, error) {
 
 	report := r.buildReport(results, time.Since(start))
 
+	if firstErr != nil {
+		runSpan.RecordError(firstErr)
+		runSpan.SetStatus(o11y.StatusError, firstErr.Error())
+	} else if len(report.Errors) > 0 {
+		runSpan.SetStatus(o11y.StatusError, "one or more samples failed")
+	} else {
+		runSpan.SetStatus(o11y.StatusOK, "")
+	}
+
 	if r.hooks.AfterRun != nil {
 		r.hooks.AfterRun(ctx, report)
 	}
@@ -163,19 +192,33 @@ func (r *EvalRunner) Run(ctx context.Context) (*EvalReport, error) {
 }
 
 // processSample evaluates a single sample with hooks and records the result.
+// Wraps the evaluation in an eval.row span so that per-metric
+// gen_ai.evaluation.result events attach to it.
 func (r *EvalRunner) processSample(ctx context.Context, idx int, s EvalSample, results []SampleResult, mu *sync.Mutex, stopped *bool, firstErr *error) {
+	rowCtx, rowSpan := startRowSpan(ctx, r.datasetName, idx)
+	defer rowSpan.End()
+
 	if r.hooks.BeforeSample != nil {
-		if err := r.hooks.BeforeSample(ctx, s); err != nil {
+		if err := r.hooks.BeforeSample(rowCtx, s); err != nil {
+			rowSpan.RecordError(err)
+			rowSpan.SetStatus(o11y.StatusError, err.Error())
 			r.recordResult(idx, SampleResult{Sample: s, Error: err}, results, mu, stopped, firstErr)
 			return
 		}
 	}
 
-	result := r.evaluateSample(ctx, s)
+	result := r.evaluateSample(rowCtx, s)
 	r.recordResult(idx, result, results, mu, stopped, firstErr)
 
+	if result.Error != nil {
+		rowSpan.RecordError(result.Error)
+		rowSpan.SetStatus(o11y.StatusError, result.Error.Error())
+	} else {
+		rowSpan.SetStatus(o11y.StatusOK, "")
+	}
+
 	if r.hooks.AfterSample != nil {
-		r.hooks.AfterSample(ctx, result)
+		r.hooks.AfterSample(rowCtx, result)
 	}
 }
 
@@ -192,7 +235,9 @@ func (r *EvalRunner) recordResult(idx int, result SampleResult, results []Sample
 	mu.Unlock()
 }
 
-// evaluateSample runs all metrics against a single sample.
+// evaluateSample runs all metrics against a single sample. On success, each
+// metric emits a gen_ai.evaluation.result event on the enclosing eval.row span
+// and a beluga.eval.metric.score Histogram sample.
 func (r *EvalRunner) evaluateSample(ctx context.Context, sample EvalSample) SampleResult {
 	scores := make(map[string]float64, len(r.metrics))
 	var sampleErr error
@@ -211,6 +256,8 @@ func (r *EvalRunner) evaluateSample(ctx context.Context, sample EvalSample) Samp
 			continue
 		}
 		scores[m.Name()] = score
+		recordEvalResult(ctx, m.Name(), score)
+		recordMetricScore(ctx, m.Name(), r.datasetName, score)
 	}
 
 	return SampleResult{
