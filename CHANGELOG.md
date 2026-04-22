@@ -2,11 +2,13 @@
 
 All notable changes to Beluga AI are documented here.
 
-## [2.13.1] - 2026-04-22
+## [2.13.2] - 2026-04-22
 
 ### Miscellaneous
 
 - **release**: Update CHANGELOG.md for v2.13.0 [skip ci] (#329)
+- **release**: Update CHANGELOG.md for v2.13.1 [skip ci] (#331)
+- Claude 4.x prompting baseline across agent + command definitions (#332)
 
 ## [2.13.1] - 2026-04-22
 
