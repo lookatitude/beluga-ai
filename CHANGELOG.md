@@ -2,6 +2,18 @@
 
 All notable changes to Beluga AI are documented here.
 
+## [2.13.1] - 2026-04-22
+
+### Miscellaneous
+
+- **release**: Update CHANGELOG.md for v2.13.0 [skip ci] (#329)
+
+## [2.13.1] - 2026-04-22
+
+### Documentation
+
+- C-020 + C-021 framework-workflow learnings from DX-1 S4 (PR #326) (#327)
+
 ## [2.13.0] - 2026-04-22
 
 ### Features
