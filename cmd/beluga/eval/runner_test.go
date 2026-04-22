@@ -228,6 +228,51 @@ func TestRun_ChildMissingProtocol_RowErrored(t *testing.T) {
 	assert.Contains(t, strings.Join(report.Errors, "|"), "eval protocol probe")
 }
 
+// Exec failures must produce exactly one entry in report.Errors and
+// preserve the exec error on the per-sample Error field. Before the
+// zero-out-latency_ms fix, the default latency metric synthesized a
+// spurious "missing metadata key \"latency_ms\"" error on the broken
+// row; toCLIReport appended that to report.Errors and overwrote
+// report.Samples[i].Error, so a single exec failure leaked as two
+// entries and the metric error silently discarded the exec error.
+// (Greptile P1 on PR #326 at cmd/beluga/eval/runner.go:199.)
+func TestRun_ExecFailure_NoDoubleCount(t *testing.T) {
+	dir := t.TempDir()
+	binaryPath := filepath.Join(dir, "fake-beluga-app")
+
+	ds := eval.Dataset{Samples: []eval.EvalSample{{Input: "q", ExpectedOutput: "a"}}}
+	path := writeDataset(t, dir, ds)
+
+	installBuilder(t, stubBuilder(binaryPath))
+	installExec(t, func(ctx context.Context, name string, args ...string) *exec.Cmd {
+		writeFakeBinary(t, binaryPath, []string{"not a probe"})
+		// #nosec G204 -- test-only binary written above.
+		return exec.CommandContext(ctx, name, args...)
+	})
+
+	cfg := &CLIConfig{
+		Dataset:     path,
+		ProjectRoot: dir,
+	}
+	require.NoError(t, cfg.ApplyDefaults())
+
+	report, err := Run(context.Background(), cfg, io.Discard, io.Discard)
+	require.NoError(t, err, "per-row failures are row-level, not run-level")
+	require.Len(t, report.Samples, 1)
+
+	require.Len(t, report.Errors, 1,
+		"single exec failure must produce exactly one error entry; got %d: %v",
+		len(report.Errors), report.Errors)
+	assert.Contains(t, report.Errors[0], "protocol probe",
+		"report.Errors[0] must preserve the exec/probe error (not a synthesized metric error)")
+	assert.Contains(t, report.Samples[0].Error, "protocol probe",
+		"per-sample Error must preserve the exec error; overwrite would discard it")
+	for _, e := range report.Errors {
+		assert.NotContains(t, e, `latency: missing metadata key`,
+			"spurious latency metadata error must not leak — exec-failed rows synthesize latency_ms=0")
+	}
+}
+
 func TestRun_MaxRows_Truncates(t *testing.T) {
 	dir := t.TempDir()
 	binaryPath := filepath.Join(dir, "fake-beluga-app")

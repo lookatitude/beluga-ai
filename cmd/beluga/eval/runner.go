@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -223,7 +224,21 @@ func execAllRows(ctx context.Context, cfg *CLIConfig, binary string, samples []e
 			rowID := newRunID()
 			out, err := execOneRow(rowCtx, binary, cfg, samples[idx], runID, rowID, stderr)
 			if err != nil {
+				// Exec failed. Build a populated sample whose Metadata
+				// carries latency_ms=0 so the default latency metric
+				// scores cleanly instead of synthesizing a second error
+				// ("missing metadata key \"latency_ms\"") — that duplicate
+				// would inflate report.Errors and overwrite the per-sample
+				// exec error downstream. maps.Clone copies the caller's
+				// metadata so the dataset is not aliased; Clone returns
+				// nil for a nil map, so we always own a fresh one here.
 				populated[idx] = samples[idx]
+				cloned := maps.Clone(samples[idx].Metadata)
+				if cloned == nil {
+					cloned = map[string]any{}
+				}
+				cloned["latency_ms"] = 0.0
+				populated[idx].Metadata = cloned
 				errs[idx] = err.Error()
 				return
 			}
