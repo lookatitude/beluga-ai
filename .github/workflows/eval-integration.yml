@@ -142,7 +142,7 @@ jobs:
 
       - name: Upload eval-report.json artefact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: eval-report-smoke
           path: /tmp/eval-test/testproject/eval-report.json
