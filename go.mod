@@ -43,8 +43,8 @@ require (
 	go.opentelemetry.io/otel/trace v1.43.0
 	go.temporal.io/sdk v1.42.0
 	golang.org/x/time v0.15.0
-	google.golang.org/genai v1.54.0
-	google.golang.org/grpc v1.80.0
+	google.golang.org/genai v1.56.0
+	google.golang.org/grpc v1.81.0
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.49.1
 )
@@ -150,7 +150,7 @@ require (
 	golang.org/x/arch v0.24.0 // indirect
 	golang.org/x/crypto v0.49.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
-	golang.org/x/oauth2 v0.35.0 // indirect
+	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
