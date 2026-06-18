@@ -55,7 +55,7 @@ jobs:
       snyk_vulns: ${{ steps.snyk_result.outputs.vulns }}
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v6
         with:
@@ -95,7 +95,7 @@ jobs:
       trivy_status: ${{ steps.trivy_result.outputs.status }}
       trivy_findings: ${{ steps.trivy_result.outputs.findings }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Run Trivy filesystem scan
         uses: aquasecurity/trivy-action@master
@@ -144,7 +144,7 @@ jobs:
     outputs:
       gitleaks_status: ${{ steps.gitleaks_result.outputs.status }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -177,7 +177,7 @@ jobs:
       licenses_status: ${{ steps.licenses_result.outputs.status }}
       licenses_violations: ${{ steps.licenses_result.outputs.violations }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v6
         with:
@@ -227,7 +227,7 @@ jobs:
       govulncheck_status: ${{ steps.result.outputs.status }}
       govulncheck_vulns: ${{ steps.result.outputs.vulns }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v6
         with:
@@ -264,7 +264,7 @@ jobs:
     outputs:
       gosec_status: ${{ steps.result.outputs.status }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v6
         with:
