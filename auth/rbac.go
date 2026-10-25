@@ -100,6 +100,11 @@ func (p *RBACPolicy) RemoveRole(subject, roleName string) error {
 // through all roles assigned to the subject and returns true if any role
 // contains the requested permission. Default deny: returns false if no role
 // grants the permission.
+//
+// RBACPolicy is resource-agnostic: the resource argument is ignored, so a
+// role holding a permission grants it on every resource. For per-resource
+// decisions, compose it with an ABACPolicy or OPAPolicy (for example via a
+// composite policy that requires both).
 func (p *RBACPolicy) Authorize(ctx context.Context, subject string, permission Permission, resource string) (bool, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
