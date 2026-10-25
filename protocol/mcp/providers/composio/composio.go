@@ -2,7 +2,9 @@ package composio
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/v2/internal/httpclient"
@@ -11,6 +13,12 @@ import (
 )
 
 // Client connects to the Composio API for tool discovery and execution.
+//
+// Client targets Composio's legacy v1 REST API (GET /api/v1/actions and
+// POST /api/v1/actions/{name}/execute). Composio's current API is v3, which
+// uses different endpoints and request shapes (tool slugs, user and
+// connected-account scoping); this client has not been migrated to it and
+// does not paginate the action listing.
 type Client struct {
 	client *httpclient.Client
 }
@@ -134,7 +142,9 @@ func (t *composioTool) InputSchema() map[string]any {
 func (t *composioTool) Execute(ctx context.Context, input map[string]any) (*tool.Result, error) {
 	req := executeRequest{Input: input}
 
-	path := fmt.Sprintf("/api/v1/actions/%s/execute", t.info.Name)
+	// The action name comes from the remote API: escape it so "../" or "?"
+	// cannot redirect the authenticated request to another endpoint.
+	path := "/api/v1/actions/" + url.PathEscape(t.info.Name) + "/execute"
 	resp, err := httpclient.DoJSON[executeResponse](ctx, t.client.client, "POST", path, req)
 	if err != nil {
 		return nil, fmt.Errorf("composio: execute %s: %w", t.info.Name, err)
@@ -151,8 +161,23 @@ func (t *composioTool) Execute(ctx context.Context, input map[string]any) (*tool
 		}, nil
 	}
 
-	output := fmt.Sprintf("%v", resp.Data)
+	output, err := formatOutput(resp.Data)
+	if err != nil {
+		return nil, fmt.Errorf("composio: execute %s: encode output: %w", t.info.Name, err)
+	}
 	return &tool.Result{
 		Content: []schema.ContentPart{schema.TextPart{Text: output}},
 	}, nil
+}
+
+// formatOutput renders action output as JSON (strings are returned as-is).
+func formatOutput(data any) (string, error) {
+	if s, ok := data.(string); ok {
+		return s, nil
+	}
+	b, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }

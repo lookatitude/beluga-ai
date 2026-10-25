@@ -7,6 +7,12 @@
 // Composio action is wrapped as a Beluga tool.Tool, enabling seamless
 // integration with Beluga agents.
 //
+// # API version
+//
+// This client targets Composio's legacy v1 REST API (/api/v1/actions).
+// Composio's current API is v3; the client has not been migrated, and the
+// action listing is not paginated. Tool output is returned as JSON text.
+//
 // # Usage
 //
 //	client, err := composio.New(

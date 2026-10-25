@@ -2,9 +2,12 @@ package rest
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 
 	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/protocol/internal/httpsafe"
 )
 
 // SSEEvent represents a Server-Sent Event.
@@ -39,7 +42,14 @@ func NewSSEWriter(w http.ResponseWriter) (*SSEWriter, error) {
 }
 
 // WriteEvent writes a single SSE event and flushes the response.
+//
+// CR and LF are stripped from the single-line ID and Event fields so that a
+// value containing a newline cannot inject extra SSE fields or events.
+// Multi-line Data is emitted as one "data:" line per line, per the SSE
+// specification, so embedded newlines cannot start a new field either.
 func (sw *SSEWriter) WriteEvent(event SSEEvent) error {
+	event.ID = httpsafe.SSEField(event.ID)
+	event.Event = httpsafe.SSEField(event.Event)
 	if event.ID != "" {
 		if _, err := fmt.Fprintf(sw.w, "id: %s\n", event.ID); err != nil {
 			return core.Errorf(core.ErrProviderDown, "rest/sse: write id: %w", err)
@@ -50,7 +60,15 @@ func (sw *SSEWriter) WriteEvent(event SSEEvent) error {
 			return core.Errorf(core.ErrProviderDown, "rest/sse: write event: %w", err)
 		}
 	}
-	if _, err := fmt.Fprintf(sw.w, "data: %s\n\n", event.Data); err != nil {
+	data := strings.ReplaceAll(strings.ReplaceAll(event.Data, "\r\n", "\n"), "\r", "\n")
+	var b strings.Builder
+	for _, line := range strings.Split(data, "\n") {
+		b.WriteString("data: ")
+		b.WriteString(line)
+		b.WriteByte('\n')
+	}
+	b.WriteByte('\n')
+	if _, err := io.WriteString(sw.w, b.String()); err != nil {
 		return core.Errorf(core.ErrProviderDown, "rest/sse: write data: %w", err)
 	}
 	sw.flusher.Flush()
