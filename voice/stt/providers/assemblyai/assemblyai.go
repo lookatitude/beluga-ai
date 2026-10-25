@@ -396,6 +396,13 @@ func drainStreamEvents(ctx context.Context, events <-chan stt.TranscriptEvent, e
 		select {
 		case event, ok := <-events:
 			if !ok {
+				// The reader records its terminal error before closing
+				// events; surface it rather than ending silently.
+				select {
+				case err := <-errs:
+					yield(stt.TranscriptEvent{}, err)
+				default:
+				}
 				return
 			}
 			if !yield(event, nil) {
