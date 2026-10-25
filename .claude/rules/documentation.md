@@ -12,7 +12,7 @@ alwaysApply: false
 2. **Quick start** — working code example, <20 lines, copy-paste ready.
 3. **API reference** — every exported type and function documented.
 4. **Full example** — realistic use case, compilable.
-5. **Common mistakes** — sourced from `.guild/wiki/corrections.md`.
+5. **Common mistakes** — sourced from `.guild/wiki/corrections/`.
 6. **Related packages** — cross-references.
 
 ## Code example requirements
@@ -33,7 +33,7 @@ alwaysApply: false
 
 - `.guild/wiki/architecture/package-map.md` — what the package does and what it depends on.
 - `.guild/wiki/patterns/*.md` — canonical implementation snippets.
-- `.guild/wiki/corrections.md` — real mistakes users hit.
+- `.guild/wiki/corrections/` — real mistakes users hit.
 - `.guild/wiki/architecture/decisions.md` — design rationale for the "why" sections.
 
 ## Anti-rationalization

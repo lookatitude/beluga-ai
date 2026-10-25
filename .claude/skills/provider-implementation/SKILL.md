@@ -31,11 +31,12 @@ llm/providers/openai/
 ```go
 var _ llm.ChatModel = (*Model)(nil)
 
+// Factory type: func(cfg config.ProviderConfig) (llm.ChatModel, error)
 func init() {
-    llm.Register("openai", func(cfg llm.ProviderConfig) (llm.ChatModel, error) { return New(cfg) })
+    llm.Register("openai", func(cfg config.ProviderConfig) (llm.ChatModel, error) { return New(cfg) })
 }
 
-func New(cfg llm.ProviderConfig) (*Model, error) {
+func New(cfg config.ProviderConfig) (*Model, error) {
     if cfg.APIKey == "" { return nil, &core.Error{Op: "openai.new", Code: core.ErrAuth, Message: "API key required"} }
     return &Model{client: newClient(cfg.APIKey, cfg.BaseURL), model: cfg.Model}, nil
 }
@@ -56,4 +57,4 @@ case 400: code = core.ErrInvalidInput
 }
 ```
 
-See `docs/providers.md` for provider categories and priorities.
+See `docs/reference/providers.md` for provider categories.

@@ -30,12 +30,12 @@ func Register(name string, f Factory) {
     registry[name] = f
 }
 
-func New(name string, cfg ProviderConfig) (Interface, error) {
+func New(name string, cfg config.ProviderConfig) (Interface, error) {
     mu.RLock()
     f, ok := registry[name]
     mu.RUnlock()
     if !ok {
-        return nil, fmt.Errorf("unknown provider %q (registered: %v)", name, List())
+        return nil, core.Errorf(core.ErrNotFound, "unknown provider %q (registered: %v)", name, List())
     }
     return f(cfg)
 }
@@ -55,7 +55,7 @@ func New(opts ...Option) *Thing { o := defaults(); for _, opt := range opts { op
 
 ```go
 func init() {
-    llm.Register("openai", func(cfg llm.ProviderConfig) (llm.ChatModel, error) { return New(cfg) })
+    llm.Register("openai", func(cfg config.ProviderConfig) (llm.ChatModel, error) { return New(cfg) })
 }
 // Users import: import _ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
 ```

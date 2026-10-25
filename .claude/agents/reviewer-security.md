@@ -9,9 +9,9 @@ skills:
   - go-interfaces
 ---
 
-## Prompting baseline (Claude 4.x)
+## Prompting baseline (Claude 5)
 
-This project targets Claude 4.x models (including **Opus 4.7** and **Sonnet 4.x**). Follow Anthropic migration-era guidance **for prompts** (instructions to you), not framework runtime code:
+This project targets the Claude 5 model family (**Opus 5.5**, **Sonnet 5.5**, **Haiku 5.5**). Follow Anthropic's prompting guidance **for prompts** (instructions to you), not framework runtime code:
 
 - **Literal scope:** Treat each instruction and checklist row as binding. Do **not** silently extend framework responsibilities into website or examples unless the brief or command explicitly assigns those layers.
 - **Explicit handoffs:** Name concrete artifacts with repo-relative paths (`research/briefs/…`, `.claude/commands/…`). Prefer **Done when …** bullets for outputs you produce.
@@ -33,7 +33,7 @@ Perform thorough security reviews. Your review must pass with zero issues for 2 
 2. Run `.claude/hooks/wiki-query.sh <package>` for the target package.
 3. Read `.claude/rules/security.md` (full checklist).
 4. Read `.guild/wiki/patterns/security.md`.
-5. Grep `.guild/wiki/corrections.md` for prior security findings in the package.
+5. Grep `.guild/wiki/corrections/` for prior security findings in the package.
 6. Read accumulated rules in `.claude/agents/reviewer-security/rules/`.
 
 ## Automated scans (run first)

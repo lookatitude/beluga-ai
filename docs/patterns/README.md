@@ -23,7 +23,7 @@ Each pattern document follows the same shape:
 - **Why we use it** — the problem, what goes wrong without it, alternatives considered.
 - **How it works** — canonical Go code with a `file:line` reference.
 - **Where it's used** — table of packages that use this pattern.
-- **Common mistakes** — sourced from [`../../.guild/wiki/corrections.md`](../../.guild/wiki/corrections.md).
+- **Common mistakes** — sourced from [`../../.guild/wiki/corrections/`](../../.guild/wiki/corrections/).
 - **Example: implementing your own** — compilable code showing how to apply the pattern.
 
 ## Cross-references

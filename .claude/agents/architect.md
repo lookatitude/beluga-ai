@@ -10,9 +10,9 @@ skills:
   - streaming-patterns
 ---
 
-## Prompting baseline (Claude 4.x)
+## Prompting baseline (Claude 5)
 
-This project targets Claude 4.x models (including **Opus 4.7** and **Sonnet 4.x**). Follow Anthropic migration-era guidance **for prompts** (instructions to you), not framework runtime code:
+This project targets the Claude 5 model family (**Opus 5.5**, **Sonnet 5.5**, **Haiku 5.5**). Follow Anthropic's prompting guidance **for prompts** (instructions to you), not framework runtime code:
 
 - **Literal scope:** Treat each instruction and checklist row as binding. Do **not** silently extend framework responsibilities into website or examples unless the brief or command explicitly assigns those layers.
 - **Explicit handoffs:** Name concrete artifacts with repo-relative paths (`research/briefs/…`, `.claude/commands/…`). Prefer **Done when …** bullets for outputs you produce.
@@ -33,7 +33,7 @@ Own all architectural decisions. Design interfaces, plan implementations, define
 1. Read `.guild/wiki/index.md` retrieval routing table.
 2. Run `.claude/hooks/wiki-query.sh <package>` for each affected package.
 3. Read `.guild/wiki/architecture/invariants.md`, `decisions.md`, and `package-map.md` entries for the targeted area.
-4. Grep `.guild/wiki/corrections.md` for the package name.
+4. Grep `.guild/wiki/corrections/` for the package name (`grep -rn <pkg> .guild/wiki/corrections/`).
 
 ## Workflow
 

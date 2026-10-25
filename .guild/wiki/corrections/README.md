@@ -41,7 +41,7 @@ Corrections are grouped into three category files, each chronological within its
 
 ## Promotion pipeline
 
-Per-agent `rules/` → this directory → `.claude/rules/<file>.md` → (human-approved) `CLAUDE.md`.
+`/learn` or a reviewer → this directory → `.claude/rules/<file>.md` → (human-approved) `CLAUDE.md`.
 Entries reach `.claude/rules/` when seen ≥3 times or HIGH confidence.
 
 ## ID → category lookup
@@ -65,6 +65,7 @@ Entries reach `.claude/rules/` when seen ≥3 times or HIGH confidence.
 | C-015 | docs-drift.md |
 | C-016 | workflow.md |
 | C-017 | docs-drift.md |
+| C-018 | docs-drift.md |
 
 ### Note on C-010 duplicate
 
