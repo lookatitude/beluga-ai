@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"strings"
 
 	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/llm"
@@ -59,7 +60,7 @@ func (p *ReActPlanner) generate(ctx context.Context, state PlannerState) ([]Acti
 	// Generate response
 	resp, err := model.Generate(ctx, messages)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "react planner: generate failed: %w", err)
+		return nil, core.Wrapf(core.ErrProviderDown, "react planner: generate failed: %w", err)
 	}
 
 	return parseAIResponse(resp), nil
@@ -127,12 +128,14 @@ func toolDefinitions(tools []tool.Tool) []schema.ToolDefinition {
 	return defs
 }
 
-// resultText extracts text from a tool result.
+// resultText extracts the text of a tool result, joining multiple text
+// parts with newlines.
 func resultText(r *tool.Result) string {
+	var parts []string
 	for _, part := range r.Content {
 		if tp, ok := part.(schema.TextPart); ok {
-			return tp.Text
+			parts = append(parts, tp.Text)
 		}
 	}
-	return ""
+	return strings.Join(parts, "\n")
 }
