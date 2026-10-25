@@ -135,7 +135,7 @@ func (p *ToTPlanner) Plan(ctx context.Context, state PlannerState) ([]Action, er
 		bestPath, err = p.searchBFS(ctx, state)
 	}
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "tree-of-thought search: %w", err)
+		return nil, core.Wrapf(core.ErrProviderDown, "tree-of-thought search: %w", err)
 	}
 
 	return p.synthesize(ctx, state, bestPath)
@@ -362,7 +362,7 @@ func (p *ToTPlanner) synthesize(ctx context.Context, state PlannerState, path []
 
 	resp, err := model.Generate(ctx, msgs)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "tree-of-thought synthesize: %w", err)
+		return nil, core.Wrapf(core.ErrProviderDown, "tree-of-thought synthesize: %w", err)
 	}
 
 	return parseAIResponse(resp), nil

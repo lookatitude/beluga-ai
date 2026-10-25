@@ -115,7 +115,7 @@ func (p *ReflexionPlanner) generateWithReflection(ctx context.Context, state Pla
 	// Actor generates
 	resp, err := model.Generate(ctx, messages)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "reflexion actor: %w", err)
+		return nil, core.Wrapf(core.ErrProviderDown, "reflexion actor: %w", err)
 	}
 
 	// If tool calls, skip evaluation and return tool actions directly
@@ -178,7 +178,7 @@ func (p *ReflexionPlanner) evaluate(ctx context.Context, input, response string)
 		schema.NewHumanMessage(evalPrompt),
 	})
 	if err != nil {
-		return 0, core.Errorf(core.ErrProviderDown, "evaluate: %w", err)
+		return 0, core.Wrapf(core.ErrProviderDown, "evaluate: %w", err)
 	}
 
 	text := strings.TrimSpace(resp.Text())
@@ -211,7 +211,7 @@ func (p *ReflexionPlanner) reflect(ctx context.Context, input, response string, 
 		schema.NewHumanMessage(reflectPrompt),
 	})
 	if err != nil {
-		return "", core.Errorf(core.ErrProviderDown, "reflect: %w", err)
+		return "", core.Wrapf(core.ErrProviderDown, "reflect: %w", err)
 	}
 
 	return resp.Text(), nil

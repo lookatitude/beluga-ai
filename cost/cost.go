@@ -16,8 +16,9 @@ type Usage struct {
 	// CachedTokens is the number of tokens served from the provider's cache.
 	CachedTokens int
 
-	// TotalTokens is the sum of input and output tokens. Callers should set
-	// this explicitly; it is not computed automatically.
+	// TotalTokens is the sum of input and output tokens. It is not computed
+	// automatically when recording; where a total is needed and TotalTokens
+	// is zero, InputTokens+OutputTokens is used instead (see Tokens).
 	TotalTokens int
 
 	// Cost is the monetary cost in USD for this call.
@@ -37,11 +38,25 @@ type Usage struct {
 	Timestamp time.Time
 }
 
+// Tokens returns TotalTokens, or InputTokens+OutputTokens when TotalTokens is
+// not set.
+func (u Usage) Tokens() int {
+	if u.TotalTokens != 0 {
+		return u.TotalTokens
+	}
+	return u.InputTokens + u.OutputTokens
+}
+
 // Filter constrains which usage records are included in a Query result.
 // Zero-value fields are ignored (i.e. they match any value).
 type Filter struct {
-	// TenantID restricts results to a specific tenant. Empty matches all tenants.
+	// TenantID restricts results to a specific tenant. Empty matches all
+	// tenants, unless ExactTenant is set.
 	TenantID string
+
+	// ExactTenant makes TenantID match exactly, so an empty TenantID selects
+	// only the default/global tenant's records instead of every tenant's.
+	ExactTenant bool
 
 	// Model restricts results to a specific model. Empty matches all models.
 	Model string

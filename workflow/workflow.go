@@ -118,8 +118,10 @@ var (
 	registry   = make(map[string]Factory)
 )
 
-// Register adds a named DurableExecutor factory. Panics if name is empty,
-// factory is nil, or name is already registered.
+// Register adds a named DurableExecutor factory. It panics if name is empty
+// or factory is nil. Registering a name that is already registered replaces
+// the previous factory, the same duplicate policy as every other Beluga
+// registry (this lets applications override a built-in provider).
 func Register(name string, f Factory) {
 	if name == "" {
 		panic("workflow: Register called with empty name")
@@ -129,9 +131,6 @@ func Register(name string, f Factory) {
 	}
 	registryMu.Lock()
 	defer registryMu.Unlock()
-	if _, dup := registry[name]; dup {
-		panic("workflow: Register called twice for " + name)
-	}
 	registry[name] = f
 }
 

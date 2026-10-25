@@ -32,6 +32,9 @@ type PluginChain struct {
 	plugins []Plugin
 }
 
+// Len returns the number of plugins in the chain.
+func (c *PluginChain) Len() int { return len(c.plugins) }
+
 // NewPluginChain creates a PluginChain that will execute the provided
 // plugins in the order they are given.
 func NewPluginChain(plugins ...Plugin) *PluginChain {

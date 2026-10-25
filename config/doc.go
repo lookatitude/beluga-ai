@@ -63,9 +63,8 @@
 // [FileWatcher] polls a file at regular intervals using SHA-256 content
 // hashing, invoking a callback when changes are detected:
 //
-//	watcher := config.NewFileWatcher("config.json", 5*time.Second)
-//	err := watcher.Watch(ctx, func(newConfig any) {
-//	    data := newConfig.([]byte)
+//	watcher := config.NewPollingFileWatcher("config.json", 5*time.Second)
+//	err := watcher.WatchBytes(ctx, func(data []byte) {
 //	    // re-parse and apply configuration
 //	})
 package config

@@ -19,7 +19,10 @@ type Result struct {
 	// Confidence is the predictor's confidence score for the prediction.
 	Confidence float64
 
-	// Speedup is the time saved by using the prediction (negative if wasted).
+	// Speedup is the time between the prediction and the ground truth
+	// finishing. It is the latency actually saved only with WithEarlyReturn;
+	// without it Invoke waits for the ground truth, so Speedup is the
+	// potential saving of a validated prediction.
 	Speedup time.Duration
 
 	// WastedTokens is the number of tokens spent on a failed prediction.

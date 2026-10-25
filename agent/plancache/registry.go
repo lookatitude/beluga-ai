@@ -15,6 +15,8 @@ var (
 
 // RegisterMatcher registers a matcher factory under the given name. This is
 // typically called from init() in matcher implementation files.
+// Registering a name that is already registered replaces the previous
+// factory (the framework-wide duplicate policy).
 func RegisterMatcher(name string, factory MatcherFactory) {
 	matcherMu.Lock()
 	defer matcherMu.Unlock()

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"iter"
-	"strings"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/v2/core"
@@ -19,7 +18,6 @@ type Executor struct {
 	maxIterations int
 	timeout       time.Duration
 	hooks         Hooks
-	toolRegistry  *tool.Registry
 }
 
 // ExecutorOption configures an Executor.
@@ -62,7 +60,6 @@ func NewExecutor(opts ...ExecutorOption) *Executor {
 	e := &Executor{
 		maxIterations: 10,
 		timeout:       5 * time.Minute,
-		toolRegistry:  tool.NewRegistry(),
 	}
 	for _, opt := range opts {
 		opt(e)
@@ -79,12 +76,28 @@ type runContext struct {
 	yield       func(Event, error) bool
 	finalResult string
 	finalErr    error
+	// stopped is set once the consumer's yield returned false. After that
+	// the loop must not yield again (the iterator contract) and must not
+	// start further side effects such as tool calls.
+	stopped bool
+}
+
+// emit yields an event unless the consumer has already stopped. It reports
+// whether the consumer wants more events.
+func (rc *runContext) emit(ev Event, err error) bool {
+	if rc.stopped {
+		return false
+	}
+	if !rc.yield(ev, err) {
+		rc.stopped = true
+	}
+	return !rc.stopped
 }
 
 // yieldError emits an error event and records it as the final error.
 func (rc *runContext) yieldError(err error) {
 	rc.finalErr = err
-	rc.yield(Event{Type: EventError, AgentID: rc.agentID}, err)
+	rc.emit(Event{Type: EventError, AgentID: rc.agentID}, err)
 }
 
 // Run executes the reasoning loop, yielding events as they occur.
@@ -92,9 +105,7 @@ func (rc *runContext) yieldError(err error) {
 func (e *Executor) Run(ctx context.Context, input string, agentID string, tools []tool.Tool, messages []schema.Message, hooks Hooks) iter.Seq2[Event, error] {
 	return func(yield func(Event, error) bool) {
 		ctx, cancel := e.applyTimeout(ctx)
-		if cancel != nil {
-			defer cancel()
-		}
+		defer cancel()
 
 		rc := e.newRunContext(agentID, tools, hooks, yield, input, messages)
 
@@ -115,13 +126,14 @@ func (e *Executor) Run(ctx context.Context, input string, agentID string, tools 
 	}
 }
 
-// applyTimeout wraps ctx with a timeout if configured. Returns the context
-// and a cancel func (nil if no timeout was applied).
+// applyTimeout wraps ctx with a timeout if configured. The returned cancel
+// func is always non-nil and must be called; it is a no-op when no timeout
+// was applied.
 func (e *Executor) applyTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
 	if e.timeout > 0 {
 		return context.WithTimeout(ctx, e.timeout)
 	}
-	return ctx, nil
+	return ctx, func() {}
 }
 
 // newRunContext initialises a runContext for a single execution.
@@ -148,7 +160,7 @@ func (e *Executor) newRunContext(agentID string, tools []tool.Tool, hooks Hooks,
 func (e *Executor) runLoop(ctx context.Context, rc *runContext, agentID string) {
 	for i := 0; i < e.maxIterations; i++ {
 		if err := ctx.Err(); err != nil {
-			rc.yieldError(core.Errorf(core.ErrTimeout, "agent execution cancelled: %w", err))
+			rc.yieldError(core.Wrapf(core.ErrTimeout, "agent execution cancelled: %w", err))
 			return
 		}
 
@@ -159,11 +171,15 @@ func (e *Executor) runLoop(ctx context.Context, rc *runContext, agentID string) 
 			return
 		}
 		if done {
-			rc.yield(Event{Type: EventDone, AgentID: agentID, Text: rc.finalResult}, nil)
+			rc.emit(Event{Type: EventDone, AgentID: agentID, Text: rc.finalResult}, nil)
 			return
 		}
-
-		rc.state.Messages = e.buildMessages(rc.state)
+		// state.Messages is deliberately left untouched: it is the
+		// conversation the run started with, and the tool calls/results of
+		// this run live only in state.Observations. Planners combine the two
+		// (see buildMessagesFromState); folding observations into Messages
+		// here as well made every planner resend each tool call twice, with
+		// the duplication growing on every iteration.
 	}
 
 	rc.yieldError(core.Errorf(core.ErrInvalidInput, "agent reached maximum iterations (%d)", e.maxIterations))
@@ -271,7 +287,12 @@ func (e *Executor) executeSingleAction(ctx context.Context, rc *runContext, acti
 		}
 	}
 
-	obs := e.executeAction(ctx, rc.agentID, action, rc.reg, rc.hooks, rc.yield)
+	obs := e.executeAction(ctx, rc, action)
+	if rc.stopped {
+		// The consumer stopped iterating; unwind without further hooks or
+		// events.
+		return false, true
+	}
 
 	if rc.hooks.AfterAct != nil {
 		if err := rc.hooks.AfterAct(ctx, action, obs); err != nil {
@@ -292,33 +313,28 @@ func (e *Executor) executeSingleAction(ctx context.Context, rc *runContext, acti
 	return false, false
 }
 
-// executeAction handles a single action and returns an observation.
-func (e *Executor) executeAction(
-	ctx context.Context,
-	agentID string,
-	action Action,
-	reg *tool.Registry,
-	hooks Hooks,
-	yield func(Event, error) bool,
-) Observation {
+// executeAction handles a single action and returns an observation. Events
+// are emitted through rc; if the consumer stops, rc.stopped is set and no
+// further work is started.
+func (e *Executor) executeAction(ctx context.Context, rc *runContext, action Action) Observation {
 	start := time.Now()
 
 	switch action.Type {
 	case ActionTool:
-		return e.executeToolAction(ctx, agentID, action, reg, hooks, yield, start)
+		return e.executeToolAction(ctx, rc, action, start)
 
 	case ActionRespond, ActionFinish:
-		yield(Event{
+		rc.emit(Event{
 			Type:    EventText,
-			AgentID: agentID,
+			AgentID: rc.agentID,
 			Text:    action.Message,
 		}, nil)
 		return Observation{Action: action, Latency: time.Since(start)}
 
 	case ActionHandoff:
-		yield(Event{
+		rc.emit(Event{
 			Type:    EventHandoff,
-			AgentID: agentID,
+			AgentID: rc.agentID,
 			Text:    action.Message,
 			Metadata: map[string]any{
 				"target": action.Metadata["target"],
@@ -336,16 +352,9 @@ func (e *Executor) executeAction(
 }
 
 // executeToolAction handles ActionTool: looks up the tool, parses arguments,
-// executes it, and emits the appropriate events.
-func (e *Executor) executeToolAction(
-	ctx context.Context,
-	agentID string,
-	action Action,
-	reg *tool.Registry,
-	hooks Hooks,
-	yield func(Event, error) bool,
-	start time.Time,
-) Observation {
+// executes it, and emits the appropriate events. If the consumer stops after
+// the tool-call event, the tool is not executed.
+func (e *Executor) executeToolAction(ctx context.Context, rc *runContext, action Action, start time.Time) Observation {
 	if action.ToolCall == nil {
 		return Observation{
 			Action:  action,
@@ -354,26 +363,28 @@ func (e *Executor) executeToolAction(
 		}
 	}
 
-	yield(Event{Type: EventToolCall, AgentID: agentID, ToolCall: action.ToolCall}, nil)
+	if !rc.emit(Event{Type: EventToolCall, AgentID: rc.agentID, ToolCall: action.ToolCall}, nil) {
+		return Observation{Action: action, Latency: time.Since(start)}
+	}
 
 	callInfo := ToolCallInfo{
 		Name:      action.ToolCall.Name,
 		Arguments: action.ToolCall.Arguments,
 		CallID:    action.ToolCall.ID,
 	}
-	if hooks.OnToolCall != nil {
-		if err := hooks.OnToolCall(ctx, callInfo); err != nil {
+	if rc.hooks.OnToolCall != nil {
+		if err := rc.hooks.OnToolCall(ctx, callInfo); err != nil {
 			return Observation{Action: action, Error: err, Latency: time.Since(start)}
 		}
 	}
 
-	result, err := e.lookupAndExecuteTool(ctx, action, reg)
+	result, err := e.lookupAndExecuteTool(ctx, action, rc.reg)
 
-	if hooks.OnToolResult != nil {
-		_ = hooks.OnToolResult(ctx, callInfo, result)
+	if rc.hooks.OnToolResult != nil {
+		_ = rc.hooks.OnToolResult(ctx, callInfo, result)
 	}
 
-	yield(Event{Type: EventToolResult, AgentID: agentID, ToolResult: result}, nil)
+	rc.emit(Event{Type: EventToolResult, AgentID: rc.agentID, ToolResult: result}, nil)
 
 	return Observation{Action: action, Result: result, Error: err, Latency: time.Since(start)}
 }
@@ -401,42 +412,4 @@ func (e *Executor) lookupAndExecuteTool(
 		return tool.ErrorResult(err), err
 	}
 	return result, nil
-}
-
-// buildMessages converts the current state (input + observations) into
-// messages for the next LLM call.
-func (e *Executor) buildMessages(state PlannerState) []schema.Message {
-	msgs := make([]schema.Message, 0, len(state.Messages)+len(state.Observations)*2)
-	msgs = append(msgs, state.Messages...)
-
-	for _, obs := range state.Observations {
-		if obs.Action.Type == ActionTool && obs.Action.ToolCall != nil {
-			// Add the AI message with tool call
-			msgs = append(msgs, &schema.AIMessage{
-				ToolCalls: []schema.ToolCall{*obs.Action.ToolCall},
-			})
-
-			// Add the tool result message
-			var text string
-			if obs.Result != nil {
-				text = extractResultText(obs.Result)
-			} else if obs.Error != nil {
-				text = obs.Error.Error()
-			}
-			msgs = append(msgs, schema.NewToolMessage(obs.Action.ToolCall.ID, text))
-		}
-	}
-
-	return msgs
-}
-
-// extractResultText extracts text content from a tool result.
-func extractResultText(result *tool.Result) string {
-	var parts []string
-	for _, part := range result.Content {
-		if tp, ok := part.(schema.TextPart); ok {
-			parts = append(parts, tp.Text)
-		}
-	}
-	return strings.Join(parts, "\n")
 }

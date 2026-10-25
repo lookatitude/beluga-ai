@@ -126,7 +126,7 @@ func (g *ToolGenerator) Generate(ctx context.Context, req GenerateRequest, execu
 
 		resp, err := g.model.Generate(ctx, msgs)
 		if err != nil {
-			return nil, core.Errorf(core.ErrProviderDown, "tool generator: llm error: %w", err)
+			return nil, core.Wrapf(core.ErrProviderDown, "tool generator: llm error: %w", err)
 		}
 
 		text := resp.Text()
@@ -151,7 +151,7 @@ func (g *ToolGenerator) Generate(ctx context.Context, req GenerateRequest, execu
 		), nil
 	}
 
-	return nil, core.Errorf(core.ErrInvalidInput, "tool generator: failed after %d retries: %w", g.maxRetries, lastErr)
+	return nil, core.Wrapf(core.ErrInvalidInput, "tool generator: failed after %d retries: %w", g.maxRetries, lastErr)
 }
 
 // buildPrompt constructs the user prompt for tool generation.

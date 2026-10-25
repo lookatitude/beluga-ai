@@ -231,7 +231,7 @@ func (c *MCPClient) call(ctx context.Context, method string, params any, dst any
 
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
-		return core.NewError(op, core.ErrProviderDown, "send request", err)
+		return core.NewError(op, core.CodeOf(err, core.ErrProviderDown), "send request", err)
 	}
 	defer resp.Body.Close()
 
@@ -337,7 +337,7 @@ func (c *MCPClient) notify(ctx context.Context, method string, params any) error
 
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
-		return core.NewError(op, core.ErrProviderDown, "send notification", err)
+		return core.NewError(op, core.CodeOf(err, core.ErrProviderDown), "send notification", err)
 	}
 	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxResponseBodySize))
 	_ = resp.Body.Close()
@@ -517,7 +517,7 @@ func (c *MCPClient) Close(ctx context.Context) error {
 
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
-		return core.NewError(op, core.ErrProviderDown, "send delete", err)
+		return core.NewError(op, core.CodeOf(err, core.ErrProviderDown), "send delete", err)
 	}
 	// H1: Drain up to a bounded amount before closing to allow connection reuse
 	// while preventing memory exhaustion.

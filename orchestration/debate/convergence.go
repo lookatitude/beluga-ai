@@ -27,6 +27,8 @@ var (
 
 // RegisterDetector registers a named ConvergenceDetector factory.
 // This should be called from init().
+// Registering a name that is already registered replaces the previous
+// factory (the framework-wide duplicate policy).
 func RegisterDetector(name string, f DetectorFactory) {
 	detectorMu.Lock()
 	defer detectorMu.Unlock()

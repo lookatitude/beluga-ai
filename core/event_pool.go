@@ -1,12 +1,26 @@
 package core
 
-import "sync"
+import (
+	"reflect"
+	"sync"
+)
 
-// eventPool is the backing sync.Pool for zero-allocation event recycling.
-// It stores *Event[any] as the common pool element; AcquireEvent and
-// ReleaseEvent cast to the correct generic instantiation.
-var eventPool = sync.Pool{
-	New: func() any { return &Event[any]{} },
+// eventPools holds one sync.Pool per Event payload type, keyed by the
+// reflect.Type of T. A single shared pool cannot recycle Event[T] values for
+// more than one T, because a pooled *Event[A] is useless to a caller asking
+// for *Event[B].
+var eventPools sync.Map // map[reflect.Type]*sync.Pool
+
+// poolFor returns the pool for Event[T], creating it on first use.
+func poolFor[T any]() *sync.Pool {
+	key := reflect.TypeFor[T]()
+	if p, ok := eventPools.Load(key); ok {
+		return p.(*sync.Pool)
+	}
+	p, _ := eventPools.LoadOrStore(key, &sync.Pool{
+		New: func() any { return &Event[T]{} },
+	})
+	return p.(*sync.Pool)
 }
 
 // Reset clears all fields on e so that the Event can be safely returned to
@@ -19,30 +33,23 @@ func (e *Event[T]) Reset() {
 	e.Meta = nil
 }
 
-// AcquireEvent retrieves a pre-allocated *Event[T] from the shared pool.
+// AcquireEvent retrieves a pre-allocated *Event[T] from the pool for type T.
 // The caller must call [ReleaseEvent] when done to return the Event for reuse.
 //
-// Because sync.Pool is untyped internally, a new Event[T] is allocated on the
-// first call for a given type T; subsequent calls in steady state return
-// recycled instances with zero allocations.
+// Each payload type T has its own pool, so in steady state (after a matching
+// ReleaseEvent) AcquireEvent returns a recycled instance for any T. sync.Pool
+// may still drop pooled items at garbage collection, in which case a fresh
+// Event is allocated.
 func AcquireEvent[T any]() *Event[T] {
-	// Attempt to reuse a pooled *Event[T] directly.
-	if v := eventPool.Get(); v != nil {
-		if e, ok := v.(*Event[T]); ok {
-			return e
-		}
-	}
-	// Pool held a differently-typed Event (or the pool was empty).
-	// Allocate a fresh one; the discarded item will be GC'd.
-	return &Event[T]{}
+	return poolFor[T]().Get().(*Event[T])
 }
 
-// ReleaseEvent resets e and returns it to the shared pool for reuse.
+// ReleaseEvent resets e and returns it to the pool for type T.
 // The caller must not access e after calling ReleaseEvent.
 func ReleaseEvent[T any](e *Event[T]) {
 	if e == nil {
 		return
 	}
 	e.Reset()
-	eventPool.Put(e)
+	poolFor[T]().Put(e)
 }

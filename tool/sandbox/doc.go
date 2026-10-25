@@ -17,13 +17,18 @@
 //	}
 //
 // Implementations may range from local process execution (for development) to
-// remote container-based sandboxes (for production).
+// remote container-based sandboxes. Only the development-only "process"
+// provider ships with the framework; production deployments need an
+// isolating implementation registered with [RegisterSandbox].
 //
 // # ProcessSandbox (Development Only)
 //
 // [ProcessSandbox] executes code via os/exec in a temporary directory. It enforces
 // timeouts via context but does NOT provide kernel-level isolation (no seccomp,
 // no namespaces, no cgroups). It is suitable for development and testing only.
+// The child gets a minimal environment unless [WithEnv] is set, and requests
+// for network policies or memory/CPU limits are rejected because they cannot
+// be enforced.
 //
 //	sb := sandbox.NewProcessSandbox(
 //	    sandbox.WithWorkDir("/tmp/sandbox"),

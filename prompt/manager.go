@@ -16,7 +16,12 @@ type TemplateInfo struct {
 
 // PromptManager provides versioned access to prompt templates.
 // Implementations load templates from various backends (filesystem, database, etc.)
-// and support rendering templates into message sequences.
+// and support rendering templates into message sequences. Providers register
+// with [Register] and are created with [New].
+//
+// Its methods predate the rule that every public function takes a
+// context.Context first; adding one would break all implementations, so it
+// is planned for the next major version.
 type PromptManager interface { //nolint:revive // exported name is public API; renaming to remove the stutter would break callers
 	// Get retrieves a template by name and version. If version is empty,
 	// the latest version is returned.

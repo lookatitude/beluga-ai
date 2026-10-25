@@ -33,7 +33,8 @@ func defaultSessionOptions() sessionOptions {
 type SessionOption func(*sessionOptions)
 
 // WithSessionTTL sets the time-to-live for sessions managed by the service.
-// Sessions whose ExpiresAt has passed will be treated as not found on Get.
+// Sessions whose ExpiresAt has passed are treated as not found on Get and
+// are evicted from memory (on Get, and on every Create).
 // A zero duration means sessions never expire.
 func WithSessionTTL(d time.Duration) SessionOption {
 	return func(o *sessionOptions) {
@@ -109,6 +110,10 @@ func (s *InMemorySessionService) Create(ctx context.Context, agentID string) (*S
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	// Evict expired sessions so they neither leak memory nor count toward
+	// the session limit.
+	s.evictExpiredLocked(now)
+
 	// Check if we've hit the max sessions limit.
 	if s.opts.maxSessions > 0 && len(s.sessions) >= s.opts.maxSessions {
 		return nil, core.NewError("runtime.session.create", core.ErrInvalidInput, "session storage limit reached", nil)
@@ -135,7 +140,12 @@ func (s *InMemorySessionService) Get(ctx context.Context, sessionID string) (*Se
 			msgSessionNotFound, nil)
 	}
 
-	if !stored.ExpiresAt.IsZero() && time.Now().UTC().After(stored.ExpiresAt) {
+	if now := time.Now().UTC(); isExpired(stored, now) {
+		s.mu.Lock()
+		if cur, ok := s.sessions[sessionID]; ok && isExpired(cur, now) {
+			delete(s.sessions, sessionID)
+		}
+		s.mu.Unlock()
 		return nil, core.NewError("runtime.session.get", core.ErrNotFound,
 			"session expired", nil)
 	}
@@ -185,6 +195,21 @@ func (s *InMemorySessionService) Delete(ctx context.Context, sessionID string) e
 
 	delete(s.sessions, sessionID)
 	return nil
+}
+
+// isExpired reports whether the session has a TTL that has passed at now.
+func isExpired(s *Session, now time.Time) bool {
+	return !s.ExpiresAt.IsZero() && now.After(s.ExpiresAt)
+}
+
+// evictExpiredLocked removes every expired session. The caller must hold
+// s.mu for writing.
+func (s *InMemorySessionService) evictExpiredLocked(now time.Time) {
+	for id, sess := range s.sessions {
+		if isExpired(sess, now) {
+			delete(s.sessions, id)
+		}
+	}
 }
 
 // generateSessionID returns a 16-byte, hex-encoded, crypto-random string.

@@ -216,3 +216,23 @@ func BenchmarkEventPoolParallel(b *testing.B) {
 		}
 	})
 }
+
+// TestAcquireEvent_RecyclesNonAnyTypes is a regression test for FWC-31: the
+// single shared *Event[any] pool could never recycle an Event[T] with T != any.
+func TestAcquireEvent_RecyclesNonAnyTypes(t *testing.T) {
+	allocs := testing.AllocsPerRun(100, func() {
+		e := AcquireEvent[string]()
+		e.Payload = "x"
+		ReleaseEvent(e)
+	})
+	if allocs > 0 {
+		t.Errorf("AcquireEvent[string]/ReleaseEvent allocs = %v, want 0", allocs)
+	}
+	ei := AcquireEvent[int]()
+	ReleaseEvent(ei)
+	es := AcquireEvent[string]()
+	if es.Payload != "" {
+		t.Errorf("recycled event not reset: %q", es.Payload)
+	}
+	ReleaseEvent(es)
+}

@@ -71,7 +71,7 @@ func NewSandboxPool(provider string, opts ...PoolOption) (*SandboxPool, error) {
 			if err != nil {
 				// Close any already-created sandboxes.
 				p.closeAll(context.Background())
-				return nil, core.Errorf(core.ErrProviderDown, "sandbox.pool: warmup failed at instance %d: %w", i, err)
+				return nil, core.Wrapf(core.ErrProviderDown, "sandbox.pool: warmup failed at instance %d: %w", i, err)
 			}
 			p.pool <- sb
 		}
@@ -97,7 +97,7 @@ func (p *SandboxPool) Checkout(ctx context.Context) (Sandbox, error) {
 	select {
 	case p.sem <- struct{}{}:
 	case <-ctx.Done():
-		return nil, core.NewError(opSandboxPool, core.ErrTimeout, "checkout timed out", ctx.Err())
+		return nil, core.NewError(opSandboxPool, core.CodeOf(ctx.Err(), core.ErrTimeout), "checkout timed out", ctx.Err())
 	}
 
 	// Try to reuse an idle sandbox.
@@ -112,7 +112,7 @@ func (p *SandboxPool) Checkout(ctx context.Context) (Sandbox, error) {
 	sb, err := NewSandbox(p.provider)
 	if err != nil {
 		<-p.sem
-		return nil, core.Errorf(core.ErrProviderDown, "sandbox.pool: create sandbox: %w", err)
+		return nil, core.Wrapf(core.ErrProviderDown, "sandbox.pool: create sandbox: %w", err)
 	}
 	return sb, nil
 }

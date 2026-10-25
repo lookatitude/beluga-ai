@@ -12,4 +12,11 @@
 //   - ScreenAnalyzer: Multimodal LLM-based screenshot analysis
 //   - ComputerUseTool: Implements tool.Tool for agent integration
 //   - SafetyGuard: URL allowlisting and action rate limiting
+//
+// # Layering note
+//
+// ScreenAnalyzer depends on package llm. The package dependency map lists tool/ as
+// depending only on core, schema and o11y, so this sideways layer-3 import is
+// a known exception. It is kept to avoid breaking the exported API and is
+// scheduled to move out of tool/ in the next major version.
 package computeruse

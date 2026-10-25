@@ -23,6 +23,7 @@ type executorConfig struct {
 	hooks               Hooks
 	metrics             *Metrics
 	fastAgent           agent.Agent
+	earlyReturn         bool
 }
 
 func defaultExecutorConfig() executorConfig {
@@ -70,6 +71,23 @@ func WithMetrics(m *Metrics) ExecutorOption {
 	}
 }
 
+// WithEarlyReturn makes Invoke return a confident prediction as soon as the
+// predictor finishes, without waiting for the ground-truth agent. The ground
+// truth keeps running in the background (detached from the caller's
+// cancellation) and the prediction is validated against it afterwards; a
+// wrong prediction is reported through Hooks.OnMisprediction, which is the
+// caller's chance to correct or roll back. Only enable this when acting on an
+// occasionally wrong answer is acceptable.
+//
+// Without WithEarlyReturn, Invoke always waits for the ground truth and only
+// returns a prediction that has been validated, so its latency is that of the
+// slower of the two.
+func WithEarlyReturn() ExecutorOption {
+	return func(c *executorConfig) {
+		c.earlyReturn = true
+	}
+}
+
 // WithFastAgent sets an optional fast agent used for streaming when the
 // predictor confidence exceeds the threshold.
 func WithFastAgent(a agent.Agent) ExecutorOption {
@@ -79,8 +97,13 @@ func WithFastAgent(a agent.Agent) ExecutorOption {
 }
 
 // SpeculativeExecutor implements agent.Agent by running a predictor and
-// ground-truth agent in parallel. If the prediction is validated, the result
-// is returned with a speedup. Otherwise, the ground-truth result is used.
+// ground-truth agent in parallel.
+//
+// By default Invoke waits for both and returns the prediction only when the
+// validator accepts it (a "validated prediction"); otherwise the ground-truth
+// result is used. This never returns sooner than the ground truth alone. With
+// [WithEarlyReturn], a confident prediction is returned immediately and
+// validated in the background, which is where the latency saving comes from.
 type SpeculativeExecutor struct { //nolint:revive // stutter: renaming would break the exported API
 	groundTruth agent.Agent
 	config      executorConfig
@@ -127,9 +150,9 @@ func (e *SpeculativeExecutor) Metrics() *Metrics {
 	return e.config.metrics
 }
 
-// Invoke runs the predictor and ground-truth agent in parallel. If the
-// predictor finishes first with sufficient confidence and passes validation,
-// the prediction is returned. Otherwise, the ground-truth result is used.
+// Invoke runs the predictor and ground-truth agent in parallel. A confident
+// prediction that passes validation is returned; otherwise the ground-truth
+// result is used. See [WithEarlyReturn] for returning before validation.
 func (e *SpeculativeExecutor) Invoke(ctx context.Context, input string, opts ...agent.Option) (string, error) {
 	if e.config.predictor == nil {
 		// No predictor configured; fall through to ground truth.
@@ -139,8 +162,16 @@ func (e *SpeculativeExecutor) Invoke(ctx context.Context, input string, opts ...
 	predCh := make(chan predictionOutcome, 1)
 	gtCh := make(chan groundTruthOutcome, 1)
 
+	// gtCtx is cancelled when Invoke returns, stopping a ground-truth run
+	// whose answer is no longer needed. With early return the ground truth
+	// must outlive this call to validate the answer in the background, so it
+	// runs on a context that is not cancelled with ours; every other return
+	// path has already received the ground-truth result.
 	gtCtx, gtCancel := context.WithCancel(ctx)
 	defer gtCancel()
+	if e.config.earlyReturn {
+		gtCtx = context.WithoutCancel(ctx)
+	}
 
 	// Run predictor and ground-truth in parallel. Synchronization is done via
 	// the buffered channels below — no WaitGroup is needed.
@@ -167,6 +198,19 @@ func (e *SpeculativeExecutor) Invoke(ctx context.Context, input string, opts ...
 	if pred.err != nil || pred.confidence < e.config.confidenceThreshold {
 		// Prediction failed or low confidence — use ground truth.
 		return e.fallbackToGroundTruth(ctx, pred, gtCh)
+	}
+
+	if e.config.earlyReturn {
+		// Return now and validate in the background.
+		bgCtx := context.WithoutCancel(ctx)
+		go func() {
+			gt := <-gtCh
+			if gt.err != nil {
+				return
+			}
+			e.resolveWithGroundTruth(bgCtx, pred, gt.text, time.Since(predDone))
+		}()
+		return pred.text, nil
 	}
 
 	// Wait for ground truth to validate.

@@ -2,10 +2,11 @@ package sleeptime
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // Priority determines the execution order of tasks during idle periods.
@@ -102,7 +103,7 @@ func NewTask(name string, cfg map[string]any) (Task, error) {
 	f, ok := taskRegistry[name]
 	taskMu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("sleeptime: unknown task %q (registered: %v)", name, ListTasks())
+		return nil, core.Errorf(core.ErrNotFound, "sleeptime: unknown task %q (registered: %v)", name, ListTasks())
 	}
 	return f(cfg)
 }

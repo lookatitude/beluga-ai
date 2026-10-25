@@ -90,7 +90,7 @@ func (vr *VersionedRegistry) Upsert(t tool.Tool) (int, error) {
 		_ = vr.inner.Remove(name)
 	}
 	if err := vr.inner.Add(t); err != nil {
-		return 0, core.Errorf(core.ErrInvalidInput, "versioned registry: failed to add tool %q: %w", name, err)
+		return 0, core.Wrapf(core.ErrInvalidInput, "versioned registry: failed to add tool %q: %w", name, err)
 	}
 
 	// Inner registry succeeded — now mutate in-memory state.
@@ -138,7 +138,7 @@ func (vr *VersionedRegistry) Activate(name string, version int) error {
 	// failure leaves the registry consistent.
 	_ = vr.inner.Remove(name)
 	if err := vr.inner.Add(entry.versions[idx].Tool); err != nil {
-		return core.Errorf(core.ErrInvalidInput, "versioned registry: failed to activate tool %q v%d: %w", name, version, err)
+		return core.Wrapf(core.ErrInvalidInput, "versioned registry: failed to activate tool %q v%d: %w", name, version, err)
 	}
 
 	// Deactivate current, activate target.
@@ -174,7 +174,7 @@ func (vr *VersionedRegistry) Rollback(name string) (int, error) {
 	// failure leaves the registry consistent.
 	_ = vr.inner.Remove(name)
 	if err := vr.inner.Add(entry.versions[idx].Tool); err != nil {
-		return 0, core.Errorf(core.ErrInvalidInput, "versioned registry: failed to rollback tool %q: %w", name, err)
+		return 0, core.Wrapf(core.ErrInvalidInput, "versioned registry: failed to rollback tool %q: %w", name, err)
 	}
 
 	entry.versions[entry.current].Active = false

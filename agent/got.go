@@ -299,14 +299,14 @@ func (p *GoTPlanner) Plan(ctx context.Context, state PlannerState) ([]Action, er
 	for i := 0; i < p.maxOperations; i++ {
 		op, err := p.controller.NextOperation(ctx, graph)
 		if err != nil {
-			return nil, core.Errorf(core.ErrProviderDown, "graph-of-thought controller: %w", err)
+			return nil, core.Wrapf(core.ErrProviderDown, "graph-of-thought controller: %w", err)
 		}
 		if op == nil {
 			break // controller signals completion
 		}
 
 		if err := p.executeOperation(ctx, state.Input, graph, op); err != nil {
-			return nil, core.Errorf(core.ErrProviderDown, "graph-of-thought op %s: %w", op.Type, err)
+			return nil, core.Wrapf(core.ErrProviderDown, "graph-of-thought op %s: %w", op.Type, err)
 		}
 
 		// If the last operation was aggregate, we're done
@@ -526,7 +526,7 @@ func (p *GoTPlanner) synthesizeFromGraph(ctx context.Context, state PlannerState
 
 	resp, err := model.Generate(ctx, msgs)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "graph-of-thought synthesize: %w", err)
+		return nil, core.Wrapf(core.ErrProviderDown, "graph-of-thought synthesize: %w", err)
 	}
 
 	return parseAIResponse(resp), nil

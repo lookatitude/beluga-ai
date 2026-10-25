@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"iter"
+	"strings"
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/v2/core"
@@ -229,11 +230,15 @@ func TestGraph_Stream_NodeError(t *testing.T) {
 	g.AddEdge(Edge{From: "a", To: "b"})
 	g.SetEntry("a")
 
+	var gotErr error
 	for _, err := range g.Stream(context.Background(), "x") {
 		if err != nil {
-			// Error from node invoke in non-terminal path.
-			return
+			gotErr = err
+			break
 		}
+	}
+	if !errors.Is(gotErr, errBoom) {
+		t.Fatalf("Stream error = %v, want one wrapping %v", gotErr, errBoom)
 	}
 }
 
@@ -245,11 +250,18 @@ func TestGraph_Stream_MaxDepth(t *testing.T) {
 	g.AddEdge(Edge{From: "b", To: "a"})
 	g.SetEntry("a")
 
+	var gotErr error
 	for _, err := range g.Stream(context.Background(), "x") {
 		if err != nil {
-			// Max depth exceeded error.
-			return
+			gotErr = err
+			break
 		}
+	}
+	if gotErr == nil {
+		t.Fatal("expected a max-depth error from a cyclic graph")
+	}
+	if !strings.Contains(gotErr.Error(), "depth") {
+		t.Errorf("error = %v, want a max-depth error", gotErr)
 	}
 }
 
@@ -339,5 +351,36 @@ func TestGraph_FirstMatchWins(t *testing.T) {
 	}
 	if result != "first" {
 		t.Fatalf("expected first (first match wins), got %v", result)
+	}
+}
+
+// TestOrchestration_PreservesWorkerErrorCode is a regression test for
+// FWC-03: worker/node errors were re-coded as the retryable ErrProviderDown.
+func TestOrchestration_PreservesWorkerErrorCode(t *testing.T) {
+	blocked := core.Errorf(core.ErrGuardBlocked, "blocked")
+	failing := newStep(func(any) (any, error) { return nil, blocked })
+
+	g := NewGraph()
+	g.AddNode("a", failing)
+	g.AddNode("b", newStep(func(v any) (any, error) { return v, nil }))
+	g.AddEdge(Edge{From: "a", To: "b"})
+	g.SetEntry("a")
+
+	sg := NewScatterGather(func(r []any) (any, error) { return r, nil }, failing)
+
+	plain := newStep(func(any) (any, error) { return nil, errors.New("plain") })
+	sgPlain := NewScatterGather(func(r []any) (any, error) { return r, nil }, plain)
+
+	chain := Chain(newStep(func(v any) (any, error) { return v, nil }), failing)
+
+	for name, r := range map[string]core.Runnable{"graph": g, "scatter": sg, "chain": chain} {
+		_, err := r.Invoke(context.Background(), "x")
+		if core.IsRetryable(err) || core.CodeOf(err, "") != core.ErrGuardBlocked {
+			t.Errorf("%s: err = %v, want non-retryable guard_blocked", name, err)
+		}
+	}
+	_, err := sgPlain.Invoke(context.Background(), "x")
+	if core.IsRetryable(err) {
+		t.Errorf("plain worker error became retryable: %v", err)
 	}
 }

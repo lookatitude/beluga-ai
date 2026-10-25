@@ -24,6 +24,8 @@ var (
 
 // RegisterScorer registers a scorer factory under the given name.
 // This is typically called from init() in scorer implementation files.
+// Registering a name that is already registered replaces the previous
+// factory (the framework-wide duplicate policy).
 func RegisterScorer(name string, factory ScorerFactory) {
 	scorerMu.Lock()
 	defer scorerMu.Unlock()

@@ -89,7 +89,7 @@ func (h *HandoffOrchestrator) Invoke(ctx context.Context, input any, opts ...cor
 		// Stream the agent to detect handoff events.
 		nextID, result, err := h.runAgent(ctx, a, inputStr)
 		if err != nil {
-			return nil, core.Errorf(core.ErrProviderDown, "orchestration/handoff: agent %q: %w", currentID, err)
+			return nil, core.Wrapf(core.ErrInternal, "orchestration/handoff: agent %q: %w", currentID, err)
 		}
 
 		if nextID == "" {
@@ -204,7 +204,7 @@ func (h *HandoffOrchestrator) streamAgent(
 	for event, evErr := range a.Stream(ctx, input) {
 		if evErr != nil {
 			// Stop regardless of whether the consumer accepts the error.
-			yield(nil, core.Errorf(core.ErrProviderDown, "orchestration/handoff: agent %q: %w", a.ID(), evErr))
+			yield(nil, core.Wrapf(core.ErrInternal, "orchestration/handoff: agent %q: %w", a.ID(), evErr))
 			return "", textBuf.String(), true
 		}
 
