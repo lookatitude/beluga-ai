@@ -70,7 +70,8 @@ func TestACL_ReadUnrestricted(t *testing.T) {
 		Key:      "open",
 		Content:  "public",
 		AuthorID: "agent-1",
-		Readers:  nil, // unrestricted
+		// Unrestricted access is an explicit flag, never an empty list.
+		UnrestrictedRead: true,
 	})
 
 	frag, err := sm.Read(context.Background(), "open", "anyone")
@@ -104,6 +105,7 @@ func TestACL_WriteAllowed(t *testing.T) {
 		Key:      "collab",
 		Content:  "v1",
 		AuthorID: "agent-1",
+		Readers:  []string{"agent-1", "agent-2"},
 		Writers:  []string{"agent-1", "agent-2"},
 	})
 
@@ -228,6 +230,8 @@ func TestProvenance_Chain(t *testing.T) {
 		Key:      "doc",
 		Content:  "first",
 		AuthorID: "agent-1",
+		Readers:  []string{"agent-1", "agent-2"},
+		Writers:  []string{"agent-1", "agent-2"},
 	})
 	require.NoError(t, err)
 
@@ -395,7 +399,7 @@ func TestWatch_ReceivesWriteNotification(t *testing.T) {
 
 	// Watch eagerly subscribes, so events produced after this call are
 	// buffered even before we start pulling.
-	next, stop := iter.Pull2(sm.Watch(ctx, "watched-key"))
+	next, stop := iter.Pull2(sm.WatchAs(ctx, "watched-key", "agent-1"))
 	defer stop()
 
 	err := sm.Write(context.Background(), &Fragment{
@@ -418,7 +422,7 @@ func TestWatch_CancelUnsubscribes(t *testing.T) {
 	sm, _ := newTestMemory()
 	ctx, cancel := context.WithCancel(context.Background())
 
-	next, stop := iter.Pull2(sm.Watch(ctx, "key"))
+	next, stop := iter.Pull2(sm.WatchAs(ctx, "key", "agent-1"))
 	defer stop()
 
 	cancel()

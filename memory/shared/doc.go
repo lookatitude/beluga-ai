@@ -10,7 +10,7 @@
 //
 // A [Fragment] is the unit of shared memory. It carries a key, content,
 // scope, access lists, and versioning metadata. Fragments support three
-// conflict resolution policies:
+// conflict resolution policies, fixed at creation:
 //
 //   - [AppendOnly]: new content is appended to existing content.
 //   - [LastWriteWins]: the latest write replaces the previous content.
@@ -19,10 +19,20 @@
 //
 // # Access Control
 //
-// Every fragment has Readers and Writers lists. An empty list means the
-// fragment is unrestricted for that operation. When lists are non-empty,
-// only agent IDs present in the list are permitted. Access is checked
-// by [SharedMemory] before delegating to the underlying [SharedStore].
+// Every fragment has Readers and Writers lists plus UnrestrictedRead and
+// UnrestrictedWrite flags. Only agent IDs present in a list (or every agent,
+// when the matching flag is set) are permitted; an empty list without the
+// flag denies everyone, so revoking the last reader or writer locks the
+// fragment rather than opening it. A fragment created with an empty list and
+// no flag defaults to its author only.
+//
+// Access-control fields and the conflict policy are fixed when a fragment is
+// created. Later writes keep them (a content-only update never widens
+// access); change access with [SharedMemory.Grant] and [SharedMemory.Revoke].
+// A store read failure other than not-found fails the write closed.
+// [SharedMemory.WatchAs] authorizes every delivered change against the
+// fragment's Readers. Access is checked by [SharedMemory] before delegating
+// to the underlying [SharedStore].
 //
 // # Provenance
 //
