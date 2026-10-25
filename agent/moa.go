@@ -97,7 +97,7 @@ func (p *MoAPlanner) Plan(ctx context.Context, state PlannerState) ([]Action, er
 	for layerIdx, models := range layers {
 		outputs, err := p.executeLayer(ctx, state, currentMessages, models, layerOutputs)
 		if err != nil {
-			return nil, core.Errorf(core.ErrProviderDown, "moa layer %d: %w", layerIdx, err)
+			return nil, core.Wrapf(core.ErrProviderDown, "moa layer %d: %w", layerIdx, err)
 		}
 
 		layerOutputs = outputs
@@ -255,7 +255,7 @@ func (p *MoAPlanner) aggregate(ctx context.Context, state PlannerState, outputs 
 
 	resp, err := model.Generate(ctx, msgs)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "moa aggregate: %w", err)
+		return nil, core.Wrapf(core.ErrProviderDown, "moa aggregate: %w", err)
 	}
 
 	return parseAIResponse(resp), nil

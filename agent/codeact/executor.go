@@ -151,7 +151,7 @@ func (e *ProcessExecutor) Execute(ctx context.Context, action CodeAction) (CodeR
 		if execCtx.Err() != nil {
 			return result, core.NewError(
 				opExecute,
-				core.ErrTimeout,
+				core.CodeOf(execCtx.Err(), core.ErrTimeout),
 				fmt.Sprintf("code execution timed out after %v", timeout),
 				execCtx.Err(),
 			)

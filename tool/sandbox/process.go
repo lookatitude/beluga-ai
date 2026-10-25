@@ -198,7 +198,7 @@ func (s *ProcessSandbox) handleRunError(ctx, execCtx context.Context, runErr err
 	}
 	if ctx.Err() != nil {
 		result.ExitCode = -1
-		cancelErr := s.applyOnError(ctx, core.NewError(opSandboxExecute, core.ErrTimeout, "execution cancelled", ctx.Err()))
+		cancelErr := s.applyOnError(ctx, core.NewError(opSandboxExecute, core.CodeOf(ctx.Err(), core.ErrTimeout), "execution cancelled", ctx.Err()))
 		s.fireAfterExecute(ctx, result, cancelErr)
 		return result, cancelErr
 	}

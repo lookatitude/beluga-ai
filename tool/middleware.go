@@ -88,5 +88,5 @@ func (r *retryTool) Execute(ctx context.Context, input map[string]any) (*Result,
 			return nil, ctx.Err()
 		}
 	}
-	return nil, core.Errorf(core.ErrToolFailed, "tool %s failed after %d attempts: %w", r.tool.Name(), r.maxAttempts, lastErr)
+	return nil, core.Wrapf(core.ErrToolFailed, "tool %s failed after %d attempts: %w", r.tool.Name(), r.maxAttempts, lastErr)
 }

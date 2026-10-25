@@ -90,7 +90,7 @@ func (t *SandboxTool) Execute(ctx context.Context, input map[string]any) (*tool.
 
 	result, err := t.sandbox.Execute(ctx, code, cfg)
 	if err != nil {
-		return tool.ErrorResult(core.Errorf(core.ErrToolFailed, "sandbox execution failed: %w", err)), nil
+		return tool.ErrorResult(core.Wrapf(core.ErrToolFailed, "sandbox execution failed: %w", err)), nil
 	}
 
 	// Marshal the result as JSON for structured output.

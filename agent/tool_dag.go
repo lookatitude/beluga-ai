@@ -321,7 +321,7 @@ func runOneTool(ctx context.Context, call schema.ToolCall, registry *tool.Regist
 
 	t, err := registry.Get(call.Name)
 	if err != nil {
-		return tool.ErrorResult(core.Errorf(core.ErrNotFound, "tool %q not found: %w", call.Name, err))
+		return tool.ErrorResult(core.Wrapf(core.ErrNotFound, "tool %q not found: %w", call.Name, err))
 	}
 
 	var args map[string]any
@@ -333,7 +333,7 @@ func runOneTool(ctx context.Context, call schema.ToolCall, registry *tool.Regist
 
 	res, err := t.Execute(ctx, args)
 	if err != nil {
-		return tool.ErrorResult(core.Errorf(core.ErrProviderDown, "tool %q execution failed: %w", call.Name, err))
+		return tool.ErrorResult(core.Wrapf(core.ErrToolFailed, "tool %q execution failed: %w", call.Name, err))
 	}
 	return res
 }

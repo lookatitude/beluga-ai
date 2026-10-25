@@ -56,7 +56,7 @@ func NewInMemoryTracker(opts ...Option) *InMemoryTracker {
 // entry is evicted before inserting the new one.
 func (t *InMemoryTracker) Record(ctx context.Context, usage Usage) error {
 	if err := ctx.Err(); err != nil {
-		return core.NewError("cost.tracker.record", core.ErrTimeout, "context cancelled", err)
+		return core.NewError("cost.tracker.record", core.CodeOf(err, core.ErrTimeout), "context cancelled", err)
 	}
 
 	t.mu.Lock()
@@ -78,7 +78,7 @@ func (t *InMemoryTracker) Record(ctx context.Context, usage Usage) error {
 // filter. It returns an error only if the context is already cancelled.
 func (t *InMemoryTracker) Query(ctx context.Context, filter Filter) (*Summary, error) {
 	if err := ctx.Err(); err != nil {
-		return nil, core.NewError("cost.tracker.query", core.ErrTimeout, "context cancelled", err)
+		return nil, core.NewError("cost.tracker.query", core.CodeOf(err, core.ErrTimeout), "context cancelled", err)
 	}
 
 	t.mu.RLock()

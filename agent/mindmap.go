@@ -93,7 +93,7 @@ func (p *MindMapPlanner) Plan(ctx context.Context, state PlannerState) ([]Action
 	p.graph = NewReasoningGraph()
 
 	if err := p.populateGraph(ctx, state); err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "mindmap plan: %w", err)
+		return nil, core.Wrapf(core.ErrProviderDown, "mindmap plan: %w", err)
 	}
 
 	return p.synthesize(ctx, state)
@@ -116,13 +116,13 @@ func (p *MindMapPlanner) Replan(ctx context.Context, state PlannerState) ([]Acti
 
 	// Add new reasoning nodes from LLM analysis.
 	if err := p.populateGraph(ctx, state); err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "mindmap replan: %w", err)
+		return nil, core.Wrapf(core.ErrProviderDown, "mindmap replan: %w", err)
 	}
 
 	// Coherence check: if below threshold, attempt to resolve contradictions.
 	if p.graph.CoherenceScore() < p.coherenceThreshold {
 		if err := p.resolveContradictions(ctx, state); err != nil {
-			return nil, core.Errorf(core.ErrProviderDown, "mindmap resolve contradictions: %w", err)
+			return nil, core.Wrapf(core.ErrProviderDown, "mindmap resolve contradictions: %w", err)
 		}
 	}
 
@@ -325,7 +325,7 @@ func (p *MindMapPlanner) synthesize(ctx context.Context, state PlannerState) ([]
 
 	resp, err := model.Generate(ctx, msgs)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "mindmap synthesize: %w", err)
+		return nil, core.Wrapf(core.ErrProviderDown, "mindmap synthesize: %w", err)
 	}
 
 	return parseAIResponse(resp), nil

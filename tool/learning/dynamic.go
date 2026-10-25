@@ -83,7 +83,7 @@ func (d *DynamicTool) Execute(ctx context.Context, input map[string]any) (*tool.
 
 	output, err := d.executor.Execute(ctx, d.code, string(inputJSON))
 	if err != nil {
-		return nil, core.Errorf(core.ErrToolFailed, "dynamic tool %s: execution failed: %w", d.name, err)
+		return nil, core.Wrapf(core.ErrToolFailed, "dynamic tool %s: execution failed: %w", d.name, err)
 	}
 
 	return tool.TextResult(output), nil

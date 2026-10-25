@@ -47,7 +47,7 @@ func HumanActivity(mgr hitl.Manager) ActivityFunc {
 		}
 		resp, err := mgr.RequestInteraction(ctx, req)
 		if err != nil {
-			return nil, core.Errorf(core.ErrProviderDown, "workflow/human_activity: %w", err)
+			return nil, core.Wrapf(core.ErrInternal, "workflow/human_activity: %w", err)
 		}
 		return resp, nil
 	}

@@ -116,7 +116,7 @@ func (t *handoffTool) Execute(ctx context.Context, input map[string]any) (*tool.
 	// Invoke the target agent
 	result, err := t.handoff.TargetAgent.Invoke(ctx, hi.Message)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "handoff to %s failed: %w", t.handoff.TargetAgent.ID(), err)
+		return nil, core.Wrapf(core.ErrInternal, "handoff to %s failed: %w", t.handoff.TargetAgent.ID(), err)
 	}
 
 	return tool.TextResult(result), nil

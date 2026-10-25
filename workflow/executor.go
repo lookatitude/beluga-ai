@@ -240,7 +240,7 @@ func (e *DefaultExecutor) Query(ctx context.Context, workflowID string, queryTyp
 		if e.store != nil {
 			state, err := e.store.Load(ctx, workflowID)
 			if err != nil {
-				return nil, core.Errorf(core.ErrProviderDown, "workflow/query: %w", err)
+				return nil, core.Wrapf(core.ErrProviderDown, "workflow/query: %w", err)
 			}
 			if state == nil {
 				return nil, core.Errorf(core.ErrNotFound, "workflow/query: workflow %q not found", workflowID)
