@@ -20,7 +20,7 @@ require (
 	github.com/go-chi/chi/v5 v5.5.0
 	github.com/gofiber/fiber/v3 v3.6.1
 	github.com/google/uuid v1.6.0
-	github.com/jackc/pgx/v5 v5.10.0
+	github.com/jackc/pgx/v5 v5.11.0
 	github.com/labstack/echo/v4 v4.16.2
 	github.com/mattn/go-sqlite3 v1.14.52
 	github.com/mendableai/firecrawl-go v1.0.0
