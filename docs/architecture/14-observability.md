@@ -2,7 +2,7 @@
 
 **Audience:** Anyone operating Beluga or debugging production issues.
 **Prerequisites:** [03 — Extensibility Patterns](./03-extensibility-patterns.md).
-**Related:** [04 — Data Flow](./04-data-flow.md), [`.wiki/patterns/otel-instrumentation.md`](../../.wiki/patterns/otel-instrumentation.md).
+**Related:** [04 — Data Flow](./04-data-flow.md), [`.guild/wiki/patterns/otel-instrumentation.md`](../../.guild/wiki/patterns/otel-instrumentation.md).
 
 ## Overview
 
@@ -31,7 +31,7 @@ The root span is `agent.invoke` (or `runner.run` if the runner is the boundary).
 
 ## `gen_ai.*` attributes
 
-Adapted from [`o11y/tracer.go:15-47`](../../.wiki/patterns/otel-instrumentation.md):
+Adapted from [`o11y/tracer.go:15-47`](../../.guild/wiki/patterns/otel-instrumentation.md):
 
 ```go
 const (
@@ -206,5 +206,5 @@ Using the standard also means provider-specific features (reasoning tokens, cach
 ## Related reading
 
 - [15 — Resilience](./15-resilience.md) — metrics for retry and circuit breaker state.
-- [`.wiki/patterns/otel-instrumentation.md`](../../.wiki/patterns/otel-instrumentation.md) — canonical code references.
+- [`.guild/wiki/patterns/otel-instrumentation.md`](../../.guild/wiki/patterns/otel-instrumentation.md) — canonical code references.
 - [04 — Data Flow](./04-data-flow.md) — which span fires at which point.

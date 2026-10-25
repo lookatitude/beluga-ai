@@ -8,7 +8,7 @@ Document: $ARGUMENTS
 ## Workflow
 
 ### Step 1 — Gather
-`@agent-docs-writer` runs the retrieval protocol: reads `.wiki/index.md`, runs `.claude/hooks/wiki-query.sh <package>`, reads source code, ADRs, patterns, and corrections.
+`@agent-docs-writer` runs the retrieval protocol: reads `.guild/wiki/index.md`, runs `.claude/hooks/wiki-query.sh <package>`, reads source code, ADRs, patterns, and corrections.
 
 ### Step 2 — Write
 Produce: concept overview, quick start, API reference, full example, common mistakes, related packages.
@@ -20,4 +20,4 @@ All code examples must compile. Run `go build` on each.
 `@agent-architect` verifies technical accuracy.
 
 ### Step 5 — Finalize
-Fix any review findings. Append to `.wiki/log.md`.
+Fix any review findings. Append to `.guild/wiki/log.md`.

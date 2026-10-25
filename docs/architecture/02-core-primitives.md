@@ -2,7 +2,7 @@
 
 **Audience:** Everyone who writes code against Beluga.
 **Prerequisites:** None (but [01 — Overview](./01-overview.md) gives you the context).
-**Related:** [03 — Extensibility Patterns](./03-extensibility-patterns.md), [04 — Data Flow](./04-data-flow.md), [`.wiki/patterns/streaming.md`](../../.wiki/patterns/streaming.md), [`.wiki/patterns/error-handling.md`](../../.wiki/patterns/error-handling.md).
+**Related:** [03 — Extensibility Patterns](./03-extensibility-patterns.md), [04 — Data Flow](./04-data-flow.md), [`.guild/wiki/patterns/streaming.md`](../../.guild/wiki/patterns/streaming.md), [`.guild/wiki/patterns/error-handling.md`](../../.guild/wiki/patterns/error-handling.md).
 
 ## Overview
 
@@ -45,7 +45,7 @@ The metadata map carries per-event information that isn't part of the payload: t
 `Stream[T]` wraps an `iter.Seq2[int, T]` so range-over-func works naturally:
 
 ```go
-// canonical example from .wiki/patterns/streaming.md → core/stream.go:49-56
+// canonical example from .guild/wiki/patterns/streaming.md → core/stream.go:49-56
 type Stream[T any] struct {
     name   string
     chunks iter.Seq2[int, T]
@@ -102,7 +102,7 @@ graph LR
 - **Merge** — fan N streams in to one (round-robin or priority).
 - **Copy** — broadcast one stream to multiple consumers.
 
-Each operation respects cancellation: if the upstream context is cancelled, the pipeline shuts down cleanly. See [`core/stream.go:73-90`](../../.wiki/patterns/streaming.md) for the `MapStream` variation.
+Each operation respects cancellation: if the upstream context is cancelled, the pipeline shuts down cleanly. See [`core/stream.go:73-90`](../../.guild/wiki/patterns/streaming.md) for the `MapStream` variation.
 
 ### Why `iter.Seq2` over channels
 
@@ -215,4 +215,4 @@ If you can read a function signature and answer "what `Stream[T]` does it return
 - [`patterns/streaming-iter-seq2.md`](../patterns/streaming-iter-seq2.md) — the pattern doc with extended examples.
 - [`patterns/error-handling.md`](../patterns/error-handling.md) — `core.Error` + `ErrorCode` contract.
 - [`patterns/context-propagation.md`](../patterns/context-propagation.md) — tenant / session / auth details.
-- [`.wiki/patterns/streaming.md`](../../.wiki/patterns/streaming.md) — canonical code references.
+- [`.guild/wiki/patterns/streaming.md`](../../.guild/wiki/patterns/streaming.md) — canonical code references.

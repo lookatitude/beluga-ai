@@ -12,7 +12,7 @@ Stable API surface. Use these when you need to look something up, not when you'r
 
 ## Where else to look
 
-- **Canonical code examples** → [`.wiki/patterns/`](../../.wiki/patterns/).
-- **Package map with file:line anchors** → [`.wiki/architecture/package-map.md`](../../.wiki/architecture/package-map.md).
-- **Architectural invariants with source pointers** → [`.wiki/architecture/invariants.md`](../../.wiki/architecture/invariants.md).
+- **Canonical code examples** → [`.guild/wiki/patterns/`](../../.guild/wiki/patterns/).
+- **Package map with file:line anchors** → [`.guild/wiki/architecture/package-map.md`](../../.guild/wiki/architecture/package-map.md).
+- **Architectural invariants with source pointers** → [`.guild/wiki/architecture/invariants.md`](../../.guild/wiki/architecture/invariants.md).
 - **Godoc for exported symbols** → `go doc github.com/lookatitude/beluga-ai/v2/<package>`.

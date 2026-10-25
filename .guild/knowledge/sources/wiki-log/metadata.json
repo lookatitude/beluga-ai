@@ -1,0 +1,10 @@
+{
+  "slug": "wiki-log",
+  "source_type": "file",
+  "url": null,
+  "path": ".wiki/log.md",
+  "original_file": "original.md",
+  "checksum_sha256": "844ce7b36b8c60efe3c30a2301fce9d3228819b8950b5787eb03ba87111535ea",
+  "captured_at": "2026-10-25T05:13:47Z",
+  "captured_by": "orchestrator"
+}

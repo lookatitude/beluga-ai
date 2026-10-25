@@ -25,9 +25,9 @@ Run `/document <feature>` then `/doc-check <affected-packages>`.
 
 ## Phase 5 — Wiki maintenance
 `@agent-coordinator`:
-- Updates `.wiki/index.md` with any new pages.
-- Checks `.wiki/corrections.md` for entries missing prevention rules.
-- Verifies `.wiki/log.md` is current.
+- Updates `.guild/wiki/index.md` with any new pages.
+- Checks `.guild/wiki/corrections.md` for entries missing prevention rules.
+- Verifies `.guild/wiki/log.md` is current.
 - Proposes `CLAUDE.md` updates for any mature patterns (human approves).
 
 ## Promotion (handed off to website)

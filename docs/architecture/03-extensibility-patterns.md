@@ -135,7 +135,7 @@ graph LR
 
 Before `init()`-based registration, every framework had a YAML or TOML "providers list" that shipped alongside the library and had to be updated by hand. Go's `init()` + import graph lets registration happen transparently: you import `_ "github.com/lookatitude/beluga-ai/v2/llm/providers/anthropic"` and the provider is available. No config, no runtime errors from typos in names.
 
-See [Provider Registration pattern](../patterns/registry-factory.md) and [`.wiki/patterns/provider-registration.md`](../../.wiki/patterns/provider-registration.md).
+See [Provider Registration pattern](../patterns/registry-factory.md) and [`.guild/wiki/patterns/provider-registration.md`](../../.guild/wiki/patterns/provider-registration.md).
 
 ## Ring 3 — Hooks
 
@@ -304,4 +304,4 @@ func buildModel() (llm.Model, error) {
 - [`patterns/middleware-chain.md`](../patterns/middleware-chain.md) — composition, ordering, and edge cases.
 - [`patterns/hooks-lifecycle.md`](../patterns/hooks-lifecycle.md) — nil-safety and when to use hooks.
 - [`patterns/provider-template.md`](../patterns/provider-template.md) — building a new provider end-to-end.
-- [`.wiki/patterns/provider-registration.md`](../../.wiki/patterns/provider-registration.md), [`middleware.md`](../../.wiki/patterns/middleware.md), [`hooks.md`](../../.wiki/patterns/hooks.md) — canonical code pointers.
+- [`.guild/wiki/patterns/provider-registration.md`](../../.guild/wiki/patterns/provider-registration.md), [`middleware.md`](../../.guild/wiki/patterns/middleware.md), [`hooks.md`](../../.guild/wiki/patterns/hooks.md) — canonical code pointers.

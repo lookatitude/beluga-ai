@@ -118,7 +118,7 @@ This brings signals in line with invariant #6 (public streaming APIs use `iter.S
 
 #### Temporal constraint: `Context.Done()` returns nil
 
-Temporal's `temporalworkflow.Context` is not a regular `context.Context` — its `Done()` method returns `nil`, so the canonical iterator termination pattern `case <-ctx.Done()` becomes a permanent block. The Temporal provider works around this by eagerly spawning the bridge coroutine on first call and guarding a `sync.Once`-closed `done` channel that the coroutine selects on when pushing; the bridge exits cleanly when the caller stops pulling. Any future `iter.Seq2` conversion of a Temporal-wrapping method must use the same approach. This discovery is captured as correction C-004 in [`.wiki/corrections.md`](../../.wiki/corrections.md).
+Temporal's `temporalworkflow.Context` is not a regular `context.Context` — its `Done()` method returns `nil`, so the canonical iterator termination pattern `case <-ctx.Done()` becomes a permanent block. The Temporal provider works around this by eagerly spawning the bridge coroutine on first call and guarding a `sync.Once`-closed `done` channel that the coroutine selects on when pushing; the bridge exits cleanly when the caller stops pulling. Any future `iter.Seq2` conversion of a Temporal-wrapping method must use the same approach. This discovery is captured as correction C-004 in [`.guild/wiki/corrections.md`](../../.guild/wiki/corrections.md).
 
 ## The agent loop as a workflow
 

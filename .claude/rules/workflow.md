@@ -68,7 +68,7 @@ PRs are expected to pass **both** SonarCloud quality gate **and** Greptile revie
    - Dead exported accessor that could be unexported or removed (no external callers in `grep -rn <Name> .`).
    - Refactors that change observable behavior without a test asserting the new behavior — especially CC-reduction refactors that introduce new mutations.
 3. **SonarCloud parity (STRONGLY RECOMMENDED, not blocking):** `sonar verify --file <changed-file>` per touched file catches S3776 (cognitive complexity), S1192 (duplicate literals), S8196 (interface naming), and S8193 (unnecessary vars) locally, before the full CI scan runs. Skip for doc-only or generated-file changes.
-4. **Scaffolded-template diffs require a `hotspot-triage.md` lookup.** When a PR changes `cmd/beluga/scaffold/templates/`, consult `.wiki/hotspot-triage.md` for the canonical Safe-review comment to attach after the next SonarCloud scan. Plan the `sonar api post /api/hotspots/change_status` follow-up at push time so it doesn't block the merge.
+4. **Scaffolded-template diffs require a `hotspot-triage.md` lookup.** When a PR changes `cmd/beluga/scaffold/templates/`, consult `.guild/wiki/hotspot-triage.md` for the canonical Safe-review comment to attach after the next SonarCloud scan. Plan the `sonar api post /api/hotspots/change_status` follow-up at push time so it doesn't block the merge.
 
 Failures caught in pre-push cost no CI cycle and preserve the PR's first-pass-clean reputation with Greptile.
 

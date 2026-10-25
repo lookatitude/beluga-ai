@@ -17,7 +17,7 @@ The optional-function-field pattern is minimal, type-safe, and composes triviall
 
 ## How it works
 
-Canonical code from `tool/hooks.go:11-44` (see [`.wiki/patterns/hooks.md`](../../.wiki/patterns/hooks.md)):
+Canonical code from `tool/hooks.go:11-44` (see [`.guild/wiki/patterns/hooks.md`](../../.guild/wiki/patterns/hooks.md)):
 
 ```go
 // tool/hooks.go
@@ -169,4 +169,4 @@ Only `AfterExecute` is set — `BeforeExecute` and `OnError` remain nil and are 
 
 - [03 — Extensibility Patterns](../architecture/03-extensibility-patterns.md#ring-3--hooks)
 - [`patterns/middleware-chain.md`](./middleware-chain.md) — the cross-cutting alternative.
-- [`.wiki/patterns/hooks.md`](../../.wiki/patterns/hooks.md) — canonical code references.
+- [`.guild/wiki/patterns/hooks.md`](../../.guild/wiki/patterns/hooks.md) — canonical code references.

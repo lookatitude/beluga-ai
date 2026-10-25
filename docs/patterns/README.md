@@ -23,10 +23,10 @@ Each pattern document follows the same shape:
 - **Why we use it** — the problem, what goes wrong without it, alternatives considered.
 - **How it works** — canonical Go code with a `file:line` reference.
 - **Where it's used** — table of packages that use this pattern.
-- **Common mistakes** — sourced from [`../../.wiki/corrections.md`](../../.wiki/corrections.md).
+- **Common mistakes** — sourced from [`../../.guild/wiki/corrections.md`](../../.guild/wiki/corrections.md).
 - **Example: implementing your own** — compilable code showing how to apply the pattern.
 
 ## Cross-references
 
-- Every pattern has a canonical example documented in [`.wiki/patterns/`](../../.wiki/patterns/) with `file:line` pointers.
+- Every pattern has a canonical example documented in [`.guild/wiki/patterns/`](../../.guild/wiki/patterns/) with `file:line` pointers.
 - Architecture rationale lives in [`../architecture/03-extensibility-patterns.md`](../architecture/03-extensibility-patterns.md).

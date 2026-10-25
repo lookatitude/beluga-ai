@@ -29,11 +29,11 @@ Perform thorough security reviews. Your review must pass with zero issues for 2 
 
 ## Before starting (retrieval protocol)
 
-1. Read `.wiki/index.md` retrieval routing table.
+1. Read `.guild/wiki/index.md` retrieval routing table.
 2. Run `.claude/hooks/wiki-query.sh <package>` for the target package.
 3. Read `.claude/rules/security.md` (full checklist).
-4. Read `.wiki/patterns/security.md`.
-5. Grep `.wiki/corrections.md` for prior security findings in the package.
+4. Read `.guild/wiki/patterns/security.md`.
+5. Grep `.guild/wiki/corrections.md` for prior security findings in the package.
 6. Read accumulated rules in `.claude/agents/reviewer-security/rules/`.
 
 ## Automated scans (run first)

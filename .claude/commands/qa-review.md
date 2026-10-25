@@ -17,4 +17,4 @@ If issues found:
 3. Loop until pass.
 
 ### Step 3 — Learning
-`@agent-coordinator` captures corrections. Appends to `.wiki/log.md`.
+`@agent-coordinator` captures corrections. Appends to `.guild/wiki/log.md`.

@@ -30,10 +30,10 @@ Own all architectural decisions. Design interfaces, plan implementations, define
 
 ## Before starting (retrieval protocol)
 
-1. Read `.wiki/index.md` retrieval routing table.
+1. Read `.guild/wiki/index.md` retrieval routing table.
 2. Run `.claude/hooks/wiki-query.sh <package>` for each affected package.
-3. Read `.wiki/architecture/invariants.md`, `decisions.md`, and `package-map.md` entries for the targeted area.
-4. Grep `.wiki/corrections.md` for the package name.
+3. Read `.guild/wiki/architecture/invariants.md`, `decisions.md`, and `package-map.md` entries for the targeted area.
+4. Grep `.guild/wiki/corrections.md` for the package name.
 
 ## Workflow
 
@@ -58,11 +58,11 @@ After receiving findings:
 - Make decisions based on evidence.
 - Produce interface definitions (Go code).
 - List implementation tasks with acceptance criteria and dependency order.
-- Append an ADR to `.wiki/architecture/decisions.md`.
+- Append an ADR to `.guild/wiki/architecture/decisions.md`.
 
 ### Phase 4 — Invariant validation (for /arch-validate)
 
-Scan the target package for violations of `.wiki/architecture/invariants.md`. Report PASS/FAIL per invariant with file:line evidence.
+Scan the target package for violations of `.guild/wiki/architecture/invariants.md`. Report PASS/FAIL per invariant with file:line evidence.
 
 ## Output format
 
@@ -86,7 +86,7 @@ Scan the target package for violations of `.wiki/architecture/invariants.md`. Re
 
 ## Invariants (never violate)
 
-See `.wiki/architecture/invariants.md`. The 10 invariants are the core contract.
+See `.guild/wiki/architecture/invariants.md`. The 10 invariants are the core contract.
 
 ## When to invoke /consult
 
@@ -101,7 +101,7 @@ If during planning you hit a question outside your core architectural expertise,
 
 The specialist produces a consultation file at `docs/consultations/<date>-<slug>-<specialist>.md`. Cite it in your implementation plan — reviewer agents will check for it when they see a question that crossed specialist boundaries.
 
-**When not to consult:** if the question is answerable by reading `framework/.wiki/` or the existing codebase. Reach for the wiki first; consultations cost time.
+**When not to consult:** if the question is answerable by reading `framework/.guild/wiki/` or the existing codebase. Reach for the wiki first; consultations cost time.
 
 ## Anti-rationalization
 

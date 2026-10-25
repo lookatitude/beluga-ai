@@ -23,7 +23,7 @@ graph LR
   A3 -->|fail| Fail[Max attempts exceeded]
 ```
 
-Retry middleware wraps any `Runnable` and retries on retryable errors. Retryability is determined by `core.IsRetryable(err)`: only `ErrRateLimit`, `ErrTimeout`, and `ErrProviderDown` are retryable (see [`.wiki/architecture/invariants.md#2`](../../.wiki/architecture/invariants.md)).
+Retry middleware wraps any `Runnable` and retries on retryable errors. Retryability is determined by `core.IsRetryable(err)`: only `ErrRateLimit`, `ErrTimeout`, and `ErrProviderDown` are retryable (see [`.guild/wiki/architecture/invariants.md#2`](../../.guild/wiki/architecture/invariants.md)).
 
 - **Exponential backoff** with jitter: `min(base * 2^attempt, max) * (1 + random jitter)`.
 - **Context respected**: every iteration checks `ctx.Done()` before sleeping and before the next attempt.

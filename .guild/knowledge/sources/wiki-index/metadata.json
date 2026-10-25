@@ -1,0 +1,10 @@
+{
+  "slug": "wiki-index",
+  "source_type": "file",
+  "url": null,
+  "path": ".wiki/index.md",
+  "original_file": "original.md",
+  "checksum_sha256": "c45de02ad36176d594c2f687228aac0b50d5c50cb44a6e1786a40e49f3f643b9",
+  "captured_at": "2026-10-25T05:13:47Z",
+  "captured_by": "orchestrator"
+}

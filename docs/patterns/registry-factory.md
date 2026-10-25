@@ -17,7 +17,7 @@ You need runtime discovery of pluggable components without introducing import cy
 
 ## How it works
 
-Canonical code from `llm/registry.go:19-27` (see [`.wiki/patterns/provider-registration.md`](../../.wiki/patterns/provider-registration.md)):
+Canonical code from `llm/registry.go:19-27` (see [`.guild/wiki/patterns/provider-registration.md`](../../.guild/wiki/patterns/provider-registration.md)):
 
 ```go
 // llm/registry.go
@@ -107,11 +107,11 @@ func newFactory() llm.Factory {
 | `state` | state store registry | global |
 | `agent` | planner registry | global |
 
-See [`.wiki/architecture/package-map.md`](../../.wiki/architecture/package-map.md) for the current live list.
+See [`.guild/wiki/architecture/package-map.md`](../../.guild/wiki/architecture/package-map.md) for the current live list.
 
 ## Common mistakes
 
-From [`.wiki/corrections.md`](../../.wiki/corrections.md) and field experience:
+From [`.guild/wiki/corrections.md`](../../.guild/wiki/corrections.md) and field experience:
 
 - **Registering outside `init()`.** The registry is append-only at startup. Runtime registration is a race condition waiting to happen.
 - **Silent overwrites on duplicate registration.** If two providers claim the same name, the second one silently wins — and you spend hours debugging. Always return an error on duplicates.
@@ -217,4 +217,4 @@ That's the whole pattern. Three functions, one init, and the user is unaware of 
 
 - [03 — Extensibility Patterns](../architecture/03-extensibility-patterns.md#ring-2--registry)
 - [`patterns/provider-template.md`](./provider-template.md) — full provider implementation walk-through.
-- [`.wiki/patterns/provider-registration.md`](../../.wiki/patterns/provider-registration.md) — canonical code references.
+- [`.guild/wiki/patterns/provider-registration.md`](../../.guild/wiki/patterns/provider-registration.md) — canonical code references.

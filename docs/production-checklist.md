@@ -291,5 +291,5 @@ in files you did not change must be documented in the commit message.
 - [`architecture/16-durable-workflows.md`](architecture/16-durable-workflows.md) — workflow backends, activity retry, HITL.
 - [`architecture/17-deployment-modes.md`](architecture/17-deployment-modes.md) — Docker, Kubernetes, Temporal, edge.
 - [`reference/providers.md`](reference/providers.md) — full provider catalog per capability.
-- [`.wiki/patterns/security-guards.md`](../.wiki/patterns/security-guards.md) — guard pipeline canonical implementation.
-- [`.wiki/architecture/invariants.md`](../.wiki/architecture/invariants.md) — the ten architectural invariants.
+- [`.guild/wiki/patterns/security-guards.md`](../.guild/wiki/patterns/security-guards.md) — guard pipeline canonical implementation.
+- [`.guild/wiki/architecture/invariants.md`](../.guild/wiki/architecture/invariants.md) — the ten architectural invariants.

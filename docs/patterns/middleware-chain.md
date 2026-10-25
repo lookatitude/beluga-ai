@@ -15,7 +15,7 @@ Cross-cutting concerns — retry, rate limit, logging, guardrails, caching, metr
 
 ## How it works
 
-Canonical code from `tool/middleware.go:11-22` (see [`.wiki/patterns/middleware.md`](../../.wiki/patterns/middleware.md)):
+Canonical code from `tool/middleware.go:11-22` (see [`.guild/wiki/patterns/middleware.md`](../../.guild/wiki/patterns/middleware.md)):
 
 ```go
 // tool/middleware.go
@@ -154,5 +154,5 @@ Note the delegation: `Name()`, `Description()`, and `InputSchema()` must pass th
 
 - [03 — Extensibility Patterns](../architecture/03-extensibility-patterns.md#ring-4--middleware)
 - [`patterns/hooks-lifecycle.md`](./hooks-lifecycle.md) — when to use hooks instead.
-- [`.wiki/patterns/middleware.md`](../../.wiki/patterns/middleware.md) — canonical code references.
+- [`.guild/wiki/patterns/middleware.md`](../../.guild/wiki/patterns/middleware.md) — canonical code references.
 - [15 — Resilience](../architecture/15-resilience.md) — retry, rate limit, circuit breaker details.

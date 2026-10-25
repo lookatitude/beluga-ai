@@ -14,7 +14,7 @@ set -euo pipefail
 
 CLAUDE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 REPO_ROOT="$(cd "$CLAUDE_DIR/.." && pwd)"
-WIKI_DIR="$REPO_ROOT/.wiki"
+WIKI_DIR="$REPO_ROOT/.guild/wiki"
 VALID_AGENTS="coordinator architect researcher developer-go reviewer-qa reviewer-security docs-writer"
 
 # Validate agent name against allowlist
@@ -84,7 +84,7 @@ RULEEOF
 
     echo "Learning extracted to $RULE_FILE"
 
-    # Optional promotion to .wiki/corrections.md for HIGH-confidence findings.
+    # Optional promotion to .guild/wiki/corrections.md for HIGH-confidence findings.
     # Agents tag their log with "CONFIDENCE: HIGH" to trigger this promotion.
     if [ -f "$TASK_LOG" ] && grep -q "CONFIDENCE:[[:space:]]*HIGH" "$TASK_LOG" 2>/dev/null && [ -f "$WIKI_DIR/corrections.md" ]; then
         NEXT_ID=$(grep -c '^### C-' "$WIKI_DIR/corrections.md" 2>/dev/null || echo 0)
@@ -99,7 +99,7 @@ RULEEOF
             echo "**Source:** \`$RULE_FILE\`"
             echo "**Confidence:** HIGH"
         } >> "$WIKI_DIR/corrections.md"
-        echo "Promoted to .wiki/corrections.md as $PRINTF_ID"
+        echo "Promoted to .guild/wiki/corrections.md as $PRINTF_ID"
     fi
 else
     echo "No learnings to extract from task $BELUGA_TASK_ID"

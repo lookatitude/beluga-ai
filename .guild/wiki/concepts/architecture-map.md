@@ -63,5 +63,5 @@ Authoritative: `docs/architecture/01-overview.md` (DOC-01) and `docs/architectur
 
 ## Knowledge that stays where it is
 
-- **[high]** This repo's own `.wiki/` (patterns, architecture invariants, package map, corrections C-NNN) remains the retrieval source for framework agents; `.claude/hooks/wiki-query.sh` reads it. It was not migrated into `.guild/wiki/` at init.
+- **[high]** This repo's wiki (patterns, architecture invariants, package map, corrections C-NNN) lives in `.guild/wiki/` with its legacy structure (moved from `.wiki/` on 2026-10-25); `.claude/hooks/wiki-query.sh` reads it.
 - **[high]** `docs/architecture/` (numbered DOC-NN) is the canonical prose architecture.

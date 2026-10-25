@@ -166,7 +166,7 @@ Same registry pattern. You can add a custom transport (WebTransport, gRPC stream
 
 ### A note on fan-in processors
 
-The voice pipeline is mostly linear, but `voice/s2s.AsFrameProcessor` fans two producers (an input-forwarding pump and an output-session pump) into a single consumer. Fan-in through iterators requires care: a single channel shared between two writers with `defer close()` on one of them trivially races under `-race`. The canonical fix, documented as C-005 in [`.wiki/corrections.md`](../../.wiki/corrections.md), is to split channels per writer and use the select-nil-channel trick to disable drained branches. If you write a new fan-in `FrameProcessor`, run its tests with `-race` and make each channel have exactly one writer.
+The voice pipeline is mostly linear, but `voice/s2s.AsFrameProcessor` fans two producers (an input-forwarding pump and an output-session pump) into a single consumer. Fan-in through iterators requires care: a single channel shared between two writers with `defer close()` on one of them trivially races under `-race`. The canonical fix, documented as C-005 in [`.guild/wiki/corrections.md`](../../.guild/wiki/corrections.md), is to split channels per writer and use the select-nil-channel trick to disable drained branches. If you write a new fan-in `FrameProcessor`, run its tests with `-race` and make each channel have exactly one writer.
 
 ## Common mistakes
 

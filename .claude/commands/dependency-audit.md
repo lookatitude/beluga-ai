@@ -25,4 +25,4 @@ For each finding:
 `@agent-developer-go` updates safe dependencies and runs the full test suite.
 
 ### Step 4 — Report
-Save to `raw/reviews/dependency-audit-<date>.md`. Append to `.wiki/log.md`.
+Save to `raw/reviews/dependency-audit-<date>.md`. Append to `.guild/wiki/log.md`.

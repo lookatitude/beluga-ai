@@ -46,12 +46,12 @@ Stable API surface: interfaces, configuration, providers catalog, glossary.
 
 ## Design principles
 
-The framework is built around ten architectural invariants documented in [`.wiki/architecture/invariants.md`](../.wiki/architecture/invariants.md). Every doc in this set cites real `file:line` references from the codebase — patterns link back to canonical implementations so nothing drifts from reality.
+The framework is built around ten architectural invariants documented in [`.guild/wiki/architecture/invariants.md`](../.guild/wiki/architecture/invariants.md). Every doc in this set cites real `file:line` references from the codebase — patterns link back to canonical implementations so nothing drifts from reality.
 
 ## Not documentation
 
 - [`../CLAUDE.md`](../CLAUDE.md) — instructions for the AI agent team that maintains this codebase.
 - [`../.claude/`](../.claude/) — agent, command, hook, and rule definitions.
-- [`../.wiki/`](../.wiki/) — extracted codebase knowledge for agent retrieval.
+- [`../.guild/wiki/`](../.guild/wiki/) — extracted codebase knowledge for agent retrieval.
 - [`./plans/`](./plans/) — historical design docs for features unrelated to core architecture.
 - [`./beluga-ai-website-blueprint-v2.md`](./beluga-ai-website-blueprint-v2.md) — documentation *website* blueprint (separate concern).

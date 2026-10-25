@@ -17,7 +17,7 @@ Typed errors with an `ErrorCode` enum are structured, programmatic, and align wi
 
 ## How it works
 
-Canonical code from `core/errors.go:8-110` (see [`.wiki/patterns/error-handling.md`](../../.wiki/patterns/error-handling.md)):
+Canonical code from `core/errors.go:8-110` (see [`.guild/wiki/patterns/error-handling.md`](../../.guild/wiki/patterns/error-handling.md)):
 
 ```go
 // core/errors.go
@@ -209,5 +209,5 @@ When the retry middleware sees `ErrRateLimit`, it retries. When it sees `ErrAuth
 
 - [`patterns/middleware-chain.md`](./middleware-chain.md) — how retry middleware consumes these.
 - [15 — Resilience](../architecture/15-resilience.md) — retry, circuit breaker, rate limiter.
-- [`.wiki/patterns/error-handling.md`](../../.wiki/patterns/error-handling.md) — canonical code references.
-- [`.wiki/architecture/invariants.md`](../../.wiki/architecture/invariants.md) — the retry invariant.
+- [`.guild/wiki/patterns/error-handling.md`](../../.guild/wiki/patterns/error-handling.md) — canonical code references.
+- [`.guild/wiki/architecture/invariants.md`](../../.guild/wiki/architecture/invariants.md) — the retry invariant.

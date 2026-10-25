@@ -23,8 +23,10 @@ storage_layout_version: 2
   `/guild:learn` to build them.
 
 ## Existing knowledge
-- The legacy `.wiki/` is **unchanged** and still used by this repo's agents, hooks and
-  commands. It was not migrated at init; that is a separate, opt-in change.
+- The legacy `.wiki/` was moved into `.guild/wiki/` on 2026-10-25 with its folder
+  structure kept (`patterns/`, `architecture/`, `corrections/`, `index.md`, `log.md`).
+  Raw captures with sha256 live under `.guild/knowledge/sources/wiki-*/`. The hooks
+  (`wiki-query.sh`, `post-task-learn.sh`) and all agents/commands now read `.guild/wiki/`.
 
 ## Reviews
 - G-init cross-host review: **skipped** by policy (`review: local`).
