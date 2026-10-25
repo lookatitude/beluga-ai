@@ -575,6 +575,31 @@ func TestConvertStreamEvent_ToolUseDelta(t *testing.T) {
 	}
 }
 
+// assertToolChoice checks that choice is the Bedrock ToolChoice variant named
+// by want ("auto", "any" or "specific"; the specific variant must target the
+// "test" tool).
+func assertToolChoice(t *testing.T, choice brtypes.ToolChoice, want string) {
+	t.Helper()
+	switch want {
+	case "auto":
+		if _, ok := choice.(*brtypes.ToolChoiceMemberAuto); !ok {
+			t.Error("expected AutoToolChoice")
+		}
+	case "any":
+		if _, ok := choice.(*brtypes.ToolChoiceMemberAny); !ok {
+			t.Error("expected AnyToolChoice")
+		}
+	case "specific":
+		tc, ok := choice.(*brtypes.ToolChoiceMemberTool)
+		if !ok {
+			t.Fatal("expected SpecificToolChoice")
+		}
+		if aws.ToString(tc.Value.Name) != "test" {
+			t.Errorf("specific tool = %q", aws.ToString(tc.Value.Name))
+		}
+	}
+}
+
 func TestConvertToolConfigWithToolChoice(t *testing.T) {
 	tools := []schema.ToolDefinition{
 		{Name: "test", InputSchema: map[string]any{"type": "object"}},
@@ -594,24 +619,7 @@ func TestConvertToolConfigWithToolChoice(t *testing.T) {
 			if cfg.ToolChoice == nil {
 				t.Fatal("expected ToolChoice")
 			}
-			switch tt.wantChoice {
-			case "auto":
-				if _, ok := cfg.ToolChoice.(*brtypes.ToolChoiceMemberAuto); !ok {
-					t.Error("expected AutoToolChoice")
-				}
-			case "any":
-				if _, ok := cfg.ToolChoice.(*brtypes.ToolChoiceMemberAny); !ok {
-					t.Error("expected AnyToolChoice")
-				}
-			case "specific":
-				tc, ok := cfg.ToolChoice.(*brtypes.ToolChoiceMemberTool)
-				if !ok {
-					t.Fatal("expected SpecificToolChoice")
-				}
-				if aws.ToString(tc.Value.Name) != "test" {
-					t.Errorf("specific tool = %q", aws.ToString(tc.Value.Name))
-				}
-			}
+			assertToolChoice(t, cfg.ToolChoice, tt.wantChoice)
 		})
 	}
 }

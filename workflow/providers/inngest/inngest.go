@@ -13,6 +13,9 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/workflow"
 )
 
+// bearerPrefix is the Authorization header scheme prefix for the Inngest event key.
+const bearerPrefix = "Bearer "
+
 const workflowPathFmt = "/v1/workflows/%s"
 
 // HTTPClient defines the HTTP client interface for Inngest API calls.
@@ -78,7 +81,7 @@ func (s *Store) Save(ctx context.Context, state workflow.WorkflowState) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	if s.eventKey != "" {
-		req.Header.Set("Authorization", "Bearer "+s.eventKey)
+		req.Header.Set("Authorization", bearerPrefix+s.eventKey)
 	}
 
 	resp, err := s.client.Do(req)
@@ -107,7 +110,7 @@ func (s *Store) Load(ctx context.Context, workflowID string) (*workflow.Workflow
 		return nil, fmt.Errorf("inngest/load: create request: %w", err)
 	}
 	if s.eventKey != "" {
-		req.Header.Set("Authorization", "Bearer "+s.eventKey)
+		req.Header.Set("Authorization", bearerPrefix+s.eventKey)
 	}
 
 	resp, err := s.client.Do(req)
@@ -157,7 +160,7 @@ func (s *Store) Delete(ctx context.Context, workflowID string) error {
 		return fmt.Errorf("inngest/delete: create request: %w", err)
 	}
 	if s.eventKey != "" {
-		req.Header.Set("Authorization", "Bearer "+s.eventKey)
+		req.Header.Set("Authorization", bearerPrefix+s.eventKey)
 	}
 
 	resp, err := s.client.Do(req)

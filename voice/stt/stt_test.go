@@ -303,35 +303,46 @@ func TestMockSTT_TranscribeStream(t *testing.T) {
 	assert.True(t, events[2].IsFinal)
 }
 
+// cancellableTranscriptStream yields up to 100 partial "chunk" events,
+// emitting ctx.Err() and stopping as soon as ctx is cancelled.
+func cancellableTranscriptStream(ctx context.Context) iter.Seq2[TranscriptEvent, error] {
+	return func(yield func(TranscriptEvent, error) bool) {
+		for i := 0; i < 100; i++ {
+			select {
+			case <-ctx.Done():
+				yield(TranscriptEvent{}, ctx.Err())
+				return
+			default:
+				if !yield(TranscriptEvent{Text: "chunk", IsFinal: false}, nil) {
+					return
+				}
+			}
+		}
+	}
+}
+
+// repeatedAudioStream yields "audio" n times with nil errors.
+func repeatedAudioStream(n int) iter.Seq2[[]byte, error] {
+	return func(yield func([]byte, error) bool) {
+		for i := 0; i < n; i++ {
+			if !yield([]byte("audio"), nil) {
+				return
+			}
+		}
+	}
+}
+
 func TestMockSTT_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	mock := &mockSTT{
 		transcribeStreamFunc: func(ctx context.Context, audioStream iter.Seq2[[]byte, error], opts ...Option) iter.Seq2[TranscriptEvent, error] {
-			return func(yield func(TranscriptEvent, error) bool) {
-				for i := 0; i < 100; i++ {
-					select {
-					case <-ctx.Done():
-						yield(TranscriptEvent{}, ctx.Err())
-						return
-					default:
-						if !yield(TranscriptEvent{Text: "chunk", IsFinal: false}, nil) {
-							return
-						}
-					}
-				}
-			}
+			return cancellableTranscriptStream(ctx)
 		},
 	}
 
-	audioStream := func(yield func([]byte, error) bool) {
-		for i := 0; i < 100; i++ {
-			if !yield([]byte("audio"), nil) {
-				return
-			}
-		}
-	}
+	audioStream := repeatedAudioStream(100)
 
 	count := 0
 	for _, err := range mock.TranscribeStream(ctx, audioStream) {

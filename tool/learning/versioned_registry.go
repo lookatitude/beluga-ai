@@ -9,6 +9,9 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/tool"
 )
 
+// errToolNotFoundFmt is the error format used when a tool name is not registered.
+const errToolNotFoundFmt = "versioned registry: tool %q not found"
+
 // VersionRecord is an immutable record of a tool version in the registry.
 type VersionRecord struct {
 	// Version is the sequential version number.
@@ -123,7 +126,7 @@ func (vr *VersionedRegistry) Activate(name string, version int) error {
 
 	entry, exists := vr.entries[name]
 	if !exists {
-		return core.Errorf(core.ErrNotFound, "versioned registry: tool %q not found", name)
+		return core.Errorf(core.ErrNotFound, errToolNotFoundFmt, name)
 	}
 
 	idx := version - 1
@@ -158,7 +161,7 @@ func (vr *VersionedRegistry) Rollback(name string) (int, error) {
 
 	entry, exists := vr.entries[name]
 	if !exists {
-		return 0, core.Errorf(core.ErrNotFound, "versioned registry: tool %q not found", name)
+		return 0, core.Errorf(core.ErrNotFound, errToolNotFoundFmt, name)
 	}
 	if entry.current == 0 {
 		return 0, core.Errorf(core.ErrNotFound, "versioned registry: no previous version for tool %q", name)
@@ -192,7 +195,7 @@ func (vr *VersionedRegistry) History(name string) ([]VersionRecord, error) {
 
 	entry, exists := vr.entries[name]
 	if !exists {
-		return nil, core.Errorf(core.ErrNotFound, "versioned registry: tool %q not found", name)
+		return nil, core.Errorf(core.ErrNotFound, errToolNotFoundFmt, name)
 	}
 
 	// Return a copy to prevent mutation.

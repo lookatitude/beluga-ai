@@ -206,15 +206,7 @@ func (a *DualProcessAgent) Stream(ctx context.Context, input string, opts ...age
 		}
 
 		// Route based on score
-		var target agent.Agent
-		var tier string
-		if score.Level == Complex || (score.Level >= Moderate && score.Confidence < a.threshold) {
-			target = a.s2
-			tier = "s2"
-		} else {
-			target = a.s1
-			tier = "s1"
-		}
+		target, tier := a.streamRoute(score)
 
 		a.fireOnRouted(ctx, input, score.Level, tier)
 
@@ -232,24 +224,49 @@ func (a *DualProcessAgent) Stream(ctx context.Context, input string, opts ...age
 		}
 
 		// Stream from selected agent
-		for event, err := range target.Stream(ctx, input, opts...) {
-			if err != nil {
-				yield(event, err)
-				return
-			}
-			if !yield(event, nil) {
-				return
-			}
+		if !forwardStream(target.Stream(ctx, input, opts...), yield) {
+			return
 		}
 
 		latency := time.Since(start)
-		switch tier {
-		case "s1":
-			a.metrics.RecordS1(latency, 0)
-		case "s2":
-			a.metrics.RecordS2(latency, 0)
-		}
+		a.recordTierLatency(tier, latency)
 		a.fireOnCompleted(ctx, tier, latency)
+	}
+}
+
+// streamRoute picks the agent and tier label for a streaming request. Unlike
+// Invoke, Stream cannot escalate after the fact, so moderate inputs below the
+// confidence threshold go straight to S2.
+func (a *DualProcessAgent) streamRoute(score ComplexityScore) (agent.Agent, string) {
+	if score.Level == Complex || (score.Level >= Moderate && score.Confidence < a.threshold) {
+		return a.s2, "s2"
+	}
+	return a.s1, "s1"
+}
+
+// forwardStream relays every event from src to yield. It returns false when
+// the stream ended early, either because src produced an error (which is
+// forwarded) or because the consumer stopped iteration.
+func forwardStream(src iter.Seq2[agent.Event, error], yield func(agent.Event, error) bool) bool {
+	for event, err := range src {
+		if err != nil {
+			yield(event, err)
+			return false
+		}
+		if !yield(event, nil) {
+			return false
+		}
+	}
+	return true
+}
+
+// recordTierLatency records latency against the routing metrics for tier.
+func (a *DualProcessAgent) recordTierLatency(tier string, latency time.Duration) {
+	switch tier {
+	case "s1":
+		a.metrics.RecordS1(latency, 0)
+	case "s2":
+		a.metrics.RecordS2(latency, 0)
 	}
 }
 

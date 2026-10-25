@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"iter"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -184,12 +185,7 @@ func TestTranscribeStream(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		audioStream := func(yield func([]byte, error) bool) {
-			if !yield([]byte("chunk1"), nil) {
-				return
-			}
-			yield([]byte("chunk2"), nil)
-		}
+		audioStream := twoChunkAudioStream
 
 		var events []stt.TranscriptEvent
 		for event, err := range e.TranscribeStream(context.Background(), audioStream) {
@@ -229,13 +225,7 @@ func TestTranscribeStream(t *testing.T) {
 			yield(nil, fmt.Errorf("audio read error"))
 		}
 
-		var gotErr error
-		for _, err := range e.TranscribeStream(context.Background(), audioStream) {
-			if err != nil {
-				gotErr = err
-				break
-			}
-		}
+		gotErr := firstStreamErr(e.TranscribeStream(context.Background(), audioStream))
 		require.Error(t, gotErr)
 		assert.Contains(t, gotErr.Error(), "audio read error")
 	})
@@ -253,13 +243,7 @@ func TestTranscribeStream(t *testing.T) {
 			yield([]byte("chunk"), nil)
 		}
 
-		var gotErr error
-		for _, err := range e.TranscribeStream(ctx, audioStream) {
-			if err != nil {
-				gotErr = err
-				break
-			}
-		}
+		gotErr := firstStreamErr(e.TranscribeStream(ctx, audioStream))
 		require.Error(t, gotErr)
 		assert.ErrorIs(t, gotErr, context.Canceled)
 	})
@@ -283,13 +267,7 @@ func TestTranscribeStream(t *testing.T) {
 			yield([]byte("chunk"), nil)
 		}
 
-		var gotErr error
-		for _, err := range e.TranscribeStream(context.Background(), audioStream) {
-			if err != nil {
-				gotErr = err
-				break
-			}
-		}
+		gotErr := firstStreamErr(e.TranscribeStream(context.Background(), audioStream))
 		require.Error(t, gotErr)
 	})
 
@@ -346,4 +324,24 @@ func TestRegistry(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "api_key is required")
 	})
+}
+
+// firstStreamErr drains seq until the first non-nil error and returns it, or
+// nil if the stream completes without error.
+func firstStreamErr(seq iter.Seq2[stt.TranscriptEvent, error]) error {
+	for _, err := range seq {
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// twoChunkAudioStream yields "chunk1" then "chunk2", stopping early if the
+// consumer does.
+func twoChunkAudioStream(yield func([]byte, error) bool) {
+	if !yield([]byte("chunk1"), nil) {
+		return
+	}
+	yield([]byte("chunk2"), nil)
 }

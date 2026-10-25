@@ -45,8 +45,8 @@ func WithDefaultTTL(d time.Duration) IssuerOption {
 
 // WithMaxCredentials sets the maximum number of credentials the issuer will
 // store. When the limit is reached, Issue returns an error. Defaults to 10000.
-func WithMaxCredentials(max int) IssuerOption {
-	return func(o *issuerOptions) { o.maxCredentials = max }
+func WithMaxCredentials(n int) IssuerOption {
+	return func(o *issuerOptions) { o.maxCredentials = n }
 }
 
 func defaultIssuerOptions() issuerOptions {

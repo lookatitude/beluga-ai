@@ -124,28 +124,35 @@ func checkPropertyCompat(outputSchema, inputSchema map[string]any, sourceName, t
 		}
 
 		// Check type compatibility for the field.
-		if inProps != nil {
-			inPropRaw, inExists := inProps[fieldName]
-			if inExists {
-				outProp, _ := outPropRaw.(map[string]any)
-				inProp, _ := inPropRaw.(map[string]any)
-				if outProp != nil && inProp != nil {
-					outFieldType, _ := outProp["type"].(string)
-					inFieldType, _ := inProp["type"].(string)
-					if outFieldType != "" && inFieldType != "" && !typesCompatible(outFieldType, inFieldType) {
-						errs = append(errs, CompatibilityError{
-							SourceAgent: sourceName,
-							TargetAgent: targetName,
-							Field:       fieldName,
-							Reason:      fmt.Sprintf("type mismatch: source produces %q, target expects %q", outFieldType, inFieldType),
-						})
-					}
-				}
-			}
+		if outFieldType, inFieldType, mismatch := fieldTypeMismatch(outPropRaw, inProps[fieldName]); mismatch {
+			errs = append(errs, CompatibilityError{
+				SourceAgent: sourceName,
+				TargetAgent: targetName,
+				Field:       fieldName,
+				Reason:      fmt.Sprintf("type mismatch: source produces %q, target expects %q", outFieldType, inFieldType),
+			})
 		}
 	}
 
 	return errs
+}
+
+// fieldTypeMismatch compares the declared "type" of a source output property
+// and a target input property. mismatch is true only when both are object
+// schemas declaring a non-empty type and those types are incompatible. A nil
+// inPropRaw (field not declared by the target) never mismatches.
+func fieldTypeMismatch(outPropRaw, inPropRaw any) (outFieldType, inFieldType string, mismatch bool) {
+	outProp, _ := outPropRaw.(map[string]any)
+	inProp, _ := inPropRaw.(map[string]any)
+	if outProp == nil || inProp == nil {
+		return "", "", false
+	}
+	outFieldType, _ = outProp["type"].(string)
+	inFieldType, _ = inProp["type"].(string)
+	if outFieldType == "" || inFieldType == "" {
+		return outFieldType, inFieldType, false
+	}
+	return outFieldType, inFieldType, !typesCompatible(outFieldType, inFieldType)
 }
 
 // extractRequired extracts the "required" array from a JSON Schema.

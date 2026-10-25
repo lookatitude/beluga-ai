@@ -159,13 +159,13 @@ func estimateTokens(text string) int {
 	return (n + 3) / 4
 }
 
-// clamp constrains v to the range [min, max].
-func clamp(v, min, max float64) float64 {
-	if v < min {
-		return min
+// clamp constrains v to the range [lo, hi].
+func clamp(v, lo, hi float64) float64 {
+	if v < lo {
+		return lo
 	}
-	if v > max {
-		return max
+	if v > hi {
+		return hi
 	}
 	return v
 }

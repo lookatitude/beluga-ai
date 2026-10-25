@@ -160,19 +160,23 @@ func TestValidateAgent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := ValidateAgent(tt.agent)
-			if got.Allowed != tt.wantAllowed {
-				t.Errorf("Allowed = %v, want %v (Reason: %q)", got.Allowed, tt.wantAllowed, got.Reason)
-			}
-			if !tt.wantAllowed && tt.wantReason != "" {
-				if !containsSubstring(got.Reason, tt.wantReason) {
-					t.Errorf("Reason = %q, want it to contain %q", got.Reason, tt.wantReason)
-				}
-			}
-			if tt.wantAllowed && got.Reason != "" {
-				t.Errorf("Reason should be empty when Allowed, got %q", got.Reason)
-			}
+			assertAgentValidation(t, ValidateAgent(tt.agent), tt.wantAllowed, tt.wantReason)
 		})
+	}
+}
+
+// assertAgentValidation checks the Allowed flag and Reason of an agent
+// validation result against the expected outcome.
+func assertAgentValidation(t *testing.T, got ValidationResult, wantAllowed bool, wantReason string) {
+	t.Helper()
+	if got.Allowed != wantAllowed {
+		t.Errorf("Allowed = %v, want %v (Reason: %q)", got.Allowed, wantAllowed, got.Reason)
+	}
+	if !wantAllowed && wantReason != "" && !containsSubstring(got.Reason, wantReason) {
+		t.Errorf("Reason = %q, want it to contain %q", got.Reason, wantReason)
+	}
+	if wantAllowed && got.Reason != "" {
+		t.Errorf("Reason should be empty when Allowed, got %q", got.Reason)
 	}
 }
 
@@ -369,25 +373,39 @@ func TestMutateAgent(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := MutateAgent(tt.input)
 			if tt.wantNil {
-				if got != nil {
-					t.Errorf("want nil, got non-nil")
-				}
+				assertNilMutation(t, got == nil)
 				return
 			}
-			if got == nil {
-				t.Fatal("want non-nil, got nil")
-			}
-			if got.Spec.MaxIterations != tt.wantMaxIterations {
-				t.Errorf("MaxIterations = %d, want %d", got.Spec.MaxIterations, tt.wantMaxIterations)
-			}
-			if got.Meta.Labels[labelComponent] != tt.wantLabel {
-				t.Errorf("label %q = %q, want %q", labelComponent, got.Meta.Labels[labelComponent], tt.wantLabel)
-			}
-			// Original must not be mutated.
-			if tt.input != nil && tt.input == got {
-				t.Error("MutateAgent must return a copy, not the same pointer")
-			}
+			assertMutatedAgent(t, tt.input, got, tt.wantMaxIterations, tt.wantLabel)
 		})
+	}
+}
+
+// assertNilMutation fails the test when a mutation that should return nil
+// returned a non-nil resource.
+func assertNilMutation(t *testing.T, gotIsNil bool) {
+	t.Helper()
+	if !gotIsNil {
+		t.Errorf("want nil, got non-nil")
+	}
+}
+
+// assertMutatedAgent checks the defaults and labels applied by MutateAgent
+// and that the result is a copy of input.
+func assertMutatedAgent(t *testing.T, input, got *operator.AgentResource, wantMaxIterations int, wantLabel string) {
+	t.Helper()
+	if got == nil {
+		t.Fatal("want non-nil, got nil")
+	}
+	if got.Spec.MaxIterations != wantMaxIterations {
+		t.Errorf("MaxIterations = %d, want %d", got.Spec.MaxIterations, wantMaxIterations)
+	}
+	if got.Meta.Labels[labelComponent] != wantLabel {
+		t.Errorf("label %q = %q, want %q", labelComponent, got.Meta.Labels[labelComponent], wantLabel)
+	}
+	// Original must not be mutated.
+	if input != nil && input == got {
+		t.Error("MutateAgent must return a copy, not the same pointer")
 	}
 }
 
@@ -443,30 +461,36 @@ func TestMutateTeam(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := MutateTeam(tt.input)
 			if tt.wantNil {
-				if got != nil {
-					t.Errorf("want nil, got non-nil")
-				}
+				assertNilMutation(t, got == nil)
 				return
 			}
-			if got == nil {
-				t.Fatal("want non-nil, got nil")
-			}
-			if got.Meta.Labels[labelComponent] != tt.wantLabel {
-				t.Errorf("label %q = %q, want %q", labelComponent, got.Meta.Labels[labelComponent], tt.wantLabel)
-			}
-			// Verify preserved labels.
-			if tt.input != nil {
-				for k, v := range tt.input.Meta.Labels {
-					if got.Meta.Labels[k] != v {
-						t.Errorf("existing label %q: got %q, want %q", k, got.Meta.Labels[k], v)
-					}
-				}
-			}
-			// Original must not be mutated.
-			if tt.input != nil && tt.input == got {
-				t.Error("MutateTeam must return a copy, not the same pointer")
-			}
+			assertMutatedTeam(t, tt.input, got, tt.wantLabel)
 		})
+	}
+}
+
+// assertMutatedTeam checks the component label applied by MutateTeam, that
+// pre-existing labels are preserved, and that the result is a copy of input.
+func assertMutatedTeam(t *testing.T, input, got *operator.TeamResource, wantLabel string) {
+	t.Helper()
+	if got == nil {
+		t.Fatal("want non-nil, got nil")
+	}
+	if got.Meta.Labels[labelComponent] != wantLabel {
+		t.Errorf("label %q = %q, want %q", labelComponent, got.Meta.Labels[labelComponent], wantLabel)
+	}
+	if input == nil {
+		return
+	}
+	// Verify preserved labels.
+	for k, v := range input.Meta.Labels {
+		if got.Meta.Labels[k] != v {
+			t.Errorf("existing label %q: got %q, want %q", k, got.Meta.Labels[k], v)
+		}
+	}
+	// Original must not be mutated.
+	if input == got {
+		t.Error("MutateTeam must return a copy, not the same pointer")
 	}
 }
 

@@ -136,19 +136,8 @@ func (e *SpeculativeExecutor) Invoke(ctx context.Context, input string, opts ...
 		return e.groundTruth.Invoke(ctx, input, opts...)
 	}
 
-	type predResult struct {
-		text       string
-		confidence float64
-		err        error
-	}
-
-	type gtResult struct {
-		text string
-		err  error
-	}
-
-	predCh := make(chan predResult, 1)
-	gtCh := make(chan gtResult, 1)
+	predCh := make(chan predictionOutcome, 1)
+	gtCh := make(chan groundTruthOutcome, 1)
 
 	gtCtx, gtCancel := context.WithCancel(ctx)
 	defer gtCancel()
@@ -157,12 +146,12 @@ func (e *SpeculativeExecutor) Invoke(ctx context.Context, input string, opts ...
 	// the buffered channels below — no WaitGroup is needed.
 	go func() {
 		prediction, confidence, err := e.config.predictor.Predict(ctx, input)
-		predCh <- predResult{text: prediction, confidence: confidence, err: err}
+		predCh <- predictionOutcome{text: prediction, confidence: confidence, err: err}
 	}()
 
 	go func() {
 		text, err := e.groundTruth.Invoke(gtCtx, input, opts...)
-		gtCh <- gtResult{text: text, err: err}
+		gtCh <- groundTruthOutcome{text: text, err: err}
 	}()
 
 	// Wait for predictor result first.
@@ -177,27 +166,7 @@ func (e *SpeculativeExecutor) Invoke(ctx context.Context, input string, opts ...
 
 	if pred.err != nil || pred.confidence < e.config.confidenceThreshold {
 		// Prediction failed or low confidence — use ground truth.
-		if pred.err != nil && e.config.hooks.OnCancel != nil {
-			e.config.hooks.OnCancel(ctx, pred.err)
-		}
-		gt := <-gtCh
-		if gt.err != nil {
-			return "", gt.err
-		}
-		if pred.err == nil {
-			// We got a prediction but confidence was too low.
-			e.config.metrics.RecordMiss(estimateTokens(pred.text))
-			if e.config.hooks.OnMisprediction != nil {
-				e.config.hooks.OnMisprediction(ctx, Result{
-					Prediction:  pred.text,
-					GroundTruth: gt.text,
-					Validated:   false,
-					Confidence:  pred.confidence,
-					Output:      gt.text,
-				})
-			}
-		}
-		return gt.text, nil
+		return e.fallbackToGroundTruth(ctx, pred, gtCh)
 	}
 
 	// Wait for ground truth to validate.
@@ -213,21 +182,66 @@ func (e *SpeculativeExecutor) Invoke(ctx context.Context, input string, opts ...
 		return "", gt.err
 	}
 
-	// Validate prediction against ground truth.
-	valid, err := e.config.validator.Validate(ctx, pred.text, gt.text)
+	return e.resolveWithGroundTruth(ctx, pred, gt.text, gtDone.Sub(predDone)), nil
+}
+
+// predictionOutcome carries the predictor's result from its goroutine.
+type predictionOutcome struct {
+	text       string
+	confidence float64
+	err        error
+}
+
+// groundTruthOutcome carries the ground-truth agent's result from its goroutine.
+type groundTruthOutcome struct {
+	text string
+	err  error
+}
+
+// fallbackToGroundTruth handles a failed or low-confidence prediction: it
+// fires OnCancel on predictor error, waits for the ground truth, and records a
+// misprediction when a low-confidence prediction was available.
+func (e *SpeculativeExecutor) fallbackToGroundTruth(ctx context.Context, pred predictionOutcome, gtCh <-chan groundTruthOutcome) (string, error) {
+	if pred.err != nil && e.config.hooks.OnCancel != nil {
+		e.config.hooks.OnCancel(ctx, pred.err)
+	}
+	gt := <-gtCh
+	if gt.err != nil {
+		return "", gt.err
+	}
+	if pred.err == nil {
+		// We got a prediction but confidence was too low.
+		e.config.metrics.RecordMiss(estimateTokens(pred.text))
+		if e.config.hooks.OnMisprediction != nil {
+			e.config.hooks.OnMisprediction(ctx, Result{
+				Prediction:  pred.text,
+				GroundTruth: gt.text,
+				Validated:   false,
+				Confidence:  pred.confidence,
+				Output:      gt.text,
+			})
+		}
+	}
+	return gt.text, nil
+}
+
+// resolveWithGroundTruth validates a confident prediction against the ground
+// truth text, records hit/miss metrics, fires the matching hook, and returns
+// the output to use. A validator error falls back to the ground truth.
+func (e *SpeculativeExecutor) resolveWithGroundTruth(ctx context.Context, pred predictionOutcome, gtText string, speedup time.Duration) string {
+	valid, err := e.config.validator.Validate(ctx, pred.text, gtText)
 	if err != nil {
 		// Validation error — use ground truth.
-		return gt.text, nil
+		return gtText
 	}
 
-	speedup := gtDone.Sub(predDone)
 	result := Result{
 		Prediction:  pred.text,
-		GroundTruth: gt.text,
+		GroundTruth: gtText,
 		Validated:   valid,
 		Confidence:  pred.confidence,
 		Speedup:     speedup,
-		Output:      gt.text,
+		Output:      gtText,
 	}
 
 	if valid {
@@ -236,7 +250,7 @@ func (e *SpeculativeExecutor) Invoke(ctx context.Context, input string, opts ...
 		if e.config.hooks.OnValidation != nil {
 			e.config.hooks.OnValidation(ctx, result)
 		}
-		return pred.text, nil
+		return pred.text
 	}
 
 	result.WastedTokens = estimateTokens(pred.text)
@@ -244,7 +258,7 @@ func (e *SpeculativeExecutor) Invoke(ctx context.Context, input string, opts ...
 	if e.config.hooks.OnMisprediction != nil {
 		e.config.hooks.OnMisprediction(ctx, result)
 	}
-	return gt.text, nil
+	return gtText
 }
 
 // Stream pre-classifies via predictor confidence. If the predictor reports
@@ -254,14 +268,7 @@ func (e *SpeculativeExecutor) Stream(ctx context.Context, input string, opts ...
 	return func(yield func(agent.Event, error) bool) {
 		// If no predictor or no fast agent, stream ground truth directly.
 		if e.config.predictor == nil || e.config.fastAgent == nil {
-			for event, err := range e.groundTruth.Stream(ctx, input, opts...) {
-				if !yield(event, err) {
-					return
-				}
-				if err != nil {
-					return
-				}
-			}
+			relayStream(e.groundTruth.Stream(ctx, input, opts...), yield)
 			return
 		}
 
@@ -272,14 +279,7 @@ func (e *SpeculativeExecutor) Stream(ctx context.Context, input string, opts ...
 				e.config.hooks.OnCancel(ctx, err)
 			}
 			// Fall through to ground truth on predictor error.
-			for event, err := range e.groundTruth.Stream(ctx, input, opts...) {
-				if !yield(event, err) {
-					return
-				}
-				if err != nil {
-					return
-				}
-			}
+			relayStream(e.groundTruth.Stream(ctx, input, opts...), yield)
 			return
 		}
 
@@ -287,31 +287,30 @@ func (e *SpeculativeExecutor) Stream(ctx context.Context, input string, opts ...
 			e.config.hooks.OnPrediction(ctx, prediction, confidence)
 		}
 
-		if confidence >= e.config.confidenceThreshold {
-			// High confidence — route to fast agent. This is an unvalidated
-			// pre-classification decision; we use a distinct metric so that
-			// validated HitRate() is not polluted.
-			e.config.metrics.RecordStreamFastRoute()
-			for event, err := range e.config.fastAgent.Stream(ctx, input, opts...) {
-				if !yield(event, err) {
-					return
-				}
-				if err != nil {
-					return
-				}
-			}
-			return
-		}
+		relayStream(e.streamTarget(confidence).Stream(ctx, input, opts...), yield)
+	}
+}
 
-		// Low confidence — use ground truth.
-		e.config.metrics.RecordStreamGroundRoute()
-		for event, err := range e.groundTruth.Stream(ctx, input, opts...) {
-			if !yield(event, err) {
-				return
-			}
-			if err != nil {
-				return
-			}
+// streamTarget picks the agent to stream from for a successful prediction
+// and records the routing metric. High confidence routes to the fast agent;
+// this is an unvalidated pre-classification decision, so it uses a distinct
+// metric and does not pollute the validated HitRate(). Low confidence routes
+// to the ground truth.
+func (e *SpeculativeExecutor) streamTarget(confidence float64) agent.Agent {
+	if confidence >= e.config.confidenceThreshold {
+		e.config.metrics.RecordStreamFastRoute()
+		return e.config.fastAgent
+	}
+	e.config.metrics.RecordStreamGroundRoute()
+	return e.groundTruth
+}
+
+// relayStream forwards every (event, err) pair from src to yield, stopping
+// after the first error or when the consumer stops iteration.
+func relayStream(src iter.Seq2[agent.Event, error], yield func(agent.Event, error) bool) {
+	for event, err := range src {
+		if !yield(event, err) || err != nil {
+			return
 		}
 	}
 }

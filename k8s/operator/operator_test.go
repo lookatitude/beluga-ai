@@ -584,14 +584,10 @@ func TestReconcileAgent_Table(t *testing.T) {
 		checkFunc func(t *testing.T, result *ReconcileResult)
 	}{
 		{
-			name:    "valid agent produces ClusterIP service",
-			agent:   agentWithModelRef("agent-a", "openai-gpt4o"),
-			wantErr: false,
-			checkFunc: func(t *testing.T, r *ReconcileResult) {
-				if r.Service.Type != "ClusterIP" {
-					t.Errorf("service type = %q, want ClusterIP", r.Service.Type)
-				}
-			},
+			name:      "valid agent produces ClusterIP service",
+			agent:     agentWithModelRef("agent-a", "openai-gpt4o"),
+			wantErr:   false,
+			checkFunc: checkClusterIPService,
 		},
 		{
 			name:    "missing modelRef is invalid input",
@@ -616,36 +612,18 @@ func TestReconcileAgent_Table(t *testing.T) {
 				a.Spec.ModelConfig = &ModelConfig{Provider: "openai", Model: "gpt-4o"}
 				return a
 			}(),
-			wantErr: false,
-			checkFunc: func(t *testing.T, r *ReconcileResult) {
-				if r.Deployment.Name != "agent-d" {
-					t.Errorf("deployment name = %q, want %q", r.Deployment.Name, "agent-d")
-				}
-			},
+			wantErr:   false,
+			checkFunc: checkDeploymentNamedAgentD,
 		},
 		{
-			name:  "scaling disabled → no HPA",
-			agent: agentWithScaling("agent-e", ScalingConfig{Enabled: false}),
-			checkFunc: func(t *testing.T, r *ReconcileResult) {
-				if r.HPA != nil {
-					t.Errorf("expected nil HPA, got %+v", r.HPA)
-				}
-			},
+			name:      "scaling disabled → no HPA",
+			agent:     agentWithScaling("agent-e", ScalingConfig{Enabled: false}),
+			checkFunc: checkNoHPA,
 		},
 		{
-			name:  "scaling enabled → HPA with name suffix",
-			agent: agentWithScaling("agent-f", ScalingConfig{Enabled: true, MaxReplicas: 3}),
-			checkFunc: func(t *testing.T, r *ReconcileResult) {
-				if r.HPA == nil {
-					t.Fatal("expected non-nil HPA")
-				}
-				if r.HPA.Name != "agent-f-hpa" {
-					t.Errorf("HPA name = %q, want %q", r.HPA.Name, "agent-f-hpa")
-				}
-				if r.HPA.MaxReplicas != 3 {
-					t.Errorf("HPA.MaxReplicas = %d, want 3", r.HPA.MaxReplicas)
-				}
-			},
+			name:      "scaling enabled → HPA with name suffix",
+			agent:     agentWithScaling("agent-f", ScalingConfig{Enabled: true, MaxReplicas: 3}),
+			checkFunc: checkHPAAgentF,
 		},
 	}
 
@@ -654,18 +632,7 @@ func TestReconcileAgent_Table(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := rec.ReconcileAgent(context.Background(), tt.agent)
 			if tt.wantErr {
-				if err == nil {
-					t.Fatal("expected error, got nil")
-				}
-				if tt.errCode != "" {
-					var coreErr *core.Error
-					if !errors.As(err, &coreErr) {
-						t.Fatalf("expected *core.Error, got %T", err)
-					}
-					if coreErr.Code != tt.errCode {
-						t.Errorf("error code = %q, want %q", coreErr.Code, tt.errCode)
-					}
-				}
+				assertReconcileErrCode(t, err, tt.errCode)
 				return
 			}
 			if err != nil {
@@ -675,5 +642,58 @@ func TestReconcileAgent_Table(t *testing.T) {
 				tt.checkFunc(t, result)
 			}
 		})
+	}
+}
+
+// assertReconcileErrCode fails unless err is non-nil and, when wantCode is
+// set, is a *core.Error carrying wantCode.
+func assertReconcileErrCode(t *testing.T, err error, wantCode core.ErrorCode) {
+	t.Helper()
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if wantCode == "" {
+		return
+	}
+	var coreErr *core.Error
+	if !errors.As(err, &coreErr) {
+		t.Fatalf("expected *core.Error, got %T", err)
+	}
+	if coreErr.Code != wantCode {
+		t.Errorf("error code = %q, want %q", coreErr.Code, wantCode)
+	}
+}
+
+func checkClusterIPService(t *testing.T, r *ReconcileResult) {
+	t.Helper()
+	if r.Service.Type != "ClusterIP" {
+		t.Errorf("service type = %q, want ClusterIP", r.Service.Type)
+	}
+}
+
+func checkDeploymentNamedAgentD(t *testing.T, r *ReconcileResult) {
+	t.Helper()
+	if r.Deployment.Name != "agent-d" {
+		t.Errorf("deployment name = %q, want %q", r.Deployment.Name, "agent-d")
+	}
+}
+
+func checkNoHPA(t *testing.T, r *ReconcileResult) {
+	t.Helper()
+	if r.HPA != nil {
+		t.Errorf("expected nil HPA, got %+v", r.HPA)
+	}
+}
+
+func checkHPAAgentF(t *testing.T, r *ReconcileResult) {
+	t.Helper()
+	if r.HPA == nil {
+		t.Fatal("expected non-nil HPA")
+	}
+	if r.HPA.Name != "agent-f-hpa" {
+		t.Errorf("HPA name = %q, want %q", r.HPA.Name, "agent-f-hpa")
+	}
+	if r.HPA.MaxReplicas != 3 {
+		t.Errorf("HPA.MaxReplicas = %d, want 3", r.HPA.MaxReplicas)
 	}
 }

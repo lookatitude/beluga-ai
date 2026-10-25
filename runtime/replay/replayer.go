@@ -9,6 +9,9 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
+// opReplay is the core.Error operation name for Replayer.Replay failures.
+const opReplay = "replay.replay"
+
 // ResponseProvider supplies pre-recorded LLM responses for replay. Given a
 // turn index, it returns the AI message that was originally produced at that
 // turn. This allows deterministic re-execution without calling a live LLM.
@@ -102,13 +105,13 @@ func NewReplayer(opts ...ReplayerOption) *Replayer {
 // replay and the number of turns replayed.
 func (r *Replayer) Replay(ctx context.Context, cp *Checkpoint, responses ResponseProvider) (*ReplayResult, error) {
 	if cp == nil {
-		return nil, core.NewError("replay.replay", core.ErrInvalidInput, "checkpoint must not be nil", nil)
+		return nil, core.NewError(opReplay, core.ErrInvalidInput, "checkpoint must not be nil", nil)
 	}
 	if responses == nil {
-		return nil, core.NewError("replay.replay", core.ErrInvalidInput, "response provider must not be nil", nil)
+		return nil, core.NewError(opReplay, core.ErrInvalidInput, "response provider must not be nil", nil)
 	}
 	if r.opts.processor == nil {
-		return nil, core.NewError("replay.replay", core.ErrInvalidInput, "turn processor must be set via WithProcessor", nil)
+		return nil, core.NewError(opReplay, core.ErrInvalidInput, "turn processor must be set via WithProcessor", nil)
 	}
 
 	start := time.Now()
@@ -141,7 +144,7 @@ func (r *Replayer) Replay(ctx context.Context, cp *Checkpoint, responses Respons
 
 		response, err := responses(turnIdx)
 		if err != nil {
-			return nil, core.NewError("replay.replay", core.ErrInvalidInput,
+			return nil, core.NewError(opReplay, core.ErrInvalidInput,
 				fmt.Sprintf("no response for turn %d", turnIdx), err)
 		}
 
@@ -159,7 +162,7 @@ func (r *Replayer) Replay(ctx context.Context, cp *Checkpoint, responses Respons
 			return r.opts.processor(turnCtx, state, cp.Turns[turnIdx].Input, response)
 		}()
 		if err != nil {
-			return nil, core.NewError("replay.replay", core.ErrToolFailed,
+			return nil, core.NewError(opReplay, core.ErrToolFailed,
 				fmt.Sprintf("turn processor failed at turn %d", turnIdx), err)
 		}
 

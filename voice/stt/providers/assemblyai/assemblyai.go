@@ -255,7 +255,7 @@ func (e *Engine) dialStream(ctx context.Context, cfg stt.Config) (*websocket.Con
 // Returns the event and whether it should be emitted.
 func (e *Engine) parseStreamMessage(data []byte, language string) (stt.TranscriptEvent, bool) {
 	var msg realtimeMessage
-	if jsonErr := json.Unmarshal(data, &msg); jsonErr != nil {
+	if json.Unmarshal(data, &msg) != nil {
 		return stt.TranscriptEvent{}, false
 	}
 	if msg.Text == "" {

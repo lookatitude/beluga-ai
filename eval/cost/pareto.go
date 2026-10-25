@@ -60,21 +60,7 @@ func (p *ParetoAnalyzer) Analyze(configs []ConfigResult) *ParetoResult {
 	result := &ParetoResult{}
 
 	for i, c := range sorted {
-		dominated := false
-		for j, other := range sorted {
-			if i == j {
-				continue
-			}
-			// c is dominated if other has >= quality and <= cost, with at
-			// least one strict inequality.
-			if other.Quality >= c.Quality && other.Cost <= c.Cost {
-				if other.Quality > c.Quality || other.Cost < c.Cost {
-					dominated = true
-					break
-				}
-			}
-		}
-		if dominated {
+		if isDominated(sorted, i) {
 			result.Dominated = append(result.Dominated, c)
 		} else {
 			result.Optimal = append(result.Optimal, c)
@@ -82,4 +68,21 @@ func (p *ParetoAnalyzer) Analyze(configs []ConfigResult) *ParetoResult {
 	}
 
 	return result
+}
+
+// isDominated reports whether configs[i] is dominated by any other entry in
+// configs: another config with >= quality and <= cost, with at least one
+// strict inequality.
+func isDominated(configs []ConfigResult, i int) bool {
+	c := configs[i]
+	for j, other := range configs {
+		if i == j {
+			continue
+		}
+		if other.Quality >= c.Quality && other.Cost <= c.Cost &&
+			(other.Quality > c.Quality || other.Cost < c.Cost) {
+			return true
+		}
+	}
+	return false
 }

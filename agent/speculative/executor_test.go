@@ -211,17 +211,7 @@ func TestSpeculativeExecutor_Invoke(t *testing.T) {
 				},
 			}
 
-			var opts []ExecutorOption
-			if tt.predictor != nil {
-				opts = append(opts, WithPredictor(tt.predictor))
-			}
-			if tt.validator != nil {
-				opts = append(opts, WithValidator(tt.validator))
-			}
-			if tt.threshold > 0 {
-				opts = append(opts, WithConfidenceThreshold(tt.threshold))
-			}
-
+			opts := invokeTestOpts(tt.predictor, tt.validator, tt.threshold)
 			e := NewSpeculativeExecutor(gt, opts...)
 			result, err := e.Invoke(context.Background(), "test input")
 
@@ -241,6 +231,22 @@ func TestSpeculativeExecutor_Invoke(t *testing.T) {
 			}
 		})
 	}
+}
+
+// invokeTestOpts builds the executor options for a TestSpeculativeExecutor_Invoke
+// case, skipping nil mocks and a zero threshold.
+func invokeTestOpts(predictor *mockPredictor, validator *mockValidator, threshold float64) []ExecutorOption {
+	var opts []ExecutorOption
+	if predictor != nil {
+		opts = append(opts, WithPredictor(predictor))
+	}
+	if validator != nil {
+		opts = append(opts, WithValidator(validator))
+	}
+	if threshold > 0 {
+		opts = append(opts, WithConfidenceThreshold(threshold))
+	}
+	return opts
 }
 
 func TestSpeculativeExecutor_ParallelExecution(t *testing.T) {

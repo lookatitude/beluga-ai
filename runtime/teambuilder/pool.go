@@ -9,6 +9,9 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
+// opPoolSelect is the core.Error operation name for pool selection failures.
+const opPoolSelect = "teambuilder.pool.select"
+
 const opPoolRegister = "teambuilder.pool.register"
 
 // AgentPool is a thread-safe registry of candidate agents with their
@@ -97,19 +100,19 @@ func (p *AgentPool) List() []PoolEntry {
 // Returns an error if the pool is empty or the selector fails.
 func (p *AgentPool) Select(ctx context.Context, task string, selector Selector) ([]agent.Agent, error) {
 	if selector == nil {
-		return nil, core.NewError("teambuilder.pool.select", core.ErrInvalidInput,
+		return nil, core.NewError(opPoolSelect, core.ErrInvalidInput,
 			"selector must not be nil", nil)
 	}
 
 	candidates := p.List()
 	if len(candidates) == 0 {
-		return nil, core.NewError("teambuilder.pool.select", core.ErrNotFound,
+		return nil, core.NewError(opPoolSelect, core.ErrNotFound,
 			"agent pool is empty", nil)
 	}
 
 	selected, err := selector.Select(ctx, task, candidates)
 	if err != nil {
-		return nil, core.NewError("teambuilder.pool.select", core.ErrToolFailed,
+		return nil, core.NewError(opPoolSelect, core.ErrToolFailed,
 			"selector failed", err)
 	}
 

@@ -391,17 +391,23 @@ func TestKeywordSelector_Select(t *testing.T) {
 				return
 			}
 
-			gotIDs := make([]string, len(result))
-			for i, e := range result {
-				gotIDs[i] = e.Agent.ID()
-			}
-			// First result should match expected best.
-			for i, wantID := range tt.wantIDs {
-				if i < len(gotIDs) {
-					assert.Equal(t, wantID, gotIDs[i])
-				}
-			}
+			assertLeadingSelectedIDs(t, result, tt.wantIDs)
 		})
+	}
+}
+
+// assertLeadingSelectedIDs checks that the leading selected entries match
+// wantIDs in order (first result should match expected best).
+func assertLeadingSelectedIDs(t *testing.T, result []PoolEntry, wantIDs []string) {
+	t.Helper()
+	gotIDs := make([]string, len(result))
+	for i, e := range result {
+		gotIDs[i] = e.Agent.ID()
+	}
+	for i, wantID := range wantIDs {
+		if i < len(gotIDs) {
+			assert.Equal(t, wantID, gotIDs[i])
+		}
 	}
 }
 

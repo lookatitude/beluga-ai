@@ -56,6 +56,9 @@ resources:
   requests:
     cpu: 100m
     memory: 128Mi
+    # The root filesystem is read-only; ephemeral storage covers container
+    # logs and the mounted webhook-cert secret only.
+    ephemeral-storage: 64Mi
   limits:
     cpu: 500m
     memory: 256Mi

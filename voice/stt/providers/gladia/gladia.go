@@ -289,7 +289,7 @@ func (e *Engine) dialStream(ctx context.Context, cfg stt.Config) (*websocket.Con
 // Returns the event, whether it should be emitted, and any error.
 func (e *Engine) parseStreamMessage(data []byte, language string) (stt.TranscriptEvent, bool) {
 	var msg gladiaStreamMsg
-	if jsonErr := json.Unmarshal(data, &msg); jsonErr != nil {
+	if json.Unmarshal(data, &msg) != nil {
 		return stt.TranscriptEvent{}, false
 	}
 	if msg.Transcript == "" {

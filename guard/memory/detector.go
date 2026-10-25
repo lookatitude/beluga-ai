@@ -198,41 +198,11 @@ func (d *RateDetector) Detect(ctx context.Context, _ string) (AnomalyResult, err
 	}
 
 	// Prune old entries and add current.
-	times := d.writers[writer]
-	pruned := times[:0]
-	for _, t := range times {
-		if t.After(cutoff) {
-			pruned = append(pruned, t)
-		}
-	}
-	pruned = append(pruned, now)
+	pruned := append(pruneBefore(d.writers[writer], cutoff), now)
 	d.writers[writer] = pruned
 	count := len(pruned)
 
-	// Opportunistically sweep stale writers to prevent unbounded growth from
-	// transient agent identities. Only touches a small bounded number of keys
-	// per call to keep worst-case latency stable.
-	swept := 0
-	for k, ts := range d.writers {
-		if swept >= 8 {
-			break
-		}
-		swept++
-		if k == writer {
-			continue
-		}
-		alive := ts[:0]
-		for _, t := range ts {
-			if t.After(cutoff) {
-				alive = append(alive, t)
-			}
-		}
-		if len(alive) == 0 {
-			delete(d.writers, k)
-		} else {
-			d.writers[k] = alive
-		}
-	}
+	d.sweepStaleLocked(writer, cutoff)
 	d.mu.Unlock()
 
 	if count > maxWrites {
@@ -246,6 +216,39 @@ func (d *RateDetector) Detect(ctx context.Context, _ string) (AnomalyResult, err
 	}
 
 	return AnomalyResult{DetectorName: d.Name()}, nil
+}
+
+// pruneBefore filters ts in place, keeping only timestamps after cutoff.
+func pruneBefore(ts []time.Time, cutoff time.Time) []time.Time {
+	alive := ts[:0]
+	for _, t := range ts {
+		if t.After(cutoff) {
+			alive = append(alive, t)
+		}
+	}
+	return alive
+}
+
+// sweepStaleLocked opportunistically prunes other writers' timestamps to
+// prevent unbounded growth from transient agent identities. It only touches a
+// small bounded number of keys per call to keep worst-case latency stable.
+// The current writer is skipped. Callers must hold d.mu.
+func (d *RateDetector) sweepStaleLocked(writer string, cutoff time.Time) {
+	swept := 0
+	for k, ts := range d.writers {
+		if swept >= 8 {
+			break
+		}
+		swept++
+		if k == writer {
+			continue
+		}
+		if alive := pruneBefore(ts, cutoff); len(alive) == 0 {
+			delete(d.writers, k)
+		} else {
+			d.writers[k] = alive
+		}
+	}
 }
 
 // --- SizeDetector ---

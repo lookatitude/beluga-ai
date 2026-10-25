@@ -149,7 +149,7 @@ func TestRegisterValidation(t *testing.T) {
 	// Empty name panics.
 	func() {
 		defer func() {
-			if r := recover(); r == nil {
+			if recover() == nil {
 				t.Error("expected panic for empty name")
 			}
 		}()
@@ -159,7 +159,7 @@ func TestRegisterValidation(t *testing.T) {
 	// Nil factory panics.
 	func() {
 		defer func() {
-			if r := recover(); r == nil {
+			if recover() == nil {
 				t.Error("expected panic for nil factory")
 			}
 		}()
@@ -174,7 +174,7 @@ func TestFreezeRegistryBlocksRegister(t *testing.T) {
 
 	FreezeRegistry()
 	defer func() {
-		if r := recover(); r == nil {
+		if recover() == nil {
 			t.Error("expected panic after FreezeRegistry")
 		}
 	}()

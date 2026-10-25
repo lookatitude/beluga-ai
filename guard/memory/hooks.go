@@ -33,26 +33,44 @@ func ComposeHooks(hooks ...Hooks) Hooks {
 	}
 
 	return Hooks{
-		OnPoisoningDetected: func(ctx context.Context, content string, results []AnomalyResult) {
-			for _, h := range hooks {
-				if h.OnPoisoningDetected != nil {
-					h.OnPoisoningDetected(ctx, content, results)
-				}
+		OnPoisoningDetected: composeOnPoisoningDetected(hooks),
+		OnSignatureInvalid:  composeOnSignatureInvalid(hooks),
+		OnCircuitTripped:    composeOnCircuitTripped(hooks),
+	}
+}
+
+// composeOnPoisoningDetected returns an OnPoisoningDetected callback that
+// invokes every non-nil OnPoisoningDetected in hooks, in order.
+func composeOnPoisoningDetected(hooks []Hooks) func(ctx context.Context, content string, results []AnomalyResult) {
+	return func(ctx context.Context, content string, results []AnomalyResult) {
+		for _, h := range hooks {
+			if h.OnPoisoningDetected != nil {
+				h.OnPoisoningDetected(ctx, content, results)
 			}
-		},
-		OnSignatureInvalid: func(ctx context.Context, reason string) {
-			for _, h := range hooks {
-				if h.OnSignatureInvalid != nil {
-					h.OnSignatureInvalid(ctx, reason)
-				}
+		}
+	}
+}
+
+// composeOnSignatureInvalid returns an OnSignatureInvalid callback that
+// invokes every non-nil OnSignatureInvalid in hooks, in order.
+func composeOnSignatureInvalid(hooks []Hooks) func(ctx context.Context, reason string) {
+	return func(ctx context.Context, reason string) {
+		for _, h := range hooks {
+			if h.OnSignatureInvalid != nil {
+				h.OnSignatureInvalid(ctx, reason)
 			}
-		},
-		OnCircuitTripped: func(ctx context.Context, writer, reader string) {
-			for _, h := range hooks {
-				if h.OnCircuitTripped != nil {
-					h.OnCircuitTripped(ctx, writer, reader)
-				}
+		}
+	}
+}
+
+// composeOnCircuitTripped returns an OnCircuitTripped callback that invokes
+// every non-nil OnCircuitTripped in hooks, in order.
+func composeOnCircuitTripped(hooks []Hooks) func(ctx context.Context, writer, reader string) {
+	return func(ctx context.Context, writer, reader string) {
+		for _, h := range hooks {
+			if h.OnCircuitTripped != nil {
+				h.OnCircuitTripped(ctx, writer, reader)
 			}
-		},
+		}
 	}
 }
