@@ -1,0 +1,37 @@
+name: Helm Chart
+
+# Validates the Helm chart under k8s/helm: `helm lint --strict` plus a full
+# `helm template` render. The chart references an operator image that no
+# workflow builds or publishes yet; this job only checks the chart itself.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "k8s/**"
+      - ".github/workflows/helm.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "k8s/**"
+      - ".github/workflows/helm.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  helm-lint:
+    name: Lint and render the chart
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      # alpine/helm:3.16.4, pinned by digest.
+      HELM_IMAGE: alpine/helm@sha256:9b25e60ae264940b276e32866d37e3088e70c4e2d1784b964dc3f90346281a74
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: helm lint
+        run: docker run --rm -v "$PWD:/apps" -w /apps "$HELM_IMAGE" lint --strict k8s/helm
+
+      - name: helm template
+        run: docker run --rm -v "$PWD:/apps" -w /apps "$HELM_IMAGE" template beluga k8s/helm > /dev/null

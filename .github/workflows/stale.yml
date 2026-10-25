@@ -13,6 +13,9 @@ jobs:
   stale:
     name: Mark Stale Issues and PRs
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
     steps:
       - uses: actions/stale@v11
         with:
