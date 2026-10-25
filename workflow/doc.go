@@ -80,7 +80,8 @@
 //
 //   - [LLMActivity] — wraps an LLM invocation as an activity
 //   - [ToolActivity] — wraps a tool execution as an activity
-//   - [HumanActivity] — wraps human-in-the-loop interaction as an activity
+//   - hitl.Activity — wraps human-in-the-loop interaction as an activity
+//     ([HumanActivity] is the deprecated in-package equivalent)
 //
 // # Retry Policies
 //
