@@ -1,42 +1,21 @@
-// Package livekit provides the LiveKit transport provider for the Beluga AI
-// voice pipeline. It implements the [transport.AudioTransport] interface for
-// bidirectional audio I/O through LiveKit rooms.
+// Package livekit registers the "livekit" transport name for LiveKit WebRTC rooms in the
+// Beluga AI voice pipeline.
 //
-// LiveKit is treated as a TRANSPORT, not a framework dependency. LiveKit
-// provides WebRTC transport while Beluga handles all STT/LLM/TTS processing
-// through the frame-based pipeline.
+// # Status: not implemented
 //
-// # Registration
+// This provider is a placeholder. It does not connect to LiveKit:
+// [New] (and transport.New("livekit", ...)) always returns an error wrapping
+// [transport.ErrNotImplemented], which in turn wraps errors.ErrUnsupported.
+// Earlier releases returned a transport that silently discarded audio and
+// never produced frames; that fake success was removed.
 //
-// This package registers itself as "livekit" with the transport registry.
-// Import it with a blank identifier to enable:
+// Use the built-in "websocket" transport (voice/transport) until a real
+// LiveKit integration is available.
 //
 //	import _ "github.com/lookatitude/beluga-ai/v2/voice/transport/providers/livekit"
 //
-// # Usage
-//
-//	t, err := transport.New("livekit", transport.Config{
-//	    URL:   "wss://myapp.livekit.cloud",
-//	    Token: "...",
-//	    Extra: map[string]any{"room": "my-room"},
-//	})
-//	frames, err := t.Recv(ctx)
-//
-// # Configuration
-//
-// Required fields in [transport.Config]:
-//
-//   - URL — LiveKit server URL (required)
-//   - Token — LiveKit authentication token (required)
-//
-// Optional Extra fields:
-//
-//   - room — LiveKit room name
-//
-// Default sample rate is 16000 Hz, default channel count is 1 (mono).
-//
-// # Exported Types
-//
-//   - [Transport] — implements transport.AudioTransport for LiveKit
-//   - [New] — constructor accepting transport.Config
+//	_, err := transport.New("livekit", transport.Config{URL: "..."})
+//	if errors.Is(err, transport.ErrNotImplemented) {
+//	    // fall back to another transport
+//	}
 package livekit

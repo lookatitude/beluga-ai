@@ -24,11 +24,16 @@ type Planner interface {
 type PlannerState struct {
 	// Input is the original user input.
 	Input string
-	// Messages is the conversation history.
+	// Messages is the conversation history the run started with (persona
+	// system message, prior turns, user input). The Executor does not append
+	// this run's tool calls or results to it; those are in Observations, and
+	// a planner that sends history to an LLM should append them itself, once
+	// (the built-in planners do this through a shared helper).
 	Messages []schema.Message
 	// Tools is the set of tools available to the agent.
 	Tools []tool.Tool
-	// Observations contains results from previously executed actions.
+	// Observations contains the results of every action executed so far in
+	// this run, in order.
 	Observations []Observation
 	// Iteration is the current reasoning loop iteration (0-based).
 	Iteration int

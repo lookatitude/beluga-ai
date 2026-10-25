@@ -8,7 +8,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 	"github.com/pashagolub/pgxmock/v4"
@@ -456,4 +458,111 @@ func TestStore_Add_MarshalError(t *testing.T) {
 	err := store.Add(context.Background(), docs, embeddings)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "marshal metadata")
+}
+
+func TestStore_InvalidTableName(t *testing.T) {
+	invalid := []string{
+		"docs; DROP TABLE users",
+		"docs--",
+		"1docs",
+		"my-docs",
+		"public.docs",
+		"",
+		"docs (id TEXT)",
+	}
+	for _, table := range invalid {
+		t.Run(table, func(t *testing.T) {
+			mock, err := pgxmock.NewPool()
+			require.NoError(t, err)
+			defer mock.Close()
+
+			// No SQL expectations are registered: any Exec/Query reaching
+			// the mock fails ExpectationsWereMet below.
+			store := New(&poolAdapter{mock: mock}, WithTable(table), WithDimension(3))
+			ctx := context.Background()
+
+			checks := map[string]error{
+				"EnsureTable": store.EnsureTable(ctx),
+				"Add": store.Add(ctx,
+					[]schema.Document{{ID: "d"}}, [][]float32{{0.1, 0.2, 0.3}}),
+				"Delete": store.Delete(ctx, []string{"d"}),
+			}
+			_, searchErr := store.Search(ctx, []float32{0.1, 0.2, 0.3}, 1)
+			checks["Search"] = searchErr
+
+			for name, err := range checks {
+				require.Error(t, err, name)
+				var cerr *core.Error
+				require.ErrorAs(t, err, &cerr, name)
+				assert.Equal(t, core.ErrInvalidInput, cerr.Code, name)
+			}
+			require.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestStore_ValidTableNames(t *testing.T) {
+	for _, table := range []string{"documents", "_docs", "Docs_2", "a"} {
+		t.Run(table, func(t *testing.T) {
+			mock, err := pgxmock.NewPool()
+			require.NoError(t, err)
+			defer mock.Close()
+			store := New(&poolAdapter{mock: mock}, WithTable(table))
+			assert.NoError(t, store.initErr)
+		})
+	}
+}
+
+func TestNewFromConfig_InvalidTableName(t *testing.T) {
+	_, err := NewFromConfig(config.ProviderConfig{
+		BaseURL: "postgres://user:pass@127.0.0.1:1/db",
+		Options: map[string]any{"table": "docs; DROP TABLE users"},
+	})
+	require.Error(t, err)
+	var cerr *core.Error
+	require.ErrorAs(t, err, &cerr)
+	assert.Equal(t, core.ErrInvalidInput, cerr.Code)
+}
+
+// TestNewFromConfig_UsesPool verifies NewFromConfig builds a concurrency-safe
+// pgxpool.Pool (connections established lazily) that Close releases. Before
+// the fix it dialled a single *pgx.Conn eagerly, so an unreachable server
+// failed construction and the connection could never be closed.
+func TestNewFromConfig_UsesPool(t *testing.T) {
+	store, err := NewFromConfig(config.ProviderConfig{
+		BaseURL: "postgres://user:pass@127.0.0.1:1/db?connect_timeout=1",
+		Options: map[string]any{"table": "my_docs", "dimension": float64(3)},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, store)
+
+	pool, ok := store.pool.(*pgxpool.Pool)
+	require.True(t, ok, "store pool should be *pgxpool.Pool, got %T", store.pool)
+	assert.Same(t, pool, store.owned)
+	assert.Equal(t, "my_docs", store.table)
+
+	require.NoError(t, store.Close())
+	require.NoError(t, store.Close(), "Close must be idempotent")
+}
+
+// closeTrackingPool is a Pool that records whether Close was called.
+type closeTrackingPool struct {
+	closed bool
+}
+
+func (p *closeTrackingPool) Exec(context.Context, string, ...any) (pgconn.CommandTag, error) {
+	return pgconn.CommandTag{}, nil
+}
+
+func (p *closeTrackingPool) Query(context.Context, string, ...any) (pgx.Rows, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (p *closeTrackingPool) Close() { p.closed = true }
+
+func TestStore_Close_UserSuppliedPoolNotClosed(t *testing.T) {
+	pool := &closeTrackingPool{}
+	store := New(pool)
+	require.NoError(t, store.Close())
+	assert.False(t, pool.closed, "Close must not close a caller-owned pool")
 }

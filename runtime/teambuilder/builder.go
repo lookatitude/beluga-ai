@@ -137,7 +137,7 @@ func (tb *TeamBuilder) runScoredSelection(ctx context.Context, task string, cand
 		if tb.hooks.OnSelectionFailed != nil {
 			tb.hooks.OnSelectionFailed(ctx, task, err)
 		}
-		return nil, nil, core.NewError(opBuild, core.ErrToolFailed,
+		return nil, nil, core.NewError(opBuild, core.CodeOf(err, core.ErrToolFailed),
 			"agent selection failed", err)
 	}
 
@@ -161,7 +161,7 @@ func (tb *TeamBuilder) runPlainSelection(ctx context.Context, task string, candi
 		if tb.hooks.OnSelectionFailed != nil {
 			tb.hooks.OnSelectionFailed(ctx, task, err)
 		}
-		return nil, nil, core.NewError(opBuild, core.ErrToolFailed,
+		return nil, nil, core.NewError(opBuild, core.CodeOf(err, core.ErrToolFailed),
 			"agent selection failed", err)
 	}
 

@@ -134,7 +134,7 @@ func TestHedge_ContextCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately.
 
-	_, err := Hedge(
+	got, err := Hedge(
 		ctx,
 		func(ctx context.Context) (string, error) {
 			return "primary", nil
@@ -145,9 +145,17 @@ func TestHedge_ContextCancelled(t *testing.T) {
 		10*time.Millisecond,
 	)
 
-	// With a cancelled context, the primary might succeed or context error might win.
-	// Either way, it should not hang.
-	_ = err
+	// With a cancelled context, the primary might succeed or the context
+	// error might win; anything else is a bug.
+	if err != nil {
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("Hedge() error = %v, want context.Canceled", err)
+		}
+		return
+	}
+	if got != "primary" && got != "secondary" {
+		t.Fatalf("Hedge() = %q, want primary or secondary", got)
+	}
 }
 
 func TestHedge_ZeroDelay(t *testing.T) {

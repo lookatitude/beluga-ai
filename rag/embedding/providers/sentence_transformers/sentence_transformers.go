@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/internal/httpclient"
 	"github.com/lookatitude/beluga-ai/v2/rag/embedding"
 )
@@ -19,7 +22,10 @@ func init() {
 const (
 	defaultModel      = "sentence-transformers/all-MiniLM-L6-v2"
 	defaultDimensions = 384
-	defaultBaseURL    = "https://api-inference.huggingface.co"
+	// defaultBaseURL is the HuggingFace Inference Providers router for the
+	// hf-inference provider. The legacy api-inference.huggingface.co host is
+	// deprecated.
+	defaultBaseURL = "https://router.huggingface.co/hf-inference"
 )
 
 // modelDimensions maps known Sentence Transformers models to their dimensions.
@@ -38,6 +44,9 @@ type Embedder struct {
 	client *httpclient.Client
 	model  string
 	dims   int
+	// path is the request path relative to the base URL, built once from
+	// the escaped model ID.
+	path string
 }
 
 // Compile-time interface check.
@@ -62,6 +71,11 @@ func New(cfg config.ProviderConfig) (*Embedder, error) {
 		dims = int(d)
 	}
 
+	path, err := featureExtractionPath(model)
+	if err != nil {
+		return nil, err
+	}
+
 	baseURL := cfg.BaseURL
 	if baseURL == "" {
 		baseURL = defaultBaseURL
@@ -81,7 +95,24 @@ func New(cfg config.ProviderConfig) (*Embedder, error) {
 		client: client,
 		model:  model,
 		dims:   dims,
+		path:   path,
 	}, nil
+}
+
+// featureExtractionPath builds "models/<model>/pipeline/feature-extraction".
+// HuggingFace model IDs are "<org>/<name>", so each "/"-separated segment is
+// escaped individually; empty, "." and ".." segments are rejected so a
+// config-supplied model cannot traverse out of the models/ prefix.
+func featureExtractionPath(model string) (string, error) {
+	segs := strings.Split(model, "/")
+	for i, seg := range segs {
+		if seg == "" || seg == "." || seg == ".." {
+			return "", core.Errorf(core.ErrInvalidInput,
+				"sentence_transformers embedding: invalid model %q", model)
+		}
+		segs[i] = url.PathEscape(seg)
+	}
+	return "models/" + strings.Join(segs, "/") + "/pipeline/feature-extraction", nil
 }
 
 // embedRequest is the request body for the HuggingFace inference API.
@@ -100,10 +131,19 @@ func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 	}
 
 	// HuggingFace feature-extraction returns [][]float32 directly.
-	path := fmt.Sprintf("pipeline/feature-extraction/%s", e.model)
-	resp, err := httpclient.DoJSON[[][]float32](ctx, e.client, http.MethodPost, path, body)
+	resp, err := httpclient.DoJSON[[][]float32](ctx, e.client, http.MethodPost, e.path, body)
 	if err != nil {
 		return nil, fmt.Errorf("sentence_transformers embedding: %w", err)
+	}
+
+	if len(resp) != len(texts) {
+		return nil, core.Errorf(core.ErrProviderDown,
+			"sentence_transformers embedding: got %d embeddings for %d inputs", len(resp), len(texts))
+	}
+	for i, v := range resp {
+		if v == nil {
+			return nil, core.Errorf(core.ErrProviderDown, "sentence_transformers embedding: missing embedding at position %d", i)
+		}
 	}
 
 	return resp, nil

@@ -2,8 +2,10 @@
 // implementation for the Beluga AI workflow engine.
 //
 // It uses Dapr's state management API for persisting workflow state as
-// JSON-encoded documents, with workflow IDs as keys. An in-memory index
-// of workflow IDs is maintained for listing operations.
+// JSON-encoded documents, with workflow IDs as keys. The list of workflow IDs
+// is persisted under [IndexKey] so that List works across processes and
+// restarts (best effort under concurrent writers; Load by ID is
+// authoritative).
 //
 // # Usage
 //

@@ -10,6 +10,7 @@ import (
 
 // StreamToSeq converts an openai-go SSE stream into a Beluga iter.Seq2 of StreamChunks.
 // It handles text deltas, tool call accumulation by index, finish reasons, and usage.
+// A stream error is classified into a typed core.Error (see classifyError).
 func StreamToSeq(stream *ssestream.Stream[openai.ChatCompletionChunk], modelID string) iter.Seq2[schema.StreamChunk, error] {
 	return func(yield func(schema.StreamChunk, error) bool) {
 		defer stream.Close()
@@ -20,7 +21,7 @@ func StreamToSeq(stream *ssestream.Stream[openai.ChatCompletionChunk], modelID s
 			}
 		}
 		if err := stream.Err(); err != nil {
-			yield(schema.StreamChunk{}, err)
+			yield(schema.StreamChunk{}, classifyError("openaicompat: stream failed", err))
 		}
 	}
 }

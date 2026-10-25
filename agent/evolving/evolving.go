@@ -120,7 +120,15 @@ func WithLogger(l *slog.Logger) Option {
 	return func(opts *evolvingOptions) { opts.logger = l }
 }
 
-// EvolvingAgent wraps a BaseAgent and adds self-improvement capabilities.
+// EvolvingAgent wraps an agent, records its interactions, and periodically
+// distills them into experiences and improvement suggestions.
+//
+// It is observation only: EvolvingAgent does not change the wrapped agent's
+// persona, prompt or tools. The application reads [EvolvingAgent.Suggestions]
+// (and [EvolvingAgent.Experiences]) and decides how to apply them. Learning
+// runs in at most one background goroutine at a time; triggers that arrive
+// while it runs are coalesced into one more pass, so results are always
+// computed from the newest interactions and never overwritten by an older run.
 type EvolvingAgent struct { //nolint:revive // stutter: renaming would break the exported API
 	inner        agent.Agent
 	opts         evolvingOptions
@@ -129,6 +137,11 @@ type EvolvingAgent struct { //nolint:revive // stutter: renaming would break the
 	experiences  []Experience
 	suggestions  []Suggestion
 	counter      int
+
+	// learnMu guards learnRunning/learnPending, which serialize learning.
+	learnMu      sync.Mutex
+	learnRunning bool
+	learnPending bool
 }
 
 var _ agent.Agent = (*EvolvingAgent)(nil)
@@ -232,8 +245,35 @@ func (e *EvolvingAgent) recordInteraction(ctx context.Context, interaction Inter
 	// from the request context so the goroutine outlives the caller
 	// while preserving trace spans, tenant ID, and other values.
 	if e.counter%e.opts.learnEveryN == 0 {
-		go e.learn(context.WithoutCancel(ctx))
+		e.triggerLearn(context.WithoutCancel(ctx))
 	}
+}
+
+// triggerLearn starts the single learning worker, or asks the running one to
+// do another pass when it finishes.
+func (e *EvolvingAgent) triggerLearn(ctx context.Context) {
+	e.learnMu.Lock()
+	if e.learnRunning {
+		e.learnPending = true
+		e.learnMu.Unlock()
+		return
+	}
+	e.learnRunning = true
+	e.learnMu.Unlock()
+
+	go func() {
+		for {
+			e.learn(ctx)
+			e.learnMu.Lock()
+			if !e.learnPending {
+				e.learnRunning = false
+				e.learnMu.Unlock()
+				return
+			}
+			e.learnPending = false
+			e.learnMu.Unlock()
+		}
+	}()
 }
 
 func (e *EvolvingAgent) learn(ctx context.Context) {

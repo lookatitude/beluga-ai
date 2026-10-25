@@ -77,12 +77,12 @@ func (a *LoopAgent) Invoke(ctx context.Context, input string, opts ...agent.Opti
 	current := input
 	for i := 0; i < a.maxIterations; i++ {
 		if err := ctx.Err(); err != nil {
-			return current, core.Errorf(core.ErrTimeout, "loop agent %q: cancelled: %w", a.id, err)
+			return current, core.Wrapf(core.ErrTimeout, "loop agent %q: cancelled: %w", a.id, err)
 		}
 
 		result, err := a.child.Invoke(ctx, current, opts...)
 		if err != nil {
-			return "", core.Errorf(core.ErrProviderDown, "loop agent %q: iteration %d failed: %w", a.id, i, err)
+			return "", core.Wrapf(core.ErrInternal, "loop agent %q: iteration %d failed: %w", a.id, i, err)
 		}
 
 		current = result
@@ -103,7 +103,7 @@ func (a *LoopAgent) Stream(ctx context.Context, input string, opts ...agent.Opti
 				yield(agent.Event{
 					Type:    agent.EventError,
 					AgentID: a.id,
-				}, core.Errorf(core.ErrTimeout, "loop agent %q: cancelled: %w", a.id, err))
+				}, core.Wrapf(core.ErrTimeout, "loop agent %q: cancelled: %w", a.id, err))
 				return
 			}
 
@@ -135,7 +135,7 @@ func (a *LoopAgent) streamIteration(ctx context.Context, input string, iteration
 			yield(agent.Event{
 				Type:    agent.EventError,
 				AgentID: a.id,
-			}, core.Errorf(core.ErrProviderDown, "loop agent %q: iteration %d failed: %w", a.id, iteration, err))
+			}, core.Wrapf(core.ErrInternal, "loop agent %q: iteration %d failed: %w", a.id, iteration, err))
 			return "", false
 		}
 		if !yield(event, nil) {

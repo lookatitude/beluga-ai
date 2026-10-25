@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
 // mockTask implements the Task interface for testing.
@@ -112,5 +114,14 @@ func TestTaskResult(t *testing.T) {
 	}
 	if result.Error != "" {
 		t.Errorf("Error = %q, want empty", result.Error)
+	}
+}
+
+// TestNewTask_UnknownIsNotFound is a regression test for FWC-25: NewTask
+// returned a plain fmt error instead of core.ErrNotFound.
+func TestNewTask_UnknownIsNotFound(t *testing.T) {
+	_, err := NewTask("definitely-not-registered", nil)
+	if core.CodeOf(err, "") != core.ErrNotFound {
+		t.Errorf("err = %v, want not_found", err)
 	}
 }

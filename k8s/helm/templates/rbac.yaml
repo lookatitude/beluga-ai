@@ -1,46 +1,115 @@
+{{- if and .Values.operator.enabled .Values.rbac.create }}
+{{- /*
+Least-privilege RBAC for the operator.
+
+- Secrets: no access. The reconciler only emits secretKeyRef env vars on the
+  Deployments it generates; the kubelet resolves those, so the operator itself
+  needs no secrets permission.
+- Scope: a ClusterRole/ClusterRoleBinding by default. When
+  operator.watchNamespace is set, a namespaced Role/RoleBinding in that
+  namespace is rendered instead (the operator binary must be configured to
+  watch only that namespace).
+- Leases (leader election) are always granted through a namespaced Role in the
+  lock namespace.
+*/}}
+{{- $watchNs := .Values.operator.watchNamespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: {{ if $watchNs }}Role{{ else }}ClusterRole{{ end }}
 metadata:
   name: {{ include "beluga-operator.fullname" . }}
+  {{- if $watchNs }}
+  namespace: {{ $watchNs }}
+  {{- end }}
   labels:
     {{- include "beluga-operator.labels" . | nindent 4 }}
 rules:
-  # Core API groups — read pods, services, events; manage deployments.
+  # Read pods for status reporting.
   - apiGroups: [""]
-    resources: ["pods", "services", "endpoints", "events", "configmaps", "secrets"]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  # ModelRef may name a ConfigMap; read-only.
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  # Services generated per Agent.
+  - apiGroups: [""]
+    resources: ["services"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  # Apps — manage Deployments and ReplicaSets.
+  # Emit Kubernetes events.
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  # Deployments generated per Agent.
   - apiGroups: ["apps"]
-    resources: ["deployments", "replicasets"]
+    resources: ["deployments"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  # Autoscaling — manage HPAs.
+  # HPAs generated when Agent scaling is enabled.
   - apiGroups: ["autoscaling"]
     resources: ["horizontalpodautoscalers"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  # Beluga AI CRDs.
+  # Beluga AI CRDs: the operator reads and updates (finalizers/annotations)
+  # but never creates or deletes user-owned custom resources.
   - apiGroups: ["beluga.ai"]
     resources: ["agents", "teams", "modelconfigs", "toolservers", "memorystores", "guardpolicies"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  # Status subresource of every CRD (all six declare subresources.status).
   - apiGroups: ["beluga.ai"]
-    resources: ["agents/status", "teams/status"]
+    resources:
+      - "agents/status"
+      - "teams/status"
+      - "modelconfigs/status"
+      - "toolservers/status"
+      - "memorystores/status"
+      - "guardpolicies/status"
     verbs: ["get", "update", "patch"]
-  # Leader election.
-  - apiGroups: ["coordination.k8s.io"]
-    resources: ["leases"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: {{ if $watchNs }}RoleBinding{{ else }}ClusterRoleBinding{{ end }}
 metadata:
   name: {{ include "beluga-operator.fullname" . }}
+  {{- if $watchNs }}
+  namespace: {{ $watchNs }}
+  {{- end }}
   labels:
     {{- include "beluga-operator.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: {{ if $watchNs }}Role{{ else }}ClusterRole{{ end }}
   name: {{ include "beluga-operator.fullname" . }}
 subjects:
   - kind: ServiceAccount
     name: {{ include "beluga-operator.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
+{{- if .Values.leaderElection.enabled }}
+{{- $leaseNs := .Values.leaderElection.namespace | default .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "beluga-operator.fullname" . }}-leader-election
+  namespace: {{ $leaseNs }}
+  labels:
+    {{- include "beluga-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "beluga-operator.fullname" . }}-leader-election
+  namespace: {{ $leaseNs }}
+  labels:
+    {{- include "beluga-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "beluga-operator.fullname" . }}-leader-election
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "beluga-operator.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
+{{- end }}

@@ -329,3 +329,38 @@ func TestWatcher_InterfaceCompliance(t *testing.T) {
 	// Verify FileWatcher implements Watcher at compile time.
 	var _ Watcher = (*FileWatcher)(nil)
 }
+
+// TestFileWatcher_WatchBytesTyped is a regression test for FWC-35: the only
+// callback was func(any); WatchBytes and NewPollingFileWatcher give a typed,
+// concrete API.
+func TestFileWatcher_WatchBytesTyped(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "c.json")
+	if err := os.WriteFile(path, []byte(`{"a":1}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	w := NewPollingFileWatcher(path, time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	got := make(chan []byte, 1)
+	go func() {
+		_ = w.WatchBytes(ctx, func(b []byte) {
+			select {
+			case got <- b:
+			default:
+			}
+		})
+	}()
+	time.Sleep(150 * time.Millisecond)
+	if err := os.WriteFile(path, []byte(`{"a":2}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case b := <-got:
+		if string(b) != `{"a":2}` {
+			t.Errorf("got %q", b)
+		}
+	case <-ctx.Done():
+		t.Fatal("no change notification")
+	}
+	_ = w.Close()
+}

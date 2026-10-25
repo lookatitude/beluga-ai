@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -112,7 +113,14 @@ func (s *StdlibAdapter) RegisterAgent(path string, a agent.Agent) error {
 		return core.Errorf(core.ErrInvalidInput, "server/register-agent: agent must not be nil")
 	}
 	handler := NewAgentHandler(a)
-	s.mux.Handle(path+"/", handler)
+	prefix := strings.TrimRight(path, "/")
+	if prefix == "" {
+		s.mux.Handle("/", handler)
+		return nil
+	}
+	// The agent handler routes on "/invoke" and "/stream", so the mount
+	// prefix must be stripped before the request reaches it.
+	s.mux.Handle(prefix+"/", http.StripPrefix(prefix, handler))
 	return nil
 }
 
@@ -125,12 +133,35 @@ func (s *StdlibAdapter) RegisterHandler(path string, handler http.Handler) error
 	return nil
 }
 
+// Default timeouts applied by StdlibAdapter when the corresponding Config
+// field is zero. WriteTimeout has no default because agent streams (SSE) are
+// long-lived; set Config.WriteTimeout explicitly if only short responses are
+// served.
+const (
+	DefaultReadTimeout = 30 * time.Second
+	DefaultIdleTimeout = 120 * time.Second
+)
+
 // Serve starts the HTTP server on the given address. It blocks until the
-// server exits or the context is canceled.
+// server exits or the context is canceled. Zero ReadTimeout and IdleTimeout
+// values are replaced by DefaultReadTimeout and DefaultIdleTimeout.
 func (s *StdlibAdapter) Serve(ctx context.Context, addr string) error {
+	read, idle := s.effectiveTimeouts()
 	return s.lc.Serve(ctx, addr, s.mux,
-		s.cfg.ReadTimeout, s.cfg.WriteTimeout, s.cfg.IdleTimeout,
+		read, s.cfg.WriteTimeout, idle,
 		"server/serve")
+}
+
+// effectiveTimeouts returns the read and idle timeouts after defaults.
+func (s *StdlibAdapter) effectiveTimeouts() (read, idle time.Duration) {
+	read, idle = s.cfg.ReadTimeout, s.cfg.IdleTimeout
+	if read <= 0 {
+		read = DefaultReadTimeout
+	}
+	if idle <= 0 {
+		idle = DefaultIdleTimeout
+	}
+	return read, idle
 }
 
 // Shutdown gracefully shuts down the server.

@@ -1,6 +1,7 @@
 package webhooks
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/v2/k8s/operator"
@@ -525,4 +526,34 @@ func containsSubstring(s, sub string) bool {
 		}
 	}
 	return false
+}
+
+// Regression (FI-45): agents may not set the operator's reserved selector
+// labels.
+func TestValidateAgent_RejectsReservedLabels(t *testing.T) {
+	for _, key := range []string{"app", "beluga-agent", "managed-by"} {
+		t.Run(key, func(t *testing.T) {
+			a := validAgent()
+			a.Meta.Labels = map[string]string{key: "x", "team": "blue"}
+			res := ValidateAgent(a)
+			if res.Allowed {
+				t.Fatalf("expected denial for reserved label %q", key)
+			}
+			if !strings.Contains(res.Reason, key) {
+				t.Errorf("reason %q does not mention %q", res.Reason, key)
+			}
+		})
+	}
+	a := validAgent()
+	a.Meta.Labels = map[string]string{"team": "blue", "beluga.ai/component": "agent"}
+	if res := ValidateAgent(a); !res.Allowed {
+		t.Errorf("non-reserved labels denied: %s", res.Reason)
+	}
+}
+
+// The mutating webhook's own label must never trip the validator.
+func TestValidateAgent_AcceptsMutatedAgent(t *testing.T) {
+	if res := ValidateAgent(MutateAgent(validAgent())); !res.Allowed {
+		t.Errorf("mutated agent denied: %s", res.Reason)
+	}
 }

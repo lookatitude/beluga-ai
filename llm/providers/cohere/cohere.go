@@ -3,20 +3,25 @@ package cohere
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"iter"
 
 	coherego "github.com/cohere-ai/cohere-go/v2"
 	cohereclient "github.com/cohere-ai/cohere-go/v2/client"
+	coherecore "github.com/cohere-ai/cohere-go/v2/core"
 	"github.com/cohere-ai/cohere-go/v2/option"
 	"github.com/lookatitude/beluga-ai/v2/config"
 	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/internal/errclass"
 	"github.com/lookatitude/beluga-ai/v2/llm"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
-const defaultModel = "command-r-plus"
+// defaultModel is Cohere's current flagship chat model. The previous default,
+// command-r-plus, is a deprecated legacy model.
+const defaultModel = "command-a-03-2025"
 
 func init() {
 	llm.Register("cohere", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
@@ -61,23 +66,33 @@ func (m *Model) Generate(ctx context.Context, msgs []schema.Message, opts ...llm
 	req := m.buildRequest(msgs, opts)
 	resp, err := m.client.Chat(ctx, req)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "cohere: generate failed: %w", err)
+		return nil, classifyError("cohere: generate failed", err)
 	}
 	return convertResponse(resp, m.model), nil
+}
+
+// classifyError maps a Cohere SDK error onto a typed core.Error using the
+// HTTP status carried by *core.APIError (all typed Cohere errors unwrap to it).
+func classifyError(prefix string, err error) error {
+	status := 0
+	var apiErr *coherecore.APIError
+	if errors.As(err, &apiErr) {
+		status = apiErr.StatusCode
+	}
+	return errclass.Classify(prefix, status, err)
 }
 
 // Stream sends messages and returns an iterator of response chunks.
 func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.GenerateOption) iter.Seq2[schema.StreamChunk, error] {
 	streamReq := m.buildStreamRequest(msgs, opts)
 
-	stream, err := m.client.ChatStream(ctx, streamReq)
-	if err != nil {
-		return func(yield func(schema.StreamChunk, error) bool) {
-			yield(schema.StreamChunk{}, core.Errorf(core.ErrProviderDown, "cohere: stream failed: %w", err))
-		}
-	}
-
 	return func(yield func(schema.StreamChunk, error) bool) {
+		// Open the stream lazily so an un-iterated Seq holds no connection.
+		stream, err := m.client.ChatStream(ctx, streamReq)
+		if err != nil {
+			yield(schema.StreamChunk{}, classifyError("cohere: stream failed", err))
+			return
+		}
 		defer stream.Close()
 		for {
 			event, err := stream.Recv()
@@ -85,7 +100,7 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 				return
 			}
 			if err != nil {
-				yield(schema.StreamChunk{}, err)
+				yield(schema.StreamChunk{}, classifyError("cohere: stream error", err))
 				return
 			}
 

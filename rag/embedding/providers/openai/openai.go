@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/rag/embedding"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -34,6 +35,9 @@ type Embedder struct {
 	client openai.Client
 	model  string
 	dims   int
+	// sendDims is true when the caller configured Options["dimensions"]
+	// explicitly; only then is the value forwarded to the API.
+	sendDims bool
 }
 
 // Compile-time interface check.
@@ -50,8 +54,10 @@ func New(cfg config.ProviderConfig) (*Embedder, error) {
 	if d, ok := modelDimensions[model]; ok {
 		dims = d
 	}
+	sendDims := false
 	if d, ok := config.GetOption[float64](cfg, "dimensions"); ok && d > 0 {
 		dims = int(d)
+		sendDims = true
 	}
 
 	opts := []option.RequestOption{}
@@ -71,9 +77,10 @@ func New(cfg config.ProviderConfig) (*Embedder, error) {
 	client := openai.NewClient(opts...)
 
 	return &Embedder{
-		client: client,
-		model:  model,
-		dims:   dims,
+		client:   client,
+		model:    model,
+		dims:     dims,
+		sendDims: sendDims,
 	}, nil
 }
 
@@ -83,25 +90,34 @@ func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 		return [][]float32{}, nil
 	}
 
-	inputs := make([]openai.EmbeddingNewParamsInputUnion, len(texts))
-	for i, t := range texts {
-		inputs[i] = openai.EmbeddingNewParamsInputUnion{OfString: openai.String(t)}
-	}
-
-	resp, err := e.client.Embeddings.New(ctx, openai.EmbeddingNewParams{
+	params := openai.EmbeddingNewParams{
 		Model:          openai.EmbeddingModel(e.model),
 		Input:          openai.EmbeddingNewParamsInputUnion{OfArrayOfStrings: texts},
 		EncodingFormat: openai.EmbeddingNewParamsEncodingFormatFloat,
-	})
+	}
+	if e.sendDims {
+		params.Dimensions = openai.Int(int64(e.dims))
+	}
+
+	resp, err := e.client.Embeddings.New(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("openai embedding: %w", err)
+	}
+
+	if len(resp.Data) != len(texts) {
+		return nil, core.Errorf(core.ErrProviderDown,
+			"openai embedding: got %d embeddings for %d inputs", len(resp.Data), len(texts))
 	}
 
 	result := make([][]float32, len(texts))
 	for i := range resp.Data {
 		emb := &resp.Data[i]
-		if emb.Index >= int64(len(texts)) {
-			continue
+		if emb.Index < 0 || emb.Index >= int64(len(texts)) {
+			return nil, core.Errorf(core.ErrProviderDown,
+				"openai embedding: response index %d out of range [0,%d)", emb.Index, len(texts))
+		}
+		if result[emb.Index] != nil {
+			return nil, core.Errorf(core.ErrProviderDown, "openai embedding: duplicate response index %d", emb.Index)
 		}
 		vec := make([]float32, len(emb.Embedding))
 		for j, v := range emb.Embedding {
@@ -109,6 +125,8 @@ func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 		}
 		result[emb.Index] = vec
 	}
+	// len(resp.Data) == len(texts) with every index in range and unique
+	// guarantees every slot is filled.
 
 	return result, nil
 }

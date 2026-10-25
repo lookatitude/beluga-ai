@@ -59,7 +59,7 @@ func executeWithRetry(ctx context.Context, policy RetryPolicy, fn func(ctx conte
 		interval = nextInterval(interval, policy.BackoffCoefficient, policy.MaxInterval)
 	}
 
-	return core.Errorf(core.ErrProviderDown, "workflow/retry: max attempts (%d) exceeded: %w", policy.MaxAttempts, lastErr)
+	return core.Wrapf(core.ErrInternal, "workflow/retry: max attempts (%d) exceeded: %w", policy.MaxAttempts, lastErr)
 }
 
 // normalizeRetryPolicy fills in zero-valued fields with sensible defaults.

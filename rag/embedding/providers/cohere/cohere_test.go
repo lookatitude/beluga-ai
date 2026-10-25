@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/rag/embedding"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -296,4 +297,32 @@ func TestNew_EmptyInputType(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Equal(t, "search_document", emb.inputType)
+}
+
+func TestEmbed_MalformedResponse(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+	}{
+		{"too_few", `{"embeddings":{"float":[[0.1]]}}`},
+		{"too_many", `{"embeddings":{"float":[[0.1],[0.2],[0.3]]}}`},
+		{"null_entry", `{"embeddings":{"float":[[0.1],null]}}`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, tt.body)
+			})
+			emb, err := New(config.ProviderConfig{APIKey: "test-key", BaseURL: ts.URL})
+			require.NoError(t, err)
+
+			vecs, err := emb.Embed(context.Background(), []string{"a", "b"})
+			require.Error(t, err)
+			assert.Nil(t, vecs)
+			var cerr *core.Error
+			require.ErrorAs(t, err, &cerr)
+			assert.Equal(t, core.ErrProviderDown, cerr.Code)
+		})
+	}
 }

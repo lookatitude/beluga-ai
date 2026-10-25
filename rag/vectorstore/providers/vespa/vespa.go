@@ -9,10 +9,20 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
+	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore/internal/filterutil"
 	"github.com/lookatitude/beluga-ai/v2/schema"
+)
+
+const (
+	// maxResponseBytes bounds every response body read from Vespa.
+	maxResponseBytes = 32 << 20
+	// defaultTimeout is the timeout of the default HTTP client.
+	defaultTimeout = 30 * time.Second
 )
 
 func init() {
@@ -58,7 +68,7 @@ func WithHTTPClient(c HTTPClient) Option {
 // New creates a new Vespa Store.
 func New(baseURL string, opts ...Option) *Store {
 	s := &Store{
-		client:    http.DefaultClient,
+		client:    &http.Client{Timeout: defaultTimeout},
 		baseURL:   strings.TrimRight(baseURL, "/"),
 		namespace: "default",
 		docType:   "document",
@@ -86,13 +96,29 @@ func NewFromConfig(cfg config.ProviderConfig) (*Store, error) {
 
 // docPath returns the Vespa document API path for a given document ID.
 func (s *Store) docPath(id string) string {
-	return fmt.Sprintf("/document/v1/%s/%s/docid/%s", s.namespace, s.docType, url.PathEscape(id))
+	return fmt.Sprintf("/document/v1/%s/%s/docid/%s",
+		url.PathEscape(s.namespace), url.PathEscape(s.docType), url.PathEscape(id))
+}
+
+// validate rejects a namespace or document type that is not a plain
+// identifier; both are interpolated into YQL and URL paths.
+func (s *Store) validate(op string) error {
+	if !filterutil.ValidKey(s.namespace) {
+		return core.NewError(op, core.ErrInvalidInput, fmt.Sprintf("invalid namespace %q", s.namespace), nil)
+	}
+	if !filterutil.ValidKey(s.docType) {
+		return core.NewError(op, core.ErrInvalidInput, fmt.Sprintf("invalid document type %q", s.docType), nil)
+	}
+	return nil
 }
 
 // Add inserts documents with their embeddings into the store.
 func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]float32) error {
 	if len(docs) != len(embeddings) {
 		return fmt.Errorf("vespa: docs length (%d) != embeddings length (%d)", len(docs), len(embeddings))
+	}
+	if err := s.validate("vespa.add"); err != nil {
+		return err
 	}
 
 	for i, doc := range docs {
@@ -125,6 +151,14 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 		opt(cfg)
 	}
 
+	if err := s.validate("vespa.search"); err != nil {
+		return nil, err
+	}
+	filterClause, err := buildFilterClause(cfg.Filter)
+	if err != nil {
+		return nil, err
+	}
+
 	// Build the ranking profile based on strategy.
 	rankProfile := "closeness(embedding)"
 	switch cfg.Strategy {
@@ -135,14 +169,7 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 	}
 
 	// Build YQL query for nearest neighbor search.
-	yql := fmt.Sprintf("select * from %s where {targetHits:%d}nearestNeighbor(embedding, q)", s.docType, k)
-
-	// Add metadata filters.
-	if len(cfg.Filter) > 0 {
-		for key, val := range cfg.Filter {
-			yql += fmt.Sprintf(" and %s = \"%v\"", key, val)
-		}
-	}
+	yql := fmt.Sprintf("select * from %s where {targetHits:%d}nearestNeighbor(embedding, q)%s", s.docType, k, filterClause)
 
 	params := url.Values{
 		"yql":            {yql},
@@ -164,7 +191,7 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 	if err != nil {
 		return nil, fmt.Errorf("vespa: read search response: %w", err)
 	}
@@ -201,6 +228,9 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 func (s *Store) Delete(ctx context.Context, ids []string) error {
 	if len(ids) == 0 {
 		return nil
+	}
+	if err := s.validate("vespa.delete"); err != nil {
+		return err
 	}
 
 	for _, id := range ids {
@@ -243,11 +273,58 @@ func (s *Store) doPut(ctx context.Context, path string, body any) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		respBody, _ := io.ReadAll(resp.Body)
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 		return fmt.Errorf("returned %d: %s", resp.StatusCode, string(respBody))
 	}
 
 	return nil
+}
+
+// buildFilterClause renders metadata filters as YQL " and ..." predicates.
+// Keys must be safe identifiers. String values use "contains" (YQL's string
+// match) with an escaped string literal; bools and numbers use "=". A value
+// can therefore never terminate its literal and rewrite the query.
+func buildFilterClause(filter map[string]any) (string, error) {
+	if len(filter) == 0 {
+		return "", nil
+	}
+	keys, err := filterutil.Validate("vespa.search", filter)
+	if err != nil {
+		return "", err
+	}
+	var b strings.Builder
+	for _, key := range keys {
+		switch v := filter[key].(type) {
+		case string:
+			fmt.Fprintf(&b, " and %s contains %s", key, quoteYQLString(v))
+		case bool:
+			fmt.Fprintf(&b, " and %s = %t", key, v)
+		default:
+			fmt.Fprintf(&b, " and %s = %v", key, v)
+		}
+	}
+	return b.String(), nil
+}
+
+// quoteYQLString returns s as a double-quoted YQL string literal with
+// backslashes, quotes and control characters escaped.
+func quoteYQLString(s string) string {
+	var b strings.Builder
+	b.Grow(len(s) + 2)
+	b.WriteByte('"')
+	for _, r := range s {
+		switch {
+		case r == '\\' || r == '"':
+			b.WriteByte('\\')
+			b.WriteRune(r)
+		case r < 0x20:
+			fmt.Fprintf(&b, `\u%04x`, r)
+		default:
+			b.WriteRune(r)
+		}
+	}
+	b.WriteByte('"')
+	return b.String()
 }
 
 // hitToDocument converts a search hit to a schema.Document, extracting

@@ -55,7 +55,9 @@ func (m *Metrics) Misses() int64 {
 	return m.misses.Load()
 }
 
-// TotalSpeedup returns the cumulative time saved by successful predictions.
+// TotalSpeedup returns the cumulative Speedup of validated predictions: the
+// time actually saved with WithEarlyReturn, otherwise the potential saving
+// (see Result.Speedup).
 func (m *Metrics) TotalSpeedup() time.Duration {
 	return time.Duration(m.totalSpeedup.Load())
 }

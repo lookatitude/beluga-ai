@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -258,7 +259,10 @@ func TestLoadEdgeCases(t *testing.T) {
 
 	t.Run("s3 with auth headers", func(t *testing.T) {
 		transport := &testTransport{handler: func(req *http.Request) (*http.Response, error) {
-			assert.Equal(t, "Bearer s3-token", req.Header.Get("Authorization"))
+			// S3 needs SigV4, not a bearer token.
+			assert.True(t, strings.HasPrefix(req.Header.Get("Authorization"), "AWS4-HMAC-SHA256 Credential=s3-token/"))
+			assert.NotEmpty(t, req.Header.Get("X-Amz-Date"))
+			assert.Equal(t, emptyPayloadHash, req.Header.Get("X-Amz-Content-Sha256"))
 			w := httptest.NewRecorder()
 			w.Write([]byte("s3 authed content"))
 			return w.Result(), nil
@@ -266,6 +270,7 @@ func TestLoadEdgeCases(t *testing.T) {
 		l := &Loader{
 			httpClient: &http.Client{Transport: transport},
 			accessKey:  "s3-token",
+			secretKey:  "s3-secret",
 			region:     "us-east-1",
 		}
 
@@ -278,7 +283,8 @@ func TestLoadEdgeCases(t *testing.T) {
 	t.Run("azure with auth headers", func(t *testing.T) {
 		transport := &testTransport{handler: func(req *http.Request) (*http.Response, error) {
 			assert.Equal(t, "Bearer azure-token", req.Header.Get("Authorization"))
-			assert.Equal(t, "BlockBlob", req.Header.Get("x-ms-blob-type"))
+			assert.Equal(t, azureAPIVersion, req.Header.Get("x-ms-version"))
+			assert.Empty(t, req.Header.Get("x-ms-blob-type"))
 			w := httptest.NewRecorder()
 			w.Write([]byte("azure authed content"))
 			return w.Result(), nil

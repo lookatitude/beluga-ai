@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/rag/embedding"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,8 +42,8 @@ func TestNew_Defaults(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, emb)
 
-	assert.Equal(t, defaultModel, emb.model)
-	assert.Equal(t, defaultDimensions, emb.Dimensions())
+	assert.Equal(t, "gemini-embedding-001", emb.model)
+	assert.Equal(t, 3072, emb.Dimensions())
 }
 
 func TestNew_CustomModel(t *testing.T) {
@@ -127,6 +129,7 @@ func TestDimensions(t *testing.T) {
 		expected int
 	}{
 		{"default", "", defaultDimensions},
+		{"gemini", "gemini-embedding-001", 3072},
 		{"004", "text-embedding-004", 768},
 		{"001", "embedding-001", 768},
 		{"unknown", "custom-model", defaultDimensions},
@@ -223,10 +226,14 @@ func TestInterfaceCompliance(t *testing.T) {
 	var _ embedding.Embedder = (*Embedder)(nil)
 }
 
-func TestEmbed_APIKeyInURL(t *testing.T) {
-	var receivedKey string
+func TestEmbed_APIKeyInHeaderNotURL(t *testing.T) {
+	var (
+		receivedQuery  string
+		receivedHeader string
+	)
 	ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
-		receivedKey = r.URL.Query().Get("key")
+		receivedQuery = r.URL.RawQuery
+		receivedHeader = r.Header.Get("x-goog-api-key")
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, batchResponse([][]float32{{0.1}}))
 	})
@@ -239,7 +246,86 @@ func TestEmbed_APIKeyInURL(t *testing.T) {
 
 	_, err = emb.Embed(context.Background(), []string{"hello"})
 	require.NoError(t, err)
-	assert.Equal(t, "my-api-key", receivedKey)
+	assert.Empty(t, receivedQuery, "API key must not be sent as a query parameter")
+	assert.NotContains(t, receivedQuery, "key")
+	assert.Equal(t, "my-api-key", receivedHeader)
+}
+
+func TestEmbed_UnreachableHostErrorDoesNotLeakKey(t *testing.T) {
+	const secret = "super-secret-google-key"
+	emb, err := New(config.ProviderConfig{
+		APIKey:  secret,
+		BaseURL: "http://127.0.0.1:1",
+	})
+	require.NoError(t, err)
+
+	_, err = emb.Embed(context.Background(), []string{"hello"})
+	require.Error(t, err)
+	assert.NotContains(t, err.Error(), secret)
+}
+
+func TestEmbed_ModelPathEscaped(t *testing.T) {
+	tests := []struct {
+		name  string
+		model string
+	}{
+		{"traversal", "../../admin"},
+		{"query", "evil?key=x"},
+		{"fragment", "m#frag"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var (
+				rawPath  string
+				rawQuery string
+			)
+			ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+				rawPath = r.URL.EscapedPath()
+				rawQuery = r.URL.RawQuery
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, batchResponse([][]float32{{0.1}}))
+			})
+
+			emb, err := New(config.ProviderConfig{
+				APIKey:  "test-key",
+				BaseURL: ts.URL,
+				Model:   tt.model,
+			})
+			require.NoError(t, err)
+
+			_, err = emb.Embed(context.Background(), []string{"hello"})
+			require.NoError(t, err)
+			assert.Equal(t, "/models/"+url.PathEscape(tt.model)+":batchEmbedContents", rawPath)
+			assert.Empty(t, rawQuery)
+		})
+	}
+}
+
+func TestEmbed_MalformedResponse(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+	}{
+		{"too_few", batchResponse([][]float32{{0.1}})},
+		{"too_many", batchResponse([][]float32{{0.1}, {0.2}, {0.3}})},
+		{"missing_values", `{"embeddings":[{"values":[0.1]},{}]}`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, tt.body)
+			})
+			emb, err := New(config.ProviderConfig{APIKey: "test-key", BaseURL: ts.URL})
+			require.NoError(t, err)
+
+			_, err = emb.Embed(context.Background(), []string{"a", "b"})
+			require.Error(t, err)
+			var cerr *core.Error
+			require.ErrorAs(t, err, &cerr)
+			assert.Equal(t, core.ErrProviderDown, cerr.Code)
+		})
+	}
 }
 
 func TestEmbedSingle_ErrorFromEmbed(t *testing.T) {
@@ -282,4 +368,31 @@ func TestEmbed_InvalidJSONResponse(t *testing.T) {
 
 	_, err = emb.Embed(context.Background(), []string{"hello"})
 	assert.Error(t, err)
+}
+
+func TestEmbed_OutputDimensionalitySent(t *testing.T) {
+	tests := []struct {
+		name string
+		opts map[string]any
+		want any
+	}{
+		{"configured", map[string]any{"dimensions": float64(256)}, float64(256)},
+		{"not configured", nil, nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var got any
+			ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+				var body map[string][]map[string]any
+				_ = json.NewDecoder(r.Body).Decode(&body)
+				got = body["requests"][0]["outputDimensionality"]
+				_, _ = w.Write([]byte(`{"embeddings":[{"values":[0.1]}]}`))
+			})
+			emb, err := New(config.ProviderConfig{APIKey: "k", BaseURL: ts.URL, Options: tt.opts})
+			require.NoError(t, err)
+			_, err = emb.Embed(context.Background(), []string{"a"})
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }

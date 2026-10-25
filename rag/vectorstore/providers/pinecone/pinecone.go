@@ -8,10 +8,19 @@ import (
 	"io"
 	"net/http"
 	"sort"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
 	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
+	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore/internal/filterutil"
 	"github.com/lookatitude/beluga-ai/v2/schema"
+)
+
+const (
+	// maxResponseBytes bounds every response body read from the server.
+	maxResponseBytes = 32 << 20
+	// defaultTimeout is the timeout of the default HTTP client.
+	defaultTimeout = 30 * time.Second
 )
 
 func init() {
@@ -52,7 +61,7 @@ func WithHTTPClient(c HTTPClient) Option {
 // New creates a new Pinecone Store.
 func New(baseURL, apiKey string, opts ...Option) *Store {
 	s := &Store{
-		client:  http.DefaultClient,
+		client:  &http.Client{Timeout: defaultTimeout},
 		baseURL: baseURL,
 		apiKey:  apiKey,
 	}
@@ -121,6 +130,9 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 	cfg := &vectorstore.SearchConfig{}
 	for _, opt := range opts {
 		opt(cfg)
+	}
+	if _, err := filterutil.Validate("pinecone.search", cfg.Filter); err != nil {
+		return nil, err
 	}
 
 	body := map[string]any{
@@ -214,7 +226,7 @@ func (s *Store) doJSON(ctx context.Context, method, path string, body any) ([]by
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 	if err != nil {
 		return nil, fmt.Errorf("pinecone: read response: %w", err)
 	}

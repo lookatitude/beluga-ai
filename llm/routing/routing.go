@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/internal/errclass"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
@@ -155,7 +156,7 @@ func (r *DefaultCostRouter) SelectModel(ctx context.Context, msgs []schema.Messa
 		if r.opts.enforcer != nil {
 			allowed, err := r.opts.enforcer.CheckAndReserve(ctx, estimated)
 			if err != nil {
-				return ModelSelection{}, core.Errorf(core.ErrBudgetExhausted, "routing: budget check: %w", err)
+				return ModelSelection{}, errclass.Wrap(core.ErrBudgetExhausted, "routing: budget check: %w", err)
 			}
 			if !allowed {
 				continue // Try cheaper model.

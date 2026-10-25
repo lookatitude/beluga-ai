@@ -64,7 +64,10 @@ func WithPlannerLanguage(lang string) PlannerOption {
 	}
 }
 
-// WithAllowedImports sets the list of allowed imports/modules.
+// WithAllowedImports lists the imports/modules the planner tells the LLM it
+// may use. This only shapes the system prompt; the planner does not enforce
+// it. CodeActAgent's WithAllowedCodeImports both sets this and rejects code
+// that imports anything else.
 func WithAllowedImports(imports []string) PlannerOption {
 	return func(p *CodeActPlanner) {
 		p.allowedImports = imports

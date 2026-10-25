@@ -112,6 +112,11 @@ func (iss *InMemoryIssuer) Issue(_ context.Context, agentID string, permissions 
 	defer iss.mu.Unlock()
 
 	if len(iss.store) >= iss.opts.maxCredentials {
+		// Lazily evict expired credentials before refusing: without an
+		// AutoRevoker they would otherwise fill the store permanently.
+		iss.evictExpiredLocked()
+	}
+	if len(iss.store) >= iss.opts.maxCredentials {
 		return nil, core.NewError(opCredentialIssue, core.ErrBudgetExhausted, "credential store is full", nil)
 	}
 
@@ -198,6 +203,16 @@ func (iss *InMemoryIssuer) Cleanup(_ context.Context) int {
 		}
 	}
 	return removed
+}
+
+// evictExpiredLocked deletes every expired credential. iss.mu must be held
+// for writing.
+func (iss *InMemoryIssuer) evictExpiredLocked() {
+	for id, cred := range iss.store {
+		if cred.IsExpired() {
+			delete(iss.store, id)
+		}
+	}
 }
 
 // generateID produces a cryptographically random credential ID.

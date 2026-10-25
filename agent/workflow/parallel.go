@@ -62,7 +62,7 @@ func (a *ParallelAgent) Invoke(ctx context.Context, input string, opts ...agent.
 	// Check for errors
 	for i, err := range errs {
 		if err != nil {
-			return "", core.Errorf(core.ErrProviderDown, "parallel agent %q: child %q failed: %w", a.id, a.children[i].ID(), err)
+			return "", core.Wrapf(core.ErrInternal, "parallel agent %q: child %q failed: %w", a.id, a.children[i].ID(), err)
 		}
 	}
 
@@ -75,9 +75,14 @@ type eventErr struct {
 	err   error
 }
 
-// Stream runs all children concurrently, yielding events from all.
+// Stream runs all children concurrently, yielding events from all. When the
+// consumer stops early (or a child yields an error), the remaining children
+// are cancelled and their goroutines exit.
 func (a *ParallelAgent) Stream(ctx context.Context, input string, opts ...agent.Option) iter.Seq2[agent.Event, error] {
 	return func(yield func(agent.Event, error) bool) {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
 		ch := make(chan eventErr, len(a.children)*8)
 
 		var wg sync.WaitGroup
@@ -114,7 +119,11 @@ func (a *ParallelAgent) Stream(ctx context.Context, input string, opts ...agent.
 // streamChildToChan streams a child agent's events into a channel.
 func streamChildToChan(ctx context.Context, child agent.Agent, input string, ch chan<- eventErr, opts []agent.Option) {
 	for event, err := range child.Stream(ctx, input, opts...) {
-		ch <- eventErr{event: event, err: err}
+		select {
+		case ch <- eventErr{event: event, err: err}:
+		case <-ctx.Done():
+			return
+		}
 		if err != nil {
 			return
 		}

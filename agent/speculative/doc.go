@@ -1,9 +1,15 @@
 // Package speculative provides speculative execution for agents.
 //
 // Speculative execution runs a fast, cheap predictor in parallel with the
-// ground-truth (slower, more expensive) agent. If the prediction matches the
-// ground truth, the result is returned early with a speedup. If the prediction
-// misses, the ground-truth result is used with minimal overhead.
+// ground-truth (slower, more expensive) agent.
+//
+// By default Invoke waits for both and returns the prediction only after the
+// validator has accepted it against the ground truth, so the answer is always
+// validated but Invoke is never faster than the ground truth alone (and costs
+// the predictor call on top). With [WithEarlyReturn], a confident prediction
+// is returned as soon as it is ready and validated in the background;
+// mispredictions are reported through [Hooks].OnMisprediction so the caller
+// can correct them. Only the early-return mode actually reduces latency.
 //
 // This pattern is inspired by speculative decoding in LLMs: a small draft
 // model proposes tokens that a large verifier model accepts or rejects.

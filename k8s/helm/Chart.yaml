@@ -1,8 +1,11 @@
 apiVersion: v2
 name: beluga-operator
-description: Beluga AI Kubernetes Operator
+description: >-
+  PREVIEW - Beluga AI Kubernetes Operator. Installs the Beluga AI CRDs; the
+  operator Deployment is disabled by default because the operator image is not
+  published yet.
 type: application
-version: 0.1.0
+version: 0.2.0
 appVersion: "0.1.0"
 keywords:
   - beluga

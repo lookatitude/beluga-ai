@@ -92,7 +92,7 @@ func (b *Blackboard) Invoke(ctx context.Context, input any, opts ...core.Option)
 			inputStr := fmt.Sprintf("%v", snap)
 			result, err := a.Invoke(ctx, inputStr)
 			if err != nil {
-				return nil, core.Errorf(core.ErrProviderDown, "orchestration/blackboard: agent %q round %d: %w", a.ID(), round, err)
+				return nil, core.Wrapf(core.ErrInternal, "orchestration/blackboard: agent %q round %d: %w", a.ID(), round, err)
 			}
 			b.Set(a.ID(), result)
 		}
@@ -138,7 +138,7 @@ func (b *Blackboard) runAgents(ctx context.Context, snap map[string]any, round i
 		inputStr := fmt.Sprintf("%v", snap)
 		result, err := a.Invoke(ctx, inputStr)
 		if err != nil {
-			return core.Errorf(core.ErrProviderDown, "orchestration/blackboard: agent %q round %d: %w", a.ID(), round, err)
+			return core.Wrapf(core.ErrInternal, "orchestration/blackboard: agent %q round %d: %w", a.ID(), round, err)
 		}
 		b.Set(a.ID(), result)
 	}

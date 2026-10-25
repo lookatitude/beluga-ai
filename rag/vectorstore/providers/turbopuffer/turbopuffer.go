@@ -7,10 +7,20 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
 	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
+	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore/internal/filterutil"
 	"github.com/lookatitude/beluga-ai/v2/schema"
+)
+
+const (
+	// maxResponseBytes bounds every response body read from the server.
+	maxResponseBytes = 32 << 20
+	// defaultTimeout is the timeout of the default HTTP client.
+	defaultTimeout = 30 * time.Second
 )
 
 func init() {
@@ -63,7 +73,7 @@ func WithBaseURL(url string) Option {
 // New creates a new Turbopuffer Store.
 func New(opts ...Option) *Store {
 	s := &Store{
-		client:    http.DefaultClient,
+		client:    &http.Client{Timeout: defaultTimeout},
 		baseURL:   defaultBaseURL,
 		namespace: "documents",
 	}
@@ -121,7 +131,7 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 	}
 
 	_, err := s.doJSON(ctx, http.MethodPost,
-		fmt.Sprintf("/vectors/%s", s.namespace), body)
+		fmt.Sprintf("/vectors/%s", url.PathEscape(s.namespace)), body)
 	return err
 }
 
@@ -130,6 +140,9 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 	cfg := &vectorstore.SearchConfig{}
 	for _, opt := range opts {
 		opt(cfg)
+	}
+	if _, err := filterutil.Validate("turbopuffer.search", cfg.Filter); err != nil {
+		return nil, err
 	}
 
 	body := map[string]any{
@@ -165,7 +178,7 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 	body["distance_metric"] = distMetric
 
 	respBody, err := s.doJSON(ctx, http.MethodPost,
-		fmt.Sprintf("/vectors/%s/query", s.namespace), body)
+		fmt.Sprintf("/vectors/%s/query", url.PathEscape(s.namespace)), body)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +218,7 @@ func (s *Store) Delete(ctx context.Context, ids []string) error {
 	}
 
 	_, err := s.doJSON(ctx, http.MethodPost,
-		fmt.Sprintf("/vectors/%s", s.namespace), body)
+		fmt.Sprintf("/vectors/%s", url.PathEscape(s.namespace)), body)
 	return err
 }
 
@@ -235,7 +248,7 @@ func (s *Store) doJSON(ctx context.Context, method, path string, body any) ([]by
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 	if err != nil {
 		return nil, fmt.Errorf("turbopuffer: read response: %w", err)
 	}

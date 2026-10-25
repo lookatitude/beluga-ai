@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
+	"sort"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/v2/core"
@@ -44,8 +46,14 @@ func (e *NoopExecutor) Execute(_ context.Context, action CodeAction) (CodeResult
 	}, nil
 }
 
-// ProcessExecutor runs code via os/exec with timeout and resource limits.
-// It maps language names to interpreter commands.
+// ProcessExecutor runs code via os/exec with a timeout. It maps language
+// names to interpreter commands.
+//
+// It enforces no memory, CPU or network limits and provides no isolation:
+// the code runs with the privileges of the parent process. Each run gets a
+// fresh temporary working directory and a minimal environment (PATH, HOME
+// and TMPDIR pointing at that directory, a UTF-8 locale), so the parent's
+// environment variables such as API keys are not passed on.
 //
 // Security note: ProcessExecutor should only be used in sandboxed environments.
 // Never pass untrusted user input directly as code without proper sandboxing.
@@ -125,17 +133,25 @@ func (e *ProcessExecutor) Execute(ctx context.Context, action CodeAction) (CodeR
 
 	// Run through interpreter with code on stdin.
 	// Security: code comes from the LLM, not directly from user input.
+	workDir, err := os.MkdirTemp("", "beluga-codeact-*")
+	if err != nil {
+		return CodeResult{}, core.NewError(opExecute, core.ErrToolFailed, "failed to create working directory", err)
+	}
+	defer os.RemoveAll(workDir)
+
 	// The ProcessExecutor should only be used in sandboxed environments.
-	// #nosec G204 -- interpreter is from a whitelisted map controlled by the
-	// application, not user input. ProcessExecutor is meant for sandboxed use.
-	cmd := exec.CommandContext(execCtx, interpreter) //nolint:gosec // sandboxed execution
+	// The interpreter is from a whitelisted map controlled by the
+	// application, not user input.
+	cmd := exec.CommandContext(execCtx, interpreter) // #nosec G204 -- interpreter comes from the application-controlled map
 	cmd.Stdin = bytes.NewReader([]byte(action.Code))
+	cmd.Dir = workDir
+	cmd.Env = minimalEnv(workDir)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
-	err := cmd.Run()
+	err = cmd.Run()
 	duration := time.Since(start)
 
 	result := CodeResult{
@@ -151,7 +167,7 @@ func (e *ProcessExecutor) Execute(ctx context.Context, action CodeAction) (CodeR
 		if execCtx.Err() != nil {
 			return result, core.NewError(
 				opExecute,
-				core.ErrTimeout,
+				core.CodeOf(execCtx.Err(), core.ErrTimeout),
 				fmt.Sprintf("code execution timed out after %v", timeout),
 				execCtx.Err(),
 			)
@@ -177,5 +193,22 @@ func (e *ProcessExecutor) supportedLanguages() []string {
 	for lang := range e.interpreters {
 		langs = append(langs, lang)
 	}
+	sort.Strings(langs)
 	return langs
+}
+
+// minimalEnv is the environment given to interpreter processes: PATH so the
+// interpreter can be found, HOME/TMPDIR inside the run's directory, and a
+// UTF-8 locale. On Windows SYSTEMROOT is kept as well.
+func minimalEnv(dir string) []string {
+	env := []string{
+		"PATH=" + os.Getenv("PATH"),
+		"HOME=" + dir,
+		"TMPDIR=" + dir,
+		"LANG=C.UTF-8",
+	}
+	if root := os.Getenv("SYSTEMROOT"); root != "" {
+		env = append(env, "SYSTEMROOT="+root)
+	}
+	return env
 }

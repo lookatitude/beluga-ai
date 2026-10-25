@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"math/rand/v2"
 	"sync"
 	"time"
 )
@@ -21,10 +22,14 @@ type BatchOptions struct {
 	Timeout time.Duration
 
 	// RetryPolicy optionally configures retry behaviour for failed items.
+	// Only errors for which IsRetryable reports true are retried, and retries
+	// stop as soon as the item's context is done. Nil means no retries.
 	RetryPolicy *RetryPolicy
 }
 
-// RetryPolicy specifies how failed operations should be retried.
+// RetryPolicy specifies how failed operations should be retried. It is used
+// by BatchOptions; resilience.RetryPolicy is the general-purpose equivalent
+// for other call sites (core cannot import resilience).
 type RetryPolicy struct {
 	// MaxAttempts is the total number of attempts (including the first).
 	MaxAttempts int
@@ -84,6 +89,7 @@ func BatchInvoke[I, O any](
 			results: results,
 			sem:     sem,
 			timeout: opts.Timeout,
+			retry:   opts.RetryPolicy,
 			wg:      &wg,
 		})
 	}
@@ -122,6 +128,7 @@ type batchItemParams[I, O any] struct {
 	results []BatchResult[O]
 	sem     chan struct{}
 	timeout time.Duration
+	retry   *RetryPolicy
 	wg      *sync.WaitGroup
 }
 
@@ -139,5 +146,60 @@ func batchInvokeItem[I, O any](ctx context.Context, p batchItemParams[I, O]) {
 		defer cancel()
 	}
 
-	p.results[p.idx].Value, p.results[p.idx].Err = p.fn(itemCtx, p.input)
+	p.results[p.idx].Value, p.results[p.idx].Err = invokeWithRetry(itemCtx, p.fn, p.input, p.retry)
+}
+
+// invokeWithRetry calls fn, retrying retryable errors according to policy.
+func invokeWithRetry[I, O any](ctx context.Context, fn func(context.Context, I) (O, error), input I, policy *RetryPolicy) (O, error) {
+	out, err := fn(ctx, input)
+	if policy == nil || policy.MaxAttempts <= 1 {
+		return out, err
+	}
+	backoff := policy.InitialBackoff
+	for attempt := 1; attempt < policy.MaxAttempts && err != nil && IsRetryable(err); attempt++ {
+		if !sleepCtx(ctx, jittered(backoff, policy.Jitter)) {
+			return out, err
+		}
+		out, err = fn(ctx, input)
+		backoff = nextBackoff(backoff, policy)
+	}
+	return out, err
+}
+
+// nextBackoff grows d by the policy factor (default 2), capped at MaxBackoff.
+func nextBackoff(d time.Duration, policy *RetryPolicy) time.Duration {
+	factor := policy.BackoffFactor
+	if factor <= 0 {
+		factor = 2
+	}
+	next := time.Duration(float64(d) * factor)
+	if policy.MaxBackoff > 0 && next > policy.MaxBackoff {
+		next = policy.MaxBackoff
+	}
+	return next
+}
+
+// jittered returns a duration in [d/2, d] when jitter is enabled.
+func jittered(d time.Duration, jitter bool) time.Duration {
+	if !jitter || d <= 1 {
+		return d
+	}
+	half := d / 2
+	return half + time.Duration(rand.Int64N(int64(half)+1)) // #nosec G404 -- jitter, not security sensitive
+}
+
+// sleepCtx waits for d or until ctx is done. It reports whether the full
+// duration elapsed.
+func sleepCtx(ctx context.Context, d time.Duration) bool {
+	if d <= 0 {
+		return ctx.Err() == nil
+	}
+	timer := time.NewTimer(d)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-timer.C:
+		return true
+	}
 }

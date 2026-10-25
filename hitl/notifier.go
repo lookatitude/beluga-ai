@@ -83,7 +83,7 @@ func (n *WebhookNotifier) Notify(ctx context.Context, req InteractionRequest) er
 
 	resp, err := n.client.Do(httpReq)
 	if err != nil {
-		return core.Errorf(core.ErrProviderDown, "hitl/webhook: send: %w", err)
+		return core.Wrapf(core.ErrProviderDown, "hitl/webhook: send: %w", err)
 	}
 	defer resp.Body.Close()
 

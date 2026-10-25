@@ -26,6 +26,8 @@ var (
 
 // RegisterPlanner registers a planner factory under the given name.
 // This is typically called from init() in planner implementation files.
+// Registering a name that is already registered replaces the previous
+// factory (the framework-wide duplicate policy).
 func RegisterPlanner(name string, factory PlannerFactory) {
 	plannerMu.Lock()
 	defer plannerMu.Unlock()

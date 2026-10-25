@@ -122,7 +122,7 @@ func NewSemanticCache(embedder embedding.Embedder, opts ...Option) *SemanticCach
 func (sc *SemanticCache) Get(ctx context.Context, key string) (any, bool, error) {
 	emb, err := sc.embedder.EmbedSingle(ctx, key)
 	if err != nil {
-		return nil, false, core.Errorf(core.ErrProviderDown, "cache: semantic embed: %w", err)
+		return nil, false, core.Wrapf(core.ErrProviderDown, "cache: semantic embed: %w", err)
 	}
 	return sc.GetByEmbedding(ctx, emb)
 }
@@ -136,7 +136,7 @@ func (sc *SemanticCache) Get(ctx context.Context, key string) (any, bool, error)
 func (sc *SemanticCache) Set(ctx context.Context, key string, value any, ttl time.Duration) error {
 	emb, err := sc.embedder.EmbedSingle(ctx, key)
 	if err != nil {
-		return core.Errorf(core.ErrProviderDown, "cache: semantic embed: %w", err)
+		return core.Wrapf(core.ErrProviderDown, "cache: semantic embed: %w", err)
 	}
 	return sc.SetByEmbedding(ctx, key, emb, value, ttl)
 }

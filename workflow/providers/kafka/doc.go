@@ -3,8 +3,10 @@
 //
 // Workflow state is stored as JSON messages in a Kafka compacted topic, where
 // the workflow ID serves as the message key. Deletions are performed by writing
-// tombstone messages (nil value). An in-memory cache provides fast reads while
-// Kafka provides durable persistence.
+// tombstone messages (nil value). Load and List are served from an in-memory
+// index of the latest state per workflow. The index starts empty in a new
+// process; call [Store.Restore] at startup to rebuild it from the topic,
+// otherwise states written before a restart are not visible.
 //
 // # Usage
 //
@@ -18,13 +20,19 @@
 //	}
 //	defer store.Close()
 //
+//	// Rebuild the index from the compacted topic after a restart.
+//	rctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+//	_, err = store.Restore(rctx)
+//	cancel()
+//
 //	executor := workflow.NewExecutor(workflow.WithStore(store))
 //
 // # Configuration
 //
 // [Config] requires a [Writer] for producing messages. A [Reader] is optional
-// and used for consuming messages from the topic. The Topic defaults to
-// "beluga-workflows".
+// and only used by [Store.Restore]. This package does not connect to Kafka
+// itself: broker addresses and the topic are configured on the Writer and
+// Reader you supply.
 //
 // # Testing
 //

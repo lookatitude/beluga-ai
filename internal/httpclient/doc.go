@@ -9,9 +9,17 @@
 // # Client
 //
 // The [Client] type wraps net/http.Client with automatic retry on 429/503
-// status codes and network errors, exponential backoff with jitter, and
-// default headers (including bearer token authentication). Configuration
-// uses the functional options pattern:
+// status codes (and 502/504 for idempotent methods) and transient network
+// errors, exponential backoff with jitter, and default headers (including
+// bearer token authentication). Network errors are retried for POST/PATCH
+// only when the request never left the client, so writes are not duplicated.
+// Server Retry-After values are honoured up to 60 seconds, and error bodies
+// are read up to 1 MiB.
+//
+// Every transport error the client returns is passed through [RedactError],
+// which scrubs credential query parameters (key=, api_key=, token=, ...) and
+// URL passwords, so an API key carried in a URL never reaches logs, spans or
+// HTTP responses. Configuration uses the functional options pattern:
 //
 //	c := httpclient.New(
 //	    httpclient.WithBaseURL("https://api.example.com/v1"),

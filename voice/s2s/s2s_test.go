@@ -109,6 +109,7 @@ func (m *mockS2S) Start(ctx context.Context, opts ...Option) (Session, error) {
 
 func TestRegistry_RegisterAndNew(t *testing.T) {
 	// Register a mock provider.
+	t.Cleanup(func() { unregisterForTest("mock-s2s") })
 	Register("mock-s2s", func(cfg Config) (S2S, error) {
 		return &mockS2S{}, nil
 	})
@@ -141,15 +142,18 @@ func TestRegistry_PanicOnEmptyName(t *testing.T) {
 
 func TestRegistry_PanicOnNilFactory(t *testing.T) {
 	assert.Panics(t, func() {
+		t.Cleanup(func() { unregisterForTest("test-s2s-nil-factory") })
 		Register("test-s2s-nil-factory", nil)
 	})
 }
 
 func TestRegistry_PanicOnDuplicate(t *testing.T) {
+	t.Cleanup(func() { unregisterForTest("test-s2s-dup-check") })
 	Register("test-s2s-dup-check", func(cfg Config) (S2S, error) {
 		return &mockS2S{}, nil
 	})
 	assert.Panics(t, func() {
+		t.Cleanup(func() { unregisterForTest("test-s2s-dup-check") })
 		Register("test-s2s-dup-check", func(cfg Config) (S2S, error) {
 			return &mockS2S{}, nil
 		})
@@ -158,6 +162,7 @@ func TestRegistry_PanicOnDuplicate(t *testing.T) {
 
 func TestList(t *testing.T) {
 	// Register a test provider.
+	t.Cleanup(func() { unregisterForTest("test-s2s-list") })
 	Register("test-s2s-list", func(cfg Config) (S2S, error) {
 		return &mockS2S{}, nil
 	})

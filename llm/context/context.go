@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/internal/errclass"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
@@ -121,7 +122,7 @@ func (p *DefaultPipeline) Execute(ctx gocontext.Context, input PipelineInput) (P
 		var err error
 		items, err = step.Process(ctx, items)
 		if err != nil {
-			return PipelineOutput{}, core.Errorf(core.ErrInvalidInput, "context: step %q: %w", step.Name(), err)
+			return PipelineOutput{}, errclass.Wrap(core.ErrInvalidInput, "context: step %q: %w", step.Name(), err)
 		}
 		stepsExecuted = append(stepsExecuted, step.Name())
 	}

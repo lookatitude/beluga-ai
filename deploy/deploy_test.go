@@ -28,8 +28,10 @@ func TestGenerateDockerfile(t *testing.T) {
 				Port:        8080,
 			},
 			wantTokens: []string{
-				"FROM golang:1.23 AS builder",
+				"FROM golang:" + DefaultGoVersion + " AS builder",
 				"FROM gcr.io/distroless/static-debian12",
+				"-o /agent .\n",
+				"USER nonroot:nonroot",
 				"EXPOSE 8080",
 				"COPY config/agent.yaml /config/",
 				"ENTRYPOINT [\"/app/agent\"]",

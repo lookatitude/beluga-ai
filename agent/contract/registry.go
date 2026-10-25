@@ -22,6 +22,8 @@ var (
 // after program startup is unsupported and may result in race conditions
 // or unexpected behavior; the mutex is present solely to guard against
 // concurrent init() ordering issues across packages.
+// Registering a name that is already registered replaces the previous
+// factory (the framework-wide duplicate policy).
 func Register(templateName string, f Factory) {
 	mu.Lock()
 	defer mu.Unlock()

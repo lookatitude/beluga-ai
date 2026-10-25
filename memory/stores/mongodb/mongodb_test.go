@@ -467,3 +467,31 @@ func textOf(msg schema.Message) string {
 	}
 	return strings.Join(parts, " ")
 }
+
+// sortCapture records the sort spec passed to Find.
+type sortCapture struct {
+	cursorCollection
+	sort any
+}
+
+func (c *sortCapture) Find(ctx context.Context, filter any, opts ...options.Lister[options.FindOptions]) (*mongo.Cursor, error) {
+	var fo options.FindOptions
+	for _, o := range opts {
+		for _, set := range o.List() {
+			_ = set(&fo)
+		}
+	}
+	c.sort = fo.Sort
+	return c.cursorCollection.Find(ctx, filter)
+}
+
+// FI-28 (same bug as redis): the in-process seq restarts at 1, so history
+// must be ordered by timestamp first.
+func TestAll_SortsByTimestampThenSeq(t *testing.T) {
+	c := &sortCapture{}
+	store, err := New(Config{Collection: c})
+	require.NoError(t, err)
+	_, err = store.All(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, bson.D{{Key: "timestamp", Value: 1}, {Key: "seq", Value: 1}}, c.sort)
+}

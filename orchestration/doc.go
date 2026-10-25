@@ -6,6 +6,25 @@
 // with the rest of the framework. [Hooks] and [Middleware] provide
 // extensibility for logging, tracing, and custom cross-cutting concerns.
 //
+// # Choosing an orchestration layer
+//
+// Three packages offer similar composition patterns at different levels:
+//
+//   - agent/workflow (SequentialAgent, ParallelAgent, LoopAgent) composes
+//     agent.Agent values and is itself an agent.Agent; use it to build an
+//     agent out of other agents.
+//   - orchestration (this package) composes any core.Runnable with string- or
+//     any-typed input; use it for general pipelines that mix agents, models
+//     and plain functions.
+//   - runtime team patterns (Pipeline, Scatter, Supervisor) run agents
+//     inside a runtime.Runner with sessions and plugins; use them for
+//     deployed multi-agent teams.
+//
+// They do not share an implementation. All three propagate a failing
+// child's error code unchanged (falling back to core.ErrInternal for
+// unclassified errors), so callers can handle failures the same way
+// whichever layer they use.
+//
 // # Chain
 //
 // [Chain] composes steps sequentially: the output of step N becomes the

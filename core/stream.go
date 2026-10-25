@@ -110,8 +110,15 @@ func FilterStream[T any](src Stream[T], keep func(Event[T]) bool) Stream[T] {
 // MergeStreams merges multiple streams into a single stream. Events from all
 // input streams are interleaved in arrival order. The merged stream completes
 // when all input streams are exhausted.
+//
+// If the consumer stops early (breaks out of the range loop, or the merged
+// stream yields an error), the producer goroutines are stopped as well; ctx
+// only needs to be cancelled to abandon a merge that is still running.
 func MergeStreams[T any](ctx context.Context, streams ...Stream[T]) Stream[T] {
 	return func(yield func(Event[T], error) bool) {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
 		ch := make(chan eventOrErr[T], len(streams))
 		var wg sync.WaitGroup
 		wg.Add(len(streams))
@@ -162,49 +169,77 @@ type eventOrErr[T any] struct {
 	err   error
 }
 
+// fanOutBranch is one consumer side of FanOut. left is closed when the
+// consumer stops iterating, so the producer stops sending to it.
+type fanOutBranch[T any] struct {
+	ch       chan eventOrErr[T]
+	left     chan struct{}
+	leftOnce sync.Once
+}
+
+func (b *fanOutBranch[T]) leave() {
+	b.leftOnce.Do(func() { close(b.left) })
+}
+
 // FanOut copies a single stream to n consumers. Each consumer receives all
 // events independently. The returned slice has n streams.
+//
+// A consumer that stops early (breaks out of its range loop) is detached and
+// no longer receives events; the remaining consumers are unaffected, and the
+// source is abandoned once every consumer has stopped. A returned stream that
+// is never iterated still receives (buffered) events, so either iterate every
+// returned stream or cancel ctx to release the producer goroutine.
 func FanOut[T any](ctx context.Context, src Stream[T], n int) []Stream[T] {
-	chs := make([]chan eventOrErr[T], n)
-	for i := range chs {
-		chs[i] = make(chan eventOrErr[T], 16)
+	branches := make([]*fanOutBranch[T], n)
+	for i := range branches {
+		branches[i] = &fanOutBranch[T]{
+			ch:   make(chan eventOrErr[T], 16),
+			left: make(chan struct{}),
+		}
 	}
 
-	go fanOutProducer(ctx, src, chs)
+	go fanOutProducer(ctx, src, branches)
 
 	streams := make([]Stream[T], n)
-	for i := range chs {
-		streams[i] = channelToStream(chs[i])
+	for i, b := range branches {
+		streams[i] = fanOutConsumer(b)
 	}
 	return streams
 }
 
-// fanOutProducer reads events from src and broadcasts them to all channels.
-func fanOutProducer[T any](ctx context.Context, src Stream[T], chs []chan eventOrErr[T]) {
+// fanOutProducer reads events from src and broadcasts them to all branches
+// that are still being consumed.
+func fanOutProducer[T any](ctx context.Context, src Stream[T], branches []*fanOutBranch[T]) {
 	defer func() {
-		for _, ch := range chs {
-			close(ch)
+		for _, b := range branches {
+			close(b.ch)
 		}
 	}()
 	for event, err := range src {
 		item := eventOrErr[T]{event: event, err: err}
-		for _, ch := range chs {
+		active := 0
+		for _, b := range branches {
 			select {
 			case <-ctx.Done():
 				return
-			case ch <- item:
+			case <-b.left:
+				continue
+			case b.ch <- item:
+				active++
 			}
 		}
-		if err != nil {
+		if err != nil || active == 0 {
 			return
 		}
 	}
 }
 
-// channelToStream converts a channel of eventOrErr into a Stream.
-func channelToStream[T any](ch <-chan eventOrErr[T]) Stream[T] {
+// fanOutConsumer converts a FanOut branch into a Stream that detaches the
+// branch when the consumer stops.
+func fanOutConsumer[T any](b *fanOutBranch[T]) Stream[T] {
 	return func(yield func(Event[T], error) bool) {
-		for item := range ch {
+		defer b.leave()
+		for item := range b.ch {
 			if !yield(item.event, item.err) {
 				return
 			}
@@ -219,13 +254,17 @@ func channelToStream[T any](ch <-chan eventOrErr[T]) Stream[T] {
 // absorb bursts between a fast producer and a slow consumer. The buffer size
 // controls the backpressure threshold.
 type BufferedStream[T any] struct {
-	ch   chan eventOrErr[T]
-	done chan struct{}
+	ch       chan eventOrErr[T]
+	done     chan struct{}
+	stop     chan struct{}
+	stopOnce sync.Once
 }
 
 // NewBufferedStream starts consuming src into an internal buffer of the given
-// size and returns a BufferedStream that can be iterated. Cancel ctx to stop
-// the background goroutine.
+// size and returns a BufferedStream that can be iterated. The background
+// goroutine stops when src is exhausted, when the consumer of Iter stops
+// early, or when ctx is cancelled. If Iter is never called, cancel ctx to
+// stop the goroutine.
 func NewBufferedStream[T any](ctx context.Context, src Stream[T], bufSize int) *BufferedStream[T] {
 	if bufSize < 1 {
 		bufSize = 1
@@ -233,6 +272,7 @@ func NewBufferedStream[T any](ctx context.Context, src Stream[T], bufSize int) *
 	bs := &BufferedStream[T]{
 		ch:   make(chan eventOrErr[T], bufSize),
 		done: make(chan struct{}),
+		stop: make(chan struct{}),
 	}
 
 	go func() {
@@ -241,6 +281,8 @@ func NewBufferedStream[T any](ctx context.Context, src Stream[T], bufSize int) *
 		for event, err := range src {
 			select {
 			case <-ctx.Done():
+				return
+			case <-bs.stop:
 				return
 			case bs.ch <- eventOrErr[T]{event: event, err: err}:
 			}
@@ -254,9 +296,11 @@ func NewBufferedStream[T any](ctx context.Context, src Stream[T], bufSize int) *
 }
 
 // Iter returns an iter.Seq2 that drains the buffered stream. It is safe to
-// call Iter only once.
+// call Iter only once. Stopping the iteration early also stops the
+// background producer.
 func (bs *BufferedStream[T]) Iter() Stream[T] {
 	return func(yield func(Event[T], error) bool) {
+		defer bs.stopOnce.Do(func() { close(bs.stop) })
 		for item := range bs.ch {
 			if !yield(item.event, item.err) {
 				return

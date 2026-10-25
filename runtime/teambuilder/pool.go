@@ -112,7 +112,7 @@ func (p *AgentPool) Select(ctx context.Context, task string, selector Selector) 
 
 	selected, err := selector.Select(ctx, task, candidates)
 	if err != nil {
-		return nil, core.NewError(opPoolSelect, core.ErrToolFailed,
+		return nil, core.NewError(opPoolSelect, core.CodeOf(err, core.ErrToolFailed),
 			"selector failed", err)
 	}
 

@@ -3,9 +3,11 @@ package kafka
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
+	"io"
 	"sync"
 
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/workflow"
 )
 
@@ -30,18 +32,31 @@ type Message struct {
 // Config holds configuration for the Kafka WorkflowStore.
 type Config struct {
 	// Brokers is the list of Kafka broker addresses.
+	//
+	// Deprecated: this package does not dial Kafka itself and never reads
+	// Brokers. Configure the broker addresses on the Writer and Reader you
+	// pass in.
 	Brokers []string
-	// Topic is the Kafka topic for workflow states. Defaults to "beluga-workflows".
+	// Topic is the Kafka topic for workflow states. Defaults to
+	// "beluga-workflows". It is informational only: the topic is chosen by
+	// the Writer and Reader you pass in.
 	Topic string
-	// Writer is an optional pre-existing Kafka writer. If provided, Brokers/Topic are ignored for writes.
+	// Writer is the Kafka writer used to persist states. Required.
 	Writer Writer
-	// Reader is an optional pre-existing Kafka reader. If provided, Brokers/Topic are ignored for reads.
+	// Reader is an optional Kafka reader positioned at the start of the
+	// workflow topic. It is only used by [Store.Restore] to rebuild the
+	// in-memory index after a restart.
 	Reader Reader
 }
 
 // Store is a Kafka-backed WorkflowStore implementation.
-// It uses a compacted topic with workflow ID as the key, and maintains
-// an in-memory index for fast lookups.
+// It writes every state to a compacted topic with the workflow ID as the key,
+// and serves Load and List from an in-memory index of the latest state per
+// workflow.
+//
+// The index starts empty. Load and List only see states written by this
+// process unless [Store.Restore] has been called to replay the topic, so call
+// Restore at startup when states must survive a restart.
 type Store struct {
 	writer Writer
 	reader Reader
@@ -59,7 +74,7 @@ func New(cfg Config) (*Store, error) {
 	}
 
 	if cfg.Writer == nil {
-		return nil, fmt.Errorf("kafka: writer is required")
+		return nil, core.Errorf(core.ErrInvalidInput, "kafka: writer is required")
 	}
 
 	return &Store{
@@ -94,28 +109,71 @@ func (s *Store) Close() error {
 			errs = append(errs, err)
 		}
 	}
-	if len(errs) > 0 {
-		return errs[0]
+	return errors.Join(errs...)
+}
+
+// Restore rebuilds the in-memory index by reading the topic through the
+// configured Reader until the reader reports io.EOF or ctx is done (use a
+// ctx with a deadline when the Reader blocks at the end of the topic).
+// Later messages for a workflow replace earlier ones, and tombstones (empty
+// values) remove the workflow. It returns the number of messages applied.
+// Reaching the end of the topic, or ctx's deadline, is not an error.
+func (s *Store) Restore(ctx context.Context) (int, error) {
+	if s.reader == nil {
+		return 0, core.Errorf(core.ErrInvalidInput, "kafka/restore: no reader configured")
 	}
+	applied := 0
+	for {
+		msg, err := s.reader.ReadMessage(ctx)
+		if err != nil {
+			if errors.Is(err, io.EOF) || ctx.Err() != nil {
+				return applied, nil
+			}
+			return applied, core.Wrapf(core.ErrProviderDown, "kafka/restore: read: %w", err)
+		}
+		if err := s.apply(msg); err != nil {
+			return applied, err
+		}
+		applied++
+	}
+}
+
+// apply updates the index from one topic message.
+func (s *Store) apply(msg Message) error {
+	id := string(msg.Key)
+	if id == "" {
+		return nil
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(msg.Value) == 0 {
+		delete(s.cache, id)
+		return nil
+	}
+	var state workflow.WorkflowState
+	if err := json.Unmarshal(msg.Value, &state); err != nil {
+		return core.Errorf(core.ErrInvalidInput, "kafka/restore: decode %q: %w", id, err)
+	}
+	s.cache[id] = state
 	return nil
 }
 
 // Save persists the workflow state by writing it to the Kafka topic.
 func (s *Store) Save(ctx context.Context, state workflow.WorkflowState) error {
 	if state.WorkflowID == "" {
-		return fmt.Errorf("kafka/save: workflow ID is required")
+		return core.Errorf(core.ErrInvalidInput, "kafka/save: workflow ID is required")
 	}
 
 	data, err := json.Marshal(state)
 	if err != nil {
-		return fmt.Errorf("kafka/save: marshal: %w", err)
+		return core.Errorf(core.ErrInvalidInput, "kafka/save: marshal: %w", err)
 	}
 
 	if err := s.writer.WriteMessages(ctx, Message{
 		Key:   []byte(state.WorkflowID),
 		Value: data,
 	}); err != nil {
-		return fmt.Errorf("kafka/save: write: %w", err)
+		return core.Wrapf(core.ErrProviderDown, "kafka/save: write: %w", err)
 	}
 
 	s.mu.Lock()
@@ -125,7 +183,8 @@ func (s *Store) Save(ctx context.Context, state workflow.WorkflowState) error {
 	return nil
 }
 
-// Load retrieves the workflow state by ID from the in-memory cache.
+// Load retrieves the workflow state by ID from the in-memory index (see
+// [Store.Restore]).
 func (s *Store) Load(_ context.Context, workflowID string) (*workflow.WorkflowState, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -137,7 +196,8 @@ func (s *Store) Load(_ context.Context, workflowID string) (*workflow.WorkflowSt
 	return &state, nil
 }
 
-// List returns workflows matching the filter from the in-memory cache.
+// List returns workflows matching the filter from the in-memory index (see
+// [Store.Restore]).
 func (s *Store) List(_ context.Context, filter workflow.WorkflowFilter) ([]workflow.WorkflowState, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -162,7 +222,7 @@ func (s *Store) Delete(ctx context.Context, workflowID string) error {
 		Key:   []byte(workflowID),
 		Value: nil,
 	}); err != nil {
-		return fmt.Errorf("kafka/delete: write tombstone: %w", err)
+		return core.Wrapf(core.ErrProviderDown, "kafka/delete: write tombstone: %w", err)
 	}
 
 	s.mu.Lock()

@@ -27,10 +27,19 @@
 //	// {"input": "Hello"}
 //	// Response: text/event-stream with agent events
 //
+// # Errors and limits
+//
+// Error responses are JSON ({"error": "...", "request_id": "..."}) with
+// Content-Type application/json. Agent failures are logged server-side via
+// log/slog and reported to clients only as "internal error" plus a
+// request_id (also sent in the X-Request-Id header, and in the "error" SSE
+// event). Request bodies are limited to 1 MiB (HTTP 413 beyond that).
+//
 // # SSE Support
 //
 // The package includes SSEWriter for writing Server-Sent Events to HTTP
-// responses. It handles event formatting, multi-line data splitting, and
+// responses. It handles event formatting, multi-line data splitting, CR/LF
+// stripping of the event and id fields (preventing field injection), and
 // connection keep-alive heartbeats per the SSE specification.
 //
 //	sse, err := rest.NewSSEWriter(w)

@@ -1,29 +1,21 @@
-// Package daily provides the Daily.co transport provider for the Beluga AI
-// voice pipeline. It implements the [transport.AudioTransport] interface for
-// bidirectional audio I/O through Daily.co rooms.
+// Package daily registers the "daily" transport name for Daily.co rooms in the
+// Beluga AI voice pipeline.
 //
-// # Registration
+// # Status: not implemented
 //
-// This package registers itself as "daily" with the transport registry. Import
-// it with a blank identifier to enable:
+// This provider is a placeholder. It does not connect to Daily:
+// [New] (and transport.New("daily", ...)) always returns an error wrapping
+// [transport.ErrNotImplemented], which in turn wraps errors.ErrUnsupported.
+// Earlier releases returned a transport that silently discarded audio and
+// never produced frames; that fake success was removed.
+//
+// Use the built-in "websocket" transport (voice/transport) until a real
+// Daily integration is available.
 //
 //	import _ "github.com/lookatitude/beluga-ai/v2/voice/transport/providers/daily"
 //
-// # Usage
-//
-//	t, err := transport.New("daily", transport.Config{
-//	    URL:   "https://myapp.daily.co/room",
-//	    Token: "...",
-//	})
-//	frames, err := t.Recv(ctx)
-//
-// # Configuration
-//
-// The transport requires a Daily.co room URL. An optional authentication token
-// and sample rate (default 16000 Hz) can be provided via [transport.Config].
-//
-// # Exported Types
-//
-//   - [Transport] — implements transport.AudioTransport for Daily.co
-//   - [New] — constructor accepting transport.Config
+//	_, err := transport.New("daily", transport.Config{URL: "..."})
+//	if errors.Is(err, transport.ErrNotImplemented) {
+//	    // fall back to another transport
+//	}
 package daily

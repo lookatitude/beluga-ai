@@ -3,12 +3,14 @@ package google
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"iter"
 	"math"
 	"net/http"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
 	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/internal/errclass"
 	"github.com/lookatitude/beluga-ai/v2/llm"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 	"google.golang.org/genai"
@@ -57,7 +59,7 @@ func NewWithHTTPClient(cfg config.ProviderConfig, httpClient *http.Client) (*Mod
 
 	client, err := genai.NewClient(context.Background(), cc)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "google: failed to create client: %w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, "google: failed to create client: %w", err)
 	}
 
 	return &Model{
@@ -71,9 +73,24 @@ func (m *Model) Generate(ctx context.Context, msgs []schema.Message, opts ...llm
 	contents, gcConfig := m.buildRequest(msgs, opts)
 	resp, err := m.client.Models.GenerateContent(ctx, m.model, contents, gcConfig)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "google: generate failed: %w", err)
+		return nil, classifyError("google: generate failed", err)
 	}
 	return convertResponse(resp, m.model), nil
+}
+
+// classifyError maps a genai error onto a typed core.Error using the HTTP
+// status carried by genai.APIError (returned by value or pointer).
+func classifyError(prefix string, err error) error {
+	status := 0
+	var apiErr genai.APIError
+	var apiErrPtr *genai.APIError
+	switch {
+	case errors.As(err, &apiErr):
+		status = apiErr.Code
+	case errors.As(err, &apiErrPtr) && apiErrPtr != nil:
+		status = apiErrPtr.Code
+	}
+	return errclass.Classify(prefix, status, err)
 }
 
 // Stream sends messages and returns an iterator of response chunks.
@@ -82,7 +99,7 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 	return func(yield func(schema.StreamChunk, error) bool) {
 		for resp, err := range m.client.Models.GenerateContentStream(ctx, m.model, contents, gcConfig) {
 			if err != nil {
-				yield(schema.StreamChunk{}, core.Errorf(core.ErrProviderDown, "google: stream error: %w", err))
+				yield(schema.StreamChunk{}, classifyError("google: stream error", err))
 				return
 			}
 			chunk := convertStreamResponse(resp, m.model)

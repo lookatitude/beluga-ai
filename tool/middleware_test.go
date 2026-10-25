@@ -224,3 +224,60 @@ func (o *orderTool) Execute(ctx context.Context, input map[string]any) (*Result,
 	o.before()
 	return o.Tool.Execute(ctx, input)
 }
+
+// TestWithRetry_BacksOffBetweenAttempts is a regression test for FWC-26: the
+// retry loop had no delay, which immediately exhausted rate-limited tools.
+func TestWithRetry_BacksOffBetweenAttempts(t *testing.T) {
+	var times []time.Time
+	base := &mockTool{name: "rl", executeFn: func(map[string]any) (*Result, error) {
+		times = append(times, time.Now())
+		return nil, core.NewError("t", core.ErrRateLimit, "slow down", nil)
+	}}
+	wrapped := ApplyMiddleware(base, WithRetryBackoff(3, 20*time.Millisecond, 40*time.Millisecond))
+	if _, err := wrapped.Execute(context.Background(), nil); err == nil {
+		t.Fatal("expected error")
+	}
+	if len(times) != 3 {
+		t.Fatalf("calls = %d, want 3", len(times))
+	}
+	if gap := times[1].Sub(times[0]); gap < 10*time.Millisecond {
+		t.Errorf("first retry after %v, want >= 10ms backoff", gap)
+	}
+	if gap := times[2].Sub(times[1]); gap < 20*time.Millisecond {
+		t.Errorf("second retry after %v, want >= 20ms (doubled) backoff", gap)
+	}
+}
+
+// TestWithRetry_NonPositiveAttemptsRunsOnce is a regression test for FWC-26:
+// maxAttempts <= 0 never ran the tool and returned a "%w" of nil.
+func TestWithRetry_NonPositiveAttemptsRunsOnce(t *testing.T) {
+	for _, n := range []int{0, -3} {
+		calls := 0
+		base := &mockTool{name: "x", executeFn: func(map[string]any) (*Result, error) {
+			calls++
+			return TextResult("ok"), nil
+		}}
+		res, err := ApplyMiddleware(base, WithRetry(n)).Execute(context.Background(), nil)
+		if err != nil || res == nil || calls != 1 {
+			t.Errorf("WithRetry(%d): calls=%d res=%v err=%v, want one successful call", n, calls, res, err)
+		}
+	}
+}
+
+func TestWithRetry_CancelDuringBackoff(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	base := &mockTool{name: "x", executeFn: func(map[string]any) (*Result, error) {
+		cancel()
+		return nil, core.NewError("t", core.ErrTimeout, "slow", nil)
+	}}
+	_, err := ApplyMiddleware(base, WithRetryBackoff(3, time.Hour, time.Hour)).Execute(ctx, nil)
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("err = %v, want context.Canceled", err)
+	}
+	if d := nextRetryBackoff(time.Second, 0); d != 2*time.Second {
+		t.Errorf("uncapped backoff = %v", d)
+	}
+	if err := sleepWithContext(context.Background(), 0); err != nil {
+		t.Errorf("sleepWithContext(0) = %v", err)
+	}
+}

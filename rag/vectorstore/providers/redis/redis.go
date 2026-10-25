@@ -7,11 +7,13 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"unicode"
 
 	goredis "github.com/redis/go-redis/v9"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
 	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
+	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore/internal/filterutil"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
@@ -159,13 +161,9 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 	}
 
 	// Build the FT.SEARCH query for KNN vector search.
-	filterExpr := "*"
-	if len(cfg.Filter) > 0 {
-		filters := make([]string, 0, len(cfg.Filter))
-		for key, val := range cfg.Filter {
-			filters = append(filters, fmt.Sprintf("@%s:{%v}", key, val))
-		}
-		filterExpr = strings.Join(filters, " ")
+	filterExpr, err := buildFilterExpr(cfg.Filter)
+	if err != nil {
+		return nil, err
 	}
 
 	queryStr := fmt.Sprintf("(%s)=>[KNN %d @embedding $BLOB AS score]", filterExpr, k)
@@ -185,6 +183,38 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 
 	// Parse FT.SEARCH response.
 	return parseFTSearchResult(result, s.prefix, cfg.Threshold)
+}
+
+// buildFilterExpr renders metadata filters as RediSearch TAG predicates.
+// Keys must be safe identifiers and values scalars; every character of a
+// value that is not a letter, digit or underscore is backslash-escaped, so a
+// value can never close the tag set or add query clauses.
+func buildFilterExpr(filter map[string]any) (string, error) {
+	if len(filter) == 0 {
+		return "*", nil
+	}
+	keys, err := filterutil.Validate("redis.search", filter)
+	if err != nil {
+		return "", err
+	}
+	parts := make([]string, 0, len(keys))
+	for _, key := range keys {
+		parts = append(parts, fmt.Sprintf("@%s:{%s}", key, escapeTag(fmt.Sprintf("%v", filter[key]))))
+	}
+	return strings.Join(parts, " "), nil
+}
+
+// escapeTag escapes a RediSearch TAG value.
+func escapeTag(v string) string {
+	var b strings.Builder
+	b.Grow(len(v) * 2)
+	for _, r := range v {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '_' {
+			b.WriteByte('\\')
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
 }
 
 // Delete removes documents with the given IDs from the store.

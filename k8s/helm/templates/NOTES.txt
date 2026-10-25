@@ -1,0 +1,22 @@
+Beluga AI operator chart {{ .Chart.Version }} — PREVIEW
+
+CRDs: Helm installed (or kept) the Beluga AI CustomResourceDefinitions from the
+chart's crds/ directory: agents, teams, modelconfigs, toolservers,
+memorystores, guardpolicies (group beluga.ai). Helm never upgrades or deletes
+CRDs; apply k8s/crds/*.yaml with kubectl to update them.
+{{- if .Values.operator.enabled }}
+
+Operator: a Deployment running {{ include "beluga-operator.image" . }} was
+created in namespace {{ .Release.Namespace }}.
+
+WARNING: the Beluga repository does not build or publish an operator image
+yet. Unless you built your own image (an operator main that applies
+k8s/operator reconcile results and serves operator.NewHealthHandler on the
+"http" port), this pod will fail with ImagePullBackOff or failing probes.
+{{- else }}
+
+Operator: NOT deployed (operator.enabled=false, the default). The operator
+image ghcr.io/lookatitude/beluga-operator is not published yet. Set
+operator.enabled=true together with image.repository/image.tag pointing at an
+image you built yourself to deploy it.
+{{- end }}
