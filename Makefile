@@ -9,7 +9,7 @@ RM ?= rm -f
 # Tool versions pinned to match CI (.github/workflows/_ci-checks.yml and
 # _security-checks.yml). `make tools` installs exactly these.
 GOLANGCI_LINT_VERSION ?= v2.15.0
-GOSEC_VERSION ?= v2.25.0
+GOSEC_VERSION ?= v2.30.0
 GOVULNCHECK_VERSION ?= v1.9.0
 GO_LICENSES_VERSION ?= v2.0.1
 FUZZ_TIME ?=

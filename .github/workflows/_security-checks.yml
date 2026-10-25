@@ -279,7 +279,7 @@ jobs:
         id: gosec_scan
         # Blocking: no -no-fail, so findings fail the step. The SARIF file
         # is still written, and the steps below upload it with always().
-        uses: securego/gosec@223e19b8856e00f02cc67804499a83f77e208f3c # v2.25.0
+        uses: securego/gosec@5eb1d104ef85ff2c905c877eb600e8c1dee33a22 # v2.30.0
         with:
           args: -fmt sarif -out gosec-results.sarif ./...
 
