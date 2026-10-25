@@ -232,7 +232,6 @@ func TestReplayer_ProcessorError(t *testing.T) {
 	assert.Equal(t, core.ErrToolFailed, coreErr.Code)
 }
 
-
 // TestReplayer_ProcessorErrorKeepsCode is a regression test for FWC-03: a
 // classified processor error was re-coded as tool_failed.
 func TestReplayer_ProcessorErrorKeepsCode(t *testing.T) {
