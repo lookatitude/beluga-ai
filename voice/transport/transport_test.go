@@ -76,6 +76,7 @@ func (m *mockAudioTransport) Close() error {
 
 func TestRegistry_RegisterAndNew(t *testing.T) {
 	// Register a mock provider.
+	t.Cleanup(func() { unregisterForTest("mock-transport") })
 	Register("mock-transport", func(cfg Config) (AudioTransport, error) {
 		return &mockAudioTransport{}, nil
 	})
@@ -95,6 +96,7 @@ func TestRegistry_UnknownProvider(t *testing.T) {
 
 func TestList(t *testing.T) {
 	// Register a test provider.
+	t.Cleanup(func() { unregisterForTest("test-transport-list") })
 	Register("test-transport-list", func(cfg Config) (AudioTransport, error) {
 		return &mockAudioTransport{}, nil
 	})
@@ -721,6 +723,7 @@ func TestRegistry_PanicEmptyName(t *testing.T) {
 
 func TestRegistry_PanicNilFactory(t *testing.T) {
 	assert.Panics(t, func() {
+		t.Cleanup(func() { unregisterForTest("nil-factory-test") })
 		Register("nil-factory-test", nil)
 	})
 }

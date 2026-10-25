@@ -55,7 +55,10 @@
 //
 // # Middleware
 //
-// CredentialMiddleware wraps an auth.Policy to enforce credential-based
-// authorization: it extracts the credential from context, validates
-// expiry, and checks that the required permission is present.
+// MiddlewareWithIssuer wraps an auth.Policy to enforce
+// credential-based authorization: it extracts the credential from context,
+// re-reads it from the issuer (so revocation takes effect immediately),
+// requires the credential's AgentID to match the subject, validates expiry,
+// and checks that the required permission is present. The older
+// CredentialMiddleware trusts the context snapshot and is deprecated.
 package credential

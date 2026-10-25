@@ -258,17 +258,51 @@ func agentReplicas(spec AgentSpec, defaultReplicas int) int {
 	return defaultReplicas
 }
 
-// agentLabels merges the CRD user-supplied labels with the standard Beluga
-// operator labels (app, beluga-agent).
-func agentLabels(name string, userLabels map[string]string) map[string]string {
-	labels := map[string]string{
-		"app":          name,
-		"beluga-agent": name,
-		"managed-by":   "beluga-operator",
+// Reserved label keys set by the operator on every generated Deployment and
+// used as the Service selector. User-supplied labels can never override them.
+const (
+	labelApp         = "app"
+	labelBelugaAgent = "beluga-agent"
+	labelManagedBy   = "managed-by"
+	managedByValue   = "beluga-operator"
+)
+
+// reservedLabelKeys lists the reserved keys in a stable order.
+var reservedLabelKeys = []string{labelApp, labelBelugaAgent, labelManagedBy}
+
+// ReservedLabelKeys returns the label keys the operator owns on generated
+// resources ("app", "beluga-agent", "managed-by"). Values supplied for these
+// keys in an Agent's metadata labels are ignored by the reconciler and
+// rejected by the validating webhook. The returned slice is a fresh copy.
+func ReservedLabelKeys() []string {
+	out := make([]string, len(reservedLabelKeys))
+	copy(out, reservedLabelKeys)
+	return out
+}
+
+// IsReservedLabel reports whether key is one of [ReservedLabelKeys].
+// Comparison is exact (label keys are case-sensitive in Kubernetes).
+func IsReservedLabel(key string) bool {
+	for _, k := range reservedLabelKeys {
+		if k == key {
+			return true
+		}
 	}
+	return false
+}
+
+// agentLabels merges the CRD user-supplied labels with the standard Beluga
+// operator labels. User labels are applied first and the reserved keys
+// (see [ReservedLabelKeys]) last, so a user label can never redirect the
+// Service selector to another workload's pods.
+func agentLabels(name string, userLabels map[string]string) map[string]string {
+	labels := make(map[string]string, len(userLabels)+len(reservedLabelKeys))
 	for k, v := range userLabels {
 		labels[k] = v
 	}
+	labels[labelApp] = name
+	labels[labelBelugaAgent] = name
+	labels[labelManagedBy] = managedByValue
 	return labels
 }
 

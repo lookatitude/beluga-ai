@@ -176,3 +176,26 @@ func keys(m map[string]string) []string {
 	}
 	return out
 }
+
+// EX-07: the generated CI must install the CLI at the pinned version from
+// outside the module; a bare `go install .../cmd/beluga` inside the module
+// fails because the project's go.sum lacks the CLI-only dependencies.
+func TestScaffoldBasic_CIInstallsPinnedCLIOutsideModule(t *testing.T) {
+	data, err := builtinTemplatesFS.ReadFile("templates/basic/.github/workflows/ci.yml.tmpl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ci := string(data)
+	if strings.Contains(ci, "go install github.com/lookatitude/beluga-ai/v2/cmd/beluga\n") {
+		t.Error("ci.yml.tmpl still installs the beluga CLI without a version")
+	}
+	for _, want := range []string{
+		`go list -m -f '{{.Version}}' github.com/lookatitude/beluga-ai/v2`,
+		`cd "$RUNNER_TEMP"`,
+		`go install "github.com/lookatitude/beluga-ai/v2/cmd/beluga@${BELUGA_VERSION}"`,
+	} {
+		if !strings.Contains(ci, want) {
+			t.Errorf("ci.yml.tmpl missing %q", want)
+		}
+	}
+}

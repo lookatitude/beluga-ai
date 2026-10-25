@@ -2,11 +2,10 @@ package pipecat
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"iter"
-	"sync"
 
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/voice"
 	"github.com/lookatitude/beluga-ai/v2/voice/transport"
 )
@@ -19,84 +18,51 @@ func init() {
 	})
 }
 
-// Transport implements transport.AudioTransport for Pipecat servers.
-type Transport struct {
-	url        string
-	sampleRate int
-	closed     bool
-	mu         sync.Mutex
-	frames     chan voice.Frame
+// Transport is the placeholder transport.AudioTransport for a Pipecat server.
+//
+// NOT IMPLEMENTED: no Pipecat connection is made. New always returns an error
+// wrapping transport.ErrNotImplemented, and every method of a Transport
+// value reports the same error instead of silently discarding audio. The
+// type is kept so existing code compiles; use the built-in "websocket"
+// transport until a real Pipecat integration ships.
+type Transport struct{}
+
+// New reports that the Pipecat transport is not implemented. It always
+// returns a nil Transport and an error wrapping transport.ErrNotImplemented.
+func New(_ transport.Config) (*Transport, error) {
+	return nil, notImplemented()
 }
 
-// New creates a new Pipecat transport.
-func New(cfg transport.Config) (*Transport, error) {
-	if cfg.URL == "" {
-		return nil, fmt.Errorf("pipecat: URL is required")
-	}
-
-	sampleRate := cfg.SampleRate
-	if sampleRate == 0 {
-		sampleRate = 16000
-	}
-
-	return &Transport{
-		url:        cfg.URL,
-		sampleRate: sampleRate,
-		frames:     make(chan voice.Frame, 64),
-	}, nil
+func notImplemented() error {
+	return core.Errorf(core.ErrInvalidInput, "pipecat: %w", transport.ErrNotImplemented)
 }
 
-// Recv returns an iterator of incoming audio frames.
-// If the transport is already closed the first yielded pair carries an error
-// and the iterator ends.
-func (t *Transport) Recv(ctx context.Context) iter.Seq2[voice.Frame, error] {
+// Recv yields a single transport.ErrNotImplemented error.
+func (t *Transport) Recv(_ context.Context) iter.Seq2[voice.Frame, error] {
 	return func(yield func(voice.Frame, error) bool) {
-		t.mu.Lock()
-		closed := t.closed
-		frames := t.frames
-		t.mu.Unlock()
-		if closed {
-			yield(voice.Frame{}, fmt.Errorf("pipecat: transport is closed"))
-			return
-		}
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case frame, ok := <-frames:
-				if !ok {
-					return
-				}
-				if !yield(frame, nil) {
-					return
-				}
-			}
-		}
+		yield(voice.Frame{}, notImplemented())
 	}
 }
 
-// Send writes an outgoing frame to the Pipecat server.
+// Send returns transport.ErrNotImplemented.
 func (t *Transport) Send(_ context.Context, _ voice.Frame) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if t.closed {
-		return fmt.Errorf("pipecat: transport is closed")
-	}
-	return nil
+	return notImplemented()
 }
 
-// AudioOut returns a writer for raw audio output.
+// AudioOut returns a writer whose writes fail with
+// transport.ErrNotImplemented.
 func (t *Transport) AudioOut() io.Writer {
-	return io.Discard
+	return errWriter{}
 }
 
-// Close shuts down the Pipecat transport.
+// Close is a no-op.
 func (t *Transport) Close() error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if !t.closed {
-		t.closed = true
-		close(t.frames)
-	}
 	return nil
+}
+
+// errWriter fails every write.
+type errWriter struct{}
+
+func (errWriter) Write(_ []byte) (int, error) {
+	return 0, notImplemented()
 }

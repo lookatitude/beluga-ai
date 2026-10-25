@@ -1,6 +1,10 @@
 // Package playht provides the PlayHT TTS provider for the Beluga AI voice
 // pipeline. It uses the PlayHT Text-to-Speech API for voice synthesis.
 //
+// Deprecated: PlayHT discontinued its service and public API in 2025, so
+// this provider is not expected to work. It is kept for source
+// compatibility and will be removed; use another voice/tts provider.
+//
 // # Registration
 //
 // This package registers itself as "playht" with the tts registry. Import it

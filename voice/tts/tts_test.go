@@ -47,6 +47,7 @@ func (m *mockTTS) SynthesizeStream(ctx context.Context, textStream iter.Seq2[str
 
 func TestRegistry_RegisterAndNew(t *testing.T) {
 	// Register a mock provider.
+	t.Cleanup(func() { unregisterForTest("mock-tts") })
 	Register("mock-tts", func(cfg Config) (TTS, error) {
 		return &mockTTS{}, nil
 	})
@@ -78,15 +79,18 @@ func TestRegistry_PanicOnEmptyName(t *testing.T) {
 
 func TestRegistry_PanicOnNilFactory(t *testing.T) {
 	assert.Panics(t, func() {
+		t.Cleanup(func() { unregisterForTest("test-tts-nil-factory") })
 		Register("test-tts-nil-factory", nil)
 	})
 }
 
 func TestRegistry_PanicOnDuplicate(t *testing.T) {
+	t.Cleanup(func() { unregisterForTest("test-tts-dup-check") })
 	Register("test-tts-dup-check", func(cfg Config) (TTS, error) {
 		return &mockTTS{}, nil
 	})
 	assert.Panics(t, func() {
+		t.Cleanup(func() { unregisterForTest("test-tts-dup-check") })
 		Register("test-tts-dup-check", func(cfg Config) (TTS, error) {
 			return &mockTTS{}, nil
 		})
@@ -95,6 +99,7 @@ func TestRegistry_PanicOnDuplicate(t *testing.T) {
 
 func TestList(t *testing.T) {
 	// Register a test provider.
+	t.Cleanup(func() { unregisterForTest("test-tts-list") })
 	Register("test-tts-list", func(cfg Config) (TTS, error) {
 		return &mockTTS{}, nil
 	})

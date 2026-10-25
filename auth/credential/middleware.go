@@ -11,15 +11,40 @@ import (
 // authorization. It extracts the credential from the context, validates that it
 // is not expired or revoked, and checks that it contains the requested
 // permission. If any check fails, authorization is denied.
+//
+// Deprecated: CredentialMiddleware trusts the credential snapshot stored in
+// the context, so a credential revoked at the issuer after it was placed in
+// the context is still accepted, and it does not bind the credential to the
+// subject being authorized. Use MiddlewareWithIssuer.
 func CredentialMiddleware() auth.Middleware { //nolint:revive // stuttering name is part of the published v2 API; renaming would break callers
 	return func(next auth.Policy) auth.Policy {
 		return &credentialPolicy{next: next}
 	}
 }
 
+// MiddlewareWithIssuer returns an auth.Middleware that enforces
+// credential-based authorization against the live state held by iss. For a
+// credential found in the context it:
+//
+//   - re-fetches the credential from iss by ID, so revocation and expiry are
+//     evaluated on the issuer's current copy, not the context snapshot;
+//   - requires the credential's AgentID to equal the subject being
+//     authorized, so agent A's credential cannot authorize subject B;
+//   - requires the requested permission on the issuer's copy.
+//
+// Requests without a credential in the context are delegated unchanged.
+func MiddlewareWithIssuer(iss CredentialIssuer) auth.Middleware {
+	return func(next auth.Policy) auth.Policy {
+		return &credentialPolicy{next: next, issuer: iss}
+	}
+}
+
 // credentialPolicy wraps an auth.Policy with credential enforcement.
 type credentialPolicy struct {
 	next auth.Policy
+	// issuer, when set, is the source of truth for credential state and
+	// enables subject binding.
+	issuer CredentialIssuer
 }
 
 // Compile-time check that credentialPolicy implements auth.Policy.
@@ -38,6 +63,17 @@ func (p *credentialPolicy) Authorize(ctx context.Context, subject string, permis
 	if cred == nil {
 		// No credential in context; delegate to underlying policy.
 		return p.next.Authorize(ctx, subject, permission, resource)
+	}
+
+	if p.issuer != nil {
+		live, err := p.issuer.Get(ctx, cred.ID)
+		if err != nil {
+			return false, core.NewError("credential.middleware", core.ErrAuth, "credential is not known to the issuer", err)
+		}
+		if live.AgentID != subject {
+			return false, core.NewError("credential.middleware", core.ErrAuth, "credential was not issued to this subject", nil)
+		}
+		cred = live
 	}
 
 	// Validate the credential.

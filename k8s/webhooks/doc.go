@@ -13,6 +13,8 @@
 //   - Planner must be a recognised value ("react", "openai-functions", "plan-and-execute").
 //   - MaxIterations must be > 0.
 //   - Persona.Role must be non-empty.
+//   - Labels must not set the operator-reserved keys "app", "beluga-agent",
+//     or "managed-by" (see [operator.ReservedLabelKeys]).
 //
 // [ValidateTeam] checks a [operator.TeamResource] for correctness:
 //   - Pattern must be a recognised value ("sequential", "parallel", "supervisor").

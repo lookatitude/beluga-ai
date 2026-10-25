@@ -84,8 +84,11 @@ func TestSignedMemory_SaveAddsSignature(t *testing.T) {
 	assert.True(t, ok)
 	assert.NotEmpty(t, sig)
 
-	// Verify the signature is valid.
-	assert.True(t, s.Verify("world", sig))
+	// Verify the signature is the v2 canonical signature.
+	payload, err := canonicalMessage(savedOutput)
+	require.NoError(t, err)
+	assert.True(t, s.Verify(payload, sig))
+	assert.Equal(t, signatureVersion, meta[MetaKeySignatureVersion])
 
 	// Verify existing metadata preserved.
 	assert.Equal(t, "value", meta["existing"])
@@ -95,7 +98,15 @@ func TestSignedMemory_LoadVerifiesSignature(t *testing.T) {
 	s, err := NewSignedMemoryMiddleware([]byte("key123"))
 	require.NoError(t, err)
 
-	sig := s.Sign("valid response")
+	validMsg, err := s.SignMessage(&schema.AIMessage{Parts: []schema.ContentPart{schema.TextPart{Text: "valid response"}}})
+	require.NoError(t, err)
+	sigMeta := validMsg.GetMetadata()
+	tampered := func(text string) schema.Message {
+		return &schema.AIMessage{
+			Parts:    []schema.ContentPart{schema.TextPart{Text: text}},
+			Metadata: sigMeta,
+		}
+	}
 
 	tests := []struct {
 		name       string
@@ -106,10 +117,7 @@ func TestSignedMemory_LoadVerifiesSignature(t *testing.T) {
 		{
 			name: "valid signature passes",
 			messages: []schema.Message{
-				&schema.AIMessage{
-					Parts:    []schema.ContentPart{schema.TextPart{Text: "valid response"}},
-					Metadata: map[string]any{MetaKeySignature: sig},
-				},
+				validMsg,
 			},
 			wantCount: 1,
 		},
@@ -127,10 +135,7 @@ func TestSignedMemory_LoadVerifiesSignature(t *testing.T) {
 		{
 			name: "tampered content filtered",
 			messages: []schema.Message{
-				&schema.AIMessage{
-					Parts:    []schema.ContentPart{schema.TextPart{Text: "tampered content"}},
-					Metadata: map[string]any{MetaKeySignature: sig},
-				},
+				tampered("tampered content"),
 			},
 			wantCount:  0,
 			hookCalled: true,
@@ -138,14 +143,8 @@ func TestSignedMemory_LoadVerifiesSignature(t *testing.T) {
 		{
 			name: "mixed valid and invalid",
 			messages: []schema.Message{
-				&schema.AIMessage{
-					Parts:    []schema.ContentPart{schema.TextPart{Text: "valid response"}},
-					Metadata: map[string]any{MetaKeySignature: sig},
-				},
-				&schema.AIMessage{
-					Parts:    []schema.ContentPart{schema.TextPart{Text: "tampered"}},
-					Metadata: map[string]any{MetaKeySignature: sig},
-				},
+				validMsg,
+				tampered("tampered"),
 			},
 			wantCount:  1,
 			hookCalled: true,
@@ -206,7 +205,7 @@ func TestSignedMemory_DelegatesClearAndSearch(t *testing.T) {
 
 	docs, err := signed.Search(context.Background(), "query", 5)
 	require.NoError(t, err)
-	assert.Nil(t, docs)
+	assert.Empty(t, docs)
 }
 
 func TestWithSignature_AllMessageTypes(t *testing.T) {

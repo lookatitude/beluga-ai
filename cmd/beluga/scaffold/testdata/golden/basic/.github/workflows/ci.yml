@@ -20,7 +20,7 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-          check-latest: false
+          check-latest: true
           cache: true
 
       - name: Install golangci-lint
@@ -49,14 +49,21 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-          check-latest: false
+          check-latest: true
           cache: true
 
-      # `go install` inside the module installs the beluga version pinned
-      # in this project's go.mod, so the CLI and framework stay in lockstep.
+      # Install the beluga CLI at the exact framework version pinned in this
+      # project's go.mod, so the CLI and framework stay in lockstep. The
+      # install runs outside the module with an explicit @version: the
+      # project's tidy go.sum does not carry the CLI-only dependencies
+      # (cobra and others), so a bare `go install .../cmd/beluga` inside
+      # the module fails with "missing go.sum entry".
       # setup-go puts $HOME/go/bin on PATH automatically.
       - name: Install beluga CLI
-        run: go install github.com/lookatitude/beluga-ai/v2/cmd/beluga
+        run: |
+          BELUGA_VERSION="$(go list -m -f '{{.Version}}' github.com/lookatitude/beluga-ai/v2)"
+          cd "$RUNNER_TEMP"
+          go install "github.com/lookatitude/beluga-ai/v2/cmd/beluga@${BELUGA_VERSION}"
 
       - name: Make eval-ci
         run: make eval-ci
@@ -88,7 +95,10 @@ jobs:
   #         go-version-file: go.mod
   #         cache: true
   #     - name: Install beluga CLI
-  #       run: go install github.com/lookatitude/beluga-ai/v2/cmd/beluga
+  #       run: |
+  #         BELUGA_VERSION="$(go list -m -f '{{.Version}}' github.com/lookatitude/beluga-ai/v2)"
+  #         cd "$RUNNER_TEMP"
+  #         go install "github.com/lookatitude/beluga-ai/v2/cmd/beluga@${BELUGA_VERSION}"
   #     - name: Run real-provider eval
   #       env:
   #         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

@@ -38,12 +38,12 @@ func TestNew(t *testing.T) {
 			Extra: map[string]any{
 				"api_key":  "test-key",
 				"base_url": "https://custom.assemblyai.com/v2",
-				"ws_url":   "wss://custom.assemblyai.com/v2/realtime/ws",
+				"ws_url":   "wss://custom.assemblyai.com/v3/ws",
 			},
 		})
 		require.NoError(t, err)
 		assert.Equal(t, "https://custom.assemblyai.com/v2", e.baseURL)
-		assert.Equal(t, "wss://custom.assemblyai.com/v2/realtime/ws", e.wsURL)
+		assert.Equal(t, "wss://custom.assemblyai.com/v3/ws", e.wsURL)
 	})
 }
 
@@ -328,19 +328,13 @@ func TestTranscribeStream_SuccessfulStreaming(t *testing.T) {
 			return
 		}
 		ctx := r.Context()
-		conn.Read(ctx)                           //nolint:errcheck
-		wsjson.Write(ctx, conn, realtimeMessage{ //nolint:errcheck
-			MessageType: "FinalTranscript",
-			Text:        "hello world",
-			Confidence:  0.98,
-			AudioStart:  0,
-			AudioEnd:    1500,
-			Words: []struct {
-				Text       string  `json:"text"`
-				Start      int     `json:"start"`
-				End        int     `json:"end"`
-				Confidence float64 `json:"confidence"`
-			}{
+		conn.Read(ctx)                       //nolint:errcheck
+		wsjson.Write(ctx, conn, turnMessage{ //nolint:errcheck
+			Type:            "Turn",
+			Transcript:      "hello world",
+			EndOfTurn:       true,
+			TurnIsFormatted: true,
+			Words: []streamWord{
 				{Text: "hello", Start: 0, End: 500, Confidence: 0.99},
 				{Text: "world", Start: 600, End: 1500, Confidence: 0.97},
 			},
@@ -370,7 +364,7 @@ func TestTranscribeStream_SuccessfulStreaming(t *testing.T) {
 	require.GreaterOrEqual(t, len(events), 1)
 	assert.Equal(t, "hello world", events[0].Text)
 	assert.True(t, events[0].IsFinal)
-	assert.Equal(t, 0.98, events[0].Confidence)
+	assert.InDelta(t, 0.98, events[0].Confidence, 1e-9)
 	require.Len(t, events[0].Words, 2)
 	assert.Equal(t, "hello", events[0].Words[0].Text)
 }
@@ -382,11 +376,10 @@ func TestTranscribeStream_PartialTranscript(t *testing.T) {
 			return
 		}
 		ctx := r.Context()
-		conn.Read(ctx)                           //nolint:errcheck
-		wsjson.Write(ctx, conn, realtimeMessage{ //nolint:errcheck
-			MessageType: "PartialTranscript",
-			Text:        "hello",
-			Confidence:  0.7,
+		conn.Read(ctx)                       //nolint:errcheck
+		wsjson.Write(ctx, conn, turnMessage{ //nolint:errcheck
+			Type:       "Turn",
+			Transcript: "hello",
 		})
 		conn.Close(websocket.StatusNormalClosure, "") //nolint:errcheck
 	}))
@@ -418,10 +411,10 @@ func TestTranscribeStream_EmptyTextSkipped(t *testing.T) {
 			return
 		}
 		ctx := r.Context()
-		conn.Read(ctx)                                                                                            //nolint:errcheck
-		wsjson.Write(ctx, conn, realtimeMessage{MessageType: "PartialTranscript", Text: ""})                      //nolint:errcheck
-		wsjson.Write(ctx, conn, realtimeMessage{MessageType: "FinalTranscript", Text: "actual", Confidence: 0.9}) //nolint:errcheck
-		conn.Close(websocket.StatusNormalClosure, "")                                                             //nolint:errcheck
+		conn.Read(ctx)                                                                                                   //nolint:errcheck
+		wsjson.Write(ctx, conn, turnMessage{Type: "Turn", Transcript: ""})                                               //nolint:errcheck
+		wsjson.Write(ctx, conn, turnMessage{Type: "Turn", Transcript: "actual", EndOfTurn: true, TurnIsFormatted: true}) //nolint:errcheck
+		conn.Close(websocket.StatusNormalClosure, "")                                                                    //nolint:errcheck
 	}))
 	defer srv.Close()
 
@@ -451,10 +444,10 @@ func TestTranscribeStream_NonJSONMessageSkipped(t *testing.T) {
 			return
 		}
 		ctx := r.Context()
-		conn.Read(ctx)                                                                                           //nolint:errcheck
-		conn.Write(ctx, websocket.MessageText, []byte("not json"))                                               //nolint:errcheck
-		wsjson.Write(ctx, conn, realtimeMessage{MessageType: "FinalTranscript", Text: "valid", Confidence: 0.9}) //nolint:errcheck
-		conn.Close(websocket.StatusNormalClosure, "")                                                            //nolint:errcheck
+		conn.Read(ctx)                                                                                                  //nolint:errcheck
+		conn.Write(ctx, websocket.MessageText, []byte("not json"))                                                      //nolint:errcheck
+		wsjson.Write(ctx, conn, turnMessage{Type: "Turn", Transcript: "valid", EndOfTurn: true, TurnIsFormatted: true}) //nolint:errcheck
+		conn.Close(websocket.StatusNormalClosure, "")                                                                   //nolint:errcheck
 	}))
 	defer srv.Close()
 
@@ -607,7 +600,7 @@ func TestTranscribeStream_WriteErrorOnClosedConnection(t *testing.T) {
 		if err != nil {
 			return
 		}
-		conn.Close(websocket.StatusNormalClosure, "") //nolint:errcheck
+		conn.CloseNow() //nolint:errcheck // abrupt close: the stream must report an error
 	}))
 	defer srv.Close()
 
@@ -641,10 +634,10 @@ func TestTranscribeStream_YieldReturnsFalse(t *testing.T) {
 		defer conn.Close(websocket.StatusNormalClosure, "") //nolint:errcheck
 		ctx := r.Context()
 		for i := 0; i < 5; i++ {
-			wsjson.Write(ctx, conn, realtimeMessage{ //nolint:errcheck
-				MessageType: "FinalTranscript",
-				Text:        "text",
-				Confidence:  0.9,
+			wsjson.Write(ctx, conn, turnMessage{ //nolint:errcheck
+				Type:       "Turn",
+				Transcript: "text",
+				EndOfTurn:  true,
 			})
 		}
 	}))
@@ -683,4 +676,77 @@ func TestRegistry(t *testing.T) {
 		}
 		assert.True(t, found, "expected 'assemblyai' in registered providers: %v", names)
 	})
+}
+
+// FI-32: streaming uses the Universal-Streaming v3 protocol: binary audio,
+// v3 query parameters, Terminate message, and formatted end-of-turn finals.
+func TestTranscribeStream_V3Protocol(t *testing.T) {
+	type got struct {
+		query   string
+		auth    string
+		binary  []byte
+		control string
+	}
+	var g got
+	done := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		g.query = r.URL.RawQuery
+		g.auth = r.Header.Get("Authorization")
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer close(done)
+		ctx := r.Context()
+		_ = conn.Write(ctx, websocket.MessageText, []byte(`{"type":"Begin","id":"s1"}`))
+		typ, data, err := conn.Read(ctx)
+		if err != nil || typ != websocket.MessageBinary {
+			return
+		}
+		g.binary = data
+		for _, m := range []turnMessage{
+			{Type: "Turn", Transcript: "hello world", EndOfTurn: true},
+			{Type: "Turn", Transcript: "Hello world.", EndOfTurn: true, TurnIsFormatted: true},
+		} {
+			_ = wsjson.Write(ctx, conn, m)
+		}
+		_, data, _ = conn.Read(ctx)
+		g.control = string(data)
+		_ = conn.Write(ctx, websocket.MessageText, []byte(`{"type":"Termination"}`))
+		_ = conn.Close(websocket.StatusNormalClosure, "")
+	}))
+	defer srv.Close()
+
+	e, err := New(stt.Config{Language: "es", Extra: map[string]any{"api_key": "k", "ws_url": "ws" + strings.TrimPrefix(srv.URL, "http")}})
+	require.NoError(t, err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	audio := func(yield func([]byte, error) bool) {
+		yield([]byte{0x01, 0x02}, nil)
+		time.Sleep(100 * time.Millisecond)
+	}
+	var events []stt.TranscriptEvent
+	for ev, err := range e.TranscribeStream(ctx, audio) {
+		require.NoError(t, err)
+		events = append(events, ev)
+	}
+	<-done
+	require.Len(t, events, 2)
+	assert.False(t, events[0].IsFinal)
+	assert.True(t, events[1].IsFinal)
+	assert.Equal(t, "Hello world.", events[1].Text)
+	assert.Equal(t, []byte{0x01, 0x02}, g.binary)
+	assert.Equal(t, `{"type":"Terminate"}`, g.control)
+	assert.Equal(t, "k", g.auth)
+	assert.Contains(t, g.query, "speech_model=universal-streaming-multilingual")
+	assert.Contains(t, g.query, "encoding=pcm_s16le")
+	assert.Contains(t, g.query, "format_turns=true")
+}
+
+func TestStreamSpeechModel(t *testing.T) {
+	assert.Equal(t, "universal-streaming-english", streamSpeechModel(stt.Config{}))
+	assert.Equal(t, "universal-streaming-english", streamSpeechModel(stt.Config{Language: "en-US"}))
+	assert.Equal(t, "universal-streaming-multilingual", streamSpeechModel(stt.Config{Language: "de"}))
+	assert.Equal(t, "custom", streamSpeechModel(stt.Config{Model: "custom"}))
 }

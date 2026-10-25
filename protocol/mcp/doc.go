@@ -1,12 +1,13 @@
 // Package mcp implements the Model Context Protocol (MCP) for tool and resource
-// sharing between AI systems. It supports the Streamable HTTP transport per the
-// March 2025 MCP specification, using a single HTTP endpoint for JSON-RPC 2.0
-// messages.
+// sharing between AI systems. It supports a subset of the Streamable HTTP
+// transport (MCP revisions 2025-03-26 and 2025-06-18), using a single HTTP
+// endpoint for JSON-RPC 2.0 messages. For full spec coverage use
+// protocol/mcp/sdk, which wraps the official Go SDK.
 //
 // MCP enables AI applications to expose and consume tools, resources, and prompt
 // templates across process and network boundaries. The protocol uses JSON-RPC 2.0
-// as its message format, with methods including initialize, tools/list, tools/call,
-// resources/list, and prompts/list.
+// as its message format, with methods including initialize, ping, tools/list,
+// tools/call, resources/list, and prompts/list.
 //
 // # Server
 //
@@ -24,10 +25,23 @@
 //
 //	http.Handle("/mcp", srv.Handler())
 //
+// Notifications are acknowledged with HTTP 202. Resources and prompts are
+// list-only (resources/read and prompts/get are not implemented), so their
+// capabilities are not advertised. Bodies are capped at 1 MiB
+// (WithMaxBodyBytes) and internal tool errors are returned only as a generic
+// "internal error" with a request_id. Origin validation against DNS
+// rebinding is opt-in:
+//
+//	srv := mcp.NewServer("my-server", "1.0.0",
+//	    mcp.WithAllowedOrigins("https://app.example.com"))
+//
 // # Client
 //
 // MCPClient connects to a remote MCP server and provides methods for
-// initialization, tool listing, and tool invocation.
+// initialization, tool listing, and tool invocation. Initialize performs the
+// 2025-06-18 handshake (initialize params, Mcp-Session-Id tracking,
+// notifications/initialized); JSON and SSE responses are both accepted. The
+// default HTTP client has a 30s timeout (override with WithClientHTTPClient).
 //
 //	client := mcp.NewClient("http://localhost:8080/mcp")
 //	caps, err := client.Initialize(ctx)

@@ -25,7 +25,7 @@
 //   - base_url — Custom API base URL (optional)
 //
 // The default voice is "Rachel" (21m00Tcm4TlvDq8ikWAM) and the default model
-// is "eleven_monolingual_v1". Output format defaults to audio/mpeg.
+// is "eleven_multilingual_v2" (eleven_monolingual_v1 is deprecated by ElevenLabs). Output format defaults to audio/mpeg.
 //
 // # Exported Types
 //

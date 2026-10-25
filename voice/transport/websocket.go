@@ -3,8 +3,10 @@ package transport
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"iter"
+	"net"
 	"net/http"
 	"strings"
 	"sync"
@@ -108,7 +110,8 @@ type WebSocketTransport struct {
 	closeOnce sync.Once
 	mu        sync.Mutex // guards writes to conn
 	audioOut  io.Writer  // cached writer from AudioOut()
-	err       error      // first error encountered
+	errMu     sync.Mutex // guards err
+	err       error      // terminal read error, surfaced by Recv
 }
 
 // NewWebSocketTransport dials a WebSocket at the given URL and returns a
@@ -187,12 +190,12 @@ func (t *WebSocketTransport) readLoop(ctx context.Context) {
 
 		msgType, data, err := t.conn.Read(ctx)
 		if err != nil {
-			// Store first error for diagnostics.
-			t.mu.Lock()
+			// Record the terminal error so Recv can surface it.
+			t.errMu.Lock()
 			if t.err == nil {
 				t.err = err
 			}
-			t.mu.Unlock()
+			t.errMu.Unlock()
 			return
 		}
 
@@ -248,6 +251,9 @@ func (t *WebSocketTransport) Recv(ctx context.Context) iter.Seq2[voice.Frame, er
 				return
 			case frame, ok := <-t.frames:
 				if !ok {
+					if err := t.terminalErr(ctx); err != nil {
+						yield(voice.Frame{}, err)
+					}
 					return
 				}
 				if !yield(frame, nil) {
@@ -256,6 +262,31 @@ func (t *WebSocketTransport) Recv(ctx context.Context) iter.Seq2[voice.Frame, er
 			}
 		}
 	}
+}
+
+// terminalErr returns the read-loop error that ended the stream, or nil when
+// the stream ended normally: a normal/going-away close from the peer, a local
+// Close, or cancellation of ctx.
+func (t *WebSocketTransport) terminalErr(ctx context.Context) error {
+	t.errMu.Lock()
+	err := t.err
+	t.errMu.Unlock()
+	if err == nil || ctx.Err() != nil {
+		return nil
+	}
+	select {
+	case <-t.done:
+		return nil
+	default:
+	}
+	switch websocket.CloseStatus(err) {
+	case websocket.StatusNormalClosure, websocket.StatusGoingAway:
+		return nil
+	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return nil
+	}
+	return core.Errorf(core.ErrProviderDown, "transport: websocket read: %w", err)
 }
 
 // Send writes an outgoing frame to the WebSocket connection.
@@ -346,8 +377,26 @@ func (t *WebSocketTransport) Close() error {
 	t.closeOnce.Do(func() {
 		close(t.done)
 		err = t.conn.Close(websocket.StatusNormalClosure, "")
+		// The read loop or the peer may already have torn the connection
+		// down; that is a successful close from the caller's view.
+		if err != nil && t.closeErrIsBenign(err) {
+			_ = t.conn.CloseNow()
+			err = nil
+		}
 	})
 	return err
+}
+
+// closeErrIsBenign reports whether a Close error only reflects that the
+// connection was already gone (peer closed, read loop ended, socket closed).
+func (t *WebSocketTransport) closeErrIsBenign(err error) bool {
+	if errors.Is(err, net.ErrClosed) || errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) ||
+		websocket.CloseStatus(err) != -1 {
+		return true
+	}
+	t.errMu.Lock()
+	defer t.errMu.Unlock()
+	return t.err != nil
 }
 
 func init() {

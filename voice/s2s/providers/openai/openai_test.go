@@ -488,7 +488,9 @@ func TestStartWithOptions(t *testing.T) {
 
 			session := msg["session"].(map[string]any)
 			assert.Equal(t, "You are a helpful assistant", session["instructions"])
-			assert.Equal(t, "nova", session["voice"])
+			assert.Equal(t, "realtime", session["type"])
+			audio := session["audio"].(map[string]any)
+			assert.Equal(t, "nova", audio["output"].(map[string]any)["voice"])
 
 			tools := session["tools"].([]any)
 			require.Len(t, tools, 1)

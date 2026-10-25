@@ -2,6 +2,13 @@
 // Beluga AI safety pipeline. It implements the guard.Guard interface and sends
 // content validation requests to a NeMo Guardrails API endpoint.
 //
+// The guard calls the Guardrails server's OpenAI-compatible
+// POST /v1/chat/completions endpoint with guardrails.config_id, rails-only
+// generation options (dialog disabled) and the activated-rails log enabled.
+// Content is blocked when any activated rail reports stop=true. The guard
+// fails closed: a response without choices or without
+// guardrails.log.activated_rails is returned as an error, never as an allow.
+//
 // NeMo Guardrails can be configured to check for topic safety, jailbreak
 // detection, fact-checking, and more via Colang configurations.
 //
@@ -13,6 +20,7 @@
 //     "http://localhost:8080".
 //   - WithAPIKey sets the API key for authentication (optional).
 //   - WithConfigID sets the guardrails configuration ID. Defaults to "default".
+//   - WithModel sets the request "model" field. Defaults to "default".
 //   - WithTimeout sets the HTTP client timeout. Defaults to 15 seconds.
 //
 // # Usage

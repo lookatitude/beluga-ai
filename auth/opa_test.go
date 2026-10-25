@@ -65,7 +65,7 @@ func TestOPAPolicy_AuthorizeConditionBased(t *testing.T) {
 		json.NewDecoder(r.Body).Decode(&req)
 
 		// Allow PermToolExec, deny others.
-		allowed := req.Permission == string(PermToolExec)
+		allowed := req.Input.Permission == string(PermToolExec)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(opaResponse{Result: allowed})
 	}))
@@ -167,14 +167,14 @@ func TestOPAPolicy_RequestBody(t *testing.T) {
 
 	p.Authorize(ctx, "alice", PermToolExec, "calculator")
 
-	if capturedReq.Subject != "alice" {
-		t.Errorf("expected subject 'alice', got %q", capturedReq.Subject)
+	if capturedReq.Input.Subject != "alice" {
+		t.Errorf("expected subject 'alice', got %q", capturedReq.Input.Subject)
 	}
-	if capturedReq.Permission != string(PermToolExec) {
-		t.Errorf("expected permission %q, got %q", PermToolExec, capturedReq.Permission)
+	if capturedReq.Input.Permission != string(PermToolExec) {
+		t.Errorf("expected permission %q, got %q", PermToolExec, capturedReq.Input.Permission)
 	}
-	if capturedReq.Resource != "calculator" {
-		t.Errorf("expected resource 'calculator', got %q", capturedReq.Resource)
+	if capturedReq.Input.Resource != "calculator" {
+		t.Errorf("expected resource 'calculator', got %q", capturedReq.Input.Resource)
 	}
 }
 
@@ -249,7 +249,7 @@ func TestOPAPolicy_MultiplePermissions(t *testing.T) {
 		json.NewDecoder(r.Body).Decode(&req)
 
 		// Allow only read permissions.
-		allowed := req.Permission == string(PermMemoryRead) || req.Permission == string(PermToolExec)
+		allowed := req.Input.Permission == string(PermMemoryRead) || req.Input.Permission == string(PermToolExec)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(opaResponse{Result: allowed})
 	}))
@@ -408,5 +408,75 @@ func TestOPAPolicy_RegistrationEmptyEndpoint(t *testing.T) {
 	_, err := New("opa", Config{Extra: map[string]any{"endpoint": ""}})
 	if err == nil {
 		t.Fatal("expected error for empty endpoint")
+	}
+}
+
+// FI-09: the request must use the OPA v1 Data API {"input": ...} envelope.
+func TestOPAPolicy_RequestUsesInputEnvelope(t *testing.T) {
+	var raw map[string]json.RawMessage
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&raw)
+		_, _ = w.Write([]byte(`{"result":true}`))
+	}))
+	defer srv.Close()
+
+	ok, err := NewOPAPolicy("t", srv.URL).Authorize(context.Background(), "alice", PermToolExec, "calc")
+	if err != nil || !ok {
+		t.Fatalf("Authorize = %v, %v", ok, err)
+	}
+	if _, top := raw["subject"]; top {
+		t.Fatal("subject must not be a top-level field")
+	}
+	var in map[string]string
+	if err := json.Unmarshal(raw["input"], &in); err != nil {
+		t.Fatalf("missing input envelope: %v (%v)", err, raw)
+	}
+	if in["subject"] != "alice" || in["permission"] != string(PermToolExec) || in["resource"] != "calc" {
+		t.Errorf("input = %v", in)
+	}
+}
+
+// An undefined decision (no "result") denies.
+func TestOPAPolicy_UndefinedDecisionDenies(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer srv.Close()
+	ok, err := NewOPAPolicy("t", srv.URL).Authorize(context.Background(), "a", PermToolExec, "r")
+	if err != nil || ok {
+		t.Fatalf("Authorize = %v, %v; want deny", ok, err)
+	}
+}
+
+// FI-09: the registry factory must not panic when "name" is absent.
+func TestNewOPAFromConfig(t *testing.T) {
+	tests := []struct {
+		name     string
+		extra    map[string]any
+		wantErr  bool
+		wantName string
+	}{
+		{name: "missing name defaults", extra: map[string]any{"endpoint": "http://opa/v1/data/x"}, wantName: "opa"},
+		{name: "non-string name defaults", extra: map[string]any{"endpoint": "http://opa", "name": 42}, wantName: "opa"},
+		{name: "explicit name", extra: map[string]any{"endpoint": "http://opa", "name": "authz", "timeout": 2.0}, wantName: "authz"},
+		{name: "missing endpoint", extra: map[string]any{}, wantErr: true},
+		{name: "empty endpoint", extra: map[string]any{"endpoint": ""}, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p, err := newOPAFromConfig(Config{Extra: tt.extra})
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("expected error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if p.(*OPAPolicy).Name() != tt.wantName {
+				t.Errorf("name = %q", p.(*OPAPolicy).Name())
+			}
+		})
 	}
 }

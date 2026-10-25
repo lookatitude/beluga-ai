@@ -16,7 +16,7 @@ import (
 
 const (
 	defaultBaseURL = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent"
-	defaultModel   = "gemini-2.0-flash-exp"
+	defaultModel   = "gemini-3.8-live"
 )
 
 var _ s2s.S2S = (*Engine)(nil) // compile-time interface check
@@ -64,9 +64,12 @@ func (e *Engine) Start(ctx context.Context, opts ...s2s.Option) (s2s.Session, er
 		opt(&cfg)
 	}
 
-	wsURL := fmt.Sprintf("%s?key=%s", e.baseURL, e.apiKey)
-	conn, _, err := websocket.Dial(ctx, wsURL, &websocket.DialOptions{ //nolint:bodyclose // coder/websocket nils resp.Body on success and closes it on error
-		HTTPHeader: http.Header{},
+	// The API key travels in the x-goog-api-key header, never in the URL:
+	// URLs end up in *url.Error text, logs and spans.
+	header := http.Header{}
+	header.Set("x-goog-api-key", e.apiKey)
+	conn, _, err := websocket.Dial(ctx, e.baseURL, &websocket.DialOptions{ //nolint:bodyclose // coder/websocket nils resp.Body on success and closes it on error
+		HTTPHeader: header,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("gemini live: websocket dial: %w", err)

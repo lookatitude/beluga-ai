@@ -32,10 +32,11 @@ check: build test lint
 # stdout; a stdout OTel exporter would corrupt it). See framework
 # docs/reference/cli.md for the canonical eval env contract.
 #
-# Requires the `beluga` binary on PATH. Install once (versioned to your
-# go.mod via the current module):
-#   go install github.com/lookatitude/beluga-ai/v2/cmd/beluga
-# `go run github.com/.../cmd/beluga` would force a resolved go.sum entry
+# Requires the `beluga` binary on PATH. Install once, at the framework
+# version pinned in go.mod, with an explicit @version (outside the module's
+# go.sum, which lacks the CLI-only dependencies):
+#   go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@$(go list -m -f '{{.Version}}' github.com/lookatitude/beluga-ai/v2)
+# A bare `go install .../cmd/beluga` or `go run github.com/.../cmd/beluga` would force a resolved go.sum entry
 # for every transitive dep of the full CLI (fsnotify, cobra, every
 # provider) — which a scaffolded project's tidy'd go.sum does not carry.
 eval-ci:

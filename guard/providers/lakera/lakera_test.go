@@ -42,17 +42,13 @@ func TestValidate(t *testing.T) {
 	t.Run("allowed", func(t *testing.T) {
 		var receivedReq guardRequest
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, "/v1/guard", r.URL.Path)
+			assert.Equal(t, "/v2/guard", r.URL.Path)
 			assert.Equal(t, "POST", r.Method)
 			assert.Contains(t, r.Header.Get("Authorization"), "Bearer ")
 
 			json.NewDecoder(r.Body).Decode(&receivedReq)
 
-			resp := guardResponse{
-				Flagged:    false,
-				Categories: nil,
-				Model:      "lakera-guard-1",
-			}
+			resp := map[string]any{"flagged": false, "metadata": map[string]string{"request_uuid": "u"}}
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(resp)
 		}))
@@ -68,19 +64,19 @@ func TestValidate(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, result.Allowed)
 		assert.Equal(t, "lakera_guard", result.GuardName)
-		assert.Equal(t, "What is the weather today?", receivedReq.Input)
+		require.Len(t, receivedReq.Messages, 1)
+		assert.Equal(t, "user", receivedReq.Messages[0].Role)
+		assert.Equal(t, "What is the weather today?", receivedReq.Messages[0].Content)
+		assert.True(t, receivedReq.Breakdown)
 	})
 
 	t.Run("flagged with categories", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			resp := guardResponse{
-				Flagged: true,
-				Categories: []categoryResult{
-					{Category: "prompt_injection", Flagged: true, Score: 0.99},
-					{Category: "jailbreak", Flagged: true, Score: 0.85},
-					{Category: "pii", Flagged: false, Score: 0.1},
-				},
-			}
+			resp := map[string]any{"flagged": true, "breakdown": []map[string]any{
+				{"detector_type": "prompt_attack", "detected": true},
+				{"detector_id": "jailbreak", "detected": true},
+				{"detector_type": "pii/email", "detected": false},
+			}}
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(resp)
 		}))
@@ -95,13 +91,14 @@ func TestValidate(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.False(t, result.Allowed)
-		assert.Contains(t, result.Reason, "prompt_injection")
+		assert.Contains(t, result.Reason, "prompt_attack")
 		assert.Contains(t, result.Reason, "jailbreak")
+		assert.NotContains(t, result.Reason, "pii")
 	})
 
 	t.Run("flagged without categories", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			resp := guardResponse{Flagged: true, Categories: nil}
+			resp := map[string]any{"flagged": true}
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(resp)
 		}))
@@ -114,6 +111,43 @@ func TestValidate(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, result.Allowed)
 		assert.Contains(t, result.Reason, "Lakera Guard")
+	})
+
+	// FI-10: a response without the decisive field must fail closed.
+	for name, body := range map[string]string{
+		"v1 shape without flagged": `{"categories":[],"model":"lakera-guard-1"}`,
+		"empty object":             `{}`,
+		"null flagged":             `{"flagged":null}`,
+	} {
+		t.Run("fail closed: "+name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(body))
+			}))
+			defer srv.Close()
+			g, err := New(WithBaseURL(srv.URL), WithAPIKey("lk-test"))
+			require.NoError(t, err)
+			result, err := g.Validate(context.Background(), guard.GuardInput{Content: "x", Role: "input"})
+			require.Error(t, err)
+			assert.False(t, result.Allowed)
+		})
+	}
+
+	t.Run("output role and project id", func(t *testing.T) {
+		var req guardRequest
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_ = json.NewDecoder(r.Body).Decode(&req)
+			_, _ = w.Write([]byte(`{"flagged":false}`))
+		}))
+		defer srv.Close()
+		g, err := New(WithBaseURL(srv.URL), WithAPIKey("lk-test"), WithProjectID("proj-1"))
+		require.NoError(t, err)
+		result, err := g.Validate(context.Background(), guard.GuardInput{Content: "answer", Role: "output"})
+		require.NoError(t, err)
+		assert.True(t, result.Allowed)
+		assert.Equal(t, "proj-1", req.ProjectID)
+		require.Len(t, req.Messages, 1)
+		assert.Equal(t, "assistant", req.Messages[0].Role)
 	})
 
 	t.Run("server error", func(t *testing.T) {

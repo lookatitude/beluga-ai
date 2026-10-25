@@ -15,9 +15,11 @@
 //
 // # Keyword-Based Metrics
 //
-//   - Toxicity performs keyword-based toxicity checking. Returns 1.0 (not
-//     toxic) when no toxic keywords are found, decreasing toward 0.0 as more
-//     keywords are detected. Configurable keyword list and threshold.
+//   - Toxicity is a keyword heuristic (not a classifier). Keywords match
+//     case-insensitively on whole-word boundaries. Returns 1.0 when no keyword
+//     is found; any match scores strictly below the configurable threshold
+//     (default 0.5), decreasing toward 0.0 as more distinct keywords match.
+//     Use Toxicity.IsToxic to classify a score.
 //
 // # Metadata-Based Metrics
 //
