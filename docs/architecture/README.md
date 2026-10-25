@@ -1,11 +1,9 @@
 # Architecture
 
-The 18 documents in this directory explain the Beluga AI v2 architecture, layer by layer.
-The design targets production deployments: observability ([DOC-14](./14-observability.md)) and
-resilience ([DOC-15](./15-resilience.md)) are first-class concerns in Layer 2, not retrofit; durable
-workflow execution ([DOC-16](./16-durable-workflows.md)) and deployment topology ([DOC-17](./17-deployment-modes.md))
-are covered in the cross-cutting section.
-The documents in this directory explain the Beluga AI v2 architecture, layer by layer.
+The 21 documents in this directory explain the Beluga AI v2 architecture, layer by layer.
+Observability ([DOC-14](./14-observability.md)) and resilience ([DOC-15](./15-resilience.md)) are
+first-class concerns; workflow execution ([DOC-16](./16-durable-workflows.md)) and deployment topology
+([DOC-17](./17-deployment-modes.md)) are covered in the cross-cutting section.
 
 ## The 7-layer model
 
@@ -27,7 +25,7 @@ The documents in this directory explain the Beluga AI v2 architecture, layer by 
 │  LLM · Tools · Memory · RAG · Voice · Guard · …       │
 ├──────────────────────────────────────────────────────┤
 │  Layer 2 — Cross-cutting concerns                     │
-│  Resilience · Auth · Audit · Cost · State · Sandbox   │
+│  Resilience · Auth · Audit · Cost · State · Workflow  │
 ├──────────────────────────────────────────────────────┤
 │  Layer 1 — Foundation                                 │
 │  core · schema · config · o11y                        │
@@ -67,7 +65,6 @@ Data flows down. Each layer imports only from layers below.
 - [20 — Evaluation Framework](./20-evaluation.md)
 - [21 — Human-in-the-Loop](./21-hitl.md)
 
-## Visual sources
+## Diagrams
 
-- [`../beluga_full_layered_architecture.svg`](../beluga_full_layered_architecture.svg) — the master 7-layer diagram, embedded in DOC-01.
-- [`../beluga_request_lifecycle.svg`](../beluga_request_lifecycle.svg) — complete text chat lifecycle, embedded in DOC-04.
+Diagrams are Mermaid blocks inside each document; there are no separate image sources.

@@ -6,7 +6,7 @@
 
 ## Overview
 
-An agent is the atomic unit of behaviour in Beluga. It has a persona, a set of tools, a planner, memory, hooks, and middleware. It implements the `Agent` interface (which itself embeds `Runnable`), so agents compose with every streaming primitive. Teams implement the same interface, which is how recursive composition works.
+An agent is the atomic unit of behaviour in Beluga. It has a persona, a set of tools, a planner, memory, hooks, and middleware. It implements the `agent.Agent` interface (`AgentMetadata` + `AgentExecutor`). Teams implement the same interface, which is how recursive composition works.
 
 ## What's inside an agent
 
@@ -35,82 +35,66 @@ graph TD
 - **Tools** — native tools, MCP-backed tools, or remote tools via `transfer_to_{agent}` handoffs.
 - **Memory** — if absent, the agent is stateless per turn.
 - **Hooks** — `BeforePlan`, `OnToolCall`, `OnToolResult`, `OnError`, etc.
-- **Middleware** — retry, rate limit, logging, guardrails.
-- **Guards** — per-agent safety pipeline (stacks with the runner's global guards).
+- **Middleware** — `agent.ApplyMiddleware(a, agent.WithTracing())`; retry and rate limits apply to the LLM and tools underneath.
+- **Guards** — a `guard.Pipeline` run from hooks (for example `BeforeGenerate`, `OnToolCall`) or around the agent call.
 
-## BaseAgent embedding
+## BaseAgent
+
+`agent.New(id, opts...)` returns a `*BaseAgent`. It is the planner-driven agent: there is no separate `LLMAgent` type.
 
 ```go
-// agent/base.go — conceptual
+// agent/base.go (excerpt)
 type BaseAgent struct {
-    id       string
-    persona  Persona
-    tools    []Tool
-    hooks    Hooks
-    card     AgentCard
-    children []Agent
+    id     string
+    config agentConfig // llm, tools, persona, planner, hooks, memory, handoffs, children, ...
 }
 
-func (b *BaseAgent) ID() string          { return b.id }
-func (b *BaseAgent) Persona() Persona    { return b.persona }
-func (b *BaseAgent) Tools() []Tool       { return b.tools }
-func (b *BaseAgent) Card() AgentCard     { return b.card }
-func (b *BaseAgent) Children() []Agent   { return b.children }
+func (a *BaseAgent) ID() string          { return a.id }
+func (a *BaseAgent) Persona() Persona    { return a.config.persona }
+func (a *BaseAgent) Tools() []tool.Tool  // configured tools plus generated handoff tools
+func (a *BaseAgent) Children() []Agent   { return a.config.children }
+
+func (a *BaseAgent) Invoke(ctx context.Context, input string, opts ...Option) (string, error)
+func (a *BaseAgent) Stream(ctx context.Context, input string, opts ...Option) iter.Seq2[Event, error]
 ```
 
-Every concrete agent embeds `BaseAgent` and implements `Invoke` + `Stream`:
+`Stream` resolves the planner (`WithPlanner`, or `WithPlannerName`, default `react`), builds the initial messages from the persona and input, and runs the Plan → Act → Observe → Replan loop in the `Executor`. `Invoke` collects the stream into the final text.
 
-```go
-type LLMAgent struct {
-    BaseAgent
-    llm     llm.Model
-    memory  memory.Memory
-    planner Planner
-    exec    Executor
-}
+### Composition, not inheritance
 
-func (a *LLMAgent) Stream(ctx context.Context, input any) (*core.Stream[core.Event[any]], error) {
-    return a.exec.Run(ctx, a, input)
-}
-```
+Other agent types do not embed `BaseAgent`. They implement the small `agent.Agent` interface (`AgentMetadata` + `AgentExecutor`) directly, which keeps method dispatch static and lets any type be an agent:
 
-### Why composition over inheritance
-
-Go doesn't have classical inheritance, and that's a feature. Embedding `BaseAgent`:
-
-- Makes the "inherited" methods explicit (`BaseAgent` fields are visible in the concrete struct).
-- Allows `LLMAgent` to *replace* any method by defining it directly — no `virtual`/`override` indirection.
-- Keeps method dispatch static. No surprises at call sites.
-- Lets the same `BaseAgent` be embedded in a `TeamAgent`, a `WorkflowAgent`, or a `CustomAgent` without any hierarchy.
+- `agent/workflow.SequentialAgent`, `ParallelAgent`, `LoopAgent` hold an ID, a persona and child agents.
+- `runtime.Team` holds members and an orchestration pattern.
 
 ## Agent types
 
 ```mermaid
 graph TD
-  BA[BaseAgent]
-  BA --> LLM[LLMAgent: planner-driven]
-  BA --> Seq[SequentialAgent]
-  BA --> Par[ParallelAgent]
-  BA --> Loop[LoopAgent]
-  BA --> Cust[CustomAgent: full control]
-  BA --> Team[TeamAgent: orchestrated children]
+  I[agent.Agent interface]
+  I --> BA[BaseAgent: planner-driven]
+  I --> Seq[workflow.SequentialAgent]
+  I --> Par[workflow.ParallelAgent]
+  I --> Loop[workflow.LoopAgent]
+  I --> Team[runtime.Team: orchestrated members]
+  I --> Cust[your type: full control]
 ```
 
-### LLMAgent
+### BaseAgent
 
 The default. A planner drives the Plan/Act/Observe loop. Use for tasks where the model decides what to do next.
 
 ### SequentialAgent / ParallelAgent / LoopAgent
 
-Deterministic workflow agents. `SequentialAgent` runs its children in order. `ParallelAgent` fans out. `LoopAgent` repeats until a condition is met. These are workflows disguised as agents — useful when you want agent-shaped composition without LLM reasoning.
+Deterministic workflow agents in `agent/workflow`. `SequentialAgent` runs its children in order. `ParallelAgent` fans out. `LoopAgent` repeats a child until a condition is met or `maxIterations` is reached. These are workflows disguised as agents, useful when you want agent-shaped composition without LLM reasoning.
 
-### CustomAgent
+### Custom agents
 
-You implement `Stream` yourself. Full control. Use when none of the above patterns fit.
+Implement `agent.Agent` yourself (`ID`, `Persona`, `Tools`, `Children`, `Invoke`, `Stream`). Full control. Use when none of the above fit.
 
-### TeamAgent
+### Teams
 
-A team is an agent. Its `Stream` method delegates to an orchestration pattern ([DOC-07](./07-orchestration-patterns.md)) to coordinate its children.
+A `runtime.Team` is an agent. Its `Stream` method delegates to an orchestration pattern ([DOC-07](./07-orchestration-patterns.md)) to coordinate its members.
 
 ## Persona model
 
@@ -127,7 +111,7 @@ At prompt-build time, the persona is rendered into the system prompt. Providers 
 
 ## The A2A AgentCard
 
-Every agent exposes an `AgentCard` at `/.well-known/agent.json`. It describes:
+An agent served through `protocol/a2a` (`a2a.NewServer(agent, card)`) exposes an `AgentCard` at `/.well-known/agent.json`. It describes:
 
 - Agent name, version, description.
 - Input/output schemas.
@@ -150,29 +134,23 @@ graph TD
   WT --> W2[Editor]
 ```
 
-`SupervisorTeam`, `ResearchTeam`, and `WritingTeam` are all `TeamAgent` instances — which implement `Agent`. So `SupervisorTeam` can contain `ResearchTeam` as a child the same way it contains `Researcher 1`. Infinite depth, uniform interface.
+`SupervisorTeam`, `ResearchTeam`, and `WritingTeam` are all `runtime.Team` instances, which implement `agent.Agent`. So `SupervisorTeam` can contain `ResearchTeam` as a child the same way it contains `Researcher 1`. Infinite depth, uniform interface.
 
 **Why this matters:** there is no "root team" vs "leaf agent" distinction. Any agent can be a member of any team. You can refactor a single agent into a sub-team without changing its callers.
 
 ## Handoffs are tools
 
-When agent A has agent B in its `Handoffs` list, Beluga auto-generates a tool named `transfer_to_agent_b`. The LLM picks it via normal function-calling. The executor handles the transfer:
+When agent A is built with `agent.WithHandoffs([]agent.Handoff{{TargetAgent: b}})`, Beluga generates a tool named `transfer_to_<b.ID()>`. The LLM picks it via normal function-calling. The executor handles the transfer:
 
-1. Emit `ActionHandoff{Target: B}`.
-2. Apply `InputFilter` to control what context passes to B.
-3. Start B's turn with a `"Transferred from A"` system message.
+1. The planner returns an `Action` of type `ActionHandoff`.
+2. `Handoff.InputFilter`, if set, controls what message and context pass to B; `OnHandoff` fires.
+3. B runs with the filtered input.
 
 **Why handoffs are tools:** the LLM already knows how to pick tools. Adding a new "handoff" mechanism would require separate prompt engineering for every model. Treating them as tools reuses everything.
 
-## Why agents implement Runnable
+## Agents and Runnable
 
-Because agents implement `Runnable`, they participate in:
-
-- `core.Pipe(retriever, agent)` — a retriever feeds an agent.
-- `core.Parallel(agentA, agentB)` — two agents run on the same input in parallel.
-- Middleware chains — `ApplyMiddleware(agent, logging, retry)`.
-
-Agents are values, not special-cased framework types. That's the whole point of the design.
+`agent.Agent` takes and returns strings (`Invoke(ctx, input string, ...) (string, error)`, `Stream` yielding `agent.Event`), while `core.Runnable` takes `any`. Agents therefore do not plug into `core.Pipe` or `core.Parallel` directly. Compose agents with `runtime.Team` patterns, `agent/workflow` agents, or `orchestration` (whose `Supervisor`, `Pipeline` and `ScatterGather` accept agents or runnables), and wrap them with `agent.ApplyMiddleware`.
 
 ## Advanced Agent Architectures [experimental]
 
@@ -194,7 +172,7 @@ type ComplexityScorer interface {
 
 **Invoke vs Stream behaviour** (`agent/cognitive/agent.go:124-190` and `194-254`): `Invoke` uses a *cascading* strategy — S1 runs first, and if the score is `Moderate` with confidence below the threshold (default 0.7), execution escalates to S2. `Stream` pre-classifies before streaming so it never buffers a full S1 response before deciding. Both paths are symmetric: `Complex` inputs always route directly to S2.
 
-**Hook into BaseAgent:** `DualProcessAgent` implements `agent.Agent` directly (compile-time check at `agent/cognitive/agent.go:31`). Attach it to a `Runner` exactly like any other agent. Use `Hooks` (`agent/cognitive/types.go:65-76`) to observe `OnRouted`, `OnEscalated`, and `OnCompleted` events, and `RoutingMetrics` (`agent/cognitive/metrics.go:11`) to track aggregate S1/S2 counts and escalation rates.
+**Hook into BaseAgent:** `DualProcessAgent` implements `agent.Agent` directly (compile-time check at `agent/cognitive/agent.go:31`). Host it in a `Runner` exactly like any other agent. Use `Hooks` (`agent/cognitive/types.go:65-76`) to observe `OnRouted`, `OnEscalated`, and `OnCompleted` events, and `RoutingMetrics` (`agent/cognitive/metrics.go:11`) to track aggregate S1/S2 counts and escalation rates.
 
 **When to use:** you have a cheap, fast agent (e.g., small local model) that handles the majority of queries, and an expensive, accurate agent for the minority that require deeper reasoning. Cognitive routing reduces cost proportionally to your S1 hit rate.
 
@@ -238,7 +216,7 @@ type SelfModelStore interface {
 - `Plugin` (`agent/metacognitive/plugin.go:31`) — implements `runtime.Plugin`. Its `BeforeTurn` loads and injects heuristics; its `AfterTurn` extracts and saves new ones.
 - `InMemoryStore` (`agent/metacognitive/store.go:31`) — thread-safe in-process store for development. Implement `SelfModelStore` to persist across restarts.
 
-**Hook into BaseAgent:** attach `plugin.Monitor().Hooks()` to the agent, then register the `Plugin` with the `Runner` via `runner.AddPlugin(plugin)`. The runner calls `BeforeTurn`/`AfterTurn` around each session turn automatically.
+**Hook into BaseAgent:** attach `plugin.Monitor().Hooks()` to the agent, then pass the `Plugin` to the `Runner` with `runtime.WithPlugins(plugin)`. The runner calls `BeforeTurn`/`AfterTurn` around each session turn automatically.
 
 **When to use:** the agent handles recurring task types and you want it to improve without human intervention — for example, a customer-support agent that learns which tool sequences resolve certain query categories most efficiently.
 
@@ -266,7 +244,7 @@ Built-in implementations — `SimpleDistiller` (success rate and average latency
 
 ### agent/speculative — Speculative Execution
 
-`agent/speculative` runs a cheap `Predictor` and the ground-truth `agent.Agent` in parallel. If the predictor finishes first with sufficient confidence and passes validation, the predicted result is returned immediately — similar to speculative execution in CPU pipelines. The ground-truth result is used otherwise.
+`agent/speculative` runs a cheap `Predictor` and the ground-truth `agent.Agent` in parallel. If the prediction is confident and passes validation against the ground truth, the predicted result is used; otherwise the ground-truth result is. Note that `Invoke` currently waits for the ground-truth agent before returning, so it is not faster than the ground-truth agent alone.
 
 **Key interfaces** (`agent/speculative/predictor.go:13-15` and `agent/speculative/validator.go:10-13`):
 
@@ -301,8 +279,8 @@ See [DOC-06 — Reasoning Strategies: Plan-Level Caching](./06-reasoning-strateg
 
 ## Common mistakes
 
-- **Forgetting to embed `BaseAgent`.** Your custom agent needs to satisfy the full `Agent` interface. Embedding `BaseAgent` is the shortcut.
-- **Hand-rolling handoffs with direct calls.** Don't. Use the `Handoffs` field and let Beluga generate the `transfer_to_*` tool.
+- **Implementing only part of `agent.Agent`.** A custom agent needs `ID`, `Persona`, `Tools`, `Children`, `Invoke` and `Stream`. Add `var _ agent.Agent = (*MyAgent)(nil)`.
+- **Hand-rolling handoffs with direct calls.** Don't. Use `agent.WithHandoffs` and let Beluga generate the `transfer_to_*` tool.
 - **Treating the planner and the LLM as the same thing.** The planner *decides*; the LLM *generates*. One planner can call the LLM zero or many times per iteration.
 - **Storing state in agent fields instead of session/memory.** Agents should be stateless — state lives in the session. Otherwise two concurrent requests share state and race.
 - **Sharing a metacognitive store across unrelated agents.** `SelfModelStore` uses `agentID` as the namespace key. Two agents with the same ID share heuristics — use distinct IDs.

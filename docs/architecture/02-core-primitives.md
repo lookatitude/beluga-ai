@@ -6,22 +6,23 @@
 
 ## Overview
 
-Four primitives underpin every package in Beluga: `Event[T]`, `Stream[T]`, `Runnable`, and the context helpers (`WithTenant`, `WithSession`, etc.). Understand these four and you understand the framework's contract.
+Four primitives underpin every package in Beluga: `Event[T]`, `Stream[T]`, `Runnable`, and the context helpers (`WithTenant`, `WithSessionID`, etc.). Understand these four and you understand the framework's contract.
 
 ## Event[T] — the unit of data flow
 
 Every emission from a streaming component is an `Event`. It carries a payload, optional error, and metadata.
 
 ```go
-// core/event.go — conceptual shape (see current source for exact definition)
-type EventType int
+// core/stream.go (excerpt)
+type EventType string
 
 const (
-    EventData      EventType = iota // payload chunk
-    EventToolCall                    // LLM asked to call a tool
-    EventToolResult                  // tool returned
-    EventDone                        // stream terminated normally
-    EventError                       // stream terminated with error
+    EventData       EventType = "data"        // payload chunk
+    EventToolCall   EventType = "tool_call"   // LLM asked to call a tool
+    EventToolResult EventType = "tool_result" // tool returned
+    EventHandoff    EventType = "handoff"     // agent-to-agent transfer
+    EventDone       EventType = "done"        // stream terminated normally
+    EventError      EventType = "error"       // error within the stream
 )
 
 type Event[T any] struct {
@@ -42,67 +43,53 @@ The metadata map carries per-event information that isn't part of the payload: t
 
 ## Stream[T] — the transport
 
-`Stream[T]` wraps an `iter.Seq2[int, T]` so range-over-func works naturally:
+`Stream[T]` is a type alias for an `iter.Seq2` of events, so range-over-func works directly:
 
 ```go
-// canonical example from .guild/wiki/patterns/streaming.md → core/stream.go:49-56
-type Stream[T any] struct {
-    name   string
-    chunks iter.Seq2[int, T]
-}
-
-func (s *Stream[T]) Range(yield func(int, T) bool) {
-    for idx, chunk := range s.chunks {
-        if !yield(idx, chunk) {
-            break
-        }
-    }
-}
+// core/stream.go (excerpt)
+type Stream[T any] = iter.Seq2[Event[T], error]
 ```
+
+Most public streaming APIs return a plain `iter.Seq2` with a concrete element type: `llm.ChatModel.Stream` yields `schema.StreamChunk`, `agent.Agent.Stream` yields `agent.Event`, `core.Runnable.Stream` yields `any`.
 
 ### Consumer pattern
 
 ```go
-for idx, ev := range stream.Range {
-    if ev.Err != nil {
-        return ev.Err
+for ev, err := range stream {
+    if err != nil {
+        return err
     }
     // handle ev.Payload
 }
 ```
 
-The `yield` protocol guarantees backpressure: if the consumer returns `false`, the producer sees it on the next iteration and cleans up. No goroutine leaks.
+The `yield` protocol guarantees backpressure: if the consumer breaks, `yield` returns `false` and the producer must stop and clean up. No goroutine leaks.
 
 ### Stream operations
 
-Four core operations compose streams:
+`core` provides helpers over `Stream[T]`:
 
 ```mermaid
 graph LR
-  subgraph Pipe
+  subgraph MapStream
     A[Stream A] --> T[Transform] --> B[Stream B]
   end
-  subgraph Parallel
-    S1[Stream in] --> F1[Worker 1]
-    S1 --> F2[Worker 2]
-    S1 --> F3[Worker 3]
-  end
-  subgraph Merge
+  subgraph MergeStreams
     M1[Stream 1] --> MM[Merged]
     M2[Stream 2] --> MM
   end
-  subgraph Copy
+  subgraph FanOut
     C[Stream] --> C1[Consumer 1]
     C --> C2[Consumer 2]
   end
 ```
 
-- **Pipe (A → B)** — apply a transformation function to every event.
-- **Parallel** — fan a single stream out to N workers, aggregate results.
-- **Merge** — fan N streams in to one (round-robin or priority).
-- **Copy** — broadcast one stream to multiple consumers.
+- **`MapStream(s, fn)`** — apply a transformation to every event. **`FilterStream(s, keep)`** drops events.
+- **`MergeStreams(ctx, s...)`** — fan N streams in to one, in arrival order.
+- **`FanOut(ctx, s, n)`** — broadcast one stream to `n` independent consumers.
+- **`NewBufferedStream(ctx, s, size)`** — decouple producer and consumer speed; **`CollectStream(s)`** drains to a slice.
 
-Each operation respects cancellation: if the upstream context is cancelled, the pipeline shuts down cleanly. See [`core/stream.go:73-90`](../../.guild/wiki/patterns/streaming.md) for the `MapStream` variation.
+The context-taking helpers stop when the context is cancelled.
 
 ### Why `iter.Seq2` over channels
 
@@ -117,47 +104,51 @@ Beluga requires Go 1.26+ (the `go` directive in `go.mod`); `iter.Seq2` itself ar
 
 ### Error semantics
 
-A stream can emit `Event{Err: err, Type: EventError}` and still continue (recoverable errors like "one tool call failed, keep planning"), or emit once and terminate. The convention: treat any `ev.Err != nil` as advisory; the stream is done only when `range` returns.
+The second value of the pair is the stream error: a producer yields at most one non-nil error and then stops, so consumers return or break on it. Recoverable, in-band problems (for example a failed tool call the planner can react to) are carried as events instead, such as an `EventError` event or an observation with an error.
 
 ## Runnable — the composable unit
 
 Every component that participates in a pipeline implements `Runnable`:
 
 ```go
-// core/runnable.go — conceptual shape
+// core/runnable.go (excerpt)
 type Runnable interface {
-    Invoke(ctx context.Context, input any) (any, error)
-    Stream(ctx context.Context, input any) (*Stream[Event[any]], error)
+    Invoke(ctx context.Context, input any, opts ...Option) (any, error)
+    Stream(ctx context.Context, input any, opts ...Option) iter.Seq2[any, error]
 }
 ```
 
 ### Why `any` at the base level
 
-Type-safe wrappers live at the consumer layer: `ChatModel`, `Retriever`, `Tool` are `Runnable`-shaped but with concrete types. The `Runnable` base exists so you can `Pipe(model, retriever, tool)` without inventing a new composition type per combination.
+Type-safe interfaces live at the capability layer: `llm.ChatModel`, `retriever.Retriever`, `tool.Tool` and `agent.Agent` have concrete input and output types and do not implement `Runnable` themselves. `Runnable` is the untyped unit for generic composition: `core.Pipe`, `core.Parallel`, `orchestration.Chain`, `orchestration.ScatterGather` and orchestration middleware all work on it.
 
 ### Runnable ⇒ composable
 
 ```go
-// pseudo — the real Pipe signature uses generics
-chain := core.Pipe(
-    retriever,   // Runnable → returns documents
-    promptBuild, // Runnable → prompts with retrieved context
-    llm,         // Runnable → streams chat response
-)
-stream, err := chain.Stream(ctx, userQuery)
+// core.Pipe(a, b Runnable) Runnable: a's Invoke output feeds b.
+chain := core.Pipe(retrieveStep, answerStep) // both are core.Runnable
+for out, err := range chain.Stream(ctx, userQuery) {
+    if err != nil {
+        return err
+    }
+    fmt.Println(out)
+}
+
+// core.Parallel(rs ...Runnable) Runnable: same input to each, results as []any.
+both, err := core.Parallel(stepA, stepB).Invoke(ctx, userQuery)
 ```
 
-Agents, teams, planners, tools — everything that moves data implements `Runnable` so it plugs into this composition.
+`orchestration.Chain(steps ...core.Runnable)` chains more than two steps.
 
 ### `Invoke` vs `Stream`
 
-`Invoke` is the synchronous convenience form: it calls `Stream` internally, collects all events, and returns the final payload. Middleware and hooks are wired to `Stream`; `Invoke` delegates.
+`Invoke` is the synchronous convenience form. For agents, `BaseAgent.Invoke` runs the same loop as `Stream` and returns the collected text.
 
 **Rule:** never implement `Invoke` without implementing `Stream`. `Stream` is the contract.
 
 ## Context — the invisible argument
 
-`context.Context` is the first parameter of every public function and it carries four things:
+`context.Context` is the first parameter of every public function and it carries:
 
 ```mermaid
 graph TD
@@ -166,7 +157,7 @@ graph TD
   Ctx --> Otel[OTel trace + span]
   Ctx --> Tenant[Tenant ID]
   Ctx --> Session[Session ID]
-  Ctx --> Auth[Auth claims]
+  Ctx --> Req[Request ID]
 ```
 
 ### Cancellation
@@ -177,19 +168,21 @@ If the caller aborts, every downstream call — the LLM request, the vector stor
 
 OTel's `tracer.Start(ctx, "llm.generate")` returns a new context with a child span attached. Downstream code reads the span from the context; `SpanFromContext(ctx)` gives you the current span without manual threading.
 
-### Tenant / session / auth
+### Tenant / session / request ID
 
 Multi-tenancy and per-session state are carried via `context.Context` helpers:
 
 ```go
-// conceptual — see core/context.go
+// core/tenant.go and core/context.go
 ctx = core.WithTenant(ctx, "acme")
-ctx = core.WithSession(ctx, sessionID)
-ctx = core.WithAuth(ctx, claims)
+ctx = core.WithSessionID(ctx, sessionID)
+ctx = core.WithRequestID(ctx, requestID)
 
 // downstream:
-tenant := core.GetTenant(ctx) // "acme"
+tenant := core.GetTenant(ctx) // core.TenantID("acme")
 ```
+
+Agent credentials travel the same way through `auth/credential.WithCredential`.
 
 These helpers use typed context keys (an unexported struct-typed constant) to avoid collisions with other packages.
 
@@ -205,7 +198,7 @@ If you can read a function signature and answer "what `Stream[T]` does it return
 
 - **Storing `ctx` in a struct.** Breaks cancellation. Pass it per call.
 - **Implementing `Invoke` without `Stream`.** Middleware attaches to `Stream`; consumers that use `Invoke` get the wrong behaviour.
-- **Using channels in a public return type.** Use `*Stream[T]`. Channels live *inside* your implementation if you need them; they don't cross the API boundary.
+- **Using channels in a public return type.** Return an `iter.Seq2`. Channels live *inside* your implementation if you need them; they don't cross the API boundary.
 - **Ignoring `yield → false`.** Producers must check the return of `yield` and stop the pipeline. Otherwise you're leaking work.
 
 ## Related reading

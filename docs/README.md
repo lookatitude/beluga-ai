@@ -13,29 +13,29 @@ New to Beluga? Read in this order:
 
 ## Production readiness
 
-Beluga is designed for the production agent stack. Every package ships with
-OpenTelemetry GenAI spans ([DOC-14](architecture/14-observability.md)),
-circuit breakers and rate limits are middleware on the same interface as your
-LLM calls ([DOC-15](architecture/15-resilience.md)), and the `workflow/`
-package provides crash-durable execution ([DOC-16](architecture/16-durable-workflows.md)).
+Beluga is designed for the production agent stack. Every extensible package ships
+OpenTelemetry GenAI tracing middleware ([DOC-14](architecture/14-observability.md)),
+`resilience/` provides circuit breakers, retry, hedging and rate limits
+([DOC-15](architecture/15-resilience.md)), and the `workflow/` package defines
+durable workflow execution ([DOC-16](architecture/16-durable-workflows.md)).
 Deployment targets — Docker, Kubernetes, Temporal, and embedded — are documented in
-[DOC-17](architecture/17-deployment-modes.md).
-See the [Production Checklist](production-checklist.md).
+[DOC-17](architecture/17-deployment-modes.md), with the current status of each.
+For what ships today versus what is planned, see [Feature Status](feature-status.md).
 Before deploying to production, work through the [Production Checklist](./production-checklist.md). It maps each enterprise-grade capability — observability, resilience, safety guards, auth, durability, cost enforcement, and evaluation — to the exact package and file that implements it, with verification steps.
 
 ## Sections
 
 ### [Architecture](./architecture/README.md)
-18 documents explaining the 7-layer architecture, runtime, capabilities, cross-cutting concerns, and deployment. Read this to understand *why* Beluga is built the way it is.
+21 documents explaining the 7-layer architecture, runtime, capabilities, cross-cutting concerns, and deployment. Read this to understand *why* Beluga is built the way it is.
 
 ### [Patterns](./patterns/README.md)
 8 reusable patterns (registry, middleware, hooks, streaming, options, provider template, errors, context). Read this to learn *how* to extend any Beluga package.
 
 ### [Guides](./guides/README.md)
-7 task-oriented how-tos. Read this to *build something*: first agent, custom provider, custom planner, multi-agent teams, Kubernetes/Temporal/Docker deployments.
+9 task-oriented how-tos. Read this to *build something*: first agent, dev loop, evaluation, custom provider, custom planner, multi-agent teams, Kubernetes/Temporal/Docker deployments.
 
 ### [Reference](./reference/README.md)
-Stable API surface: interfaces, configuration, providers catalog, glossary.
+API surface: interfaces, configuration, CLI, providers catalog, glossary.
 
 ## By role
 
@@ -46,12 +46,11 @@ Stable API surface: interfaces, configuration, providers catalog, glossary.
 
 ## Design principles
 
-The framework is built around ten architectural invariants documented in [`.guild/wiki/architecture/invariants.md`](../.guild/wiki/architecture/invariants.md). Every doc in this set cites real `file:line` references from the codebase — patterns link back to canonical implementations so nothing drifts from reality.
+The framework is built around ten architectural invariants documented in [`.guild/wiki/architecture/invariants.md`](../.guild/wiki/architecture/invariants.md). Docs cite source files from the codebase, and patterns link back to canonical implementations. Line numbers drift; the file is the reference.
 
 ## Not documentation
 
 - [`../CLAUDE.md`](../CLAUDE.md) — instructions for the AI agent team that maintains this codebase.
 - [`../.claude/`](../.claude/) — agent, command, hook, and rule definitions.
 - [`../.guild/wiki/`](../.guild/wiki/) — extracted codebase knowledge for agent retrieval.
-- [`./plans/`](./plans/) — historical design docs for features unrelated to core architecture.
-- [`./beluga-ai-website-blueprint-v2.md`](./beluga-ai-website-blueprint-v2.md) — documentation *website* blueprint (separate concern).
+- [`./consultations/`](./consultations/) — point-in-time specialist consultations produced by `/consult`. Historical records; their code is not maintained against the current API.

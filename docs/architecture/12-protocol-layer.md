@@ -31,14 +31,17 @@ graph LR
 Beluga can expose its tools, resources, and prompts as an MCP server. Clients discover them via the standard `tools/list`, `resources/list`, `prompts/list` endpoints, and invoke them via `tools/call`.
 
 ```go
-r := runtime.NewRunner(agent,
-    runtime.WithMCPServer("/mcp",
-        mcp.ExposeTools(toolRegistry),
-        mcp.ExposeResources(docService),
-        mcp.ExposePrompts(promptRegistry),
-    ),
-)
+srv := mcp.NewServer("beluga-tools", "1.0.0").
+    AddTool(searchTool).
+    AddResource(docsResource). // mcp.Resource
+    AddPrompt(summaryPrompt)   // mcp.Prompt
+
+if err := srv.Serve(ctx, ":8081"); err != nil { // or mount srv.Handler()
+    return err
+}
 ```
+
+The MCP server is separate from `runtime.Runner`; the Runner does not mount protocol endpoints itself.
 
 The inverse is also supported: Beluga can *consume* an external MCP server as if its tools were native. See [`patterns/provider-template.md`](../patterns/provider-template.md) for the `tool/mcp.go` consumer.
 

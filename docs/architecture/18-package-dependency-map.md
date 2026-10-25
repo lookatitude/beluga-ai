@@ -19,9 +19,8 @@ This is checked by `/arch-validate` (see [.claude/commands/arch-validate.md](../
 ```mermaid
 graph TD
   subgraph L7[Layer 7 · Application]
-    cmd[cmd/]
-    examples[examples/]
-    ops[ops/ · CLIs]
+    cmd[cmd/ · beluga CLI]
+    user[your code]
   end
 
   subgraph L6[Layer 6 · Agent runtime]
@@ -30,10 +29,9 @@ graph TD
     orchestration[orchestration/]
   end
 
-  subgraph L5[Layer 5 · Orchestration-specific]
-    handoff[orchestration/handoff]
-    supervisor[orchestration/supervisor]
-    scatter[orchestration/scatter-gather]
+  subgraph L5[Layer 5 · Orchestration patterns]
+    patterns[orchestration/ · supervisor.go, handoff.go, scatter.go, pipeline.go, blackboard.go, router.go]
+    debate[orchestration/debate]
   end
 
   subgraph L4[Layer 4 · Protocol]
@@ -88,67 +86,72 @@ graph TD
 
 Use [`.guild/wiki/architecture/package-map.md`](../../.guild/wiki/architecture/package-map.md) as the live, scan-backed reference. The summary:
 
+The lists below are the in-module imports of each package's root as reported by `go list` (October 2026; `internal/*` omitted). Sub-packages can import more.
+
 ### Layer 1 — Foundation (`core`, `schema`, `config`, `o11y`)
 
 **Rule:** zero external deps beyond stdlib + OpenTelemetry. No imports from above.
 
 ```
-core     → stdlib, otel
-schema   → stdlib
-config   → stdlib
-o11y     → stdlib, otel
+core     → (none)
+schema   → (none)
+config   → core
+o11y     → (none)
 ```
 
 ### Layer 2 — Cross-cutting (`resilience`, `auth`, `audit`, `cost`, `state`, `workflow`)
 
 May import: `core`, `schema`, `config`, `o11y`.
-May NOT import: each other (in most cases), or anything in Layer 3+.
 
 ```
-resilience → core, o11y
-auth       → core, schema, o11y
+resilience → core
+auth       → core, o11y
 audit      → core
 cost       → core
 state      → core, o11y
-workflow   → core, schema, o11y, config
+workflow   → core, o11y, hitl   (⚠ hitl is Layer 3)
 ```
-
-Note: `audit` and `cost` currently depend only on `core`. `state` depends on `core` and `o11y` (plus `internal/hookutil`).
 
 ### Layer 3 — Capability (`llm`, `tool`, `memory`, `rag`, `voice`, `guard`, `prompt`, `cache`, `eval`, `hitl`)
 
 May import: Layers 1, 2. May also import provider SDKs inside their own `*/providers/` subdirectories.
 
 ```
-llm        → core, schema, o11y, resilience, cache
-tool       → core, schema, o11y
-memory     → core, schema, o11y, rag (for archival)
-rag        → core, schema, o11y
-voice      → core, schema, o11y, llm, tool
-guard      → core, schema, o11y, llm (for guard LLMs)
-prompt     → o11y, schema
-cache      → core, rag/embedding
-eval       → core, schema, llm, tool, agent (⚠ violation — see below)
-hitl       → core, o11y (plus internal/hookutil)
+llm             → config, core, o11y, schema
+tool            → core, o11y, schema
+memory          → config, core, o11y, schema, memory/procedural, rag/embedding, rag/vectorstore
+rag/embedding   → config, core, o11y
+rag/vectorstore → config, o11y, schema
+rag/retriever   → config, core, o11y, schema, rag/embedding, rag/vectorstore, llm, tool
+voice           → core, schema
+guard           → core
+prompt          → o11y, schema
+cache           → core, rag/embedding
+eval            → o11y, schema
+hitl            → core, o11y
 ```
 
-**Layering violation — `eval` imports `agent`:** The `eval` package (Layer 3) imports `agent` (Layer 6), which is an upward dependency. The `eval` package also imports `llm` and `tool` (Layer 3 peers), which is acceptable for evaluation runners that need to invoke models and tools. However, the `agent` import violates the layering rule and should be refactored so that evaluation of agents is wired at Layer 6 or Layer 7, not inside `eval/` itself.
+Several Layer 3 packages import other Layer 3 packages: `memory` and `cache` use `rag`, `rag/retriever` uses `llm` and `tool`, and `tool/computeruse` and `tool/learning` use `llm`. These are deliberate capability compositions, but they break the "no sideways imports" rule as written below.
 
 ### Layer 4 — Protocol (`protocol`, `server`)
 
 May import: Layers 1–3.
 
 ```
-protocol → core, schema, o11y, tool, llm (for LLM-backed protocol ops)
-server   → core, schema, o11y, protocol, runtime
+protocol/mcp  → core, schema, tool
+protocol/a2a  → core, tool, agent   (⚠ agent is Layer 6)
+protocol/rest → core, agent         (⚠)
+server        → core, o11y, agent   (⚠)
 ```
 
-### Layer 5 — Orchestration (`orchestration/*`)
+The protocol servers take an `agent.Agent` to serve, so they import `agent` upward.
+
+### Layer 5 — Orchestration (`orchestration`)
 
 May import: Layers 1–4 and `agent` (recursive composition).
 
 ```
-orchestration → core, schema, o11y, agent
+orchestration → core, o11y, agent, agent/contract
 ```
 
 ### Layer 6 — Agent runtime (`agent`, `runtime`)
@@ -156,17 +159,27 @@ orchestration → core, schema, o11y, agent
 May import: everything below.
 
 ```
-agent   → core, schema, o11y, llm, tool, memory, guard, prompt, hitl
-runtime → core, schema, o11y, agent, orchestration, server, auth, audit, cost
+agent   → core, llm, o11y, schema, tool
+runtime → core, schema, tool, agent
 ```
 
 ### Layer 7 — Application
 
-Everything below. User code, CLIs, examples, operators.
+Everything below. User code, the `beluga` CLI, operators.
+
+### Known violations
+
+| From | To | Direction |
+|---|---|---|
+| `workflow` (L2) | `hitl` (L3) | upward |
+| `protocol/a2a`, `protocol/rest`, `server` (L4) | `agent` (L6) | upward |
+| `memory`, `cache` (L3) | `rag/*` (L3) | sideways |
+| `rag/retriever` (L3) | `llm`, `tool` (L3) | sideways |
+| `tool/computeruse`, `tool/learning` (L3) | `llm` (L3) | sideways |
 
 ### k8s/ — outside the tree
 
-**The framework never imports `k8s/`.** K8s integration is an *overlay*: the operator imports `runtime/` to instantiate agents, and `runtime/` doesn't care whether it's being embedded in a kubelet or a CLI. See [DOC-17](./17-deployment-modes.md).
+**The framework never imports `k8s/`.** K8s integration is an *overlay*: `k8s/operator` depends only on the standard library and `core`, and nothing in the library imports it. See [DOC-17](./17-deployment-modes.md).
 
 ## Prohibited dependencies
 
@@ -185,7 +198,7 @@ A few specific prohibitions:
 - **`schema/` imports anything above Layer 1** — `schema/` is wire types only.
 - **Any package imports `k8s/`** — Kubernetes support is an overlay, not a dependency.
 - **`tool/` imports `agent/`** — tools are invoked *by* agents; they must not import them.
-- **Cross-capability imports in Layer 3** — `llm/` doesn't import `memory/`, `memory/` doesn't import `voice/`, etc. If you need cross-capability wiring, do it in Layer 6.
+- **Cross-capability imports in Layer 3** — `llm/` doesn't import `memory/`, `memory/` doesn't import `voice/`, etc. If you need cross-capability wiring, do it in Layer 6. (See Known violations for the existing exceptions.)
 
 Run `/arch-validate all` to scan the current code for violations.
 
@@ -199,10 +212,9 @@ Run `/arch-validate all` to scan the current code for violations.
 
 ## Enforcement
 
-- **Static:** `go vet ./...` catches many violations via import cycle detection.
+- **Static:** the Go compiler rejects import cycles. It does not know about layers.
 - **Automated:** [`arch-validate`](../../.claude/commands/arch-validate.md) scans for disallowed imports per the rules above.
 - **Review:** `reviewer-security` and `reviewer-qa` check imports in code review.
-- **Runtime:** the dependency graph is emitted as a span attribute during startup (optional), so violations are visible in observability.
 
 ## Common mistakes
 

@@ -32,20 +32,26 @@ Every other Go-ecosystem option (ADK-Go, Eino, LangChainGo, Genkit-Go) is either
 import (
     "context"
     "fmt"
+    "os"
 
     "github.com/lookatitude/beluga-ai/v2/agent"
+    "github.com/lookatitude/beluga-ai/v2/config"
     "github.com/lookatitude/beluga-ai/v2/llm"
     _ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
 )
 
 func main() {
-    model, err := llm.New("openai", llm.Config{Model: "gpt-4o"})
+    model, err := llm.New("openai", config.ProviderConfig{
+        Provider: "openai",
+        APIKey:   os.Getenv("OPENAI_API_KEY"),
+        Model:    "gpt-4o",
+    })
     if err != nil {
         panic(err)
     }
-    a := agent.New(
+    a := agent.New("assistant",
         agent.WithPersona(agent.Persona{Role: "assistant"}),
-        agent.WithModel(model),
+        agent.WithLLM(model),
     )
     result, err := a.Invoke(context.Background(), "What is the capital of France?")
     if err != nil {
@@ -85,9 +91,9 @@ Competitor comparison: ADK-Go — 1 documented strategy (source: `github.com/goo
 
 ---
 
-### 3. Built-in durable execution — no Go agentic framework ships this natively
+### 3. A durable-execution interface in the framework
 
-Durable workflows with crash recovery, signal/query, activity retry, and HITL pause are first-class features, not add-ons. The `DurableExecutor` interface (`workflow/workflow.go:52-65`) ships with providers for in-memory (dev), NATS, Kafka, Temporal, Dapr, and Inngest. Agents do not change code when the executor backend changes.
+Workflows with signal/query, activity retry and HITL pause are part of the framework API. The `DurableExecutor` interface (`workflow/workflow.go`) has a built-in in-process executor (`workflow.NewExecutor`) and a Temporal executor (`workflow/providers/temporal`, worker side not shipped yet); NATS, Kafka, Dapr, Inngest and in-memory providers implement `workflow.WorkflowStore` for state. Crash recovery depends on the backend: the in-process executor keeps state in memory.
 
 ```go
 import "github.com/lookatitude/beluga-ai/v2/workflow"
@@ -100,10 +106,7 @@ import "github.com/lookatitude/beluga-ai/v2/workflow"
 //     Cancel(ctx context.Context, workflowID string) error
 // }
 
-exec, err := workflow.NewExecutor(workflow.Config{Backend: "temporal", HostPort: "localhost:7233"})
-if err != nil {
-    panic(err)
-}
+exec := workflow.NewExecutor() // in-process; use temporal.NewExecutor for Temporal
 handle, err := exec.Execute(ctx, myAgentWorkflow, workflow.WorkflowOptions{ID: "order-42"})
 if err != nil {
     panic(err)
@@ -122,27 +125,33 @@ Competitor comparison: ADK-Go — no built-in durable execution as of v1.0. Eino
 
 ### 4. Frame-based voice pipeline — no Go competitor has this
 
-Beluga's `voice/` layer implements a full real-time voice pipeline with VAD, cascaded (STT + LLM + TTS) and speech-to-speech (S2S) modes. Providers: OpenAI Realtime, Gemini Live (S2S); Deepgram, AssemblyAI, Whisper (STT); ElevenLabs, Cartesia, OpenAI TTS, Azure Speech (TTS); LiveKit, Daily, WebSocket (transport). Source: `docs/reference/providers.md` — Voice providers section.
+Beluga's `voice/` layer implements a full real-time voice pipeline with VAD, cascaded (STT + LLM + TTS) and speech-to-speech (S2S) modes. Providers: OpenAI Realtime, Gemini Live (S2S); Deepgram, AssemblyAI, Whisper (STT); ElevenLabs, Cartesia, PlayHT, Groq, Fish, LMNT, Smallest (TTS); LiveKit, Daily, Pipecat, WebSocket (transport). Source: `docs/reference/providers.md` — Voice providers section.
 
 ```go
 import (
     "context"
+    "io"
 
     "github.com/lookatitude/beluga-ai/v2/voice/s2s"
     _ "github.com/lookatitude/beluga-ai/v2/voice/s2s/providers/openai"
 )
 
-func streamVoice(ctx context.Context, transport AudioTransport) error {
-    session, err := s2s.New("openai", s2s.Config{Model: "gpt-4o-realtime-preview"})
+func streamVoice(ctx context.Context, out io.Writer) error {
+    engine, err := s2s.New("openai", s2s.Config{Model: "gpt-4o-realtime-preview"})
     if err != nil {
         return err
     }
-    for event, err := range session.Stream(ctx) {
+    session, err := engine.Start(ctx)
+    if err != nil {
+        return err
+    }
+    defer session.Close()
+    for event, err := range session.Recv(ctx) {
         if err != nil {
             return err
         }
         if event.Type == s2s.EventAudioOutput {
-            if err := transport.Send(event.Audio); err != nil {
+            if _, err := out.Write(event.Audio); err != nil {
                 return err
             }
         }
@@ -189,24 +198,25 @@ Competitor comparison: LangChainGo — uses channels for streaming (leak risk, a
 
 ### 7. Uniform four-ring extension model across all 30+ packages
 
-Every extensible package follows the same contract: Interface (≤4 methods) → Registry (`Register`/`New`/`List`) → Middleware (`func T→T`) → Hooks (nil-safe, composable). Learning one package transfers immediately to all others. This is enforced by `/arch-validate` and the pre-commit gate.
+Extensible packages follow the same contract: Interface (≤4 methods) → Registry (`Register`/`New`/`List`) → Hooks (nil-safe, composable) → Middleware (`func T→T`). Learning one package transfers to the others. `/arch-validate` checks it.
 
 ```go
 import (
+    "github.com/lookatitude/beluga-ai/v2/config"
     "github.com/lookatitude/beluga-ai/v2/llm"
     _ "github.com/lookatitude/beluga-ai/v2/llm/providers/anthropic"
 )
 
 // The same four-ring shape applies to llm, tool, memory, rag, voice, guard, workflow...
-base, err := llm.New("anthropic", llm.Config{Model: "claude-opus-4-5"})
+base, err := llm.New("anthropic", config.ProviderConfig{Provider: "anthropic", Model: "claude-opus-4-5"})
 if err != nil {
     panic(err)
 }
 wrapped := llm.ApplyMiddleware(base,
-    llm.WithRateLimit(rpm, tpm),
-    llm.WithRetry(3),
+    llm.WithTracing(),
+    llm.WithProviderLimits(llm.ProviderLimits{RPM: 60}),
+    llm.WithHooks(llm.ComposeHooks(auditHooks, costHooks)),
 )
-wrapped.SetHooks(llm.ComposeHooks(auditHooks, costHooks))
 ```
 
 Evidence: `docs/architecture/03-extensibility-patterns.md`. `WithTracing()` in 17 packages: `agent/middleware.go`, `llm/`, `tool/`, `memory/tracing.go`, `workflow/tracing.go`, and 12 others.
