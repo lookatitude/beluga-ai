@@ -32,10 +32,7 @@ func TestStartSpan(t *testing.T) {
 		}
 		span.End()
 
-		spans := exporter.GetSpans()
-		if len(spans) != 1 {
-			t.Fatalf("expected 1 span, got %d", len(spans))
-		}
+		spans := requireSpanCount(t, exporter, 1)
 		if spans[0].Name != "test-op" {
 			t.Errorf("expected span name 'test-op', got %q", spans[0].Name)
 		}
@@ -51,17 +48,8 @@ func TestStartSpan(t *testing.T) {
 		})
 		span.End()
 
-		spans := exporter.GetSpans()
-		if len(spans) != 1 {
-			t.Fatalf("expected 1 span, got %d", len(spans))
-		}
-		found := false
-		for _, attr := range spans[0].Attributes {
-			if string(attr.Key) == AttrResponseModel && attr.Value.AsString() == "gpt-4o-mini" {
-				found = true
-			}
-		}
-		if !found {
+		spans := requireSpanCount(t, exporter, 1)
+		if !hasStringAttr(spans[0], AttrResponseModel, "gpt-4o-mini") {
 			t.Error("expected gen_ai.response.model attribute")
 		}
 	})
@@ -73,10 +61,7 @@ func TestStartSpan(t *testing.T) {
 		span.RecordError(errors.New("test error"))
 		span.End()
 
-		spans := exporter.GetSpans()
-		if len(spans) != 1 {
-			t.Fatalf("expected 1 span, got %d", len(spans))
-		}
+		spans := requireSpanCount(t, exporter, 1)
 		if len(spans[0].Events) == 0 {
 			t.Error("expected at least one event for recorded error")
 		}
@@ -89,10 +74,7 @@ func TestStartSpan(t *testing.T) {
 		span.SetStatus(StatusOK, "all good")
 		span.End()
 
-		spans := exporter.GetSpans()
-		if len(spans) != 1 {
-			t.Fatalf("expected 1 span, got %d", len(spans))
-		}
+		requireSpanCount(t, exporter, 1)
 	})
 
 	t.Run("span SetStatus Error", func(t *testing.T) {
@@ -102,10 +84,7 @@ func TestStartSpan(t *testing.T) {
 		span.SetStatus(StatusError, "something failed")
 		span.End()
 
-		spans := exporter.GetSpans()
-		if len(spans) != 1 {
-			t.Fatalf("expected 1 span, got %d", len(spans))
-		}
+		requireSpanCount(t, exporter, 1)
 	})
 
 	t.Run("nil attrs does not panic", func(t *testing.T) {
@@ -115,6 +94,27 @@ func TestStartSpan(t *testing.T) {
 		span.SetAttributes(nil)
 		span.End()
 	})
+}
+
+// requireSpanCount fetches the exported spans and fails the test immediately
+// unless exactly want spans were recorded.
+func requireSpanCount(t *testing.T, exporter *tracetest.InMemoryExporter, want int) tracetest.SpanStubs {
+	t.Helper()
+	spans := exporter.GetSpans()
+	if len(spans) != want {
+		t.Fatalf("expected %d span, got %d", want, len(spans))
+	}
+	return spans
+}
+
+// hasStringAttr reports whether span carries attribute key with string value want.
+func hasStringAttr(span tracetest.SpanStub, key, want string) bool {
+	for _, attr := range span.Attributes {
+		if string(attr.Key) == key && attr.Value.AsString() == want {
+			return true
+		}
+	}
+	return false
 }
 
 func TestInitTracerWithSampler(t *testing.T) {

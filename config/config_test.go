@@ -335,19 +335,6 @@ func TestToEnvName(t *testing.T) {
 	}
 }
 
-// isValidationError checks if err's chain contains a *ValidationError.
-func isValidationError(err error, target **ValidationError) bool {
-	if err == nil {
-		return false
-	}
-	// Try to unwrap to find ValidationError.
-	if ve, ok := err.(*ValidationError); ok {
-		*target = ve
-		return true
-	}
-	return false
-}
-
 // Types for testing additional field types and edge cases.
 
 type floatConfig struct {

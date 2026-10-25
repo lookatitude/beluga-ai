@@ -9,9 +9,7 @@ import (
 const defaultBaseURL = "https://api.openai.com/v1"
 
 func init() {
-	llm.Register("openai", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
-		return New(cfg)
-	})
+	llm.Register("openai", New)
 }
 
 // New creates a new OpenAI ChatModel.

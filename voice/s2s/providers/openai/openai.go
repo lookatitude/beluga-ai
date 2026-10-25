@@ -72,7 +72,7 @@ func (e *Engine) Start(ctx context.Context, opts ...s2s.Option) (s2s.Session, er
 	headers.Set("Authorization", "Bearer "+e.apiKey)
 	headers.Set("OpenAI-Beta", "realtime=v1")
 
-	conn, _, err := websocket.Dial(ctx, wsURL, &websocket.DialOptions{
+	conn, _, err := websocket.Dial(ctx, wsURL, &websocket.DialOptions{ //nolint:bodyclose // coder/websocket nils resp.Body on success and closes it on error
 		HTTPHeader: headers,
 	})
 	if err != nil {

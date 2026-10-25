@@ -77,7 +77,7 @@ func WithScorer(s *DefenseScorer) RunnerOption {
 }
 
 // RedTeamRunner orchestrates a red team exercise against a target agent.
-type RedTeamRunner struct {
+type RedTeamRunner struct { //nolint:revive // stutter kept: renaming would break the exported API
 	opts runnerOptions
 }
 

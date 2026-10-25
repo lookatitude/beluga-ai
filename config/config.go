@@ -78,7 +78,7 @@ func LoadFromEnv[T any](prefix string) (T, error) {
 // cfg must be a pointer to a struct.
 func MergeEnv(cfg any, prefix string) error {
 	v := reflect.ValueOf(cfg)
-	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
+	if v.Kind() != reflect.Pointer || v.Elem().Kind() != reflect.Struct {
 		return core.Errorf(core.ErrInvalidInput, "config: MergeEnv requires a pointer to a struct, got %T", cfg)
 	}
 	return mergeEnvFields(v.Elem(), strings.ToUpper(prefix))
@@ -92,7 +92,7 @@ func MergeEnv(cfg any, prefix string) error {
 // cfg must be a pointer to a struct or a struct.
 func Validate(cfg any) error {
 	v := reflect.ValueOf(cfg)
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 	if v.Kind() != reflect.Struct {
@@ -106,7 +106,7 @@ func Validate(cfg any) error {
 // (even if their value is the zero value).
 func applyDefaultsSelective(cfg any, provided map[string]json.RawMessage) {
 	v := reflect.ValueOf(cfg)
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 	if v.Kind() != reflect.Struct {
@@ -160,7 +160,7 @@ func applyDefaultSelectiveField(field reflect.Value, sf reflect.StructField, jso
 // applyDefaults sets zero-valued struct fields to their `default` tag values.
 func applyDefaults(cfg any) {
 	v := reflect.ValueOf(cfg)
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 	if v.Kind() != reflect.Struct {
@@ -206,7 +206,7 @@ func applyDefaultsToValue(v reflect.Value) {
 // missing only when it is zero-valued AND was not explicitly provided.
 func validateRequired(cfg any, provided map[string]json.RawMessage) error {
 	v := reflect.ValueOf(cfg)
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 	if v.Kind() != reflect.Struct {

@@ -33,7 +33,7 @@ type Turn struct {
 // EvalSample represents a single evaluation sample containing the input
 // question, the generated output, the expected output, and any additional
 // context such as retrieved documents and metadata.
-type EvalSample struct {
+type EvalSample struct { //nolint:revive // stutter kept: renaming would break the exported API
 	// Input is the original question or prompt.
 	Input string
 	// Output is the AI-generated response to evaluate.
@@ -67,7 +67,7 @@ type SampleResult struct {
 }
 
 // EvalReport is the aggregate result of running an evaluation suite.
-type EvalReport struct {
+type EvalReport struct { //nolint:revive // stutter kept: renaming would break the exported API
 	// Samples contains the per-sample results.
 	Samples []SampleResult
 	// Metrics contains the average score for each metric across all samples.

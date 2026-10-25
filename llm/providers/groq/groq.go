@@ -9,9 +9,7 @@ import (
 const defaultBaseURL = "https://api.groq.com/openai/v1"
 
 func init() {
-	llm.Register("groq", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
-		return New(cfg)
-	})
+	llm.Register("groq", New)
 }
 
 // New creates a new Groq ChatModel.

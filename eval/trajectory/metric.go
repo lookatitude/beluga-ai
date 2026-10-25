@@ -8,7 +8,7 @@ import (
 // TrajectoryMetric is the interface that all trajectory evaluation metrics
 // implement. A TrajectoryMetric scores a complete agent trajectory and returns
 // detailed per-step and overall scores.
-type TrajectoryMetric interface {
+type TrajectoryMetric interface { //nolint:revive // stutter kept: renaming would break the exported API
 	// Name returns the unique name of this metric (e.g., "tool_selection").
 	Name() string
 
@@ -18,7 +18,7 @@ type TrajectoryMetric interface {
 }
 
 // TrajectoryScore holds the evaluation result for a single trajectory.
-type TrajectoryScore struct {
+type TrajectoryScore struct { //nolint:revive // stutter kept: renaming would break the exported API
 	// Overall is the aggregate score in [0.0, 1.0].
 	Overall float64 `json:"overall"`
 	// StepScores provides per-step scoring details.
@@ -39,7 +39,7 @@ type StepScore struct {
 
 // TrajectoryResult holds evaluation scores for a single trajectory across
 // all configured metrics.
-type TrajectoryResult struct {
+type TrajectoryResult struct { //nolint:revive // stutter kept: renaming would break the exported API
 	// TrajectoryID identifies the trajectory that was evaluated.
 	TrajectoryID string `json:"trajectory_id"`
 	// Scores maps metric names to their trajectory scores.

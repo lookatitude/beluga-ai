@@ -9,9 +9,7 @@ import (
 const defaultBaseURL = "http://localhost:11434/v1"
 
 func init() {
-	llm.Register("ollama", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
-		return New(cfg)
-	})
+	llm.Register("ollama", New)
 }
 
 // New creates a new Ollama ChatModel using the OpenAI-compatible endpoint.

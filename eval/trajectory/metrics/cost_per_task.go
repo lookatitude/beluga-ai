@@ -101,7 +101,8 @@ func (c *CostPerTask) extractCost(t trajectory.Trajectory) (float64, error) {
 
 	// Fall back to summing per-step costs.
 	var total float64
-	for _, step := range t.Steps {
+	for i := range t.Steps {
+		step := &t.Steps[i]
 		if step.Metadata != nil {
 			if v, ok := step.Metadata["step_cost"]; ok {
 				cost, err := toFloat(v)

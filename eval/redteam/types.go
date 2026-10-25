@@ -81,7 +81,7 @@ type AttackResult struct {
 }
 
 // RedTeamReport is the aggregate result of a red team exercise.
-type RedTeamReport struct {
+type RedTeamReport struct { //nolint:revive // stutter kept: renaming would break the exported API
 	// Results contains the outcome of each individual attack.
 	Results []AttackResult
 

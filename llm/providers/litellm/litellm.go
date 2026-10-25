@@ -9,9 +9,7 @@ import (
 const defaultBaseURL = "http://localhost:4000/v1"
 
 func init() {
-	llm.Register("litellm", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
-		return New(cfg)
-	})
+	llm.Register("litellm", New)
 }
 
 // New creates a new LiteLLM ChatModel.

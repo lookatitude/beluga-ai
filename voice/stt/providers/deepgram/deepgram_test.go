@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"iter"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -731,15 +730,4 @@ func TestBuildQueryParams(t *testing.T) {
 		assert.Equal(t, "opus", params.Get("encoding"))
 		assert.Equal(t, "48000", params.Get("sample_rate"))
 	})
-}
-
-// audioStreamFromChunks creates an iter.Seq2 from byte slices.
-func audioStreamFromChunks(chunks ...[]byte) iter.Seq2[[]byte, error] {
-	return func(yield func([]byte, error) bool) {
-		for _, chunk := range chunks {
-			if !yield(chunk, nil) {
-				return
-			}
-		}
-	}
 }

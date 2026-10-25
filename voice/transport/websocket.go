@@ -152,7 +152,7 @@ func NewWebSocketTransport(ctx context.Context, url string, opts ...WSOption) (*
 		dialOpts.HTTPHeader = cfg.headers
 	}
 
-	conn, _, err := websocket.Dial(ctx, url, dialOpts)
+	conn, _, err := websocket.Dial(ctx, url, dialOpts) //nolint:bodyclose // coder/websocket nils resp.Body on success and closes it on error
 	if err != nil {
 		return nil, core.Errorf(core.ErrProviderDown, "transport: websocket dial %q: %w", url, err)
 	}

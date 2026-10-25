@@ -92,7 +92,7 @@ func WithDatasetName(name string) RunnerOption {
 }
 
 // EvalRunner runs a set of metrics against a dataset of samples.
-type EvalRunner struct {
+type EvalRunner struct { //nolint:revive // stutter kept: renaming would break the exported API
 	metrics     []Metric
 	dataset     []EvalSample
 	datasetName string
@@ -144,7 +144,7 @@ func (r *EvalRunner) Run(ctx context.Context) (*EvalReport, error) {
 	var firstErr error
 	stopped := false
 
-	for i, sample := range r.dataset {
+	for i := range r.dataset {
 		mu.Lock()
 		if stopped {
 			mu.Unlock()
@@ -168,19 +168,20 @@ func (r *EvalRunner) Run(ctx context.Context) (*EvalReport, error) {
 			defer wg.Done()
 			defer func() { <-sem }()
 			r.processSample(ctx, idx, s, results, &mu, &stopped, &firstErr)
-		}(i, sample)
+		}(i, r.dataset[i])
 	}
 
 	wg.Wait()
 
 	report := r.buildReport(results, time.Since(start))
 
-	if firstErr != nil {
+	switch {
+	case firstErr != nil:
 		runSpan.RecordError(firstErr)
 		runSpan.SetStatus(o11y.StatusError, firstErr.Error())
-	} else if len(report.Errors) > 0 {
+	case len(report.Errors) > 0:
 		runSpan.SetStatus(o11y.StatusError, "one or more samples failed")
-	} else {
+	default:
 		runSpan.SetStatus(o11y.StatusOK, "")
 	}
 
@@ -279,7 +280,8 @@ func (r *EvalRunner) buildReport(results []SampleResult, duration time.Duration)
 	sums := make(map[string]float64)
 	counts := make(map[string]int)
 
-	for _, res := range results {
+	for i := range results {
+		res := &results[i]
 		if res.Error != nil {
 			report.Errors = append(report.Errors, res.Error)
 		}

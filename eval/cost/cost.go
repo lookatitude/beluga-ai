@@ -41,7 +41,7 @@ type costOptions struct {
 }
 
 // CostOption configures a CostMetric.
-type CostOption func(*costOptions)
+type CostOption func(*costOptions) //nolint:revive // stutter kept: renaming would break the exported API
 
 // WithPricing sets the model pricing map.
 func WithPricing(pricing map[string]ModelPricing) CostOption {
@@ -97,7 +97,7 @@ func WithCostReference(ref float64) CostOption {
 // score (1 - cost/costReference, clamped to [0, 1]): a zero-cost sample scores
 // 1.0 and a sample at or above the cost reference scores 0.0. Use
 // ComputeRawCost for the raw dollar amount (e.g. for budget tracking).
-type CostMetric struct {
+type CostMetric struct { //nolint:revive // stutter kept: renaming would break the exported API
 	opts costOptions
 }
 

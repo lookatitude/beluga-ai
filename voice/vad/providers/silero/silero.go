@@ -160,7 +160,7 @@ func (v *VAD) computeSpeechProbability(audio []byte) float64 {
 		rmsVal = (sumSquares / float64(numSamples))
 	}
 	if rmsVal > 0 {
-		rmsVal = rmsVal / (32768.0 * 32768.0) // normalize
+		rmsVal /= (32768.0 * 32768.0) // normalize
 	}
 
 	// Sigmoid-like mapping to speech probability.

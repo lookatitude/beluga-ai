@@ -244,7 +244,10 @@ func TestBindTools_SatisfiesChatModelInterface(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
-	var _ llm.ChatModel = m.BindTools(nil)
+	// BindTools' declared return type (llm.ChatModel) is checked by the compiler.
+	if bound := m.BindTools(nil); bound == nil {
+		t.Fatal("BindTools returned nil ChatModel")
+	}
 }
 
 func TestRegistryFactory(t *testing.T) {

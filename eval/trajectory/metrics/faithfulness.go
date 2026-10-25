@@ -108,7 +108,8 @@ func formatTrajectorySteps(steps []trajectory.Step) string {
 		return "(no steps)"
 	}
 	var b strings.Builder
-	for _, s := range steps {
+	for i := range steps {
+		s := &steps[i]
 		fmt.Fprintf(&b, "Step %d [%s]: ", s.Index, s.Type)
 		switch s.Type {
 		case trajectory.StepToolCall:
