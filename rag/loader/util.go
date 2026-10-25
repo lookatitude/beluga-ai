@@ -8,9 +8,12 @@ import (
 )
 
 // cleanPath validates and normalises a filesystem path supplied to a loader.
-// It rejects paths that, after cleaning, still contain a ".." segment — a
-// common indicator of a path-traversal attempt. The cleaned path is returned
-// for use by the caller.
+// It rejects paths that, after cleaning, still contain a ".." segment. The
+// cleaned path is returned for use by the caller.
+//
+// cleanPath is NOT containment: absolute paths such as /etc/passwd pass
+// unchanged. When loader sources come from users or LLM tools, wrap the
+// loader with [WithinRoot] to confine reads to a directory.
 //
 // Loaders are explicitly file-I/O shaped by design (their whole purpose is
 // to read a user-supplied path), so gosec G304 is acceptable at the callsite
