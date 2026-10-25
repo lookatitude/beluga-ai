@@ -14,9 +14,17 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/agent"
 )
 
+// Shared HTTP literals used by the handler routes.
+const (
+	msgMethodNotAllowed = "method not allowed"
+	chatPathSegment     = "/chat/"
+	headerContentType   = "Content-Type"
+	mimeJSON            = "application/json"
+)
+
 // AGUIHandler serves agents via the AG-UI protocol, providing a standardized
 // interface for UI clients to discover and interact with agents.
-type AGUIHandler interface {
+type AGUIHandler interface { //nolint:revive // exported name is public API; renaming to remove the stutter would break callers
 	// ServeHTTP handles AG-UI protocol requests.
 	http.Handler
 }
@@ -112,17 +120,17 @@ func (h *DefaultHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case path == h.opts.basePath+"/agents" || path == h.opts.basePath+"/agents/":
 		if r.Method != http.MethodGet {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			http.Error(w, msgMethodNotAllowed, http.StatusMethodNotAllowed)
 			return
 		}
 		h.handleAgents(w, r)
 	case path == h.opts.basePath+"/manifest" || path == h.opts.basePath+"/manifest/":
 		if r.Method != http.MethodGet {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			http.Error(w, msgMethodNotAllowed, http.StatusMethodNotAllowed)
 			return
 		}
 		h.handleManifest(w, r)
-	case strings.HasPrefix(path, h.opts.basePath+"/chat/"):
+	case strings.HasPrefix(path, h.opts.basePath+chatPathSegment):
 		h.handleChat(w, r)
 	default:
 		http.NotFound(w, r)
@@ -131,7 +139,7 @@ func (h *DefaultHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h *DefaultHandler) handleAgents(w http.ResponseWriter, _ *http.Request) {
 	manifest := h.buildManifest()
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(headerContentType, mimeJSON)
 	if err := json.NewEncoder(w).Encode(manifest.Agents); err != nil {
 		slog.Error("agui: encode agents", "err", err)
 	}
@@ -139,7 +147,7 @@ func (h *DefaultHandler) handleAgents(w http.ResponseWriter, _ *http.Request) {
 
 func (h *DefaultHandler) handleManifest(w http.ResponseWriter, _ *http.Request) {
 	manifest := h.buildManifest()
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(headerContentType, mimeJSON)
 	if err := json.NewEncoder(w).Encode(manifest); err != nil {
 		slog.Error("agui: encode manifest", "err", err)
 	}
@@ -149,12 +157,12 @@ func (h *DefaultHandler) handleChat(w http.ResponseWriter, r *http.Request) {
 	// Method check before agent lookup: avoids leaking whether an agent
 	// exists via the 405 vs 404 response difference.
 	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, msgMethodNotAllowed, http.StatusMethodNotAllowed)
 		return
 	}
 
 	// Extract agent ID from path: /agui/chat/{agentID}
-	parts := strings.Split(strings.TrimPrefix(r.URL.Path, h.opts.basePath+"/chat/"), "/")
+	parts := strings.Split(strings.TrimPrefix(r.URL.Path, h.opts.basePath+chatPathSegment), "/")
 	if len(parts) == 0 || parts[0] == "" {
 		http.Error(w, "agent ID required", http.StatusBadRequest)
 		return
@@ -192,14 +200,14 @@ func (h *DefaultHandler) handleChat(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(headerContentType, mimeJSON)
 		if err := json.NewEncoder(w).Encode(map[string]string{"result": result}); err != nil {
 			slog.Error("agui: encode chat response", "agent_id", safeAgentID, "err", sanitizeLogValue(err.Error()))
 		}
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set(headerContentType, "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Accel-Buffering", "no")
@@ -268,7 +276,7 @@ func (h *DefaultHandler) buildManifest() *AgentsManifest {
 		entries = append(entries, AgentEntry{
 			ID:       a.ID(),
 			Name:     a.Persona().Role,
-			Endpoint: h.opts.basePath + "/chat/" + a.ID(),
+			Endpoint: h.opts.basePath + chatPathSegment + a.ID(),
 			Tools:    toolNames,
 		})
 	}
@@ -308,10 +316,10 @@ func GenerateMarkdown(agents []agent.Agent) string {
 	sort.Slice(sorted, func(i, j int) bool { return sorted[i].ID() < sorted[j].ID() })
 
 	for _, a := range sorted {
-		b.WriteString(fmt.Sprintf("## %s\n\n", a.ID()))
-		b.WriteString(fmt.Sprintf("- **Role**: %s\n", a.Persona().Role))
+		fmt.Fprintf(&b, "## %s\n\n", a.ID())
+		fmt.Fprintf(&b, "- **Role**: %s\n", a.Persona().Role)
 		if a.Persona().Goal != "" {
-			b.WriteString(fmt.Sprintf("- **Goal**: %s\n", a.Persona().Goal))
+			fmt.Fprintf(&b, "- **Goal**: %s\n", a.Persona().Goal)
 		}
 		tools := a.Tools()
 		if len(tools) > 0 {

@@ -161,14 +161,22 @@ func (b *Blackboard) Watch(ctx context.Context, keys ...string) iter.Seq2[state.
 	}
 
 	if len(keys) == 0 {
-		return func(yield func(state.StateChange, error) bool) {}
+		return func(yield func(state.StateChange, error) bool) {
+			// No keys to watch: the stream is empty by design.
+		}
 	}
 
 	if len(keys) == 1 {
 		return state.WatchSeq(ctx, b.store, keys[0])
 	}
 
-	// For multiple keys, fan in per-key iter.Seq2 streams into a single stream.
+	return b.watchMany(ctx, keys)
+}
+
+// watchMany fans in per-key iter.Seq2 streams into a single stream. The
+// merged stream ends on the first error, when every per-key stream is
+// exhausted, when the consumer stops, or when ctx is canceled.
+func (b *Blackboard) watchMany(ctx context.Context, keys []string) iter.Seq2[state.StateChange, error] {
 	return func(yield func(state.StateChange, error) bool) {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()

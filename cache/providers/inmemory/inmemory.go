@@ -24,7 +24,7 @@ type entry struct {
 
 // InMemoryCache is a thread-safe, in-memory LRU cache with TTL-based
 // expiration. It implements the cache.Cache interface.
-type InMemoryCache struct {
+type InMemoryCache struct { //nolint:revive // exported name is public API; renaming to remove the stutter would break callers
 	mu         sync.Mutex
 	items      map[string]*list.Element
 	order      *list.List // front = most recent, back = least recent

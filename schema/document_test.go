@@ -5,16 +5,19 @@ import (
 	"testing"
 )
 
+// documentFieldsCase is one table case for TestDocument_Fields.
+type documentFieldsCase struct {
+	name        string
+	doc         Document
+	wantID      string
+	wantContent string
+	wantScore   float64
+	wantMeta    bool
+	wantEmbed   bool
+}
+
 func TestDocument_Fields(t *testing.T) {
-	tests := []struct {
-		name        string
-		doc         Document
-		wantID      string
-		wantContent string
-		wantScore   float64
-		wantMeta    bool
-		wantEmbed   bool
-	}{
+	tests := []documentFieldsCase{
 		{
 			name: "fully_populated",
 			doc: Document{
@@ -57,25 +60,29 @@ func TestDocument_Fields(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.doc.ID != tt.wantID {
-				t.Errorf("ID = %q, want %q", tt.doc.ID, tt.wantID)
-			}
-			if tt.doc.Content != tt.wantContent {
-				t.Errorf("Content = %q, want %q", tt.doc.Content, tt.wantContent)
-			}
-			if tt.doc.Score != tt.wantScore {
-				t.Errorf("Score = %f, want %f", tt.doc.Score, tt.wantScore)
-			}
-			hasMeta := tt.doc.Metadata != nil
-			if hasMeta != tt.wantMeta {
-				t.Errorf("has Metadata = %v, want %v", hasMeta, tt.wantMeta)
-			}
-			hasEmbed := tt.doc.Embedding != nil
-			if hasEmbed != tt.wantEmbed {
-				t.Errorf("has Embedding = %v, want %v", hasEmbed, tt.wantEmbed)
-			}
-		})
+		t.Run(tt.name, func(t *testing.T) { checkDocumentFields(t, tt) })
+	}
+}
+
+// checkDocumentFields asserts that tt.doc matches every expectation in tt.
+func checkDocumentFields(t *testing.T, tt documentFieldsCase) {
+	t.Helper()
+	if tt.doc.ID != tt.wantID {
+		t.Errorf("ID = %q, want %q", tt.doc.ID, tt.wantID)
+	}
+	if tt.doc.Content != tt.wantContent {
+		t.Errorf("Content = %q, want %q", tt.doc.Content, tt.wantContent)
+	}
+	if tt.doc.Score != tt.wantScore {
+		t.Errorf("Score = %f, want %f", tt.doc.Score, tt.wantScore)
+	}
+	hasMeta := tt.doc.Metadata != nil
+	if hasMeta != tt.wantMeta {
+		t.Errorf("has Metadata = %v, want %v", hasMeta, tt.wantMeta)
+	}
+	hasEmbed := tt.doc.Embedding != nil
+	if hasEmbed != tt.wantEmbed {
+		t.Errorf("has Embedding = %v, want %v", hasEmbed, tt.wantEmbed)
 	}
 }
 

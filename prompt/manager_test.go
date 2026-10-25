@@ -25,13 +25,6 @@ func (m *inMemoryManager) add(t *Template) {
 	m.templates[t.Name] = t
 }
 
-func (m *inMemoryManager) addVersionOnly(t *Template) {
-	// Store under name:version only (no latest alias).
-	if t.Version != "" {
-		m.templates[t.Name+":"+t.Version] = t
-	}
-}
-
 func (m *inMemoryManager) Get(name, version string) (*Template, error) {
 	if version != "" {
 		key := name + ":" + version

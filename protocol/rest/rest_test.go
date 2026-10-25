@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"iter"
 	"net/http"
 	"net/http/httptest"
@@ -81,7 +82,7 @@ func TestRESTServer_Invoke(t *testing.T) {
 	defer ts.Close()
 
 	body := `{"input":"hello"}`
-	resp, err := http.Post(ts.URL+"/assistant/invoke", "application/json", strings.NewReader(body))
+	resp, err := testPost(t, ts.URL+"/assistant/invoke", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -105,7 +106,7 @@ func TestRESTServer_Invoke_EmptyInput(t *testing.T) {
 	defer ts.Close()
 
 	body := `{"input":""}`
-	resp, err := http.Post(ts.URL+"/assistant/invoke", "application/json", strings.NewReader(body))
+	resp, err := testPost(t, ts.URL+"/assistant/invoke", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -120,7 +121,7 @@ func TestRESTServer_Invoke_InvalidBody(t *testing.T) {
 	_, ts := setupRESTTestServer()
 	defer ts.Close()
 
-	resp, err := http.Post(ts.URL+"/assistant/invoke", "application/json", strings.NewReader("not json"))
+	resp, err := testPost(t, ts.URL+"/assistant/invoke", "application/json", strings.NewReader("not json"))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -136,7 +137,7 @@ func TestRESTServer_Invoke_AgentNotFound(t *testing.T) {
 	defer ts.Close()
 
 	body := `{"input":"hello"}`
-	resp, err := http.Post(ts.URL+"/nonexistent/invoke", "application/json", strings.NewReader(body))
+	resp, err := testPost(t, ts.URL+"/nonexistent/invoke", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -159,7 +160,7 @@ func TestRESTServer_Invoke_Error(t *testing.T) {
 	defer ts.Close()
 
 	body := `{"input":"hello"}`
-	resp, err := http.Post(ts.URL+"/fail/invoke", "application/json", strings.NewReader(body))
+	resp, err := testPost(t, ts.URL+"/fail/invoke", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -177,7 +178,7 @@ func TestRESTServer_Stream(t *testing.T) {
 	defer ts.Close()
 
 	body := `{"input":"hello"}`
-	resp, err := http.Post(ts.URL+"/assistant/stream", "application/json", strings.NewReader(body))
+	resp, err := testPost(t, ts.URL+"/assistant/stream", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -203,7 +204,7 @@ func TestRESTServer_Stream_EmptyInput(t *testing.T) {
 	defer ts.Close()
 
 	body := `{"input":""}`
-	resp, err := http.Post(ts.URL+"/assistant/stream", "application/json", strings.NewReader(body))
+	resp, err := testPost(t, ts.URL+"/assistant/stream", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -218,7 +219,7 @@ func TestRESTServer_Stream_InvalidBody(t *testing.T) {
 	_, ts := setupRESTTestServer()
 	defer ts.Close()
 
-	resp, err := http.Post(ts.URL+"/assistant/stream", "application/json", strings.NewReader("not json"))
+	resp, err := testPost(t, ts.URL+"/assistant/stream", "application/json", strings.NewReader("not json"))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -243,7 +244,7 @@ func TestRESTServer_StreamError(t *testing.T) {
 	defer ts.Close()
 
 	body := `{"input":"hello"}`
-	resp, err := http.Post(ts.URL+"/err/stream", "application/json", strings.NewReader(body))
+	resp, err := testPost(t, ts.URL+"/err/stream", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -267,7 +268,7 @@ func TestRESTServer_MethodNotAllowed(t *testing.T) {
 	_, ts := setupRESTTestServer()
 	defer ts.Close()
 
-	resp, err := http.Get(ts.URL + "/assistant/invoke")
+	resp, err := testGet(t, ts.URL+"/assistant/invoke")
 	if err != nil {
 		t.Fatalf("GET: %v", err)
 	}
@@ -282,7 +283,7 @@ func TestRESTServer_InvalidPath(t *testing.T) {
 	_, ts := setupRESTTestServer()
 	defer ts.Close()
 
-	resp, err := http.Post(ts.URL+"/noslash", "application/json", strings.NewReader(`{}`))
+	resp, err := testPost(t, ts.URL+"/noslash", "application/json", strings.NewReader(`{}`))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -297,7 +298,7 @@ func TestRESTServer_UnknownAction(t *testing.T) {
 	_, ts := setupRESTTestServer()
 	defer ts.Close()
 
-	resp, err := http.Post(ts.URL+"/assistant/unknown", "application/json", strings.NewReader(`{}`))
+	resp, err := testPost(t, ts.URL+"/assistant/unknown", "application/json", strings.NewReader(`{}`))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -317,7 +318,7 @@ func TestRESTServer_RegisterAgent_TrimSlashes(t *testing.T) {
 	defer ts.Close()
 
 	body := `{"input":"hello"}`
-	resp, err := http.Post(ts.URL+"/trimmed/invoke", "application/json", strings.NewReader(body))
+	resp, err := testPost(t, ts.URL+"/trimmed/invoke", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -445,6 +446,13 @@ func TestSSEWriter_WriteHeartbeat_WriterError(t *testing.T) {
 // --- Serve test ---
 
 func TestRESTServer_Serve_ContextCancel(t *testing.T) {
+	assertServeStopsOnCancel(t)
+}
+
+// assertServeStopsOnCancel starts a server on an ephemeral port, cancels its
+// context, and asserts that Serve returns context.Canceled promptly.
+func assertServeStopsOnCancel(t *testing.T) {
+	t.Helper()
 	srv := NewServer()
 	srv.RegisterAgent("test", &mockAgent{id: "test"})
 
@@ -455,6 +463,7 @@ func TestRESTServer_Serve_ContextCancel(t *testing.T) {
 		errCh <- srv.Serve(ctx, "127.0.0.1:0")
 	}()
 
+	// Give the server a moment to start, then cancel to trigger shutdown.
 	time.Sleep(50 * time.Millisecond)
 	cancel()
 
@@ -611,32 +620,7 @@ func TestSSEWriter_WriteEvent_IDLineError(t *testing.T) {
 // handles the shutdown path. The shutdownErr != nil path at server.go:69-71 is tested by
 // simulating a context cancellation.
 func TestRESTServer_Serve_ShutdownDuringCancel(t *testing.T) {
-	srv := NewServer()
-	srv.RegisterAgent("test", &mockAgent{id: "test"})
-
-	ctx, cancel := context.WithCancel(context.Background())
-
-	// Use an address that will bind successfully.
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- srv.Serve(ctx, "127.0.0.1:0")
-	}()
-
-	// Give the server a moment to start.
-	time.Sleep(50 * time.Millisecond)
-
-	// Cancel the context to trigger shutdown.
-	cancel()
-
-	select {
-	case err := <-errCh:
-		// We expect context.Canceled since that's what the select returns.
-		if err != context.Canceled {
-			t.Errorf("expected context.Canceled, got %v", err)
-		}
-	case <-time.After(5 * time.Second):
-		t.Fatal("Serve did not return after context cancel")
-	}
+	assertServeStopsOnCancel(t)
 }
 
 // --- Additional edge case tests ---
@@ -701,7 +685,7 @@ func TestRESTServer_Stream_NonFlusherWriter(t *testing.T) {
 
 	// Create a request with valid body.
 	body := strings.NewReader(`{"input":"hello"}`)
-	req := httptest.NewRequest(http.MethodPost, "/test/stream", body)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/test/stream", body)
 	req.Header.Set("Content-Type", "application/json")
 
 	// Use a non-flusher ResponseWriter.
@@ -740,7 +724,7 @@ func TestRESTServer_Stream_WriteEventErrorDuringStream(t *testing.T) {
 
 	// Create a request with valid body.
 	body := strings.NewReader(`{"input":"hello"}`)
-	req := httptest.NewRequest(http.MethodPost, "/test/stream", body)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/test/stream", body)
 	req.Header.Set("Content-Type", "application/json")
 
 	// Use httptest.ResponseRecorder which always succeeds.
@@ -757,4 +741,25 @@ func TestRESTServer_Stream_WriteEventErrorDuringStream(t *testing.T) {
 	if ct := rec.Header().Get("Content-Type"); ct != "text/event-stream" {
 		t.Errorf("expected text/event-stream, got %q", ct)
 	}
+}
+
+// testGet issues a GET request bound to the test's context using the default client.
+func testGet(t *testing.T, url string) (*http.Response, error) {
+	t.Helper()
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return http.DefaultClient.Do(req)
+}
+
+// testPost issues a POST request bound to the test's context using the default client.
+func testPost(t *testing.T, url, contentType string, body io.Reader) (*http.Response, error) {
+	t.Helper()
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", contentType)
+	return http.DefaultClient.Do(req)
 }

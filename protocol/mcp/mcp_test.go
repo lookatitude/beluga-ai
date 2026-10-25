@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -203,7 +204,11 @@ func TestServer_InvalidHTTPMethod(t *testing.T) {
 	_, ts := setupTestServer()
 	defer ts.Close()
 
-	resp, err := ts.Client().Get(ts.URL)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL, nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	resp, err := ts.Client().Do(req)
 	if err != nil {
 		t.Fatalf("GET: %v", err)
 	}
@@ -442,7 +447,7 @@ func TestServer_InvalidJSON(t *testing.T) {
 	_, ts := setupTestServer()
 	defer ts.Close()
 
-	resp, err := http.Post(ts.URL, "application/json", strings.NewReader("not json"))
+	resp, err := testPost(t, ts.URL, "application/json", strings.NewReader("not json"))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -460,7 +465,7 @@ func TestServer_InvalidJSONRPCVersion(t *testing.T) {
 	defer ts.Close()
 
 	body, _ := json.Marshal(Request{JSONRPC: "1.0", ID: 1, Method: "initialize"})
-	resp, err := http.Post(ts.URL, "application/json", strings.NewReader(string(body)))
+	resp, err := testPost(t, ts.URL, "application/json", strings.NewReader(string(body)))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -504,7 +509,7 @@ func TestServer_ToolsCall_InvalidParams(t *testing.T) {
 		Method:  "tools/call",
 		Params:  "not an object",
 	})
-	resp, err := http.Post(ts.URL, "application/json", strings.NewReader(string(body)))
+	resp, err := testPost(t, ts.URL, "application/json", strings.NewReader(string(body)))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -602,4 +607,15 @@ func TestClient_RpcError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for RPC error response")
 	}
+}
+
+// testPost issues a POST request bound to the test's context using the default client.
+func testPost(t *testing.T, url, contentType string, body io.Reader) (*http.Response, error) {
+	t.Helper()
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", contentType)
+	return http.DefaultClient.Do(req)
 }

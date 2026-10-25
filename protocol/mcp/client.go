@@ -14,7 +14,7 @@ import (
 )
 
 // MCPClient connects to a remote MCP server over Streamable HTTP transport.
-type MCPClient struct {
+type MCPClient struct { //nolint:revive // exported name is public API; renaming to remove the stutter would break callers
 	serverURL  string
 	httpClient *http.Client
 	nextID     atomic.Int64

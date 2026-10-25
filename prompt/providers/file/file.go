@@ -16,7 +16,7 @@ import (
 // FileManager implements prompt.PromptManager by loading templates from
 // JSON files in a directory. Files must have a .json extension and contain
 // a valid prompt.Template structure.
-type FileManager struct {
+type FileManager struct { //nolint:revive // exported name is public API; renaming to remove the stutter would break callers
 	dir string
 
 	mu        sync.RWMutex
@@ -89,7 +89,7 @@ func (fm *FileManager) load() error {
 
 // Get retrieves a template by name and version. If version is empty,
 // the latest version (lexicographically highest) is returned.
-func (fm *FileManager) Get(name string, version string) (*prompt.Template, error) {
+func (fm *FileManager) Get(name, version string) (*prompt.Template, error) {
 	fm.mu.RLock()
 	defer fm.mu.RUnlock()
 

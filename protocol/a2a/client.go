@@ -24,7 +24,7 @@ const (
 )
 
 // A2AClient connects to a remote A2A agent over HTTP.
-type A2AClient struct {
+type A2AClient struct { //nolint:revive // exported name is public API; renaming to remove the stutter would break callers
 	baseURL    string
 	httpClient *http.Client
 }
@@ -210,7 +210,7 @@ func (a *remoteAgent) Invoke(ctx context.Context, input string, _ ...agent.Optio
 		}
 
 		// Exponential backoff, capped at maxDelay.
-		delay = delay * 2
+		delay *= 2
 		if delay > maxDelay {
 			delay = maxDelay
 		}

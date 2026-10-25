@@ -17,7 +17,7 @@ type TemplateInfo struct {
 // PromptManager provides versioned access to prompt templates.
 // Implementations load templates from various backends (filesystem, database, etc.)
 // and support rendering templates into message sequences.
-type PromptManager interface {
+type PromptManager interface { //nolint:revive // exported name is public API; renaming to remove the stutter would break callers
 	// Get retrieves a template by name and version. If version is empty,
 	// the latest version is returned.
 	Get(name, version string) (*Template, error)

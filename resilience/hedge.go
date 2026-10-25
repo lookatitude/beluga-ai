@@ -38,7 +38,6 @@ func Hedge[T any](
 	}()
 
 	// Schedule secondary after the delay, unless primary finishes first.
-	secondaryStarted := false
 	timer := time.NewTimer(delay)
 	defer timer.Stop()
 
@@ -52,7 +51,6 @@ func Hedge[T any](
 		}
 		// Primary failed before delay — start secondary now.
 		wg.Add(1)
-		secondaryStarted = true
 		go func() {
 			defer wg.Done()
 			v, err := secondary(ctx)
@@ -70,7 +68,6 @@ func Hedge[T any](
 	case <-timer.C:
 		// Delay elapsed — start secondary.
 		wg.Add(1)
-		secondaryStarted = true
 		go func() {
 			defer wg.Done()
 			v, err := secondary(ctx)
@@ -94,8 +91,6 @@ func Hedge[T any](
 			primaryErr = r.err
 		}
 	}
-
-	_ = secondaryStarted // used above
 
 	var zero T
 	return zero, primaryErr
