@@ -1,12 +1,12 @@
 # Guide: Deploy on Temporal
 
 **Time:** ~30 minutes
-**You will build:** a Beluga agent whose loop is durable — it survives crashes, supports day-long workflows, and uses signals for human approval.
-**Prerequisites:** [Deploy on Docker guide](./deploy-docker.md), running Temporal server (locally via `temporal server start-dev`, or a cluster).
+**You will build:** an approval workflow (research, wait for a human, then act) on Beluga's workflow API, run it on the in-process executor, and see how it maps onto the Temporal executor.
+**Prerequisites:** [Deploy on Docker guide](./deploy-docker.md). For the Temporal part, a running Temporal server (`temporal server start-dev`, or a cluster).
 
 ## When to use Temporal
 
-Use Temporal mode when:
+Use a Temporal-backed executor when:
 
 - Your workflows run longer than a single request's lifetime (minutes, hours, days).
 - You need human-in-the-loop pauses (approval workflows).
@@ -18,172 +18,210 @@ Don't use Temporal when:
 - You don't have a Temporal cluster or the budget to run one.
 - Simplicity is more valuable than durability.
 
-**Status:** Temporal integration lives in `workflow/` as a provider backend. Confirm with `workflow.List()` that the Temporal backend is registered.
+> **Status.** `workflow/providers/temporal` implements `workflow.DurableExecutor` on a Temporal client: `Execute` starts a Temporal workflow, and `Signal`, `Query` and `Cancel` are forwarded. It does not yet ship a worker: the workflow wrapper it starts is unexported, so you cannot register it with a Temporal worker from your code, and `workflow.WithActivityTimeout` is not applied (activities use a fixed 5-minute start-to-close timeout). Until that lands, develop workflows on the in-process executor below. The in-process executor keeps state in memory and does not survive a restart.
 
-## Step 1 — run Temporal locally
+## Step 1 — the workflow
 
-```bash
-temporal server start-dev --ui-port 8233
-```
-
-Temporal UI: http://localhost:8233.
-
-## Step 2 — the agent with durable execution
+A Beluga workflow is a `workflow.WorkflowFunc`: a function of a `workflow.WorkflowContext`. Non-deterministic work (LLM calls, tool calls, deletes) goes in activities via `ctx.ExecuteActivity`; waiting for a human is `ctx.ReceiveSignal`.
 
 ```go
-// cmd/durable-agent/main.go
+// main.go
 package main
 
 import (
-    "context"
-    "log"
-    "time"
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
 
-    "github.com/lookatitude/beluga-ai/v2/agent"
-    "github.com/lookatitude/beluga-ai/v2/llm"
-    "github.com/lookatitude/beluga-ai/v2/runtime"
-    "github.com/lookatitude/beluga-ai/v2/workflow"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/llm"
+	"github.com/lookatitude/beluga-ai/v2/workflow"
 
-    _ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
-    _ "github.com/lookatitude/beluga-ai/v2/workflow/backends/temporal"
+	_ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
 )
+
+const approvalSignal = "approval"
+
+// Approval is the payload a human sends to resume the workflow.
+type Approval struct {
+	Approved bool   `json:"approved"`
+	Reason   string `json:"reason"`
+}
+
+// deleteUser is the irreversible action, run as an activity.
+func deleteUser(ctx context.Context, input any) (any, error) {
+	userID, _ := input.(string)
+	// Call your user service here.
+	return "deleted " + userID, nil
+}
+
+// deleteUserWorkflow researches the account, waits for approval, then deletes.
+func deleteUserWorkflow(researcher agent.Agent) workflow.WorkflowFunc {
+	research := workflow.LLMActivity(func(ctx context.Context, prompt string) (string, error) {
+		return researcher.Invoke(ctx, prompt)
+	})
+
+	return func(ctx workflow.WorkflowContext, input any) (any, error) {
+		userID, _ := input.(string)
+
+		summary, err := ctx.ExecuteActivity(research,
+			"Summarise the recent account activity for user "+userID,
+			workflow.WithActivityTimeout(5*time.Minute))
+		if err != nil {
+			return nil, err
+		}
+
+		// Pause until a human answers on the "approval" signal.
+		var decision *Approval
+		for payload, err := range ctx.ReceiveSignal(approvalSignal) {
+			if err != nil {
+				return nil, err
+			}
+			if a, ok := payload.(Approval); ok {
+				decision = &a
+				break
+			}
+		}
+		if decision == nil || !decision.Approved {
+			return nil, core.Errorf(core.ErrGuardBlocked, "delete_user for %s was not approved", userID)
+		}
+
+		if _, err := ctx.ExecuteActivity(deleteUser, userID); err != nil {
+			return nil, core.Errorf(core.ErrToolFailed, "delete_user: %w", err)
+		}
+		return fmt.Sprintf("user %s deleted (%s). Research: %v", userID, decision.Reason, summary), nil
+	}
+}
 
 func main() {
-    ctx := context.Background()
+	ctx := context.Background()
 
-    model, _ := llm.New("openai", llm.Config{"model": "gpt-4o"})
-    a := agent.NewLLMAgent(
-        agent.WithPersona(agent.Persona{Role: "researcher"}),
-        agent.WithLLM(model),
-        agent.WithTools(/* … */),
-    )
+	model, err := llm.New("openai", config.ProviderConfig{
+		Provider: "openai",
+		APIKey:   os.Getenv("OPENAI_API_KEY"),
+		Model:    "gpt-4o",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	researcher := agent.New("researcher",
+		agent.WithPersona(agent.Persona{Role: "account researcher"}),
+		agent.WithLLM(model),
+	)
 
-    engine, err := workflow.NewEngine("temporal", workflow.Config{
-        "host_port":  "localhost:7233",
-        "namespace":  "default",
-        "task_queue": "beluga-agent",
-    })
-    if err != nil {
-        log.Fatalf("workflow engine: %v", err)
-    }
+	// Step 2: run it on the in-process executor.
+	executor := workflow.NewExecutor()
+	handle, err := executor.Execute(ctx, deleteUserWorkflow(researcher), workflow.WorkflowOptions{
+		ID:      "delete-user-42",
+		Input:   "42",
+		Timeout: 24 * time.Hour,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    r := runtime.NewRunner(a,
-        runtime.WithDurableExecution(engine),
-        runtime.WithDurableActivityTimeout(5 * time.Minute),
-        runtime.WithDurableWorkflowTimeout(24 * time.Hour),
-        runtime.WithRESTEndpoint("/api/chat"),
-    )
+	// Step 3: a human approves through an HTTP endpoint, which sends the signal.
+	http.HandleFunc("POST /approve", func(w http.ResponseWriter, r *http.Request) {
+		var a Approval
+		if err := json.NewDecoder(r.Body).Decode(&a); err != nil {
+			http.Error(w, "invalid body", http.StatusBadRequest)
+			return
+		}
+		err := executor.Signal(r.Context(), handle.ID(), workflow.Signal{
+			Name:    approvalSignal,
+			Payload: a,
+			SentAt:  time.Now(),
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusAccepted)
+	})
+	go func() {
+		srv := &http.Server{Addr: ":8080", ReadHeaderTimeout: 10 * time.Second}
+		log.Fatal(srv.ListenAndServe())
+	}()
 
-    log.Println("listening on :8080")
-    if err := r.Serve(ctx, ":8080"); err != nil {
-        log.Fatalf("serve: %v", err)
-    }
+	result, err := handle.Result(ctx)
+	if err != nil {
+		log.Fatalf("workflow: %v", err)
+	}
+	log.Println(result)
 }
 ```
 
-## Step 3 — HITL approval workflow
+## Step 2 — run it
 
-Add a high-risk tool that requires human approval:
+```bash
+export OPENAI_API_KEY=sk-...
+go run .
+```
+
+The workflow runs the research activity, then waits on the `approval` signal.
+
+## Step 3 — approve
+
+```bash
+curl -X POST http://localhost:8080/approve \
+  -H 'Content-Type: application/json' \
+  -d '{"approved":true,"reason":"verified identity"}'
+```
+
+`executor.Signal` delivers the payload to `ctx.ReceiveSignal("approval")`, the workflow runs the delete activity, and `handle.Result` returns.
+
+For approvals routed through Beluga's HITL manager instead of a raw signal, wrap a `hitl.Manager` with `workflow.HumanActivity(mgr)` and pass it a `hitl.InteractionRequest`; a reviewer answers with `mgr.Respond(ctx, requestID, hitl.InteractionResponse{Decision: hitl.DecisionApprove})`.
+
+## Step 4 — the Temporal executor
+
+The workflow function does not change. Only the executor does:
 
 ```go
-// dangerous-tool.go
-package main
-
 import (
-    "context"
-    "github.com/lookatitude/beluga-ai/v2/core"
-    "github.com/lookatitude/beluga-ai/v2/hitl"
-    "github.com/lookatitude/beluga-ai/v2/tool"
+	"go.temporal.io/sdk/client"
+
+	"github.com/lookatitude/beluga-ai/v2/workflow/providers/temporal"
 )
 
-type deleteUserTool struct {
-    approval hitl.Service
+c, err := client.Dial(client.Options{HostPort: "localhost:7233", Namespace: "default"})
+if err != nil {
+	log.Fatal(err)
 }
+defer c.Close()
 
-func (d *deleteUserTool) Name() string              { return "delete_user" }
-func (d *deleteUserTool) Description() string       { return "Permanently delete a user account" }
-func (d *deleteUserTool) InputSchema() map[string]any { return userIDSchema }
-func (d *deleteUserTool) RiskLevel() hitl.Risk      { return hitl.RiskHigh }
-
-func (d *deleteUserTool) Execute(ctx context.Context, in map[string]any) (*tool.Result, error) {
-    userID, _ := in["user_id"].(string)
-
-    // Pause the workflow and wait for approval.
-    decision, err := d.approval.RequestApproval(ctx, hitl.Request{
-        Action: "delete_user",
-        Payload: map[string]any{"user_id": userID},
-        Timeout: 24 * time.Hour,
-    })
-    if err != nil {
-        return nil, core.Errorf(core.ErrGuardBlocked, "approval denied: %w", err)
-    }
-    if !decision.Approved {
-        return nil, core.Errorf(core.ErrGuardBlocked, "human denied: %s", decision.Reason)
-    }
-
-    // Approved — do the delete.
-    if err := deleteUser(ctx, userID); err != nil {
-        return nil, core.Errorf(core.ErrToolFailed, "delete: %w", err)
-    }
-    return tool.TextResult("user deleted"), nil
-}
+executor, err := temporal.NewExecutor(temporal.Config{
+	Client:         c,
+	TaskQueue:      "beluga-agent",
+	DefaultTimeout: 24 * time.Hour,
+})
 ```
 
-Inside Temporal mode, `RequestApproval` translates to `workflow.WaitSignal("approval")`. The worker goes idle and uses no memory beyond the event log until the signal arrives.
+Through the registry, the same executor is `workflow.New("temporal", workflow.Config{Extra: map[string]any{"client": c, "task_queue": "beluga-agent"}})`.
 
-## Step 4 — human approves via API
+See the status note at the top: with the current provider the workflow is started on Temporal, but no worker in your process can pick it up yet. Signal payloads that cross Temporal are also serialised, so a workflow that must run on both executors should accept the decoded form (for example a `map[string]any`) as well as the typed `Approval`.
 
-The approval service exposes an endpoint:
+## Determinism rules
 
-```bash
-curl -X POST http://localhost:8080/hitl/approve \
-  -H 'Content-Type: application/json' \
-  -d '{"workflow_id":"chat-session-abc","approved":true,"reason":"verified identity"}'
-```
+For replay on a durable engine to work, the workflow function must be deterministic:
 
-This sends a Temporal signal that wakes the workflow. The agent resumes from exactly where it paused, completes the delete, and returns the response.
-
-## Step 5 — crash recovery test
-
-With a long-running turn:
-
-```bash
-curl -N http://localhost:8080/api/chat \
-  -d '{"message":"Research every paper about RAG published in 2024"}'
-```
-
-Kill the worker mid-turn:
-
-```bash
-pkill -f durable-agent
-```
-
-Restart:
-
-```bash
-./durable-agent
-```
-
-Check the Temporal UI. The workflow is still there. When the worker comes back, it replays from the event log, reads the already-completed activities (the LLM calls and tool invocations that finished), and continues from the first unfinished activity. The client request (if it's still connected) receives the rest of the stream.
-
-## Determinism rules (critical)
-
-For replay to work, the workflow orchestration code must be deterministic:
-
-- **Don't use `time.Now()`** in workflow code. Use `workflow.Now(ctx)`.
-- **Don't use `rand`** in workflow code. Use `workflow.Random(ctx)`.
-- **Don't use `go`** in workflow code. Use `workflow.Go(ctx, fn)`.
+- **Don't read the clock** (`time.Now()`) or call `time.Sleep` in workflow code. Use `ctx.Sleep(d)`; take timestamps inside activities.
+- **Don't use `rand`** in workflow code. Generate random values in an activity.
+- **Don't start goroutines** in workflow code.
 - **Don't make network calls** in workflow code. Wrap them in activities.
 
-Activities are the non-deterministic escape hatch. An activity can do anything — its result is recorded in the event log and returned on replay.
-
-Beluga's executor respects these rules when running under a durable engine. Your *tool* code runs inside activities, so it can use whatever it wants.
+Activities are the non-deterministic escape hatch: an activity can do anything, and a durable engine records its result.
 
 ## Monitoring durable workflows
 
 Temporal UI shows:
 
-- Workflow ID (matches Beluga session ID).
+- Workflow ID (the `WorkflowOptions.ID` you passed to `Execute`).
 - Current state (Running, Completed, Failed, Canceled).
 - Event log (every activity, every signal, every retry).
 - Pending activities.
@@ -195,7 +233,7 @@ Use it as a second observability surface alongside [OTel traces](../architecture
 - **Non-deterministic code in orchestration.** Breaks replay. Move it into an activity.
 - **Large payloads in workflow state.** Pass references (IDs, S3 keys), not the full data. The event log bloats and replay gets slow.
 - **Activity timeout too short.** Long LLM calls need long timeouts. Start at 5 minutes and tune.
-- **Not handling approval timeout.** A workflow can wait forever on a signal. Always set a timeout on `RequestApproval`.
+- **Not handling approval timeout.** A workflow can wait forever on a signal. Set `WorkflowOptions.Timeout`, or a `Timeout` on the `hitl.InteractionRequest`.
 - **Running Temporal in dev mode in production.** `temporal server start-dev` is for development. Use a real cluster.
 
 ## Related
