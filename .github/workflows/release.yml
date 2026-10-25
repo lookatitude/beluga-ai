@@ -125,7 +125,7 @@ jobs:
           fetch-depth: 0
 
       - name: Generate CHANGELOG.md
-        uses: orhun/git-cliff-action@v4
+        uses: orhun/git-cliff-action@a9a95522b26fe6403f7bb24031f21fb573d0f5ff # v4.9.1
         with:
           config: .cliff.toml
           args: --output CHANGELOG.md ${{ github.event_name == 'workflow_dispatch' && format('--tag {0}', inputs.tag) || '' }}
@@ -171,7 +171,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v7
+        uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
         with:
           version: "~> v2"
           args: release --clean
@@ -254,7 +254,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Install pkgsite
-        run: go install golang.org/x/pkgsite/cmd/pkgsite@latest
+        run: go install golang.org/x/pkgsite/cmd/pkgsite@v0.2.0
 
       - name: Generate godoc HTML
         run: |
@@ -337,7 +337,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send repository_dispatch to beluga-website
-        uses: peter-evans/repository-dispatch@v4
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
         with:
           # Requires a PAT (repo scope) stored as WEBSITE_DISPATCH_TOKEN
           # in this repo's secrets. GITHUB_TOKEN cannot dispatch across repos.
@@ -361,7 +361,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send repository_dispatch to beluga-examples
-        uses: peter-evans/repository-dispatch@v4
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
         with:
           token: ${{ secrets.EXAMPLES_DISPATCH_TOKEN }}
           repository: lookatitude/beluga-examples
