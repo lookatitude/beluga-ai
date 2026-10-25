@@ -44,7 +44,7 @@ type Turn struct {
 
 // VoiceSession manages the state and conversational turns of a voice
 // interaction. It is safe for concurrent use.
-type VoiceSession struct {
+type VoiceSession struct { //nolint:revive // stutter kept: renaming would break the exported API
 	mu sync.RWMutex
 
 	// ID uniquely identifies this session.

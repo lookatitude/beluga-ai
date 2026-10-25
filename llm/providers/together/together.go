@@ -9,9 +9,7 @@ import (
 const defaultBaseURL = "https://api.together.xyz/v1"
 
 func init() {
-	llm.Register("together", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
-		return New(cfg)
-	})
+	llm.Register("together", New)
 }
 
 // New creates a new Together AI ChatModel.

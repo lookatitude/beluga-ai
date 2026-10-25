@@ -45,8 +45,9 @@ func (se *StepEfficiency) ScoreTrajectory(_ context.Context, t trajectory.Trajec
 	productiveCount := 0
 	var stepScores []trajectory.StepScore
 
-	for _, step := range t.Steps {
-		productive := isProductive(step)
+	for i := range t.Steps {
+		step := &t.Steps[i]
+		productive := isProductive(*step)
 		score := 0.0
 		reason := "non-productive"
 		if productive {

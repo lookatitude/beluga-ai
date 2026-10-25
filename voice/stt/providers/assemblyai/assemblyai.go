@@ -242,7 +242,7 @@ func (e *Engine) dialStream(ctx context.Context, cfg stt.Config) (*websocket.Con
 	headers := http.Header{}
 	headers.Set("Authorization", e.apiKey)
 
-	conn, _, err := websocket.Dial(ctx, wsEndpoint, &websocket.DialOptions{
+	conn, _, err := websocket.Dial(ctx, wsEndpoint, &websocket.DialOptions{ //nolint:bodyclose // coder/websocket nils resp.Body on success and closes it on error
 		HTTPHeader: headers,
 	})
 	if err != nil {

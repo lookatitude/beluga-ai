@@ -278,7 +278,7 @@ func (e *Engine) dialStream(ctx context.Context, cfg stt.Config) (*websocket.Con
 		return nil, fmt.Errorf("gladia: no websocket URL returned")
 	}
 
-	conn, _, err := websocket.Dial(ctx, liveResp.URL, nil)
+	conn, _, err := websocket.Dial(ctx, liveResp.URL, nil) //nolint:bodyclose // coder/websocket nils resp.Body on success and closes it on error
 	if err != nil {
 		return nil, fmt.Errorf("gladia: websocket dial: %w", err)
 	}

@@ -9,9 +9,7 @@ import (
 const defaultBaseURL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
 func init() {
-	llm.Register("qwen", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
-		return New(cfg)
-	})
+	llm.Register("qwen", New)
 }
 
 // New creates a new Qwen ChatModel.

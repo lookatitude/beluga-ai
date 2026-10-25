@@ -102,7 +102,7 @@ func (r *Runner) Run(ctx context.Context) (*Report, error) {
 	var mu sync.Mutex
 	var firstErr error
 
-	for i, traj := range r.trajectories {
+	for i := range r.trajectories {
 		if ctx.Err() != nil {
 			mu.Lock()
 			if firstErr == nil {
@@ -145,7 +145,7 @@ func (r *Runner) Run(ctx context.Context) (*Report, error) {
 			if r.hooks.AfterTrajectory != nil {
 				r.hooks.AfterTrajectory(ctx, result)
 			}
-		}(i, traj)
+		}(i, r.trajectories[i])
 	}
 
 	wg.Wait()

@@ -164,7 +164,7 @@ func WithChannelBufferSize(size int) PipelineOption {
 
 // VoicePipeline implements the cascading voice pipeline: STT → LLM → TTS.
 // Each stage is a FrameProcessor composed lazily over iter.Seq2 streams.
-type VoicePipeline struct {
+type VoicePipeline struct { //nolint:revive // stutter kept: renaming would break the exported API
 	config PipelineConfig
 }
 

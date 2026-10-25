@@ -9,9 +9,7 @@ import (
 const defaultBaseURL = "https://openrouter.ai/api/v1"
 
 func init() {
-	llm.Register("openrouter", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
-		return New(cfg)
-	})
+	llm.Register("openrouter", New)
 }
 
 // New creates a new OpenRouter ChatModel.

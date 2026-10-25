@@ -667,10 +667,10 @@ func TestTranscribe_PollHTTPError(t *testing.T) {
 
 func TestTranscribe_CreateTranscriptionHTTPFailed(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/upload":
+		switch r.URL.Path {
+		case "/upload":
 			json.NewEncoder(w).Encode(uploadResponse{AudioURL: "https://x"})
-		case r.URL.Path == "/transcription":
+		case "/transcription":
 			// Close connection to trigger HTTP error
 			hj, ok := w.(http.Hijacker)
 			if ok {

@@ -9,9 +9,7 @@ import (
 const defaultBaseURL = "https://api.sambanova.ai/v1"
 
 func init() {
-	llm.Register("sambanova", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
-		return New(cfg)
-	})
+	llm.Register("sambanova", New)
 }
 
 // New creates a new SambaNova ChatModel.

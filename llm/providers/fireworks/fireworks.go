@@ -9,9 +9,7 @@ import (
 const defaultBaseURL = "https://api.fireworks.ai/inference/v1"
 
 func init() {
-	llm.Register("fireworks", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
-		return New(cfg)
-	})
+	llm.Register("fireworks", New)
 }
 
 // New creates a new Fireworks AI ChatModel.

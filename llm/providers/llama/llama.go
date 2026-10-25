@@ -19,9 +19,7 @@ var backends = map[string]string{
 }
 
 func init() {
-	llm.Register("llama", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
-		return New(cfg)
-	})
+	llm.Register("llama", New)
 }
 
 // New creates a new Llama ChatModel by delegating to a hosting provider.

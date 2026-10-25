@@ -9,9 +9,7 @@ import (
 const defaultBaseURL = "https://api.cerebras.ai/v1"
 
 func init() {
-	llm.Register("cerebras", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
-		return New(cfg)
-	})
+	llm.Register("cerebras", New)
 }
 
 // New creates a new Cerebras ChatModel.

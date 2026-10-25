@@ -74,10 +74,7 @@ func TestRecv(t *testing.T) {
 			done <- lastErr
 		}()
 		cancel()
-		select {
-		case err := <-done:
-			assert.NoError(t, err)
-		}
+		assert.NoError(t, <-done)
 	})
 
 	t.Run("error when closed", func(t *testing.T) {
