@@ -8,7 +8,7 @@ import (
 // ContractProvider is an optional interface that agents may implement to
 // expose their semantic contract. Use ContractOf to safely extract the
 // contract from any agent.
-type ContractProvider interface {
+type ContractProvider interface { //nolint:revive // stutter: renaming would break the exported API
 	// Contract returns the agent's semantic contract, or nil if none is set.
 	Contract() *schema.Contract
 }
@@ -16,7 +16,7 @@ type ContractProvider interface {
 // ContractOf extracts the contract from an agent. If the agent implements
 // ContractProvider, its Contract() method is called. Otherwise, nil is returned
 // (wildcard behavior).
-func ContractOf(a agent.Agent) *schema.Contract {
+func ContractOf(a agent.Agent) *schema.Contract { //nolint:revive // stutter: renaming would break the exported API
 	if cp, ok := a.(ContractProvider); ok {
 		return cp.Contract()
 	}

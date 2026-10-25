@@ -10,7 +10,7 @@ import (
 )
 
 // WorkflowStatus represents the lifecycle state of a workflow execution.
-type WorkflowStatus string
+type WorkflowStatus string //nolint:revive // stutter: renaming would break the exported API
 
 const (
 	// StatusRunning indicates the workflow is currently executing.
@@ -36,7 +36,7 @@ type Signal struct {
 }
 
 // WorkflowOptions configures a workflow execution.
-type WorkflowOptions struct {
+type WorkflowOptions struct { //nolint:revive // stutter: renaming would break the exported API
 	// ID is a user-supplied workflow identifier. If empty, one is generated.
 	ID string
 	// Input is the initial input to the workflow function.
@@ -47,7 +47,7 @@ type WorkflowOptions struct {
 
 // WorkflowFunc is a function that defines workflow logic. It receives a
 // WorkflowContext for deterministic execution.
-type WorkflowFunc func(ctx WorkflowContext, input any) (any, error)
+type WorkflowFunc func(ctx WorkflowContext, input any) (any, error) //nolint:revive // stutter: renaming would break the exported API
 
 // DurableExecutor is the interface for executing and managing durable workflows.
 type DurableExecutor interface {
@@ -65,7 +65,7 @@ type DurableExecutor interface {
 }
 
 // WorkflowHandle provides access to a running or completed workflow.
-type WorkflowHandle interface {
+type WorkflowHandle interface { //nolint:revive // stutter: renaming would break the exported API
 	// ID returns the workflow identifier.
 	ID() string
 	// RunID returns the run identifier for this execution.

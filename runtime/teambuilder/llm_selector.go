@@ -122,21 +122,21 @@ func buildSelectionPrompt(task string, candidates []PoolEntry) string {
 	b.WriteString("\n</task>\n\n## Available Agents\n")
 
 	for _, c := range candidates {
-		b.WriteString(fmt.Sprintf("- **%s**: ", c.Agent.ID()))
+		fmt.Fprintf(&b, "- **%s**: ", c.Agent.ID())
 		persona := c.Agent.Persona()
 		if persona.Role != "" {
-			b.WriteString(fmt.Sprintf("Role: %s. ", persona.Role))
+			fmt.Fprintf(&b, "Role: %s. ", persona.Role)
 		}
 		if persona.Goal != "" {
-			b.WriteString(fmt.Sprintf("Goal: %s. ", persona.Goal))
+			fmt.Fprintf(&b, "Goal: %s. ", persona.Goal)
 		}
 		if len(c.Capabilities) > 0 {
-			b.WriteString(fmt.Sprintf("Capabilities: [%s]. ", strings.Join(c.Capabilities, ", ")))
+			fmt.Fprintf(&b, "Capabilities: [%s]. ", strings.Join(c.Capabilities, ", "))
 		}
 		snap := c.Metrics.Snapshot()
 		if snap.Invocations > 0 {
-			b.WriteString(fmt.Sprintf("Success rate: %.0f%%, Avg latency: %s. ",
-				snap.SuccessRate()*100, snap.AvgLatency))
+			fmt.Fprintf(&b, "Success rate: %.0f%%, Avg latency: %s. ",
+				snap.SuccessRate()*100, snap.AvgLatency)
 		}
 		b.WriteString("\n")
 	}

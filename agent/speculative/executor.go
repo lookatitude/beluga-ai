@@ -81,7 +81,7 @@ func WithFastAgent(a agent.Agent) ExecutorOption {
 // SpeculativeExecutor implements agent.Agent by running a predictor and
 // ground-truth agent in parallel. If the prediction is validated, the result
 // is returned with a speedup. Otherwise, the ground-truth result is used.
-type SpeculativeExecutor struct {
+type SpeculativeExecutor struct { //nolint:revive // stutter: renaming would break the exported API
 	groundTruth agent.Agent
 	config      executorConfig
 }

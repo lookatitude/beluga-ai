@@ -22,7 +22,7 @@ const EventCodeResult agent.EventType = "code_result"
 // CodeActAgent wraps a BaseAgent with a CodeExecutor. It intercepts ActionCode
 // actions from the planner and routes them to the executor instead of the
 // standard tool execution path.
-type CodeActAgent struct {
+type CodeActAgent struct { //nolint:revive // stutter: renaming would break the exported API
 	base          *agent.BaseAgent
 	executor      CodeExecutor
 	language      string
@@ -149,7 +149,7 @@ func NewCodeActAgent(id string, opts ...AgentOption) *CodeActAgent {
 
 	// Build base agent options
 	baseOpts := make([]agent.Option, 0, len(o.agentOpts)+3)
-	var planner agent.Planner = o.planner
+	planner := o.planner
 	if planner == nil && o.llm != nil {
 		planner = NewCodeActPlanner(o.llm, plannerOpts...)
 	}

@@ -34,7 +34,7 @@ func WithWarmup(warmup bool) PoolOption {
 // The pool size bounds the maximum number of concurrently-live sandboxes:
 // callers that request a sandbox when all slots are checked out will block
 // until one is returned or the context is cancelled.
-type SandboxPool struct {
+type SandboxPool struct { //nolint:revive // stutter: renaming would break the exported API
 	mu       sync.Mutex
 	provider string
 	opts     poolOptions

@@ -8,7 +8,7 @@ import (
 
 // AgentEvent is an event published through the event bus for inter-agent
 // communication.
-type AgentEvent struct {
+type AgentEvent struct { //nolint:revive // stutter: renaming would break the exported API
 	// Type identifies the kind of event.
 	Type string
 	// SourceID is the agent that published this event.

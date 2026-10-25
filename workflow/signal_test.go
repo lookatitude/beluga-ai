@@ -290,119 +290,110 @@ func TestInMemorySignalChannel_MultipleSignals(t *testing.T) {
 }
 
 func TestInMemorySignalChannel_ConcurrentAccess(t *testing.T) {
-	t.Run("concurrent sends to same workflow", func(t *testing.T) {
-		sc := NewInMemorySignalChannel()
-		workflowID := "workflow-1"
-		numGoroutines := 10
-		signalsPerGoroutine := 5
+	t.Run("concurrent sends to same workflow", testSignalConcurrentSendsSameWorkflow)
+	t.Run("concurrent sends and receives", testSignalConcurrentSendsAndReceives)
+}
 
-		done := make(chan struct{})
-		errCh := make(chan error, numGoroutines*signalsPerGoroutine)
+func testSignalConcurrentSendsSameWorkflow(t *testing.T) {
+	sc := NewInMemorySignalChannel()
+	workflowID := "workflow-1"
+	numGoroutines := 10
+	signalsPerGoroutine := 5
 
-		// Spawn goroutines to send signals concurrently
-		for i := 0; i < numGoroutines; i++ {
-			go func(id int) {
-				for j := 0; j < signalsPerGoroutine; j++ {
-					signal := Signal{
-						Name:     "approval",
-						Payload:  id*1000 + j,
-						SenderID: "",
-					}
-					err := sc.Send(context.Background(), workflowID, signal)
-					if err != nil {
-						errCh <- err
-					}
-				}
-				done <- struct{}{}
-			}(i)
-		}
+	done := make(chan struct{})
+	errCh := make(chan error, numGoroutines*signalsPerGoroutine)
 
-		// Wait for all goroutines to finish
-		for i := 0; i < numGoroutines; i++ {
-			<-done
-		}
-
-		// Check for any errors
-		close(errCh)
-		for err := range errCh {
-			require.NoError(t, err)
-		}
-
-		// Verify we can receive all signals
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		receivedCount := 0
-		for {
-			received, err := sc.Receive(ctx, workflowID, "approval")
-			if err != nil {
-				// Timeout is expected when all signals are consumed
-				if err == context.DeadlineExceeded {
-					break
-				}
-				t.Fatalf("unexpected error: %v", err)
-			}
-			require.NotNil(t, received)
-			receivedCount++
-		}
-
-		assert.Equal(t, numGoroutines*signalsPerGoroutine, receivedCount)
-	})
-
-	t.Run("concurrent sends and receives", func(t *testing.T) {
-		sc := NewInMemorySignalChannel()
-		workflowID := "workflow-1"
-
-		sendDone := make(chan struct{})
-		receiveDone := make(chan struct{})
-		errCh := make(chan error, 20)
-
-		// Goroutine that sends signals
-		go func() {
-			for i := 0; i < 10; i++ {
+	// Spawn goroutines to send signals concurrently
+	for i := 0; i < numGoroutines; i++ {
+		go func(id int) {
+			for j := 0; j < signalsPerGoroutine; j++ {
 				signal := Signal{
 					Name:     "approval",
-					Payload:  i,
-					SenderID: "sender",
+					Payload:  id*1000 + j,
+					SenderID: "",
 				}
 				err := sc.Send(context.Background(), workflowID, signal)
 				if err != nil {
 					errCh <- err
 				}
-				time.Sleep(10 * time.Millisecond)
 			}
-			sendDone <- struct{}{}
-		}()
+			done <- struct{}{}
+		}(i)
+	}
 
-		// Goroutine that receives signals
-		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
+	// Wait for all goroutines to finish
+	for i := 0; i < numGoroutines; i++ {
+		<-done
+	}
 
-			for i := 0; i < 10; i++ {
-				received, err := sc.Receive(ctx, workflowID, "approval")
-				if err != nil {
-					errCh <- err
-					break
-				}
-				if received == nil {
-					errCh <- context.DeadlineExceeded
-					break
-				}
+	// Check for any errors
+	close(errCh)
+	for err := range errCh {
+		require.NoError(t, err)
+	}
+
+	// Verify we can receive all signals
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	receivedCount := drainSignalCount(ctx, t, sc, workflowID, "approval")
+
+	assert.Equal(t, numGoroutines*signalsPerGoroutine, receivedCount)
+}
+
+func testSignalConcurrentSendsAndReceives(t *testing.T) {
+	sc := NewInMemorySignalChannel()
+	workflowID := "workflow-1"
+
+	sendDone := make(chan struct{})
+	receiveDone := make(chan struct{})
+	errCh := make(chan error, 20)
+
+	// Goroutine that sends signals
+	go func() {
+		for i := 0; i < 10; i++ {
+			signal := Signal{
+				Name:     "approval",
+				Payload:  i,
+				SenderID: "sender",
 			}
-			receiveDone <- struct{}{}
-		}()
-
-		// Wait for both goroutines
-		<-sendDone
-		<-receiveDone
-
-		// Check for errors
-		close(errCh)
-		for err := range errCh {
-			require.NoError(t, err)
+			err := sc.Send(context.Background(), workflowID, signal)
+			if err != nil {
+				errCh <- err
+			}
+			time.Sleep(10 * time.Millisecond)
 		}
-	})
+		sendDone <- struct{}{}
+	}()
+
+	// Goroutine that receives signals
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		for i := 0; i < 10; i++ {
+			received, err := sc.Receive(ctx, workflowID, "approval")
+			if err != nil {
+				errCh <- err
+				break
+			}
+			if received == nil {
+				errCh <- context.DeadlineExceeded
+				break
+			}
+		}
+		receiveDone <- struct{}{}
+	}()
+
+	// Wait for both goroutines
+	<-sendDone
+	<-receiveDone
+
+	// Check for errors
+	close(errCh)
+	for err := range errCh {
+		require.NoError(t, err)
+	}
 }
 
 func TestInMemorySignalChannel_SignalTimestamp(t *testing.T) {
@@ -493,4 +484,23 @@ func TestInMemorySignalChannel_IsolationBetweenWorkflows(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "approved-2", received2.Payload)
 	})
+}
+
+// drainSignalCount receives signals named name for workflowID until ctx's
+// deadline is exceeded (expected once all signals are consumed) and returns
+// how many were received. Any other receive error fails the test.
+func drainSignalCount(ctx context.Context, t *testing.T, sc *InMemorySignalChannel, workflowID, name string) int {
+	t.Helper()
+	count := 0
+	for {
+		received, err := sc.Receive(ctx, workflowID, name)
+		if err != nil {
+			if err == context.DeadlineExceeded {
+				return count
+			}
+			t.Fatalf("unexpected error: %v", err)
+		}
+		require.NotNil(t, received)
+		count++
+	}
 }

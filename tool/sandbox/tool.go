@@ -15,13 +15,13 @@ var _ tool.Tool = (*SandboxTool)(nil)
 // SandboxTool wraps a Sandbox as a tool.Tool, making it callable by agents.
 // The tool accepts JSON input with "code" and "language" fields and returns
 // the execution result as structured JSON text.
-type SandboxTool struct {
+type SandboxTool struct { //nolint:revive // stutter: renaming would break the exported API
 	sandbox Sandbox
 	timeout time.Duration
 }
 
 // SandboxToolOption configures a SandboxTool.
-type SandboxToolOption func(*SandboxTool)
+type SandboxToolOption func(*SandboxTool) //nolint:revive // stutter: renaming would break the exported API
 
 // WithToolTimeout sets the default execution timeout for the sandbox tool.
 // This can be overridden by the SandboxConfig timeout if the sandbox

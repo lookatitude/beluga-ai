@@ -2,7 +2,6 @@ package workflow
 
 import (
 	"context"
-	"fmt"
 	"iter"
 	"testing"
 )
@@ -163,5 +162,4 @@ func TestHookedExecutor_Query(t *testing.T) {
 func TestHookedExecutor_CompileTimeCheck(t *testing.T) {
 	// Just ensure it satisfies the interface.
 	var _ DurableExecutor = &hookedExecutor{}
-	_ = fmt.Sprintf("ok")
 }

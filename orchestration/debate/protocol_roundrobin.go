@@ -38,13 +38,13 @@ func (p *RoundRobinProtocol) NextRound(_ context.Context, state DebateState) (ma
 
 	for _, id := range state.AgentIDs {
 		var sb strings.Builder
-		sb.WriteString(fmt.Sprintf("Topic: %s\n\n", state.Topic))
+		fmt.Fprintf(&sb, "Topic: %s\n\n", state.Topic)
 		if history != "" {
 			sb.WriteString("Previous discussion:\n")
 			sb.WriteString(history)
 			sb.WriteString("\n")
 		}
-		sb.WriteString(fmt.Sprintf("Round %d: Please share your perspective.", state.CurrentRound+1))
+		fmt.Fprintf(&sb, "Round %d: Please share your perspective.", state.CurrentRound+1)
 		prompts[id] = sb.String()
 	}
 
@@ -59,9 +59,9 @@ func buildHistory(state DebateState) string {
 
 	var sb strings.Builder
 	for _, round := range state.Rounds {
-		sb.WriteString(fmt.Sprintf("--- Round %d ---\n", round.Number))
+		fmt.Fprintf(&sb, "--- Round %d ---\n", round.Number)
 		for _, c := range round.Contributions {
-			sb.WriteString(fmt.Sprintf("[%s]: %s\n", c.AgentID, c.Content))
+			fmt.Fprintf(&sb, "[%s]: %s\n", c.AgentID, c.Content)
 		}
 	}
 	return sb.String()

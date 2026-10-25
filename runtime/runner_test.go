@@ -87,62 +87,66 @@ func (p *mockPlugin) OnError(ctx context.Context, err error) error {
 }
 
 func TestNewRunner(t *testing.T) {
-	t.Run("defaults", func(t *testing.T) {
-		a := &mockAgent{id: "test-agent"}
-		r := NewRunner(a)
+	t.Run("defaults", testNewRunnerDefaults)
+	t.Run("with options", testNewRunnerWithOptions)
+	t.Run("with runner config", testNewRunnerWithRunnerConfig)
+}
 
-		if r.agent != a {
-			t.Error("agent not set")
-		}
-		if r.sessionService == nil {
-			t.Error("session service should default to InMemorySessionService")
-		}
-		if r.pluginChain == nil {
-			t.Error("plugin chain should be initialized")
-		}
-		if r.workerPool == nil {
-			t.Error("worker pool should be initialized")
-		}
-		if r.config.WorkerPoolSize != defaultWorkerPoolSize {
-			t.Errorf("worker pool size = %d, want %d", r.config.WorkerPoolSize, defaultWorkerPoolSize)
-		}
-	})
+func testNewRunnerDefaults(t *testing.T) {
+	a := &mockAgent{id: "test-agent"}
+	r := NewRunner(a)
 
-	t.Run("with options", func(t *testing.T) {
-		a := &mockAgent{id: "test-agent"}
-		svc := NewInMemorySessionService()
-		p := &mockPlugin{name: "test"}
+	if r.agent != a {
+		t.Error("agent not set")
+	}
+	if r.sessionService == nil {
+		t.Error("session service should default to InMemorySessionService")
+	}
+	if r.pluginChain == nil {
+		t.Error("plugin chain should be initialized")
+	}
+	if r.workerPool == nil {
+		t.Error("worker pool should be initialized")
+	}
+	if r.config.WorkerPoolSize != defaultWorkerPoolSize {
+		t.Errorf("worker pool size = %d, want %d", r.config.WorkerPoolSize, defaultWorkerPoolSize)
+	}
+}
 
-		r := NewRunner(a,
-			WithSessionService(svc),
-			WithPlugins(p),
-			WithWorkerPoolSize(5),
-		)
+func testNewRunnerWithOptions(t *testing.T) {
+	a := &mockAgent{id: "test-agent"}
+	svc := NewInMemorySessionService()
+	p := &mockPlugin{name: "test"}
 
-		if r.sessionService != svc {
-			t.Error("session service not set by option")
-		}
-		if r.config.WorkerPoolSize != 5 {
-			t.Errorf("worker pool size = %d, want 5", r.config.WorkerPoolSize)
-		}
-	})
+	r := NewRunner(a,
+		WithSessionService(svc),
+		WithPlugins(p),
+		WithWorkerPoolSize(5),
+	)
 
-	t.Run("with runner config", func(t *testing.T) {
-		a := &mockAgent{id: "test-agent"}
-		cfg := RunnerConfig{
-			WorkerPoolSize:          3,
-			SessionTTL:              5 * time.Minute,
-			GracefulShutdownTimeout: 10 * time.Second,
-		}
-		r := NewRunner(a, WithRunnerConfig(cfg))
+	if r.sessionService != svc {
+		t.Error("session service not set by option")
+	}
+	if r.config.WorkerPoolSize != 5 {
+		t.Errorf("worker pool size = %d, want 5", r.config.WorkerPoolSize)
+	}
+}
 
-		if r.config.WorkerPoolSize != 3 {
-			t.Errorf("worker pool size = %d, want 3", r.config.WorkerPoolSize)
-		}
-		if r.config.SessionTTL != 5*time.Minute {
-			t.Errorf("session TTL = %v, want 5m", r.config.SessionTTL)
-		}
-	})
+func testNewRunnerWithRunnerConfig(t *testing.T) {
+	a := &mockAgent{id: "test-agent"}
+	cfg := RunnerConfig{
+		WorkerPoolSize:          3,
+		SessionTTL:              5 * time.Minute,
+		GracefulShutdownTimeout: 10 * time.Second,
+	}
+	r := NewRunner(a, WithRunnerConfig(cfg))
+
+	if r.config.WorkerPoolSize != 3 {
+		t.Errorf("worker pool size = %d, want 3", r.config.WorkerPoolSize)
+	}
+	if r.config.SessionTTL != 5*time.Minute {
+		t.Errorf("session TTL = %v, want 5m", r.config.SessionTTL)
+	}
 }
 
 func TestRunnerRun(t *testing.T) {
@@ -208,17 +212,7 @@ func TestRunnerRun(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := NewRunner(tt.agent, WithWorkerPoolSize(2))
 
-			ctx := context.Background()
-			var events []agent.Event
-			var gotErr error
-
-			for evt, err := range r.Run(ctx, tt.sessionID, tt.input) {
-				if err != nil {
-					gotErr = err
-					break
-				}
-				events = append(events, evt)
-			}
+			events, gotErr := collectRunEvents(context.Background(), r, tt.sessionID, tt.input)
 
 			if tt.wantErr {
 				if gotErr == nil {
@@ -467,12 +461,7 @@ func TestRunnerWorkerPoolLimitsConcurrency(t *testing.T) {
 			return func(yield func(agent.Event, error) bool) {
 				cur := concurrent.Add(1)
 				// Track the maximum concurrency seen.
-				for {
-					max := maxConcurrent.Load()
-					if cur <= max || maxConcurrent.CompareAndSwap(max, cur) {
-						break
-					}
-				}
+				storeMaxInt32(&maxConcurrent, cur)
 				time.Sleep(50 * time.Millisecond)
 				concurrent.Add(-1)
 				yield(agent.Event{Type: agent.EventText, Text: "ok", AgentID: "agent-1"}, nil)
@@ -610,5 +599,28 @@ func TestRunnerNilInput(t *testing.T) {
 	// Should succeed — nil message is valid (empty input).
 	if gotErr != nil {
 		t.Fatalf("unexpected error with nil input: %v", gotErr)
+	}
+}
+
+// collectRunEvents drains r.Run, returning the events received before the
+// first error and that error (nil if the stream completed cleanly).
+func collectRunEvents(ctx context.Context, r *Runner, sessionID string, input schema.Message) ([]agent.Event, error) {
+	var events []agent.Event
+	for evt, err := range r.Run(ctx, sessionID, input) {
+		if err != nil {
+			return events, err
+		}
+		events = append(events, evt)
+	}
+	return events, nil
+}
+
+// storeMaxInt32 atomically raises m to v if v is greater than its current value.
+func storeMaxInt32(m *atomic.Int32, v int32) {
+	for {
+		cur := m.Load()
+		if v <= cur || m.CompareAndSwap(cur, v) {
+			return
+		}
 	}
 }

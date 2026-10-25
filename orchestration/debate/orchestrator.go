@@ -80,7 +80,7 @@ func WithSynthesize(v bool) Option {
 
 // DebateOrchestrator coordinates multi-agent debate. It implements
 // core.Runnable and supports both Invoke and Stream.
-type DebateOrchestrator struct {
+type DebateOrchestrator struct { //nolint:revive // stutter: renaming would break the exported API
 	agents map[string]agent.Agent
 	ids    []string
 	opts   debateOptions
@@ -385,7 +385,7 @@ func (d *DebateOrchestrator) synthesizeFinalAnswer(state DebateState) string {
 		if i > 0 {
 			sb.WriteString("\n\n")
 		}
-		sb.WriteString(fmt.Sprintf("[%s]: %s", c.AgentID, c.Content))
+		fmt.Fprintf(&sb, "[%s]: %s", c.AgentID, c.Content)
 	}
 	return sb.String()
 }

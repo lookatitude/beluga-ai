@@ -10,7 +10,7 @@ import (
 // memory poisoning attempts. It runs all detectors and aggregates their
 // results, flagging content when the maximum score exceeds a configurable
 // threshold.
-type MemoryGuard struct {
+type MemoryGuard struct { //nolint:revive // stutter: renaming would break the exported API
 	detectors []AnomalyDetector
 	threshold float64
 	hooks     Hooks

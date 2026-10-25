@@ -99,12 +99,11 @@ func NewToTPlanner(model llm.ChatModel, opts ...ToTOption) *ToTPlanner {
 
 // thoughtNode represents a single node in the thought tree.
 type thoughtNode struct {
-	thought  string
-	score    float64
-	depth    int
-	path     []string // chain of thoughts from root to this node
-	priority int      // for heap ordering
-	index    int      // heap index
+	thought string
+	score   float64
+	depth   int
+	path    []string // chain of thoughts from root to this node
+	index   int      // heap index
 }
 
 // thoughtHeap implements a max-heap of thought nodes ordered by score.

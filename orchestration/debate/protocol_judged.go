@@ -85,13 +85,13 @@ func (p *JudgedProtocol) resolveJudge(agentIDs []string) string {
 // buildParticipantPrompt creates the prompt for debate participants.
 func (p *JudgedProtocol) buildParticipantPrompt(state DebateState, history string) string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("Topic: %s\n\n", state.Topic))
+	fmt.Fprintf(&sb, "Topic: %s\n\n", state.Topic)
 	if history != "" {
 		sb.WriteString("Previous discussion:\n")
 		sb.WriteString(history)
 		sb.WriteString("\n")
 	}
-	sb.WriteString(fmt.Sprintf("Round %d: Share your perspective. A judge will evaluate contributions.", state.CurrentRound+1))
+	fmt.Fprintf(&sb, "Round %d: Share your perspective. A judge will evaluate contributions.", state.CurrentRound+1)
 	return sb.String()
 }
 
@@ -100,7 +100,7 @@ func (p *JudgedProtocol) buildParticipantPrompt(state DebateState, history strin
 // can evaluate them directly.
 func (p *JudgedProtocol) buildJudgePromptWithCurrent(state DebateState, history string, currentRound Round) string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("Topic: %s\n\n", state.Topic))
+	fmt.Fprintf(&sb, "Topic: %s\n\n", state.Topic)
 	sb.WriteString("You are the JUDGE in this debate.\n\n")
 	if history != "" {
 		sb.WriteString("Previous discussion:\n")
@@ -108,12 +108,12 @@ func (p *JudgedProtocol) buildJudgePromptWithCurrent(state DebateState, history 
 		sb.WriteString("\n")
 	}
 	if len(currentRound.Contributions) > 0 {
-		sb.WriteString(fmt.Sprintf("Round %d contributions to evaluate:\n", state.CurrentRound+1))
+		fmt.Fprintf(&sb, "Round %d contributions to evaluate:\n", state.CurrentRound+1)
 		for _, c := range currentRound.Contributions {
-			sb.WriteString(fmt.Sprintf("[%s]: %s\n", c.AgentID, c.Content))
+			fmt.Fprintf(&sb, "[%s]: %s\n", c.AgentID, c.Content)
 		}
 		sb.WriteString("\n")
 	}
-	sb.WriteString(fmt.Sprintf("Round %d: Evaluate the arguments above. Identify strengths, weaknesses, and which positions are most compelling.", state.CurrentRound+1))
+	fmt.Fprintf(&sb, "Round %d: Evaluate the arguments above. Identify strengths, weaknesses, and which positions are most compelling.", state.CurrentRound+1)
 	return sb.String()
 }

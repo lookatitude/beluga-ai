@@ -17,7 +17,7 @@ type Guard interface {
 // GuardInput carries the content to be validated along with metadata about
 // the validation stage and arbitrary key-value pairs for guard-specific
 // configuration.
-type GuardInput struct {
+type GuardInput struct { //nolint:revive // stutter: renaming would break the exported API
 	// Content is the text to validate.
 	Content string
 
@@ -30,7 +30,7 @@ type GuardInput struct {
 }
 
 // GuardResult conveys the outcome of a Guard.Validate call.
-type GuardResult struct {
+type GuardResult struct { //nolint:revive // stutter: renaming would break the exported API
 	// Allowed is true when the content passes validation.
 	Allowed bool
 
@@ -48,4 +48,4 @@ type GuardResult struct {
 
 // GuardFactory creates a Guard from an arbitrary configuration map. Factories
 // are stored in the package-level registry and invoked by New.
-type GuardFactory func(cfg map[string]any) (Guard, error)
+type GuardFactory func(cfg map[string]any) (Guard, error) //nolint:revive // stutter: renaming would break the exported API

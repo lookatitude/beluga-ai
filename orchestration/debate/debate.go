@@ -8,7 +8,7 @@ import (
 )
 
 // DebateState captures the full state of a debate at any point during execution.
-type DebateState struct {
+type DebateState struct { //nolint:revive // stutter: renaming would break the exported API
 	// Topic is the original input/question being debated.
 	Topic string
 	// Rounds contains all completed rounds of the debate.
@@ -59,7 +59,7 @@ type ConvergenceResult struct {
 }
 
 // DebateResult is the final output of a debate.
-type DebateResult struct {
+type DebateResult struct { //nolint:revive // stutter: renaming would break the exported API
 	// Topic is the original input/question.
 	Topic string
 	// Rounds contains all rounds of the debate.
@@ -73,7 +73,7 @@ type DebateResult struct {
 }
 
 // DebateMetrics captures execution statistics for a debate.
-type DebateMetrics struct {
+type DebateMetrics struct { //nolint:revive // stutter: renaming would break the exported API
 	// TotalRounds is the number of rounds completed.
 	TotalRounds int
 	// TotalContributions is the total number of agent contributions.
@@ -83,7 +83,7 @@ type DebateMetrics struct {
 }
 
 // DebateEventType identifies the kind of debate event.
-type DebateEventType string
+type DebateEventType string //nolint:revive // stutter: renaming would break the exported API
 
 const (
 	// EventRoundStart indicates a new round is beginning.
@@ -99,7 +99,7 @@ const (
 )
 
 // DebateEvent is an event emitted during debate execution.
-type DebateEvent struct {
+type DebateEvent struct { //nolint:revive // stutter: renaming would break the exported API
 	// Type identifies the kind of event.
 	Type DebateEventType
 	// Round is the round number associated with this event.

@@ -131,7 +131,7 @@ func TestWithTracing_PassthroughMethods(t *testing.T) {
 	if got := wrapped.Description(); got != "test tool" {
 		t.Errorf("Description() = %q, want %q", got, "test tool")
 	}
-	if got := wrapped.InputSchema(); got == nil {
+	if wrapped.InputSchema() == nil {
 		t.Error("InputSchema() = nil, want non-nil")
 	}
 }
