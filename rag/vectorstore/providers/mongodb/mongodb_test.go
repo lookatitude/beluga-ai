@@ -2,48 +2,55 @@ package mongodb
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
+	"errors"
 	"testing"
 
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
+
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func newTestServer(t *testing.T, handler http.HandlerFunc) (*httptest.Server, *Store) {
+// fakeCollection records calls and returns canned results.
+type fakeCollection struct {
+	models   []mongo.WriteModel
+	pipeline any
+	filter   any
+	results  []any
+	err      error
+}
+
+func (f *fakeCollection) BulkWrite(_ context.Context, models []mongo.WriteModel, _ ...options.Lister[options.BulkWriteOptions]) (*mongo.BulkWriteResult, error) {
+	f.models = models
+	return &mongo.BulkWriteResult{}, f.err
+}
+
+func (f *fakeCollection) Aggregate(_ context.Context, pipeline any, _ ...options.Lister[options.AggregateOptions]) (*mongo.Cursor, error) {
+	f.pipeline = pipeline
+	if f.err != nil {
+		return nil, f.err
+	}
+	return mongo.NewCursorFromDocuments(f.results, nil, nil)
+}
+
+func (f *fakeCollection) DeleteMany(_ context.Context, filter any, _ ...options.Lister[options.DeleteManyOptions]) (*mongo.DeleteResult, error) {
+	f.filter = filter
+	return &mongo.DeleteResult{}, f.err
+}
+
+var _ Collection = (*fakeCollection)(nil)
+
+func requireCode(t *testing.T, err error, code core.ErrorCode) {
 	t.Helper()
-	srv := httptest.NewServer(handler)
-	store := New(srv.URL,
-		WithCollection("test_col"),
-		WithDatabase("test_db"),
-		WithIndex("test_index"),
-		WithHTTPClient(srv.Client()),
-	)
-	return srv, store
-}
-
-func TestNew(t *testing.T) {
-	store := New("http://localhost:8080",
-		WithCollection("my_col"),
-		WithDatabase("my_db"),
-		WithIndex("my_index"),
-	)
-	require.NotNil(t, store)
-	assert.Equal(t, "http://localhost:8080", store.baseURL)
-	assert.Equal(t, "my_col", store.collection)
-	assert.Equal(t, "my_db", store.database)
-	assert.Equal(t, "my_index", store.index)
-}
-
-func TestNew_Defaults(t *testing.T) {
-	store := New("http://localhost:8080")
-	assert.Equal(t, "beluga", store.database)
-	assert.Equal(t, "documents", store.collection)
-	assert.Equal(t, "vector_index", store.index)
+	var ce *core.Error
+	require.True(t, errors.As(err, &ce), "want core.Error, got %v", err)
+	assert.Equal(t, code, ce.Code)
 }
 
 func TestStore_InterfaceCompliance(t *testing.T) {
@@ -51,337 +58,139 @@ func TestStore_InterfaceCompliance(t *testing.T) {
 }
 
 func TestStore_Add(t *testing.T) {
-	var receivedBody map[string]any
-	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodPost, r.Method)
-		assert.Contains(t, r.URL.Path, "/action/insertMany")
-
-		json.NewDecoder(r.Body).Decode(&receivedBody)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"insertedIds":["doc1","doc2"]}`))
-	})
-	defer srv.Close()
-
-	docs := []schema.Document{
-		{ID: "doc1", Content: "hello", Metadata: map[string]any{"category": "A"}},
-		{ID: "doc2", Content: "world"},
-	}
-	embeddings := [][]float32{
-		{0.1, 0.2, 0.3},
-		{0.4, 0.5, 0.6},
-	}
-
-	err := store.Add(context.Background(), docs, embeddings)
+	coll := &fakeCollection{}
+	s := NewWithCollection(coll)
+	err := s.Add(context.Background(),
+		[]schema.Document{{ID: "a", Content: "x", Metadata: map[string]any{"k": "v"}}, {ID: "b"}},
+		[][]float32{{1, 2}, {3, 4}})
 	require.NoError(t, err)
-
-	documents := receivedBody["documents"].([]any)
-	assert.Len(t, documents, 2)
-	assert.Equal(t, "test_db", receivedBody["database"])
-	assert.Equal(t, "test_col", receivedBody["collection"])
+	require.Len(t, coll.models, 2)
+	m, ok := coll.models[0].(*mongo.ReplaceOneModel)
+	require.True(t, ok)
+	assert.Equal(t, bson.M{"_id": "a"}, m.Filter)
+	assert.True(t, *m.Upsert)
+	repl := m.Replacement.(bson.M)
+	assert.Equal(t, []float64{1, 2}, repl["embedding"])
+	assert.Equal(t, map[string]any{"k": "v"}, repl["metadata"])
 }
 
-func TestStore_Add_MismatchedLength(t *testing.T) {
-	store := New("http://localhost:8080")
-	err := store.Add(context.Background(),
-		[]schema.Document{{ID: "doc1"}},
-		[][]float32{{0.1}, {0.2}},
-	)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "docs length")
-}
+func TestStore_Add_Errors(t *testing.T) {
+	s := NewWithCollection(&fakeCollection{})
+	require.Error(t, s.Add(context.Background(), []schema.Document{{ID: "a"}}, nil))
+	require.NoError(t, s.Add(context.Background(), nil, nil))
 
-func TestStore_Add_ServerError(t *testing.T) {
-	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"internal error"}`))
-	})
-	defer srv.Close()
-
-	err := store.Add(context.Background(),
-		[]schema.Document{{ID: "doc1", Content: "test"}},
-		[][]float32{{0.1, 0.2, 0.3}},
-	)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "500")
+	s = NewWithCollection(&fakeCollection{err: errors.New("boom")})
+	requireCode(t, s.Add(context.Background(), []schema.Document{{ID: "a"}}, [][]float32{{1}}), core.ErrProviderDown)
 }
 
 func TestStore_Search(t *testing.T) {
-	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodPost, r.Method)
-		assert.Contains(t, r.URL.Path, "/action/aggregate")
-
-		resp := map[string]any{
-			"documents": []map[string]any{
-				{
-					"_id":     "doc1",
-					"content": "hello world",
-					"score":   0.95,
-					"metadata": map[string]any{
-						"category": "A",
-					},
-				},
-				{
-					"_id":     "doc2",
-					"content": "goodbye",
-					"score":   0.80,
-				},
-			},
-		}
-		json.NewEncoder(w).Encode(resp)
-	})
-	defer srv.Close()
-
-	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	coll := &fakeCollection{results: []any{
+		bson.D{{Key: "_id", Value: "a"}, {Key: "content", Value: "hello"}, {Key: "score", Value: 0.9},
+			{Key: "metadata", Value: bson.D{{Key: "k", Value: "v"}}}},
+		bson.D{{Key: "_id", Value: "b"}, {Key: "content", Value: "low"}, {Key: "score", Value: 0.1}},
+	}}
+	s := NewWithCollection(coll, WithIndex("idx"))
+	docs, err := s.Search(context.Background(), []float32{1, 2}, 2,
+		vectorstore.WithFilter(map[string]any{"k": "v"}), vectorstore.WithThreshold(0.5))
 	require.NoError(t, err)
-	require.Len(t, results, 2)
+	require.Len(t, docs, 1)
+	assert.Equal(t, "a", docs[0].ID)
+	assert.Equal(t, "hello", docs[0].Content)
+	assert.InDelta(t, 0.9, docs[0].Score, 1e-9)
+	assert.Equal(t, "v", docs[0].Metadata["k"])
 
-	assert.Equal(t, "doc1", results[0].ID)
-	assert.Equal(t, "hello world", results[0].Content)
-	assert.Equal(t, 0.95, results[0].Score)
-	assert.Equal(t, "A", results[0].Metadata["category"])
-
-	assert.Equal(t, "doc2", results[1].ID)
-	assert.Equal(t, 0.80, results[1].Score)
+	p := coll.pipeline.(mongo.Pipeline)
+	vs := p[0][0].Value.(bson.D)
+	assert.Equal(t, "$vectorSearch", p[0][0].Key)
+	assert.Contains(t, vs, bson.E{Key: "index", Value: "idx"})
+	assert.Contains(t, vs, bson.E{Key: "limit", Value: 2})
+	assert.Contains(t, vs, bson.E{Key: "filter", Value: bson.D{
+		{Key: "metadata.k", Value: bson.D{{Key: "$eq", Value: "v"}}},
+	}})
 }
 
-func TestStore_Search_WithFilter(t *testing.T) {
-	var receivedBody map[string]any
-	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		json.NewDecoder(r.Body).Decode(&receivedBody)
-		resp := map[string]any{"documents": []any{}}
-		json.NewEncoder(w).Encode(resp)
-	})
-	defer srv.Close()
+func TestStore_Search_Errors(t *testing.T) {
+	s := NewWithCollection(&fakeCollection{err: errors.New("boom")})
+	_, err := s.Search(context.Background(), []float32{1}, 1)
+	requireCode(t, err, core.ErrProviderDown)
 
-	filter := map[string]any{"category": "A"}
-	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5,
-		vectorstore.WithFilter(filter))
-	require.NoError(t, err)
+	// Operator keys and operator-object values must be rejected.
+	s = NewWithCollection(&fakeCollection{})
+	for _, f := range []map[string]any{{"$where": "1"}, {"k": bson.M{"$ne": "x"}}, {"a.b": 1}} {
+		_, err = s.Search(context.Background(), []float32{1}, 1, vectorstore.WithFilter(f))
+		requireCode(t, err, core.ErrInvalidInput)
+	}
 
-	// Verify the pipeline contains filter.
-	pipeline := receivedBody["pipeline"].([]any)
-	require.NotEmpty(t, pipeline)
-	vectorSearch := pipeline[0].(map[string]any)["$vectorSearch"].(map[string]any)
-	f, ok := vectorSearch["filter"]
-	require.True(t, ok, "filter should be in vectorSearch")
-	filterMap := f.(map[string]any)
-	assert.Equal(t, "A", filterMap["metadata.category"])
-}
-
-func TestStore_Search_WithThreshold(t *testing.T) {
-	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		resp := map[string]any{
-			"documents": []map[string]any{
-				{"_id": "doc1", "content": "hello", "score": 0.95},
-				{"_id": "doc2", "content": "world", "score": 0.50},
-			},
-		}
-		json.NewEncoder(w).Encode(resp)
-	})
-	defer srv.Close()
-
-	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5,
-		vectorstore.WithThreshold(0.7))
-	require.NoError(t, err)
-	require.Len(t, results, 1)
-	assert.Equal(t, "doc1", results[0].ID)
-}
-
-func TestStore_Search_Empty(t *testing.T) {
-	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		resp := map[string]any{"documents": []any{}}
-		json.NewEncoder(w).Encode(resp)
-	})
-	defer srv.Close()
-
-	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
-	require.NoError(t, err)
-	assert.Len(t, results, 0)
-}
-
-func TestStore_Search_ServerError(t *testing.T) {
-	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"search failed"}`))
-	})
-	defer srv.Close()
-
-	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "500")
+	// Undecodable results.
+	s = NewWithCollection(&fakeCollection{results: []any{bson.D{{Key: "_id", Value: 5}}}})
+	_, err = s.Search(context.Background(), []float32{1}, 1)
+	requireCode(t, err, core.ErrProviderDown)
 }
 
 func TestStore_Delete(t *testing.T) {
-	var receivedBody map[string]any
-	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodPost, r.Method)
-		assert.Contains(t, r.URL.Path, "/action/deleteMany")
+	coll := &fakeCollection{}
+	s := NewWithCollection(coll)
+	require.NoError(t, s.Delete(context.Background(), nil))
+	assert.Nil(t, coll.filter)
+	require.NoError(t, s.Delete(context.Background(), []string{"a", "b"}))
+	assert.Equal(t, bson.M{"_id": bson.M{"$in": []string{"a", "b"}}}, coll.filter)
 
-		json.NewDecoder(r.Body).Decode(&receivedBody)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"deletedCount":2}`))
-	})
-	defer srv.Close()
-
-	err := store.Delete(context.Background(), []string{"doc1", "doc2"})
-	require.NoError(t, err)
-
-	filter := receivedBody["filter"].(map[string]any)
-	in := filter["_id"].(map[string]any)["$in"].([]any)
-	assert.Len(t, in, 2)
+	s = NewWithCollection(&fakeCollection{err: errors.New("boom")})
+	requireCode(t, s.Delete(context.Background(), []string{"a"}), core.ErrProviderDown)
 }
 
-func TestStore_Delete_Empty(t *testing.T) {
-	store := New("http://localhost:8080")
-	err := store.Delete(context.Background(), []string{})
-	require.NoError(t, err)
-}
+// FI-14: the retired Atlas Data API must produce a clear error, not
+// silent HTTP calls to a dead endpoint.
+func TestNew_DataAPIURLRejected(t *testing.T) {
+	ctx := context.Background()
+	s := New("https://data.mongodb-api.com/app/x/endpoint/data/v1", WithAPIKey("k"), WithHTTPClient(nil))
+	requireCode(t, s.Add(ctx, []schema.Document{{ID: "a"}}, [][]float32{{1}}), core.ErrInvalidInput)
+	_, err := s.Search(ctx, []float32{1}, 1)
+	requireCode(t, err, core.ErrInvalidInput)
+	requireCode(t, s.Delete(ctx, []string{"a"}), core.ErrInvalidInput)
+	assert.Contains(t, s.Add(ctx, nil, nil).Error(), "Data API")
+	require.NoError(t, s.Close(ctx))
 
-func TestStore_Delete_ServerError(t *testing.T) {
-	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"delete failed"}`))
-	})
-	defer srv.Close()
-
-	err := store.Delete(context.Background(), []string{"doc1"})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "500")
-}
-
-func TestStore_APIKey(t *testing.T) {
-	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "test-key", r.Header.Get("api-key"))
-		resp := map[string]any{"documents": []any{}}
-		json.NewEncoder(w).Encode(resp)
-	})
-	defer srv.Close()
-	store.apiKey = "test-key"
-
-	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
-	require.NoError(t, err)
-}
-
-func TestStore_ContextCancelled(t *testing.T) {
-	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"documents":[]}`))
-	})
-	defer srv.Close()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	_, err := store.Search(ctx, []float32{0.1, 0.2, 0.3}, 5)
-	require.Error(t, err)
-}
-
-func TestRegistry_Integration(t *testing.T) {
-	names := vectorstore.List()
-	assert.Contains(t, names, "mongodb")
-}
-
-func TestNewFromConfig_MissingBaseURL(t *testing.T) {
-	_, err := NewFromConfig(config.ProviderConfig{})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "base_url")
+	_, err = NewFromConfig(config.ProviderConfig{BaseURL: "https://data.mongodb-api.com/app/x"})
+	requireCode(t, err, core.ErrInvalidInput)
 }
 
 func TestNewFromConfig(t *testing.T) {
-	store, err := NewFromConfig(config.ProviderConfig{
-		BaseURL: "http://localhost:8080",
-		APIKey:  "my-key",
-		Options: map[string]any{
-			"database":   "my_db",
-			"collection": "my_col",
-			"index":      "my_index",
-		},
-	})
-	require.NoError(t, err)
-	assert.Equal(t, "http://localhost:8080", store.baseURL)
-	assert.Equal(t, "my-key", store.apiKey)
-	assert.Equal(t, "my_db", store.database)
-	assert.Equal(t, "my_col", store.collection)
-	assert.Equal(t, "my_index", store.index)
-}
-
-func TestStore_Search_PipelineStructure(t *testing.T) {
-	var receivedBody map[string]any
-	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		json.NewDecoder(r.Body).Decode(&receivedBody)
-		resp := map[string]any{"documents": []any{}}
-		json.NewEncoder(w).Encode(resp)
-	})
-	defer srv.Close()
-
-	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 10)
-	require.NoError(t, err)
-
-	pipeline := receivedBody["pipeline"].([]any)
-	assert.Len(t, pipeline, 2) // $vectorSearch + $addFields
-
-	vectorSearch := pipeline[0].(map[string]any)["$vectorSearch"].(map[string]any)
-	assert.Equal(t, "test_index", vectorSearch["index"])
-	assert.Equal(t, "embedding", vectorSearch["path"])
-	assert.Equal(t, float64(10), vectorSearch["limit"])
-	assert.Equal(t, float64(100), vectorSearch["numCandidates"])
-}
-
-func TestStore_Search_InvalidJSON(t *testing.T) {
-	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{invalid json`))
-	})
-	defer srv.Close()
-
-	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	_, err := NewFromConfig(config.ProviderConfig{})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "unmarshal")
-}
 
-func TestRegistry_Factory(t *testing.T) {
-	// Test that the init() registered factory works.
-	store, err := vectorstore.New("mongodb", config.ProviderConfig{
-		BaseURL: "http://localhost:8080",
-		APIKey:  "test-key",
-		Options: map[string]any{
-			"database":   "test_db",
-			"collection": "test_col",
-			"index":      "test_idx",
-		},
+	s, err := NewFromConfig(config.ProviderConfig{
+		BaseURL: "mongodb://127.0.0.1:1/?serverSelectionTimeoutMS=10",
+		Options: map[string]any{"database": "db", "collection": "c", "index": "i"},
 	})
 	require.NoError(t, err)
-	require.NotNil(t, store)
+	assert.Equal(t, "db", s.database)
+	assert.Equal(t, "c", s.collection)
+	assert.Equal(t, "i", s.index)
+	require.NotNil(t, s.client)
+	require.NoError(t, s.Close(context.Background()))
+	require.NoError(t, s.Close(context.Background()))
 
-	// Verify it's actually a MongoDB store.
-	mongoStore, ok := store.(*Store)
-	require.True(t, ok)
-	assert.Equal(t, "http://localhost:8080", mongoStore.baseURL)
-	assert.Equal(t, "test-key", mongoStore.apiKey)
-	assert.Equal(t, "test_db", mongoStore.database)
-	assert.Equal(t, "test_col", mongoStore.collection)
-	assert.Equal(t, "test_idx", mongoStore.index)
+	_, err = NewFromConfig(config.ProviderConfig{BaseURL: "mongodb://%zz"})
+	requireCode(t, err, core.ErrInvalidInput)
 }
 
-func TestStore_Add_WithNilMetadata(t *testing.T) {
-	var receivedBody map[string]any
-	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		json.NewDecoder(r.Body).Decode(&receivedBody)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"insertedIds":["doc1"]}`))
-	})
-	defer srv.Close()
-
-	docs := []schema.Document{
-		{ID: "doc1", Content: "hello", Metadata: nil},
+func TestNew_ConnectionString(t *testing.T) {
+	s := New("mongodb+srv://user:pw@cluster.example.invalid/?connect=direct&serverSelectionTimeoutMS=10")
+	// mongodb+srv resolves DNS at connect time; either outcome must be a
+	// usable store or a typed configuration error, never a panic.
+	if s.initErr != nil {
+		requireCode(t, s.initErr, core.ErrInvalidInput)
+		return
 	}
-	embeddings := [][]float32{{0.1, 0.2, 0.3}}
+	require.NoError(t, s.Close(context.Background()))
+}
 
-	err := store.Add(context.Background(), docs, embeddings)
-	require.NoError(t, err)
+func TestNewWithCollection_Nil(t *testing.T) {
+	s := NewWithCollection(nil)
+	requireCode(t, s.Delete(context.Background(), []string{"a"}), core.ErrInvalidInput)
+}
 
-	documents := receivedBody["documents"].([]any)
-	doc := documents[0].(map[string]any)
-	_, hasMetadata := doc["metadata"]
-	assert.False(t, hasMetadata, "nil metadata should not be included")
+func TestRegistry(t *testing.T) {
+	assert.Contains(t, vectorstore.List(), "mongodb")
 }
