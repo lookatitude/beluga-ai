@@ -1,7 +1,7 @@
 ---
 name: developer-go
 description: Senior Go developer. Implements packages and tests per the Architect's plan using Red/Green TDD. Use for all Go implementation work.
-tools: Read, Write, Edit, Bash, Glob, Grep
+tools: Read, Write, Edit, Bash, Glob, Grep, SendMessage
 model: opus
 memory: user
 skills:
@@ -85,7 +85,7 @@ gosec -quiet ./...        # CI pins v2.30.0
 govulncheck ./...         # CI pins v1.9.0
 ```
 
-CI parity: CI runs Go 1.27.3 with `GOTOOLCHAIN=local` (`go.mod` floor is 1.26). `make tools` installs the pinned linters; `make ci` mirrors every blocking CI job (adds `docs-providers`, `test-scripts`, integration tests and the license gate). If a tool is missing locally, say it did not run — never report it green.
+CI parity: CI runs Go 1.27.3 with `GOTOOLCHAIN=local` (`go.mod` floor is 1.26). `make tools` installs the pinned linters; `make ci` mirrors the locally runnable blocking CI jobs (it adds `docs-providers`, `test-scripts`, integration tests and the license gate; Trivy, Gitleaks and CodeQL are CI-only). If a tool is missing locally, say it did not run — never report it green.
 
 ## When to invoke /consult
 

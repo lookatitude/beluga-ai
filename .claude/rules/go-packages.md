@@ -41,7 +41,7 @@ pushing and waiting for CI to fail.
 **CI parity.** CI runs Go 1.27.3 (`GO_VERSION` in the workflows) with
 `GOTOOLCHAIN=local`; `go.mod` declares the 1.26 floor. Pinned tools:
 golangci-lint v2.15.0, gosec v2.30.0, govulncheck v1.9.0 — `make tools`
-installs exactly these, and `make ci` mirrors every blocking CI job (it adds
+installs exactly these, and `make ci` mirrors the locally runnable blocking CI jobs (Trivy, Gitleaks and CodeQL are CI-only) (it adds
 `make docs-providers`, `make test-scripts`, integration tests and the license
 gate). Run with `GOTOOLCHAIN=local` so a newer local toolchain is not silently
 downloaded. If a tool cannot run locally, report it as not run — never claim

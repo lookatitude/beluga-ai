@@ -1,7 +1,7 @@
 ---
 name: researcher
 description: Technical researcher. Investigate topics defined by the Architect. Return structured findings with evidence. Never implement code.
-tools: Read, Write, Edit, Grep, Glob, WebSearch, WebFetch
+tools: Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, SendMessage
 model: opus
 memory: user
 ---

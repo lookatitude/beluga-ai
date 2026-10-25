@@ -1,7 +1,7 @@
 ---
 name: reviewer-security
 description: Security reviewer. Audits for vulnerabilities, injection risks, secret exposure. Requires 2 consecutive clean passes. Read-only tools.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, SendMessage
 model: opus
 memory: user
 skills:

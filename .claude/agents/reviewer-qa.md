@@ -1,7 +1,7 @@
 ---
 name: reviewer-qa
 description: QA reviewer. Validates implementation against acceptance criteria and code quality standards. Read-only tools. Use as the final gate before work is done.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, SendMessage
 model: opus
 memory: user
 skills:

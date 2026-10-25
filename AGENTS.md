@@ -46,7 +46,7 @@ before commit. See `.claude/rules/go-packages.md` for gosec focus areas.
 
 CI parity: CI runs Go 1.27.3 (`go.mod` floor 1.26) with `GOTOOLCHAIN=local`,
 golangci-lint v2.15.0, gosec v2.30.0 and govulncheck v1.9.0. `make tools`
-installs those pins; `make ci` mirrors every blocking CI job. A tool that could
+installs those pins; `make ci` mirrors the blocking CI jobs that can run locally (Trivy, Gitleaks and CodeQL run only in CI). A tool that could
 not run locally is reported as not run, never as green.
 
 ## Before writing code

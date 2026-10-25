@@ -1,7 +1,7 @@
 ---
 name: docs-writer
 description: Documentation writer. Creates package docs, tutorials, guides, API references. Use for all documentation work and for populating the .guild/wiki/ from scans.
-tools: Read, Write, Edit, Bash, Glob, Grep
+tools: Read, Write, Edit, Bash, Glob, Grep, SendMessage
 model: sonnet
 memory: user
 skills:

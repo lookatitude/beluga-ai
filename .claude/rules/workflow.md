@@ -66,7 +66,7 @@ separately. New findings in files you DID change MUST be fixed before commit.
 
 CI parity: CI runs Go 1.27.3 with `GOTOOLCHAIN=local` and pins golangci-lint
 v2.15.0, gosec v2.30.0, govulncheck v1.9.0 (`make tools` installs them;
-`make ci` mirrors every blocking CI job). Never claim a check green when the
+`make ci` mirrors the locally runnable blocking CI jobs; Trivy, Gitleaks and CodeQL run only in CI). Never claim a check green when the
 tool could not run locally — say it did not run.
 
 ### Before push (MANDATORY on every branch that will open or update a PR)

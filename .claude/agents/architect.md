@@ -1,7 +1,7 @@
 ---
 name: architect
 description: System architect. Designs interfaces, writes ADRs, validates invariants, runs gap analysis. Use for new features, packages, design decisions, and architecture validation.
-tools: Read, Write, Edit, Grep, Glob, Bash
+tools: Read, Write, Edit, Grep, Glob, Bash, SendMessage
 model: opus
 memory: user
 skills:
