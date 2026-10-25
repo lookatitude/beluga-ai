@@ -37,7 +37,7 @@ func (r CodeResult) Success() bool {
 
 // CodeActHooks provides optional callback functions for code execution lifecycle.
 // All fields are optional; nil hooks are skipped.
-type CodeActHooks struct {
+type CodeActHooks struct { //nolint:revive // stutter: renaming would break the exported API
 	// BeforeExec is called before code is executed. Returning an error cancels execution.
 	BeforeExec func(ctx context.Context, action CodeAction) error
 	// AfterExec is called after code execution completes.

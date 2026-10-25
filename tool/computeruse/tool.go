@@ -55,7 +55,7 @@ func WithSafetyGuard(g *SafetyGuard) ToolOption {
 // ComputerUseTool implements tool.Tool for computer use and browser
 // automation. It dispatches actions to the configured backend and applies
 // safety guards.
-type ComputerUseTool struct {
+type ComputerUseTool struct { //nolint:revive // stutter: renaming would break the exported API
 	opts toolOptions
 }
 
@@ -170,11 +170,12 @@ func (t *ComputerUseTool) handleScreenshot(ctx context.Context) (*tool.Result, e
 	var screenshot []byte
 	var err error
 
-	if t.opts.browser != nil {
+	switch {
+	case t.opts.browser != nil:
 		screenshot, err = t.opts.browser.Screenshot(ctx)
-	} else if t.opts.action != nil {
+	case t.opts.action != nil:
 		screenshot, err = t.opts.action.Screenshot(ctx)
-	} else {
+	default:
 		return tool.ErrorResult(fmt.Errorf("no backend configured for screenshots")), nil
 	}
 

@@ -133,7 +133,11 @@ func (s *ProcessSandbox) Execute(ctx context.Context, code string, cfg SandboxCo
 	execCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	args := append(lang.args, filename)
+	// Copy lang.args so appending never writes into the shared
+	// supportedLanguages backing array.
+	args := make([]string, 0, len(lang.args)+1)
+	args = append(args, lang.args...)
+	args = append(args, filename)
 	// The interpreter is selected from a fixed allowlist (supportedLanguages),
 	// args are fixed per language, and filename is a server-generated path
 	// inside a freshly created temp directory. The user-supplied code is

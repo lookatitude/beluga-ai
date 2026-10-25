@@ -214,17 +214,24 @@ func (p *MindMapPlanner) parseAndAddNodes(text string) error {
 
 		// Parse relationship if present.
 		if len(parts) >= 5 {
-			relIdx := parseInt(strings.TrimSpace(parts[3]), 0)
-			relType := parseEdgeType(strings.TrimSpace(parts[4]))
-			if relIdx > 0 && relIdx <= len(addedIDs)-1 && relType != "" {
-				targetID := addedIDs[relIdx-1]
-				// Ignore edge errors (e.g., duplicate) — best effort.
-				_ = p.graph.AddEdge(id, targetID, relType, score)
-			}
+			p.addRelationEdge(id, parts[3], parts[4], addedIDs, score)
 		}
 	}
 
 	return nil
+}
+
+// addRelationEdge links node id to a previously added node referenced by the
+// 1-based index relIdxStr (into addedIDs, excluding id itself) using the edge
+// type relTypeStr. Invalid indexes or unknown edge types are ignored.
+func (p *MindMapPlanner) addRelationEdge(id, relIdxStr, relTypeStr string, addedIDs []string, score float64) {
+	relIdx := parseInt(strings.TrimSpace(relIdxStr), 0)
+	relType := parseEdgeType(strings.TrimSpace(relTypeStr))
+	if relIdx > 0 && relIdx <= len(addedIDs)-1 && relType != "" {
+		targetID := addedIDs[relIdx-1]
+		// Ignore edge errors (e.g., duplicate) — best effort.
+		_ = p.graph.AddEdge(id, targetID, relType, score)
+	}
 }
 
 // resolveContradictions asks the LLM to evaluate contradictions and add

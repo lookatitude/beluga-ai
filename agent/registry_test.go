@@ -5,7 +5,6 @@ import (
 	"iter"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/v2/schema"
 	"github.com/lookatitude/beluga-ai/v2/tool"
 )
 
@@ -204,13 +203,3 @@ func (a *streamMockAgent) Stream(ctx context.Context, input string, opts ...Opti
 // Ensure mockAgent has the right return type by using it to populate an Agent slice.
 var _ Agent = (*mockAgent)(nil)
 var _ Agent = (*streamMockAgent)(nil)
-
-// A simple stub for tests that need schema.Message verification.
-func msgText(m schema.Message) string {
-	for _, p := range m.GetContent() {
-		if tp, ok := p.(schema.TextPart); ok {
-			return tp.Text
-		}
-	}
-	return ""
-}

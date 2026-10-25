@@ -51,7 +51,7 @@ type HistoryEvent struct {
 }
 
 // WorkflowState holds the complete state of a workflow execution.
-type WorkflowState struct {
+type WorkflowState struct { //nolint:revive // stutter: renaming would break the exported API
 	// WorkflowID is the unique workflow identifier.
 	WorkflowID string
 	// RunID is the unique run identifier.
@@ -73,7 +73,7 @@ type WorkflowState struct {
 }
 
 // WorkflowFilter specifies criteria for listing workflows.
-type WorkflowFilter struct {
+type WorkflowFilter struct { //nolint:revive // stutter: renaming would break the exported API
 	// Status filters by workflow status. Empty means all statuses.
 	Status WorkflowStatus
 	// Limit is the maximum number of results.

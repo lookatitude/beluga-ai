@@ -70,7 +70,7 @@ func WithOnTurnReplay(fn func(turnIndex int, events []schema.AgentEvent)) Replay
 }
 
 // ReplayResult contains the outcome of a replay operation.
-type ReplayResult struct {
+type ReplayResult struct { //nolint:revive // stutter: renaming would break the exported API
 	// Events contains all events produced during replay, in order.
 	Events []schema.AgentEvent
 

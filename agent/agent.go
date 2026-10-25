@@ -11,7 +11,7 @@ import (
 // AgentMetadata exposes an agent's static identity and composition. Consumers
 // that only need to introspect an agent (for routing, telemetry, rendering an
 // AgentCard) can depend on AgentMetadata rather than the full Agent.
-type AgentMetadata interface {
+type AgentMetadata interface { //nolint:revive // stutter: renaming would break the exported API
 	// ID returns the unique identifier for this agent.
 	ID() string
 
@@ -28,7 +28,7 @@ type AgentMetadata interface {
 // AgentExecutor is the runtime-behaviour surface of an agent. Consumers that
 // only need to run an agent (middleware, retry wrappers, orchestration
 // patterns) can depend on AgentExecutor rather than the full Agent.
-type AgentExecutor interface {
+type AgentExecutor interface { //nolint:revive // stutter: renaming would break the exported API
 	// Invoke executes the agent synchronously and returns a text result.
 	Invoke(ctx context.Context, input string, opts ...Option) (string, error)
 

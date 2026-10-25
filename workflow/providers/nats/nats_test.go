@@ -373,7 +373,7 @@ func TestList_KeysError_NonNotFound(t *testing.T) {
 		keysErr: fmt.Errorf("connection error"),
 	}
 	// Add a key so keys() would succeed normally.
-	kv.mockKV.store["wf-1"] = []byte(`{}`)
+	kv.store["wf-1"] = []byte(`{}`)
 	store := newWithKV(kv)
 
 	results, err := store.List(context.Background(), workflow.WorkflowFilter{})

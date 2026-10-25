@@ -46,14 +46,14 @@ func (p *AdversarialProtocol) NextRound(_ context.Context, state DebateState) (m
 		}
 
 		var sb strings.Builder
-		sb.WriteString(fmt.Sprintf("Topic: %s\n\n", state.Topic))
-		sb.WriteString(fmt.Sprintf("Your role: %s — %s the topic.\n\n", strings.ToUpper(role), roleDesc))
+		fmt.Fprintf(&sb, "Topic: %s\n\n", state.Topic)
+		fmt.Fprintf(&sb, "Your role: %s — %s the topic.\n\n", strings.ToUpper(role), roleDesc)
 		if history != "" {
 			sb.WriteString("Previous discussion:\n")
 			sb.WriteString(history)
 			sb.WriteString("\n")
 		}
-		sb.WriteString(fmt.Sprintf("Round %d: Present your %s argument.", state.CurrentRound+1, role))
+		fmt.Fprintf(&sb, "Round %d: Present your %s argument.", state.CurrentRound+1, role)
 		prompts[id] = sb.String()
 	}
 

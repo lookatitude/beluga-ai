@@ -93,11 +93,11 @@ func (s *InMemoryStore) Query(ctx context.Context, filter Filter) ([]Entry, erro
 	s.mu.RUnlock()
 
 	var result []Entry
-	for _, e := range snapshot {
-		if !matchesFilter(e, filter) {
+	for i := range snapshot {
+		if !matchesFilter(&snapshot[i], filter) {
 			continue
 		}
-		result = append(result, e)
+		result = append(result, snapshot[i])
 		if filter.Limit > 0 && len(result) >= filter.Limit {
 			break
 		}
@@ -106,7 +106,7 @@ func (s *InMemoryStore) Query(ctx context.Context, filter Filter) ([]Entry, erro
 }
 
 // matchesFilter reports whether e satisfies all non-zero fields of filter.
-func matchesFilter(e Entry, f Filter) bool {
+func matchesFilter(e *Entry, f Filter) bool {
 	if f.TenantID != "" && e.TenantID != f.TenantID {
 		return false
 	}

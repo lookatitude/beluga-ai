@@ -45,7 +45,7 @@ var codeBlockPattern = regexp.MustCompile("(?s)```(\\w*)\\n(.*?)\\n```")
 
 // CodeActPlanner implements agent.Planner using the CodeAct pattern.
 // It instructs the LLM to emit code blocks and parses them into ActionCode actions.
-type CodeActPlanner struct {
+type CodeActPlanner struct { //nolint:revive // stutter: renaming would break the exported API
 	llm            llm.ChatModel
 	language       string
 	allowedImports []string
@@ -164,14 +164,14 @@ func (p *CodeActPlanner) systemPrompt() string {
 	var sb strings.Builder
 	sb.WriteString("You are a code-executing assistant. To solve tasks, write executable code in fenced code blocks.\n\n")
 	sb.WriteString("Rules:\n")
-	sb.WriteString(fmt.Sprintf("- Use %s as the programming language.\n", p.language))
+	fmt.Fprintf(&sb, "- Use %s as the programming language.\n", p.language)
 	sb.WriteString("- Wrap all code in fenced code blocks with the language tag: ```" + p.language + "\n")
 	sb.WriteString("- Print results to stdout so they can be captured.\n")
 	sb.WriteString("- If you need multiple steps, write one code block at a time and wait for the result.\n")
 	sb.WriteString("- When you have the final answer, respond with plain text (no code block).\n")
 
 	if len(p.allowedImports) > 0 {
-		sb.WriteString(fmt.Sprintf("- Only use these imports/modules: %s\n", strings.Join(p.allowedImports, ", ")))
+		fmt.Fprintf(&sb, "- Only use these imports/modules: %s\n", strings.Join(p.allowedImports, ", "))
 	}
 
 	return sb.String()

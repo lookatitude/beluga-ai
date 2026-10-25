@@ -71,8 +71,7 @@ func (v *ASTValidator) Validate(code string) error {
 		if walkErr != nil {
 			return false
 		}
-		switch n.(type) {
-		case *ast.GoStmt:
+		if _, ok := n.(*ast.GoStmt); ok {
 			walkErr = core.Errorf(core.ErrGuardBlocked, "ast validation: goroutine spawning (go statement) is not allowed")
 			return false
 		}

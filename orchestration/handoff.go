@@ -119,40 +119,51 @@ func (h *HandoffOrchestrator) Stream(ctx context.Context, input any, opts ...cor
 			return
 		}
 
-		inputStr := fmt.Sprintf("%v", input)
-		currentID := h.entryID
-		hops := 0
+		h.streamChain(ctx, fmt.Sprintf("%v", input), yield)
+	}
+}
 
-		for hops <= h.maxHops {
-			a, ok := h.agents[currentID]
-			if !ok {
-				yield(nil, core.Errorf(core.ErrNotFound, "orchestration/handoff: unknown agent %q", currentID))
-				return
-			}
+// streamChain runs the handoff chain starting at the entry agent, streaming
+// every agent's events through yield until no handoff occurs, an error is
+// yielded, the consumer stops, or maxHops is exceeded.
+func (h *HandoffOrchestrator) streamChain(ctx context.Context, inputStr string, yield func(any, error) bool) {
+	currentID := h.entryID
+	hops := 0
 
-			nextID, result, stop := h.streamAgent(ctx, a, inputStr, yield)
-			if stop {
-				return
-			}
-
-			if nextID == "" {
-				// No handoff — done.
-				_ = result
-				return
-			}
-
-			if _, known := h.agents[nextID]; !known {
-				yield(nil, core.Errorf(core.ErrNotFound, "orchestration/handoff: unknown target agent %q", nextID))
-				return
-			}
-
-			inputStr = result
-			currentID = nextID
-			hops++
+	for hops <= h.maxHops {
+		a, ok := h.agents[currentID]
+		if !ok {
+			yield(nil, core.Errorf(core.ErrNotFound, "orchestration/handoff: unknown agent %q", currentID))
+			return
 		}
 
-		yield(nil, core.Errorf(core.ErrInvalidInput, "orchestration/handoff: max hops (%d) exceeded", h.maxHops))
+		nextID, result, stop := h.streamAgent(ctx, a, inputStr, yield)
+		if stop || nextID == "" {
+			// Consumer stopped, an error was yielded, or no handoff — done.
+			return
+		}
+
+		if _, known := h.agents[nextID]; !known {
+			yield(nil, core.Errorf(core.ErrNotFound, "orchestration/handoff: unknown target agent %q", nextID))
+			return
+		}
+
+		inputStr = result
+		currentID = nextID
+		hops++
 	}
+
+	yield(nil, core.Errorf(core.ErrInvalidInput, "orchestration/handoff: max hops (%d) exceeded", h.maxHops))
+}
+
+// handoffTarget returns the non-empty "target_id" metadata value of a handoff
+// event, or "" when the event carries no usable target.
+func handoffTarget(event agent.Event) string {
+	if event.Metadata == nil {
+		return ""
+	}
+	id, _ := event.Metadata["target_id"].(string)
+	return id
 }
 
 // runAgent invokes an agent, collecting events. Returns the next agent ID if a
@@ -168,10 +179,8 @@ func (h *HandoffOrchestrator) runAgent(ctx context.Context, a agent.Agent, input
 		case agent.EventText:
 			textBuf.WriteString(event.Text)
 		case agent.EventHandoff:
-			if event.Metadata != nil {
-				if id, ok := event.Metadata["target_id"].(string); ok && id != "" {
-					return id, textBuf.String(), nil
-				}
+			if id := handoffTarget(event); id != "" {
+				return id, textBuf.String(), nil
 			}
 		case agent.EventDone:
 			return "", textBuf.String(), nil
@@ -194,9 +203,8 @@ func (h *HandoffOrchestrator) streamAgent(
 
 	for event, evErr := range a.Stream(ctx, input) {
 		if evErr != nil {
-			if !yield(nil, core.Errorf(core.ErrProviderDown, "orchestration/handoff: agent %q: %w", a.ID(), evErr)) {
-				return "", textBuf.String(), true
-			}
+			// Stop regardless of whether the consumer accepts the error.
+			yield(nil, core.Errorf(core.ErrProviderDown, "orchestration/handoff: agent %q: %w", a.ID(), evErr))
 			return "", textBuf.String(), true
 		}
 
@@ -208,10 +216,8 @@ func (h *HandoffOrchestrator) streamAgent(
 			if !yield(event, nil) {
 				return "", textBuf.String(), true
 			}
-			if event.Metadata != nil {
-				if id, ok := event.Metadata["target_id"].(string); ok && id != "" {
-					return id, textBuf.String(), false
-				}
+			if id := handoffTarget(event); id != "" {
+				return id, textBuf.String(), false
 			}
 			continue
 		}

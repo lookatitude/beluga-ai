@@ -409,8 +409,8 @@ func (c *defaultWorkflowContext) Sleep(d time.Duration) error {
 	select {
 	case <-time.After(d):
 		return nil
-	case <-c.Context.Done():
-		return c.Context.Err()
+	case <-c.Done():
+		return c.Err()
 	}
 }
 

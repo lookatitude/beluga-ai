@@ -158,8 +158,8 @@ func (g *ToolGenerator) Generate(ctx context.Context, req GenerateRequest, execu
 func (g *ToolGenerator) buildPrompt(req GenerateRequest) string {
 	var b strings.Builder
 
-	b.WriteString(fmt.Sprintf("Create a Go tool named %q.\n", req.Name))
-	b.WriteString(fmt.Sprintf("Description: %s\n\n", req.Description))
+	fmt.Fprintf(&b, "Create a Go tool named %q.\n", req.Name)
+	fmt.Fprintf(&b, "Description: %s\n\n", req.Description)
 
 	if len(req.InputFields) > 0 {
 		b.WriteString("Input fields:\n")
@@ -169,7 +169,7 @@ func (g *ToolGenerator) buildPrompt(req GenerateRequest) string {
 		}
 		sort.Strings(keys)
 		for _, name := range keys {
-			b.WriteString(fmt.Sprintf("  - %s: %s\n", name, req.InputFields[name]))
+			fmt.Fprintf(&b, "  - %s: %s\n", name, req.InputFields[name])
 		}
 		b.WriteString("\n")
 	}
@@ -177,7 +177,7 @@ func (g *ToolGenerator) buildPrompt(req GenerateRequest) string {
 	if len(req.Examples) > 0 {
 		b.WriteString("Examples:\n")
 		for i, ex := range req.Examples {
-			b.WriteString(fmt.Sprintf("  Example %d:\n    Input: %s\n    Output: %s\n", i+1, ex.Input, ex.Output))
+			fmt.Fprintf(&b, "  Example %d:\n    Input: %s\n    Output: %s\n", i+1, ex.Input, ex.Output)
 		}
 	}
 

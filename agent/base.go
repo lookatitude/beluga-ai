@@ -14,9 +14,8 @@ import (
 // embedded in custom agent types. BaseAgent wires together a planner, executor,
 // tools, handoffs, and hooks into a working agent.
 type BaseAgent struct {
-	id       string
-	config   agentConfig
-	executor *Executor
+	id     string
+	config agentConfig
 }
 
 // New creates a new BaseAgent with the given ID and options.

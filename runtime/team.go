@@ -241,7 +241,7 @@ func (s *supervisorPattern) Execute(ctx context.Context, agents []agent.Agent, i
 		var desc strings.Builder
 		desc.WriteString("Available agents:\n")
 		for _, a := range agents {
-			desc.WriteString(fmt.Sprintf("- %s: %s\n", a.ID(), a.Persona().Role))
+			fmt.Fprintf(&desc, "- %s: %s\n", a.ID(), a.Persona().Role)
 		}
 		desc.WriteString("\nTask: ")
 		desc.WriteString(input)
@@ -284,51 +284,17 @@ func (sg *scatterGatherPattern) Execute(ctx context.Context, agents []agent.Agen
 		default:
 		}
 
-		type agentResult struct {
-			agentID string
-			output  string
-			err     error
-		}
-
-		results := make([]agentResult, len(agents))
-		var wg sync.WaitGroup
-
-		for i, a := range agents {
-			wg.Add(1)
-			go func(idx int, ag agent.Agent) {
-				defer wg.Done()
-				out, err := ag.Invoke(ctx, input)
-				results[idx] = agentResult{
-					agentID: ag.ID(),
-					output:  out,
-					err:     err,
-				}
-			}(i, a)
-		}
-
-		wg.Wait()
-
-		// Emit individual agent results and check for errors
-		var combined strings.Builder
-		combined.WriteString("Agent outputs:\n")
-		for _, r := range results {
-			if r.err != nil {
-				if !yield(agent.Event{}, core.NewError("runtime.team.scatter", core.ErrToolFailed,
-					fmt.Sprintf("scatter agent %s failed", r.agentID), r.err)) {
-					return
-				}
-				return
-			}
-			combined.WriteString(fmt.Sprintf("\n--- %s ---\n%s\n", r.agentID, r.output))
+		combined, err := combineScatterResults(scatterInvoke(ctx, agents, input))
+		if err != nil {
+			yield(agent.Event{}, err)
+			return
 		}
 
 		// Pass combined results to the aggregator
-		for event, err := range sg.aggregator.Stream(ctx, combined.String()) {
+		for event, err := range sg.aggregator.Stream(ctx, combined) {
 			if err != nil {
-				if !yield(agent.Event{}, core.NewError("runtime.team.scatter", core.ErrToolFailed,
-					"scatter aggregator failed", err)) {
-					return
-				}
+				yield(agent.Event{}, core.NewError("runtime.team.scatter", core.ErrToolFailed,
+					"scatter aggregator failed", err))
 				return
 			}
 			event.AgentID = sg.aggregator.ID()
@@ -337,4 +303,50 @@ func (sg *scatterGatherPattern) Execute(ctx context.Context, agents []agent.Agen
 			}
 		}
 	}
+}
+
+// scatterResult holds the outcome of one agent's invocation in a
+// scatter-gather run.
+type scatterResult struct {
+	agentID string
+	output  string
+	err     error
+}
+
+// scatterInvoke invokes every agent in parallel with input and returns their
+// results in the same order as agents.
+func scatterInvoke(ctx context.Context, agents []agent.Agent, input string) []scatterResult {
+	results := make([]scatterResult, len(agents))
+	var wg sync.WaitGroup
+
+	for i, a := range agents {
+		wg.Add(1)
+		go func(idx int, ag agent.Agent) {
+			defer wg.Done()
+			out, err := ag.Invoke(ctx, input)
+			results[idx] = scatterResult{
+				agentID: ag.ID(),
+				output:  out,
+				err:     err,
+			}
+		}(i, a)
+	}
+
+	wg.Wait()
+	return results
+}
+
+// combineScatterResults concatenates agent outputs into the aggregator prompt.
+// It returns an error for the first (in agent order) failed agent.
+func combineScatterResults(results []scatterResult) (string, error) {
+	var combined strings.Builder
+	combined.WriteString("Agent outputs:\n")
+	for _, r := range results {
+		if r.err != nil {
+			return "", core.NewError("runtime.team.scatter", core.ErrToolFailed,
+				fmt.Sprintf("scatter agent %s failed", r.agentID), r.err)
+		}
+		fmt.Fprintf(&combined, "\n--- %s ---\n%s\n", r.agentID, r.output)
+	}
+	return combined.String(), nil
 }

@@ -9,7 +9,7 @@ import (
 // AgenticPipeline combines multiple agentic guards into a single validation
 // pass. Guards run sequentially; the first blocking guard stops the pipeline.
 // Individual risks can be enabled or disabled via options.
-type AgenticPipeline struct {
+type AgenticPipeline struct { //nolint:revive // stutter: renaming would break the exported API
 	guards []guard.Guard
 }
 
