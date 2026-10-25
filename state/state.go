@@ -10,9 +10,10 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
-// Store is the interface for shared agent state storage.
-// Implementations must be safe for concurrent use.
-type Store interface {
+// KV is the key/value part of a [Store]: read, write and delete.
+// Code that only reads or writes state should accept a KV rather than a full
+// Store.
+type KV interface {
 	// Get retrieves the value for the given key.
 	// Returns nil, nil if the key does not exist.
 	Get(ctx context.Context, key string) (any, error)
@@ -22,7 +23,10 @@ type Store interface {
 
 	// Delete removes the given key. Deleting a non-existent key is a no-op.
 	Delete(ctx context.Context, key string) error
+}
 
+// Watcher is the change-notification part of a [Store].
+type Watcher interface {
 	// Watch returns an iter.Seq2 stream of StateChange notifications for
 	// the given key. The subscription is established eagerly before Watch
 	// returns, so events produced after this call but before the caller
@@ -34,6 +38,19 @@ type Store interface {
 	// subscription errors such as a closed store) are reported by yielding
 	// a zero-value StateChange together with a non-nil error.
 	Watch(ctx context.Context, key string) iter.Seq2[StateChange, error]
+}
+
+// Store is the interface for shared agent state storage.
+// Implementations must be safe for concurrent use.
+//
+// Store is a documented exception to the framework's "interfaces have at
+// most 4 methods" rule: it predates the rule and changing its method set
+// would break every implementation. It is composed of the smaller [KV] (3
+// methods) and [Watcher] (1 method) interfaces plus io.Closer; new APIs
+// should accept the narrowest of these that they need.
+type Store interface {
+	KV
+	Watcher
 
 	// Close releases resources held by the store and closes all watcher
 	// channels.
