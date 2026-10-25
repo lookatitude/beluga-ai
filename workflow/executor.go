@@ -220,16 +220,17 @@ func (e *DefaultExecutor) runWorkflow(parentCtx, wfCtx context.Context, p runWor
 // does not fire OnWorkflowFail.
 func (e *DefaultExecutor) finalizeHandle(ctx context.Context, handle *defaultHandle, wfID string, result any, err error, canceled bool) {
 	handle.mu.Lock()
-	if canceled {
+	switch {
+	case canceled:
 		handle.status = StatusCanceled
 		handle.err = err
-	} else if err != nil {
+	case err != nil:
 		handle.status = StatusFailed
 		handle.err = err
 		if e.hooks.OnWorkflowFail != nil {
 			e.hooks.OnWorkflowFail(ctx, wfID, err)
 		}
-	} else {
+	default:
 		handle.status = StatusCompleted
 		handle.result = result
 		if e.hooks.OnWorkflowComplete != nil {
