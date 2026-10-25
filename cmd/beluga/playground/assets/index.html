@@ -84,7 +84,7 @@ pre.stderr { margin: 0; padding: 12px; font-size: 12px; max-height: 300px; overf
     tr.children[3].textContent = (ev.duration_ms || 0) + ' ms';
     tr.children[4].textContent = ev.status || 'ok';
     spanBody.insertBefore(tr, spanBody.firstChild);
-    while (spanBody.children.length > 50) spanBody.removeChild(spanBody.lastChild);
+    while (spanBody.children.length > 50) spanBody.lastChild.remove();
 
     spanCount.textContent = spans.length;
     kpiIn.textContent = totalIn.toLocaleString();
@@ -99,7 +99,7 @@ pre.stderr { margin: 0; padding: 12px; font-size: 12px; max-height: 300px; overf
     stderrEl.textContent += decoded;
     const lines = stderrEl.textContent.split('\n');
     if (lines.length > 200) {
-      stderrEl.textContent = lines.slice(lines.length - 200).join('\n');
+      stderrEl.textContent = lines.slice(-200).join('\n');
     }
     stderrEl.scrollTop = stderrEl.scrollHeight;
   }

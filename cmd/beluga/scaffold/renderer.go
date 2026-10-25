@@ -214,7 +214,7 @@ func writeTemplatedFile(fsys fs.FS, relPath, outPath, renderedRel string, vars S
 	if err != nil {
 		return fmt.Errorf("beluga: open %q: %w", outPath, err)
 	}
-	if _, writeErr := f.Write([]byte(rendered)); writeErr != nil {
+	if _, writeErr := f.WriteString(rendered); writeErr != nil {
 		_ = f.Close()
 		return fmt.Errorf("beluga: write %q: %w", outPath, writeErr)
 	}

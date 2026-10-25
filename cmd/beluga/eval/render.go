@@ -264,12 +264,12 @@ func sortedMetricNames(rep *Report) []string {
 // truncate returns s unchanged when it fits, else a three-dot
 // truncated copy. Used for stdout-readable row rendering without
 // destroying alignment when a row happens to carry a long prompt.
-func truncate(s string, max int) string {
-	if len(s) <= max {
+func truncate(s string, limit int) string {
+	if len(s) <= limit {
 		return s
 	}
-	if max <= 3 {
-		return s[:max]
+	if limit <= 3 {
+		return s[:limit]
 	}
-	return s[:max-3] + "..."
+	return s[:limit-3] + "..."
 }

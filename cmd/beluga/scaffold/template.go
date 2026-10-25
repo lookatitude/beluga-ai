@@ -13,7 +13,7 @@ import (
 // one field here. Substitution is deterministic: applyTemplate calls
 // strings.ReplaceAll for each field in alphabetical order of the sentinel
 // name so output is stable across runs (required for golden-file tests).
-type ScaffoldVars struct {
+type ScaffoldVars struct { //nolint:revive // exported: renaming to Vars would change the package's exported API
 	AgentName      string // "__BELUGA_AGENT_NAME__"       — derived from ProjectName (e.g. "myproject-agent")
 	BelugaVersion  string // "__BELUGA_VERSION__"          — Options.BelugaVersion or "(devel)"
 	ModelName      string // "__BELUGA_MODEL_NAME__"       — "gpt-4o-mini" for basic

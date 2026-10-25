@@ -81,36 +81,7 @@ func streamChunks(deltas []streamDelta) string {
 			"index":         0,
 			"finish_reason": d.FinishReason,
 		}
-		delta := map[string]any{}
-		if d.Content != "" {
-			delta["content"] = d.Content
-		}
-		if d.Role != "" {
-			delta["role"] = d.Role
-		}
-		if len(d.ToolCalls) > 0 {
-			tcs := make([]map[string]any, len(d.ToolCalls))
-			for i, tc := range d.ToolCalls {
-				m := map[string]any{
-					"index": tc.Index,
-				}
-				if tc.ID != "" {
-					m["id"] = tc.ID
-					m["type"] = "function"
-				}
-				fn := map[string]any{}
-				if tc.Name != "" {
-					fn["name"] = tc.Name
-				}
-				if tc.Arguments != "" {
-					fn["arguments"] = tc.Arguments
-				}
-				m["function"] = fn
-				tcs[i] = m
-			}
-			delta["tool_calls"] = tcs
-		}
-		choice["delta"] = delta
+		choice["delta"] = streamDeltaJSON(d)
 		chunk["choices"] = []map[string]any{choice}
 		if d.Usage != nil {
 			chunk["usage"] = d.Usage
@@ -122,6 +93,46 @@ func streamChunks(deltas []streamDelta) string {
 	}
 	sb.WriteString("data: [DONE]\n\n")
 	return sb.String()
+}
+
+// streamDeltaJSON builds the "delta" object of one streaming chunk choice.
+func streamDeltaJSON(d streamDelta) map[string]any {
+	delta := map[string]any{}
+	if d.Content != "" {
+		delta["content"] = d.Content
+	}
+	if d.Role != "" {
+		delta["role"] = d.Role
+	}
+	if len(d.ToolCalls) > 0 {
+		tcs := make([]map[string]any, len(d.ToolCalls))
+		for i, tc := range d.ToolCalls {
+			tcs[i] = streamToolCallJSON(tc)
+		}
+		delta["tool_calls"] = tcs
+	}
+	return delta
+}
+
+// streamToolCallJSON builds one tool-call entry of a streaming delta,
+// omitting empty fields the way the OpenAI API does for continuation chunks.
+func streamToolCallJSON(tc streamToolCall) map[string]any {
+	m := map[string]any{
+		"index": tc.Index,
+	}
+	if tc.ID != "" {
+		m["id"] = tc.ID
+		m["type"] = "function"
+	}
+	fn := map[string]any{}
+	if tc.Name != "" {
+		fn["name"] = tc.Name
+	}
+	if tc.Arguments != "" {
+		fn["arguments"] = tc.Arguments
+	}
+	m["function"] = fn
+	return m
 }
 
 type streamDelta struct {

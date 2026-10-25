@@ -162,15 +162,9 @@ func (s *supervisor) runWithWatcher(ctx context.Context) error {
 			if !ok {
 				return nil
 			}
-			if !s.cfg.Filter.Accept(ev.Name, ev.Op) {
-				continue
+			if s.acceptEvent(watcher, ev) {
+				arm()
 			}
-			if ev.Op&fsnotify.Create != 0 {
-				if info, statErr := os.Stat(ev.Name); statErr == nil && info.IsDir() {
-					_ = watcher.Add(ev.Name)
-				}
-			}
-			arm()
 		case err, ok := <-watcher.Errors:
 			if !ok {
 				return nil
@@ -187,6 +181,21 @@ func (s *supervisor) runWithWatcher(ctx context.Context) error {
 			child = nil
 		}
 	}
+}
+
+// acceptEvent reports whether ev should trigger a debounced rebuild. As a
+// side effect, a newly created directory that passes the filter is added
+// to the watcher so files saved inside it are observed too.
+func (s *supervisor) acceptEvent(watcher *fsnotify.Watcher, ev fsnotify.Event) bool {
+	if !s.cfg.Filter.Accept(ev.Name, ev.Op) {
+		return false
+	}
+	if ev.Op&fsnotify.Create != 0 {
+		if info, statErr := os.Stat(ev.Name); statErr == nil && info.IsDir() {
+			_ = watcher.Add(ev.Name)
+		}
+	}
+	return true
 }
 
 func (s *supervisor) startChild(ctx context.Context) (*exec.Cmd, <-chan error, string, error) {

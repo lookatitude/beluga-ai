@@ -76,10 +76,7 @@ func TestServer_SnapshotIncludesPushedEvents(t *testing.T) {
 	s.StderrSink() <- StderrLine{Bytes: []byte("hello stderr\n"), RestartSeq: 1}
 
 	deadline := time.Now().Add(2 * time.Second)
-	for {
-		if s.spans.len() >= 1 && s.stderr.len() >= 1 {
-			break
-		}
+	for s.spans.len() < 1 || s.stderr.len() < 1 {
 		if time.Now().After(deadline) {
 			t.Fatal("fanout never populated rings")
 		}
@@ -215,10 +212,7 @@ func TestServer_EventsReplaysRingOnConnect(t *testing.T) {
 
 	// Wait for the fanout goroutine to land both events in the rings.
 	deadline := time.Now().Add(2 * time.Second)
-	for {
-		if s.spans.len() >= 1 && s.stderr.len() >= 1 {
-			break
-		}
+	for s.spans.len() < 1 || s.stderr.len() < 1 {
 		if time.Now().After(deadline) {
 			t.Fatal("rings never populated before replay test opened /events")
 		}
@@ -309,11 +303,4 @@ func readUntilEvent(t *testing.T, r io.Reader, want string, timeout time.Duratio
 			}
 		}
 	}
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

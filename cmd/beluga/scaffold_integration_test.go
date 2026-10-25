@@ -60,7 +60,7 @@ func findFrameworkRoot(t *testing.T) string {
 // identically locally and in CI.
 func runCmd(t *testing.T, dir, name string, args ...string) {
 	t.Helper()
-	cmd := exec.Command(name, args...)
+	cmd := exec.CommandContext(t.Context(), name, args...)
 	cmd.Dir = dir
 	cmd.Env = append(os.Environ(), "GOTOOLCHAIN=local")
 	var stdout, stderr bytes.Buffer
@@ -97,7 +97,7 @@ func TestScaffoldIntegration_EndToEnd(t *testing.T) {
 	// version string is injected as "(devel)" so the replace-directive
 	// branch of postProcessGoMod fires. This also guarantees the pin
 	// fix (v2.0.0-unknown) is exercised inside go mod tidy.
-	buildCmd := exec.Command(goBin, "build",
+	buildCmd := exec.CommandContext(t.Context(), goBin, "build",
 		"-ldflags", "-X github.com/lookatitude/beluga-ai/v2/cmd/beluga/internal/version.Version=(devel)",
 		"-o", belugaBin,
 		"./cmd/beluga",
