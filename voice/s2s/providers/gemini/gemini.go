@@ -262,7 +262,7 @@ func (s *geminiSession) readLoop(ctx context.Context) {
 		}
 
 		var msg geminiServerMsg
-		if jsonErr := json.Unmarshal(data, &msg); jsonErr != nil {
+		if json.Unmarshal(data, &msg) != nil {
 			continue
 		}
 

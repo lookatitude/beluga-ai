@@ -73,33 +73,44 @@ func (m *mockAgent) Stream(ctx context.Context, input string, opts ...agent.Opti
 		}
 
 		if len(m.events) > 0 {
-			for _, e := range m.events {
-				if !yield(e, nil) {
-					return
-				}
-			}
+			m.yieldScriptedEvents(yield)
 			return
 		}
 
 		// Default: emit text chunks
-		words := strings.Fields(m.result)
-		for _, w := range words {
-			select {
-			case <-ctx.Done():
-				yield(agent.Event{}, ctx.Err())
-				return
-			default:
-			}
-			if !yield(agent.Event{
-				Type:    agent.EventText,
-				AgentID: m.id,
-				Text:    w + " ",
-			}, nil) {
-				return
-			}
-		}
-		yield(agent.Event{Type: agent.EventDone, AgentID: m.id}, nil)
+		m.yieldResultWords(ctx, yield)
 	}
+}
+
+// yieldScriptedEvents emits the configured events in order, stopping early
+// if the consumer stops iterating.
+func (m *mockAgent) yieldScriptedEvents(yield func(agent.Event, error) bool) {
+	for _, e := range m.events {
+		if !yield(e, nil) {
+			return
+		}
+	}
+}
+
+// yieldResultWords emits m.result as word-sized text events followed by a
+// done event, aborting with ctx.Err() if the context is cancelled.
+func (m *mockAgent) yieldResultWords(ctx context.Context, yield func(agent.Event, error) bool) {
+	for _, w := range strings.Fields(m.result) {
+		select {
+		case <-ctx.Done():
+			yield(agent.Event{}, ctx.Err())
+			return
+		default:
+		}
+		if !yield(agent.Event{
+			Type:    agent.EventText,
+			AgentID: m.id,
+			Text:    w + " ",
+		}, nil) {
+			return
+		}
+	}
+	yield(agent.Event{Type: agent.EventDone, AgentID: m.id}, nil)
 }
 
 // --- Mock Scorer ---

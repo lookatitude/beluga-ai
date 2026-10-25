@@ -66,16 +66,25 @@ func (r *Rubric) Validate() error {
 			return fmt.Errorf("rubric %q: duplicate criterion name %q", r.Name, c.Name)
 		}
 		seen[c.Name] = true
-		if c.Weight <= 0 {
-			return fmt.Errorf("rubric %q: criterion %q weight must be positive, got %f", r.Name, c.Name, c.Weight)
+		if err := validateCriterion(r.Name, c); err != nil {
+			return err
 		}
-		if len(c.Levels) == 0 {
-			return fmt.Errorf("rubric %q: criterion %q must have at least one level", r.Name, c.Name)
-		}
-		for _, l := range c.Levels {
-			if l.Score < 0 || l.Score > 1 {
-				return fmt.Errorf("rubric %q: criterion %q level %q score %f out of [0,1]", r.Name, c.Name, l.Label, l.Score)
-			}
+	}
+	return nil
+}
+
+// validateCriterion checks a single criterion's weight and score levels.
+// rubricName is used only for error messages.
+func validateCriterion(rubricName string, c Criterion) error {
+	if c.Weight <= 0 {
+		return fmt.Errorf("rubric %q: criterion %q weight must be positive, got %f", rubricName, c.Name, c.Weight)
+	}
+	if len(c.Levels) == 0 {
+		return fmt.Errorf("rubric %q: criterion %q must have at least one level", rubricName, c.Name)
+	}
+	for _, l := range c.Levels {
+		if l.Score < 0 || l.Score > 1 {
+			return fmt.Errorf("rubric %q: criterion %q level %q score %f out of [0,1]", rubricName, c.Name, l.Label, l.Score)
 		}
 	}
 	return nil

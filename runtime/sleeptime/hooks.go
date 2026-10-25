@@ -27,36 +27,61 @@ type Hooks struct {
 // Hooks in order. For BeforeTask, execution stops at the first error.
 func ComposeHooks(hooks ...Hooks) Hooks {
 	return Hooks{
-		OnIdle: func(ctx context.Context, state SessionState) {
-			for _, h := range hooks {
-				if h.OnIdle != nil {
-					h.OnIdle(ctx, state)
-				}
+		OnIdle:     composeOnIdle(hooks),
+		OnWake:     composeOnWake(hooks),
+		BeforeTask: composeBeforeTask(hooks),
+		AfterTask:  composeAfterTask(hooks),
+	}
+}
+
+// composeOnIdle returns an OnIdle callback that invokes every non-nil OnIdle
+// in hooks, in order.
+func composeOnIdle(hooks []Hooks) func(ctx context.Context, state SessionState) {
+	return func(ctx context.Context, state SessionState) {
+		for _, h := range hooks {
+			if h.OnIdle != nil {
+				h.OnIdle(ctx, state)
 			}
-		},
-		OnWake: func(ctx context.Context, state SessionState) {
-			for _, h := range hooks {
-				if h.OnWake != nil {
-					h.OnWake(ctx, state)
-				}
+		}
+	}
+}
+
+// composeOnWake returns an OnWake callback that invokes every non-nil OnWake
+// in hooks, in order.
+func composeOnWake(hooks []Hooks) func(ctx context.Context, state SessionState) {
+	return func(ctx context.Context, state SessionState) {
+		for _, h := range hooks {
+			if h.OnWake != nil {
+				h.OnWake(ctx, state)
 			}
-		},
-		BeforeTask: func(ctx context.Context, taskName string, state SessionState) error {
-			for _, h := range hooks {
-				if h.BeforeTask != nil {
-					if err := h.BeforeTask(ctx, taskName, state); err != nil {
-						return err
-					}
-				}
+		}
+	}
+}
+
+// composeBeforeTask returns a BeforeTask callback that invokes every non-nil
+// BeforeTask in hooks, in order, stopping at the first error.
+func composeBeforeTask(hooks []Hooks) func(ctx context.Context, taskName string, state SessionState) error {
+	return func(ctx context.Context, taskName string, state SessionState) error {
+		for _, h := range hooks {
+			if h.BeforeTask == nil {
+				continue
 			}
-			return nil
-		},
-		AfterTask: func(ctx context.Context, result TaskResult) {
-			for _, h := range hooks {
-				if h.AfterTask != nil {
-					h.AfterTask(ctx, result)
-				}
+			if err := h.BeforeTask(ctx, taskName, state); err != nil {
+				return err
 			}
-		},
+		}
+		return nil
+	}
+}
+
+// composeAfterTask returns an AfterTask callback that invokes every non-nil
+// AfterTask in hooks, in order.
+func composeAfterTask(hooks []Hooks) func(ctx context.Context, result TaskResult) {
+	return func(ctx context.Context, result TaskResult) {
+		for _, h := range hooks {
+			if h.AfterTask != nil {
+				h.AfterTask(ctx, result)
+			}
+		}
 	}
 }

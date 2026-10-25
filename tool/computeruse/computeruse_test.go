@@ -404,6 +404,31 @@ func (m *mockExtendedBrowser) ExecuteJS(_ context.Context, _ string) (string, er
 	return "", nil
 }
 
+// buildScrollToolOptions assembles the ToolOptions for a scroll test case.
+// When extBrowser is set it returns the mockExtendedBrowser it installed
+// (configured to fail when scrollErr is set) so the caller can inspect it;
+// otherwise the returned browser is nil.
+func buildScrollToolOptions(useBrowser, extBrowser, scrollErr, useAction bool) ([]ToolOption, *mockExtendedBrowser) {
+	var opts []ToolOption
+	var extBr *mockExtendedBrowser
+
+	if extBrowser {
+		var err error
+		if scrollErr {
+			err = errors.New("scroll failed")
+		}
+		extBr = &mockExtendedBrowser{scrollErr: err}
+		opts = append(opts, WithBrowser(extBr))
+	} else if useBrowser {
+		opts = append(opts, WithBrowser(&mockBrowser{}))
+	}
+
+	if useAction {
+		opts = append(opts, WithAction(&mockAction{}))
+	}
+	return opts, extBr
+}
+
 func TestComputerUseTool_Scroll(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -443,25 +468,7 @@ func TestComputerUseTool_Scroll(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var opts []ToolOption
-			var extBr *mockExtendedBrowser
-			var act *mockAction
-
-			if tt.extBrowser {
-				scrollErr := error(nil)
-				if tt.scrollErr {
-					scrollErr = errors.New("scroll failed")
-				}
-				extBr = &mockExtendedBrowser{scrollErr: scrollErr}
-				opts = append(opts, WithBrowser(extBr))
-			} else if tt.useBrowser {
-				opts = append(opts, WithBrowser(&mockBrowser{}))
-			}
-
-			if tt.useAction {
-				act = &mockAction{}
-				opts = append(opts, WithAction(act))
-			}
+			opts, extBr := buildScrollToolOptions(tt.useBrowser, tt.extBrowser, tt.scrollErr, tt.useAction)
 
 			ct, err := NewComputerUseTool(opts...)
 			require.NoError(t, err)

@@ -202,63 +202,9 @@ func (d *DebateOrchestrator) Stream(ctx context.Context, input any, opts ...core
 
 			state.CurrentRound = round
 
-			if !yield(DebateEvent{Type: EventRoundStart, Round: round + 1}, nil) {
+			conv, ok := d.streamRound(ctx, &state, round, yield)
+			if !ok {
 				return
-			}
-
-			if d.opts.hooks.BeforeRound != nil {
-				if err := d.opts.hooks.BeforeRound(ctx, state); err != nil {
-					yield(nil, d.handleError(ctx, core.Errorf(core.ErrProviderDown, "debate: before round %d: %w", round, err)))
-					return
-				}
-			}
-
-			roundData, err := d.executeRound(ctx, state)
-			if err != nil {
-				yield(nil, d.handleError(ctx, err))
-				return
-			}
-
-			// Yield individual contributions.
-			for _, c := range roundData.Contributions {
-				if !yield(DebateEvent{
-					Type:    EventContribution,
-					Round:   round + 1,
-					AgentID: c.AgentID,
-					Content: c.Content,
-				}, nil) {
-					return
-				}
-			}
-
-			state.Rounds = append(state.Rounds, roundData)
-
-			if !yield(DebateEvent{Type: EventRoundEnd, Round: round + 1}, nil) {
-				return
-			}
-
-			if d.opts.hooks.AfterRound != nil {
-				if err := d.opts.hooks.AfterRound(ctx, state); err != nil {
-					yield(nil, d.handleError(ctx, core.Errorf(core.ErrProviderDown, "debate: after round %d: %w", round, err)))
-					return
-				}
-			}
-
-			conv, err := d.opts.detector.Check(ctx, state)
-			if err != nil {
-				yield(nil, d.handleError(ctx, core.Errorf(core.ErrProviderDown, "debate: convergence check: %w", err)))
-				return
-			}
-
-			if !yield(DebateEvent{Type: EventConvergence, Convergence: &conv}, nil) {
-				return
-			}
-
-			if d.opts.hooks.OnConvergence != nil {
-				if err := d.opts.hooks.OnConvergence(ctx, conv); err != nil {
-					yield(nil, d.handleError(ctx, core.Errorf(core.ErrProviderDown, "debate: on convergence: %w", err)))
-					return
-				}
 			}
 
 			if conv.Converged {
@@ -275,6 +221,86 @@ func (d *DebateOrchestrator) Stream(ctx context.Context, input any, opts ...core
 		result := d.buildResult(state, conv, start)
 		yield(DebateEvent{Type: EventComplete, Result: result}, nil)
 	}
+}
+
+// streamRound runs one debate round for Stream: it yields the round-start,
+// contribution and round-end events, runs the round hooks, appends the round
+// to state, and checks convergence. ok is false when streaming must stop,
+// either because an error was yielded or the consumer stopped iteration.
+func (d *DebateOrchestrator) streamRound(ctx context.Context, state *DebateState, round int, yield func(any, error) bool) (conv ConvergenceResult, ok bool) {
+	if !yield(DebateEvent{Type: EventRoundStart, Round: round + 1}, nil) {
+		return conv, false
+	}
+
+	if d.opts.hooks.BeforeRound != nil {
+		if err := d.opts.hooks.BeforeRound(ctx, *state); err != nil {
+			yield(nil, d.handleError(ctx, core.Errorf(core.ErrProviderDown, "debate: before round %d: %w", round, err)))
+			return conv, false
+		}
+	}
+
+	roundData, err := d.executeRound(ctx, *state)
+	if err != nil {
+		yield(nil, d.handleError(ctx, err))
+		return conv, false
+	}
+
+	if !yieldContributions(yield, round, roundData.Contributions) {
+		return conv, false
+	}
+
+	state.Rounds = append(state.Rounds, roundData)
+
+	if !yield(DebateEvent{Type: EventRoundEnd, Round: round + 1}, nil) {
+		return conv, false
+	}
+
+	if d.opts.hooks.AfterRound != nil {
+		if err := d.opts.hooks.AfterRound(ctx, *state); err != nil {
+			yield(nil, d.handleError(ctx, core.Errorf(core.ErrProviderDown, "debate: after round %d: %w", round, err)))
+			return conv, false
+		}
+	}
+
+	return d.streamConvergence(ctx, *state, yield)
+}
+
+// yieldContributions yields one EventContribution per contribution. It
+// returns false if the consumer stopped iteration.
+func yieldContributions(yield func(any, error) bool, round int, contributions []Contribution) bool {
+	for _, c := range contributions {
+		if !yield(DebateEvent{
+			Type:    EventContribution,
+			Round:   round + 1,
+			AgentID: c.AgentID,
+			Content: c.Content,
+		}, nil) {
+			return false
+		}
+	}
+	return true
+}
+
+// streamConvergence runs the convergence detector, yields the convergence
+// event and runs the OnConvergence hook. ok is false when streaming must stop.
+func (d *DebateOrchestrator) streamConvergence(ctx context.Context, state DebateState, yield func(any, error) bool) (conv ConvergenceResult, ok bool) {
+	conv, err := d.opts.detector.Check(ctx, state)
+	if err != nil {
+		yield(nil, d.handleError(ctx, core.Errorf(core.ErrProviderDown, "debate: convergence check: %w", err)))
+		return conv, false
+	}
+
+	if !yield(DebateEvent{Type: EventConvergence, Convergence: &conv}, nil) {
+		return conv, false
+	}
+
+	if d.opts.hooks.OnConvergence != nil {
+		if err := d.opts.hooks.OnConvergence(ctx, conv); err != nil {
+			yield(nil, d.handleError(ctx, core.Errorf(core.ErrProviderDown, "debate: on convergence: %w", err)))
+			return conv, false
+		}
+	}
+	return conv, true
 }
 
 // initState creates the initial DebateState.

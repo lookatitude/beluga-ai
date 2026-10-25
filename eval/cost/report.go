@@ -103,18 +103,7 @@ func generateRecommendations(configs []ConfigResult, pareto *ParetoResult) []str
 	}
 
 	// Find best quality-per-dollar among optimal configs.
-	var bestQPD float64
-	var bestName string
-	for _, c := range pareto.Optimal {
-		if c.Cost > 0 {
-			qpd := c.Quality / c.Cost
-			if qpd > bestQPD {
-				bestQPD = qpd
-				bestName = c.Name
-			}
-		}
-	}
-	if bestName != "" {
+	if bestName, bestQPD := bestQualityPerDollar(pareto.Optimal); bestName != "" {
 		recs = append(recs, fmt.Sprintf(
 			"Best quality-per-dollar: %s (%.2f quality/$)",
 			bestName, bestQPD,
@@ -122,16 +111,7 @@ func generateRecommendations(configs []ConfigResult, pareto *ParetoResult) []str
 	}
 
 	// Find cheapest option with quality above 0.7.
-	var cheapest *ConfigResult
-	for i := range configs {
-		c := configs[i]
-		if c.Quality >= 0.7 {
-			if cheapest == nil || c.Cost < cheapest.Cost {
-				cheapest = &c
-			}
-		}
-	}
-	if cheapest != nil {
+	if cheapest := cheapestAboveQuality(configs, 0.7); cheapest != nil {
 		recs = append(recs, fmt.Sprintf(
 			"Cheapest option with quality >= 0.7: %s ($%.4f, quality=%.3f)",
 			cheapest.Name, cheapest.Cost, cheapest.Quality,
@@ -139,4 +119,35 @@ func generateRecommendations(configs []ConfigResult, pareto *ParetoResult) []str
 	}
 
 	return recs
+}
+
+// bestQualityPerDollar returns the name and quality/cost ratio of the config
+// with the highest positive ratio. Configs with zero or negative cost are
+// skipped. It returns "" when no config qualifies.
+func bestQualityPerDollar(configs []ConfigResult) (string, float64) {
+	var bestQPD float64
+	var bestName string
+	for _, c := range configs {
+		if c.Cost <= 0 {
+			continue
+		}
+		if qpd := c.Quality / c.Cost; qpd > bestQPD {
+			bestQPD = qpd
+			bestName = c.Name
+		}
+	}
+	return bestName, bestQPD
+}
+
+// cheapestAboveQuality returns a copy of the lowest-cost config whose quality
+// is at least minQuality, or nil when none qualifies. Ties keep the first.
+func cheapestAboveQuality(configs []ConfigResult, minQuality float64) *ConfigResult {
+	var cheapest *ConfigResult
+	for i := range configs {
+		c := configs[i]
+		if c.Quality >= minQuality && (cheapest == nil || c.Cost < cheapest.Cost) {
+			cheapest = &c
+		}
+	}
+	return cheapest
 }

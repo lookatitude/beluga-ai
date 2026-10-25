@@ -69,6 +69,20 @@ func firstDifference(a, b []float32) int {
 	return -1
 }
 
+// requireVectorBatch fails the test unless vectors holds wantCount vectors
+// of wantDims dimensions each.
+func requireVectorBatch(t *testing.T, vectors [][]float32, wantCount, wantDims int) {
+	t.Helper()
+	if len(vectors) != wantCount {
+		t.Fatalf("expected %d vectors, got %d", wantCount, len(vectors))
+	}
+	for i, vec := range vectors {
+		if len(vec) != wantDims {
+			t.Fatalf("vector %d: expected %d dimensions, got %d", i, wantDims, len(vec))
+		}
+	}
+}
+
 func TestEmbed(t *testing.T) {
 	emb, err := embedding.New("inmemory", config.ProviderConfig{})
 	if err != nil {
@@ -83,14 +97,7 @@ func TestEmbed(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if len(vectors) != 3 {
-			t.Fatalf("expected 3 vectors, got %d", len(vectors))
-		}
-		for i, vec := range vectors {
-			if len(vec) != 128 {
-				t.Fatalf("vector %d: expected 128 dimensions, got %d", i, len(vec))
-			}
-		}
+		requireVectorBatch(t, vectors, 3, 128)
 	})
 
 	t.Run("embed single", func(t *testing.T) {
@@ -124,9 +131,7 @@ func TestEmbed(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if len(vectors) != 0 {
-			t.Fatalf("expected 0 vectors, got %d", len(vectors))
-		}
+		requireVectorBatch(t, vectors, 0, 128)
 	})
 }
 

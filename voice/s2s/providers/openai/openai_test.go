@@ -96,6 +96,30 @@ func newWSServer(t *testing.T, handler func(*websocket.Conn)) *httptest.Server {
 	}))
 }
 
+// collectRecv gathers events from recvCh, requiring each to carry no error,
+// until the channel closes, done reports true for the events collected so far,
+// or the timeout elapses.
+func collectRecv(t *testing.T, recvCh <-chan recvResult, timeout time.Duration, done func([]s2s.SessionEvent) bool) []s2s.SessionEvent {
+	t.Helper()
+	var events []s2s.SessionEvent
+	deadline := time.After(timeout)
+	for {
+		select {
+		case r, chOk := <-recvCh:
+			if !chOk || !r.ok {
+				return events
+			}
+			require.NoError(t, r.err)
+			events = append(events, r.event)
+			if done(events) {
+				return events
+			}
+		case <-deadline:
+			return events
+		}
+	}
+}
+
 func TestStartAndRecv(t *testing.T) {
 	t.Run("receive audio output", func(t *testing.T) {
 		audioData := []byte("test-pcm-audio")
@@ -153,24 +177,9 @@ func TestStartAndRecv(t *testing.T) {
 
 		recvCh, stopRecv := startRecv(session.Recv(ctx))
 		defer stopRecv()
-		var events []s2s.SessionEvent
-		timeout := time.After(3 * time.Second)
-	collectAudio:
-		for {
-			select {
-			case r, chOk := <-recvCh:
-				if !chOk || !r.ok {
-					break collectAudio
-				}
-				require.NoError(t, r.err)
-				events = append(events, r.event)
-				if r.event.Type == s2s.EventTurnEnd {
-					break collectAudio
-				}
-			case <-timeout:
-				break collectAudio
-			}
-		}
+		events := collectRecv(t, recvCh, 3*time.Second, func(evs []s2s.SessionEvent) bool {
+			return evs[len(evs)-1].Type == s2s.EventTurnEnd
+		})
 		require.GreaterOrEqual(t, len(events), 2)
 
 		// First should be audio.
@@ -228,24 +237,9 @@ func TestStartAndRecv(t *testing.T) {
 
 		recvCh, stopRecv := startRecv(session.Recv(ctx))
 		defer stopRecv()
-		var events []s2s.SessionEvent
-		timeout := time.After(2 * time.Second)
-	collectText:
-		for {
-			select {
-			case r, chOk := <-recvCh:
-				if !chOk || !r.ok {
-					break collectText
-				}
-				require.NoError(t, r.err)
-				events = append(events, r.event)
-				if len(events) >= 2 {
-					break collectText
-				}
-			case <-timeout:
-				break collectText
-			}
-		}
+		events := collectRecv(t, recvCh, 2*time.Second, func(evs []s2s.SessionEvent) bool {
+			return len(evs) >= 2
+		})
 		require.Equal(t, 2, len(events))
 		assert.Equal(t, s2s.EventTranscript, events[0].Type)
 		assert.Equal(t, "hello user", events[0].Text)

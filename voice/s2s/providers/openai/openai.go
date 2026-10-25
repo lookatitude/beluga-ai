@@ -237,7 +237,7 @@ func (s *realtimeSession) readLoop(ctx context.Context) {
 		}
 
 		var event serverEvent
-		if jsonErr := json.Unmarshal(data, &event); jsonErr != nil {
+		if json.Unmarshal(data, &event) != nil {
 			continue
 		}
 

@@ -49,33 +49,45 @@ type Hooks struct {
 // Callbacks are called in the order the hooks were provided.
 func ComposeHooks(hooks ...Hooks) Hooks {
 	return Hooks{
-		OnPrediction: func(ctx context.Context, prediction string, confidence float64) {
-			for _, h := range hooks {
-				if h.OnPrediction != nil {
-					h.OnPrediction(ctx, prediction, confidence)
-				}
+		OnPrediction:    composeOnPrediction(hooks),
+		OnValidation:    composeResultHook(hooks, func(h Hooks) func(context.Context, Result) { return h.OnValidation }),
+		OnMisprediction: composeResultHook(hooks, func(h Hooks) func(context.Context, Result) { return h.OnMisprediction }),
+		OnCancel:        composeOnCancel(hooks),
+	}
+}
+
+// composeOnPrediction returns an OnPrediction callback that invokes every
+// non-nil OnPrediction in hooks, in order.
+func composeOnPrediction(hooks []Hooks) func(ctx context.Context, prediction string, confidence float64) {
+	return func(ctx context.Context, prediction string, confidence float64) {
+		for _, h := range hooks {
+			if h.OnPrediction != nil {
+				h.OnPrediction(ctx, prediction, confidence)
 			}
-		},
-		OnValidation: func(ctx context.Context, result Result) {
-			for _, h := range hooks {
-				if h.OnValidation != nil {
-					h.OnValidation(ctx, result)
-				}
+		}
+	}
+}
+
+// composeResultHook returns a callback that invokes the Result-typed hook
+// selected by pick from every element of hooks, in order, skipping nil ones.
+func composeResultHook(hooks []Hooks, pick func(Hooks) func(context.Context, Result)) func(ctx context.Context, result Result) {
+	return func(ctx context.Context, result Result) {
+		for _, h := range hooks {
+			if fn := pick(h); fn != nil {
+				fn(ctx, result)
 			}
-		},
-		OnMisprediction: func(ctx context.Context, result Result) {
-			for _, h := range hooks {
-				if h.OnMisprediction != nil {
-					h.OnMisprediction(ctx, result)
-				}
+		}
+	}
+}
+
+// composeOnCancel returns an OnCancel callback that invokes every non-nil
+// OnCancel in hooks, in order.
+func composeOnCancel(hooks []Hooks) func(ctx context.Context, err error) {
+	return func(ctx context.Context, err error) {
+		for _, h := range hooks {
+			if h.OnCancel != nil {
+				h.OnCancel(ctx, err)
 			}
-		},
-		OnCancel: func(ctx context.Context, err error) {
-			for _, h := range hooks {
-				if h.OnCancel != nil {
-					h.OnCancel(ctx, err)
-				}
-			}
-		},
+		}
 	}
 }

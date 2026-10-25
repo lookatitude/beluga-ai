@@ -174,51 +174,13 @@ func (r *SimRunner) RunEpisode(ctx context.Context) (*EpisodeResult, error) {
 		// (user_message -> previous_agent_message) pair for completeness and
 		// stop. No further agent turn is required.
 		if userResp.GoalComplete || userResp.GoalFailed {
-			sample := eval.EvalSample{
-				Input:    userResp.Message,
-				Output:   "",
-				Metadata: map[string]any{"turn": turn, "terminal": true},
-			}
-			r.scoreSample(ctx, &sample)
-			result.Turns = append(result.Turns, sample)
-			result.TurnCount = turn + 1
-			if r.opts.onTurn != nil {
-				r.opts.onTurn(turn, userResp.Message, "")
-			}
-			if userResp.GoalComplete {
-				result.GoalComplete = true
-			} else {
-				result.GoalFailed = true
-			}
+			r.recordTerminalTurn(ctx, result, turn, userResp)
 			break
 		}
 
-		// Step environment if present.
-		if r.opts.env != nil {
-			if _, err := r.opts.env.Step(ctx, userResp.Message); err != nil {
-				return nil, core.Errorf(core.ErrProviderDown, "simulation: env step at turn %d: %w", turn, err)
-			}
-		}
-
-		// Agent processes user message — this is the output that should be
-		// paired with the user message in the EvalSample so metrics see the
-		// actual (input, output) pair rather than the agent's prior turn.
-		nextAgentResp, err := r.opts.agent(ctx, userResp.Message)
+		nextAgentResp, err := r.playTurn(ctx, result, turn, userResp.Message)
 		if err != nil {
-			return nil, core.Errorf(core.ErrProviderDown, "simulation: agent at turn %d: %w", turn, err)
-		}
-
-		sample := eval.EvalSample{
-			Input:    userResp.Message,
-			Output:   nextAgentResp,
-			Metadata: map[string]any{"turn": turn},
-		}
-		r.scoreSample(ctx, &sample)
-		result.Turns = append(result.Turns, sample)
-		result.TurnCount = turn + 1
-
-		if r.opts.onTurn != nil {
-			r.opts.onTurn(turn, userResp.Message, nextAgentResp)
+			return nil, err
 		}
 
 		agentResp = nextAgentResp
@@ -226,6 +188,62 @@ func (r *SimRunner) RunEpisode(ctx context.Context) (*EpisodeResult, error) {
 
 	result.Duration = time.Since(start)
 	return result, nil
+}
+
+// recordTerminalTurn records the final (user_message -> previous_agent_message)
+// pair for a user response that reached a terminal state, and marks the
+// episode outcome. No further agent turn is required.
+func (r *SimRunner) recordTerminalTurn(ctx context.Context, result *EpisodeResult, turn int, userResp *UserResponse) {
+	sample := eval.EvalSample{
+		Input:    userResp.Message,
+		Output:   "",
+		Metadata: map[string]any{"turn": turn, "terminal": true},
+	}
+	r.scoreSample(ctx, &sample)
+	result.Turns = append(result.Turns, sample)
+	result.TurnCount = turn + 1
+	if r.opts.onTurn != nil {
+		r.opts.onTurn(turn, userResp.Message, "")
+	}
+	if userResp.GoalComplete {
+		result.GoalComplete = true
+	} else {
+		result.GoalFailed = true
+	}
+}
+
+// playTurn steps the environment (if any) with the user's message, gets the
+// agent's reply, and records the (user message, agent reply) pair as a scored
+// sample. It returns the agent's reply for the next turn.
+func (r *SimRunner) playTurn(ctx context.Context, result *EpisodeResult, turn int, userMsg string) (string, error) {
+	// Step environment if present.
+	if r.opts.env != nil {
+		if _, err := r.opts.env.Step(ctx, userMsg); err != nil {
+			return "", core.Errorf(core.ErrProviderDown, "simulation: env step at turn %d: %w", turn, err)
+		}
+	}
+
+	// Agent processes user message — this is the output that should be
+	// paired with the user message in the EvalSample so metrics see the
+	// actual (input, output) pair rather than the agent's prior turn.
+	nextAgentResp, err := r.opts.agent(ctx, userMsg)
+	if err != nil {
+		return "", core.Errorf(core.ErrProviderDown, "simulation: agent at turn %d: %w", turn, err)
+	}
+
+	sample := eval.EvalSample{
+		Input:    userMsg,
+		Output:   nextAgentResp,
+		Metadata: map[string]any{"turn": turn},
+	}
+	r.scoreSample(ctx, &sample)
+	result.Turns = append(result.Turns, sample)
+	result.TurnCount = turn + 1
+
+	if r.opts.onTurn != nil {
+		r.opts.onTurn(turn, userMsg, nextAgentResp)
+	}
+	return nextAgentResp, nil
 }
 
 // scoreSample applies the configured metrics to the given sample, storing

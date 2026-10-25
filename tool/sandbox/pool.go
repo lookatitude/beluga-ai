@@ -7,6 +7,9 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
+// opSandboxPool is the core.Error operation name for SandboxPool failures.
+const opSandboxPool = "sandbox.pool"
+
 // poolOptions holds configuration for SandboxPool.
 type poolOptions struct {
 	size   int
@@ -52,7 +55,7 @@ func NewSandboxPool(provider string, opts ...PoolOption) (*SandboxPool, error) {
 		opt(&o)
 	}
 	if o.size <= 0 {
-		return nil, core.NewError("sandbox.pool", core.ErrInvalidInput, "pool size must be positive", nil)
+		return nil, core.NewError(opSandboxPool, core.ErrInvalidInput, "pool size must be positive", nil)
 	}
 
 	p := &SandboxPool{
@@ -85,7 +88,7 @@ func (p *SandboxPool) Checkout(ctx context.Context) (Sandbox, error) {
 	p.mu.Lock()
 	if p.closed {
 		p.mu.Unlock()
-		return nil, core.NewError("sandbox.pool", core.ErrToolFailed, "pool is closed", nil)
+		return nil, core.NewError(opSandboxPool, core.ErrToolFailed, "pool is closed", nil)
 	}
 	p.mu.Unlock()
 
@@ -94,7 +97,7 @@ func (p *SandboxPool) Checkout(ctx context.Context) (Sandbox, error) {
 	select {
 	case p.sem <- struct{}{}:
 	case <-ctx.Done():
-		return nil, core.NewError("sandbox.pool", core.ErrTimeout, "checkout timed out", ctx.Err())
+		return nil, core.NewError(opSandboxPool, core.ErrTimeout, "checkout timed out", ctx.Err())
 	}
 
 	// Try to reuse an idle sandbox.

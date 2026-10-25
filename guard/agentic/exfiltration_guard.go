@@ -56,9 +56,10 @@ type ExfiltrationOption func(*DataExfiltrationGuard)
 func WithPIIPattern(category, pattern string) ExfiltrationOption {
 	compiled, err := regexp.Compile(pattern)
 	if err != nil {
-		// Intentional no-op: silently discard patterns that fail to compile so
-		// callers are not forced to handle the error at option-apply time.
-		return func(*DataExfiltrationGuard) {}
+		return func(*DataExfiltrationGuard) {
+			// Intentional no-op: silently discard patterns that fail to compile so
+			// callers are not forced to handle the error at option-apply time.
+		}
 	}
 	return func(g *DataExfiltrationGuard) {
 		g.piiPatterns = append(g.piiPatterns, piiPattern{

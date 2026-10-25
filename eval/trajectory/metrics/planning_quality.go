@@ -71,69 +71,19 @@ func (pq *PlanningQuality) ScoreTrajectory(_ context.Context, t trajectory.Traje
 	}
 
 	// Step efficiency: how close to optimal step count.
-	efficiency := 1.0
-	if totalSteps > pq.maxExpectedSteps {
-		// Linearly decrease from 1.0 to 0.0 as steps go from max to 2*max.
-		overshoot := float64(totalSteps-pq.maxExpectedSteps) / float64(pq.maxExpectedSteps)
-		efficiency = 1.0 - overshoot
-		if efficiency < 0 {
-			efficiency = 0
-		}
-	}
+	efficiency := stepEfficiency(totalSteps, pq.maxExpectedSteps)
 
 	// Redundancy: detect repeated tool calls with same name and args.
-	type toolSig struct {
-		name string
-		args string
-	}
-	seen := make(map[toolSig]int)
-	redundantCount := 0
-	var stepScores []trajectory.StepScore
-
-	for i := range t.Steps {
-		step := &t.Steps[i]
-		if step.Type == trajectory.StepToolCall {
-			sig := toolSig{name: step.Action.ToolName, args: step.Action.ToolArgs}
-			seen[sig]++
-			if seen[sig] > 1 {
-				redundantCount++
-				stepScores = append(stepScores, trajectory.StepScore{
-					StepIndex: step.Index,
-					Score:     0.0,
-					Reason:    "redundant tool call",
-				})
-			} else {
-				stepScores = append(stepScores, trajectory.StepScore{
-					StepIndex: step.Index,
-					Score:     1.0,
-					Reason:    "unique tool call",
-				})
-			}
-		}
-	}
+	stepScores, redundantCount, toolCallCount := scoreToolRedundancy(t.Steps)
 
 	// Redundancy score: 1.0 means no redundancy.
-	toolCallCount := 0
-	for i := range t.Steps {
-		step := &t.Steps[i]
-		if step.Type == trajectory.StepToolCall {
-			toolCallCount++
-		}
-	}
 	redundancyScore := 1.0
 	if toolCallCount > 0 {
 		redundancyScore = 1.0 - float64(redundantCount)/float64(toolCallCount)
 	}
 
 	// Goal achievement: did the trajectory end with a finish step and produce output?
-	goalAchieved := false
-	for i := range t.Steps {
-		step := &t.Steps[i]
-		if step.Type == trajectory.StepFinish {
-			goalAchieved = true
-			break
-		}
-	}
+	goalAchieved := hasFinishStep(t.Steps)
 	goalScore := 0.0
 	if goalAchieved {
 		goalScore = 1.0
@@ -155,4 +105,63 @@ func (pq *PlanningQuality) ScoreTrajectory(_ context.Context, t trajectory.Traje
 			"max_expected_steps": pq.maxExpectedSteps,
 		},
 	}, nil
+}
+
+// stepEfficiency scores how close totalSteps is to maxExpected: 1.0 at or
+// below maxExpected, decreasing linearly to 0.0 at 2*maxExpected and beyond.
+func stepEfficiency(totalSteps, maxExpected int) float64 {
+	if totalSteps <= maxExpected {
+		return 1.0
+	}
+	overshoot := float64(totalSteps-maxExpected) / float64(maxExpected)
+	efficiency := 1.0 - overshoot
+	if efficiency < 0 {
+		return 0
+	}
+	return efficiency
+}
+
+// scoreToolRedundancy scores every tool-call step: 1.0 for the first call with
+// a given tool name and args, 0.0 for repeats. It also returns the number of
+// repeated calls and the total number of tool calls.
+func scoreToolRedundancy(steps []trajectory.Step) (stepScores []trajectory.StepScore, redundantCount, toolCallCount int) {
+	type toolSig struct {
+		name string
+		args string
+	}
+	seen := make(map[toolSig]int)
+	for i := range steps {
+		step := &steps[i]
+		if step.Type != trajectory.StepToolCall {
+			continue
+		}
+		toolCallCount++
+		sig := toolSig{name: step.Action.ToolName, args: step.Action.ToolArgs}
+		seen[sig]++
+		if seen[sig] > 1 {
+			redundantCount++
+			stepScores = append(stepScores, trajectory.StepScore{
+				StepIndex: step.Index,
+				Score:     0.0,
+				Reason:    "redundant tool call",
+			})
+		} else {
+			stepScores = append(stepScores, trajectory.StepScore{
+				StepIndex: step.Index,
+				Score:     1.0,
+				Reason:    "unique tool call",
+			})
+		}
+	}
+	return stepScores, redundantCount, toolCallCount
+}
+
+// hasFinishStep reports whether any step in steps is a finish step.
+func hasFinishStep(steps []trajectory.Step) bool {
+	for i := range steps {
+		if steps[i].Type == trajectory.StepFinish {
+			return true
+		}
+	}
+	return false
 }

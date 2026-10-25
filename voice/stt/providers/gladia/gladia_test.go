@@ -789,26 +789,42 @@ func TestTranscribe_UploadHTTPFailed(t *testing.T) {
 	assert.Contains(t, err.Error(), "upload failed")
 }
 
+// liveDrainHandler is a fake Gladia endpoint: /live returns the websocket
+// URL, and /ws accepts the connection and drains client messages until the
+// connection closes.
+func liveDrainHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/live" {
+		json.NewEncoder(w).Encode(map[string]string{"url": "ws://" + r.Host + "/ws"}) //nolint:errcheck
+		return
+	}
+	if r.URL.Path != "/ws" {
+		return
+	}
+	conn, err := websocket.Accept(w, r, nil)
+	if err != nil {
+		return
+	}
+	defer conn.Close(websocket.StatusNormalClosure, "") //nolint:errcheck
+	for {
+		if _, _, err := conn.Read(r.Context()); err != nil {
+			return
+		}
+	}
+}
+
+// tickingAudioStream yields a one-byte chunk every 50ms until the consumer
+// stops.
+func tickingAudioStream(yield func([]byte, error) bool) {
+	for {
+		time.Sleep(50 * time.Millisecond)
+		if !yield([]byte{0x01}, nil) {
+			return
+		}
+	}
+}
+
 func TestTranscribeStream_ContextCancelledDuringStream(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/live" {
-			json.NewEncoder(w).Encode(map[string]string{"url": "ws://" + r.Host + "/ws"}) //nolint:errcheck
-			return
-		}
-		if r.URL.Path != "/ws" {
-			return
-		}
-		conn, err := websocket.Accept(w, r, nil)
-		if err != nil {
-			return
-		}
-		defer conn.Close(websocket.StatusNormalClosure, "") //nolint:errcheck
-		for {
-			if _, _, err := conn.Read(r.Context()); err != nil {
-				return
-			}
-		}
-	}))
+	srv := httptest.NewServer(http.HandlerFunc(liveDrainHandler))
 	defer srv.Close()
 
 	e, _ := New(stt.Config{Extra: map[string]any{"api_key": "k", "base_url": srv.URL}})
@@ -816,14 +832,7 @@ func TestTranscribeStream_ContextCancelledDuringStream(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
 
-	audioStream := func(yield func([]byte, error) bool) {
-		for {
-			time.Sleep(50 * time.Millisecond)
-			if !yield([]byte{0x01}, nil) {
-				return
-			}
-		}
-	}
+	audioStream := tickingAudioStream
 
 	var gotErr error
 	for _, err := range e.TranscribeStream(ctx, audioStream) {

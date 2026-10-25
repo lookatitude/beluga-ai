@@ -247,7 +247,7 @@ func (s *novaSession) readLoop(ctx context.Context) {
 		}
 
 		var event novaServerEvent
-		if jsonErr := json.Unmarshal(data, &event); jsonErr != nil {
+		if json.Unmarshal(data, &event) != nil {
 			continue
 		}
 

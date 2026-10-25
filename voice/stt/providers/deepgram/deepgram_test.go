@@ -295,66 +295,70 @@ func TestTranscribeRaw(t *testing.T) {
 	})
 }
 
+// serveDeepgramPartialAndFinal is a fake Deepgram streaming endpoint: it
+// reads one audio chunk, sends a partial and then a final result, and closes.
+func serveDeepgramPartialAndFinal(w http.ResponseWriter, r *http.Request) {
+	conn, err := websocket.Accept(w, r, nil)
+	if err != nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Read first audio chunk.
+	_, _, err = conn.Read(ctx)
+	if err != nil {
+		conn.Close(websocket.StatusNormalClosure, "")
+		return
+	}
+
+	// Send a partial result.
+	partial := deepgramStreamResponse{
+		Type:    "Results",
+		IsFinal: false,
+		Start:   0.0,
+	}
+	partial.Channel.Alternatives = []struct {
+		Transcript string         `json:"transcript"`
+		Confidence float64        `json:"confidence"`
+		Words      []deepgramWord `json:"words"`
+	}{
+		{Transcript: "hel", Confidence: 0.9},
+	}
+	data, _ := json.Marshal(partial)
+	conn.Write(ctx, websocket.MessageText, data)
+
+	// Send a final result.
+	final := deepgramStreamResponse{
+		Type:    "Results",
+		IsFinal: true,
+		Start:   0.0,
+	}
+	final.Channel.Alternatives = []struct {
+		Transcript string         `json:"transcript"`
+		Confidence float64        `json:"confidence"`
+		Words      []deepgramWord `json:"words"`
+	}{
+		{
+			Transcript: "hello world",
+			Confidence: 0.98,
+			Words: []deepgramWord{
+				{Word: "hello", Start: 0.1, End: 0.5, Confidence: 0.99},
+			},
+		},
+	}
+	data, _ = json.Marshal(final)
+	conn.Write(ctx, websocket.MessageText, data)
+
+	// Give client time to receive events before closing.
+	time.Sleep(100 * time.Millisecond)
+	conn.Close(websocket.StatusNormalClosure, "done")
+}
+
 func TestTranscribeStream(t *testing.T) {
 	t.Run("successful streaming", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			conn, err := websocket.Accept(w, r, nil)
-			if err != nil {
-				return
-			}
-
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-
-			// Read first audio chunk.
-			_, _, err = conn.Read(ctx)
-			if err != nil {
-				conn.Close(websocket.StatusNormalClosure, "")
-				return
-			}
-
-			// Send a partial result.
-			partial := deepgramStreamResponse{
-				Type:    "Results",
-				IsFinal: false,
-				Start:   0.0,
-			}
-			partial.Channel.Alternatives = []struct {
-				Transcript string         `json:"transcript"`
-				Confidence float64        `json:"confidence"`
-				Words      []deepgramWord `json:"words"`
-			}{
-				{Transcript: "hel", Confidence: 0.9},
-			}
-			data, _ := json.Marshal(partial)
-			conn.Write(ctx, websocket.MessageText, data)
-
-			// Send a final result.
-			final := deepgramStreamResponse{
-				Type:    "Results",
-				IsFinal: true,
-				Start:   0.0,
-			}
-			final.Channel.Alternatives = []struct {
-				Transcript string         `json:"transcript"`
-				Confidence float64        `json:"confidence"`
-				Words      []deepgramWord `json:"words"`
-			}{
-				{
-					Transcript: "hello world",
-					Confidence: 0.98,
-					Words: []deepgramWord{
-						{Word: "hello", Start: 0.1, End: 0.5, Confidence: 0.99},
-					},
-				},
-			}
-			data, _ = json.Marshal(final)
-			conn.Write(ctx, websocket.MessageText, data)
-
-			// Give client time to receive events before closing.
-			time.Sleep(100 * time.Millisecond)
-			conn.Close(websocket.StatusNormalClosure, "done")
-		}))
+		srv := httptest.NewServer(http.HandlerFunc(serveDeepgramPartialAndFinal))
 		defer srv.Close()
 
 		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")

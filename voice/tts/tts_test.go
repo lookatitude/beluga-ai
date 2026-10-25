@@ -294,35 +294,46 @@ func TestMockTTS_SynthesizeStream(t *testing.T) {
 	assert.Equal(t, []byte("chunk:world"), chunks[1])
 }
 
+// cancellableChunkStream yields up to 100 "chunk" values, emitting ctx.Err()
+// and stopping as soon as ctx is cancelled.
+func cancellableChunkStream(ctx context.Context) iter.Seq2[[]byte, error] {
+	return func(yield func([]byte, error) bool) {
+		for i := 0; i < 100; i++ {
+			select {
+			case <-ctx.Done():
+				yield(nil, ctx.Err())
+				return
+			default:
+				if !yield([]byte("chunk"), nil) {
+					return
+				}
+			}
+		}
+	}
+}
+
+// repeatedTextStream yields "text" n times with nil errors.
+func repeatedTextStream(n int) iter.Seq2[string, error] {
+	return func(yield func(string, error) bool) {
+		for i := 0; i < n; i++ {
+			if !yield("text", nil) {
+				return
+			}
+		}
+	}
+}
+
 func TestMockTTS_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	mock := &mockTTS{
 		synthesizeStreamFunc: func(ctx context.Context, textStream iter.Seq2[string, error], opts ...Option) iter.Seq2[[]byte, error] {
-			return func(yield func([]byte, error) bool) {
-				for i := 0; i < 100; i++ {
-					select {
-					case <-ctx.Done():
-						yield(nil, ctx.Err())
-						return
-					default:
-						if !yield([]byte("chunk"), nil) {
-							return
-						}
-					}
-				}
-			}
+			return cancellableChunkStream(ctx)
 		},
 	}
 
-	textStream := func(yield func(string, error) bool) {
-		for i := 0; i < 100; i++ {
-			if !yield("text", nil) {
-				return
-			}
-		}
-	}
+	textStream := repeatedTextStream(100)
 
 	count := 0
 	for chunk, err := range mock.SynthesizeStream(ctx, textStream) {

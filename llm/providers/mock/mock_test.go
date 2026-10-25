@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"iter"
 	"os"
 	"path/filepath"
 	"sync"
@@ -152,6 +153,37 @@ func TestGenerate_ContextCancelled(t *testing.T) {
 	}
 }
 
+// collectStreamChunks drains seq, failing the test on the first error.
+func collectStreamChunks(t *testing.T, seq iter.Seq2[schema.StreamChunk, error]) []schema.StreamChunk {
+	t.Helper()
+	var got []schema.StreamChunk
+	for chunk, err := range seq {
+		if err != nil {
+			t.Fatalf("Stream: %v", err)
+		}
+		got = append(got, chunk)
+	}
+	return got
+}
+
+// requireSingleChunk fails the test unless got holds exactly one chunk with
+// the given Delta, FinishReason and number of ToolCalls.
+func requireSingleChunk(t *testing.T, got []schema.StreamChunk, wantDelta, wantFinish string, wantCalls int) {
+	t.Helper()
+	if len(got) != 1 {
+		t.Fatalf("chunks=%d want 1", len(got))
+	}
+	if got[0].Delta != wantDelta {
+		t.Fatalf("Delta=%q want %q", got[0].Delta, wantDelta)
+	}
+	if got[0].FinishReason != wantFinish {
+		t.Fatalf("FinishReason=%q want %q", got[0].FinishReason, wantFinish)
+	}
+	if len(got[0].ToolCalls) != wantCalls {
+		t.Fatalf("ToolCalls=%d want %d", len(got[0].ToolCalls), wantCalls)
+	}
+}
+
 func TestStream_EmitsSingleChunkAndFinish(t *testing.T) {
 	t.Parallel()
 
@@ -181,25 +213,8 @@ func TestStream_EmitsSingleChunkAndFinish(t *testing.T) {
 			if err != nil {
 				t.Fatalf("New: %v", err)
 			}
-			var got []schema.StreamChunk
-			for chunk, err := range m.Stream(context.Background(), nil) {
-				if err != nil {
-					t.Fatalf("Stream: %v", err)
-				}
-				got = append(got, chunk)
-			}
-			if len(got) != 1 {
-				t.Fatalf("chunks=%d want 1", len(got))
-			}
-			if got[0].Delta != tc.wantDelta {
-				t.Fatalf("Delta=%q want %q", got[0].Delta, tc.wantDelta)
-			}
-			if got[0].FinishReason != tc.wantFinish {
-				t.Fatalf("FinishReason=%q want %q", got[0].FinishReason, tc.wantFinish)
-			}
-			if len(got[0].ToolCalls) != tc.wantCalls {
-				t.Fatalf("ToolCalls=%d want %d", len(got[0].ToolCalls), tc.wantCalls)
-			}
+			got := collectStreamChunks(t, m.Stream(context.Background(), nil))
+			requireSingleChunk(t, got, tc.wantDelta, tc.wantFinish, tc.wantCalls)
 		})
 	}
 }

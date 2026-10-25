@@ -124,20 +124,8 @@ func validateObject(value any, sch map[string]any, strict bool, path string) []s
 		return []string{fmt.Sprintf("%s: expected object, got %T", path, value)}
 	}
 
-	var errs []string
-
 	// Check required fields.
-	if required, ok := sch["required"].([]any); ok {
-		for _, r := range required {
-			name, _ := r.(string)
-			if name == "" {
-				continue
-			}
-			if _, exists := obj[name]; !exists {
-				errs = append(errs, fmt.Sprintf("%s: missing required field %q", path, name))
-			}
-		}
-	}
+	errs := missingRequiredFields(obj, sch, path)
 
 	// Validate properties.
 	properties, _ := sch["properties"].(map[string]any)
@@ -154,22 +142,52 @@ func validateObject(value any, sch map[string]any, strict bool, path string) []s
 	}
 
 	// Check additionalProperties when strict.
-	apVal, apExists := sch["additionalProperties"]
-	rejectAdditional := strict
-	if apExists {
-		if apBool, ok := apVal.(bool); ok {
-			rejectAdditional = !apBool
-		}
+	if rejectsAdditional(sch, strict) && properties != nil {
+		errs = append(errs, unexpectedProperties(obj, properties, path)...)
 	}
 
-	if rejectAdditional && properties != nil {
-		for key := range obj {
-			if _, defined := properties[key]; !defined {
-				errs = append(errs, fmt.Sprintf("%s: unexpected property %q", path, key))
-			}
+	return errs
+}
+
+// missingRequiredFields reports every name in sch["required"] that is absent
+// from obj.
+func missingRequiredFields(obj, sch map[string]any, path string) []string {
+	required, ok := sch["required"].([]any)
+	if !ok {
+		return nil
+	}
+	var errs []string
+	for _, r := range required {
+		name, _ := r.(string)
+		if name == "" {
+			continue
+		}
+		if _, exists := obj[name]; !exists {
+			errs = append(errs, fmt.Sprintf("%s: missing required field %q", path, name))
 		}
 	}
+	return errs
+}
 
+// rejectsAdditional reports whether properties not declared in the schema
+// must be rejected. An explicit boolean additionalProperties wins; otherwise
+// strict mode decides.
+func rejectsAdditional(sch map[string]any, strict bool) bool {
+	if apBool, ok := sch["additionalProperties"].(bool); ok {
+		return !apBool
+	}
+	return strict
+}
+
+// unexpectedProperties reports every key of obj that is not declared in
+// properties.
+func unexpectedProperties(obj, properties map[string]any, path string) []string {
+	var errs []string
+	for key := range obj {
+		if _, defined := properties[key]; !defined {
+			errs = append(errs, fmt.Sprintf("%s: unexpected property %q", path, key))
+		}
+	}
 	return errs
 }
 

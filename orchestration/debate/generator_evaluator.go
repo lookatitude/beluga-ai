@@ -208,8 +208,6 @@ func (ge *GeneratorEvaluator) Stream(ctx context.Context, input any, opts ...cor
 			return
 		}
 
-		start := time.Now()
-		var allCritiques [][]Critique
 		currentPrompt := prompt
 		lastResponse := ""
 
@@ -221,61 +219,14 @@ func (ge *GeneratorEvaluator) Stream(ctx context.Context, input any, opts ...cor
 			default:
 			}
 
-			// Generate.
-			response, err := ge.generator.Invoke(ctx, currentPrompt)
-			if err != nil {
-				yield(nil, ge.handleError(ctx, core.Errorf(core.ErrProviderDown, "generator_evaluator: generation iteration %d: %w", iteration+1, err)))
+			response, critiques, ok := ge.streamIteration(ctx, prompt, currentPrompt, iteration, yield)
+			if !ok {
 				return
 			}
 			lastResponse = response
 
-			if !yield(GeneratorEvaluatorEvent{
-				Type:      GEEventGenerate,
-				Iteration: iteration + 1,
-				Content:   response,
-			}, nil) {
-				return
-			}
-
-			// Evaluate.
-			critiques, err := ge.evaluate(ctx, prompt, response)
-			if err != nil {
-				yield(nil, ge.handleError(ctx, core.Errorf(core.ErrProviderDown, "generator_evaluator: evaluation iteration %d: %w", iteration+1, err)))
-				return
-			}
-			allCritiques = append(allCritiques, critiques)
-
-			if !yield(GeneratorEvaluatorEvent{
-				Type:      GEEventEvaluate,
-				Iteration: iteration + 1,
-				Critiques: critiques,
-			}, nil) {
-				return
-			}
-
-			approved := ge.isApproved(critiques)
-			if approved {
-				if !yield(GeneratorEvaluatorEvent{
-					Type:      GEEventApproved,
-					Iteration: iteration + 1,
-					Content:   response,
-					Approved:  true,
-				}, nil) {
-					return
-				}
-
-				result := &GeneratorEvaluatorResult{
-					FinalResponse: response,
-					Iterations:    iteration + 1,
-					Approved:      true,
-					AllCritiques:  allCritiques,
-					Duration:      time.Since(start),
-				}
-				yield(GeneratorEvaluatorEvent{
-					Type:    GEEventComplete,
-					Content: response,
-				}, nil)
-				_ = result // Event carries sufficient info.
+			if ge.isApproved(critiques) {
+				yieldApproved(yield, iteration, response)
 				return
 			}
 
@@ -296,6 +247,59 @@ func (ge *GeneratorEvaluator) Stream(ctx context.Context, input any, opts ...cor
 			Content: lastResponse,
 		}, nil)
 	}
+}
+
+// streamIteration runs one generate+evaluate step for Stream, yielding the
+// generate and evaluate events. ok is false when streaming must stop, either
+// because an error was yielded or the consumer stopped iteration.
+func (ge *GeneratorEvaluator) streamIteration(ctx context.Context, prompt, currentPrompt string, iteration int, yield func(any, error) bool) (response string, critiques []Critique, ok bool) {
+	// Generate.
+	response, err := ge.generator.Invoke(ctx, currentPrompt)
+	if err != nil {
+		yield(nil, ge.handleError(ctx, core.Errorf(core.ErrProviderDown, "generator_evaluator: generation iteration %d: %w", iteration+1, err)))
+		return response, nil, false
+	}
+
+	if !yield(GeneratorEvaluatorEvent{
+		Type:      GEEventGenerate,
+		Iteration: iteration + 1,
+		Content:   response,
+	}, nil) {
+		return response, nil, false
+	}
+
+	// Evaluate.
+	critiques, err = ge.evaluate(ctx, prompt, response)
+	if err != nil {
+		yield(nil, ge.handleError(ctx, core.Errorf(core.ErrProviderDown, "generator_evaluator: evaluation iteration %d: %w", iteration+1, err)))
+		return response, nil, false
+	}
+
+	if !yield(GeneratorEvaluatorEvent{
+		Type:      GEEventEvaluate,
+		Iteration: iteration + 1,
+		Critiques: critiques,
+	}, nil) {
+		return response, critiques, false
+	}
+	return response, critiques, true
+}
+
+// yieldApproved yields the approved event followed by the completion event,
+// unless the consumer stops iteration after the approved event.
+func yieldApproved(yield func(any, error) bool, iteration int, response string) {
+	if !yield(GeneratorEvaluatorEvent{
+		Type:      GEEventApproved,
+		Iteration: iteration + 1,
+		Content:   response,
+		Approved:  true,
+	}, nil) {
+		return
+	}
+	yield(GeneratorEvaluatorEvent{
+		Type:    GEEventComplete,
+		Content: response,
+	}, nil)
 }
 
 // evaluate runs all evaluators against the response.
