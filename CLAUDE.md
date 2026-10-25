@@ -6,7 +6,7 @@ Go-native agentic AI framework. `github.com/lookatitude/beluga-ai/v2`. Go 1.23+.
 
 This repo owns the **engineering layer** of the Beluga project: code, tech docs, and releases. It does **not** own website content, marketing, blog posts, runnable example programs, or cross-repo strategy — those live in sibling repos (`beluga-website`, `beluga-examples`) and in the private workspace repo (`beluga.git`).
 
-When working on cross-repo concerns (release flow fan-out, website dispatch, shared incident learnings, feature-brief coordination), consult the **workspace wiki** at `../.wiki/index.md` and the workspace `CLAUDE.md` at `../CLAUDE.md` — they're only visible when this repo is checked out inside the multi-repo workspace. Anything code-grounded or framework-specific stays here, in this repo's `.wiki/` and `docs/`.
+When working on cross-repo concerns (release flow fan-out, website dispatch, shared incident learnings, feature-brief coordination), consult the **workspace wiki** at `../.guild/wiki/context/workspace-router.md` and the workspace `CLAUDE.md` at `../CLAUDE.md` — they're only visible when this repo is checked out inside the multi-repo workspace. Anything code-grounded or framework-specific stays here, in this repo's `.wiki/` and `docs/`.
 
 ## Critical rules
 
