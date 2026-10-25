@@ -8,8 +8,6 @@
 
 A single request travels through every layer of Beluga. This document traces exactly which component handles it at each step, which events are emitted, and where control transfers.
 
-![Request lifecycle](../beluga_request_lifecycle.svg)
-
 ## The complete text chat lifecycle
 
 ```mermaid

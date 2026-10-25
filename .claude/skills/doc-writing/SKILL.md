@@ -29,5 +29,5 @@ description: Documentation writing patterns for Beluga AI v2. Use when creating 
 
 - No phase references or timeline language.
 - Don't duplicate architecture docs — link to them.
-- Don't list every provider — point to `docs/providers.md`.
+- Don't list every provider — point to `docs/reference/providers.md`.
 - Don't show incomplete examples that won't compile.

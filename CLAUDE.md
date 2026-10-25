@@ -11,7 +11,7 @@ When working on cross-repo concerns (release flow fan-out, website dispatch, sha
 ## Critical rules
 
 1. Streaming uses `iter.Seq2[T, error]` in public APIs — never channels. `Invoke()` = stream + collect.
-2. Every extensible package: Interface → Registry (`Register`/`New`/`List`) → Hooks → Middleware (`func T → T`).
+2. Every extensible package: Interface → Registry (`Register`/`New`/`List`) → Hooks → Middleware (`func T → T`). (`tool` uses an instance `tool.Registry` instead of package-level `Register`/`New`.)
 3. Providers auto-register in `init()` + `Register()`. No config files to edit.
 4. Library never imports `k8s/`. Kubernetes is an optional overlay.
 5. Errors: `core.Error` with typed `ErrorCode`. Check `IsRetryable()` before retry.
@@ -34,7 +34,7 @@ go build ./...
 go vet ./...
 go test -race ./...
 go mod tidy && git diff --exit-code go.mod go.sum
-gofmt -l . | grep -v ".claude/worktrees"
+test -z "$(gofmt -l $(git ls-files '*.go'))"   # fails if any tracked file is unformatted
 golangci-lint run ./...
 gosec -quiet ./...
 govulncheck ./...
@@ -57,15 +57,15 @@ before commit. See `.claude/rules/go-packages.md` for gosec focus areas.
 | Command | Purpose |
 |---|---|
 | `/plan $FEATURE` | Architect + Researcher design loop → implementation plan with acceptance criteria |
-| `/develop $TASK` | Developer-go Red/Green TDD → QA review → fix loop |
+| `/develop $TASK` | Implement a Linear sub-issue or brief: architect → developer-go (Red/Green TDD) → reviewer-security → reviewer-qa → PR |
 | `/consult <specialist> <question>` | Bounce a design question to a workspace specialist mid-flow; produces citable consultation in `docs/consultations/`. |
 | `/security-review $PATH` | 2 consecutive clean passes required |
 | `/qa-review $PATH` | Standalone QA review |
 | `/doc-check $PATH` | Verify examples compile and docs match current API |
 | `/document $TARGET` | Write package docs, tutorials, API reference |
 | `/dependency-audit` | gosec + govulncheck + update safe deps |
-| `/new-feature $DESC` | Composite pipeline: plan → develop → security-review → document |
-| `/learn $DESCRIPTION` | Capture a correction into `.guild/wiki/corrections.md` |
+| `/new-feature $DESC` | Composite pipeline: plan → develop → security-review → document → doc-check |
+| `/learn $DESCRIPTION` | Capture a correction into `.guild/wiki/corrections/<category>.md` |
 | `/wiki-learn [$PATH\|all]` | Extract patterns and architecture from the codebase into `.guild/wiki/` |
 | `/arch-validate $PACKAGE` | Validate code against architecture invariants |
 | `/arch-update $CHANGE` | Update architecture docs + ADRs after significant changes |
@@ -93,10 +93,10 @@ Marketing and content commands (`/promote`, `/blog`) and `/notion-sync` live in 
 
 Website (`developer-web`, `marketeer`) and Notion (`notion-publisher` in website, `notion-syncer` in workspace) agents live in their respective sibling repos. They are reachable when this repo is checked out inside the multi-repo Beluga workspace, but not invoked by framework commands.
 
-## Claude 4.x agent prompts
+## Claude 5 agent prompts
 
-Agents under `.claude/agents/` include a **Prompting baseline (Claude 4.x)** section aligned with Anthropic’s migration-era guidance for **instructions** (not Go runtime defaults): literal acceptance criteria, concise defaults, tool use when it reduces error, and delegation only when the workspace or command explicitly requires isolation. Prefer stating **Done when …** in plans and reviews so downstream agents (and humans) do not have to infer scope.
+Agents under `.claude/agents/` include a **Prompting baseline (Claude 5)** section for the current model family (Opus 5.5, Sonnet 5.5, Haiku 5.5), aligned with Anthropic’s prompting guidance for **instructions** (not Go runtime defaults): literal acceptance criteria, concise defaults, tool use when it reduces error, and delegation only when the workspace or command explicitly requires isolation. Prefer stating **Done when …** in plans and reviews so downstream agents (and humans) do not have to infer scope.
 
 ## Learning pipeline
 
-Per-agent `.claude/agents/<name>/rules/` (automatic, fast) → `.guild/wiki/corrections.md` (curated) → `.claude/rules/<file>.md` (enforced) → `CLAUDE.md` (always-loaded, human-approved).
+`/learn` or a reviewer records a correction in `.guild/wiki/corrections/<category>.md` (curated; see `corrections/README.md` for categories and the next `C-NNN` ID) → recurring ones become `.claude/rules/<file>.md` (enforced) → the most important reach `CLAUDE.md` (always-loaded, human-approved).

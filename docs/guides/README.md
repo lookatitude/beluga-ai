@@ -16,9 +16,9 @@ Task-oriented how-to documents. Each guide assumes you've read [Architecture Ove
 
 ## Deployment
 
-- [Deploy on Docker](./deploy-docker.md) — Docker Compose with multiple agents, Redis, and NATS.
-- [Deploy on Kubernetes](./deploy-kubernetes.md) — CRDs, operator, HPA, and the reconcile loop.
-- [Deploy on Temporal](./deploy-temporal.md) — durable agent workflows with crash recovery.
+- [Deploy on Docker](./deploy-docker.md) — a Runner-hosted agent with SSE, an A2A card, and graceful shutdown in Docker Compose.
+- [Deploy on Kubernetes](./deploy-kubernetes.md) — the CRDs and the reconciler that computes Deployment, Service and HPA (no controller binary yet).
+- [Deploy on Temporal](./deploy-temporal.md) — an approval workflow on the workflow API, and the current state of the Temporal executor.
 
 ## Which guide do I need?
 

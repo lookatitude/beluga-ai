@@ -18,7 +18,7 @@ recall_importance: 3
 
 > Migrated from `.wiki/patterns/streaming.md` on 2026-10-25 (Guild 3.x; structure kept). Verbatim original: `.guild/knowledge/sources/wiki-patterns-streaming/original.md` (sha256 `7c40bb29baac…`).
 
-Go 1.23 iter.Seq2 range-over-func producers for chunk-based streaming with internal channels.
+iter.Seq2 range-over-func producers for chunk-based streaming with internal channels.
 
 ## Canonical Example
 

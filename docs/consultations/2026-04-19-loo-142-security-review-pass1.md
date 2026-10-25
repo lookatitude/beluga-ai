@@ -1,4 +1,6 @@
 # Security Review — DX-1 S1 CLI Foundation — Pass 1
+
+> **Historical record.** This consultation captures a design discussion at the date in its file name. Its code sketches predate the shipped API (some use the pre-`/v2` module path) and are not maintained; see `docs/reference/interfaces.md` and the guides for current usage.
 Branch: feat/loo-142-cli-foundation-cobra-version-providers
 Reviewer: reviewer-security
 Date: 2026-04-19

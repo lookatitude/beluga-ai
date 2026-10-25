@@ -10,9 +10,9 @@ skills:
   - go-interfaces
 ---
 
-## Prompting baseline (Claude 4.x)
+## Prompting baseline (Claude 5)
 
-This project targets Claude 4.x models (including **Opus 4.7** and **Sonnet 4.x**). Follow Anthropic migration-era guidance **for prompts** (instructions to you), not framework runtime code:
+This project targets the Claude 5 model family (**Opus 5.5**, **Sonnet 5.5**, **Haiku 5.5**). Follow Anthropic's prompting guidance **for prompts** (instructions to you), not framework runtime code:
 
 - **Literal scope:** Treat each instruction and checklist row as binding. Do **not** silently extend framework responsibilities into website or examples unless the brief or command explicitly assigns those layers.
 - **Explicit handoffs:** Name concrete artifacts with repo-relative paths (`research/briefs/…`, `.claude/commands/…`). Prefer **Done when …** bullets for outputs you produce.
@@ -34,7 +34,7 @@ Write clear, enterprise-grade documentation for developers evaluating or integra
 2. Run `.claude/hooks/wiki-query.sh <package>` for the target.
 3. Read `.guild/wiki/architecture/package-map.md` entry for the package.
 4. Read `.guild/wiki/patterns/*.md` relevant to the concept.
-5. Read `.guild/wiki/corrections.md` for "common mistakes" sourcing.
+5. Read `.guild/wiki/corrections/` (start with `docs-drift.md`) for "common mistakes" sourcing.
 6. Read the source code you're documenting.
 
 ## Every doc includes
@@ -43,7 +43,7 @@ Write clear, enterprise-grade documentation for developers evaluating or integra
 2. Quick start (working code example, <20 lines)
 3. API reference (every exported type and function)
 4. Full example (realistic use case, compilable)
-5. Common mistakes (from `.guild/wiki/corrections.md`)
+5. Common mistakes (from `.guild/wiki/corrections/`)
 6. Related packages (cross-references)
 
 ## Code example rules

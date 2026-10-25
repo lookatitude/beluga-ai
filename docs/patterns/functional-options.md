@@ -19,93 +19,78 @@ Constructors accept variadic `Option` values rather than a configuration struct.
 
 ## How it works
 
+From `agent/option.go` and `agent/base.go` (trimmed to four of the fields):
+
 ```go
-// agent/base.go — conceptual
-package agent
-
-type config struct {
-    id        string
-    persona   Persona
-    llm       llm.Model
-    memory    memory.Memory
-    planner   Planner
-    hooks     Hooks
-    tools     []Tool
-    handoffs  []Agent
+// agentConfig holds the configuration applied by options.
+type agentConfig struct {
+    llm           llm.ChatModel
+    tools         []tool.Tool
+    persona       Persona
+    maxIterations int
+    // ... timeout, hooks, handoffs, memory, planner, children, metadata, contract
 }
 
-type Option func(*config)
+// Option configures an agent.
+type Option func(*agentConfig)
 
-func WithID(id string) Option {
-    return func(c *config) { c.id = id }
+func defaultConfig() agentConfig {
+    return agentConfig{
+        maxIterations: 10,
+        timeout:       5 * time.Minute,
+        plannerName:   "react",
+    }
 }
 
+// WithLLM sets the language model for the agent.
+func WithLLM(model llm.ChatModel) Option {
+    return func(c *agentConfig) { c.llm = model }
+}
+
+// WithPersona sets the agent's persona.
 func WithPersona(p Persona) Option {
-    return func(c *config) { c.persona = p }
+    return func(c *agentConfig) { c.persona = p }
 }
 
-func WithLLM(m llm.Model) Option {
-    return func(c *config) { c.llm = m }
-}
-
-func WithMemory(m memory.Memory) Option {
-    return func(c *config) { c.memory = m }
-}
-
-func NewLLMAgent(opts ...Option) *LLMAgent {
-    // defaults
-    c := config{
-        id:      generateID(),
-        persona: Persona{Role: "assistant"},
-        hooks:   Hooks{},
-    }
-    // apply overrides
+// New creates a new BaseAgent with the given ID and options.
+func New(id string, opts ...Option) *BaseAgent {
+    cfg := defaultConfig()
     for _, opt := range opts {
-        opt(&c)
+        opt(&cfg)
     }
-    // validate
-    if c.llm == nil {
-        panic("agent: WithLLM is required") // or return error from a NewX that returns error
-    }
-    return &LLMAgent{
-        BaseAgent: BaseAgent{
-            id:      c.id,
-            persona: c.persona,
-            hooks:   c.hooks,
-        },
-        llm:     c.llm,
-        memory:  c.memory,
-        planner: c.planner,
-    }
+    return &BaseAgent{id: id, config: cfg}
 }
 ```
+
+The required value (the ID) is a positional argument; everything else is an option with a default.
 
 User code:
 
 ```go
-a := agent.NewLLMAgent(
-    agent.WithID("research-assistant"),
+a := agent.New("research-assistant",
     agent.WithLLM(model),
-    agent.WithMemory(mem),
-    agent.WithPlanner(planner.ReAct()),
+    agent.WithTools(tools),
+    agent.WithPlannerName("reflexion"),
+    agent.WithMaxIterations(5),
 )
 ```
 
 ## Where it's used
 
-Every constructor in Beluga:
+Most constructors in Beluga:
 
-- `agent.NewLLMAgent`, `agent.NewSequentialAgent`, etc.
-- `runtime.NewRunner`
-- `llm.New` (via `Config` struct that itself uses options inside providers)
-- `tool.New*`
-- `memory.NewComposite`
-- `rag.NewRetriever`
-- `guard.New*`
+- `agent.New` (`agent.With*`)
+- `runtime.NewRunner` (`runtime.With*`), `runtime.NewTeam`
+- `hitl.NewManager` (`hitl.WithNotifier`, `hitl.WithTimeout`)
+- `workflow.NewExecutor` (`workflow.WithStore`, `workflow.WithExecutorHooks`)
+- `guard.NewPipeline` (`guard.Input`, `guard.Output`, `guard.Tool`)
+- `cost.NewInMemoryTracker`, `audit.NewInMemoryStore`
+
+Registry constructors (`llm.New`, `memory.New`, `rag/vectorstore.New`, ...) take a `config.ProviderConfig` struct instead, because the config is often loaded from a file.
 
 ## Common mistakes
 
-- **Constructor that doesn't work with zero arguments.** If `NewX()` panics, the pattern is broken. Required values should be top-level positional arguments, with `With*` options only for the optional ones. (e.g., `NewLLMAgent(model llm.Model, opts ...Option)`.)
+- **Constructor that doesn't work with zero arguments.** If `NewX()` panics, the pattern is broken. Required values should be top-level positional arguments, with `With*` options only for the optional ones (e.g. `agent.New(id string, opts ...Option)`).
 - **Silent option conflicts.** If `WithPlanner(a)` and `WithPlanner(b)` are both passed, the last wins without a warning. Document this or return an error.
 - **Exposing the internal config struct.** Keep `config` unexported. If users can import it, you've lost the "grows without breaking" benefit.
 - **Options that mutate shared state.** An `Option` should set fields on the local config, not touch package-level variables.

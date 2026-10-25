@@ -6,7 +6,7 @@
 
 ## Overview
 
-LLM providers rate limit. Networks fail. Tools time out. Beluga treats these as first-class concerns and ships four resilience primitives as middleware: **retry**, **rate limit**, **circuit breaker**, and **hedged requests**. All four compose via [`ApplyMiddleware`](./03-extensibility-patterns.md#ring-4--middleware).
+LLM providers rate limit. Networks fail. Tools time out. Beluga ships four resilience primitives in `resilience/`: **retry** (`Retry`), **rate limit** (`RateLimiter`), **circuit breaker** (`CircuitBreaker`) and **hedged requests** (`Hedge`). They are generic helpers that wrap any call, not package middleware. Separately, `llm` ships `WithProviderLimits` and `WithFallback` middleware, and `tool` ships `WithTimeout` and `WithRetry` middleware.
 
 ## Retry
 
@@ -15,30 +15,28 @@ graph LR
   C[Call] --> A1[Attempt 1]
   A1 -->|success| Done
   A1 -->|non-retryable error| Fail
-  A1 -->|retryable error| Wait1[Backoff 100ms ± jitter]
+  A1 -->|retryable error| Wait1[Backoff 500ms ± jitter]
   Wait1 --> A2[Attempt 2]
-  A2 --> Wait2[Backoff 200ms ± jitter]
+  A2 --> Wait2[Backoff 1s ± jitter]
   Wait2 --> A3[Attempt 3]
   A3 -->|success| Done
   A3 -->|fail| Fail[Max attempts exceeded]
 ```
 
-Retry middleware wraps any `Runnable` and retries on retryable errors. Retryability is determined by `core.IsRetryable(err)`: only `ErrRateLimit`, `ErrTimeout`, and `ErrProviderDown` are retryable (see [`.guild/wiki/architecture/invariants.md#2`](../../.guild/wiki/architecture/invariants.md)).
+`resilience.Retry[T]` wraps any `func(ctx) (T, error)` and retries on retryable errors. Retryability is determined by `core.IsRetryable(err)`: only `ErrRateLimit`, `ErrTimeout`, and `ErrProviderDown` are retryable. `RetryPolicy.RetryableErrors` adds codes to that set (see [`.guild/wiki/architecture/invariants.md#2`](../../.guild/wiki/architecture/invariants.md)).
 
-- **Exponential backoff** with jitter: `min(base * 2^attempt, max) * (1 + random jitter)`.
+- **Exponential backoff** with jitter: the delay starts at `InitialBackoff`, grows by `BackoffFactor` up to `MaxBackoff`, and `Jitter` adds ±25%.
 - **Context respected**: every iteration checks `ctx.Done()` before sleeping and before the next attempt.
-- **Bounded**: default 3 attempts, configurable per call.
+- **Bounded**: `DefaultRetryPolicy()` is 3 attempts, 500ms initial backoff, 30s max, factor 2, jitter on.
 
 ```go
-wrapped := llm.ApplyMiddleware(model,
-    llm.WithRetry(llm.RetryConfig{
-        MaxAttempts: 3,
-        BaseDelay:   100 * time.Millisecond,
-        MaxDelay:    5 * time.Second,
-        Jitter:      0.2,
-    }),
-)
+resp, err := resilience.Retry(ctx, resilience.DefaultRetryPolicy(),
+    func(ctx context.Context) (*schema.AIMessage, error) {
+        return model.Generate(ctx, msgs)
+    })
 ```
+
+`tool.WithRetry(n)` is a simpler middleware for tools: it retries retryable errors up to `n` attempts with no backoff.
 
 **Invariant:** retry never retries `ErrAuth`, `ErrInvalidInput`, `ErrGuardBlocked`, or `ErrBudgetExhausted`. These are permanent; retrying wastes time and money.
 
@@ -63,14 +61,20 @@ Three buckets per provider:
 
 Why three? Different providers gate on different things. Anthropic historically gates on TPM; Google gates on RPM; self-hosted often gates on concurrency. All three coexist because the rate limiter takes the tightest constraint.
 
+`resilience.RateLimiter` enforces all three (`Allow`/`Wait` per request, `ConsumeTokens` for TPM, `Release` when a call finishes). The `llm.WithProviderLimits` middleware enforces RPM, TPM and concurrency. TPM is tracked from each response's `Usage.TotalTokens` (for streams, from the chunks that carry usage): a new request is admitted only while the tokens used in the trailing minute are below the limit.
+
 ```go
-wrapped := llm.ApplyMiddleware(model,
-    llm.WithRateLimit(llm.RateLimitConfig{
-        RPM:           600,
-        TPM:           150_000,
-        MaxConcurrent: 20,
-    }),
+// Middleware form (RPM + concurrency):
+model = llm.ApplyMiddleware(model,
+    llm.WithProviderLimits(llm.ProviderLimits{RPM: 600, MaxConcurrent: 20}),
 )
+
+// Helper form (RPM + TPM + concurrency):
+limiter := resilience.NewRateLimiter(resilience.ProviderLimits{RPM: 600, TPM: 150_000, MaxConcurrent: 20})
+if err := limiter.Allow(ctx); err != nil {
+    return err
+}
+defer limiter.Release()
 ```
 
 ## Circuit breaker
@@ -78,7 +82,7 @@ wrapped := llm.ApplyMiddleware(model,
 ```mermaid
 stateDiagram-v2
   [*] --> Closed
-  Closed --> Open: N failures in window
+  Closed --> Open: N consecutive failures
   Open --> HalfOpen: after cooldown
   HalfOpen --> Closed: success
   HalfOpen --> Open: failure
@@ -89,6 +93,14 @@ Three states:
 - **Closed** — normal operation, calls pass through.
 - **Open** — too many recent failures, fail fast without calling the underlying service.
 - **Half-Open** — cooldown elapsed; let one call through to probe. If it succeeds, close the circuit. If it fails, re-open.
+
+```go
+breaker := resilience.NewCircuitBreaker(5, 30*time.Second) // failure threshold, reset timeout
+out, err := breaker.Execute(ctx, func(ctx context.Context) (any, error) {
+    return model.Generate(ctx, msgs)
+})
+// While open, Execute returns resilience.ErrCircuitOpen without calling fn.
+```
 
 Why circuit break instead of just retry? If the provider is down, retrying every request makes it worse (you pile work on a sick service). Circuit breaking says "don't even try for the next 30 seconds, the provider is visibly broken", freeing the caller to fail fast and maybe fall back to a different provider.
 
@@ -111,36 +123,45 @@ sequenceDiagram
   end
 ```
 
-Used for tail-latency cutoff. If the primary request is still running at `hedge_delay`, fire a parallel fallback request. Whichever finishes first wins; the other is cancelled.
+Used for tail-latency cutoff. If the primary request is still running at the hedge delay, fire a parallel fallback request. Whichever succeeds first wins; the other is cancelled.
+
+```go
+resp, err := resilience.Hedge(ctx,
+    func(ctx context.Context) (*schema.AIMessage, error) { return primary.Generate(ctx, msgs) },
+    func(ctx context.Context) (*schema.AIMessage, error) { return backup.Generate(ctx, msgs) },
+    500*time.Millisecond,
+)
+```
 
 Best for tools like search or retrieval where the median is fast but the tail is long. Costs up to 2× the base rate for calls that exceed the hedge delay, but dramatically cuts P99 latency.
 
 ## Composition order matters
 
 ```go
-wrapped := llm.ApplyMiddleware(model,
-    llm.WithGuardrails(guards),   // outermost: see raw input
+breaker := resilience.NewCircuitBreaker(5, 30*time.Second)
+
+model = llm.ApplyMiddleware(model,
+    llm.WithTracing(),             // outermost: one span per call
     llm.WithLogging(logger),
-    llm.WithMetrics(),
-    llm.WithCircuitBreaker(...),
-    llm.WithRateLimit(...),
-    llm.WithRetry(...),
-    llm.WithHedge(...),           // innermost: wraps the actual call
+    llm.WithProviderLimits(limits), // gate before calling out
 )
+
+resp, err := resilience.Retry(ctx, policy, func(ctx context.Context) (*schema.AIMessage, error) {
+    out, err := breaker.Execute(ctx, func(ctx context.Context) (any, error) {
+        return model.Generate(ctx, msgs)
+    })
+    if err != nil {
+        return nil, err
+    }
+    return out.(*schema.AIMessage), nil
+})
 ```
 
-Reading outside-in: guardrails inspect before anything happens; logging and metrics record; circuit breaker short-circuits if the service is down; rate limit gates; retry wraps individual attempts; hedge fires parallel attempts. This is the recommended order. See [03 — Extensibility Patterns](./03-extensibility-patterns.md#ring-4--middleware) for why outside-in.
+Reading outside-in: retry wraps individual attempts; the circuit breaker short-circuits an attempt when the service is down (an open-circuit error is not retryable, so retry stops); tracing and logging record each attempt; the rate limit gates it. Run guards (`guard.Pipeline`) on the input before this and on the output after. See [03 — Extensibility Patterns](./03-extensibility-patterns.md#ring-4--middleware) for why outside-in.
 
 ## Observability of resilience
 
-Every resilience middleware emits metrics and spans:
-
-- `llm_retries_total{provider,model,outcome}` — retry counts.
-- `rate_limit_wait_seconds` — histogram of wait times.
-- `circuit_breaker_state{provider,state}` — current state gauge.
-- `hedged_requests_won{provider,result}` — which side won the race.
-
-Combined with distributed tracing ([DOC-14](./14-observability.md)), you can drill into any slow or failing turn and see exactly which resilience layer kicked in.
+The `resilience` helpers do not emit metrics or spans themselves. Wrap the call in `llm.WithTracing()` (or your own span) so each attempt shows up in traces ([DOC-14](./14-observability.md)), and use `CircuitBreaker.State()` if you want to export breaker state as a gauge.
 
 ## Common mistakes
 

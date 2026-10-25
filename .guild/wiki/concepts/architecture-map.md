@@ -25,7 +25,7 @@ graph and onboarding tour were **not** built at init; run `/guild:learn` to buil
 
 ## What this repo is
 
-- **[high]** `beluga-ai`: the Go-native agentic AI framework, module `github.com/lookatitude/beluga-ai/v2`, Go 1.23+. The engineering layer of the Beluga project (code, tech docs, releases). Source: `CLAUDE.md` §Project scope.
+- **[high]** `beluga-ai`: the Go-native agentic AI framework, module `github.com/lookatitude/beluga-ai/v2`, Go 1.26+. The engineering layer of the Beluga project (code, tech docs, releases). Source: `CLAUDE.md` §Project scope.
 - **[high]** Public streaming APIs use `iter.Seq2[T, error]`, never channels; `Invoke()` is stream plus collect. Source: `CLAUDE.md` §Critical rules.
 - **[high]** Every extensible package follows interface → registry (`Register`/`New`/`List`) → hooks → middleware; providers self-register in `init()`. Source: `CLAUDE.md` §Critical rules.
 

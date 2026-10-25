@@ -124,33 +124,39 @@ Run N diverse agents (different planners, different models) in parallel. Aggrega
 ## The Planner interface
 
 ```go
-// agent/planner.go — conceptual
+// agent/planner.go (excerpt, doc comments trimmed)
 type Planner interface {
     Plan(ctx context.Context, state PlannerState) ([]Action, error)
-    Replan(ctx context.Context, state PlannerState, obs Observation) ([]Action, error)
+    Replan(ctx context.Context, state PlannerState) ([]Action, error)
 }
 
 type PlannerState struct {
     Input        string
     Messages     []schema.Message
-    Tools        []Tool
-    Observations []Observation
+    Tools        []tool.Tool
+    Observations []Observation // results of previously executed actions
     Iteration    int
     Metadata     map[string]any // planner-specific state
 }
 
-type Action interface {
-    isAction()
-}
+type ActionType string
 
-type ActionTool struct {
-    Tool  string
-    Input map[string]any
+const (
+    ActionTool    ActionType = "tool"
+    ActionRespond ActionType = "respond"
+    ActionFinish  ActionType = "finish"
+    ActionHandoff ActionType = "handoff"
+)
+
+type Action struct {
+    Type     ActionType
+    ToolCall *schema.ToolCall // for ActionTool
+    Message  string           // for ActionRespond and ActionFinish
+    Metadata map[string]any
 }
-type ActionRespond struct { Text string }
-type ActionFinish   struct { Output any }
-type ActionHandoff  struct { Target string }
 ```
+
+`Replan` receives no separate observation argument: the new observations are already in `state.Observations`.
 
 ### Why `Planner` is separate from `Agent`
 
@@ -166,18 +172,46 @@ Planner-specific state. ToT stores the branch tree. LATS stores node values. Sel
 package myplanner
 
 import (
+    "context"
+
     "github.com/lookatitude/beluga-ai/v2/agent"
+    "github.com/lookatitude/beluga-ai/v2/llm"
 )
+
+// BeamSearchPlanner keeps the best `width` partial plans at each step.
+type BeamSearchPlanner struct {
+    model        llm.ChatModel
+    width, depth int
+}
+
+func NewBeamSearchPlanner(model llm.ChatModel, width, depth int) *BeamSearchPlanner {
+    return &BeamSearchPlanner{model: model, width: width, depth: depth}
+}
+
+func (p *BeamSearchPlanner) Plan(ctx context.Context, state agent.PlannerState) ([]agent.Action, error) {
+    // Expand and score candidate plans with p.model here.
+    return []agent.Action{{Type: agent.ActionFinish, Message: "..."}}, nil
+}
+
+func (p *BeamSearchPlanner) Replan(ctx context.Context, state agent.PlannerState) ([]agent.Action, error) {
+    return p.Plan(ctx, state)
+}
 
 func init() {
     agent.RegisterPlanner("beam-search", func(cfg agent.PlannerConfig) (agent.Planner, error) {
-        return &BeamSearchPlanner{
-            width: cfg.Get("width", 5).(int),
-            depth: cfg.Get("depth", 10).(int),
-        }, nil
+        width, depth := 5, 10
+        if v, ok := cfg.Extra["width"].(int); ok {
+            width = v
+        }
+        if v, ok := cfg.Extra["depth"].(int); ok {
+            depth = v
+        }
+        return NewBeamSearchPlanner(cfg.LLM, width, depth), nil
     })
 }
 ```
+
+`agent.PlannerConfig` carries the planner's `LLM` and an `Extra map[string]any` for planner-specific settings. See the [custom planner guide](../guides/custom-planner.md) for a complete, compiling planner.
 
 Same registry pattern as [DOC-03](./03-extensibility-patterns.md). Import for side-effects and it's available.
 

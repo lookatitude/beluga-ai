@@ -11,6 +11,8 @@ consults:
   - research/briefs/2026-04-19-dx1-s1-cli-foundation/specialist-observability-expert.md
 ---
 
+> **Historical record.** This consultation captures a design discussion at the date in its file name. Its code sketches predate the shipped API (some use the pre-`/v2` module path) and are not maintained; see `docs/reference/interfaces.md` and the guides for current usage.
+
 ## Design: DX-1 S1 CLI Foundation
 
 The approved brief is exhaustive and is the source of truth. This consultation converts its 17-file plan into a Red/Green TDD-friendly task sequence, pins down the Go signatures that the brief describes in prose, maps each of the 10 success criteria to concrete tests, and flags layering / security surfaces for the downstream reviewers. No new architectural decisions are introduced beyond those already locked in by the brief.

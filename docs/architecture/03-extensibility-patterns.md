@@ -13,7 +13,7 @@ Every extensible package in Beluga uses the same four mechanisms:
 3. **Hooks** — interception at lifecycle points. Optional, nil-safe, composable.
 4. **Middleware** — cross-cutting wrapping. `func(T) T`, applied outside-in.
 
-Learn these four. They apply to `llm`, `tool`, `memory`, `rag/embedding`, `rag/vectorstore`, `rag/retriever`, `voice/*`, `guard`, `workflow`, `server`, `cache`, `auth`, and `state` — identically. Once you understand the shape, every package is learnable in minutes.
+Learn these four. They apply to `llm`, `tool`, `memory`, `rag/embedding`, `rag/vectorstore`, `rag/retriever`, `voice/*`, `guard`, `workflow`, `server`, `cache`, `auth`, and `state`. One exception: `tool` has an instance registry (`tool.NewRegistry`) instead of a package-level `Register`/`New`/`List` (see Ring 2). Once you understand the shape, every package is learnable in minutes.
 
 ## The four concentric rings
 
@@ -48,12 +48,12 @@ type Tool interface {
 }
 ```
 
-Four methods. No more. Larger capability surfaces compose via embedding:
+Four methods. No more. Larger capability surfaces compose via embedding. From `agent/agent.go`:
 
 ```go
-type StreamingTool interface {
-    Tool
-    Stream(ctx context.Context, input map[string]any) (*core.Stream[Event[Result]], error)
+type Agent interface {
+    AgentMetadata // ID, Persona, Tools, Children
+    AgentExecutor // Invoke, Stream
 }
 ```
 
@@ -66,57 +66,57 @@ type StreamingTool interface {
 Every implementation includes a compile-time assertion:
 
 ```go
-var _ Tool = (*HTTPFetchTool)(nil)
+var _ llm.ChatModel = (*Model)(nil)
 ```
 
 ## Ring 2 — Registry
 
 A registry lets the framework discover implementations at runtime without import cycles.
 
-Canonical example (adapted from `llm/registry.go:20-44`):
+Canonical example (from `llm/registry.go`):
 
 ```go
 // llm/registry.go
+type Factory func(cfg config.ProviderConfig) (ChatModel, error)
+
 var (
-    mu        sync.RWMutex
-    providers = make(map[string]Factory)
+    registryMu sync.RWMutex
+    registry   = make(map[string]Factory)
 )
 
-type Factory func(cfg Config) (Provider, error)
-
-func Register(name string, factory Factory) error {
-    mu.Lock()
-    defer mu.Unlock()
-    if _, exists := providers[name]; exists {
-        return fmt.Errorf("provider %q already registered", name)
-    }
-    providers[name] = factory
-    return nil
+// Register is called from provider init() functions. A duplicate name
+// overwrites the previous factory.
+func Register(name string, f Factory) {
+    registryMu.Lock()
+    defer registryMu.Unlock()
+    registry[name] = f
 }
 
-func New(name string, cfg Config) (Provider, error) {
-    mu.RLock()
-    defer mu.RUnlock()
-    factory, ok := providers[name]
+func New(name string, cfg config.ProviderConfig) (ChatModel, error) {
+    registryMu.RLock()
+    f, ok := registry[name]
+    registryMu.RUnlock()
     if !ok {
-        return nil, fmt.Errorf("provider %q not found", name)
+        return nil, core.Errorf(core.ErrNotFound, "llm: unknown provider %q (registered: %v)", name, List())
     }
-    return factory(cfg)
+    return f(cfg)
 }
 
-func List() []string { /* … */ }
+func List() []string { /* sorted names */ }
 ```
 
 Providers register themselves in `init()`:
 
 ```go
-// llm/providers/anthropic/anthropic.go:19-21
+// llm/providers/anthropic/anthropic.go
 func init() {
-    if err := llm.Register("anthropic", newFactory()); err != nil {
-        panic(err)
-    }
+    llm.Register("anthropic", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
+        return New(cfg)
+    })
 }
 ```
+
+Not every package has a registry. `tool` has an instance registry (`tool.NewRegistry()` with `Add`/`Get`/`List`) rather than a package-level `Register`/`New`, because tools are values your code constructs, not providers chosen by name.
 
 ```mermaid
 graph LR
@@ -127,7 +127,7 @@ graph LR
   end
   subgraph runtime
     U[User code] -->|llm.New'anthropic'| R
-    R -->|Factory| I[Provider instance]
+    R -->|Factory| I[ChatModel instance]
   end
 ```
 
@@ -141,7 +141,7 @@ See [Provider Registration pattern](../patterns/registry-factory.md) and [`.guil
 
 Hooks are optional function fields on a struct. `nil` means "skip this hook". `ComposeHooks(h1, h2, h3)` combines multiple hook sets into one that invokes each in order.
 
-Canonical example (adapted from `tool/hooks.go:11-44`):
+Canonical example (from `tool/hooks.go`):
 
 ```go
 type Hooks struct {
@@ -185,38 +185,46 @@ A rule of thumb: middleware *wraps the whole call*; hooks *fire at specific mome
 
 Middleware is a function `func(T) T` that wraps an implementation and returns a new one with the same interface but augmented behaviour.
 
-Canonical example (adapted from `tool/middleware.go:13-22`):
+Canonical example (from `tool/middleware.go`):
 
 ```go
 type Middleware func(Tool) Tool
 
-func ApplyMiddleware(tool Tool, mws ...Middleware) Tool {
-    result := tool
+// ApplyMiddleware applies mws in reverse order, so the first middleware in
+// the list is the outermost wrapper.
+func ApplyMiddleware(t Tool, mws ...Middleware) Tool {
     for i := len(mws) - 1; i >= 0; i-- {
-        result = mws[i](result)
+        t = mws[i](t)
     }
-    return result
+    return t
 }
 ```
 
 Concrete middleware (retry):
 
 ```go
-func WithRetry(max int) Middleware {
-    return func(inner Tool) Tool {
-        return &retryTool{inner: inner, max: max}
+func WithRetry(maxAttempts int) Middleware {
+    return func(t Tool) Tool {
+        return &retryTool{tool: t, maxAttempts: maxAttempts}
     }
 }
 
 func (r *retryTool) Execute(ctx context.Context, input map[string]any) (*Result, error) {
-    for attempt := 0; attempt <= r.max; attempt++ {
-        out, err := r.inner.Execute(ctx, input)
-        if err == nil || !core.IsRetryable(err) {
-            return out, err
+    var lastErr error
+    for attempt := 0; attempt < r.maxAttempts; attempt++ {
+        result, err := r.tool.Execute(ctx, input)
+        if err == nil {
+            return result, nil
         }
-        // backoff with context check …
+        lastErr = err
+        if !core.IsRetryable(err) {
+            return nil, err
+        }
+        if ctx.Err() != nil {
+            return nil, ctx.Err()
+        }
     }
-    return nil, lastErr
+    return nil, core.Errorf(core.ErrToolFailed, "tool %s failed after %d attempts: %w", r.tool.Name(), r.maxAttempts, lastErr)
 }
 ```
 
@@ -224,14 +232,13 @@ func (r *retryTool) Execute(ctx context.Context, input map[string]any) (*Result,
 
 ```mermaid
 graph LR
-  Call[caller] --> G[Guardrail]
-  G --> L[Logging]
-  L --> Rl[RateLimit]
-  Rl --> Rt[Retry]
+  Call[caller] --> Tr[WithTracing]
+  Tr --> To[WithTimeout]
+  To --> Rt[WithRetry]
   Rt --> Core[Tool.Execute]
 ```
 
-Call `ApplyMiddleware(tool, guardrail, logging, ratelimit, retry)` and the first argument in the slice wraps the outside. Read left-to-right → "guardrail wraps logging wraps ratelimit wraps retry wraps tool".
+Call `tool.ApplyMiddleware(t, tool.WithTracing(), tool.WithTimeout(d), tool.WithRetry(3))` and the first argument wraps the outside. Read left to right: tracing wraps timeout wraps retry wraps the tool. Every package's `ApplyMiddleware` uses this order. (In `tool`, hooks are attached with `tool.WithHooks(t, h)`, which wraps a tool directly rather than returning a `Middleware`.)
 
 ### Why `func(T) T`
 
@@ -249,52 +256,67 @@ One Ring 4 middleware is now provided by every extensible package: `WithTracing(
 graph TD
   U[User code] -->|New name, cfg| Reg[Registry]
   Reg -->|calls Factory| I[Interface instance]
-  I -->|wraps with| MW[Middleware chain]
-  MW -->|fires at points| H[Hooks]
+  I -->|wrapped by| MW[Middleware chain]
+  MW -->|WithHooks fires| H[Hooks]
   H -->|does work| Work[Implementation]
 ```
 
 1. **Interface** defines what an extension must implement.
 2. **Registry** is how the user's code finds that extension at runtime.
-3. **Middleware** wraps the instance before handing it to the caller.
-4. **Hooks** fire inside the wrapped call at lifecycle points.
+3. **Hooks** fire at lifecycle points inside the wrapped call. In `llm` they are installed by the `llm.WithHooks` middleware, in `tool` by `tool.WithHooks(t, h)`, and `agent` takes them as an option (`agent.WithHooks`).
+4. **Middleware** wraps the instance before handing it to the caller.
 
 A complete wire-up looks like this:
 
 ```go
-// import the provider for its init() side-effect
+// import the provider for its init() side effect
 import _ "github.com/lookatitude/beluga-ai/v2/llm/providers/anthropic"
 
-func buildModel() (llm.Model, error) {
-    // Ring 2 — registry lookup
-    base, err := llm.New("anthropic", llm.Config{ /* … */ })
+func buildModel(auditHooks, costHooks llm.Hooks) (llm.ChatModel, error) {
+    // Ring 2: registry lookup.
+    base, err := llm.New("anthropic", config.ProviderConfig{
+        Provider: "anthropic",
+        APIKey:   os.Getenv("ANTHROPIC_API_KEY"),
+        Model:    "claude-sonnet-4-5",
+    })
     if err != nil {
         return nil, err
     }
 
-    // Ring 4 — middleware
-    wrapped := llm.ApplyMiddleware(base,
-        llm.WithGuardrails(guardPipeline),
-        llm.WithLogging(logger),
-        llm.WithRateLimit(rpm, tpm),
-        llm.WithRetry(3),
-    )
-
-    // Ring 3 — hooks
-    wrapped.SetHooks(llm.ComposeHooks(
-        auditHooks,
-        costHooks,
-    ))
-
-    return wrapped, nil
+    // Ring 4: middleware. The first argument is the outermost wrapper.
+    // Ring 3: hooks are installed through the WithHooks middleware.
+    return llm.ApplyMiddleware(base,
+        llm.WithTracing(),
+        llm.WithLogging(slog.Default()),
+        llm.WithProviderLimits(llm.ProviderLimits{RPM: 60, MaxConcurrent: 4}),
+        llm.WithHooks(llm.ComposeHooks(auditHooks, costHooks)),
+    ), nil
 }
 ```
+
+Retry, circuit breaking and hedging live in `resilience/` as generic helpers that wrap any call, rather than as `llm` middleware:
+
+```go
+breaker := resilience.NewCircuitBreaker(5, 30*time.Second)
+resp, err := resilience.Retry(ctx, resilience.DefaultRetryPolicy(),
+    func(ctx context.Context) (*schema.AIMessage, error) {
+        out, err := breaker.Execute(ctx, func(ctx context.Context) (any, error) {
+            return model.Generate(ctx, msgs)
+        })
+        if err != nil {
+            return nil, err
+        }
+        return out.(*schema.AIMessage), nil
+    })
+```
+
+Guards are not an `llm` middleware either: run a `guard.Pipeline` (`ValidateInput`, `ValidateOutput`, `ValidateTool`) around the call, for example from an `llm.Hooks.BeforeGenerate` hook or a `tool.Hooks.BeforeExecute` hook.
 
 ## Common mistakes
 
 - **Using middleware for lifecycle interception.** If you need to fire at a specific moment ("when the planner chooses a tool"), use a hook. Middleware sees only the outer call.
 - **Using hooks for cross-cutting concerns.** Retry, rate limit, logging — all apply uniformly to every call, so they're middleware. Adding retry logic to a `BeforeExecute` hook fights the design.
-- **Registering outside `init()`.** The registry is append-only at startup. Dynamic registration post-`main()` is a race condition.
+- **Registering outside `init()`.** Registries are meant to be filled at startup. Registering later works (the map is mutex-guarded), but a later `Register` with the same name silently replaces the earlier factory, which is hard to debug.
 - **Non-nil-safe hooks.** Always check `if h.BeforeExecute != nil` before invoking. `ComposeHooks` does this for you; hand-rolled code often forgets.
 - **Forgetting the compile-time check.** `var _ Interface = (*Impl)(nil)` catches interface-drift at compile time. Add it to every implementation.
 

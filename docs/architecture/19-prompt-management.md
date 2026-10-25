@@ -159,11 +159,17 @@ The `prompt` package does not import `cache/` — it does not perform LLM-level 
 
 ```
 System prompt  (slot 1)  ← most static → cached by provider
-    base, err := promptfile.NewFileManager("/etc/prompts")
-    if err != nil {
-        log.Fatal(err)
-    }
-    mgr := prompt.ApplyMiddleware(base, prompt.WithTracing())
+Tool defs      (slot 2)  ← semi-static →
+Static context (slot 3)  ← semi-static →
+── cache_breakpoint ──   ← explicit boundary via WithCacheBreakpoint()
+Dynamic history (slot 4) ← per-session →
+User input     (slot 5)  ← always changes →
+```
+
+The breakpoint is a `schema.SystemMessage` carrying `Metadata["cache_breakpoint"] = true` (see `prompt/builder.go`). LLM providers that support explicit cache control (Anthropic's `cache_control` block, OpenAI's cached prefix API) can inspect this metadata to know where to anchor the cache boundary.
+
+The `cache/` package (Layer 3) implements exact-match and semantic caches that wrap the LLM layer. Those two concerns are orthogonal: `Builder` orders content for provider-native prefix caching; `cache/` deduplicates full prompt+response pairs at the framework layer.
+
 ### Builder API
 
 **Source:** `prompt/builder.go`
@@ -212,11 +218,17 @@ func main() {
         prompt.WithCacheBreakpoint(),
         prompt.WithDynamicContext([]schema.Message{
             schema.NewHumanMessage("What is an interface?"),
-    base, err := promptfile.NewFileManager("/etc/prompts")
-    if err != nil {
-        log.Fatal(err)
-    }
-    mgr := prompt.ApplyMiddleware(base, prompt.WithTracing())
+        }),
+        prompt.WithUserInput(schema.NewHumanMessage("How do I implement one?")),
+    ).Build()
+
+    fmt.Printf("%d messages assembled\n", len(all))
+}
+```
+
+## Full example
+
+The following example shows versioned template retrieval, manual rendering with variable overrides, and cache-optimised assembly with tool definitions.
 
 ```go
 package main

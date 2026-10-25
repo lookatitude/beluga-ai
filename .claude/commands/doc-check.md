@@ -15,7 +15,7 @@ For each doc file:
 - Do code examples compile? Verify with `go build` on a throwaway file.
 - Do documented interfaces match actual code?
 - Any undocumented exported types/functions?
-- Do "common mistakes" match `.guild/wiki/corrections.md`?
+- Do "common mistakes" match `.guild/wiki/corrections/`?
 
 ### Step 3 — Fix
 `@agent-docs-writer` updates inaccurate documentation.

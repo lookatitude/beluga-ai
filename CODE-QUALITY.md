@@ -9,7 +9,7 @@
 **Status:** Passing
 **Issues found:** 0
 
-**Linters enabled:** gosec, govet, staticcheck, errcheck, ineffassign, unused, gofmt, goimports, misspell, revive, bodyclose, noctx, gocritic
+**Linters enabled:** gosec, govet, staticcheck, errcheck, ineffassign, unused, misspell, revive, bodyclose, noctx, gocritic. **Formatters:** gofmt, goimports (golangci-lint v2).
 
 ## Unit Tests
 

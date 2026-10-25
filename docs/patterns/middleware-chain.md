@@ -15,20 +15,17 @@ Cross-cutting concerns — retry, rate limit, logging, guardrails, caching, metr
 
 ## How it works
 
-Canonical code from `tool/middleware.go:11-22` (see [`.guild/wiki/patterns/middleware.md`](../../.guild/wiki/patterns/middleware.md)):
+Canonical code from `tool/middleware.go` (see [`.guild/wiki/patterns/middleware.md`](../../.guild/wiki/patterns/middleware.md)):
 
 ```go
-// tool/middleware.go
-package tool
-
+// tool/middleware.go (excerpt)
 type Middleware func(Tool) Tool
 
 func ApplyMiddleware(t Tool, mws ...Middleware) Tool {
-    result := t
     for i := len(mws) - 1; i >= 0; i-- {
-        result = mws[i](result)
+        t = mws[i](t)
     }
-    return result
+    return t
 }
 ```
 
@@ -36,59 +33,64 @@ Applied in reverse so the **first** middleware in the slice wraps the outermost 
 
 ```go
 wrapped := tool.ApplyMiddleware(base,
-    tool.WithGuardrails(guards),   // runs first
-    tool.WithLogging(logger),      // runs second
-    tool.WithRateLimit(rl),        // runs third
-    tool.WithRetry(3),             // runs fourth
+    tool.WithTracing(),               // runs first
+    tool.WithTimeout(30*time.Second), // runs second
+    tool.WithRetry(3),                // runs third
 )
 // base.Execute() runs last
 ```
 
-A concrete middleware (retry):
+A concrete middleware (retry), from `tool/middleware.go`:
 
 ```go
-// tool/middleware.go — conceptual
+// tool/middleware.go (excerpt)
 func WithRetry(maxAttempts int) Middleware {
-    return func(inner Tool) Tool {
-        return &retryTool{inner: inner, maxAttempts: maxAttempts}
+    return func(t Tool) Tool {
+        return &retryTool{tool: t, maxAttempts: maxAttempts}
     }
 }
 
 type retryTool struct {
-    inner       Tool
+    tool        Tool
     maxAttempts int
 }
 
-func (r *retryTool) Name() string             { return r.inner.Name() }
-func (r *retryTool) Description() string      { return r.inner.Description() }
-func (r *retryTool) InputSchema() map[string]any { return r.inner.InputSchema() }
+func (r *retryTool) Name() string                { return r.tool.Name() }
+func (r *retryTool) Description() string         { return r.tool.Description() }
+func (r *retryTool) InputSchema() map[string]any { return r.tool.InputSchema() }
 
 func (r *retryTool) Execute(ctx context.Context, input map[string]any) (*Result, error) {
     var lastErr error
     for attempt := 0; attempt < r.maxAttempts; attempt++ {
-        if err := ctx.Err(); err != nil {
-            return nil, err
-        }
-        out, err := r.inner.Execute(ctx, input)
-        if err == nil || !core.IsRetryable(err) {
-            return out, err
+        result, err := r.tool.Execute(ctx, input)
+        if err == nil {
+            return result, nil
         }
         lastErr = err
-        backoffWithJitter(attempt)
+        if !core.IsRetryable(err) {
+            return nil, err
+        }
+        if ctx.Err() != nil {
+            return nil, ctx.Err()
+        }
     }
-    return nil, lastErr
+    return nil, core.Errorf(core.ErrToolFailed, "tool %s failed after %d attempts: %w", r.tool.Name(), r.maxAttempts, lastErr)
 }
 ```
 
+This retry has no backoff between attempts. For backoff with jitter, wrap the call in `resilience.Retry` instead.
+
 ## Where it's used
 
-| Package | Middleware types |
+| Package | Middleware shipped |
 |---|---|
-| `llm` | retry, rate limit, circuit breaker, logging, metrics, guardrails, cache |
-| `tool` | retry, timeout, logging, guardrails, HITL |
-| `memory` | encryption, compression, caching |
-| `rag/retriever` | reranking, filtering, caching |
-| `agent` | session-scoping, plugin hooks |
+| `llm` | `WithTracing`, `WithHooks`, `WithLogging`, `WithFallback`, `WithProviderLimits` |
+| `tool` | `WithTracing`, `WithTimeout`, `WithRetry` |
+| `memory` | `WithTracing`, `WithHooks` |
+| `rag/retriever` | `WithTracing`, `WithHooks` |
+| `agent` | `WithTracing` |
+
+Every extensible package ships `WithTracing()`. Retry, circuit breaking and hedging for `llm` calls live in `resilience/` as generic helpers rather than as middleware.
 
 ## Common mistakes
 
@@ -100,34 +102,37 @@ func (r *retryTool) Execute(ctx context.Context, input map[string]any) (*Result,
 
 ## Example: implementing your own
 
-A simple timing middleware that logs how long each `Tool.Execute` call takes:
+A simple timing middleware that logs how long each `Tool.Execute` call takes, written in your own package:
 
 ```go
-// tool/middleware_timing.go
-package tool
+// mymw/timing.go
+package mymw
 
 import (
     "context"
     "log/slog"
     "time"
+
+    "github.com/lookatitude/beluga-ai/v2/tool"
 )
 
-func WithTiming(logger *slog.Logger) Middleware {
-    return func(inner Tool) Tool {
+// WithTiming logs the duration of every Execute call.
+func WithTiming(logger *slog.Logger) tool.Middleware {
+    return func(inner tool.Tool) tool.Tool {
         return &timingTool{inner: inner, logger: logger}
     }
 }
 
 type timingTool struct {
-    inner  Tool
+    inner  tool.Tool
     logger *slog.Logger
 }
 
-func (t *timingTool) Name() string             { return t.inner.Name() }
-func (t *timingTool) Description() string      { return t.inner.Description() }
+func (t *timingTool) Name() string                { return t.inner.Name() }
+func (t *timingTool) Description() string         { return t.inner.Description() }
 func (t *timingTool) InputSchema() map[string]any { return t.inner.InputSchema() }
 
-func (t *timingTool) Execute(ctx context.Context, input map[string]any) (*Result, error) {
+func (t *timingTool) Execute(ctx context.Context, input map[string]any) (*tool.Result, error) {
     start := time.Now()
     out, err := t.inner.Execute(ctx, input)
     t.logger.InfoContext(ctx, "tool executed",
@@ -142,8 +147,8 @@ Usage:
 
 ```go
 wrapped := tool.ApplyMiddleware(base,
-    tool.WithGuardrails(guards),
-    tool.WithTiming(logger),     // new middleware
+    tool.WithTracing(),
+    mymw.WithTiming(logger), // new middleware
     tool.WithRetry(3),
 )
 ```

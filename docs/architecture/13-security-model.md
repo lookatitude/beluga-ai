@@ -266,7 +266,7 @@ import (
 	guardmem "github.com/lookatitude/beluga-ai/v2/guard/memory"
 )
 
-guard := guardmem.NewMemoryGuard(
+mg := guardmem.NewMemoryGuard(
     guardmem.WithThreshold(0.6),
     guardmem.WithDetectors(
         &guardmem.EntropyDetector{Threshold: 5.0},
@@ -275,7 +275,7 @@ guard := guardmem.NewMemoryGuard(
     ),
 )
 
-result, err := guard.Check(ctx, candidateContent)
+result, err := mg.Check(ctx, candidateContent)
 if err != nil {
     return err
 }

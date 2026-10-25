@@ -3,7 +3,7 @@
 #
 # Given a topic (usually a package name or concept), prints:
 #   - Matching entries from .guild/wiki/index.md
-#   - Matching corrections from .guild/wiki/corrections.md
+#   - Matching corrections from .guild/wiki/corrections/*.md
 #   - Matching pattern files
 #   - Matching package-map entry
 #
@@ -25,8 +25,6 @@ if [ ! -d "$WIKI_DIR" ]; then
     exit 1
 fi
 
-# Case-insensitive topic match
-TOPIC_RE="$(printf '%s' "$TOPIC" | sed 's/[][\.^$*+?()|{}\\]/\\&/g')"
 
 separator() {
     printf '\n=== %s ===\n\n' "$1"
@@ -40,23 +38,31 @@ else
 fi
 
 separator "CORRECTIONS matches"
-if [ -f "$WIKI_DIR/corrections.md" ]; then
-    awk -v topic_re="$TOPIC_RE" '
-        BEGIN { IGNORECASE=1; in_entry=0; match_found=0; buf="" }
-        /^### C-/ {
-            if (in_entry && match_found) { printf "%s\n", buf }
-            in_entry=1; match_found=0; buf=$0
-            if ($0 ~ topic_re) match_found=1
-            next
-        }
-        in_entry {
-            buf = buf "\n" $0
-            if ($0 ~ topic_re) match_found=1
-        }
-        END { if (in_entry && match_found) { printf "%s\n", buf } }
-    ' "$WIKI_DIR/corrections.md" 2>/dev/null || echo "(no matches in corrections.md)"
+# Corrections live in per-category files under corrections/ (the old
+# corrections.md is an index stub). Print every C-NNN entry that mentions the
+# topic, case-insensitively (tolower keeps this portable across awk variants).
+CORR_DIR="$WIKI_DIR/corrections"
+if [ -d "$CORR_DIR" ]; then
+    found=0
+    for f in "$CORR_DIR"/*.md; do
+        [ -f "$f" ] || continue
+        [ "$(basename "$f")" = "README.md" ] && continue
+        out="$(awk -v topic="$TOPIC" -v file="$(basename "$f")" '
+            BEGIN { t=tolower(topic); in_entry=0; hit=0; buf="" }
+            function flush() { if (in_entry && hit) printf "[%s]\n%s\n\n", file, buf; in_entry=0; hit=0; buf="" }
+            /^### C-/ { flush(); in_entry=1; buf=$0; if (index(tolower($0), t)) hit=1; next }
+            /^## / { flush(); next }
+            in_entry { buf = buf "\n" $0; if (index(tolower($0), t)) hit=1 }
+            END { flush() }
+        ' "$f")"
+        if [ -n "$out" ]; then
+            printf '%s\n' "$out"
+            found=1
+        fi
+    done
+    [ "$found" -eq 1 ] || echo "(no matches in corrections/)"
 else
-    echo "(corrections.md missing)"
+    echo "(corrections/ missing)"
 fi
 
 separator "PATTERN files referencing topic"

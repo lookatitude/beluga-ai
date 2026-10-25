@@ -17,7 +17,7 @@ Typed errors with an `ErrorCode` enum are structured, programmatic, and align wi
 
 ## How it works
 
-Canonical code from `core/errors.go:8-110` (see [`.guild/wiki/patterns/error-handling.md`](../../.guild/wiki/patterns/error-handling.md)):
+Canonical code from `core/errors.go` (doc comments trimmed) (see [`.guild/wiki/patterns/error-handling.md`](../../.guild/wiki/patterns/error-handling.md)):
 
 ```go
 // core/errors.go
@@ -65,11 +65,11 @@ func (e *Error) Error() string {
 func (e *Error) Unwrap() error { return e.Err }
 
 func (e *Error) Is(target error) bool {
-    t, ok := target.(*Error)
-    if !ok {
-        return false
+    var t *Error
+    if errors.As(target, &t) {
+        return e.Code == t.Code
     }
-    return e.Code == t.Code
+    return false
 }
 
 // IsRetryable returns true if err is a core.Error with a retryable code.
@@ -82,55 +82,52 @@ func IsRetryable(err error) bool {
 }
 
 // NewError constructs a core.Error.
-func NewError(op string, code ErrorCode, message string, cause error) *Error {
-    return &Error{Op: op, Code: code, Message: message, Err: cause}
+func NewError(op string, code ErrorCode, msg string, cause error) *Error {
+    return &Error{Op: op, Code: code, Message: msg, Err: cause}
 }
 
-// Errorf is the fmt.Errorf equivalent for core.Error.
+// Errorf is the fmt.Errorf equivalent for core.Error. A %w argument is kept
+// as the cause, so errors.Is, errors.As and IsRetryable see through it.
 func Errorf(code ErrorCode, format string, args ...any) *Error {
-    msg := fmt.Sprintf(format, args...)
-    return &Error{Code: code, Message: msg}
+    inner := fmt.Errorf(format, args...)
+    return &Error{Code: code, Message: inner.Error(), Err: errors.Unwrap(inner)}
 }
 ```
 
-Usage in a provider:
+Usage in a provider (simplified from an HTTP-based `llm.ChatModel`):
 
 ```go
-func (p *openaiProvider) Generate(ctx context.Context, req llm.Request) (*llm.Response, error) {
-    resp, err := p.client.Chat(ctx, req)
+func (m *Model) Generate(ctx context.Context, msgs []schema.Message, opts ...llm.GenerateOption) (*schema.AIMessage, error) {
+    resp, err := m.do(ctx, msgs, opts...)
     if err != nil {
-        // translate provider errors to core codes
-        if apiErr, ok := err.(*openai.APIError); ok {
-            switch apiErr.Code {
-            case "rate_limit_exceeded":
-                return nil, core.Errorf(core.ErrRateLimit, "openai: %w", err)
-            case "invalid_api_key":
-                return nil, core.Errorf(core.ErrAuth, "openai: %w", err)
-            case "context_length_exceeded":
-                return nil, core.Errorf(core.ErrInvalidInput, "openai: %w", err)
-            default:
-                return nil, core.Errorf(core.ErrProviderDown, "openai: %w", err)
-            }
-        }
-        return nil, core.Errorf(core.ErrProviderDown, "openai: %w", err)
+        return nil, core.Errorf(core.ErrProviderDown, "myprovider: %w", err)
     }
-    return translateResponse(resp), nil
+    defer resp.Body.Close()
+
+    // translate provider errors to core codes
+    switch {
+    case resp.StatusCode == http.StatusTooManyRequests:
+        return nil, core.Errorf(core.ErrRateLimit, "myprovider: rate limited")
+    case resp.StatusCode == http.StatusUnauthorized:
+        return nil, core.Errorf(core.ErrAuth, "myprovider: invalid API key")
+    case resp.StatusCode == http.StatusBadRequest:
+        return nil, core.Errorf(core.ErrInvalidInput, "myprovider: bad request")
+    case resp.StatusCode >= 500:
+        return nil, core.Errorf(core.ErrProviderDown, "myprovider: status %d", resp.StatusCode)
+    }
+    return decodeResponse(resp.Body)
 }
 ```
 
-Middleware consumer:
+Consumer: `resilience.Retry` retries only while `core.IsRetryable` says so.
 
 ```go
-func (r *retryLLM) Generate(ctx context.Context, req llm.Request) (*llm.Response, error) {
-    for attempt := 0; attempt < r.maxAttempts; attempt++ {
-        out, err := r.inner.Generate(ctx, req)
-        if err == nil || !core.IsRetryable(err) {
-            return out, err // success or non-retryable failure
-        }
-        // retry with backoff
-    }
-    return nil, lastErr
-}
+resp, err := resilience.Retry(ctx, resilience.DefaultRetryPolicy(),
+    func(ctx context.Context) (*schema.AIMessage, error) {
+        return model.Generate(ctx, msgs)
+    })
+// ErrRateLimit, ErrTimeout, ErrProviderDown: retried with backoff.
+// Anything else: returned after the first attempt.
 ```
 
 ## Where it's used
@@ -165,7 +162,7 @@ This list is deliberately small — adding more retryable codes increases the ri
 
 ## Example: implementing your own
 
-Wrapping a third-party library's errors in a new tool:
+Wrapping a third-party library's errors in a new tool. `Client` and `APIError` stand in for the vendor SDK:
 
 ```go
 package weather
@@ -178,32 +175,67 @@ import (
     "github.com/lookatitude/beluga-ai/v2/tool"
 )
 
-func (t *weatherTool) Execute(ctx context.Context, input map[string]any) (*tool.Result, error) {
+// Kind classifies vendor API failures.
+type Kind int
+
+const (
+    KindOther Kind = iota
+    KindRateLimited
+    KindUnauthorized
+    KindNotFound
+)
+
+// APIError is the error type returned by the vendor SDK.
+type APIError struct{ Kind Kind }
+
+func (e *APIError) Error() string { return "weather api error" }
+
+// Client is the subset of the vendor SDK the tool needs.
+type Client interface {
+    Forecast(ctx context.Context, city string) (string, error)
+}
+
+// Tool exposes the forecast API to agents.
+type Tool struct{ api Client }
+
+var _ tool.Tool = (*Tool)(nil)
+
+func (t *Tool) Name() string        { return "weather" }
+func (t *Tool) Description() string { return "Get the weather forecast for a city" }
+func (t *Tool) InputSchema() map[string]any {
+    return map[string]any{
+        "type":       "object",
+        "properties": map[string]any{"city": map[string]any{"type": "string"}},
+        "required":   []string{"city"},
+    }
+}
+
+func (t *Tool) Execute(ctx context.Context, input map[string]any) (*tool.Result, error) {
     city, _ := input["city"].(string)
     if city == "" {
         return nil, core.Errorf(core.ErrInvalidInput, "weather: city is required")
     }
 
-    data, err := t.api.Forecast(ctx, city)
+    summary, err := t.api.Forecast(ctx, city)
     if err != nil {
-        var apiErr *weatherapi.Error
+        var apiErr *APIError
         if errors.As(err, &apiErr) {
             switch apiErr.Kind {
-            case weatherapi.KindRateLimited:
+            case KindRateLimited:
                 return nil, core.Errorf(core.ErrRateLimit, "weather: rate limit for %s", city)
-            case weatherapi.KindUnauthorized:
+            case KindUnauthorized:
                 return nil, core.Errorf(core.ErrAuth, "weather: api key invalid")
-            case weatherapi.KindNotFound:
+            case KindNotFound:
                 return nil, core.Errorf(core.ErrNotFound, "weather: city %q not found", city)
             }
         }
         return nil, core.Errorf(core.ErrToolFailed, "weather: %w", err)
     }
-    return tool.TextResult(data.Summary()), nil
+    return tool.TextResult(summary), nil
 }
 ```
 
-When the retry middleware sees `ErrRateLimit`, it retries. When it sees `ErrAuth`, it fails fast. When it sees `ErrNotFound`, it fails fast (the city doesn't exist; retrying won't help). When it sees `ErrToolFailed`, it fails fast (the planner decides whether to try a different tool).
+When `tool.WithRetry` or `resilience.Retry` sees `ErrRateLimit`, it retries. When it sees `ErrAuth`, it fails fast. When it sees `ErrNotFound`, it fails fast (the city doesn't exist; retrying won't help). When it sees `ErrToolFailed`, it fails fast (the planner decides whether to try a different tool).
 
 ## Related
 
