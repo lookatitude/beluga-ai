@@ -61,10 +61,7 @@ func (s *MessageStore) Append(ctx context.Context, msg schema.Message) error {
 // Search finds messages whose text content contains the query as a
 // case-insensitive substring, returning at most k results.
 func (s *MessageStore) Search(ctx context.Context, query string, k int) ([]schema.Message, error) {
-	members, err := s.client.ZRangeByScore(ctx, s.key, &redis.ZRangeBy{
-		Min: "-inf",
-		Max: "+inf",
-	}).Result()
+	members, err := s.client.ZRange(ctx, s.key, 0, -1).Result() // full sorted set in score order
 	if err != nil {
 		return nil, core.Errorf(core.ErrProviderDown, "redis: search: %w", err)
 	}
@@ -88,10 +85,7 @@ func (s *MessageStore) Search(ctx context.Context, query string, k int) ([]schem
 
 // All returns all stored messages in chronological order.
 func (s *MessageStore) All(ctx context.Context) ([]schema.Message, error) {
-	members, err := s.client.ZRangeByScore(ctx, s.key, &redis.ZRangeBy{
-		Min: "-inf",
-		Max: "+inf",
-	}).Result()
+	members, err := s.client.ZRange(ctx, s.key, 0, -1).Result() // full sorted set in score order
 	if err != nil {
 		return nil, core.Errorf(core.ErrProviderDown, "redis: all: %w", err)
 	}

@@ -58,6 +58,17 @@ func TestRegistry(t *testing.T) {
 	})
 }
 
+// firstDifference returns the first index i in a where a[i] != b[i], or -1
+// if every element of a matches b.
+func firstDifference(a, b []float32) int {
+	for i := range a {
+		if a[i] != b[i] {
+			return i
+		}
+	}
+	return -1
+}
+
 func TestEmbed(t *testing.T) {
 	emb, err := embedding.New("inmemory", config.ProviderConfig{})
 	if err != nil {
@@ -95,24 +106,15 @@ func TestEmbed(t *testing.T) {
 	t.Run("deterministic", func(t *testing.T) {
 		v1, _ := emb.EmbedSingle(ctx, "deterministic test")
 		v2, _ := emb.EmbedSingle(ctx, "deterministic test")
-		for i := range v1 {
-			if v1[i] != v2[i] {
-				t.Fatalf("embedding not deterministic at index %d: %f != %f", i, v1[i], v2[i])
-			}
+		if i := firstDifference(v1, v2); i >= 0 {
+			t.Fatalf("embedding not deterministic at index %d: %f != %f", i, v1[i], v2[i])
 		}
 	})
 
 	t.Run("different texts produce different embeddings", func(t *testing.T) {
 		v1, _ := emb.EmbedSingle(ctx, "hello")
 		v2, _ := emb.EmbedSingle(ctx, "goodbye")
-		same := true
-		for i := range v1 {
-			if v1[i] != v2[i] {
-				same = false
-				break
-			}
-		}
-		if same {
+		if firstDifference(v1, v2) < 0 {
 			t.Fatal("expected different embeddings for different texts")
 		}
 	})

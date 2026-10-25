@@ -74,25 +74,26 @@ func (m *mockVectorStore) Search(_ context.Context, _ []float32, k int, opts ...
 
 	var filtered []schema.Document
 	for _, d := range m.docs {
-		if cfg.Filter != nil {
-			match := true
-			for fk, fv := range cfg.Filter {
-				if d.Metadata[fk] != fv {
-					match = false
-					break
-				}
-			}
-			if !match {
-				continue
-			}
+		if metadataMatches(d.Metadata, cfg.Filter) {
+			filtered = append(filtered, d)
 		}
-		filtered = append(filtered, d)
 	}
 
 	if k > len(filtered) {
 		k = len(filtered)
 	}
 	return filtered[:k], nil
+}
+
+// metadataMatches reports whether meta contains every key/value in filter.
+// A nil or empty filter matches everything.
+func metadataMatches(meta, filter map[string]any) bool {
+	for fk, fv := range filter {
+		if meta[fk] != fv {
+			return false
+		}
+	}
+	return true
 }
 
 func (m *mockVectorStore) Delete(_ context.Context, ids []string) error {

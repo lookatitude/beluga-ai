@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	sqlite_vec "github.com/asg017/sqlite-vec-go-bindings/cgo"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mattn/go-sqlite3" // registers the "sqlite3" database/sql driver used by New
 
 	"github.com/lookatitude/beluga-ai/v2/config"
 	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
@@ -291,7 +291,7 @@ func (s *Store) Delete(ctx context.Context, ids []string) error {
 }
 
 // matchesFilter checks if metadata matches all filter key-value pairs.
-func matchesFilter(metadata map[string]any, filter map[string]any) bool {
+func matchesFilter(metadata, filter map[string]any) bool {
 	if metadata == nil {
 		return false
 	}

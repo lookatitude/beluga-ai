@@ -91,8 +91,8 @@ func (s *MessageStore) Search(ctx context.Context, query string, k int) ([]schem
 
 	q := strings.ToLower(query)
 	var results []schema.Message
-	for _, doc := range all {
-		msg := unmarshalDoc(doc)
+	for i := range all {
+		msg := unmarshalDoc(all[i])
 		if q == "" || containsText(msg, q) {
 			results = append(results, msg)
 			if len(results) >= k {
@@ -111,8 +111,8 @@ func (s *MessageStore) All(ctx context.Context) ([]schema.Message, error) {
 	}
 
 	msgs := make([]schema.Message, 0, len(docs))
-	for _, doc := range docs {
-		msgs = append(msgs, unmarshalDoc(doc))
+	for i := range docs {
+		msgs = append(msgs, unmarshalDoc(docs[i]))
 	}
 	return msgs, nil
 }

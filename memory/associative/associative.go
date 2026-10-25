@@ -97,7 +97,7 @@ func WithHooks(hooks Hooks) Option {
 // It orchestrates enrichment, embedding, linking, and optional retroactive
 // refinement when notes are added. It implements the memory.Memory interface
 // for integration with the composite memory system.
-type AssociativeMemory struct {
+type AssociativeMemory struct { //nolint:revive // stutter accepted: renaming this exported type is a breaking API change
 	embedder embedding.Embedder
 	store    NoteStore
 	enricher *NoteEnricher

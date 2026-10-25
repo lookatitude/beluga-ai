@@ -12,10 +12,13 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
+// opNew is the operation name attached to construction errors.
+const opNew = "structured.new"
+
 func init() {
 	retriever.Register("structured", func(_ config.ProviderConfig) (retriever.Retriever, error) {
 		return nil, core.NewError(
-			"structured.new",
+			opNew,
 			core.ErrInvalidInput,
 			"use structured.NewStructuredRetriever() with explicit dependencies; "+
 				"registry entry exists for discovery only",
@@ -86,7 +89,7 @@ func WithHooks(h retriever.Hooks) RetrieverOption {
 // StructuredRetriever implements [retriever.Retriever] by generating structured
 // database queries from natural language, executing them, and optionally
 // evaluating result relevance with a retry loop.
-type StructuredRetriever struct {
+type StructuredRetriever struct { //nolint:revive // stutter accepted: renaming this exported type is a breaking API change
 	opts options
 }
 
@@ -105,10 +108,10 @@ func NewStructuredRetriever(opts ...RetrieverOption) (*StructuredRetriever, erro
 	}
 
 	if o.generator == nil {
-		return nil, core.NewError("structured.new", core.ErrInvalidInput, "generator is required", nil)
+		return nil, core.NewError(opNew, core.ErrInvalidInput, "generator is required", nil)
 	}
 	if o.executor == nil {
-		return nil, core.NewError("structured.new", core.ErrInvalidInput, "executor is required", nil)
+		return nil, core.NewError(opNew, core.ErrInvalidInput, "executor is required", nil)
 	}
 
 	return &StructuredRetriever{opts: o}, nil

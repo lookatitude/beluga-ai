@@ -36,7 +36,8 @@ func NewSummaryCompressor(model llm.ChatModel) *SummaryCompressor {
 // utility scores are preserved; only the content is replaced.
 func (c *SummaryCompressor) Compress(ctx context.Context, records []Record) ([]Record, error) {
 	compressed := make([]Record, len(records))
-	for i, r := range records {
+	for i := range records {
+		r := &records[i]
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
@@ -48,7 +49,7 @@ func (c *SummaryCompressor) Compress(ctx context.Context, records []Record) ([]R
 			return nil, core.Errorf(core.ErrProviderDown, "consolidation: compress record %q: %w", r.ID, err)
 		}
 
-		out := r
+		out := *r
 		out.Content = summary
 		// Deep-copy Metadata to avoid mutating the caller's map.
 		newMeta := make(map[string]any, len(r.Metadata)+1)

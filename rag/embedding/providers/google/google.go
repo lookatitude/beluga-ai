@@ -77,11 +77,6 @@ func New(cfg config.ProviderConfig) (*Embedder, error) {
 	}, nil
 }
 
-// embedRequest is the request body for the Google embedContent API.
-type embedRequest struct {
-	Content *contentPart `json:"content"`
-}
-
 type contentPart struct {
 	Parts []partText `json:"parts"`
 }
@@ -98,11 +93,6 @@ type batchEmbedRequest struct {
 type singleEmbedRequest struct {
 	Model   string       `json:"model"`
 	Content *contentPart `json:"content"`
-}
-
-// embedResponse is the response from the Google embedContent API.
-type embedResponse struct {
-	Embedding *embeddingValue `json:"embedding"`
 }
 
 type embeddingValue struct {

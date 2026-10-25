@@ -50,7 +50,8 @@ func NewThresholdPolicy() *ThresholdPolicy {
 func (p *ThresholdPolicy) Evaluate(ctx context.Context, records []Record) ([]Decision, error) {
 	now := time.Now()
 	decisions := make([]Decision, len(records))
-	for i, r := range records {
+	for i := range records {
+		r := records[i] // copy: Recency is updated on the decision's record only
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
@@ -99,7 +100,8 @@ func (p *FrequencyPolicy) Evaluate(ctx context.Context, records []Record) ([]Dec
 	}
 	now := time.Now()
 	decisions := make([]Decision, len(records))
-	for i, r := range records {
+	for i := range records {
+		r := &records[i]
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
@@ -110,7 +112,7 @@ func (p *FrequencyPolicy) Evaluate(ctx context.Context, records []Record) ([]Dec
 		if r.Utility.AccessCount == 0 && now.Sub(r.CreatedAt) > ttl {
 			action = ActionPrune
 		}
-		decisions[i] = Decision{Record: r, Action: action}
+		decisions[i] = Decision{Record: *r, Action: action}
 	}
 	return decisions, nil
 }
@@ -138,8 +140,8 @@ func (c *CompositePolicy) Evaluate(ctx context.Context, records []Record) ([]Dec
 	}
 
 	merged := make([]Decision, len(records))
-	for i, r := range records {
-		merged[i] = Decision{Record: r, Action: ActionKeep}
+	for i := range records {
+		merged[i] = Decision{Record: records[i], Action: ActionKeep}
 	}
 
 	for _, pol := range c.policies {
@@ -147,9 +149,9 @@ func (c *CompositePolicy) Evaluate(ctx context.Context, records []Record) ([]Dec
 		if err != nil {
 			return nil, err
 		}
-		for i, d := range decisions {
-			if d.Action > merged[i].Action {
-				merged[i].Action = d.Action
+		for i := range decisions {
+			if decisions[i].Action > merged[i].Action {
+				merged[i].Action = decisions[i].Action
 			}
 		}
 	}

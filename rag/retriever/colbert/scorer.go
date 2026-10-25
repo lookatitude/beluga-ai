@@ -14,7 +14,7 @@ func MaxSim(queryVecs, docVecs [][]float32) float64 {
 	}
 	var total float64
 	for _, qv := range queryVecs {
-		var maxSim float64 = -math.MaxFloat64
+		maxSim := -math.MaxFloat64
 		for _, dv := range docVecs {
 			sim := cosineSimilarity(qv, dv)
 			if sim > maxSim {

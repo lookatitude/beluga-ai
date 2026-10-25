@@ -21,7 +21,7 @@ const (
 // with bi-temporal knowledge graph capabilities. It supports saving conversation turns
 // as graph entities/relations, loading relevant context, and querying the graph as
 // it existed at any point in time.
-type TemporalMemory struct {
+type TemporalMemory struct { //nolint:revive // stutter accepted: renaming this exported type is a breaking API change
 	store    memory.TemporalGraphStore
 	resolver ConflictResolver
 	hooks    Hooks
@@ -237,9 +237,9 @@ func (tm *TemporalMemory) samTypeHistory(ctx context.Context, newRelation *memor
 		return nil, core.Errorf(core.ErrProviderDown, "temporal: resolve_conflicts history: %w", err)
 	}
 	var sameType []memory.Relation
-	for _, c := range candidates {
-		if c.Type == newRelation.Type {
-			sameType = append(sameType, c)
+	for i := range candidates {
+		if candidates[i].Type == newRelation.Type {
+			sameType = append(sameType, candidates[i])
 		}
 	}
 	return sameType, nil
@@ -248,8 +248,9 @@ func (tm *TemporalMemory) samTypeHistory(ctx context.Context, newRelation *memor
 // applyInvalidations applies each invalidated relation to the store.
 // Missing or malformed identifiers surface as errors to prevent store desync.
 func (tm *TemporalMemory) applyInvalidations(ctx context.Context, invalidated []memory.Relation) error {
-	for _, inv := range invalidated {
-		relID, err := extractRelationID(inv)
+	for i := range invalidated {
+		inv := &invalidated[i]
+		relID, err := extractRelationID(*inv)
 		if err != nil {
 			return err
 		}

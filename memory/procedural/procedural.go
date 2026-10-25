@@ -18,7 +18,7 @@ const errSkillIDRequired = "procedural: skill ID is required"
 // storage and semantic retrieval of procedural knowledge (how-to skills).
 // It uses vector embeddings for similarity search over skill descriptions
 // and triggers.
-type ProceduralMemory struct {
+type ProceduralMemory struct { //nolint:revive // stutter accepted: renaming this exported type is a breaking API change
 	emb  embedding.Embedder
 	vs   vectorstore.VectorStore
 	opts options

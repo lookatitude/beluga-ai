@@ -235,12 +235,6 @@ func TestRerankRetriever_PreservesDocumentMetadata(t *testing.T) {
 }
 
 func TestRerankRetriever_PassesOptionsToInner(t *testing.T) {
-	// Create a custom mock that tracks options
-	type optionTracker struct {
-		topK int
-	}
-	tracker := &optionTracker{}
-
 	inner := &mockRetriever{
 		docs: makeDocs("a", "b", "c", "d", "e"),
 	}
@@ -258,7 +252,6 @@ func TestRerankRetriever_PassesOptionsToInner(t *testing.T) {
 
 	// The inner retriever receives the options
 	// We can't easily test this with the current mock, but the code path is exercised
-	_ = tracker
 }
 
 // --- Test utility: custom reranker that sorts by ID ---

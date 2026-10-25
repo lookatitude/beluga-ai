@@ -139,30 +139,9 @@ func TestKMeansClusterer_Cluster(t *testing.T) {
 				{0.0, 0.0}, {0.1, 0.1}, {0.05, 0.05},
 				{10.0, 10.0}, {10.1, 10.1}, {9.95, 9.95},
 			},
-			k:    2,
-			seed: 42,
-			checkFn: func(t *testing.T, clusters [][]int) {
-				if len(clusters) != 2 {
-					t.Errorf("got %d clusters, want 2", len(clusters))
-					return
-				}
-				// Each cluster should have 3 elements.
-				for i, c := range clusters {
-					if len(c) != 3 {
-						t.Errorf("cluster %d has %d elements, want 3", i, len(c))
-					}
-				}
-				// Verify all indices are covered.
-				seen := make(map[int]bool)
-				for _, c := range clusters {
-					for _, idx := range c {
-						seen[idx] = true
-					}
-				}
-				if len(seen) != 6 {
-					t.Errorf("expected 6 unique indices, got %d", len(seen))
-				}
-			},
+			k:       2,
+			seed:    42,
+			checkFn: checkTwoDistinctGroups,
 		},
 		{
 			name: "auto K estimation",
@@ -173,20 +152,9 @@ func TestKMeansClusterer_Cluster(t *testing.T) {
 				}
 				return e
 			}(),
-			k:    0, // auto
-			seed: 42,
-			checkFn: func(t *testing.T, clusters [][]int) {
-				if len(clusters) < 2 {
-					t.Errorf("expected at least 2 clusters, got %d", len(clusters))
-				}
-				total := 0
-				for _, c := range clusters {
-					total += len(c)
-				}
-				if total != 20 {
-					t.Errorf("total elements = %d, want 20", total)
-				}
-			},
+			k:       0, // auto
+			seed:    42,
+			checkFn: checkAutoKClusters,
 		},
 	}
 
@@ -201,6 +169,45 @@ func TestKMeansClusterer_Cluster(t *testing.T) {
 				tt.checkFn(t, clusters)
 			}
 		})
+	}
+}
+
+// checkTwoDistinctGroups expects two clusters of three that together cover
+// all six input indices.
+func checkTwoDistinctGroups(t *testing.T, clusters [][]int) {
+	if len(clusters) != 2 {
+		t.Errorf("got %d clusters, want 2", len(clusters))
+		return
+	}
+	// Each cluster should have 3 elements.
+	for i, c := range clusters {
+		if len(c) != 3 {
+			t.Errorf("cluster %d has %d elements, want 3", i, len(c))
+		}
+	}
+	// Verify all indices are covered.
+	seen := make(map[int]bool)
+	for _, c := range clusters {
+		for _, idx := range c {
+			seen[idx] = true
+		}
+	}
+	if len(seen) != 6 {
+		t.Errorf("expected 6 unique indices, got %d", len(seen))
+	}
+}
+
+// checkAutoKClusters expects at least two clusters covering all 20 inputs.
+func checkAutoKClusters(t *testing.T, clusters [][]int) {
+	if len(clusters) < 2 {
+		t.Errorf("expected at least 2 clusters, got %d", len(clusters))
+	}
+	total := 0
+	for _, c := range clusters {
+		total += len(c)
+	}
+	if total != 20 {
+		t.Errorf("total elements = %d, want 20", total)
 	}
 }
 

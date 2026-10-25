@@ -22,7 +22,7 @@ func init() {
 }
 
 // RedisClient abstracts the Redis client for testability.
-type RedisClient interface {
+type RedisClient interface { //nolint:revive // stutter accepted: renaming this exported type is a breaking API change
 	HSet(ctx context.Context, key string, values ...any) *goredis.IntCmd
 	Del(ctx context.Context, keys ...string) *goredis.IntCmd
 	Do(ctx context.Context, args ...any) *goredis.Cmd

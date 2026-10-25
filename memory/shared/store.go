@@ -10,7 +10,7 @@ import (
 
 // SharedStore is the storage backend for shared memory fragments.
 // Implementations must be safe for concurrent use.
-type SharedStore interface {
+type SharedStore interface { //nolint:revive // stutter accepted: renaming this exported type is a breaking API change
 	// WriteFragment persists a fragment. If the fragment's key already exists,
 	// the store updates it in place and increments the version.
 	WriteFragment(ctx context.Context, frag *Fragment) error
@@ -88,7 +88,7 @@ func (s *InMemorySharedStore) WriteFragment(ctx context.Context, frag *Fragment)
 		}
 		existing.Content = frag.Content
 	case AppendOnly:
-		existing.Content = existing.Content + frag.Content
+		existing.Content += frag.Content
 	default: // LastWriteWins or unset
 		existing.Content = frag.Content
 	}

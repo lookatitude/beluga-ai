@@ -6,7 +6,6 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/v2/memory"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
@@ -21,7 +20,6 @@ type mockMemory struct {
 	saveErr     error
 	loadMsgs    []schema.Message
 	searchDocs  []schema.Document
-	deletable   bool
 }
 
 // deletableMemory wraps mockMemory and implements Deleter. It is
@@ -30,8 +28,8 @@ type mockMemory struct {
 type deletableMemory struct{ *mockMemory }
 
 func (d deletableMemory) Delete(_ context.Context, id string) error {
-	d.mockMemory.deleteCount.Add(1)
-	d.mockMemory.lastDelete = id
+	d.deleteCount.Add(1)
+	d.lastDelete = id
 	return nil
 }
 
@@ -64,16 +62,6 @@ type mockPolicy struct {
 
 func (p *mockPolicy) Decide(_ context.Context, _ PolicyFeatures) (MemoryAction, float64, error) {
 	return p.action, p.confidence, p.err
-}
-
-// mockExtractor is a test double for FeatureExtractor.
-type mockExtractor struct {
-	features PolicyFeatures
-	err      error
-}
-
-func (e *mockExtractor) Extract(_ context.Context, _ memory.Memory, _, _ schema.Message) (PolicyFeatures, error) {
-	return e.features, e.err
 }
 
 func newInput() schema.Message  { return schema.NewHumanMessage("hello") }

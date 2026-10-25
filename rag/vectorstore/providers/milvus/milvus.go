@@ -287,7 +287,7 @@ func buildIDFilter(ids []string) string {
 		if i > 0 {
 			filter += ","
 		}
-		filter += fmt.Sprintf(`"%s"`, id)
+		filter += fmt.Sprintf(`%q`, id)
 	}
 	filter += "]"
 	return filter

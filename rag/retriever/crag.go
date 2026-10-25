@@ -103,37 +103,21 @@ func (r *CRAGRetriever) Retrieve(ctx context.Context, query string, opts ...Opti
 			return nil, core.Errorf(core.ErrProviderDown, "retriever: crag inner retrieve: %w", err)
 		}
 
-		if len(docs) == 0 {
-			// No docs — try rewriting before web fallback.
-			if attempt < r.maxAttempts-1 {
-				rewritten, err := r.rewriteQuery(ctx, query, currentQuery)
-				if err != nil {
-					return nil, core.Errorf(core.ErrProviderDown, "retriever: crag rewrite: %w", err)
+		// Empty docs skip evaluation and go straight to rewrite / fallback.
+		if len(docs) > 0 {
+			relevant, err := r.selectRelevant(ctx, currentQuery, docs, cfg.TopK)
+			if err != nil {
+				return nil, err
+			}
+			if len(relevant) > 0 {
+				if r.hooks.AfterRetrieve != nil {
+					r.hooks.AfterRetrieve(ctx, relevant, nil)
 				}
-				currentQuery = rewritten
-				continue
+				return relevant, nil
 			}
-			return r.fallbackSearch(ctx, currentQuery, cfg)
 		}
 
-		// Evaluate relevance of retrieved documents.
-		relevant, err := r.evaluateRelevance(ctx, currentQuery, docs)
-		if err != nil {
-			return nil, core.Errorf(core.ErrProviderDown, "retriever: crag evaluate: %w", err)
-		}
-
-		// If enough relevant documents, return them.
-		if len(relevant) > 0 {
-			if cfg.TopK > 0 && len(relevant) > cfg.TopK {
-				relevant = relevant[:cfg.TopK]
-			}
-			if r.hooks.AfterRetrieve != nil {
-				r.hooks.AfterRetrieve(ctx, relevant, nil)
-			}
-			return relevant, nil
-		}
-
-		// Relevance too low — rewrite and retry if attempts remain.
+		// No docs or relevance too low — rewrite and retry if attempts remain.
 		if attempt < r.maxAttempts-1 {
 			rewritten, err := r.rewriteQuery(ctx, query, currentQuery)
 			if err != nil {
@@ -150,6 +134,19 @@ func (r *CRAGRetriever) Retrieve(ctx context.Context, query string, opts ...Opti
 	// Unreachable under normal operation: every iteration of the loop
 	// either returns or continues. Left as a defensive safety net.
 	return r.fallbackSearch(ctx, currentQuery, cfg)
+}
+
+// selectRelevant evaluates docs against query and returns the relevant ones,
+// truncated to topK when topK > 0.
+func (r *CRAGRetriever) selectRelevant(ctx context.Context, query string, docs []schema.Document, topK int) ([]schema.Document, error) {
+	relevant, err := r.evaluateRelevance(ctx, query, docs)
+	if err != nil {
+		return nil, core.Errorf(core.ErrProviderDown, "retriever: crag evaluate: %w", err)
+	}
+	if topK > 0 && len(relevant) > topK {
+		relevant = relevant[:topK]
+	}
+	return relevant, nil
 }
 
 // evaluateRelevance uses the LLM to score each document's relevance to the

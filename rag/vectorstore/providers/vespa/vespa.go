@@ -286,7 +286,7 @@ func formatVectorParam(v []float32) string {
 		if i > 0 {
 			sb.WriteString(",")
 		}
-		sb.WriteString(fmt.Sprintf("%g", f))
+		fmt.Fprintf(&sb, "%g", f)
 	}
 	sb.WriteString("]")
 	return sb.String()

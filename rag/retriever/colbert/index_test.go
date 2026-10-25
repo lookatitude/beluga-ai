@@ -160,15 +160,22 @@ func TestInMemoryIndex_Search(t *testing.T) {
 				}
 				return
 			}
-			if len(results) != tt.wantLen {
-				t.Fatalf("got %d results, want %d", len(results), tt.wantLen)
-			}
-			for i, wantID := range tt.wantIDs {
-				if results[i].ID != wantID {
-					t.Errorf("result[%d].ID = %q, want %q", i, results[i].ID, wantID)
-				}
-			}
+			assertIndexResults(t, results, tt.wantLen, tt.wantIDs)
 		})
+	}
+}
+
+// assertIndexResults checks that results has wantLen entries whose leading IDs
+// equal wantIDs in order.
+func assertIndexResults(t *testing.T, results []IndexResult, wantLen int, wantIDs []string) {
+	t.Helper()
+	if len(results) != wantLen {
+		t.Fatalf("got %d results, want %d", len(results), wantLen)
+	}
+	for i, wantID := range wantIDs {
+		if results[i].ID != wantID {
+			t.Errorf("result[%d].ID = %q, want %q", i, results[i].ID, wantID)
+		}
 	}
 }
 
