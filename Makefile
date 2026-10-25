@@ -64,7 +64,7 @@ bench: ## Run benchmarks
 	$(GOTEST) -bench=. -benchmem ./...
 
 docs: ## Start local pkgsite on :8080
-	$(GO) install golang.org/x/pkgsite/cmd/pkgsite@latest
+	$(GO) install golang.org/x/pkgsite/cmd/pkgsite@v0.6.0
 	$(PKGSITE) -http=:8080 .
 
 clean: ## Remove generated artifacts

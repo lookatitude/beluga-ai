@@ -36,7 +36,7 @@ Other great first contributions:
 
 ### Prerequisites
 
-- **Go 1.23+** — uses `iter.Seq2` for streaming
+- **Go 1.26+** — uses `iter.Seq2` for streaming
 - **Git**
 - **Make** (optional but recommended)
 - **golangci-lint** — `go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest`

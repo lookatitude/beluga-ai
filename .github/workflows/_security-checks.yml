@@ -42,7 +42,7 @@ on:
     - cron: "0 4 * * 1" # Weekly Monday 4am UTC
 
 env:
-  GO_VERSION: "1.25.7"
+  GO_VERSION: "1.27.3"
 
 jobs:
   snyk:
@@ -55,9 +55,9 @@ jobs:
       snyk_vulns: ${{ steps.snyk_result.outputs.vulns }}
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -95,7 +95,7 @@ jobs:
       trivy_status: ${{ steps.trivy_result.outputs.status }}
       trivy_findings: ${{ steps.trivy_result.outputs.findings }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Run Trivy filesystem scan
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
@@ -144,13 +144,13 @@ jobs:
     outputs:
       gitleaks_status: ${{ steps.gitleaks_result.outputs.status }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Run Gitleaks
         id: gitleaks_scan
-        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -177,14 +177,14 @@ jobs:
       licenses_status: ${{ steps.licenses_result.outputs.status }}
       licenses_violations: ${{ steps.licenses_result.outputs.violations }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Install go-licenses
-        run: go install github.com/google/go-licenses@v1.6.0
+        run: go install github.com/google/go-licenses/v2@v2.0.1
 
       - name: Check license compliance
         id: license_check
@@ -227,9 +227,9 @@ jobs:
       govulncheck_status: ${{ steps.result.outputs.status }}
       govulncheck_vulns: ${{ steps.result.outputs.vulns }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -237,7 +237,7 @@ jobs:
         id: scan
         continue-on-error: true
         run: |
-          go install golang.org/x/vuln/cmd/govulncheck@v1.7.0
+          go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
           govulncheck ./... 2>&1 | tee govulncheck-output.txt
 
       - name: Parse govulncheck results
@@ -264,9 +264,9 @@ jobs:
     outputs:
       gosec_status: ${{ steps.result.outputs.status }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
 

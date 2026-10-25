@@ -26,7 +26,7 @@ on:
         value: ${{ jobs.integration-test.outputs.integration_count }}
 
 env:
-  GO_VERSION: "1.25.7"
+  GO_VERSION: "1.27.3"
 
 jobs:
   lint:
@@ -36,9 +36,9 @@ jobs:
       lint_status: ${{ steps.lint_result.outputs.status }}
       lint_issues_count: ${{ steps.lint_result.outputs.issues_count }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -75,9 +75,9 @@ jobs:
     needs: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -98,9 +98,9 @@ jobs:
       test_count: ${{ steps.test_result.outputs.test_count }}
       coverage_pct: ${{ steps.test_result.outputs.coverage_pct }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -165,9 +165,9 @@ jobs:
       integration_status: ${{ steps.integration_result.outputs.status }}
       integration_count: ${{ steps.integration_result.outputs.test_count }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
 

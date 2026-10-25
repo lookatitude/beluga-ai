@@ -14,17 +14,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           check-latest: false
           cache: true
 
       - name: Install golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v9
         with:
           version: latest
           install-mode: binary
@@ -43,10 +43,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           check-latest: false
@@ -63,7 +63,7 @@ jobs:
 
       - name: Upload eval report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: eval-report
           path: eval-report.json
@@ -82,8 +82,8 @@ jobs:
   #   # — real-provider eval makes paid API calls and must be controlled.
   #   if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
   #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-go@v5
+  #     - uses: actions/checkout@v7
+  #     - uses: actions/setup-go@v7
   #       with:
   #         go-version-file: go.mod
   #         cache: true
@@ -95,7 +95,7 @@ jobs:
   #       run: beluga eval --max-rows 20 --max-cost 5.00 .beluga/eval.smoke.json
   #     - name: Upload eval report
   #       if: always()
-  #       uses: actions/upload-artifact@v4
+  #       uses: actions/upload-artifact@v7
   #       with:
   #         name: eval-report-real
   #         path: eval-report.json
