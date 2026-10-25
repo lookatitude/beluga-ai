@@ -138,7 +138,8 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 	metadatas := make([]map[string]any, len(docs))
 	embeds := make([][]float64, len(docs))
 
-	for i, doc := range docs {
+	for i, emb := range embeddings {
+		doc := &docs[i]
 		ids[i] = doc.ID
 		documents[i] = doc.Content
 		meta := make(map[string]any)
@@ -146,7 +147,7 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 			meta[k] = v
 		}
 		metadatas[i] = meta
-		embeds[i] = float32SliceToFloat64(embeddings[i])
+		embeds[i] = float32SliceToFloat64(emb)
 	}
 
 	body := map[string]any{

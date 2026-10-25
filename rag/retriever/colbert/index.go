@@ -19,7 +19,7 @@ type IndexResult struct {
 
 // ColBERTIndex stores pre-computed per-token document embeddings and supports
 // search by MaxSim scoring. Implementations must be safe for concurrent use.
-type ColBERTIndex interface {
+type ColBERTIndex interface { //nolint:revive // stutter accepted: renaming this exported type is a breaking API change
 	// Add stores per-token embeddings for a document. If a document with the
 	// same ID already exists, its embeddings are replaced.
 	Add(ctx context.Context, id string, tokenVecs [][]float32) error

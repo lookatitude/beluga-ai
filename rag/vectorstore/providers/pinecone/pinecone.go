@@ -91,7 +91,8 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 	}
 
 	vectors := make([]pineconeVector, len(docs))
-	for i, doc := range docs {
+	for i, emb := range embeddings {
+		doc := &docs[i]
 		meta := make(map[string]any)
 		meta["content"] = doc.Content
 		for k, v := range doc.Metadata {
@@ -99,7 +100,7 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 		}
 		vectors[i] = pineconeVector{
 			ID:       doc.ID,
-			Values:   float32SliceToFloat64(embeddings[i]),
+			Values:   float32SliceToFloat64(emb),
 			Metadata: meta,
 		}
 	}

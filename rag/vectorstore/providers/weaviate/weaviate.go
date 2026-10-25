@@ -88,7 +88,8 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 	}
 
 	objects := make([]map[string]any, len(docs))
-	for i, doc := range docs {
+	for i, emb := range embeddings {
+		doc := &docs[i]
 		props := map[string]any{
 			"content":    doc.Content,
 			"_beluga_id": doc.ID,
@@ -101,7 +102,7 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 			"class":      s.class,
 			"id":         uuidFromID(doc.ID),
 			"properties": props,
-			"vector":     float32SliceToFloat64(embeddings[i]),
+			"vector":     float32SliceToFloat64(emb),
 		}
 	}
 
@@ -172,7 +173,7 @@ func buildWhereClause(filter map[string]any) string {
 	operands := make([]string, 0, len(filter))
 	for key, val := range filter {
 		operands = append(operands, fmt.Sprintf(
-			`{path:["%s"],operator:Equal,valueText:"%v"}`, key, val))
+			`{path:[%q],operator:Equal,valueText:"%v"}`, key, val))
 	}
 	if len(operands) == 1 {
 		return fmt.Sprintf(`, where: %s`, operands[0])
@@ -308,7 +309,7 @@ func uuidFromID(id string) string {
 	// Pad or hash to fill UUID format: 8-4-4-4-12 hex digits.
 	h := fmt.Sprintf("%032x", []byte(id))
 	if len(h) < 32 {
-		h = h + "00000000000000000000000000000000"
+		h += "00000000000000000000000000000000"
 		h = h[:32]
 	}
 	h = h[:32]

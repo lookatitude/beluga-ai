@@ -183,16 +183,18 @@ func (g *GraphStore) Neighbors(_ context.Context, entityID string, depth int) ([
 func (g *GraphStore) findNeighbors(nodeID string, visited map[string]bool) ([]string, []memory.Relation) {
 	var neighbors []string
 	var rels []memory.Relation
-	for _, rel := range g.relations {
-		neighborID := ""
-		if rel.From == nodeID {
+	for i := range g.relations {
+		rel := &g.relations[i]
+		var neighborID string
+		switch nodeID {
+		case rel.From:
 			neighborID = rel.To
-		} else if rel.To == nodeID {
+		case rel.To:
 			neighborID = rel.From
-		} else {
+		default:
 			continue
 		}
-		rels = append(rels, rel)
+		rels = append(rels, *rel)
 		if !visited[neighborID] {
 			visited[neighborID] = true
 			neighbors = append(neighbors, neighborID)

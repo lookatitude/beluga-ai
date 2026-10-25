@@ -27,7 +27,7 @@ type ConflictResolver interface {
 //  3. Otherwise, if the candidate's ValidAt < newRelation.ValidAt, the candidate
 //     is invalidated: its InvalidAt is set to newRelation.ValidAt and its ExpiredAt
 //     is set to the current system time.
-type TemporalResolver struct{}
+type TemporalResolver struct{} //nolint:revive // stutter accepted: renaming this exported type is a breaking API change
 
 // NewTemporalResolver creates a new TemporalResolver.
 func NewTemporalResolver() *TemporalResolver {
@@ -44,7 +44,8 @@ func (r *TemporalResolver) Resolve(_ context.Context, newRelation *memory.Relati
 	var invalidated []memory.Relation
 	now := time.Now()
 
-	for _, candidate := range candidates {
+	for i := range candidates {
+		candidate := candidates[i] // copy: mutated below and returned without touching the input
 		// Condition 1: candidate already superseded -- coexist.
 		if candidate.InvalidAt != nil && !candidate.InvalidAt.After(newRelation.ValidAt) {
 			continue

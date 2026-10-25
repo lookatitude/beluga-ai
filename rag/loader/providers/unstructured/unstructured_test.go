@@ -503,16 +503,7 @@ func TestLoad_TableDriven(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var serverCalled bool
-			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				serverCalled = true
-				if tt.statusCode != 0 {
-					w.WriteHeader(tt.statusCode)
-				}
-				if tt.elements != nil {
-					w.Header().Set("Content-Type", "application/json")
-					json.NewEncoder(w).Encode(tt.elements)
-				}
-			}))
+			ts := newElementsServer(tt.statusCode, tt.elements, &serverCalled)
 			defer ts.Close()
 
 			l, err := New(config.ProviderConfig{BaseURL: ts.URL})
@@ -530,17 +521,39 @@ func TestLoad_TableDriven(t *testing.T) {
 			}
 
 			require.NoError(t, err)
-			if tt.wantDocs == 0 {
-				assert.Nil(t, docs)
-			} else {
-				assert.Len(t, docs, tt.wantDocs)
-				if tt.checkDoc != nil && len(docs) > 0 {
-					tt.checkDoc(t, docs[0])
-				}
-			}
+			assertLoadedDocs(t, docs, tt.wantDocs, tt.checkDoc)
 			if tt.elements != nil {
 				assert.True(t, serverCalled, "server should have been called")
 			}
 		})
+	}
+}
+
+// newElementsServer starts a test server that records that it was called,
+// writes statusCode when non-zero, and JSON-encodes elements when non-nil.
+func newElementsServer(statusCode int, elements []element, called *bool) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		*called = true
+		if statusCode != 0 {
+			w.WriteHeader(statusCode)
+		}
+		if elements != nil {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(elements)
+		}
+	}))
+}
+
+// assertLoadedDocs expects nil docs when wantDocs is zero; otherwise wantDocs
+// documents, with checkDoc (if set) applied to the first.
+func assertLoadedDocs(t *testing.T, docs []schema.Document, wantDocs int, checkDoc func(t *testing.T, doc schema.Document)) {
+	t.Helper()
+	if wantDocs == 0 {
+		assert.Nil(t, docs)
+		return
+	}
+	assert.Len(t, docs, wantDocs)
+	if checkDoc != nil && len(docs) > 0 {
+		checkDoc(t, docs[0])
 	}
 }

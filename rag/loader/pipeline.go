@@ -27,7 +27,7 @@ func WithTransformer(t Transformer) PipelineOption {
 // LoaderPipeline chains multiple loaders and transformers. When Load is called,
 // all loaders are invoked and their results are concatenated. Then all
 // transformers are applied to each document in order.
-type LoaderPipeline struct {
+type LoaderPipeline struct { //nolint:revive // stutter accepted: renaming this exported type is a breaking API change
 	loaders      []DocumentLoader
 	transformers []Transformer
 }
