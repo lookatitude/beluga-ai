@@ -97,7 +97,7 @@ model = llm.ApplyMiddleware(model,
 )
 ```
 
-`llm.ProviderLimits` also has a `TPM` field, but the `llm` middleware does not enforce it yet. Per-call settings (temperature, max tokens, tool choice) are `llm.GenerateOption`s passed to `Generate`/`Stream`, for example `llm.WithTemperature(0.7)`.
+`llm.ProviderLimits.TPM` caps tokens per minute; the middleware records usage from each response and stops admitting requests once the trailing-minute budget is spent. Per-call settings (temperature, max tokens, tool choice) are `llm.GenerateOption`s passed to `Generate`/`Stream`, for example `llm.WithTemperature(0.7)`.
 
 ### Resilience
 

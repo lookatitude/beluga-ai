@@ -61,7 +61,7 @@ Three buckets per provider:
 
 Why three? Different providers gate on different things. Anthropic historically gates on TPM; Google gates on RPM; self-hosted often gates on concurrency. All three coexist because the rate limiter takes the tightest constraint.
 
-`resilience.RateLimiter` enforces all three (`Allow`/`Wait` per request, `ConsumeTokens` for TPM, `Release` when a call finishes). The `llm.WithProviderLimits` middleware enforces RPM and concurrency; its `TPM` field is not enforced yet.
+`resilience.RateLimiter` enforces all three (`Allow`/`Wait` per request, `ConsumeTokens` for TPM, `Release` when a call finishes). The `llm.WithProviderLimits` middleware enforces RPM, TPM and concurrency. TPM is tracked from each response's `Usage.TotalTokens` (for streams, from the chunks that carry usage): a new request is admitted only while the tokens used in the trailing minute are below the limit.
 
 ```go
 // Middleware form (RPM + concurrency):
