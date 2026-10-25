@@ -1,13 +1,13 @@
 # Branch Discipline
 
 Branch-and-PR discipline for the framework repo. This file mirrors the
-mandatory rules already stated in `CLAUDE.md` and `workflow.md`, and adds the
+mandatory rules already stated in `AGENTS.md` and `workflow.md`, and adds the
 Linear-integrated branch-naming convention introduced in A1.
 
 ## Rules
 
 1. **Never commit directly to `main`.** Every change — code, docs, tests — starts with `git checkout -b <type>/<short-desc>` where `<type>` is `fix`, `feat`, `refactor`, `docs`, or `chore`.
-2. **Every branch ends with `gh pr create`.** Never merge directly to `main`. CI must be green before merge.
+2. **Every branch ends with a PR** (`gh pr create`), opened by the **coordinator** (the main session). Teammates and subagents prepare commits on their branch and hand back; they never push, open or merge PRs, or write to Linear/Sonar/Notion. Never merge directly to `main`. CI must be green before merge.
 3. **Verify `git branch --show-current` is not `main`** before any `git commit`.
 4. **Never skip hooks** (`--no-verify`, `--no-gpg-sign`, etc.) unless the user explicitly requests it. If a hook fails, investigate and fix the underlying issue.
 5. **Never force-push to `main`**, and never force-push without explicit user approval on any shared branch.

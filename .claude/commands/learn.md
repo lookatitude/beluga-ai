@@ -8,7 +8,7 @@ Capture learning: $ARGUMENTS
 ## Workflow
 
 ### Step 1 — Structure
-`@agent-coordinator` parses the correction and determines:
+The coordinator (main session, following `.claude/agents/coordinator.md`) parses the correction and determines:
 - Which package(s) affected
 - Root cause (not just symptom)
 - Prevention strategy
@@ -32,8 +32,8 @@ If the correction reveals a pattern to enforce, update the relevant `.claude/rul
 ### Step 4 — Update patterns (if applicable)
 If the correction reveals a canonical implementation approach, `@agent-architect` updates `.guild/wiki/patterns/<relevant>.md`.
 
-### Step 5 — Propose CLAUDE.md update (if mature)
-If this correction has been seen ≥3 times or is HIGH confidence: propose a `CLAUDE.md` rule addition for human approval. Never auto-write to `CLAUDE.md` — human decides.
+### Step 5 — Propose AGENTS.md update (if mature)
+If this correction has been seen ≥3 times or is HIGH confidence: propose a `AGENTS.md` rule addition for human approval. Never auto-write to `AGENTS.md` — human decides.
 
 ### Step 6 — Log
 Append to `.guild/wiki/log.md`.

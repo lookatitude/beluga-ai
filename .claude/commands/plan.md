@@ -8,7 +8,7 @@ Plan the feature: $ARGUMENTS
 ## Workflow
 
 ### Step 1 — Scope (coordinator)
-Use `@agent-coordinator` to parse the request, identify affected packages, list unknowns, and produce an initial task breakdown.
+The coordinator (main session, following `.claude/agents/coordinator.md`) parses the request, identify affected packages, list unknowns, and produce an initial task breakdown.
 
 ### Step 2 — Architecture (architect)
 Use `@agent-architect` to review against invariants in `.guild/wiki/architecture/invariants.md`, draft interface changes, and produce a research brief for the Researcher.
@@ -28,7 +28,7 @@ Stop when the architect confirms the design is fully specified.
 - An ADR appended to `.guild/wiki/architecture/decisions.md`
 
 ### Step 5 — Task list
-`@agent-coordinator` creates prioritized tasks with measurable acceptance criteria.
+The coordinator creates prioritized tasks with measurable acceptance criteria.
 
 ### Step 6 — Log
 Append an entry to `.guild/wiki/log.md` summarizing the plan.

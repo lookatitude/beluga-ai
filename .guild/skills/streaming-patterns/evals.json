@@ -1,0 +1,15 @@
+{
+  "skill": "streaming-patterns",
+  "should_trigger": [
+    "Implement Stream for the Ollama chat model using iter.Seq2.",
+    "This exported function returns <-chan Event; convert it to the framework's streaming style.",
+    "Fan the agent's event stream out to three consumers with a bounded buffer.",
+    "Make Invoke collect the Stream output for the new workflow runner."
+  ],
+  "should_not_trigger": [
+    "Split the Memory interface into read and write interfaces.",
+    "Add an init() registration for the new vectorstore provider.",
+    "Write the API reference page for the rag package.",
+    "Run govulncheck and triage the findings."
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "skill": "go-interfaces",
+  "should_trigger": [
+    "Design the Planner interface for the orchestration package; keep it small.",
+    "The VectorStore interface grew to six methods. How do we split it?",
+    "Add BeforeRetrieve and AfterRetrieve hooks to the retriever and make them composable.",
+    "Write a logging middleware for ChatModel and explain the ApplyMiddleware order."
+  ],
+  "should_not_trigger": [
+    "Add a registry with Register/New/List to the new cache package.",
+    "Implement the Stream method with iter.Seq2 and context cancellation.",
+    "Scan the repo with gosec and govulncheck.",
+    "Write the tutorial page for building a first agent."
+  ]
+}

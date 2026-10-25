@@ -100,7 +100,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "The subagent just finished. Verify: (1) Did it complete ALL assigned tasks from its dispatch prompt? (2) Did it run tests if it wrote code? (3) Did it note any corrections or new patterns discovered? (4) Did it use the 3-step retrieval protocol (index.md, wiki-query.sh, targeted files)? If any item is missing or incomplete, respond with decision:block and list what's missing. Otherwise respond with decision:approve.",
+            "prompt": "The subagent just finished. Verify: (1) Did it complete ALL assigned tasks from its dispatch prompt? (2) Did it run tests if it wrote code? (3) Did it note any corrections or new patterns discovered? (4) Did it use the 3-step retrieval protocol (index.md, wiki-query.sh — or an equivalent Grep of .guild/wiki/ for agents without Bash — and targeted files)? (5) It must NOT have pushed, opened or merged a PR, or written to Linear/Sonar/Notion — those belong to the coordinator (main session). If any item is missing or incomplete, respond with decision:block and list what's missing. Otherwise respond with decision:approve.",
             "model": "claude-haiku-4-5-20251001",
             "timeout": 15
           }

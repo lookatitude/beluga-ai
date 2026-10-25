@@ -1,11 +1,15 @@
 ---
 name: develop
-description: Implement a Linear sub-issue end-to-end via the framework agent chain (architect → developer-go → reviewer-security → reviewer-qa → PR).
+description: Implement a Linear sub-issue end-to-end via the framework agent chain (architect → developer-go → reviewer-security → reviewer-qa → Codex adversarial review → coordinator opens the PR).
 ---
 
 Develop: $ARGUMENTS
 
 $ARGUMENTS should be a Linear sub-issue ID (e.g., `LOO-43`) created by `/plan-feature` in the workspace. For work not tracked in Linear (small fixes, exploration), pass a brief path instead: `/develop research/briefs/<slug>.md` — then most of the Linear-specific steps below are skipped and the agents work from the brief alone.
+
+## Who runs what
+
+The main session is the **coordinator** (`.claude/agents/coordinator.md`): it runs pre-flight, dispatches each step as a teammate in an agent team (workspace `AGENTS.md` § Teammate dispatch — plan-ack checkpoint, CI-parity gate, no-over-scoping, correction-log handoff), verifies their output, and owns every outward action. Teammates prepare commits on the branch; they never push, open or merge PRs, or write to Linear/Sonar/Notion. Reading Linear in pre-flight is a coordinator action.
 
 ## Claude 5 chain notes
 
@@ -66,13 +70,13 @@ git checkout -b <branch-name>
 
 ## Agent chain
 
-With context loaded (sub-issue + parent + brief), proceed with the standard framework implementation chain per `framework/.claude/rules/workflow.md`:
+With context loaded (sub-issue + parent + brief), proceed with the standard framework implementation chain per `.claude/rules/workflow.md`:
 
 ### Step 1 — Architect
 
 `@agent-architect` analyzes the brief's Framework tasks + Proposed solution, produces a research request if gaps exist, then (after any research) outputs an implementation plan with interface definitions (Go code), tasks in dependency order, and acceptance criteria per task.
 
-If the architect hits a design question outside their core expertise (OTel span naming, OWASP mapping, RAG strategy, etc.), they may invoke `/consult <specialist-name>` once A2 ships to bounce the question to a workspace specialist. In A1, the architect should stop and ask the user when hitting such questions.
+If the architect hits a design question outside their core expertise (OTel span naming, OWASP mapping, RAG strategy, etc.), they use `/consult <specialist-name> <question>` to bounce it to a workspace specialist and cite the resulting `docs/consultations/` file in the plan.
 
 ### Step 2 — Researcher (if requested by architect)
 
@@ -80,7 +84,7 @@ If the architect hits a design question outside their core expertise (OTel span 
 
 ### Step 3 — Developer-go
 
-`@agent-developer-go` implements code AND tests per the plan using Red/Green TDD. Must pass `go build ./...`, `go vet ./...`, `go test -race ./...`, `go mod tidy`, `gofmt`, `golangci-lint`, `gosec -quiet`, `govulncheck` before submitting per `framework/.claude/rules/go-packages.md`.
+`@agent-developer-go` implements code AND tests per the plan using Red/Green TDD. Must pass the full pre-commit gate in `.claude/rules/go-packages.md` (`go build`, `go vet`, `go test -race`, `go mod tidy` + diff, `gofmt -l`, `golangci-lint` v2.15.0, `gosec -quiet` v2.30.0, `govulncheck` v1.9.0) before committing on the branch. CI parity: Go 1.27.3 with `GOTOOLCHAIN=local`; `make ci` mirrors the blocking CI jobs. A tool that could not run locally is reported as not run, never as green.
 
 ### Step 4 — Reviewer-security
 
@@ -90,15 +94,25 @@ If the architect hits a design question outside their core expertise (OTel span 
 
 `@agent-reviewer-qa` validates every acceptance criterion with evidence. Any failure returns to developer-go.
 
-## Open the PR
+### Step 6 — Codex adversarial review (coordinator)
 
-### 1. Push the branch
+Run `/codex:adversarial-review` on the branch (needs the `codex@openai-codex` plugin and a logged-in `codex` CLI — `codex login status`). Route findings back to developer-go, then through Steps 4–5 again for any code change. If Codex is unavailable, say so in the PR body: the review ran with weak (same-family) independence and is not an equivalent pass.
+
+## Open the PR (coordinator only)
+
+### 1. Run the pre-push checks
+
+The "Before push" list in `.claude/rules/workflow.md` (Greptile-pattern self-review, optional `sonar verify`, hotspot triage for scaffold templates).
+
+### 2. Push the branch
 
 ```bash
 git push -u origin <branch-name>
 ```
 
-### 2. Create the PR
+Verify `git rev-list --left-right --count origin/<branch-name>...HEAD` prints `0 0` (workspace W-013).
+
+### 3. Create the PR
 
 ```bash
 gh pr create --fill --title "<Conventional commit prefix>: <sub-issue title> (LOO-NN)" --body "<PR body referencing the brief, the sub-issue ID, and acceptance criteria>"
@@ -106,7 +120,7 @@ gh pr create --fill --title "<Conventional commit prefix>: <sub-issue title> (LO
 
 The PR title should include the `LOO-NN` ID so Linear auto-links the PR to the sub-issue (auto-link works on title/body/branch name). The PR body should link to the brief at `research/briefs/<slug>.md` in the workspace and summarize what was implemented against the acceptance criteria.
 
-### 3. Wait for CI + human review
+### 4. Wait for CI + human review
 
 CI runs gosec, golangci-lint, govulncheck, SonarCloud, Snyk, Trivy, CodeQL, unit + integration tests. Human reviews and merges when CI is green. On merge, Linear auto-closes the sub-issue.
 

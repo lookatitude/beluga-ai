@@ -1,1 +1,115 @@
-CLAUDE.md
+# Beluga AI v2
+
+Go-native agentic AI framework. `github.com/lookatitude/beluga-ai/v2`. Go 1.26+. Streaming via `iter.Seq2[T, error]`.
+
+## Project scope
+
+This repo owns the **engineering layer** of the Beluga project: code, tech docs, and releases. It does **not** own website content, marketing, blog posts, runnable example programs, or cross-repo strategy — those live in sibling repos (`beluga-website`, `beluga-examples`) and in the private workspace repo (`beluga.git`).
+
+When working on cross-repo concerns (release flow fan-out, website dispatch, shared incident learnings, feature-brief coordination), consult the **workspace wiki** at `../.guild/wiki/context/workspace-router.md` and the workspace `AGENTS.md` at `../AGENTS.md` — they're only visible when this repo is checked out inside the multi-repo workspace. Anything code-grounded or framework-specific stays here, in this repo's `.guild/wiki/` and `docs/`.
+
+## Critical rules
+
+1. Streaming uses `iter.Seq2[T, error]` in public APIs — never channels. `Invoke()` = stream + collect.
+2. Every extensible package: Interface → Registry (`Register`/`New`/`List`) → Hooks → Middleware (`func T → T`). (`tool` uses an instance `tool.Registry` instead of package-level `Register`/`New`.)
+3. Providers auto-register in `init()` + `Register()`. No config files to edit.
+4. Library never imports `k8s/`. Kubernetes is an optional overlay.
+5. Errors: `core.Error` with typed `ErrorCode`. Check `IsRetryable()` before retry.
+6. OTel GenAI spans (`gen_ai.*`) at every package boundary.
+7. Tests: table-driven, `-race`, `*_test.go` alongside source. Red/Green TDD.
+8. No `interface{}` in public APIs — use generics. No global mutable state outside registries.
+9. Interfaces have ≤4 methods. `context.Context` is the first parameter of every public function.
+10. Zero external deps in `core/` and `schema/` beyond stdlib + otel. No circular imports.
+
+## Branch + PR discipline (MANDATORY)
+
+See [`.claude/rules/branch-discipline.md`](.claude/rules/branch-discipline.md) — mandatory; enforced at the Quality Gates section of [`.claude/rules/workflow.md`](.claude/rules/workflow.md).
+
+## Pre-commit verification gate (MANDATORY)
+
+Before ANY `git commit` on a Go change, run and pass:
+
+```bash
+go build ./...
+go vet ./...
+go test -race ./...
+go mod tidy && git diff --exit-code go.mod go.sum
+test -z "$(gofmt -l $(git ls-files '*.go'))"   # fails if any tracked file is unformatted
+golangci-lint run ./...
+gosec -quiet ./...
+govulncheck ./...
+```
+
+Pre-existing findings in files you did NOT change: document in the commit
+message, don't block on them. New findings in files you DID change: fix
+before commit. See `.claude/rules/go-packages.md` for gosec focus areas.
+
+CI parity: CI runs Go 1.27.3 (`go.mod` floor 1.26) with `GOTOOLCHAIN=local`,
+golangci-lint v2.15.0, gosec v2.30.0 and govulncheck v1.9.0. `make tools`
+installs those pins; `make ci` mirrors the blocking CI jobs that can run locally (Trivy, Gitleaks and CodeQL run only in CI). A tool that could
+not run locally is reported as not run, never as green.
+
+## Before writing code
+
+1. File-scoped rules in `.claude/rules/` auto-load for the files you touch.
+2. Run `.claude/hooks/wiki-query.sh <package>` — returns relevant wiki index entries, corrections, and pattern files in one call.
+3. Read `.guild/wiki/index.md` retrieval routing table; read the targeted files for your task type.
+4. Read existing code in the target package — match style exactly.
+5. Write a failing test first, then make it pass (Red/Green TDD).
+
+## Commands (all independently triggerable)
+
+| Command | Purpose |
+|---|---|
+| `/plan $FEATURE` | Architect + Researcher design loop → implementation plan with acceptance criteria |
+| `/develop $TASK` | Implement a Linear sub-issue or brief: architect → developer-go (Red/Green TDD) → reviewer-security → reviewer-qa → Codex adversarial review → coordinator opens the PR |
+| `/consult <specialist> <question>` | Bounce a design question to a workspace specialist mid-flow; produces citable consultation in `docs/consultations/`. |
+| `/security-review $PATH` | 2 consecutive clean passes required |
+| `/qa-review $PATH` | Standalone QA review |
+| `/doc-check $PATH` | Verify examples compile and docs match current API |
+| `/document $TARGET` | Write package docs, tutorials, API reference |
+| `/dependency-audit` | gosec + govulncheck + update safe deps |
+| `/new-feature $DESC` | Composite pipeline: plan → develop → security-review → document → doc-check |
+| `/learn $DESCRIPTION` | Capture a correction into `.guild/wiki/corrections/<category>.md` |
+| `/wiki-learn [$PATH\|all]` | Extract patterns and architecture from the codebase into `.guild/wiki/` |
+| `/arch-validate $PACKAGE` | Validate code against architecture invariants |
+| `/arch-update $CHANGE` | Update architecture docs + ADRs after significant changes |
+| `/status` | Package health snapshot |
+
+Marketing and content commands (`/promote`, `/blog`) and `/notion-sync` live in the website and workspace repos respectively — see `beluga-website/.claude/commands/` and `beluga.git/.claude/commands/`. Framework-side `/new-feature` no longer chains into promotion; promotion happens independently in the website repo when content is ready.
+
+## Architecture references
+
+@docs/README.md
+@docs/architecture/01-overview.md
+@docs/architecture/03-extensibility-patterns.md
+@docs/architecture/18-package-dependency-map.md
+@docs/reference/providers.md
+
+## Agent team
+
+The **main session is the coordinator**: it dispatches the agents below (as agent-team teammates for multi-step or PR-bound work, per the workspace `AGENTS.md` § Teammate dispatch), verifies their output, runs the Codex adversarial review (`/codex:adversarial-review`; Guild uses `review: cross`), and owns every outward action — push, PR, merge, Linear/Sonar/Notion writes. Teammates prepare commits on their branch and never push.
+
+Each Claude Code agent in `.claude/agents/` has a Guild specialist in `.guild/agents/` for `/guild:*` runs (Guild never host-registers `.guild/agents/`, so both copies are kept; when a role's scope changes, update both). Framework skills live in `.claude/skills/<name>/` (canonical body) with a Guild wrapper of the same name in `.guild/skills/<name>/`.
+
+| `.claude` agent | Guild specialist | Source | `model` | Role |
+|---|---|---|---|---|
+| **coordinator** | — (host-only) | — | `opus` | Main-session role: routes work, enforces gates, owns outward actions, captures learnings. No Guild copy: in `/guild` runs the T0 session orchestrates and Guild's shipped `team-lead` leads each TaskCell. |
+| **architect** | `architect` | Guild `architect` template | `opus` | Designs interfaces, writes ADRs, validates invariants |
+| **researcher** | `researcher` | Guild `researcher` template | `opus` | Code-reading evidence gathering, never implements (no `Bash`) |
+| **developer-go** | `developer-go` | project-specific | `opus` | Red/Green TDD Go implementation. Not the `backend` template — that one is service-shaped (endpoints, migrations, queues), not library-shaped. |
+| **reviewer-security** | `security` | Guild `security` template | `opus` | 2 clean passes required, read-only |
+| **reviewer-qa** | `qa` | Guild `qa` template (narrowed to the acceptance gate) | `opus` | Validates acceptance criteria, read-only |
+| **docs-writer** | `doc-writer` | Guild `doc-writer` template | `sonnet` | Package docs, guides, API reference |
+
+Guild's per-lane auto-tiering (`.guild/settings.json` `models.tiers`) still applies inside `/guild` runs; the `model` column is each role's default tier. The read-only reviewers' Guild copies add `Write` only for their report and handoff receipt.
+
+Website (`developer-web`, `marketeer`) and Notion (`notion-publisher` in website, `notion-syncer` in workspace) agents live in their respective sibling repos. They are reachable when this repo is checked out inside the multi-repo Beluga workspace, but not invoked by framework commands.
+
+## Claude 5 agent prompts
+
+Agents under `.claude/agents/` include a **Prompting baseline (Claude 5)** section for the current model family (Opus 5.5, Sonnet 5.5, Haiku 5.5), aligned with Anthropic’s prompting guidance for **instructions** (not Go runtime defaults): literal acceptance criteria, concise defaults, tool use when it reduces error, and delegation only when the workspace or command explicitly requires isolation. Prefer stating **Done when …** in plans and reviews so downstream agents (and humans) do not have to infer scope.
+
+## Learning pipeline
+
+`/learn` or a reviewer records a correction in `.guild/wiki/corrections/<category>.md` (curated; see `corrections/README.md` for categories and the next `C-NNN` ID) → recurring ones become `.claude/rules/<file>.md` (enforced) → the most important reach `AGENTS.md` (always-loaded, human-approved).

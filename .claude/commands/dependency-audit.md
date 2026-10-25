@@ -25,4 +25,4 @@ For each finding:
 `@agent-developer-go` updates safe dependencies and runs the full test suite.
 
 ### Step 4 — Report
-Save to `raw/reviews/dependency-audit-<date>.md`. Append to `.guild/wiki/log.md`.
+The coordinator (main session) saves the report to `raw/reviews/dependency-audit-<date>.md` and appends to `.guild/wiki/log.md` (reviewer-security is read-only). Dependency bumps go on a branch and through the normal PR flow; the coordinator pushes.

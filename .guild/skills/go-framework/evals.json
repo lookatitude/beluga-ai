@@ -1,0 +1,15 @@
+{
+  "skill": "go-framework",
+  "should_trigger": [
+    "Create a new reranker package with Register/New/List and init() auto-registration.",
+    "Lay out the new cache package the way the other extensible packages are structured.",
+    "Add WithTimeout and WithRetries functional options to the memory store constructor.",
+    "Does the guard package follow the framework's registry + hooks + middleware pattern?"
+  ],
+  "should_not_trigger": [
+    "The Retriever interface has six methods; split it into two smaller interfaces.",
+    "Write a table-driven test with context cancellation for the Stream method.",
+    "Add an Anthropic provider to the existing llm registry with error mapping.",
+    "Bump golangci-lint in the CI workflow."
+  ]
+}

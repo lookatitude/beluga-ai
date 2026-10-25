@@ -15,15 +15,15 @@ Wiki-learn scope: $ARGUMENTS (default: "all"; otherwise a package path)
 - Error taxonomy (grep for `core.Errorf` and `ErrorCode`)
 - Compile-time checks (`var _ Interface = (*Impl)(nil)`)
 - Invariant violations (for a "known debt" list)
+- ADR-worthy commit messages (`git log`) and the per-package import graph (`go list -deps`) — the architect has `Bash`, the researcher does not
 
 Output: structured JSON or markdown scratch file in `raw/research/wiki-scan-<date>.md`.
 
 ### Step 2 — Evidence (researcher)
 `@agent-researcher`:
-- Inspects `go.mod` for dependency surface per package.
+- Reads `go.mod` for the dependency surface per package.
 - Walks `docs/` for concept coverage.
 - Greps tests for canonical examples (the cleanest real instance per pattern).
-- Scans git log for ADR-worthy commit messages.
 
 ### Step 3 — Distill (docs-writer)
 `@agent-docs-writer` turns the scan into wiki content:
@@ -40,9 +40,13 @@ For `.guild/wiki/architecture/invariants.md`:
 - Keep the 10 invariants + add a real file:line reference for each.
 
 ### Step 4 — Index (coordinator)
-`@agent-coordinator`:
+The coordinator (main session, following `.claude/agents/coordinator.md`):
 - Updates `.guild/wiki/index.md` — refreshes the "Last scanned" timestamp and adjusts the retrieval routing table if new patterns were discovered.
 - Appends a `/wiki-learn` entry to `.guild/wiki/log.md`.
+
+## Relation to Guild
+
+`/guild:learn` builds Guild's derived knowledge (codebase map, knowledge graph) under `.guild/`; `/wiki-learn` refreshes the curated pages in `.guild/wiki/patterns/` and `.guild/wiki/architecture/`. They complement each other; neither replaces the other.
 
 ## Modes
 

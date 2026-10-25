@@ -1,0 +1,15 @@
+{
+  "skill": "go-testing",
+  "should_trigger": [
+    "Write a failing table-driven test for the new reranker before implementing it.",
+    "Add a test that cancels the context mid-stream and asserts the iterator stops.",
+    "Create a mock embedder in internal/testutil with error injection and call counting.",
+    "Is the test coverage on the guard pipeline good enough to approve this PR?"
+  ],
+  "should_not_trigger": [
+    "Design the Hooks struct for the memory package.",
+    "Map Anthropic 429 and 529 responses to core.Error codes.",
+    "Pin the setup-go action to a SHA in the release workflow.",
+    "Write the conceptual guide for the RAG pipeline."
+  ]
+}

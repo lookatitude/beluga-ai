@@ -5,6 +5,12 @@ alwaysApply: true
 
 # Workflow Rules
 
+## Roles
+
+The **main session is the coordinator** (`.claude/agents/coordinator.md`). It routes tasks, dispatches the agents below (as agent-team teammates for multi-step or PR-bound work — plan-ack, CI-parity, no-over-scoping, correction-log handoff; see workspace `AGENTS.md` § Teammate dispatch), verifies their output, runs the Codex adversarial review, and owns every outward action: push, PR, merge, Linear/Sonar/Notion writes. Teammates prepare commits on their branch and never push.
+
+In a `/guild` run the same roles are the Guild specialists in `.guild/agents/` (mapping in `AGENTS.md` § Agent team); the T0 session coordinates and Guild's `review: cross` engages Codex.
+
 ## Task Routing
 
 | Task Type | Workflow | Agents |
@@ -13,6 +19,7 @@ alwaysApply: true
 | Bug fix / small change | Short workflow | Developer → Security Reviewer → QA |
 | Documentation only | Direct | Doc Writer |
 | Code review | Security review | Security Reviewer |
+| Any branch before its PR | Adversarial review | Coordinator runs `/codex:adversarial-review` |
 
 ## Full Workflow
 
@@ -30,6 +37,8 @@ alwaysApply: true
    - Any issue resets the clean pass counter to 0.
 6. **QA Engineer** validates every acceptance criterion with evidence.
    - If any criterion fails → return to Developer → fix → back through Security Review.
+7. **Coordinator** runs the Codex adversarial review on the branch (`/codex:adversarial-review`; needs the `codex@openai-codex` plugin and `codex login status` OK). Findings return to the Developer. If Codex is unavailable, record weak (same-family) independence in the PR body — it is not an equivalent pass.
+8. **Coordinator** runs the "Before push" checks, pushes, and opens the PR.
 
 ## Quality Gates
 
@@ -55,16 +64,23 @@ Pre-existing findings in files you did NOT change do not block your commit, but
 MUST be documented in the commit message so reviewers know to ignore or fix
 separately. New findings in files you DID change MUST be fixed before commit.
 
+CI parity: CI runs Go 1.27.3 with `GOTOOLCHAIN=local` and pins golangci-lint
+v2.15.0, gosec v2.30.0, govulncheck v1.9.0 (`make tools` installs them;
+`make ci` mirrors the locally runnable blocking CI jobs; Trivy, Gitleaks and CodeQL run only in CI). Never claim a check green when the
+tool could not run locally — say it did not run.
+
 ### Before push (MANDATORY on every branch that will open or update a PR)
+
+Run by the **coordinator**, who is the only one that pushes.
 
 PRs are expected to pass **both** SonarCloud quality gate **and** Greptile review on first submission. Most regressions that ship back after `git push` fall into a small set of recurring patterns that are cheap to catch locally. Run this pre-push pass on every changed file:
 
-1. **Verify `git rev-list --left-right --count origin/<branch>...HEAD` is `0 0` after every push.** If it shows `N 0`, the push silently skipped (no tracking or `push.autoSetupRemote` disabled). Use `git push origin <branch>:<branch>` explicitly for new branches. See workspace `.guild/wiki/standards/corrections.md` W-013.
+1. **Verify `git rev-list --left-right --count origin/<branch>...HEAD` is `0 0` after every push.** If it shows `N 0`, the push silently skipped (no tracking or `push.autoSetupRemote` disabled). Use `git push origin <branch>:<branch>` explicitly for new branches. See workspace `../.guild/wiki/standards/corrections.md` W-013.
 2. **Greptile-pattern self-review on every file in the diff:**
    - Non-deterministic `for k, v := range map[...]...` writes with partial-failure risk → replace with a slice of pairs + rollback.
    - GitHub Actions uses mutable `@vN` tags on any new workflow that will exist as a security-scanned artifact (scaffolded CI templates, release workflows) → pin to a full SHA OR document that repo-wide `@vN` convention is deliberate.
    - `curl | tar` or `curl | sh` of binaries without `--proto '=https' --tlsv1.2` and without a `sha256sum -c` checksum verification step.
-   - Exported interfaces renamed without `type OldName = NewName` back-compat aliases (S8196). See workspace `.guild/wiki/standards/corrections.md` W-012 rule 2.
+   - Exported interfaces renamed without `type OldName = NewName` back-compat aliases (S8196). See workspace `../.guild/wiki/standards/corrections.md` W-012 rule 2.
    - Dead exported accessor that could be unexported or removed (no external callers in `grep -rn <Name> .`).
    - Refactors that change observable behavior without a test asserting the new behavior — especially CC-reduction refactors that introduce new mutations.
 3. **SonarCloud parity (STRONGLY RECOMMENDED, not blocking):** `sonar verify --file <changed-file>` per touched file catches S3776 (cognitive complexity), S1192 (duplicate literals), S8196 (interface naming), and S8193 (unnecessary vars) locally, before the full CI scan runs. Skip for doc-only or generated-file changes.
@@ -94,7 +110,8 @@ Failures caught in pre-push cost no CI cycle and preserve the PR's first-pass-cl
 
 ## Handoff Protocol
 
+- Teammates send a structured plan via `SendMessage` first and wait for an explicit `go` before mutating state.
 - Each agent produces structured output for the next agent.
 - Never skip an agent in the chain.
-- If blocked, escalate to the user — don't guess.
+- If blocked, escalate to the coordinator (and through it to the user) — don't guess.
 - Document decisions and rationale at each step.
