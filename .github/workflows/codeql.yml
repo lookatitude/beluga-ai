@@ -1,15 +1,15 @@
 name: CodeQL
 
+# `.github/**` is not ignored: the `actions` language analyses the workflow
+# files themselves, so workflow-only changes must run it.
 on:
   push:
     branches: [main]
     paths-ignore:
-      - ".github/**"
       - ".claude/**"
   pull_request:
     branches: [main]
     paths-ignore:
-      - ".github/**"
       - ".claude/**"
   schedule:
     - cron: "0 6 * * 1" # Weekly Monday 6am UTC
@@ -18,18 +18,29 @@ permissions:
   security-events: write
   contents: read
 
+env:
+  GOTOOLCHAIN: local
+
 jobs:
   analyze:
-    name: CodeQL Analysis
+    name: CodeQL Analysis (${{ matrix.language }})
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     strategy:
       fail-fast: false
       matrix:
-        language: [go]
+        include:
+          - language: go
+            build-mode: autobuild
+          - language: actions
+            build-mode: none
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v7
+        if: matrix.language == 'go'
         with:
           go-version: "1.27.3"
 
@@ -37,9 +48,7 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v4
+          build-mode: ${{ matrix.build-mode }}
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4

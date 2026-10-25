@@ -1,26 +1,27 @@
 name: Main
 
+# Runs CI and the security suite on every push to main, including pushes
+# that only touch workflows, docs or Guild knowledge. Whether a push cuts a
+# release is decided inside the release-tag job (scripts/release-version.sh),
+# not by a trigger path filter, so workflow-only edits are still
+# validated but do not produce a release.
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - "CODE-QUALITY.md"
-      - "SECURITY.md"
-      - "CHANGELOG.md"
-      - ".github/**"
-      - ".claude/**"
-      # Documentation and Guild knowledge never warrant a release. A push runs only
-      # when at least one changed file falls outside these patterns.
-      - ".guild/**"
-      - "docs/**"
-      - "**/*.md"
 
+# Cancelling an older run is safe: the release-tag job only computes a
+# version and dispatches release.yml, which creates the tag itself. A
+# cancelled run therefore never leaves a pushed tag without a release.
 concurrency:
   group: "main-pipeline"
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
   GO_VERSION: "1.27.3"
+  GOTOOLCHAIN: local
 
 jobs:
   ci:
@@ -36,7 +37,6 @@ jobs:
       security-events: write
     uses: ./.github/workflows/_security-checks.yml
     secrets:
-      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
   sonarcloud:
@@ -78,6 +78,10 @@ jobs:
 
       - name: Generate CODE-QUALITY.md
         env:
+          VET_STATUS: ${{ needs.ci.outputs.vet_status }}
+          BUILD_STATUS: ${{ needs.ci.outputs.build_status }}
+          TIDY_STATUS: ${{ needs.ci.outputs.tidy_status }}
+          PROVIDERS_DOC_STATUS: ${{ needs.ci.outputs.providers_doc_status }}
           LINT_STATUS: ${{ needs.ci.outputs.lint_status }}
           LINT_ISSUES: ${{ needs.ci.outputs.lint_issues_count }}
           TEST_STATUS: ${{ needs.ci.outputs.test_status }}
@@ -93,65 +97,69 @@ jobs:
 
           HEADER
 
-          TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
-          echo "**Last updated:** ${TIMESTAMP}" >> CODE-QUALITY.md
-          echo "" >> CODE-QUALITY.md
+          {
+            TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
+            echo "**Last updated:** ${TIMESTAMP}"
+            echo ""
 
-          # Linting section
-          echo "## Linting" >> CODE-QUALITY.md
-          echo "" >> CODE-QUALITY.md
-          if [ "$LINT_STATUS" = "passing" ]; then
-            echo "**Status:** Passing" >> CODE-QUALITY.md
-          else
-            echo "**Status:** Failing" >> CODE-QUALITY.md
-          fi
-          echo "**Issues found:** ${LINT_ISSUES:-0}" >> CODE-QUALITY.md
-          echo "" >> CODE-QUALITY.md
-          echo "**Linters enabled:** gosec, govet, staticcheck, errcheck, ineffassign, unused, gofmt, goimports, misspell, revive, bodyclose, noctx, gocritic" >> CODE-QUALITY.md
-          echo "" >> CODE-QUALITY.md
+            # Linting section
+            echo "## Linting"
+            echo ""
+            if [ "$LINT_STATUS" = "passing" ]; then
+              echo "**Status:** Passing"
+            else
+              echo "**Status:** Failing"
+            fi
+            echo "**Issues found:** ${LINT_ISSUES:-0}"
+            echo ""
+            echo "**Linters enabled:** gosec, govet, staticcheck, errcheck, ineffassign, unused, gofmt, goimports, misspell, revive, bodyclose, noctx, gocritic"
+            echo ""
 
-          # Unit tests section
-          echo "## Unit Tests" >> CODE-QUALITY.md
-          echo "" >> CODE-QUALITY.md
-          if [ "$TEST_STATUS" = "passing" ]; then
-            echo "**Status:** Passing" >> CODE-QUALITY.md
-          else
-            echo "**Status:** Failing" >> CODE-QUALITY.md
-          fi
-          echo "**Total tests:** ${TEST_COUNT:-0}" >> CODE-QUALITY.md
-          echo "**Coverage:** ${COVERAGE:-0}%" >> CODE-QUALITY.md
-          echo "" >> CODE-QUALITY.md
+            # Unit tests section
+            echo "## Unit Tests"
+            echo ""
+            if [ "$TEST_STATUS" = "passing" ]; then
+              echo "**Status:** Passing"
+            else
+              echo "**Status:** Failing"
+            fi
+            echo "**Total tests:** ${TEST_COUNT:-0}"
+            echo "**Coverage:** ${COVERAGE:-0}%"
+            echo ""
 
-          # Integration tests section
-          echo "## Integration Tests" >> CODE-QUALITY.md
-          echo "" >> CODE-QUALITY.md
-          if [ "$INT_STATUS" = "passing" ]; then
-            echo "**Status:** Passing" >> CODE-QUALITY.md
-          else
-            echo "**Status:** Failing" >> CODE-QUALITY.md
-          fi
-          echo "**Total tests:** ${INT_COUNT:-0}" >> CODE-QUALITY.md
-          echo "" >> CODE-QUALITY.md
+            # Integration tests section
+            echo "## Integration Tests"
+            echo ""
+            if [ "$INT_STATUS" = "passing" ]; then
+              echo "**Status:** Passing"
+            else
+              echo "**Status:** Failing"
+            fi
+            echo "**Total tests:** ${INT_COUNT:-0}"
+            echo ""
 
-          # Build checks section
-          echo "## Build Checks" >> CODE-QUALITY.md
-          echo "" >> CODE-QUALITY.md
-          echo "| Check | Status |" >> CODE-QUALITY.md
-          echo "|-------|--------|" >> CODE-QUALITY.md
-          echo "| go vet | Passing |" >> CODE-QUALITY.md
-          echo "| go build | Passing |" >> CODE-QUALITY.md
-          echo "| go mod tidy | Clean |" >> CODE-QUALITY.md
-          echo "" >> CODE-QUALITY.md
+            # Build checks section
+            echo "## Build Checks"
+            echo ""
+            echo "| Check | Status |"
+            echo "|-------|--------|"
+            row() { case "$2" in passing|clean) echo "| $1 | ${3} |" ;; "") echo "| $1 | Not run |" ;; *) echo "| $1 | ${4} |" ;; esac; }
+            {
+              row "go vet" "$VET_STATUS" Passing Failing
+              row "go build" "$BUILD_STATUS" Passing Failing
+              row "go mod tidy" "$TIDY_STATUS" Clean Drift
+              row "provider catalog (docs/reference/providers.md)" "$PROVIDERS_DOC_STATUS" "Up to date" Stale
+            }
+            echo ""
 
-          # SonarCloud link
-          echo "## SonarCloud" >> CODE-QUALITY.md
-          echo "" >> CODE-QUALITY.md
-          echo "Full analysis available at [SonarCloud Dashboard](https://sonarcloud.io/project/overview?id=lookatitude_beluga-ai)" >> CODE-QUALITY.md
+            # SonarCloud link
+            echo "## SonarCloud"
+            echo ""
+            echo "Full analysis available at [SonarCloud Dashboard](https://sonarcloud.io/project/overview?id=lookatitude_beluga-ai)"
+          } >> CODE-QUALITY.md
 
       - name: Generate SECURITY.md
         env:
-          SNYK_STATUS: ${{ needs.security.outputs.snyk_status }}
-          SNYK_VULNS: ${{ needs.security.outputs.snyk_vulns }}
           TRIVY_STATUS: ${{ needs.security.outputs.trivy_status }}
           TRIVY_FINDINGS: ${{ needs.security.outputs.trivy_findings }}
           GOVULNCHECK_STATUS: ${{ needs.security.outputs.govulncheck_status }}
@@ -168,94 +176,90 @@ jobs:
 
           HEADER
 
-          TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
-          echo "**Last updated:** ${TIMESTAMP}" >> SECURITY.md
-          echo "" >> SECURITY.md
+          {
+            TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
+            echo "**Last updated:** ${TIMESTAMP}"
+            echo ""
 
-          # Snyk section
-          echo "## Dependency Vulnerabilities (Snyk)" >> SECURITY.md
-          echo "" >> SECURITY.md
-          if [ "$SNYK_STATUS" = "clean" ]; then
-            echo "**Status:** No vulnerabilities found" >> SECURITY.md
-          else
-            echo "**Status:** ${SNYK_VULNS:-unknown} vulnerabilities found" >> SECURITY.md
-          fi
-          echo "" >> SECURITY.md
-          echo "[View full Snyk report](https://app.snyk.io)" >> SECURITY.md
-          echo "" >> SECURITY.md
+            # Snyk section
+            echo "## Dependency Vulnerabilities (Snyk)"
+            echo ""
+            echo "Snyk runs through the Snyk GitHub App, which posts the \`security/snyk\` and \`license/snyk\` checks on every pull request."
+            echo ""
 
-          # Trivy section
-          echo "## Dependency & Filesystem Scan (Trivy)" >> SECURITY.md
-          echo "" >> SECURITY.md
-          if [ "$TRIVY_STATUS" = "clean" ]; then
-            echo "**Status:** No findings (CRITICAL/HIGH)" >> SECURITY.md
-          else
-            echo "**Status:** ${TRIVY_FINDINGS:-0} findings detected" >> SECURITY.md
-          fi
-          echo "" >> SECURITY.md
-          echo "Results uploaded to [GitHub Security tab](../../security/code-scanning)" >> SECURITY.md
-          echo "" >> SECURITY.md
+            # Trivy section
+            echo "## Dependency & Filesystem Scan (Trivy)"
+            echo ""
+            if [ "$TRIVY_STATUS" = "clean" ]; then
+              echo "**Status:** No findings (CRITICAL/HIGH)"
+            else
+              echo "**Status:** ${TRIVY_FINDINGS:-0} findings detected"
+            fi
+            echo ""
+            echo "Results uploaded to [GitHub Security tab](../../security/code-scanning)"
+            echo ""
 
-          # govulncheck section
-          echo "## Go Vulnerability Database (govulncheck)" >> SECURITY.md
-          echo "" >> SECURITY.md
-          if [ "$GOVULNCHECK_STATUS" = "clean" ]; then
-            echo "**Status:** No vulnerabilities found" >> SECURITY.md
-          else
-            echo "**Status:** ${GOVULNCHECK_VULNS:-unknown} vulnerabilities found" >> SECURITY.md
-          fi
-          echo "" >> SECURITY.md
-          echo "Scanned using the Go team's official vulnerability scanner with symbol-level reachability analysis." >> SECURITY.md
-          echo "" >> SECURITY.md
-          echo "[Go Vulnerability Database](https://vuln.go.dev)" >> SECURITY.md
-          echo "" >> SECURITY.md
+            # govulncheck section
+            echo "## Go Vulnerability Database (govulncheck)"
+            echo ""
+            if [ "$GOVULNCHECK_STATUS" = "clean" ]; then
+              echo "**Status:** No vulnerabilities found"
+            else
+              echo "**Status:** ${GOVULNCHECK_VULNS:-unknown} vulnerabilities found"
+            fi
+            echo ""
+            echo "Scanned using the Go team's official vulnerability scanner with symbol-level reachability analysis."
+            echo ""
+            echo "[Go Vulnerability Database](https://vuln.go.dev)"
+            echo ""
 
-          # gosec section
-          echo "## Static Security Analysis (gosec)" >> SECURITY.md
-          echo "" >> SECURITY.md
-          if [ "$GOSEC_STATUS" = "clean" ]; then
-            echo "**Status:** No findings" >> SECURITY.md
-          else
-            echo "**Status:** Findings detected — review required" >> SECURITY.md
-          fi
-          echo "" >> SECURITY.md
-          echo "SARIF results uploaded to [GitHub Security tab](../../security/code-scanning)" >> SECURITY.md
-          echo "" >> SECURITY.md
+            # gosec section
+            echo "## Static Security Analysis (gosec)"
+            echo ""
+            if [ "$GOSEC_STATUS" = "clean" ]; then
+              echo "**Status:** No findings"
+            else
+              echo "**Status:** Findings detected — review required"
+            fi
+            echo ""
+            echo "SARIF results uploaded to [GitHub Security tab](../../security/code-scanning)"
+            echo ""
 
-          # Gitleaks section
-          echo "## Secret Detection (Gitleaks)" >> SECURITY.md
-          echo "" >> SECURITY.md
-          if [ "$GITLEAKS_STATUS" = "clean" ]; then
-            echo "**Status:** No secrets detected" >> SECURITY.md
-          else
-            echo "**Status:** Potential secrets detected — review required" >> SECURITY.md
-          fi
-          echo "" >> SECURITY.md
+            # Gitleaks section
+            echo "## Secret Detection (Gitleaks)"
+            echo ""
+            if [ "$GITLEAKS_STATUS" = "clean" ]; then
+              echo "**Status:** No secrets detected"
+            else
+              echo "**Status:** Potential secrets detected — review required"
+            fi
+            echo ""
 
-          # License compliance section
-          echo "## License Compliance (go-licenses)" >> SECURITY.md
-          echo "" >> SECURITY.md
-          if [ "$LIC_STATUS" = "compliant" ]; then
-            echo "**Status:** All dependencies compliant" >> SECURITY.md
-          else
-            echo "**Status:** ${LIC_VIOLATIONS:-0} license violations found" >> SECURITY.md
-          fi
-          echo "" >> SECURITY.md
-          echo "**Allowed licenses:** MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, MPL-2.0" >> SECURITY.md
-          echo "" >> SECURITY.md
+            # License compliance section
+            echo "## License Compliance (go-licenses)"
+            echo ""
+            if [ "$LIC_STATUS" = "compliant" ]; then
+              echo "**Status:** All dependencies compliant"
+            else
+              echo "**Status:** ${LIC_VIOLATIONS:-0} license violations found"
+            fi
+            echo ""
+            echo "**Allowed licenses:** MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, MPL-2.0"
+            echo ""
 
-          # CodeQL note
-          echo "## Static Analysis (CodeQL)" >> SECURITY.md
-          echo "" >> SECURITY.md
-          echo "CodeQL runs in a [separate workflow](../../actions/workflows/codeql.yml). Results are available in the [GitHub Security tab](../../security/code-scanning)." >> SECURITY.md
-          echo "" >> SECURITY.md
+            # CodeQL note
+            echo "## Static Analysis (CodeQL)"
+            echo ""
+            echo "CodeQL runs in a [separate workflow](../../actions/workflows/codeql.yml). Results are available in the [GitHub Security tab](../../security/code-scanning)."
+            echo ""
 
-          # Summary
-          echo "---" >> SECURITY.md
-          echo "" >> SECURITY.md
-          echo "## Reporting Vulnerabilities" >> SECURITY.md
-          echo "" >> SECURITY.md
-          echo "If you discover a security vulnerability, please report it responsibly by emailing security@lookatitude.com. Do not open public issues for security vulnerabilities." >> SECURITY.md
+            # Summary
+            echo "---"
+            echo ""
+            echo "## Reporting Vulnerabilities"
+            echo ""
+            echo "If you discover a security vulnerability, please report it responsibly by emailing security@lookatitude.com. Do not open public issues for security vulnerabilities."
+          } >> SECURITY.md
 
       - name: Upload reports artifact
         uses: actions/upload-artifact@v7
@@ -265,147 +269,58 @@ jobs:
             CODE-QUALITY.md
             SECURITY.md
 
-  commit-reports:
-    name: Commit Generated Reports
-    needs: [generate-reports]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v7
+      - name: Write reports to the job summary
+        run: |
+          {
+            cat CODE-QUALITY.md
+            echo ""
+            cat SECURITY.md
+          } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Download reports artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: reports
+  # Generated reports are no longer committed back to main (the PRs that did
+  # it were opened with GITHUB_TOKEN, so no checks ran on them and they piled
+  # up unmerged). They are published instead: the job summary above, the
+  # `reports` artifact, and — for releases — inside docs-bundle.tar.gz, which
+  # release.yml builds from this run's `reports` artifact.
 
-      - name: Create PR for report updates
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ci/update-reports
-          base: main
-          delete-branch: true
-          title: "chore(ci): update CODE-QUALITY.md and SECURITY.md"
-          commit-message: "chore(ci): update CODE-QUALITY.md and SECURITY.md [skip ci]"
-          body: |
-            Auto-generated report updates from the main CI pipeline.
-
-            - Update `CODE-QUALITY.md`
-            - Update `SECURITY.md`
-          add-paths: |
-            CODE-QUALITY.md
-            SECURITY.md
-
-  # After main passes CI and security, compute next version from conventional
-  # commits since the last tag: minor for feat, patch otherwise.
+  # After main passes CI and security, compute the next version from
+  # conventional commits since the last tag: minor for feat, patch otherwise.
   # Breaking changes (feat!:, fix!:, BREAKING CHANGE) skip auto-release;
   # major versions must be published manually via the Release workflow.
   #
-  # NOTE: Tags pushed via GITHUB_TOKEN do not trigger other workflows
-  # (GitHub's anti-recursion policy). Instead of relying on the tag push
-  # event, we explicitly dispatch the release workflow after tagging.
+  # This job does not push the tag. It dispatches release.yml with the tag
+  # and the tested commit SHA, and release.yml's create-tag job creates an
+  # annotated tag at that SHA. That removes the window where a cancelled run
+  # could push a tag and never dispatch its release. (Tags pushed with
+  # GITHUB_TOKEN would not trigger release.yml's push:tags event anyway.)
   release-tag:
     name: Bump Version and Create Release Tag
-    needs: [ci, security]
+    needs: [ci, security, generate-reports]
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       actions: write
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - name: Compute next version from conventional commits
+      # scripts/release-version.sh holds the rules (tested by
+      # scripts/release-version_test.sh): skip when HEAD is tagged, when only
+      # workflows/docs/Guild/Markdown changed since the last tag, on breaking
+      # changes, or when there is no feat/fix/perf/revert/(deps) commit;
+      # otherwise minor for feat, patch for the rest.
+      - name: Decide whether to release and compute the next version
         id: bump
-        run: |
-          set -e
-
-          # ── 1. Resolve latest tag ──────────────────────────────────────
-          LATEST=$(git tag -l 'v*.*.*' --sort=-v:refname | head -1 || true)
-
-          if [ -z "$LATEST" ]; then
-            echo "No existing tag found; starting at v0.0.1"
-            echo "tag=v0.0.1" >> "$GITHUB_OUTPUT"
-            echo "skip=false"  >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "Latest tag: ${LATEST}"
-
-          # ── 2. Skip if HEAD is already tagged ──────────────────────────
-          if git describe --exact-match --tags HEAD 2>/dev/null; then
-            echo "HEAD is already tagged — skipping auto-release."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # ── 3. Parse latest tag into MAJOR.MINOR.PATCH ────────────────
-          V="${LATEST#v}"
-          MAJOR="${V%%.*}"
-          REST="${V#*.}"
-          MINOR="${REST%%.*}"
-          PATCH="${REST#*.}"
-
-          # ── 4. Collect commit subjects + bodies since last tag ─────────
-          HAS_BREAKING=false
-          HAS_FEAT=false
-
-          # Use NUL-delimited records so multi-line bodies are safe.
-          # Format: subject<NUL>body<NUL>  (repeated per commit)
-          while IFS= read -r -d '' SUBJECT && IFS= read -r -d '' BODY; do
-            # 4a. Check for breaking change indicator in the subject
-            #     Matches: feat!:  fix(scope)!:  refactor!:  etc.
-            if echo "$SUBJECT" | grep -qE '^[a-z]+(\([^)]*\))?!:'; then
-              echo "  BREAKING (subject): ${SUBJECT}"
-              HAS_BREAKING=true
-            fi
-
-            # 4b. Check for BREAKING CHANGE token in the body
-            if echo "$BODY" | grep -qi 'BREAKING CHANGE'; then
-              echo "  BREAKING (body): ${SUBJECT}"
-              HAS_BREAKING=true
-            fi
-
-            # 4c. Check for feat (without breaking bang)
-            if echo "$SUBJECT" | grep -qE '^feat(\([^)]*\))?:'; then
-              echo "  feat: ${SUBJECT}"
-              HAS_FEAT=true
-            fi
-          done < <(git log "${LATEST}..HEAD" --pretty=format:"%s%x00%b%x00")
-
-          # ── 5. Decide bump ─────────────────────────────────────────────
-          if [ "$HAS_BREAKING" = true ]; then
-            echo "Breaking changes detected — skipping auto-release."
-            echo "Major releases must be published manually via the Release workflow."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          if [ "$HAS_FEAT" = true ]; then
-            NEW_TAG="v${MAJOR}.$((MINOR + 1)).0"
-            echo "feat detected → minor bump: ${LATEST} -> ${NEW_TAG}"
-          else
-            NEW_TAG="v${MAJOR}.${MINOR}.$((PATCH + 1))"
-            echo "No feat → patch bump: ${LATEST} -> ${NEW_TAG}"
-          fi
-
-          echo "tag=${NEW_TAG}" >> "$GITHUB_OUTPUT"
-          echo "skip=false"     >> "$GITHUB_OUTPUT"
-
-      - name: Create and push tag
-        if: steps.bump.outputs.skip != 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "${{ steps.bump.outputs.tag }}"
-          git push origin "${{ steps.bump.outputs.tag }}"
+        run: scripts/release-version.sh
 
       - name: Trigger release workflow
         if: steps.bump.outputs.skip != 'true'
         uses: actions/github-script@v9
+        env:
+          RELEASE_TAG: ${{ steps.bump.outputs.tag }}
+          RELEASE_SHA: ${{ github.sha }}
+          REPORTS_RUN_ID: ${{ github.run_id }}
         with:
           script: |
             await github.rest.actions.createWorkflowDispatch({
@@ -414,7 +329,9 @@ jobs:
               workflow_id: 'release.yml',
               ref: 'main',
               inputs: {
-                tag: '${{ steps.bump.outputs.tag }}',
-                ref: 'main'
+                tag: process.env.RELEASE_TAG,
+                // Tag the commit this run tested, not whatever main is now.
+                ref: process.env.RELEASE_SHA,
+                reports_run_id: process.env.REPORTS_RUN_ID
               }
             });

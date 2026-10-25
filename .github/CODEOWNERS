@@ -1,29 +1,12 @@
-# Default owners for everything
-* @lookatitude/beluga-maintainers
-
-# Core packages
-/core/ @lookatitude/beluga-maintainers
-/schema/ @lookatitude/beluga-maintainers
-
-# LLM and agents
-/llm/ @lookatitude/beluga-maintainers
-/agent/ @lookatitude/beluga-maintainers
-/tool/ @lookatitude/beluga-maintainers
-
-# RAG pipeline
-/rag/ @lookatitude/beluga-maintainers
-
-# Voice pipeline
-/voice/ @lookatitude/beluga-maintainers
-
-# Infrastructure
-/resilience/ @lookatitude/beluga-maintainers
-/guard/ @lookatitude/beluga-maintainers
-/cache/ @lookatitude/beluga-maintainers
-/auth/ @lookatitude/beluga-maintainers
-
-# CI/CD and workflows
-/.github/ @lookatitude/beluga-maintainers
-
-# Documentation
-/docs/ @lookatitude/beluga-maintainers
+# Code owners for beluga-ai.
+#
+# The repository belongs to the personal account `lookatitude` (there is no
+# organisation, so `@lookatitude/<team>` handles cannot resolve). The
+# previous per-directory rules all named the non-existent team
+# `@lookatitude/beluga-maintainers`, which GitHub reported as an unknown
+# owner on every line, so the file assigned nobody.
+#
+# A single default rule is enough while there is one maintainer. Add
+# narrower rules below it (later rules win) when more owners join; every
+# owner listed must have write access to the repository.
+* @lookatitude

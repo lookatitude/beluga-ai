@@ -1,0 +1,40 @@
+name: Sync Labels
+
+# Keeps the repository's labels in line with .github/labels.yml. Issue
+# templates (triage), Dependabot (dependencies, go, ci), the fuzz workflow
+# (fuzzing) and the stale workflow (pinned, security) all rely on labels
+# defined there. PRs run a dry run; main applies the changes.
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/labels.yml"
+      - ".github/workflows/labels.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/labels.yml"
+      - ".github/workflows/labels.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  labels:
+    name: Sync labels from .github/labels.yml
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Sync labels
+        uses: crazy-max/ghaction-github-labeler@548a7c3603594ec17c819e1239f281a3b801ab4d # v6.0.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          yaml-file: .github/labels.yml
+          # Never delete labels that are missing from the file.
+          skip-delete: true
+          dry-run: ${{ github.event_name == 'pull_request' }}

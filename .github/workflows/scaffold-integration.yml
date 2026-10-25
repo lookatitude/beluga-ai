@@ -14,14 +14,26 @@ name: Scaffold Integration
 on:
   push:
     branches: [main]
-    paths:
-      - "cmd/beluga/**"
-      - ".github/workflows/scaffold-integration.yml"
+    paths-ignore:
+      # The scaffolded/fixture projects import a wide, transitive slice of
+      # the framework, and go.mod/go.sum bumps change what they build
+      # against, so a positive path filter missed real breakage. Run on
+      # everything except changes that cannot affect a build.
+      - "docs/**"
+      - ".claude/**"
+      - ".guild/**"
+      - "**/*.md"
   pull_request:
     branches: [main]
-    paths:
-      - "cmd/beluga/**"
-      - ".github/workflows/scaffold-integration.yml"
+    paths-ignore:
+      # The scaffolded/fixture projects import a wide, transitive slice of
+      # the framework, and go.mod/go.sum bumps change what they build
+      # against, so a positive path filter missed real breakage. Run on
+      # everything except changes that cannot affect a build.
+      - "docs/**"
+      - ".claude/**"
+      - ".guild/**"
+      - "**/*.md"
 
 permissions:
   contents: read
@@ -34,6 +46,8 @@ jobs:
   scaffold:
     name: Scaffold + build ${{ matrix.template }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:

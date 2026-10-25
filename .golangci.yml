@@ -1,7 +1,8 @@
 version: "2"
 run:
+  # `cgo` is not a user build tag (CGO_ENABLED controls it), so only the
+  # integration tag is passed.
   build-tags:
-    - cgo
     - integration
 linters:
   enable:
@@ -47,14 +48,9 @@ linters:
           - errcheck
           - gosec
         path: internal/testutil/
-      - linters:
-          - dupl
-        path: providers/
-        text: similar
     paths:
       - third_party$
       - builtin$
-      - examples$
 formatters:
   enable:
     - gofmt
@@ -64,4 +60,3 @@ formatters:
     paths:
       - third_party$
       - builtin$
-      - examples$

@@ -24,17 +24,36 @@ on:
       integration_count:
         description: "Integration test count"
         value: ${{ jobs.integration-test.outputs.integration_count }}
+      vet_status:
+        description: "go vet status (passing/failing)"
+        value: ${{ jobs.lint.outputs.vet_status }}
+      build_status:
+        description: "go build status (passing/failing)"
+        value: ${{ jobs.build.outputs.build_status }}
+      tidy_status:
+        description: "go mod tidy status (clean/drift)"
+        value: ${{ jobs.build.outputs.tidy_status }}
+      providers_doc_status:
+        description: "docs/reference/providers.md drift status (clean/stale)"
+        value: ${{ jobs.build.outputs.providers_doc_status }}
+
+permissions:
+  contents: read
 
 env:
   GO_VERSION: "1.27.3"
+  GOTOOLCHAIN: local
 
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       lint_status: ${{ steps.lint_result.outputs.status }}
       lint_issues_count: ${{ steps.lint_result.outputs.issues_count }}
+      vet_status: ${{ steps.lint_result.outputs.vet_status }}
     steps:
       - uses: actions/checkout@v7
 
@@ -43,6 +62,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Run go vet
+        id: vet
         run: go vet ./...
 
       - name: Run golangci-lint
@@ -57,7 +77,13 @@ jobs:
         if: always()
         env:
           LINT_OUTCOME: ${{ steps.golangci.outcome }}
+          VET_OUTCOME: ${{ steps.vet.outcome }}
         run: |
+          if [ "$VET_OUTCOME" = "success" ]; then
+            echo "vet_status=passing" >> "$GITHUB_OUTPUT"
+          else
+            echo "vet_status=failing" >> "$GITHUB_OUTPUT"
+          fi
           if [ -f lint-report.json ]; then
             ISSUES=$(jq '.Issues | length // 0' lint-report.json 2>/dev/null || echo "0")
           else
@@ -74,6 +100,12 @@ jobs:
     name: Build
     needs: lint
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      build_status: ${{ steps.build_result.outputs.build_status }}
+      tidy_status: ${{ steps.build_result.outputs.tidy_status }}
+      providers_doc_status: ${{ steps.build_result.outputs.providers_doc_status }}
     steps:
       - uses: actions/checkout@v7
 
@@ -82,17 +114,54 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Build all packages
+        id: go_build
         run: go build ./...
 
       - name: Check go mod tidy
+        id: tidy
         run: |
           go mod tidy
           git diff --exit-code go.mod go.sum
+
+      # Same check as `make docs-providers`: the generated provider catalog
+      # must match the providers on disk.
+      - name: Check provider catalog is up to date
+        id: providers_doc
+        run: make docs-providers
+
+      - name: Test repository scripts
+        run: make test-scripts
+
+      - name: Record build results
+        id: build_result
+        if: always()
+        env:
+          BUILD_OUTCOME: ${{ steps.go_build.outcome }}
+          TIDY_OUTCOME: ${{ steps.tidy.outcome }}
+          PROVIDERS_OUTCOME: ${{ steps.providers_doc.outcome }}
+        run: |
+          if [ "$BUILD_OUTCOME" = "success" ]; then
+            echo "build_status=passing" >> "$GITHUB_OUTPUT"
+          else
+            echo "build_status=failing" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "$TIDY_OUTCOME" = "success" ]; then
+            echo "tidy_status=clean" >> "$GITHUB_OUTPUT"
+          else
+            echo "tidy_status=drift" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "$PROVIDERS_OUTCOME" = "success" ]; then
+            echo "providers_doc_status=clean" >> "$GITHUB_OUTPUT"
+          else
+            echo "providers_doc_status=stale" >> "$GITHUB_OUTPUT"
+          fi
 
   test:
     name: Unit Tests
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       test_status: ${{ steps.test_result.outputs.status }}
       test_count: ${{ steps.test_result.outputs.test_count }}
@@ -104,25 +173,30 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
+      # Capture the exit code instead of failing here, so the parse and upload
+      # steps still run. The last step fails the job when the tests failed.
       - name: Run tests with coverage
         id: run_tests
         run: |
-          go test -race -coverprofile=coverage.out -covermode=atomic -json ./... > test-output.json 2>&1 || true
+          set +e
+          go test -race -coverprofile=coverage.out -covermode=atomic -json ./... > test-output.json 2>&1
+          rc=$?
+          echo "rc=${rc}" >> "$GITHUB_OUTPUT"
+          echo "go test exited with ${rc}"
 
       - name: Parse test results
         id: test_result
         if: always()
+        env:
+          TEST_RC: ${{ steps.run_tests.outputs.rc }}
         run: |
-          # Counts — use `|| true` to tolerate zero matches under pipefail,
-          # and `tr -dc '0-9'` to guarantee a single numeric token (no stray
-          # lines, no trailing newline) for downstream arithmetic and
-          # $GITHUB_OUTPUT formatting.
-          TEST_COUNT=$(grep -c '"Test":' test-output.json 2>/dev/null || true)
+          # `"Action":"run"` events are emitted once per test (and subtest);
+          # package-level events never use that action, so this counts tests.
+          # `|| true` tolerates zero matches; `tr -dc '0-9'` guarantees a
+          # single numeric token for $GITHUB_OUTPUT.
+          TEST_COUNT=$(grep -c '"Action":"run"' test-output.json 2>/dev/null || true)
           TEST_COUNT=$(printf '%s' "${TEST_COUNT}" | tr -dc '0-9')
           TEST_COUNT=${TEST_COUNT:-0}
-          FAIL_COUNT=$(grep -c '"Action":"fail"' test-output.json 2>/dev/null || true)
-          FAIL_COUNT=$(printf '%s' "${FAIL_COUNT}" | tr -dc '0-9')
-          FAIL_COUNT=${FAIL_COUNT:-0}
 
           if [ -f coverage.out ]; then
             # Match only the final "total:" summary line — function names
@@ -135,13 +209,13 @@ jobs:
             COVERAGE="0"
           fi
 
-          if [ "$FAIL_COUNT" -gt 0 ]; then
-            echo "status=failing" >> $GITHUB_OUTPUT
+          if [ "${TEST_RC:-1}" = "0" ]; then
+            echo "status=passing" >> "$GITHUB_OUTPUT"
           else
-            echo "status=passing" >> $GITHUB_OUTPUT
+            echo "status=failing" >> "$GITHUB_OUTPUT"
           fi
-          echo "test_count=${TEST_COUNT}" >> $GITHUB_OUTPUT
-          echo "coverage_pct=${COVERAGE}" >> $GITHUB_OUTPUT
+          echo "test_count=${TEST_COUNT}" >> "$GITHUB_OUTPUT"
+          echo "coverage_pct=${COVERAGE}" >> "$GITHUB_OUTPUT"
 
       - name: Upload coverage artifact
         if: always()
@@ -157,10 +231,21 @@ jobs:
           name: test-output
           path: test-output.json
 
+      - name: Fail on test failures
+        if: always() && steps.run_tests.outputs.rc != '0'
+        env:
+          TEST_RC: ${{ steps.run_tests.outputs.rc }}
+        run: |
+          echo "::error::Unit tests failed (go test exit code ${TEST_RC:-unknown}). See the test-output artifact."
+          grep '"Action":"fail"' test-output.json | jq -r 'select(.Test) | "\(.Package) \(.Test)"' 2>/dev/null | head -50 || true
+          exit 1
+
   integration-test:
     name: Integration Tests
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       integration_status: ${{ steps.integration_result.outputs.status }}
       integration_count: ${{ steps.integration_result.outputs.test_count }}
@@ -171,25 +256,58 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
+      # Run only the packages that contain `//go:build integration` files.
+      # The unit job already runs every package, so `./...` here would just
+      # run the whole unit suite a second time.
       - name: Run integration tests
         id: run_integration
         run: |
-          go test -race -tags integration -json ./... > integration-output.json 2>&1 || true
+          set +e
+          PKGS=$(grep -rl --include='*_test.go' --exclude-dir=.claude --exclude-dir=testdata '^//go:build integration' . \
+            | xargs -r -n1 dirname | sort -u | sed 's|^\./||; s|^|./|')
+          if [ -z "$PKGS" ]; then
+            echo "No integration-tagged packages found."
+            : > integration-output.json
+            echo "rc=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Integration packages:"
+          echo "$PKGS"
+          # shellcheck disable=SC2086 # word splitting of the package list is intended
+          go test -race -tags integration -json $PKGS > integration-output.json 2>&1
+          rc=$?
+          echo "rc=${rc}" >> "$GITHUB_OUTPUT"
+          echo "go test exited with ${rc}"
 
       - name: Parse integration results
         id: integration_result
         if: always()
+        env:
+          TEST_RC: ${{ steps.run_integration.outputs.rc }}
         run: |
-          TEST_COUNT=$(grep -c '"Test":' integration-output.json 2>/dev/null || true)
+          TEST_COUNT=$(grep -c '"Action":"run"' integration-output.json 2>/dev/null || true)
           TEST_COUNT=$(printf '%s' "${TEST_COUNT}" | tr -dc '0-9')
           TEST_COUNT=${TEST_COUNT:-0}
-          FAIL_COUNT=$(grep -c '"Action":"fail"' integration-output.json 2>/dev/null || true)
-          FAIL_COUNT=$(printf '%s' "${FAIL_COUNT}" | tr -dc '0-9')
-          FAIL_COUNT=${FAIL_COUNT:-0}
 
-          if [ "$FAIL_COUNT" -gt 0 ]; then
-            echo "status=failing" >> $GITHUB_OUTPUT
+          if [ "${TEST_RC:-1}" = "0" ]; then
+            echo "status=passing" >> "$GITHUB_OUTPUT"
           else
-            echo "status=passing" >> $GITHUB_OUTPUT
+            echo "status=failing" >> "$GITHUB_OUTPUT"
           fi
-          echo "test_count=${TEST_COUNT}" >> $GITHUB_OUTPUT
+          echo "test_count=${TEST_COUNT}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload integration test output
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: integration-output
+          path: integration-output.json
+
+      - name: Fail on integration test failures
+        if: always() && steps.run_integration.outputs.rc != '0'
+        env:
+          TEST_RC: ${{ steps.run_integration.outputs.rc }}
+        run: |
+          echo "::error::Integration tests failed (go test exit code ${TEST_RC:-unknown}). See the integration-output artifact."
+          grep '"Action":"fail"' integration-output.json | jq -r 'select(.Test) | "\(.Package) \(.Test)"' 2>/dev/null | head -50 || true
+          exit 1
