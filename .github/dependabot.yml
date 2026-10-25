@@ -7,6 +7,12 @@ updates:
       day: "monday"
     open-pull-requests-limit: 10
     labels: ["dependencies", "go"]
+    ignore:
+      # pgx v5.11.0+ adds Rows.TypeMap(), which pgxmock v4.9.0 (the latest
+      # stable release) does not implement, so the pgx-backed test doubles
+      # stop compiling. Remove this once a stable pgxmock supports it.
+      - dependency-name: "github.com/jackc/pgx/v5"
+        versions: [">= 5.11.0"]
     groups:
       aws-sdk:
         patterns: ["github.com/aws/*"]
