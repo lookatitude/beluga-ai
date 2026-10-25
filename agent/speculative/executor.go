@@ -162,18 +162,16 @@ func (e *SpeculativeExecutor) Invoke(ctx context.Context, input string, opts ...
 	predCh := make(chan predictionOutcome, 1)
 	gtCh := make(chan groundTruthOutcome, 1)
 
-	gtBase := ctx
+	// gtCtx is cancelled when Invoke returns, stopping a ground-truth run
+	// whose answer is no longer needed. With early return the ground truth
+	// must outlive this call to validate the answer in the background, so it
+	// runs on a context that is not cancelled with ours; every other return
+	// path has already received the ground-truth result.
+	gtCtx, gtCancel := context.WithCancel(ctx)
+	defer gtCancel()
 	if e.config.earlyReturn {
-		// The ground truth may outlive this call to validate an early answer.
-		gtBase = context.WithoutCancel(ctx)
+		gtCtx = context.WithoutCancel(ctx)
 	}
-	gtCtx, gtCancel := context.WithCancel(gtBase)
-	detached := false
-	defer func() {
-		if !detached {
-			gtCancel()
-		}
-	}()
 
 	// Run predictor and ground-truth in parallel. Synchronization is done via
 	// the buffered channels below — no WaitGroup is needed.
@@ -204,10 +202,8 @@ func (e *SpeculativeExecutor) Invoke(ctx context.Context, input string, opts ...
 
 	if e.config.earlyReturn {
 		// Return now and validate in the background.
-		detached = true
 		bgCtx := context.WithoutCancel(ctx)
 		go func() {
-			defer gtCancel()
 			gt := <-gtCh
 			if gt.err != nil {
 				return

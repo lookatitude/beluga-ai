@@ -105,9 +105,7 @@ func (rc *runContext) yieldError(err error) {
 func (e *Executor) Run(ctx context.Context, input string, agentID string, tools []tool.Tool, messages []schema.Message, hooks Hooks) iter.Seq2[Event, error] {
 	return func(yield func(Event, error) bool) {
 		ctx, cancel := e.applyTimeout(ctx)
-		if cancel != nil {
-			defer cancel()
-		}
+		defer cancel()
 
 		rc := e.newRunContext(agentID, tools, hooks, yield, input, messages)
 
@@ -128,13 +126,14 @@ func (e *Executor) Run(ctx context.Context, input string, agentID string, tools 
 	}
 }
 
-// applyTimeout wraps ctx with a timeout if configured. Returns the context
-// and a cancel func (nil if no timeout was applied).
+// applyTimeout wraps ctx with a timeout if configured. The returned cancel
+// func is always non-nil and must be called; it is a no-op when no timeout
+// was applied.
 func (e *Executor) applyTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
 	if e.timeout > 0 {
 		return context.WithTimeout(ctx, e.timeout)
 	}
-	return ctx, nil
+	return ctx, func() {}
 }
 
 // newRunContext initialises a runContext for a single execution.
