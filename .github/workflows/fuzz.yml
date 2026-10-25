@@ -15,16 +15,16 @@ permissions:
   issues: write
 
 env:
-  GO_VERSION: "1.25.7"
+  GO_VERSION: "1.27.3"
 
 jobs:
   fuzz:
     name: Go Native Fuzzing
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
 

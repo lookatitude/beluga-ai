@@ -39,7 +39,7 @@ permissions:
   contents: read
 
 env:
-  GO_VERSION: "1.25.7"
+  GO_VERSION: "1.27.3"
   # Pin the toolchain to the setup-go version; prevents Go from fetching
   # a newer toolchain mid-build and producing platform-dependent output.
   GOTOOLCHAIN: local
@@ -53,9 +53,9 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -142,7 +142,7 @@ jobs:
 
       - name: Upload eval-report.json artefact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: eval-report-smoke
           path: /tmp/eval-test/testproject/eval-report.json
