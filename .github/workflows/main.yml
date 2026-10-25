@@ -9,6 +9,11 @@ on:
       - "CHANGELOG.md"
       - ".github/**"
       - ".claude/**"
+      # Documentation and Guild knowledge never warrant a release. A push runs only
+      # when at least one changed file falls outside these patterns.
+      - ".guild/**"
+      - "docs/**"
+      - "**/*.md"
 
 concurrency:
   group: "main-pipeline"
