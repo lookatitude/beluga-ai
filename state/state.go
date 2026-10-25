@@ -138,6 +138,8 @@ var (
 
 // Register registers a Store factory under the given name.
 // This is typically called from init() in provider packages.
+// Registering a name that is already registered replaces the previous
+// factory (the framework-wide duplicate policy).
 func Register(name string, f Factory) {
 	mu.Lock()
 	defer mu.Unlock()

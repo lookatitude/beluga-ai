@@ -177,8 +177,10 @@ var (
 )
 
 // Register adds a named Manager factory to the global registry. It is safe to
-// call from init functions. Register panics if name is empty or already
-// registered.
+// call from init functions. Register panics if name is empty or the factory
+// is nil. Registering a name that is already registered replaces the
+// previous factory, the same duplicate policy as every other Beluga registry
+// (this lets applications override a built-in provider).
 func Register(name string, f Factory) {
 	if name == "" {
 		panic("hitl: Register called with empty name")
@@ -190,9 +192,6 @@ func Register(name string, f Factory) {
 	registryMu.Lock()
 	defer registryMu.Unlock()
 
-	if _, dup := registry[name]; dup {
-		panic("hitl: Register called twice for " + name)
-	}
 	registry[name] = f
 }
 

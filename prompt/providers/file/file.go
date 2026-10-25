@@ -9,9 +9,20 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/prompt"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
+
+func init() {
+	prompt.Register("file", func(cfg prompt.Config) (prompt.PromptManager, error) {
+		dir, _ := cfg.Extra["dir"].(string)
+		if dir == "" {
+			return nil, core.Errorf(core.ErrInvalidInput, "prompt/file: Config.Extra[\"dir\"] is required")
+		}
+		return NewFileManager(dir)
+	})
+}
 
 // FileManager implements prompt.PromptManager by loading templates from
 // JSON files in a directory. Files must have a .json extension and contain

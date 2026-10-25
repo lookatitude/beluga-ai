@@ -180,3 +180,17 @@ func TestDefaultExecutor_PersistsHistory(t *testing.T) {
 		}
 	}
 }
+
+// TestRegister_DuplicateOverwrites checks workflow follows the framework-wide
+// duplicate policy (FWC-25): a second registration replaces the first.
+func TestRegister_DuplicateOverwrites(t *testing.T) {
+	var second bool
+	Register("dup-test", func(Config) (DurableExecutor, error) { return NewExecutor(), nil })
+	Register("dup-test", func(Config) (DurableExecutor, error) { second = true; return NewExecutor(), nil })
+	if _, err := New("dup-test", Config{}); err != nil {
+		t.Fatal(err)
+	}
+	if !second {
+		t.Error("second registration did not replace the first")
+	}
+}
