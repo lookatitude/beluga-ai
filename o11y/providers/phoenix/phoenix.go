@@ -41,6 +41,11 @@ func WithTimeout(d time.Duration) Option {
 }
 
 // New creates a new Phoenix trace exporter.
+//
+// The exporter POSTs a JSON span document to {BaseURL}/v1/traces. Stock
+// Phoenix expects OTLP protobuf on that path, so prefer
+// o11y.BootstrapFromEnv with OTEL_EXPORTER_OTLP_ENDPOINT pointing at Phoenix;
+// see the package documentation.
 func New(opts ...Option) (*Exporter, error) {
 	cfg := &config{
 		baseURL: "http://localhost:6006",
@@ -108,6 +113,11 @@ type phoenixTraceResponse struct {
 }
 
 // ExportLLMCall sends an LLM call record to Phoenix via the /v1/traces API.
+//
+// The body is {"data": [span]} where span carries name, context.trace_id,
+// context.span_id, kind, start_time, end_time, status.status_code and
+// attributes. This is not OTLP; a stock Phoenix server rejects it (see the
+// package documentation for the OTLP alternative).
 func (e *Exporter) ExportLLMCall(ctx context.Context, data o11y.LLMCallData) error {
 	now := time.Now().UTC()
 	traceID := randomHex(16)

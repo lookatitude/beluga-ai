@@ -53,6 +53,10 @@ func WithTimeout(d time.Duration) Option {
 }
 
 // New creates a new Braintrust metric evaluator.
+//
+// The metric POSTs to {BaseURL}/v1/score, which is a Beluga-defined contract
+// and not an endpoint of the public Braintrust REST API; see the package
+// documentation. Use WithBaseURL to target a compatible shim.
 func New(opts ...Option) (*Metric, error) {
 	cfg := &config{
 		baseURL:     "https://api.braintrust.dev",
