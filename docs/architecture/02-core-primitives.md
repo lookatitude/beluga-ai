@@ -113,7 +113,7 @@ Each operation respects cancellation: if the upstream context is cancelled, the 
 | No generic form until Go 1.21 workarounds | First-class generic since Go 1.23 |
 | `select` required for multi-stream coordination | Natural `for … range` syntax |
 
-Beluga requires Go 1.23+ specifically for `iter.Seq2`. Channels still exist inside packages as synchronisation primitives, but **they do not cross public API boundaries.**
+Beluga requires Go 1.26+ (the `go` directive in `go.mod`); `iter.Seq2` itself arrived in Go 1.23. Channels still exist inside packages as synchronisation primitives, but **they do not cross public API boundaries.**
 
 ### Error semantics
 

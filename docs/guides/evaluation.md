@@ -1,7 +1,7 @@
 # Evaluate your first agent — `beluga eval`
 
 **You will build:** a hand-authored dataset, run it against your scaffolded agent in mock mode (zero API cost), interpret the populated `eval-report.json`, switch to a real LLM for a full-quality pass, and wire it into CI.
-**Prerequisites:** Go 1.25+, a working `beluga` CLI on `$PATH` (`go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@latest`), and a scaffolded project (`beluga init …`). If you are brand new to Beluga, work through [Build Your First Agent](./first-agent.md) and [Dev Loop](./dev-loop.md) first.
+**Prerequisites:** Go 1.26+, a working `beluga` CLI on `$PATH` (`go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@latest`), and a scaffolded project (`beluga init …`). If you are brand new to Beluga, work through [Build Your First Agent](./first-agent.md) and [Dev Loop](./dev-loop.md) first.
 **Related:** [CLI reference — `beluga eval`](../reference/cli.md#beluga-eval), [Architecture Overview — Layer 7](../architecture/01-overview.md#layer-7--application), [DOC-14 Observability](../architecture/14-observability.md).
 
 `beluga eval` is the fourth and final slice of the DX-1 CLI epic. It lets you measure whether your agent is actually *good* — whether responses match expected outputs, whether a prompt change made things better or worse, whether a model swap regressed behaviour on a curated test set. The CLI builds your scaffolded binary with the existing `devloop.BuildBinary` pipeline, exec's it once per dataset row, reads the populated sample back from stdout, scores each configured metric, renders a stdout summary, writes `eval-report.json`, and exits with an aggregate pass/fail code suitable for CI gating.

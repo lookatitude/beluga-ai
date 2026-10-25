@@ -1,7 +1,7 @@
 # Dev Loop — `beluga run`, `beluga dev`, and `beluga test`
 
 **You will build:** a scaffolded Beluga project, run it once with `beluga run`, hot-rebuild it on every save with `beluga dev`, and drive its tests with `beluga test` — no API key required.
-**Prerequisites:** Go 1.25+, a working `beluga` CLI on `$PATH` (`go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@latest`).
+**Prerequisites:** Go 1.26+, a working `beluga` CLI on `$PATH` (`go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@latest`).
 **Related:** [First Agent](./first-agent.md), [CLI reference](../reference/cli.md), [Architecture Overview — Layer 7](../architecture/01-overview.md#layer-7--application).
 
 The three subcommands in this guide share one supervisor — [`cmd/beluga/devloop/`](../../cmd/beluga/devloop/) — and one deterministic LLM backend — [`llm/providers/mock`](../../llm/providers/mock/). Learn them once; they behave the same across Linux, macOS, and Windows.
