@@ -97,7 +97,7 @@ jobs:
           echo "Changed files:"
           echo "${CHANGED_FILES}"
 
-          RELEASE_RELEVANT=$(echo "${CHANGED_FILES}" | grep -Ev '^(\.github/|\.claude/)' || true)
+          RELEASE_RELEVANT=$(echo "${CHANGED_FILES}" | grep -Ev '^(\.github/|\.claude/|\.guild/|docs/)|\.md$' || true)
           if [ -n "${RELEASE_RELEVANT}" ]; then
             echo "Release-relevant changes detected:"
             echo "${RELEASE_RELEVANT}"
