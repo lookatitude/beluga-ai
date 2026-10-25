@@ -29,8 +29,11 @@ type Config struct {
 }
 
 // MessageStore is a MongoDB-backed implementation of memory.MessageStore.
-// Messages are stored as BSON documents with a monotonically increasing
-// sequence number for chronological ordering.
+// Messages are stored as BSON documents and read back ordered by their
+// write timestamp, with an in-process sequence number as a tie-breaker. The
+// sequence alone restarts at 1 in every process, so ordering by it would
+// interleave new messages with old history after a restart or across
+// replicas.
 type MessageStore struct {
 	coll Collection
 	seq  atomic.Int64
@@ -126,9 +129,12 @@ func (s *MessageStore) Clear(ctx context.Context) error {
 	return nil
 }
 
-// allDocs returns all documents sorted by sequence number.
+// historySort orders documents by write time, then by in-process sequence.
+var historySort = bson.D{{Key: "timestamp", Value: 1}, {Key: "seq", Value: 1}}
+
+// allDocs returns all documents in chronological order.
 func (s *MessageStore) allDocs(ctx context.Context) ([]messageDoc, error) {
-	findOpts := options.Find().SetSort(bson.D{{Key: "seq", Value: 1}})
+	findOpts := options.Find().SetSort(historySort)
 	cursor, err := s.coll.Find(ctx, bson.D{}, findOpts)
 	if err != nil {
 		return nil, core.Errorf(core.ErrProviderDown, "mongodb: find: %w", err)

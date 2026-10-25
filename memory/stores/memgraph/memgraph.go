@@ -192,16 +192,23 @@ func (g *GraphStore) Query(ctx context.Context, query string) ([]memory.GraphRes
 	}}, nil
 }
 
+// Neighbor-query bounds: a variable-length pattern grows exponentially
+// with depth on dense graphs, so caller-supplied depth is clamped and the
+// result set is limited.
+const (
+	maxNeighborDepth = 5
+	maxNeighborRows  = 1000
+)
+
 // Neighbors returns all entities and relations within the given depth from
-// the specified entity using variable-length path matching.
+// the specified entity using variable-length path matching. depth is
+// clamped to [1, 5] and at most 1000 paths are returned.
 func (g *GraphStore) Neighbors(ctx context.Context, entityID string, depth int) ([]memory.Entity, []memory.Relation, error) {
-	if depth <= 0 {
-		depth = 1
-	}
+	depth = min(max(depth, 1), maxNeighborDepth)
 
 	cypher := fmt.Sprintf(
 		"MATCH (start:Entity {id: $id})-[r*1..%d]-(neighbor:Entity) "+
-			"RETURN neighbor, r", depth)
+			"RETURN neighbor, r LIMIT %d", depth, maxNeighborRows)
 	records, err := g.runner.executeRead(ctx, cypher, map[string]any{"id": entityID})
 	if err != nil {
 		return nil, nil, core.Errorf(core.ErrProviderDown, "memgraph/neighbors: %w", err)

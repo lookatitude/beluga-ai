@@ -7,7 +7,10 @@
 //  1. A [QueryGenerator] translates the question into a database query using
 //     the provided schema information.
 //  2. A [QueryExecutor] runs the query against the target database. The
-//     [ReadOnlyExecutor] wrapper ensures only read operations are executed.
+//     [ReadOnlyExecutor] wrapper rejects queries containing write, procedure
+//     or file/network I/O keywords. It is a best-effort denylist, not a
+//     security boundary: run LLM-generated queries under a read-only
+//     database role or session as the real control.
 //  3. A [ResultEvaluator] scores the results for relevance. If the score is
 //     below the threshold the pipeline retries with feedback, up to a
 //     configurable maximum.

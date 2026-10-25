@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/v2/core"
@@ -22,12 +21,12 @@ type Config struct {
 }
 
 // MessageStore is a Redis-backed implementation of memory.MessageStore.
-// Messages are stored as JSON in a Redis sorted set (ZSET) with the score
-// set to a monotonically increasing sequence number to preserve insertion order.
+// Messages are stored as JSON in a Redis sorted set (ZSET). The score is a
+// sequence number from INCR on "<key>:seq", so insertion order is preserved
+// across process restarts and between replicas sharing the key.
 type MessageStore struct {
 	client *redis.Client
 	key    string
-	seq    atomic.Int64
 }
 
 // New creates a new Redis MessageStore with the given config.
@@ -51,7 +50,11 @@ func (s *MessageStore) Append(ctx context.Context, msg schema.Message) error {
 	if err != nil {
 		return core.Errorf(core.ErrInvalidInput, "redis: marshal message: %w", err)
 	}
-	score := float64(s.seq.Add(1))
+	seq, err := s.client.Incr(ctx, s.seqKey()).Result()
+	if err != nil {
+		return core.Errorf(core.ErrProviderDown, "redis: next sequence: %w", err)
+	}
+	score := float64(seq)
 	return s.client.ZAdd(ctx, s.key, redis.Z{
 		Score:  score,
 		Member: string(data),
@@ -101,9 +104,14 @@ func (s *MessageStore) All(ctx context.Context) ([]schema.Message, error) {
 	return msgs, nil
 }
 
-// Clear removes all messages from the store.
+// seqKey is the Redis key holding the shared sequence counter.
+func (s *MessageStore) seqKey() string {
+	return s.key + ":seq"
+}
+
+// Clear removes all messages (and the sequence counter) from the store.
 func (s *MessageStore) Clear(ctx context.Context) error {
-	return s.client.Del(ctx, s.key).Err()
+	return s.client.Del(ctx, s.key, s.seqKey()).Err()
 }
 
 // containsText checks if any text part in the message contains the query.

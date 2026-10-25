@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/rag/embedding"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -307,28 +308,39 @@ func TestNew_CustomTimeout(t *testing.T) {
 	assert.NotNil(t, emb)
 }
 
-func TestEmbed_IndexOutOfBounds(t *testing.T) {
-	ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
-		resp := map[string]any{
-			"object": "list",
-			"data": []map[string]any{
-				{"object": "embedding", "embedding": []float32{0.1, 0.2}, "index": 0},
-				{"object": "embedding", "embedding": []float32{0.3, 0.4}, "index": 99},
-			},
-			"model": "jina-embeddings-v2-base-en",
-			"usage": map[string]any{"total_tokens": 5, "prompt_tokens": 5},
-		}
-		json.NewEncoder(w).Encode(resp)
-	})
+func TestEmbed_MalformedIndices(t *testing.T) {
+	e := func(idx int) map[string]any {
+		return map[string]any{"object": "embedding", "embedding": []float32{0.1, 0.2}, "index": idx}
+	}
+	tests := []struct {
+		name string
+		data []map[string]any
+	}{
+		{"out_of_bounds", []map[string]any{e(0), e(99)}},
+		{"negative", []map[string]any{e(0), e(-1)}},
+		{"duplicate_leaves_missing", []map[string]any{e(0), e(0)}},
+		{"too_few", []map[string]any{e(0)}},
+		{"too_many", []map[string]any{e(0), e(1), e(2)}},
+		{"null_embedding", []map[string]any{e(0), {"object": "embedding", "index": 1}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]any{"object": "list", "data": tt.data})
+			})
+			emb, err := New(config.ProviderConfig{APIKey: "test-key", BaseURL: ts.URL})
+			require.NoError(t, err)
 
-	emb, err := New(config.ProviderConfig{
-		APIKey:  "test-key",
-		BaseURL: ts.URL,
-	})
-	require.NoError(t, err)
-
-	vecs, err := emb.Embed(context.Background(), []string{"first", "second"})
-	require.NoError(t, err)
-	require.Len(t, vecs, 2)
-	assert.NotNil(t, vecs[0])
+			var vecs [][]float32
+			require.NotPanics(t, func() {
+				vecs, err = emb.Embed(context.Background(), []string{"first", "second"})
+			})
+			require.Error(t, err)
+			assert.Nil(t, vecs)
+			var cerr *core.Error
+			require.ErrorAs(t, err, &cerr)
+			assert.Equal(t, core.ErrProviderDown, cerr.Code)
+		})
+	}
 }

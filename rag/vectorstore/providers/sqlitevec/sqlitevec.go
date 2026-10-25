@@ -7,12 +7,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 
 	sqlite_vec "github.com/asg017/sqlite-vec-go-bindings/cgo"
 	_ "github.com/mattn/go-sqlite3" // registers the "sqlite3" database/sql driver used by New
 
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
@@ -23,6 +25,25 @@ func init() {
 		return NewFromConfig(cfg)
 	})
 }
+
+// validTableName matches SQL identifiers: letter/underscore followed by
+// letters, digits, or underscores. The table name (and the derived vec_<table>
+// virtual table) is interpolated into DDL/DML, so anything else is rejected.
+var validTableName = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
+
+const (
+	// filterOverfetch is the initial candidate multiplier used when a
+	// metadata filter is present. vec0 applies its "k = ?" constraint before
+	// the JOIN, so metadata filters can only be evaluated on the candidates
+	// it returns.
+	filterOverfetch = 10
+	// filterGrowth multiplies the candidate count on each retry when the
+	// previous pass yielded fewer than k matching documents.
+	filterGrowth = 4
+	// maxKNN is the largest k accepted by sqlite-vec's vec0 KNN queries
+	// (SQLITE_VEC_VEC0_K_MAX).
+	maxKNN = 4096
+)
 
 // DB abstracts the database interface for testability.
 type DB interface {
@@ -43,7 +64,8 @@ var _ vectorstore.VectorStore = (*Store)(nil)
 // Option configures a Store.
 type Option func(*Store)
 
-// WithTable sets the table name.
+// WithTable sets the table name. The name must match ^[a-zA-Z_][a-zA-Z0-9_]*$;
+// New returns core.ErrInvalidInput otherwise.
 func WithTable(name string) Option {
 	return func(s *Store) { s.table = name }
 }
@@ -70,6 +92,10 @@ func New(opts ...Option) (*Store, error) {
 	if s.db == nil {
 		return nil, fmt.Errorf("sqlitevec: database connection is required")
 	}
+	if !validTableName.MatchString(s.table) {
+		return nil, core.Errorf(core.ErrInvalidInput,
+			"sqlitevec: invalid table name %q (must match ^[a-zA-Z_][a-zA-Z0-9_]*$)", s.table)
+	}
 	return s, nil
 }
 
@@ -94,7 +120,12 @@ func NewFromConfig(cfg config.ProviderConfig) (*Store, error) {
 		opts = append(opts, WithDimension(int(dim)))
 	}
 
-	return New(opts...)
+	s, err := New(opts...)
+	if err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+	return s, nil
 }
 
 // EnsureTable creates the documents and vec_documents tables.
@@ -183,6 +214,13 @@ func serializeMetadata(metadata map[string]any) (string, error) {
 }
 
 // Search finds the k most similar documents to the query vector.
+//
+// Metadata filters are evaluated after vec0's KNN step, because vec0 applies
+// its "k = ?" limit before the JOIN with the metadata table. To still return
+// up to k matching documents, a filtered search over-fetches candidates
+// (k*10 initially, growing 4x per pass, capped at vec0's maximum k of 4096)
+// until it has k matches or the store has no more candidates. Matching
+// documents ranked beyond the first 4096 nearest neighbours are not found.
 func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vectorstore.SearchOption) ([]schema.Document, error) {
 	cfg := &vectorstore.SearchConfig{}
 	for _, opt := range opts {
@@ -194,6 +232,36 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 		return nil, fmt.Errorf("sqlitevec: serialize query: %w", err)
 	}
 
+	if len(cfg.Filter) == 0 || k <= 0 {
+		docs, _, err := s.knn(ctx, queryBlob, k, cfg)
+		return docs, err
+	}
+
+	candidates := maxKNN
+	if k <= maxKNN/filterOverfetch {
+		candidates = k * filterOverfetch
+	}
+	for {
+		docs, raw, err := s.knn(ctx, queryBlob, candidates, cfg)
+		if err != nil {
+			return nil, err
+		}
+		// Stop when we have enough matches, when vec0 returned fewer rows
+		// than requested (the store is exhausted), or at the vec0 cap.
+		if len(docs) >= k || raw < candidates || candidates >= maxKNN {
+			if len(docs) > k {
+				docs = docs[:k]
+			}
+			return docs, nil
+		}
+		candidates = min(candidates*filterGrowth, maxKNN)
+	}
+}
+
+// knn runs a single vec0 KNN query for n candidates and returns the
+// documents passing the threshold and metadata filter, plus the number of
+// raw rows vec0 returned.
+func (s *Store) knn(ctx context.Context, queryBlob []byte, n int, cfg *vectorstore.SearchConfig) ([]schema.Document, int, error) {
 	searchSQL := fmt.Sprintf(`
 		SELECT v.id, v.distance, d.content, d.metadata
 		FROM vec_%s v
@@ -203,9 +271,9 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 		ORDER BY v.distance
 	`, s.table, s.table)
 
-	rows, err := s.db.QueryContext(ctx, searchSQL, queryBlob, k)
+	rows, err := s.db.QueryContext(ctx, searchSQL, queryBlob, n)
 	if err != nil {
-		return nil, fmt.Errorf("sqlitevec: search: %w", err)
+		return nil, 0, fmt.Errorf("sqlitevec: search: %w", err)
 	}
 	defer rows.Close()
 
@@ -213,21 +281,24 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 }
 
 // scanSearchRows reads search result rows and converts them to documents.
-func scanSearchRows(rows *sql.Rows, cfg *vectorstore.SearchConfig) ([]schema.Document, error) {
+// It also returns the number of rows read before filtering.
+func scanSearchRows(rows *sql.Rows, cfg *vectorstore.SearchConfig) ([]schema.Document, int, error) {
 	var docs []schema.Document
+	raw := 0
 	for rows.Next() {
+		raw++
 		doc, ok, err := scanSearchRow(rows, cfg)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		if ok {
 			docs = append(docs, doc)
 		}
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("sqlitevec: rows iteration: %w", err)
+		return nil, 0, fmt.Errorf("sqlitevec: rows iteration: %w", err)
 	}
-	return docs, nil
+	return docs, raw, nil
 }
 
 // scanSearchRow scans a single row and returns the document and whether it passes filters.

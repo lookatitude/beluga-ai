@@ -367,8 +367,8 @@ func TestStore_Search_WithEuclideanStrategy(t *testing.T) {
 func TestStore_Search_WithFilter(t *testing.T) {
 	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
 		yql := r.URL.Query().Get("yql")
-		assert.Contains(t, yql, `category = "A"`)
-		assert.Contains(t, yql, `priority = "high"`)
+		assert.Contains(t, yql, `category contains "A"`)
+		assert.Contains(t, yql, `priority contains "high"`)
 
 		resp := map[string]any{
 			"root": map[string]any{

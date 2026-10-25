@@ -15,15 +15,16 @@
 // # Models
 //
 // Supported models and their default dimensions:
-//   - text-embedding-004 (768, default)
+//   - gemini-embedding-001 (3072, default)
+//   - text-embedding-004 (768, deprecated)
 //   - embedding-001 (768)
 //   - text-multilingual-embedding-002 (768)
 //
 // # Configuration
 //
 // ProviderConfig fields:
-//   - APIKey — Google AI API key (required)
-//   - Model — model name (default: "text-embedding-004")
+//   - APIKey — Google AI API key (required); sent in the x-goog-api-key header
+//   - Model — model name (default: "gemini-embedding-001")
 //   - BaseURL — API base URL (default: "https://generativelanguage.googleapis.com/v1beta")
 //   - Timeout — request timeout
 //   - Options["dimensions"] — override output dimensionality
