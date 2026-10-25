@@ -72,7 +72,7 @@ func (a *BaseAgent) Invoke(ctx context.Context, input string, opts ...Option) (s
 		case EventText:
 			result.WriteString(event.Text)
 		case EventError:
-			lastErr = core.Errorf(core.ErrProviderDown, "agent error: %s", event.Text)
+			lastErr = core.Errorf(core.ErrInternal, "agent error: %s", event.Text)
 		}
 	}
 
@@ -154,6 +154,9 @@ func (a *BaseAgent) buildInitialMessages(input string, cfg agentConfig) []schema
 			messages = append(messages, sysMsg)
 		}
 	}
+
+	// Add prior conversation turns supplied with WithHistory.
+	messages = append(messages, cfg.history...)
 
 	// Add user input
 	messages = append(messages, schema.NewHumanMessage(input))

@@ -199,3 +199,19 @@ func TestExecutor_CancelledContextIsNotRetryable(t *testing.T) {
 }
 
 func isRetryableErr(err error) bool { return core.IsRetryable(err) }
+
+func TestWithHistory_PlacedBeforeInput(t *testing.T) {
+	var got string
+	p := &funcPlanner{planFn: func(_ context.Context, s PlannerState) ([]Action, error) {
+		got = describeMessages(s.Messages)
+		return []Action{{Type: ActionFinish, Message: "ok"}}, nil
+	}}
+	a := New("a", WithPlanner(p), WithPersona(Persona{Role: "helper"}))
+	hist := []schema.Message{schema.NewHumanMessage("before"), schema.NewAIMessage("reply")}
+	if _, err := a.Invoke(context.Background(), "now", WithHistory(hist)); err != nil {
+		t.Fatal(err)
+	}
+	if want := "system human ai human"; got != want {
+		t.Errorf("messages = %q, want %q", got, want)
+	}
+}
