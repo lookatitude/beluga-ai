@@ -1,9 +1,11 @@
 name: Release
 
 # Release runs when:
-# - A version tag (v*.*.*) is pushed, or
-# - Manually from Actions with a tag and optional ref (default: main).
-# It does NOT run automatically on push to main; create and push a tag to release.
+# - main.yml dispatches it after main passes CI + security (the normal
+#   path; inputs: tag, ref = the tested commit SHA, reports_run_id), or
+# - manually from Actions with a tag and optional ref (default: main), or
+# - a version tag (v*.*.*) is pushed by a person (tags pushed with
+#   GITHUB_TOKEN do not trigger this event).
 on:
   push:
     tags:
@@ -14,12 +16,25 @@ on:
         description: "Release tag (e.g. v1.2.3); required for manual run"
         required: true
       ref:
-        description: "Ref to release from (branch or tag)"
+        description: "Ref (branch, tag or commit SHA) to tag and release from"
         required: false
         default: "main"
+      reports_run_id:
+        description: "Optional main.yml run ID whose `reports` artifact goes into the docs bundle"
+        required: false
+        default: ""
+
+# One release per tag at a time; never cancel a release that is underway.
+concurrency:
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 env:
   GO_VERSION: "1.27.3"
+  GOTOOLCHAIN: local
 
 jobs:
   create-tag:
@@ -45,12 +60,18 @@ jobs:
           fi
           echo "Version format OK: $V"
 
-      - name: Check tag does not already exist
+      - name: Create the tag unless it already exists
         env:
           TAG: ${{ inputs.tag }}
         run: |
           if git rev-parse "${TAG}" >/dev/null 2>&1; then
-            echo "Tag ${TAG} already exists — skipping creation (likely pushed by main.yml)"
+            TAG_SHA=$(git rev-list -n1 "${TAG}")
+            HEAD_SHA=$(git rev-parse HEAD)
+            if [ "${TAG_SHA}" != "${HEAD_SHA}" ]; then
+              echo "::error::Tag ${TAG} already exists at ${TAG_SHA}, not at the requested ref (${HEAD_SHA}). Another release took this version (the next main push computes the next one). To re-run the release of an existing tag, dispatch with ref set to the tag itself."
+              exit 1
+            fi
+            echo "Tag ${TAG} already exists at the requested commit — reusing it."
           else
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -119,23 +140,30 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      # Check out main (the PR base). The release tag already exists by now
+      # (create-tag ran first, or it was pushed), so git-cliff renders the
+      # tag's section from the real tag. No `--tag` flag: with it, commits
+      # merged to main after the tag would be filed under this release.
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
+          ref: main
           fetch-depth: 0
 
       - name: Generate CHANGELOG.md
         uses: orhun/git-cliff-action@a9a95522b26fe6403f7bb24031f21fb573d0f5ff # v4.9.1
         with:
           config: .cliff.toml
-          args: --output CHANGELOG.md ${{ github.event_name == 'workflow_dispatch' && format('--tag {0}', inputs.tag) || '' }}
+          args: --output CHANGELOG.md
 
+      # NOTE: PRs opened with GITHUB_TOKEN do not trigger workflows, so this
+      # PR gets no CI checks. If required status checks are enabled on main,
+      # switch `token` to a GitHub App token so checks run.
       - name: Create PR for CHANGELOG.md
-        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ci/update-changelog
-          base: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || 'main' }}
+          base: main
           delete-branch: true
           title: "chore(release): update CHANGELOG.md for ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}"
           commit-message: "chore(release): update CHANGELOG.md for ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }} [skip ci]"
@@ -153,10 +181,13 @@ jobs:
     if: |
       always() &&
       needs.changes.outputs.release_needed == 'true' &&
+      (needs.create-tag.result == 'success' || needs.create-tag.result == 'skipped') &&
       (needs.changelog.result == 'success' || needs.changelog.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      sha: ${{ steps.tag_sha.outputs.sha }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -179,14 +210,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
+      # The commit the tag points at, for the downstream dispatch payloads
+      # (github.sha is main's HEAD at dispatch time, not the tagged commit).
+      - name: Resolve tagged commit
+        id: tag_sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
   # T9 of DX-1 S1: verify `go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@<tag>`
-  # resolves via the Go module proxy post-tag. The proxy (proxy.golang.org)
-  # has a 30-60s indexing lag; we absorb that with a sleep.
+  # resolves via the Go module proxy post-tag. proxy.golang.org has an
+  # indexing lag, so the job polls `@v/<tag>.info` until the proxy serves
+  # the tag (up to 10 minutes) instead of sleeping a fixed time.
   #
-  # continue-on-error is deliberate for S1: AC1 is an informational gate
-  # (hard-blocking would couple releases to proxy availability). A failure
-  # here surfaces as a visible warning in the release run UI without
-  # gating docs-bundle / dispatch-* jobs.
+  # Blocking: a release whose `go install` path is broken is a failed
+  # release. dispatch-examples waits for this job.
   smoke-install:
     name: Smoke-test go install @tag
     needs: [release]
@@ -194,7 +230,8 @@ jobs:
       always() &&
       needs.release.result == 'success'
     runs-on: ubuntu-latest
-    continue-on-error: true
+    permissions:
+      contents: read
     env:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     steps:
@@ -204,8 +241,18 @@ jobs:
 
       - name: Wait for module proxy to index the new tag
         run: |
-          echo "Sleeping 30s to give proxy.golang.org time to index ${RELEASE_TAG}"
-          sleep 30
+          URL="https://proxy.golang.org/github.com/lookatitude/beluga-ai/v2/@v/${RELEASE_TAG}.info"
+          for i in $(seq 1 60); do
+            if curl -sf "$URL"; then
+              echo ""
+              echo "Proxy serves ${RELEASE_TAG} (attempt ${i})."
+              exit 0
+            fi
+            echo "Proxy has not indexed ${RELEASE_TAG} yet (attempt ${i}/60); retrying in 10s"
+            sleep 10
+          done
+          echo "::error::proxy.golang.org did not serve ${RELEASE_TAG} within 10 minutes"
+          exit 1
 
       - name: go install from the pushed tag
         run: |
@@ -241,8 +288,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: read
     env:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+      # Minimum number of files a healthy godoc mirror produces. v2.13.6
+      # produced several hundred; an empty or near-empty mirror means
+      # pkgsite or wget broke and must fail the job, not ship.
+      MIN_GODOC_FILES: "50"
     steps:
       - uses: actions/checkout@v7
         with:
@@ -292,6 +344,33 @@ jobs:
 
           FILE_COUNT=$(find bundle/godoc -type f | wc -l)
           echo "Generated ${FILE_COUNT} godoc files"
+          if [ "${FILE_COUNT}" -lt "${MIN_GODOC_FILES}" ]; then
+            echo "::error::godoc mirror has ${FILE_COUNT} files (< ${MIN_GODOC_FILES}); refusing to ship an empty docs bundle"
+            exit 1
+          fi
+
+      # The committed CHANGELOG.md at the tag does not contain this release
+      # yet (its entry lands later via the ci/update-changelog PR), so the
+      # bundle gets a changelog rendered from the tag itself.
+      - name: Generate changelog for this release
+        uses: orhun/git-cliff-action@a9a95522b26fe6403f7bb24031f21fb573d0f5ff # v4.9.1
+        with:
+          config: .cliff.toml
+          args: --output RELEASE-CHANGELOG.md
+
+      # Fresh CODE-QUALITY.md / SECURITY.md from the main.yml run that
+      # tested this commit. Falls back to the committed files (with a
+      # warning) for manual releases that pass no run ID.
+      - name: Download generated reports
+        id: reports
+        if: inputs.reports_run_id != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPORTS_RUN_ID: ${{ inputs.reports_run_id }}
+        run: |
+          gh run download "${REPORTS_RUN_ID}" -R "${GITHUB_REPOSITORY}" -n reports -D generated-reports
+          ls -l generated-reports
 
       - name: Copy raw reports
         run: |
@@ -300,15 +379,27 @@ jobs:
           # these bodies into its existing report stubs at build time.
           mkdir -p bundle/reports
 
-          for f in CHANGELOG.md SECURITY.md CODE-QUALITY.md; do
-            if [ ! -f "$f" ]; then
-              echo "Skipping $f (not present at release tag)"
+          if [ ! -s RELEASE-CHANGELOG.md ]; then
+            echo "::error::git-cliff produced no changelog for ${RELEASE_TAG}"
+            exit 1
+          fi
+          cp RELEASE-CHANGELOG.md bundle/reports/changelog.md
+          echo "Prepared reports/changelog.md (rendered for ${RELEASE_TAG})"
+
+          for f in SECURITY.md CODE-QUALITY.md; do
+            if [ -f "generated-reports/$f" ]; then
+              src="generated-reports/$f"
+            elif [ -f "$f" ]; then
+              echo "::warning::Using the committed $f (no generated report from a main.yml run); it may be stale."
+              src="$f"
+            else
+              echo "Skipping $f (not present)"
               continue
             fi
 
             slug=$(basename "$f" .md | tr '[:upper:]' '[:lower:]' | tr '_' '-')
-            cp "$f" "bundle/reports/${slug}.md"
-            echo "Prepared reports/${slug}.md"
+            cp "$src" "bundle/reports/${slug}.md"
+            echo "Prepared reports/${slug}.md from ${src}"
           done
 
       - name: Create tarball
@@ -330,36 +421,60 @@ jobs:
   # rebuilds against the new asset.
   dispatch-website:
     name: Dispatch beluga-website rebuild
-    needs: [docs-bundle]
+    needs: [release, docs-bundle]
     if: |
       always() &&
       needs.docs-bundle.result == 'success'
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - name: Send repository_dispatch to beluga-website
         uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
         with:
-          # Requires a PAT (repo scope) stored as WEBSITE_DISPATCH_TOKEN
-          # in this repo's secrets. GITHUB_TOKEN cannot dispatch across repos.
+          # Requires a fine-grained PAT (Contents: write on beluga-website)
+          # stored as WEBSITE_DISPATCH_TOKEN. GITHUB_TOKEN cannot dispatch
+          # across repos.
           token: ${{ secrets.WEBSITE_DISPATCH_TOKEN }}
           repository: lookatitude/beluga-website
           event-type: framework-release
           client-payload: |
             {
               "tag": "${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}",
-              "sha": "${{ github.sha }}"
+              "sha": "${{ needs.release.outputs.sha }}"
             }
 
   # Notify beluga-examples so it can smoke-test all examples against the
   # new release. Does not block the release — examples can be fixed after.
+  # Waits for smoke-install (which polls the module proxy) and re-checks
+  # the proxy itself, so examples never `go get` a tag the proxy cannot
+  # serve yet.
   dispatch-examples:
     name: Dispatch beluga-examples smoke test
-    needs: [release]
+    needs: [release, smoke-install]
     if: |
       always() &&
-      needs.release.result == 'success'
+      needs.release.result == 'success' &&
+      needs.smoke-install.result == 'success'
     runs-on: ubuntu-latest
+    permissions: {}
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     steps:
+      - name: Wait for module proxy to serve the tag
+        run: |
+          URL="https://proxy.golang.org/github.com/lookatitude/beluga-ai/v2/@v/${RELEASE_TAG}.info"
+          for i in $(seq 1 30); do
+            if curl -sf "$URL"; then
+              echo ""
+              echo "Proxy serves ${RELEASE_TAG}."
+              exit 0
+            fi
+            echo "Waiting for proxy (attempt ${i}/30)"
+            sleep 10
+          done
+          echo "::error::proxy.golang.org does not serve ${RELEASE_TAG}; not dispatching examples"
+          exit 1
+
       - name: Send repository_dispatch to beluga-examples
         uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
         with:
@@ -369,5 +484,36 @@ jobs:
           client-payload: |
             {
               "tag": "${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}",
-              "sha": "${{ github.sha }}"
+              "sha": "${{ needs.release.outputs.sha }}"
             }
+
+  # Alert on a broken release: open an issue when any release job fails
+  # (v2.13.3–v2.13.5 shipped without docs bundles and nobody noticed).
+  notify-failure:
+    name: Open issue on release failure
+    needs: [create-tag, changes, changelog, release, smoke-install, docs-bundle, dispatch-website, dispatch-examples]
+    if: always() && contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Create issue
+        uses: actions/github-script@v9
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        with:
+          script: |
+            const needs = JSON.parse(process.env.NEEDS_JSON);
+            const failed = Object.entries(needs)
+              .filter(([, v]) => v.result === 'failure')
+              .map(([k]) => `- \`${k}\``)
+              .join('\n');
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Release ${process.env.RELEASE_TAG} failed`,
+              body: `The release workflow for \`${process.env.RELEASE_TAG}\` had failing jobs:\n\n${failed}\n\n**Run:** ${runUrl}`,
+              labels: ['bug']
+            });
