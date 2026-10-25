@@ -62,7 +62,7 @@ Pluggable reasoning via the `Planner` interface: **ReAct**, **Reflexion**, **Sel
 Agents that generate code as their primary action and run it through a pluggable `CodeExecutor`, inside the standard `Planner` + `Executor` loop (registered as the `codeact` planner). The right tool when "call tool X with args Y" is too coarse.
 
 ### Tool System
-Wrap any Go function as a tool with **automatic JSON Schema** generation from struct tags. First-class MCP client and MCP tool registry. Parallel DAG execution for independent calls. Timeout, retry, hooks and tracing middleware. There is no built-in tool library: tools come from your own functions or from MCP servers.
+Wrap any Go function as a tool with **automatic JSON Schema** generation from struct tags. First-class MCP client and MCP tool registry. Parallel DAG execution for independent calls. Timeout, retry and tracing middleware, plus lifecycle hooks. There is no built-in tool library: tools come from your own functions or from MCP servers.
 
 ### Computer Use & Browser Automation <sup>[beta](docs/feature-status.md)</sup>
 **Computer Use** interfaces for agents that drive screens and browsers: screenshot, click, type, scroll, behind URL allowlists and action rate limits. A `ScreenAnalyzer` uses a multimodal LLM to describe screenshots.

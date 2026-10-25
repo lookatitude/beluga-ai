@@ -233,13 +233,12 @@ func (r *retryTool) Execute(ctx context.Context, input map[string]any) (*Result,
 ```mermaid
 graph LR
   Call[caller] --> Tr[WithTracing]
-  Tr --> H[WithHooks]
-  H --> To[WithTimeout]
+  Tr --> To[WithTimeout]
   To --> Rt[WithRetry]
   Rt --> Core[Tool.Execute]
 ```
 
-Call `tool.ApplyMiddleware(t, tool.WithTracing(), tool.WithHooks(h), tool.WithTimeout(d), tool.WithRetry(3))` and the first argument wraps the outside. Read left to right: tracing wraps hooks wraps timeout wraps retry wraps the tool. Every package's `ApplyMiddleware` uses this order.
+Call `tool.ApplyMiddleware(t, tool.WithTracing(), tool.WithTimeout(d), tool.WithRetry(3))` and the first argument wraps the outside. Read left to right: tracing wraps timeout wraps retry wraps the tool. Every package's `ApplyMiddleware` uses this order. (In `tool`, hooks are attached with `tool.WithHooks(t, h)`, which wraps a tool directly rather than returning a `Middleware`.)
 
 ### Why `func(T) T`
 
@@ -264,7 +263,7 @@ graph TD
 
 1. **Interface** defines what an extension must implement.
 2. **Registry** is how the user's code finds that extension at runtime.
-3. **Hooks** fire at lifecycle points inside the wrapped call. In `llm` and `tool` they are installed by the `WithHooks` middleware; `agent` takes them as an option (`agent.WithHooks`).
+3. **Hooks** fire at lifecycle points inside the wrapped call. In `llm` they are installed by the `llm.WithHooks` middleware, in `tool` by `tool.WithHooks(t, h)`, and `agent` takes them as an option (`agent.WithHooks`).
 4. **Middleware** wraps the instance before handing it to the caller.
 
 A complete wire-up looks like this:
