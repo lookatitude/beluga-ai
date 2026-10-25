@@ -101,7 +101,7 @@ func (t *InMemoryTracker) Query(ctx context.Context, filter Filter) (*Summary, e
 // matchesFilter reports whether a Usage record satisfies all non-zero fields
 // of the filter.
 func matchesFilter(u *Usage, f Filter) bool {
-	if f.TenantID != "" && u.TenantID != f.TenantID {
+	if (f.TenantID != "" || f.ExactTenant) && u.TenantID != f.TenantID {
 		return false
 	}
 	if f.Model != "" && u.Model != f.Model {
