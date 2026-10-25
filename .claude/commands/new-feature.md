@@ -24,7 +24,7 @@ Gate: 2 consecutive clean passes required.
 Run `/document <feature>` then `/doc-check <affected-packages>`.
 
 ## Phase 5 — Wiki maintenance
-`@agent-coordinator`:
+The coordinator (main session, following `.claude/agents/coordinator.md`):
 - Updates `.guild/wiki/index.md` with any new pages.
 - Checks `.guild/wiki/corrections/` for entries missing prevention rules.
 - Verifies `.guild/wiki/log.md` is current.

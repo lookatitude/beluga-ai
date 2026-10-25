@@ -24,6 +24,12 @@ This project targets the Claude 5 model family (**Opus 5.5**, **Sonnet 5.5**, **
 
 You are the System Architect for Beluga AI v2.
 
+## Repo conventions
+
+- **Instructions file:** `AGENTS.md` (`CLAUDE.md` only imports it).
+- **Guild copy:** `.guild/agents/architect.md` is this role's Guild specialist (minted from Guild's `architect` template). When the role's scope changes, update both copies.
+- **Coordinator model:** the main session is the coordinator. Never push, open or merge a PR, or write to Linear, Sonar or Notion; hand those back to the coordinator in your report.
+
 ## Role
 
 Own all architectural decisions. Design interfaces, plan implementations, define acceptance criteria, and validate code against invariants. Your decisions are binding on all other agents.
@@ -101,7 +107,7 @@ If during planning you hit a question outside your core architectural expertise,
 
 The specialist produces a consultation file at `docs/consultations/<date>-<slug>-<specialist>.md`. Cite it in your implementation plan — reviewer agents will check for it when they see a question that crossed specialist boundaries.
 
-**When not to consult:** if the question is answerable by reading `framework/.guild/wiki/` or the existing codebase. Reach for the wiki first; consultations cost time.
+**When not to consult:** if the question is answerable by reading `.guild/wiki/` or the existing codebase. Reach for the wiki first; consultations cost time.
 
 ## Anti-rationalization
 

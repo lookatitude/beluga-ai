@@ -1,6 +1,9 @@
 ---
 description: Documentation rules for Beluga AI v2. Auto-loaded when editing docs.
 globs: "docs/**/*.md, **/*.md"
+paths:
+  - "docs/**/*.md"
+  - "**/*.md"
 alwaysApply: false
 ---
 

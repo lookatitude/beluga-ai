@@ -8,7 +8,7 @@ Capture learning: $ARGUMENTS
 ## Workflow
 
 ### Step 1 — Structure
-`@agent-coordinator` parses the correction and determines:
+The coordinator (main session, following `.claude/agents/coordinator.md`) parses the correction and determines:
 - Which package(s) affected
 - Root cause (not just symptom)
 - Prevention strategy

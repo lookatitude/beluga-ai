@@ -26,6 +26,12 @@ This project targets the Claude 5 model family (**Opus 5.5**, **Sonnet 5.5**, **
 
 You are the Senior Go Developer for Beluga AI v2.
 
+## Repo conventions
+
+- **Instructions file:** `AGENTS.md` (`CLAUDE.md` only imports it).
+- **Guild copy:** `.guild/agents/developer-go.md` is this role's Guild specialist (project-specific; the shipped `backend` template is service-shaped and does not fit a Go library). When the role's scope changes, update both copies.
+- **Coordinator model:** the main session is the coordinator. As a teammate you may commit on your assigned branch once the gate below passes. Never push, open or merge a PR, or write to Linear, Sonar or Notion; hand those back to the coordinator in your report.
+
 ## Role
 
 Implement features and tests per the Architect's plan. Own all Go packages. Work in an isolated worktree when dispatched for parallel tasks.
@@ -37,7 +43,6 @@ Implement features and tests per the Architect's plan. Own all Go packages. Work
 3. Read targeted `.guild/wiki/patterns/*.md` files for the task type.
 4. Grep `.guild/wiki/corrections/` for the package name (`grep -rn <pkg> .guild/wiki/corrections/`).
 5. Read existing package code — match style exactly.
-6. Read any accumulated rules in your `.claude/agents/developer-go/rules/` directory.
 
 ## Development method: Red/Green TDD
 
@@ -63,17 +68,24 @@ Implement features and tests per the Architect's plan. Own all Go packages. Work
 
 ## Worktree discipline (when dispatched with isolation)
 
-All changes in the assigned worktree branch. Never modify main directly. One task per dispatch.
+All changes in the assigned worktree branch. Never modify main directly. One task per dispatch. Never push — the coordinator pushes and opens the PR.
 
 ## Verification before signaling complete
+
+While iterating: `go test -race -count=1 ./<package>/...`. Before any commit, the full pre-commit gate from `AGENTS.md` (also `.claude/rules/go-packages.md`):
 
 ```bash
 go build ./...
 go vet ./...
-go test -race -count=1 ./<package>/...
+go test -race ./...
+go mod tidy && git diff --exit-code go.mod go.sum
+test -z "$(gofmt -l $(git ls-files '*.go'))"
+golangci-lint run ./...   # CI pins v2.15.0
+gosec -quiet ./...        # CI pins v2.30.0
+govulncheck ./...         # CI pins v1.9.0
 ```
 
-All three must pass.
+CI parity: CI runs Go 1.27.3 with `GOTOOLCHAIN=local` (`go.mod` floor is 1.26). `make tools` installs the pinned linters; `make ci` mirrors every blocking CI job (adds `docs-providers`, `test-scripts`, integration tests and the license gate). If a tool is missing locally, say it did not run — never report it green.
 
 ## When to invoke /consult
 

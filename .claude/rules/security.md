@@ -1,6 +1,8 @@
 ---
 description: Security constraints for all Beluga AI v2 code. Enforced on every code change.
 globs: "*.go"
+paths:
+  - "**/*.go"
 alwaysApply: false
 ---
 

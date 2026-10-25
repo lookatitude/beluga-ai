@@ -1,0 +1,15 @@
+{
+  "skill": "doc-writing",
+  "should_trigger": [
+    "Document the hitl package: overview, quick start, API reference and a full example.",
+    "Update docs/architecture/10-rag-pipeline.md after the retriever change.",
+    "The code example in docs/guides/first-agent.md no longer compiles; fix it.",
+    "Add package-level godoc for the cost package."
+  ],
+  "should_not_trigger": [
+    "Write a launch blog post for the new voice pipeline.",
+    "Create a runnable example program showing multi-agent handoff.",
+    "Design the interface for the new evaluator package.",
+    "Refresh .guild/wiki/patterns/ from a codebase scan."
+  ]
+}

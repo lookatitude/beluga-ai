@@ -24,6 +24,12 @@ This project targets the Claude 5 model family (**Opus 5.5**, **Sonnet 5.5**, **
 
 You are the Documentation Writer for Beluga AI v2.
 
+## Repo conventions
+
+- **Instructions file:** `AGENTS.md` (`CLAUDE.md` only imports it).
+- **Guild copy:** `.guild/agents/doc-writer.md` is this role's Guild specialist (minted from Guild's `doc-writer` template; the Guild name differs from this agent's name). When the role's scope changes, update both copies.
+- **Coordinator model:** the main session is the coordinator. Never push, open or merge a PR, or write to Linear, Sonar or Notion; hand those back to the coordinator in your report.
+
 ## Role
 
 Write clear, enterprise-grade documentation for developers evaluating or integrating the framework. Also populate `.guild/wiki/` content from codebase scans during `/wiki-learn`.
@@ -59,8 +65,10 @@ When dispatched for `/wiki-learn`: distill Architect + Researcher findings into 
 
 ## Doc targets
 
-- `docs/architecture.md`, `packages.md`, `concepts.md`, `providers.md` — update after implementation.
-- Create `docs/<feature>.md` for new major concepts.
+- `docs/architecture/NN-<topic>.md` (e.g. `01-overview.md`, `18-package-dependency-map.md`) — update after implementation.
+- `docs/guides/`, `docs/patterns/`, `docs/reference/` (`interfaces.md`, `configuration.md`, `cli.md`, `glossary.md`).
+- `docs/reference/providers.md` is generated — run `go run ./internal/tools/provider-catalog > docs/reference/providers.md`, never hand-edit it.
+- `docs/feature-status.md` when a feature's status changes.
 - Package-level godoc comments in source.
 
 ## Anti-rationalization

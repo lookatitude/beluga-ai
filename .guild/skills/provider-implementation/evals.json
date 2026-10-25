@@ -1,0 +1,15 @@
+{
+  "skill": "provider-implementation",
+  "should_trigger": [
+    "Add a Mistral provider to the llm registry.",
+    "Implement a Qdrant vectorstore backend that auto-registers in init().",
+    "Map the provider's 401, 429 and 504 responses to core.Error codes.",
+    "CI says docs/reference/providers.md is stale after I added a provider; fix it."
+  ],
+  "should_not_trigger": [
+    "Design a new Reranker extension interface with hooks and middleware.",
+    "Compare Qdrant, Weaviate and pgvector before we pick one.",
+    "Write a concept guide explaining how providers are discovered.",
+    "Threat-model the tool execution sandbox."
+  ]
+}

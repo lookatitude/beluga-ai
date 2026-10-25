@@ -43,4 +43,4 @@ COMPLIANT / VIOLATIONS FOUND (N)
 ```
 
 ### Step 4 — Learning
-If violations are found, `@agent-coordinator` appends a correction entry to `.guild/wiki/corrections/architecture.md` and (if HIGH confidence) proposes a rule update.
+If violations are found, the coordinator (main session) appends a correction entry to `.guild/wiki/corrections/architecture.md` and (if HIGH confidence) proposes a rule update.

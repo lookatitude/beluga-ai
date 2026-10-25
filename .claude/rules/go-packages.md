@@ -1,6 +1,8 @@
 ---
 description: Go package rules for Beluga AI v2. Auto-loaded when editing Go files in framework packages.
 globs: "*.go"
+paths:
+  - "**/*.go"
 alwaysApply: false
 ---
 
@@ -35,6 +37,15 @@ govulncheck ./...                 # known-CVE scanner
 CI runs all of these on every PR (see `.github/workflows/_ci-checks.yml`
 and `_security-checks.yml`). Catching issues locally is faster than
 pushing and waiting for CI to fail.
+
+**CI parity.** CI runs Go 1.27.3 (`GO_VERSION` in the workflows) with
+`GOTOOLCHAIN=local`; `go.mod` declares the 1.26 floor. Pinned tools:
+golangci-lint v2.15.0, gosec v2.30.0, govulncheck v1.9.0 — `make tools`
+installs exactly these, and `make ci` mirrors every blocking CI job (it adds
+`make docs-providers`, `make test-scripts`, integration tests and the license
+gate). Run with `GOTOOLCHAIN=local` so a newer local toolchain is not silently
+downloaded. If a tool cannot run locally, report it as not run — never claim
+green for it.
 
 **gosec focus areas** (these are the most commonly flagged in this repo):
 - `G107` — avoid HTTP requests with tainted variables (sanitize URLs)
