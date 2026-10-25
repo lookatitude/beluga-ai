@@ -114,8 +114,8 @@ func TestNew(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New() error: %v", err)
 	}
-	if m.ModelID() != "command-r-plus" {
-		t.Errorf("ModelID() = %q, want %q", m.ModelID(), "command-r-plus")
+	if m.ModelID() != "command-a-03-2025" {
+		t.Errorf("ModelID() = %q, want %q", m.ModelID(), "command-a-03-2025")
 	}
 }
 
