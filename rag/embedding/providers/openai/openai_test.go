@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/rag/embedding"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -289,30 +290,117 @@ func TestNew_CustomTimeout(t *testing.T) {
 	assert.NotNil(t, emb)
 }
 
-func TestEmbed_OutOfBoundsIndex(t *testing.T) {
+func rawResponse(data []map[string]any) string {
+	b, _ := json.Marshal(map[string]any{
+		"object": "list",
+		"data":   data,
+		"model":  "text-embedding-3-small",
+		"usage":  map[string]any{"prompt_tokens": 8, "total_tokens": 8},
+	})
+	return string(b)
+}
+
+func TestEmbed_MalformedIndices(t *testing.T) {
+	tests := []struct {
+		name string
+		data []map[string]any
+	}{
+		{"out_of_bounds", []map[string]any{
+			{"object": "embedding", "index": 0, "embedding": []float64{0.1}},
+			{"object": "embedding", "index": 99, "embedding": []float64{0.3}},
+		}},
+		{"negative", []map[string]any{
+			{"object": "embedding", "index": 0, "embedding": []float64{0.1}},
+			{"object": "embedding", "index": -1, "embedding": []float64{0.3}},
+		}},
+		{"duplicate_leaves_missing", []map[string]any{
+			{"object": "embedding", "index": 0, "embedding": []float64{0.1}},
+			{"object": "embedding", "index": 0, "embedding": []float64{0.3}},
+		}},
+		{"too_few", []map[string]any{
+			{"object": "embedding", "index": 0, "embedding": []float64{0.1}},
+		}},
+		{"too_many", []map[string]any{
+			{"object": "embedding", "index": 0, "embedding": []float64{0.1}},
+			{"object": "embedding", "index": 1, "embedding": []float64{0.2}},
+			{"object": "embedding", "index": 2, "embedding": []float64{0.3}},
+		}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, rawResponse(tt.data))
+			})
+			emb, err := New(config.ProviderConfig{APIKey: "sk-test", BaseURL: ts.URL})
+			require.NoError(t, err)
+
+			var vecs [][]float32
+			require.NotPanics(t, func() {
+				vecs, err = emb.Embed(context.Background(), []string{"first", "second"})
+			})
+			require.Error(t, err)
+			assert.Nil(t, vecs)
+			var cerr *core.Error
+			require.ErrorAs(t, err, &cerr)
+			assert.Equal(t, core.ErrProviderDown, cerr.Code)
+		})
+	}
+}
+
+func TestEmbed_OutOfOrderIndices(t *testing.T) {
 	ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		resp := map[string]any{
-			"object": "list",
-			"data": []map[string]any{
-				{"object": "embedding", "index": 0, "embedding": []float64{0.1, 0.2}},
-				{"object": "embedding", "index": 99, "embedding": []float64{0.3, 0.4}},
-			},
-			"model": "text-embedding-3-small",
-			"usage": map[string]any{"prompt_tokens": 8, "total_tokens": 8},
-		}
-		b, _ := json.Marshal(resp)
-		fmt.Fprint(w, string(b))
+		fmt.Fprint(w, rawResponse([]map[string]any{
+			{"object": "embedding", "index": 1, "embedding": []float64{0.2}},
+			{"object": "embedding", "index": 0, "embedding": []float64{0.1}},
+		}))
 	})
-
-	emb, err := New(config.ProviderConfig{
-		APIKey:  "sk-test",
-		BaseURL: ts.URL,
-	})
+	emb, err := New(config.ProviderConfig{APIKey: "sk-test", BaseURL: ts.URL})
 	require.NoError(t, err)
 
-	vecs, err := emb.Embed(context.Background(), []string{"first", "second"})
+	vecs, err := emb.Embed(context.Background(), []string{"a", "b"})
 	require.NoError(t, err)
 	require.Len(t, vecs, 2)
-	assert.NotNil(t, vecs[0])
+	assert.InDelta(t, float32(0.1), vecs[0][0], 0.001)
+	assert.InDelta(t, float32(0.2), vecs[1][0], 0.001)
+}
+
+func TestEmbed_DimensionsSentToAPI(t *testing.T) {
+	tests := []struct {
+		name    string
+		options map[string]any
+		want    any // nil means the field must be absent
+	}{
+		{"configured", map[string]any{"dimensions": float64(256)}, float64(256)},
+		{"not_configured", nil, nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var receivedBody map[string]any
+			ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+				_ = json.NewDecoder(r.Body).Decode(&receivedBody)
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, embeddingResponse([][]float64{{0.1}}))
+			})
+			emb, err := New(config.ProviderConfig{
+				APIKey:  "sk-test",
+				BaseURL: ts.URL,
+				Model:   "text-embedding-3-large",
+				Options: tt.options,
+			})
+			require.NoError(t, err)
+
+			_, err = emb.Embed(context.Background(), []string{"x"})
+			require.NoError(t, err)
+
+			got, present := receivedBody["dimensions"]
+			if tt.want == nil {
+				assert.False(t, present, "dimensions must be omitted when not configured")
+				return
+			}
+			require.True(t, present, "dimensions must be sent when configured")
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }

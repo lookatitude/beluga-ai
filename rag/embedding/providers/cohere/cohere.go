@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/internal/httpclient"
 	"github.com/lookatitude/beluga-ai/v2/rag/embedding"
 )
@@ -117,6 +118,16 @@ func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 	resp, err := httpclient.DoJSON[embedResponse](ctx, e.client, http.MethodPost, "embed", body)
 	if err != nil {
 		return nil, fmt.Errorf("cohere embedding: %w", err)
+	}
+
+	if len(resp.Embeddings.Float) != len(texts) {
+		return nil, core.Errorf(core.ErrProviderDown,
+			"cohere embedding: got %d embeddings for %d inputs", len(resp.Embeddings.Float), len(texts))
+	}
+	for i, v := range resp.Embeddings.Float {
+		if v == nil {
+			return nil, core.Errorf(core.ErrProviderDown, "cohere embedding: missing embedding at position %d", i)
+		}
 	}
 
 	return resp.Embeddings.Float, nil

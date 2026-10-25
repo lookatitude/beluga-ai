@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/internal/httpclient"
 	"github.com/lookatitude/beluga-ai/v2/rag/embedding"
 )
@@ -17,13 +19,14 @@ func init() {
 }
 
 const (
-	defaultModel      = "text-embedding-004"
-	defaultDimensions = 768
+	defaultModel      = "gemini-embedding-001"
+	defaultDimensions = 3072
 	defaultBaseURL    = "https://generativelanguage.googleapis.com/v1beta"
 )
 
 // modelDimensions maps known Google embedding models to their default dimensions.
 var modelDimensions = map[string]int{
+	"gemini-embedding-001":            3072,
 	"text-embedding-004":              768,
 	"embedding-001":                   768,
 	"text-multilingual-embedding-002": 768,
@@ -34,7 +37,9 @@ type Embedder struct {
 	client *httpclient.Client
 	model  string
 	dims   int
-	apiKey string
+	// sendDims is true when the caller configured "dimensions"; the value is
+	// then sent as outputDimensionality so Dimensions() matches the vectors.
+	sendDims bool
 }
 
 // Compile-time interface check.
@@ -51,8 +56,10 @@ func New(cfg config.ProviderConfig) (*Embedder, error) {
 	if d, ok := modelDimensions[model]; ok {
 		dims = d
 	}
+	sendDims := false
 	if d, ok := config.GetOption[float64](cfg, "dimensions"); ok && d > 0 {
 		dims = int(d)
+		sendDims = true
 	}
 
 	baseURL := cfg.BaseURL
@@ -60,8 +67,14 @@ func New(cfg config.ProviderConfig) (*Embedder, error) {
 		baseURL = defaultBaseURL
 	}
 
+	// The API key is sent in the x-goog-api-key header, never as a ?key=
+	// query parameter: Go's *url.Error embeds the full request URL, so a key
+	// in the URL would leak into returned errors and logs.
 	opts := []httpclient.Option{
 		httpclient.WithBaseURL(baseURL),
+	}
+	if cfg.APIKey != "" {
+		opts = append(opts, httpclient.WithHeader("x-goog-api-key", cfg.APIKey))
 	}
 	if cfg.Timeout > 0 {
 		opts = append(opts, httpclient.WithTimeout(cfg.Timeout))
@@ -70,10 +83,10 @@ func New(cfg config.ProviderConfig) (*Embedder, error) {
 	client := httpclient.New(opts...)
 
 	return &Embedder{
-		client: client,
-		model:  model,
-		dims:   dims,
-		apiKey: cfg.APIKey,
+		client:   client,
+		model:    model,
+		dims:     dims,
+		sendDims: sendDims,
 	}, nil
 }
 
@@ -91,8 +104,9 @@ type batchEmbedRequest struct {
 }
 
 type singleEmbedRequest struct {
-	Model   string       `json:"model"`
-	Content *contentPart `json:"content"`
+	Model                string       `json:"model"`
+	Content              *contentPart `json:"content"`
+	OutputDimensionality int          `json:"outputDimensionality,omitempty"`
 }
 
 type embeddingValue struct {
@@ -118,20 +132,30 @@ func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 				Parts: []partText{{Text: text}},
 			},
 		}
+		if e.sendDims {
+			requests[i].OutputDimensionality = e.dims
+		}
 	}
 
 	body := batchEmbedRequest{Requests: requests}
-	path := fmt.Sprintf("models/%s:batchEmbedContents?key=%s", e.model, e.apiKey)
+	// The model is config-derived; escape it so it cannot inject path
+	// segments ("../") or a query string ("?").
+	path := "models/" + url.PathEscape(e.model) + ":batchEmbedContents"
 
 	resp, err := httpclient.DoJSON[batchEmbedResponse](ctx, e.client, http.MethodPost, path, body)
 	if err != nil {
 		return nil, fmt.Errorf("google embedding: %w", err)
 	}
 
+	if len(resp.Embeddings) != len(texts) {
+		return nil, core.Errorf(core.ErrProviderDown,
+			"google embedding: got %d embeddings for %d inputs", len(resp.Embeddings), len(texts))
+	}
+
 	result := make([][]float32, len(texts))
 	for i, emb := range resp.Embeddings {
-		if i >= len(texts) {
-			break
+		if emb.Values == nil {
+			return nil, core.Errorf(core.ErrProviderDown, "google embedding: missing embedding at position %d", i)
 		}
 		result[i] = emb.Values
 	}
