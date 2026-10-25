@@ -174,8 +174,8 @@ func isNetworkError(err error) bool {
 	// Check for "connection reset by peer" and similar errors.
 	errStr := err.Error()
 	if strings.Contains(errStr, "connection reset") ||
-	   strings.Contains(errStr, "broken pipe") ||
-	   strings.Contains(errStr, "connection refused") {
+		strings.Contains(errStr, "broken pipe") ||
+		strings.Contains(errStr, "connection refused") {
 		return true
 	}
 

@@ -19,9 +19,9 @@ import (
 // unsupportedTestMessage is a custom message type for testing unsupported message handling.
 type unsupportedTestMessage struct{}
 
-func (m *unsupportedTestMessage) GetRole() schema.Role              { return "custom" }
-func (m *unsupportedTestMessage) GetContent() []schema.ContentPart  { return nil }
-func (m *unsupportedTestMessage) GetMetadata() map[string]any       { return nil }
+func (m *unsupportedTestMessage) GetRole() schema.Role             { return "custom" }
+func (m *unsupportedTestMessage) GetContent() []schema.ContentPart { return nil }
+func (m *unsupportedTestMessage) GetMetadata() map[string]any      { return nil }
 
 func mockAnthropicResponse(content string) string {
 	resp := map[string]any{
@@ -35,8 +35,8 @@ func mockAnthropicResponse(content string) string {
 			{"type": "text", "text": content},
 		},
 		"usage": map[string]any{
-			"input_tokens":               10,
-			"output_tokens":              20,
+			"input_tokens":                10,
+			"output_tokens":               20,
 			"cache_creation_input_tokens": 0,
 			"cache_read_input_tokens":     5,
 		},
@@ -63,8 +63,8 @@ func mockAnthropicToolResponse() string {
 			},
 		},
 		"usage": map[string]any{
-			"input_tokens":               15,
-			"output_tokens":              25,
+			"input_tokens":                15,
+			"output_tokens":               25,
 			"cache_creation_input_tokens": 0,
 			"cache_read_input_tokens":     0,
 		},

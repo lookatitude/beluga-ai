@@ -159,8 +159,8 @@ func TestComposeHooks_NilHooksSkipped(t *testing.T) {
 		AfterStep: func(_ context.Context, _ string, _ any, _ error) {
 			// no-op: satisfies Hooks for testing; AfterStep behaviour not under test
 		},
-		OnBranch:   func(_ context.Context, _, _ string) error { return nil },
-		OnError:    func(_ context.Context, err error) error { return err },
+		OnBranch: func(_ context.Context, _, _ string) error { return nil },
+		OnError:  func(_ context.Context, err error) error { return err },
 	}
 
 	composed := ComposeHooks(h1, h2)

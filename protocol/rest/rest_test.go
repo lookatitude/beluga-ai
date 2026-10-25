@@ -23,9 +23,9 @@ type mockAgent struct {
 	streamFn func(ctx context.Context, input string) iter.Seq2[agent.Event, error]
 }
 
-func (m *mockAgent) ID() string            { return m.id }
-func (m *mockAgent) Persona() agent.Persona { return agent.Persona{Role: m.id} }
-func (m *mockAgent) Tools() []tool.Tool     { return nil }
+func (m *mockAgent) ID() string              { return m.id }
+func (m *mockAgent) Persona() agent.Persona  { return agent.Persona{Role: m.id} }
+func (m *mockAgent) Tools() []tool.Tool      { return nil }
 func (m *mockAgent) Children() []agent.Agent { return nil }
 
 func (m *mockAgent) Invoke(ctx context.Context, input string, _ ...agent.Option) (string, error) {
@@ -481,7 +481,7 @@ func TestRESTServer_Serve_InvalidAddr(t *testing.T) {
 // nonFlushWriter implements http.ResponseWriter but NOT http.Flusher.
 type nonFlushWriter struct{}
 
-func (w *nonFlushWriter) Header() http.Header        { return http.Header{} }
+func (w *nonFlushWriter) Header() http.Header         { return http.Header{} }
 func (w *nonFlushWriter) Write(b []byte) (int, error) { return len(b), nil }
 func (w *nonFlushWriter) WriteHeader(int) { // no-op: stub writer/flusher for testing error paths
 }
@@ -489,7 +489,7 @@ func (w *nonFlushWriter) WriteHeader(int) { // no-op: stub writer/flusher for te
 // errorWriter implements http.ResponseWriter but always returns errors on Write.
 type errorWriter struct{}
 
-func (w *errorWriter) Header() http.Header        { return http.Header{} }
+func (w *errorWriter) Header() http.Header         { return http.Header{} }
 func (w *errorWriter) Write(b []byte) (int, error) { return 0, fmt.Errorf("write error") }
 func (w *errorWriter) WriteHeader(int) { // no-op: stub writer/flusher for testing error paths
 }
@@ -758,4 +758,3 @@ func TestRESTServer_Stream_WriteEventErrorDuringStream(t *testing.T) {
 		t.Errorf("expected text/event-stream, got %q", ct)
 	}
 }
-

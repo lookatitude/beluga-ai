@@ -99,7 +99,7 @@ func TestWithHooks_Approve(t *testing.T) {
 func TestWithHooks_DelegateShouldApprove(t *testing.T) {
 	base := NewManager()
 	base.AddPolicy(ApprovalPolicy{
-		ToolPattern:    "delete_*",
+		ToolPattern:     "delete_*",
 		RequireExplicit: true,
 	})
 

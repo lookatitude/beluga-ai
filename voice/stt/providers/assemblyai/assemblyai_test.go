@@ -328,7 +328,7 @@ func TestTranscribeStream_SuccessfulStreaming(t *testing.T) {
 			return
 		}
 		ctx := r.Context()
-		conn.Read(ctx) //nolint:errcheck
+		conn.Read(ctx)                           //nolint:errcheck
 		wsjson.Write(ctx, conn, realtimeMessage{ //nolint:errcheck
 			MessageType: "FinalTranscript",
 			Text:        "hello world",
@@ -382,7 +382,7 @@ func TestTranscribeStream_PartialTranscript(t *testing.T) {
 			return
 		}
 		ctx := r.Context()
-		conn.Read(ctx) //nolint:errcheck
+		conn.Read(ctx)                           //nolint:errcheck
 		wsjson.Write(ctx, conn, realtimeMessage{ //nolint:errcheck
 			MessageType: "PartialTranscript",
 			Text:        "hello",
@@ -418,10 +418,10 @@ func TestTranscribeStream_EmptyTextSkipped(t *testing.T) {
 			return
 		}
 		ctx := r.Context()
-		conn.Read(ctx) //nolint:errcheck
-		wsjson.Write(ctx, conn, realtimeMessage{MessageType: "PartialTranscript", Text: ""})          //nolint:errcheck
+		conn.Read(ctx)                                                                                            //nolint:errcheck
+		wsjson.Write(ctx, conn, realtimeMessage{MessageType: "PartialTranscript", Text: ""})                      //nolint:errcheck
 		wsjson.Write(ctx, conn, realtimeMessage{MessageType: "FinalTranscript", Text: "actual", Confidence: 0.9}) //nolint:errcheck
-		conn.Close(websocket.StatusNormalClosure, "")                                                  //nolint:errcheck
+		conn.Close(websocket.StatusNormalClosure, "")                                                             //nolint:errcheck
 	}))
 	defer srv.Close()
 
@@ -451,10 +451,10 @@ func TestTranscribeStream_NonJSONMessageSkipped(t *testing.T) {
 			return
 		}
 		ctx := r.Context()
-		conn.Read(ctx)                                                                                      //nolint:errcheck
-		conn.Write(ctx, websocket.MessageText, []byte("not json"))                                         //nolint:errcheck
+		conn.Read(ctx)                                                                                           //nolint:errcheck
+		conn.Write(ctx, websocket.MessageText, []byte("not json"))                                               //nolint:errcheck
 		wsjson.Write(ctx, conn, realtimeMessage{MessageType: "FinalTranscript", Text: "valid", Confidence: 0.9}) //nolint:errcheck
-		conn.Close(websocket.StatusNormalClosure, "")                                                      //nolint:errcheck
+		conn.Close(websocket.StatusNormalClosure, "")                                                            //nolint:errcheck
 	}))
 	defer srv.Close()
 

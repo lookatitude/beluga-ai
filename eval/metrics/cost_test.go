@@ -40,8 +40,8 @@ func TestCost_Name(t *testing.T) {
 func TestCost_Score_ValidMetadata(t *testing.T) {
 	pricing := map[string]metrics.ModelPricing{
 		"gpt-4": {
-			InputTokenPrice:  30.0,  // $30 per 1M input tokens
-			OutputTokenPrice: 60.0,  // $60 per 1M output tokens
+			InputTokenPrice:  30.0, // $30 per 1M input tokens
+			OutputTokenPrice: 60.0, // $60 per 1M output tokens
 		},
 	}
 

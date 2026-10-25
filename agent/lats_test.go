@@ -532,9 +532,9 @@ func TestLATSPlanner_Registry_CreationWithExtra(t *testing.T) {
 	p, err := NewPlanner("lats", PlannerConfig{
 		LLM: model,
 		Extra: map[string]any{
-			"expansion_width":       5,
-			"max_depth":             10,
-			"exploration_constant":  2.5,
+			"expansion_width":      5,
+			"max_depth":            10,
+			"exploration_constant": 2.5,
 		},
 	})
 	if err != nil {

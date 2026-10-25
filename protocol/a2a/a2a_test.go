@@ -22,9 +22,9 @@ type mockAgent struct {
 	invokeErr error
 }
 
-func (m *mockAgent) ID() string            { return m.id }
-func (m *mockAgent) Persona() agent.Persona { return agent.Persona{Role: m.id} }
-func (m *mockAgent) Tools() []tool.Tool     { return nil }
+func (m *mockAgent) ID() string              { return m.id }
+func (m *mockAgent) Persona() agent.Persona  { return agent.Persona{Role: m.id} }
+func (m *mockAgent) Tools() []tool.Tool      { return nil }
 func (m *mockAgent) Children() []agent.Agent { return nil }
 
 func (m *mockAgent) Invoke(ctx context.Context, input string, _ ...agent.Option) (string, error) {

@@ -7,13 +7,13 @@ import (
 
 func TestStreamChunk_Fields(t *testing.T) {
 	tests := []struct {
-		name           string
-		chunk          StreamChunk
-		wantDelta      string
-		wantToolCalls  int
-		wantFinish     string
-		wantUsage      bool
-		wantModelID    string
+		name          string
+		chunk         StreamChunk
+		wantDelta     string
+		wantToolCalls int
+		wantFinish    string
+		wantUsage     bool
+		wantModelID   string
 	}{
 		{
 			name: "text_delta",
@@ -175,11 +175,11 @@ func TestStreamChunk_ToolCallDetails(t *testing.T) {
 func TestAgentEvent_Fields(t *testing.T) {
 	now := time.Now()
 	tests := []struct {
-		name         string
-		event        AgentEvent
-		wantType     string
-		wantAgentID  string
-		wantPayload  bool
+		name        string
+		event       AgentEvent
+		wantType    string
+		wantAgentID string
+		wantPayload bool
 	}{
 		{
 			name: "agent_start",

@@ -251,8 +251,8 @@ func TestCoreRegistryEntry(t *testing.T) {
 	mem, err := New("core", config.ProviderConfig{
 		Provider: "core",
 		Options: map[string]any{
-			"persona_limit":  float64(3000),
-			"human_limit":    float64(2500),
+			"persona_limit": float64(3000),
+			"human_limit":   float64(2500),
 			"self_editable": true,
 		},
 	})

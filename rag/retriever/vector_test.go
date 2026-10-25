@@ -17,9 +17,9 @@ import (
 
 // mockVectorStoreForRetriever is a mock that properly implements vectorstore.VectorStore.
 type mockVectorStoreForRetriever struct {
-	searchDocs []schema.Document
-	searchErr  error
-	addCalls   int
+	searchDocs  []schema.Document
+	searchErr   error
+	addCalls    int
 	deleteCalls int
 }
 

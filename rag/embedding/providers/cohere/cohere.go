@@ -24,11 +24,11 @@ const (
 
 // modelDimensions maps known Cohere embedding models to their default dimensions.
 var modelDimensions = map[string]int{
-	"embed-english-v3.0":      1024,
-	"embed-multilingual-v3.0": 1024,
-	"embed-english-light-v3.0": 384,
+	"embed-english-v3.0":            1024,
+	"embed-multilingual-v3.0":       1024,
+	"embed-english-light-v3.0":      384,
 	"embed-multilingual-light-v3.0": 384,
-	"embed-english-v2.0":      4096,
+	"embed-english-v2.0":            4096,
 }
 
 // Embedder implements embedding.Embedder using the Cohere Embed API.
@@ -87,9 +87,9 @@ func New(cfg config.ProviderConfig) (*Embedder, error) {
 
 // embedRequest is the request body for the Cohere embed API.
 type embedRequest struct {
-	Texts         []string `json:"texts"`
-	Model         string   `json:"model"`
-	InputType     string   `json:"input_type"`
+	Texts          []string `json:"texts"`
+	Model          string   `json:"model"`
+	InputType      string   `json:"input_type"`
 	EmbeddingTypes []string `json:"embedding_types"`
 }
 
@@ -108,9 +108,9 @@ func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 	}
 
 	body := embedRequest{
-		Texts:         texts,
-		Model:         e.model,
-		InputType:     e.inputType,
+		Texts:          texts,
+		Model:          e.model,
+		InputType:      e.inputType,
 		EmbeddingTypes: []string{"float"},
 	}
 

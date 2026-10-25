@@ -11,17 +11,17 @@ import (
 
 // AgentDef represents an agent definition in the OpenAI Agents SDK format.
 type AgentDef struct {
-	Name         string     `json:"name"`
-	Instructions string     `json:"instructions,omitempty"`
-	Model        string     `json:"model,omitempty"`
-	Tools        []ToolDef  `json:"tools,omitempty"`
-	Handoffs     []Handoff  `json:"handoffs,omitempty"`
+	Name         string    `json:"name"`
+	Instructions string    `json:"instructions,omitempty"`
+	Model        string    `json:"model,omitempty"`
+	Tools        []ToolDef `json:"tools,omitempty"`
+	Handoffs     []Handoff `json:"handoffs,omitempty"`
 }
 
 // ToolDef represents a tool definition in the OpenAI Agents SDK format.
 type ToolDef struct {
-	Type     string         `json:"type"`
-	Function FunctionDef    `json:"function,omitempty"`
+	Type     string      `json:"type"`
+	Function FunctionDef `json:"function,omitempty"`
 }
 
 // FunctionDef represents a function tool definition.

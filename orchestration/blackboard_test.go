@@ -16,10 +16,10 @@ type bbMockAgent struct {
 	invokeFn func(ctx context.Context, input string) (string, error)
 }
 
-func (m *bbMockAgent) ID() string                    { return m.id }
-func (m *bbMockAgent) Persona() agent.Persona        { return agent.Persona{} }
-func (m *bbMockAgent) Tools() []tool.Tool             { return nil }
-func (m *bbMockAgent) Children() []agent.Agent        { return nil }
+func (m *bbMockAgent) ID() string              { return m.id }
+func (m *bbMockAgent) Persona() agent.Persona  { return agent.Persona{} }
+func (m *bbMockAgent) Tools() []tool.Tool      { return nil }
+func (m *bbMockAgent) Children() []agent.Agent { return nil }
 
 func (m *bbMockAgent) Invoke(ctx context.Context, input string, _ ...agent.Option) (string, error) {
 	if m.invokeFn != nil {

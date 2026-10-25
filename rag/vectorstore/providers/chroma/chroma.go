@@ -102,8 +102,8 @@ func NewFromConfig(cfg config.ProviderConfig) (*Store, error) {
 // the collection ID.
 func (s *Store) EnsureCollection(ctx context.Context) error {
 	body := map[string]any{
-		"name":            s.collection,
-		"get_or_create":   true,
+		"name":          s.collection,
+		"get_or_create": true,
 	}
 
 	resp, err := s.doJSON(ctx, http.MethodPost,

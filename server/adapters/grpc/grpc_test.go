@@ -26,7 +26,7 @@ type mockAgent struct {
 	events []agent.Event
 }
 
-func (m *mockAgent) ID() string             { return m.id }
+func (m *mockAgent) ID() string              { return m.id }
 func (m *mockAgent) Persona() agent.Persona  { return agent.Persona{} }
 func (m *mockAgent) Tools() []tool.Tool      { return nil }
 func (m *mockAgent) Children() []agent.Agent { return nil }
@@ -226,7 +226,7 @@ func TestAdapter_Stream(t *testing.T) {
 
 	reqData, _ := json.Marshal(InvokeRequest{Path: "/chat", Input: "hi"})
 	streamDesc := &grpc.StreamDesc{
-		StreamName:   "Stream",
+		StreamName:    "Stream",
 		ServerStreams: true,
 	}
 	stream, err := conn.NewStream(context.Background(), streamDesc, "/beluga.AgentService/Stream")
@@ -415,7 +415,7 @@ type errorStreamAgent struct {
 	err error
 }
 
-func (a *errorStreamAgent) ID() string             { return a.id }
+func (a *errorStreamAgent) ID() string              { return a.id }
 func (a *errorStreamAgent) Persona() agent.Persona  { return agent.Persona{} }
 func (a *errorStreamAgent) Tools() []tool.Tool      { return nil }
 func (a *errorStreamAgent) Children() []agent.Agent { return nil }

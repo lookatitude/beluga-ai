@@ -18,11 +18,11 @@ func TestLogNotifier(t *testing.T) {
 	}
 
 	err := n.Notify(context.Background(), InteractionRequest{
-		ID:         "test-123",
-		Type:       TypeApproval,
-		ToolName:   "delete_user",
-		Confidence: 0.7,
-		RiskLevel:  RiskIrreversible,
+		ID:          "test-123",
+		Type:        TypeApproval,
+		ToolName:    "delete_user",
+		Confidence:  0.7,
+		RiskLevel:   RiskIrreversible,
 		Description: "test reason",
 	})
 	if err != nil {

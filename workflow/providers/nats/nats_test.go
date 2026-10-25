@@ -369,7 +369,7 @@ func TestLoad_UnmarshalError(t *testing.T) {
 
 func TestList_KeysError_NonNotFound(t *testing.T) {
 	kv := &errInjectKV{
-		mockKV: newMockKV(),
+		mockKV:  newMockKV(),
 		keysErr: fmt.Errorf("connection error"),
 	}
 	// Add a key so keys() would succeed normally.
@@ -554,12 +554,12 @@ type mockKVEntry struct {
 	rev   uint64
 }
 
-func (e *mockKVEntry) Bucket() string              { return "test" }
-func (e *mockKVEntry) Key() string                 { return e.key }
-func (e *mockKVEntry) Value() []byte               { return e.value }
-func (e *mockKVEntry) Revision() uint64            { return e.rev }
-func (e *mockKVEntry) Created() time.Time          { return time.Now() }
-func (e *mockKVEntry) Delta() uint64               { return 0 }
+func (e *mockKVEntry) Bucket() string                  { return "test" }
+func (e *mockKVEntry) Key() string                     { return e.key }
+func (e *mockKVEntry) Value() []byte                   { return e.value }
+func (e *mockKVEntry) Revision() uint64                { return e.rev }
+func (e *mockKVEntry) Created() time.Time              { return time.Now() }
+func (e *mockKVEntry) Delta() uint64                   { return 0 }
 func (e *mockKVEntry) Operation() jetstream.KeyValueOp { return jetstream.KeyValuePut }
 
 var _ jetstream.KeyValueEntry = (*mockKVEntry)(nil)

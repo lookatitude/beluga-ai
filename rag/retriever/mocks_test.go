@@ -157,8 +157,8 @@ func makeDocs(ids ...string) []schema.Document {
 
 // Compile-time interface checks.
 var (
-	_ llm.ChatModel            = (*mockChatModel)(nil)
-	_ embedding.Embedder       = (*mockEmbedder)(nil)
-	_ vectorstore.VectorStore  = (*mockVectorStore)(nil)
-	_ retriever.Retriever      = (*mockRetriever)(nil)
+	_ llm.ChatModel           = (*mockChatModel)(nil)
+	_ embedding.Embedder      = (*mockEmbedder)(nil)
+	_ vectorstore.VectorStore = (*mockVectorStore)(nil)
+	_ retriever.Retriever     = (*mockRetriever)(nil)
 )

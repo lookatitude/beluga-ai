@@ -184,9 +184,9 @@ func TestToxicity_Score_PartialWordMatches(t *testing.T) {
 	tox := metrics.NewToxicity(metrics.WithKeywords(keywords))
 
 	tests := []struct {
-		name          string
-		output        string
-		shouldMatch   bool
+		name        string
+		output      string
+		shouldMatch bool
 	}{
 		{
 			name:        "exact match",

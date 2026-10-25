@@ -121,10 +121,10 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 	}
 
 	body := map[string]any{
-		"dataSource":  "Cluster0",
-		"database":    s.database,
-		"collection":  s.collection,
-		"documents":   documents,
+		"dataSource": "Cluster0",
+		"database":   s.database,
+		"collection": s.collection,
+		"documents":  documents,
 	}
 	_, err := s.doJSON(ctx, http.MethodPost, "/action/insertMany", body)
 	return err

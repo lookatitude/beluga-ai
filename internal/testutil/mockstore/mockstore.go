@@ -17,11 +17,11 @@ var _ vectorstore.VectorStore = (*MockVectorStore)(nil)
 type MockVectorStore struct {
 	mu sync.Mutex
 
-	documents   []schema.Document
-	err         error
-	addFn       func(ctx context.Context, docs []schema.Document, embeddings [][]float32) error
-	searchFn    func(ctx context.Context, query []float32, k int, opts ...vectorstore.SearchOption) ([]schema.Document, error)
-	deleteFn    func(ctx context.Context, ids []string) error
+	documents []schema.Document
+	err       error
+	addFn     func(ctx context.Context, docs []schema.Document, embeddings [][]float32) error
+	searchFn  func(ctx context.Context, query []float32, k int, opts ...vectorstore.SearchOption) ([]schema.Document, error)
+	deleteFn  func(ctx context.Context, ids []string) error
 
 	addCalls    int
 	searchCalls int

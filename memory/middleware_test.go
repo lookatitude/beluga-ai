@@ -100,21 +100,21 @@ func TestApplyMiddleware_Multiple(t *testing.T) {
 
 	mw1 := func(next Memory) Memory {
 		return &testMiddleware{
-			next: next,
+			next:   next,
 			onSave: func() { calls = append(calls, "mw1") },
 		}
 	}
 
 	mw2 := func(next Memory) Memory {
 		return &testMiddleware{
-			next: next,
+			next:   next,
 			onSave: func() { calls = append(calls, "mw2") },
 		}
 	}
 
 	mw3 := func(next Memory) Memory {
 		return &testMiddleware{
-			next: next,
+			next:   next,
 			onSave: func() { calls = append(calls, "mw3") },
 		}
 	}
@@ -492,14 +492,24 @@ func TestWithHooks_AllOperations(t *testing.T) {
 	var calls []string
 
 	hooks := Hooks{
-		BeforeSave:   func(ctx context.Context, input, output schema.Message) error { calls = append(calls, "BeforeSave"); return nil },
-		AfterSave:    func(ctx context.Context, input, output schema.Message, err error) { calls = append(calls, "AfterSave") },
-		BeforeLoad:   func(ctx context.Context, query string) error { calls = append(calls, "BeforeLoad"); return nil },
-		AfterLoad:    func(ctx context.Context, query string, msgs []schema.Message, err error) { calls = append(calls, "AfterLoad") },
-		BeforeSearch: func(ctx context.Context, query string, k int) error { calls = append(calls, "BeforeSearch"); return nil },
-		AfterSearch:  func(ctx context.Context, query string, k int, docs []schema.Document, err error) { calls = append(calls, "AfterSearch") },
-		BeforeClear:  func(ctx context.Context) error { calls = append(calls, "BeforeClear"); return nil },
-		AfterClear:   func(ctx context.Context, err error) { calls = append(calls, "AfterClear") },
+		BeforeSave: func(ctx context.Context, input, output schema.Message) error {
+			calls = append(calls, "BeforeSave")
+			return nil
+		},
+		AfterSave:  func(ctx context.Context, input, output schema.Message, err error) { calls = append(calls, "AfterSave") },
+		BeforeLoad: func(ctx context.Context, query string) error { calls = append(calls, "BeforeLoad"); return nil },
+		AfterLoad: func(ctx context.Context, query string, msgs []schema.Message, err error) {
+			calls = append(calls, "AfterLoad")
+		},
+		BeforeSearch: func(ctx context.Context, query string, k int) error {
+			calls = append(calls, "BeforeSearch")
+			return nil
+		},
+		AfterSearch: func(ctx context.Context, query string, k int, docs []schema.Document, err error) {
+			calls = append(calls, "AfterSearch")
+		},
+		BeforeClear: func(ctx context.Context) error { calls = append(calls, "BeforeClear"); return nil },
+		AfterClear:  func(ctx context.Context, err error) { calls = append(calls, "AfterClear") },
 	}
 
 	wrapped := WithHooks(hooks)(mock)

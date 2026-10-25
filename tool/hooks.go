@@ -54,7 +54,7 @@ type hookedTool struct {
 	hooks Hooks
 }
 
-func (h *hookedTool) Name() string               { return h.tool.Name() }
+func (h *hookedTool) Name() string                { return h.tool.Name() }
 func (h *hookedTool) Description() string         { return h.tool.Description() }
 func (h *hookedTool) InputSchema() map[string]any { return h.tool.InputSchema() }
 

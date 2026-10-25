@@ -12,13 +12,13 @@ import (
 
 // mockRunner implements sessionRunner for testing.
 type mockRunner struct {
-	mu        sync.Mutex
-	writes    []writeCall
-	readData  []record
-	writeErr  error
-	readErr   error
-	closeErr  error
-	closed    bool
+	mu       sync.Mutex
+	writes   []writeCall
+	readData []record
+	writeErr error
+	readErr  error
+	closeErr error
+	closed   bool
 }
 
 type writeCall struct {

@@ -353,7 +353,7 @@ func TestHandoffsToTools_Execute_WithHandoffContext(t *testing.T) {
 	tools := HandoffsToTools([]Handoff{handoff})
 
 	ctx := WithHandoffContext(context.Background(), map[string]any{
-		"source": "agent-1",
+		"source":   "agent-1",
 		"priority": "high",
 	})
 

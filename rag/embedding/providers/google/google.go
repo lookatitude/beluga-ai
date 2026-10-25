@@ -24,8 +24,8 @@ const (
 
 // modelDimensions maps known Google embedding models to their default dimensions.
 var modelDimensions = map[string]int{
-	"text-embedding-004":    768,
-	"embedding-001":         768,
+	"text-embedding-004":              768,
+	"embedding-001":                   768,
 	"text-multilingual-embedding-002": 768,
 }
 

@@ -163,9 +163,9 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 	}
 
 	knnQuery := map[string]any{
-		"field":         "embedding",
-		"query_vector":  float32SliceToFloat64(query),
-		"k":             k,
+		"field":          "embedding",
+		"query_vector":   float32SliceToFloat64(query),
+		"k":              k,
 		"num_candidates": k * 2,
 	}
 

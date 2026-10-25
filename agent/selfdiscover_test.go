@@ -49,14 +49,14 @@ func TestNewSelfDiscoverPlanner_WithReasoningModules(t *testing.T) {
 
 func TestDefaultReasoningModules(t *testing.T) {
 	expectedModules := map[string]bool{
-		"critical_thinking":   true,
-		"decomposition":       true,
+		"critical_thinking":    true,
+		"decomposition":        true,
 		"analogical_reasoning": true,
-		"causal_reasoning":    true,
-		"constraint_analysis": true,
-		"abstraction":         true,
-		"step_by_step":        true,
-		"hypothesis_testing":  true,
+		"causal_reasoning":     true,
+		"constraint_analysis":  true,
+		"abstraction":          true,
+		"step_by_step":         true,
+		"hypothesis_testing":   true,
 	}
 
 	if len(DefaultReasoningModules) != len(expectedModules) {

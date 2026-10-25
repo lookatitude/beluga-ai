@@ -22,10 +22,10 @@ type mockAgent struct {
 	output   string
 }
 
-func (a *mockAgent) ID() string                  { return a.id }
-func (a *mockAgent) Persona() agent.Persona       { return a.persona }
-func (a *mockAgent) Tools() []tool.Tool            { return a.tools }
-func (a *mockAgent) Children() []agent.Agent       { return a.children }
+func (a *mockAgent) ID() string              { return a.id }
+func (a *mockAgent) Persona() agent.Persona  { return a.persona }
+func (a *mockAgent) Tools() []tool.Tool      { return a.tools }
+func (a *mockAgent) Children() []agent.Agent { return a.children }
 func (a *mockAgent) Invoke(_ context.Context, _ string, _ ...agent.Option) (string, error) {
 	return a.output, nil
 }
@@ -42,9 +42,9 @@ type mockTool struct {
 	schema      map[string]any
 }
 
-func (t *mockTool) Name() string                  { return t.name }
-func (t *mockTool) Description() string            { return t.description }
-func (t *mockTool) InputSchema() map[string]any    { return t.schema }
+func (t *mockTool) Name() string                { return t.name }
+func (t *mockTool) Description() string         { return t.description }
+func (t *mockTool) InputSchema() map[string]any { return t.schema }
 func (t *mockTool) Execute(_ context.Context, _ map[string]any) (*tool.Result, error) {
 	return &tool.Result{
 		Content: []schema.ContentPart{schema.TextPart{Text: "result"}},

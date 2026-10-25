@@ -13,10 +13,10 @@ import (
 type MockMemory struct {
 	mu sync.Mutex
 
-	messages   []schema.Message
-	documents  []schema.Document
-	err        error
-	searchErr  error
+	messages  []schema.Message
+	documents []schema.Document
+	err       error
+	searchErr error
 
 	saveCalls   int
 	loadCalls   int

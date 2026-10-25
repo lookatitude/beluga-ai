@@ -83,9 +83,9 @@ type executeRequest struct {
 
 // executeResponse is the Composio execute action API response.
 type executeResponse struct {
-	Data        any    `json:"data"`
-	Error       string `json:"error,omitempty"`
-	Successful  bool   `json:"successfull"`
+	Data       any    `json:"data"`
+	Error      string `json:"error,omitempty"`
+	Successful bool   `json:"successfull"`
 }
 
 // ListTools queries the Composio API for available actions and returns them

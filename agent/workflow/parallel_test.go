@@ -19,10 +19,10 @@ type parMockAgent struct {
 	streamFn func(ctx context.Context, input string) iter.Seq2[agent.Event, error]
 }
 
-func (a *parMockAgent) ID() string                 { return a.id }
-func (a *parMockAgent) Persona() agent.Persona     { return agent.Persona{} }
-func (a *parMockAgent) Tools() []tool.Tool         { return nil }
-func (a *parMockAgent) Children() []agent.Agent    { return nil }
+func (a *parMockAgent) ID() string              { return a.id }
+func (a *parMockAgent) Persona() agent.Persona  { return agent.Persona{} }
+func (a *parMockAgent) Tools() []tool.Tool      { return nil }
+func (a *parMockAgent) Children() []agent.Agent { return nil }
 func (a *parMockAgent) Invoke(ctx context.Context, input string, opts ...agent.Option) (string, error) {
 	if a.invokeFn != nil {
 		return a.invokeFn(ctx, input)

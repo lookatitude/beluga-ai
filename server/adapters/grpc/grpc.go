@@ -180,7 +180,7 @@ var agentServiceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:   "Stream",
+			StreamName:    "Stream",
 			ServerStreams: true,
 			ClientStreams: false,
 			Handler: func(srv any, stream grpc.ServerStream) error {

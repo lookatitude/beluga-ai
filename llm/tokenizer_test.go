@@ -15,11 +15,11 @@ func TestSimpleTokenizer_Count(t *testing.T) {
 		want int
 	}{
 		{name: "empty", text: "", want: 0},
-		{name: "short", text: "hi", want: 1},   // 2 chars / 4 = 0.5, rounds up to 1
-		{name: "four chars", text: "test", want: 1}, // 4 / 4 = 1
-		{name: "five chars", text: "hello", want: 2}, // 5 / 4 = 1.25, rounds up to 2
+		{name: "short", text: "hi", want: 1},                                                 // 2 chars / 4 = 0.5, rounds up to 1
+		{name: "four chars", text: "test", want: 1},                                          // 4 / 4 = 1
+		{name: "five chars", text: "hello", want: 2},                                         // 5 / 4 = 1.25, rounds up to 2
 		{name: "long text", text: "hello world this is a longer text for testing", want: 12}, // 45 chars, (45+3)/4=12
-		{name: "unicode", text: "héllo wörld", want: 3}, // 11 runes, (11+3)/4=3 (rounded up)
+		{name: "unicode", text: "héllo wörld", want: 3},                                      // 11 runes, (11+3)/4=3 (rounded up)
 	}
 
 	for _, tt := range tests {
@@ -60,8 +60,8 @@ func TestSimpleTokenizer_CountMessages(t *testing.T) {
 		{
 			name: "multiple messages",
 			msgs: []schema.Message{
-				schema.NewHumanMessage("test"),       // 1 + 4 = 5
-				schema.NewAIMessage("hello world"),   // 3 + 4 = 7 (11 chars = 3 tokens)
+				schema.NewHumanMessage("test"),     // 1 + 4 = 5
+				schema.NewAIMessage("hello world"), // 3 + 4 = 7 (11 chars = 3 tokens)
 			},
 			want: 12,
 		},

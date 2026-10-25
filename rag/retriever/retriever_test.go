@@ -877,10 +877,10 @@ func (c *callTracker) Retrieve(ctx context.Context, query string, opts ...Option
 
 // Ensure mock types satisfy interfaces at compile time.
 var (
-	_ Retriever    = (*mockRetriever)(nil)
-	_ Reranker     = (*mockReranker)(nil)
-	_ BM25Searcher = (*mockBM25)(nil)
-	_ WebSearcher  = (*mockWebSearcher)(nil)
+	_ Retriever     = (*mockRetriever)(nil)
+	_ Reranker      = (*mockReranker)(nil)
+	_ BM25Searcher  = (*mockBM25)(nil)
+	_ WebSearcher   = (*mockWebSearcher)(nil)
 	_ llm.ChatModel = (*mockChatModel)(nil)
 )
 

@@ -48,9 +48,12 @@ jobs:
       - name: Run golangci-lint
         id: golangci
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        # Non-blocking until the per-package lint/Sonar fix PRs land; the
+        # final PR in that series removes continue-on-error.
+        continue-on-error: true
         with:
-          version: latest
-          args: --out-format=json > lint-report.json || true
+          version: v2.15.0
+          args: --output.json.path=lint-report.json --output.text.path=stdout
 
       - name: Parse lint results
         id: lint_result

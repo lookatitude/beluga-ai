@@ -92,11 +92,11 @@ type scoreRequest struct {
 
 // scoring represents a single score request.
 type scoring struct {
-	Name           string   `json:"name"`
-	Input          string   `json:"input"`
-	Output         string   `json:"output"`
-	Expected       string   `json:"expected,omitempty"`
-	Context        []string `json:"context,omitempty"`
+	Name     string   `json:"name"`
+	Input    string   `json:"input"`
+	Output   string   `json:"output"`
+	Expected string   `json:"expected,omitempty"`
+	Context  []string `json:"context,omitempty"`
 }
 
 // scoreResponse is the Braintrust score API response.

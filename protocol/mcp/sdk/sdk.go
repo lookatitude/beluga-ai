@@ -176,7 +176,7 @@ type sdkTool struct {
 	schema  map[string]any
 }
 
-func (t *sdkTool) Name() string               { return t.name }
+func (t *sdkTool) Name() string                { return t.name }
 func (t *sdkTool) Description() string         { return t.desc }
 func (t *sdkTool) InputSchema() map[string]any { return t.schema }
 
