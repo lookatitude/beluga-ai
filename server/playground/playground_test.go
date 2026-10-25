@@ -64,7 +64,7 @@ func TestHandleUI(t *testing.T) {
 	sel := NewStaticSelector(&mockAgent{id: "test"})
 	h := NewHandler(sel, WithTitle("Test Playground"))
 
-	req := httptest.NewRequest("GET", "/", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "/", nil)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 
@@ -83,7 +83,7 @@ func TestHandleListAgents(t *testing.T) {
 	sel := NewStaticSelector(&mockAgent{id: "a1"}, &mockAgent{id: "a2"})
 	h := NewHandler(sel)
 
-	req := httptest.NewRequest("GET", "/agents", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "/agents", nil)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 
@@ -104,7 +104,7 @@ func TestHandleChat_MissingFields(t *testing.T) {
 	sel := NewStaticSelector(&mockAgent{id: "a1"})
 	h := NewHandler(sel)
 
-	req := httptest.NewRequest("POST", "/chat", strings.NewReader(`{"agent_id":"","input":""}`))
+	req := httptest.NewRequestWithContext(t.Context(), "POST", "/chat", strings.NewReader(`{"agent_id":"","input":""}`))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
@@ -118,7 +118,7 @@ func TestHandleChat_AgentNotFound(t *testing.T) {
 	sel := NewStaticSelector(&mockAgent{id: "a1"})
 	h := NewHandler(sel)
 
-	req := httptest.NewRequest("POST", "/chat", strings.NewReader(`{"agent_id":"nonexistent","input":"hi"}`))
+	req := httptest.NewRequestWithContext(t.Context(), "POST", "/chat", strings.NewReader(`{"agent_id":"nonexistent","input":"hi"}`))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
@@ -157,7 +157,7 @@ func TestWithAdapter(t *testing.T) {
 		t.Error("WithAdapter: adapter not injected")
 	}
 
-	req := httptest.NewRequest("POST", "/chat", strings.NewReader(`{"agent_id":"a1","input":"hi"}`))
+	req := httptest.NewRequestWithContext(t.Context(), "POST", "/chat", strings.NewReader(`{"agent_id":"a1","input":"hi"}`))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
@@ -173,7 +173,7 @@ func TestHandleChat_InvalidBody(t *testing.T) {
 	sel := NewStaticSelector(&mockAgent{id: "a1"})
 	h := NewHandler(sel)
 
-	req := httptest.NewRequest("POST", "/chat", strings.NewReader(`not json`))
+	req := httptest.NewRequestWithContext(t.Context(), "POST", "/chat", strings.NewReader(`not json`))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
@@ -189,7 +189,7 @@ func TestHandler_MountedAtBasePath(t *testing.T) {
 	mounted := h.Handler()
 
 	// GET /pg should serve the UI.
-	req := httptest.NewRequest("GET", "/pg", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "/pg", nil)
 	w := httptest.NewRecorder()
 	mounted.ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
@@ -200,7 +200,7 @@ func TestHandler_MountedAtBasePath(t *testing.T) {
 	}
 
 	// GET /pg/agents should list agents.
-	req = httptest.NewRequest("GET", "/pg/agents", nil)
+	req = httptest.NewRequestWithContext(t.Context(), "GET", "/pg/agents", nil)
 	w = httptest.NewRecorder()
 	mounted.ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
@@ -208,7 +208,7 @@ func TestHandler_MountedAtBasePath(t *testing.T) {
 	}
 
 	// POST /pg/chat should reach the chat handler (agent not found -> 404).
-	req = httptest.NewRequest("POST", "/pg/chat", strings.NewReader(`{"agent_id":"missing","input":"hi"}`))
+	req = httptest.NewRequestWithContext(t.Context(), "POST", "/pg/chat", strings.NewReader(`{"agent_id":"missing","input":"hi"}`))
 	req.Header.Set("Content-Type", "application/json")
 	w = httptest.NewRecorder()
 	mounted.ServeHTTP(w, req)
@@ -228,7 +228,7 @@ func TestDefaultStreamAdapter_WriteEvents(t *testing.T) {
 	sel := NewStaticSelector(&mockAgent{id: "a1"})
 	h := NewHandler(sel)
 
-	req := httptest.NewRequest("POST", "/chat", strings.NewReader(`{"agent_id":"a1","input":"hi"}`))
+	req := httptest.NewRequestWithContext(t.Context(), "POST", "/chat", strings.NewReader(`{"agent_id":"a1","input":"hi"}`))
 	req.Header.Set("Content-Type", "application/json")
 	w := &streamingRecorder{httptest.NewRecorder()}
 	h.ServeHTTP(w, req)
@@ -262,7 +262,7 @@ func TestDefaultStreamAdapter_StreamError(t *testing.T) {
 	sel := NewStaticSelector(ea)
 	h := NewHandler(sel)
 
-	req := httptest.NewRequest("POST", "/chat", strings.NewReader(`{"agent_id":"err","input":"hi"}`))
+	req := httptest.NewRequestWithContext(t.Context(), "POST", "/chat", strings.NewReader(`{"agent_id":"err","input":"hi"}`))
 	req.Header.Set("Content-Type", "application/json")
 	w := &streamingRecorder{httptest.NewRecorder()}
 	h.ServeHTTP(w, req)

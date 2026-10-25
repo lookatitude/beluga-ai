@@ -112,7 +112,7 @@ func TestAdapter_Invoke(t *testing.T) {
 	}
 
 	body, _ := json.Marshal(server.InvokeRequest{Input: "hi"})
-	req := httptest.NewRequest(http.MethodPost, "/chat/invoke", bytes.NewReader(body))
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/chat/invoke", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	a.Mux().ServeHTTP(w, req)
@@ -144,7 +144,7 @@ func TestAdapter_Stream(t *testing.T) {
 	}
 
 	body, _ := json.Marshal(server.InvokeRequest{Input: "hi"})
-	req := httptest.NewRequest(http.MethodPost, "/chat/stream", bytes.NewReader(body))
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/chat/stream", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	a.Mux().ServeHTTP(w, req)
@@ -168,7 +168,7 @@ func TestAdapter_CustomHandler(t *testing.T) {
 		t.Fatalf("RegisterHandler: %v", err)
 	}
 
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/health", nil)
 	w := httptest.NewRecorder()
 	a.Mux().ServeHTTP(w, req)
 
@@ -189,7 +189,7 @@ func TestAdapter_ServeAndShutdown(t *testing.T) {
 	a.RegisterAgent("/chat", ag)
 
 	// Find a free port.
-	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}
@@ -207,7 +207,12 @@ func TestAdapter_ServeAndShutdown(t *testing.T) {
 
 	// Make a request.
 	body, _ := json.Marshal(server.InvokeRequest{Input: "hi"})
-	resp, err := http.Post("http://"+addr+"/chat/invoke", "application/json", bytes.NewReader(body))
+	postReq, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "http://"+addr+"/chat/invoke", bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("NewRequest: %v", err)
+	}
+	postReq.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(postReq)
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -247,7 +252,7 @@ func TestAdapter_Serve_ListenError(t *testing.T) {
 	a := New(server.Config{})
 
 	// Occupy a port.
-	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}
@@ -270,7 +275,7 @@ func TestAdapter_Shutdown_Error(t *testing.T) {
 	ag := &mockAgent{id: "test", result: "hello"}
 	a.RegisterAgent("/chat", ag)
 
-	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}

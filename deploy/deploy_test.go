@@ -358,7 +358,7 @@ func TestGenerateComposeEnvironmentOrder(t *testing.T) {
 	if posAAA < 0 || posMMM < 0 || posZZZ < 0 {
 		t.Fatalf("missing environment variables in output:\n%s", out)
 	}
-	if !(posAAA < posMMM && posMMM < posZZZ) {
+	if posAAA >= posMMM || posMMM >= posZZZ {
 		t.Errorf("environment variables not in sorted order in output:\n%s", out)
 	}
 }
@@ -371,7 +371,7 @@ func TestHealthEndpointHealthz(t *testing.T) {
 	h := NewHealthEndpoint()
 	handler := h.Healthz()
 
-	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/healthz", nil)
 	rec := httptest.NewRecorder()
 	handler(rec, req)
 
@@ -438,7 +438,7 @@ func TestHealthEndpointReadyz(t *testing.T) {
 			tt.setupFn(h)
 
 			handler := h.Readyz()
-			req := httptest.NewRequest(http.MethodGet, "/readyz", nil)
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/readyz", nil)
 			rec := httptest.NewRecorder()
 			handler(rec, req)
 
@@ -467,7 +467,7 @@ func TestHealthEndpointReadyzErrorSuppressed(t *testing.T) {
 	})
 
 	rec := httptest.NewRecorder()
-	h.Readyz()(rec, httptest.NewRequest(http.MethodGet, "/readyz", nil))
+	h.Readyz()(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/readyz", nil))
 
 	body := rec.Body.String()
 	// Error message must NOT appear to prevent information disclosure.
@@ -493,14 +493,14 @@ func TestHealthEndpointMethodRestriction(t *testing.T) {
 	for _, method := range methods {
 		t.Run("healthz/"+method, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			h.Healthz()(rec, httptest.NewRequest(method, "/healthz", nil))
+			h.Healthz()(rec, httptest.NewRequestWithContext(t.Context(), method, "/healthz", nil))
 			if rec.Code != http.StatusMethodNotAllowed {
 				t.Errorf("expected 405, got %d", rec.Code)
 			}
 		})
 		t.Run("readyz/"+method, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			h.Readyz()(rec, httptest.NewRequest(method, "/readyz", nil))
+			h.Readyz()(rec, httptest.NewRequestWithContext(t.Context(), method, "/readyz", nil))
 			if rec.Code != http.StatusMethodNotAllowed {
 				t.Errorf("expected 405, got %d", rec.Code)
 			}
@@ -510,14 +510,14 @@ func TestHealthEndpointMethodRestriction(t *testing.T) {
 	// HEAD should be accepted.
 	t.Run("healthz/HEAD", func(t *testing.T) {
 		rec := httptest.NewRecorder()
-		h.Healthz()(rec, httptest.NewRequest(http.MethodHead, "/healthz", nil))
+		h.Healthz()(rec, httptest.NewRequestWithContext(t.Context(), http.MethodHead, "/healthz", nil))
 		if rec.Code != http.StatusOK {
 			t.Errorf("expected 200 for HEAD, got %d", rec.Code)
 		}
 	})
 	t.Run("readyz/HEAD", func(t *testing.T) {
 		rec := httptest.NewRecorder()
-		h.Readyz()(rec, httptest.NewRequest(http.MethodHead, "/readyz", nil))
+		h.Readyz()(rec, httptest.NewRequestWithContext(t.Context(), http.MethodHead, "/readyz", nil))
 		if rec.Code != http.StatusOK {
 			t.Errorf("expected 200 for HEAD, got %d", rec.Code)
 		}
@@ -542,7 +542,7 @@ func TestHealthEndpointAddCheckConcurrent(t *testing.T) {
 	}
 
 	rec := httptest.NewRecorder()
-	h.Readyz()(rec, httptest.NewRequest(http.MethodGet, "/readyz", nil))
+	h.Readyz()(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/readyz", nil))
 	if rec.Code != http.StatusOK {
 		t.Errorf("expected 200 after concurrent AddCheck, got %d", rec.Code)
 	}
@@ -555,14 +555,12 @@ func TestHealthEndpointReadyzContextCancellation(t *testing.T) {
 
 	checkCtxDone := make(chan struct{}, 1)
 	h.AddCheck("slow", func(ctx context.Context) error {
-		select {
-		case <-ctx.Done():
-			checkCtxDone <- struct{}{}
-			return ctx.Err()
-		}
+		<-ctx.Done()
+		checkCtxDone <- struct{}{}
+		return ctx.Err()
 	})
 
-	req := httptest.NewRequest(http.MethodGet, "/readyz", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/readyz", nil)
 	ctx, cancel := context.WithCancel(req.Context())
 	req = req.WithContext(ctx)
 

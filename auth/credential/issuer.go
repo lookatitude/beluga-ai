@@ -15,7 +15,7 @@ const opCredentialIssue = "credential.issue" // #nosec G101 -- operation name, n
 
 // CredentialIssuer manages the lifecycle of agent credentials. Implementations
 // must be safe for concurrent use.
-type CredentialIssuer interface {
+type CredentialIssuer interface { //nolint:revive // stuttering name is part of the published v2 API; renaming would break callers
 	// Issue creates a new credential for the given agent with the specified
 	// permissions and TTL.
 	Issue(ctx context.Context, agentID string, permissions []string, ttl time.Duration) (*AgentCredential, error)

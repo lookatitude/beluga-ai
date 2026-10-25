@@ -97,7 +97,7 @@ func handleStream(w http.ResponseWriter, r *http.Request, a agent.Agent) {
 		if eventType == "" {
 			eventType = "message"
 		}
-		if writeErr := sw.WriteEvent(SSEEvent{Event: eventType, Data: string(data)}); writeErr != nil {
+		if sw.WriteEvent(SSEEvent{Event: eventType, Data: string(data)}) != nil {
 			return
 		}
 	}

@@ -15,7 +15,7 @@ func WithCredential(ctx context.Context, cred *AgentCredential) context.Context 
 
 // CredentialFromContext extracts the AgentCredential from ctx. It returns nil
 // if no credential is present.
-func CredentialFromContext(ctx context.Context) *AgentCredential {
+func CredentialFromContext(ctx context.Context) *AgentCredential { //nolint:revive // stuttering name is part of the published v2 API; renaming would break callers
 	cred, _ := ctx.Value(credentialKey).(*AgentCredential)
 	return cred
 }

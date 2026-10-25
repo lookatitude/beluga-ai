@@ -15,7 +15,7 @@ import (
 // ServerAdapter is the interface that HTTP framework adapters must implement.
 // Each adapter wraps a specific HTTP framework and exposes a uniform API for
 // registering agents and handlers.
-type ServerAdapter interface {
+type ServerAdapter interface { //nolint:revive // stuttering name is part of the published v2 API; renaming would break callers
 	// RegisterAgent registers an agent at the given path prefix. The adapter
 	// creates sub-routes for invoke and stream endpoints automatically.
 	RegisterAgent(path string, a agent.Agent) error

@@ -55,7 +55,7 @@ func WithAdapter(sa StreamAdapter) Option {
 }
 
 // PlaygroundHandler serves the chat UI and handles API requests.
-type PlaygroundHandler struct {
+type PlaygroundHandler struct { //nolint:revive // stuttering name is part of the published v2 API; renaming would break callers
 	selector AgentSelector
 	adapter  StreamAdapter
 	opts     options

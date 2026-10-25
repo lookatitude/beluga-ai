@@ -5,6 +5,7 @@ import (
 	"iter"
 	"net"
 	"net/http"
+	"slices"
 	"testing"
 	"time"
 
@@ -42,14 +43,7 @@ func (m *mockAgent) Stream(ctx context.Context, input string, opts ...agent.Opti
 func TestRegistry(t *testing.T) {
 	t.Run("stdlib is registered by default", func(t *testing.T) {
 		names := List()
-		found := false
-		for _, n := range names {
-			if n == "stdlib" {
-				found = true
-				break
-			}
-		}
-		if !found {
+		if !slices.Contains(names, "stdlib") {
 			t.Fatalf("expected 'stdlib' in registry, got %v", names)
 		}
 	})
@@ -150,7 +144,7 @@ func TestStdlibAdapter_ServeAndShutdown(t *testing.T) {
 	}
 
 	// Get a random port.
-	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("failed to get random port: %v", err)
 	}
@@ -171,7 +165,11 @@ func TestStdlibAdapter_ServeAndShutdown(t *testing.T) {
 
 	// Make a request to verify server is running.
 	client := &http.Client{Timeout: 2 * time.Second}
-	resp, err := client.Get("http://" + addr + "/health")
+	healthReq, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://"+addr+"/health", nil)
+	if err != nil {
+		t.Fatalf("NewRequest: %v", err)
+	}
+	resp, err := client.Do(healthReq)
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -213,7 +211,7 @@ func TestStdlibAdapter_Shutdown_WithRunningServer(t *testing.T) {
 	adapter := NewStdlibAdapter(Config{})
 
 	// Get a random port.
-	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("failed to get random port: %v", err)
 	}

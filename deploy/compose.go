@@ -51,52 +51,81 @@ func validateComposeConfig(cfg ComposeConfig) error {
 		return core.Errorf(core.ErrInvalidInput, "deploy: ComposeConfig must contain at least one agent")
 	}
 	names := make(map[string]struct{}, len(cfg.Agents))
-	for i, a := range cfg.Agents {
-		if a.Name == "" {
-			return core.Errorf(core.ErrInvalidInput, "deploy: agent[%d].Name must not be empty", i)
-		}
-		// Validate Name against safe service name characters to prevent YAML injection.
-		if !serviceNameRe.MatchString(a.Name) {
-			return core.Errorf(core.ErrInvalidInput, "deploy: agent[%d].Name %q contains invalid characters; must match ^[a-zA-Z0-9_-]+$", i, a.Name)
-		}
-		if a.ConfigPath == "" {
-			return core.Errorf(core.ErrInvalidInput, "deploy: agent %q: ConfigPath must not be empty", a.Name)
-		}
-		// Reject newlines in ConfigPath to prevent YAML injection.
-		if strings.ContainsAny(a.ConfigPath, "\n\r") {
-			return core.Errorf(core.ErrInvalidInput, "deploy: agent %q: ConfigPath must not contain newlines", a.Name)
-		}
-		// Use filepath.Clean-based path traversal check instead of naive ".." substring match.
-		cleaned := filepath.Clean(a.ConfigPath)
-		if strings.HasPrefix(cleaned, "..") || filepath.IsAbs(cleaned) {
-			return core.Errorf(core.ErrInvalidInput, "deploy: agent %q: ConfigPath must not contain path traversal sequences or be absolute", a.Name)
-		}
-		if a.Port < 1 || a.Port > 65535 {
-			return core.Errorf(core.ErrInvalidInput, "deploy: agent %q: Port must be between 1 and 65535", a.Name)
-		}
-		// Validate environment variable keys and values.
-		for k, v := range a.Environment {
-			if !envKeyRe.MatchString(k) {
-				return core.Errorf(core.ErrInvalidInput, "deploy: agent %q: environment key %q is not a valid POSIX variable name", a.Name, k)
-			}
-			if strings.ContainsAny(v, "\n\r") {
-				return core.Errorf(core.ErrInvalidInput, "deploy: agent %q: environment value for key %q must not contain newlines", a.Name, k)
-			}
-		}
-		// Validate DependsOn entries against safe service name characters.
-		for _, dep := range a.DependsOn {
-			if !serviceNameRe.MatchString(dep) {
-				return core.Errorf(core.ErrInvalidInput, "deploy: agent %q: DependsOn entry %q contains invalid characters", a.Name, dep)
-			}
+	for i := range cfg.Agents {
+		a := &cfg.Agents[i]
+		if err := validateAgentDeployment(i, a); err != nil {
+			return err
 		}
 		names[a.Name] = struct{}{}
 	}
 	// Verify that all DependsOn references resolve to declared services.
-	for _, a := range cfg.Agents {
+	for i := range cfg.Agents {
+		a := &cfg.Agents[i]
 		for _, dep := range a.DependsOn {
 			if _, ok := names[dep]; !ok {
 				return core.Errorf(core.ErrInvalidInput, "deploy: agent %q: DependsOn %q is not a declared agent", a.Name, dep)
 			}
+		}
+	}
+	return nil
+}
+
+// validateAgentDeployment checks the fields of the i-th agent in a
+// ComposeConfig: name, config path, port, environment, and DependsOn syntax.
+// Cross-agent DependsOn resolution is done by validateComposeConfig.
+func validateAgentDeployment(i int, a *AgentDeployment) error {
+	if a.Name == "" {
+		return core.Errorf(core.ErrInvalidInput, "deploy: agent[%d].Name must not be empty", i)
+	}
+	// Validate Name against safe service name characters to prevent YAML injection.
+	if !serviceNameRe.MatchString(a.Name) {
+		return core.Errorf(core.ErrInvalidInput, "deploy: agent[%d].Name %q contains invalid characters; must match ^[a-zA-Z0-9_-]+$", i, a.Name)
+	}
+	if err := validateComposeConfigPath(a.Name, a.ConfigPath); err != nil {
+		return err
+	}
+	if a.Port < 1 || a.Port > 65535 {
+		return core.Errorf(core.ErrInvalidInput, "deploy: agent %q: Port must be between 1 and 65535", a.Name)
+	}
+	if err := validateComposeEnvironment(a.Name, a.Environment); err != nil {
+		return err
+	}
+	// Validate DependsOn entries against safe service name characters.
+	for _, dep := range a.DependsOn {
+		if !serviceNameRe.MatchString(dep) {
+			return core.Errorf(core.ErrInvalidInput, "deploy: agent %q: DependsOn entry %q contains invalid characters", a.Name, dep)
+		}
+	}
+	return nil
+}
+
+// validateComposeConfigPath rejects empty, multi-line, absolute, or
+// parent-escaping config paths for the named agent.
+func validateComposeConfigPath(name, configPath string) error {
+	if configPath == "" {
+		return core.Errorf(core.ErrInvalidInput, "deploy: agent %q: ConfigPath must not be empty", name)
+	}
+	// Reject newlines in ConfigPath to prevent YAML injection.
+	if strings.ContainsAny(configPath, "\n\r") {
+		return core.Errorf(core.ErrInvalidInput, "deploy: agent %q: ConfigPath must not contain newlines", name)
+	}
+	// Use filepath.Clean-based path traversal check instead of naive ".." substring match.
+	cleaned := filepath.Clean(configPath)
+	if strings.HasPrefix(cleaned, "..") || filepath.IsAbs(cleaned) {
+		return core.Errorf(core.ErrInvalidInput, "deploy: agent %q: ConfigPath must not contain path traversal sequences or be absolute", name)
+	}
+	return nil
+}
+
+// validateComposeEnvironment checks that every key is a valid POSIX variable
+// name and that no value contains a newline.
+func validateComposeEnvironment(name string, env map[string]string) error {
+	for k, v := range env {
+		if !envKeyRe.MatchString(k) {
+			return core.Errorf(core.ErrInvalidInput, "deploy: agent %q: environment key %q is not a valid POSIX variable name", name, k)
+		}
+		if strings.ContainsAny(v, "\n\r") {
+			return core.Errorf(core.ErrInvalidInput, "deploy: agent %q: environment value for key %q must not contain newlines", name, k)
 		}
 	}
 	return nil

@@ -86,7 +86,8 @@ func (p *auditPolicy) Name() string { return p.next.Name() }
 func (p *auditPolicy) Authorize(ctx context.Context, subject string, permission Permission, resource string) (bool, error) {
 	allowed, err := p.next.Authorize(ctx, subject, permission, resource)
 
-	if err != nil {
+	switch {
+	case err != nil:
 		p.logger.ErrorContext(ctx, "auth.authorize.error",
 			"policy", p.next.Name(),
 			"subject", subject,
@@ -94,14 +95,14 @@ func (p *auditPolicy) Authorize(ctx context.Context, subject string, permission 
 			"resource", resource,
 			"error", err,
 		)
-	} else if allowed {
+	case allowed:
 		p.logger.InfoContext(ctx, "auth.authorize.allow",
 			"policy", p.next.Name(),
 			"subject", subject,
 			"permission", string(permission),
 			"resource", resource,
 		)
-	} else {
+	default:
 		p.logger.WarnContext(ctx, "auth.authorize.deny",
 			"policy", p.next.Name(),
 			"subject", subject,
