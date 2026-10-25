@@ -1,8 +1,10 @@
 package core
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -50,7 +52,7 @@ func TestError_Error(t *testing.T) {
 		{
 			name: "empty_fields",
 			err:  NewError("", "", "", nil),
-			want: " []: ",
+			want: "[]: ",
 		},
 	}
 
@@ -294,5 +296,101 @@ func TestErrorCodes_Values(t *testing.T) {
 		if string(code) != want {
 			t.Errorf("ErrorCode %v = %q, want %q", code, string(code), want)
 		}
+	}
+}
+
+// TestErrorf_CauseNotDuplicated is a regression test for FWC-09: Errorf used to
+// print the wrapped cause twice and prefix every message with a blank Op.
+func TestErrorf_CauseNotDuplicated(t *testing.T) {
+	cause := errors.New("boom")
+	got := Errorf(ErrTimeout, "call failed: %w", cause).Error()
+	if want := "[timeout]: call failed: boom"; got != want {
+		t.Errorf("Error() = %q, want %q", got, want)
+	}
+
+	inner := Errorf(ErrGuardBlocked, "blocked by guard")
+	outer := Errorf(ErrProviderDown, "parallel agent: child failed: %w", inner)
+	if want := "[provider_unavailable]: parallel agent: child failed: [guard_blocked]: blocked by guard"; outer.Error() != want {
+		t.Errorf("nested Error() = %q, want %q", outer.Error(), want)
+	}
+	if strings.Count(outer.Error(), "blocked by guard") != 1 {
+		t.Errorf("cause repeated in %q", outer.Error())
+	}
+}
+
+// TestErrorf_MultipleWrapVerbs is a regression test for FWC-09: with two %w
+// verbs the causes used to be dropped.
+func TestErrorf_MultipleWrapVerbs(t *testing.T) {
+	a := errors.New("first")
+	b := errors.New("second")
+	e := Errorf(ErrInternal, "both: %w and %w", a, b)
+	if !errors.Is(e, a) || !errors.Is(e, b) {
+		t.Fatalf("errors.Is lost a cause: Is(a)=%v Is(b)=%v", errors.Is(e, a), errors.Is(e, b))
+	}
+	if e.Err == nil {
+		t.Fatal("Err is nil")
+	}
+	if want := "[internal_error]: both: first and second"; e.Error() != want {
+		t.Errorf("Error() = %q, want %q", e.Error(), want)
+	}
+	if got := Errorf(ErrInternal, "no cause").Err; got != nil {
+		t.Errorf("Err = %v, want nil", got)
+	}
+}
+
+func TestError_NewErrorWithCauseStillPrintsCause(t *testing.T) {
+	e := NewError("op", ErrToolFailed, "failed", errors.New("disk full"))
+	if want := "op [tool_failed]: failed: disk full"; e.Error() != want {
+		t.Errorf("Error() = %q, want %q", e.Error(), want)
+	}
+}
+
+// TestWrapf_PreservesInnerCode is a regression test for FWC-03: re-wrapping a
+// non-retryable error under ErrProviderDown made it retryable.
+func TestWrapf_PreservesInnerCode(t *testing.T) {
+	tests := []struct {
+		name          string
+		cause         error
+		fallback      ErrorCode
+		wantCode      ErrorCode
+		wantRetryable bool
+	}{
+		{"guard blocked kept", Errorf(ErrGuardBlocked, "blocked"), ErrProviderDown, ErrGuardBlocked, false},
+		{"auth kept", Errorf(ErrAuth, "denied"), ErrProviderDown, ErrAuth, false},
+		{"rate limit kept", Errorf(ErrRateLimit, "slow down"), ErrInternal, ErrRateLimit, true},
+		{"deep chain kept", fmt.Errorf("ctx: %w", Errorf(ErrBudgetExhausted, "spent")), ErrProviderDown, ErrBudgetExhausted, false},
+		{"canceled", context.Canceled, ErrProviderDown, ErrCanceled, false},
+		{"canceled wrapped", fmt.Errorf("op: %w", context.Canceled), ErrProviderDown, ErrCanceled, false},
+		{"deadline", context.DeadlineExceeded, ErrProviderDown, ErrTimeout, true},
+		{"plain uses fallback", errors.New("plain"), ErrInternal, ErrInternal, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := Wrapf(tt.fallback, "outer: %w", tt.cause)
+			if e.Code != tt.wantCode {
+				t.Errorf("Code = %q, want %q", e.Code, tt.wantCode)
+			}
+			if IsRetryable(e) != tt.wantRetryable {
+				t.Errorf("IsRetryable = %v, want %v", IsRetryable(e), tt.wantRetryable)
+			}
+			if !errors.Is(e, tt.cause) {
+				t.Error("cause not reachable via errors.Is")
+			}
+		})
+	}
+	if got := Wrapf(ErrInternal, "no cause"); got.Code != ErrInternal {
+		t.Errorf("no-cause Code = %q, want %q", got.Code, ErrInternal)
+	}
+}
+
+func TestCodeOf(t *testing.T) {
+	if got := CodeOf(nil, ErrNotFound); got != ErrNotFound {
+		t.Errorf("CodeOf(nil) = %q", got)
+	}
+	if got := CodeOf(Errorf(ErrAuth, "x"), ErrInternal); got != ErrAuth {
+		t.Errorf("CodeOf(auth) = %q", got)
+	}
+	if IsRetryable(Errorf(ErrCanceled, "x")) || IsRetryable(Errorf(ErrInternal, "x")) {
+		t.Error("canceled/internal must not be retryable")
 	}
 }

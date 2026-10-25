@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -93,6 +94,8 @@ func (a *App) Start(ctx context.Context) error {
 
 // Shutdown stops all components in reverse registration order. It collects
 // all errors and returns a combined error if any component fails to stop.
+// The combined error is built with errors.Join, so errors.Is and errors.As
+// reach every component's error.
 func (a *App) Shutdown(ctx context.Context) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -110,7 +113,7 @@ func (a *App) Shutdown(ctx context.Context) error {
 	a.running = false
 
 	if len(errs) > 0 {
-		return fmt.Errorf("shutdown errors: %v", errs)
+		return errors.Join(errs...)
 	}
 	return nil
 }
