@@ -139,12 +139,12 @@ func (r *Replayer) Replay(ctx context.Context, cp *Checkpoint, responses Respons
 		turnIdx := startTurn + i
 
 		if err := ctx.Err(); err != nil {
-			return nil, fmt.Errorf("replay cancelled at turn %d: %w", turnIdx, err)
+			return nil, core.Wrapf(core.ErrCanceled, "replay cancelled at turn %d: %w", turnIdx, err)
 		}
 
 		response, err := responses(turnIdx)
 		if err != nil {
-			return nil, core.NewError(opReplay, core.ErrInvalidInput,
+			return nil, core.NewError(opReplay, core.CodeOf(err, core.ErrInvalidInput),
 				fmt.Sprintf("no response for turn %d", turnIdx), err)
 		}
 
@@ -162,7 +162,7 @@ func (r *Replayer) Replay(ctx context.Context, cp *Checkpoint, responses Respons
 			return r.opts.processor(turnCtx, state, cp.Turns[turnIdx].Input, response)
 		}()
 		if err != nil {
-			return nil, core.NewError(opReplay, core.ErrToolFailed,
+			return nil, core.NewError(opReplay, core.CodeOf(err, core.ErrToolFailed),
 				fmt.Sprintf("turn processor failed at turn %d", turnIdx), err)
 		}
 

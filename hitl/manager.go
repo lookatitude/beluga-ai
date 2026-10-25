@@ -150,10 +150,10 @@ func (m *DefaultManager) checkAutoApproval(ctx context.Context, req InteractionR
 	if err != nil {
 		if m.hooks.OnError != nil {
 			if e := m.hooks.OnError(ctx, err); e != nil {
-				return nil, core.Errorf(core.ErrInvalidInput, errHitlRequest, e)
+				return nil, core.Wrapf(core.ErrInvalidInput, errHitlRequest, e)
 			}
 		}
-		return nil, core.Errorf(core.ErrInvalidInput, errHitlRequest, err)
+		return nil, core.Wrapf(core.ErrInvalidInput, errHitlRequest, err)
 	}
 	if !autoApprove {
 		return nil, nil

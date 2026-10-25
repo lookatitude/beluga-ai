@@ -58,7 +58,7 @@ func (s *Supervisor) Invoke(ctx context.Context, input any, opts ...core.Option)
 	for round := 0; round < s.maxRounds; round++ {
 		selected, err := s.strategy(ctx, current, s.agents)
 		if err != nil {
-			return nil, core.Errorf(core.ErrProviderDown, supervisorStrategyErrFmt, err)
+			return nil, core.Wrapf(core.ErrInternal, supervisorStrategyErrFmt, err)
 		}
 		if selected == nil {
 			return current, nil
@@ -68,7 +68,7 @@ func (s *Supervisor) Invoke(ctx context.Context, input any, opts ...core.Option)
 		inputStr := fmt.Sprintf("%v", current)
 		result, err := selected.Invoke(ctx, inputStr)
 		if err != nil {
-			return nil, core.Errorf(core.ErrProviderDown, supervisorAgentErrFmt, selected.ID(), err)
+			return nil, core.Wrapf(core.ErrInternal, supervisorAgentErrFmt, selected.ID(), err)
 		}
 		current = result
 	}
@@ -93,7 +93,7 @@ func (s *Supervisor) streamRounds(ctx context.Context, input any, yield func(any
 	for round := 0; round < s.maxRounds; round++ {
 		selected, err := s.strategy(ctx, current, s.agents)
 		if err != nil {
-			yield(nil, core.Errorf(core.ErrProviderDown, supervisorStrategyErrFmt, err))
+			yield(nil, core.Wrapf(core.ErrInternal, supervisorStrategyErrFmt, err))
 			return
 		}
 		if selected == nil {
@@ -110,7 +110,7 @@ func (s *Supervisor) streamRounds(ctx context.Context, input any, yield func(any
 
 		result, err := selected.Invoke(ctx, inputStr)
 		if err != nil {
-			yield(nil, core.Errorf(core.ErrProviderDown, supervisorAgentErrFmt, selected.ID(), err))
+			yield(nil, core.Wrapf(core.ErrInternal, supervisorAgentErrFmt, selected.ID(), err))
 			return
 		}
 		current = result
@@ -121,7 +121,7 @@ func (s *Supervisor) streamRounds(ctx context.Context, input any, yield func(any
 func streamAgent(ctx context.Context, a agent.Agent, input string, yield func(any, error) bool) {
 	for event, err := range a.Stream(ctx, input) {
 		if err != nil {
-			yield(nil, core.Errorf(core.ErrProviderDown, supervisorAgentErrFmt, a.ID(), err))
+			yield(nil, core.Wrapf(core.ErrInternal, supervisorAgentErrFmt, a.ID(), err))
 			return
 		}
 		if !yield(event, nil) {

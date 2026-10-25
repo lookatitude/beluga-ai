@@ -371,7 +371,9 @@ func TestOrchestration_PreservesWorkerErrorCode(t *testing.T) {
 	plain := newStep(func(any) (any, error) { return nil, errors.New("plain") })
 	sgPlain := NewScatterGather(func(r []any) (any, error) { return r, nil }, plain)
 
-	for name, r := range map[string]core.Runnable{"graph": g, "scatter": sg} {
+	chain := Chain(newStep(func(v any) (any, error) { return v, nil }), failing)
+
+	for name, r := range map[string]core.Runnable{"graph": g, "scatter": sg, "chain": chain} {
 		_, err := r.Invoke(context.Background(), "x")
 		if core.IsRetryable(err) || core.CodeOf(err, "") != core.ErrGuardBlocked {
 			t.Errorf("%s: err = %v, want non-retryable guard_blocked", name, err)
