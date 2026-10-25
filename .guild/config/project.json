@@ -1,6 +1,9 @@
 {
-  "agent_mode": "auto",
+  "agent_mode": "team",
   "wiki": {
     "autopromote": true
+  },
+  "review": {
+    "independence": true
   }
 }
