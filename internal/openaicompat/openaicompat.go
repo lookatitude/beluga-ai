@@ -2,10 +2,12 @@ package openaicompat
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"iter"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/internal/errclass"
 	"github.com/lookatitude/beluga-ai/v2/llm"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 	"github.com/openai/openai-go"
@@ -69,9 +71,22 @@ func (m *Model) Generate(ctx context.Context, msgs []schema.Message, opts ...llm
 	}
 	resp, err := m.client.Chat.Completions.New(ctx, params)
 	if err != nil {
-		return nil, fmt.Errorf("openaicompat: generate failed: %w", err)
+		return nil, classifyError("openaicompat: generate failed", err)
 	}
 	return ConvertResponse(resp), nil
+}
+
+// classifyError maps an openai-go error onto a typed core.Error using the
+// HTTP status of *openai.Error when present (429 -> rate limit, 5xx ->
+// provider down, 401/403 -> auth, other 4xx -> invalid input), and network /
+// deadline classification otherwise.
+func classifyError(prefix string, err error) error {
+	status := 0
+	var apiErr *openai.Error
+	if errors.As(err, &apiErr) {
+		status = apiErr.StatusCode
+	}
+	return errclass.Classify(prefix, status, err)
 }
 
 // Stream sends messages and returns an iterator of response chunks.
@@ -85,8 +100,16 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 	params.StreamOptions = openai.ChatCompletionStreamOptionsParam{
 		IncludeUsage: openai.Bool(true),
 	}
-	stream := m.client.Chat.Completions.NewStreaming(ctx, params)
-	return StreamToSeq(stream, m.model)
+	// The HTTP request is issued lazily, on first iteration, so a stream that
+	// is created but never ranged holds no connection.
+	return func(yield func(schema.StreamChunk, error) bool) {
+		stream := m.client.Chat.Completions.NewStreaming(ctx, params)
+		for chunk, err := range StreamToSeq(stream, m.model) {
+			if !yield(chunk, err) {
+				return
+			}
+		}
+	}
 }
 
 // BindTools returns a new Model that includes the given tools in every request.

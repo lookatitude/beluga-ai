@@ -10,8 +10,8 @@ import (
 )
 
 // Middleware wraps a ChatModel to add cross-cutting behaviour.
-// Middlewares are composed via ApplyMiddleware and applied outside-in
-// (the last middleware in the list is the outermost wrapper).
+// Middlewares are composed via ApplyMiddleware and applied outside-in: the
+// first middleware in the list is the outermost wrapper and runs first.
 type Middleware func(ChatModel) ChatModel
 
 // ApplyMiddleware wraps model with the given middlewares in reverse order so
@@ -47,6 +47,12 @@ func (m *hookedModel) Generate(ctx context.Context, msgs []schema.Message, opts 
 
 	if err != nil && m.hooks.OnError != nil {
 		err = m.hooks.OnError(ctx, err)
+		if err == nil && resp == nil {
+			// The hook suppressed the error but there is no response to
+			// return. Return an empty message rather than (nil, nil), which
+			// callers would dereference.
+			resp = &schema.AIMessage{}
+		}
 	}
 
 	if resp != nil {

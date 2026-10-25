@@ -29,7 +29,7 @@
 //
 // The following [config.ProviderConfig] fields are used:
 //
-//   - Model: the Groq model name (e.g. "llama-3.3-70b-versatile", "mixtral-8x7b-32768")
+//   - Model: the Groq model name (e.g. "llama-3.3-70b-versatile", "llama-3.1-8b-instant")
 //   - APIKey: the Groq API key
 //   - BaseURL: optional, defaults to "https://api.groq.com/openai/v1"
 //

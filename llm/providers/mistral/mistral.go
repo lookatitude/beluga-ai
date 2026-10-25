@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"iter"
+	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/gage-technologies/mistral-go"
 	"github.com/lookatitude/beluga-ai/v2/config"
 	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/internal/errclass"
 	"github.com/lookatitude/beluga-ai/v2/llm"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
@@ -65,9 +68,25 @@ func (m *Model) Generate(ctx context.Context, msgs []schema.Message, opts ...llm
 
 	resp, err := m.client.Chat(m.model, chatMsgs, params)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "mistral: generate failed: %w", err)
+		return nil, classifyError("mistral: generate failed", err)
 	}
 	return convertResponse(resp), nil
+}
+
+// mistralStatusRe extracts the status from mistral-go's untyped
+// "(HTTP Error 429) ..." errors.
+var mistralStatusRe = regexp.MustCompile(`\(HTTP Error (\d{3})\)`)
+
+// classifyError maps a mistral-go error onto a typed core.Error. mistral-go
+// returns plain fmt errors, so the HTTP status is parsed from the message.
+func classifyError(prefix string, err error) error {
+	status := 0
+	if err != nil {
+		if m := mistralStatusRe.FindStringSubmatch(err.Error()); m != nil {
+			status, _ = strconv.Atoi(m[1])
+		}
+	}
+	return errclass.Classify(prefix, status, err)
 }
 
 // Stream sends messages and returns an iterator of response chunks.
@@ -75,16 +94,26 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 	chatMsgs := convertMessages(msgs)
 	params := m.buildParams(opts)
 
-	ch, err := m.client.ChatStream(m.model, chatMsgs, params)
-	if err != nil {
-		return func(yield func(schema.StreamChunk, error) bool) {
-			yield(schema.StreamChunk{}, core.Errorf(core.ErrProviderDown, "mistral: stream failed: %w", err))
-		}
-	}
-
 	return func(yield func(schema.StreamChunk, error) bool) {
+		// Open the stream lazily so an un-iterated Seq starts no request and
+		// no SDK goroutine.
+		ch, err := m.client.ChatStream(m.model, chatMsgs, params)
+		if err != nil {
+			yield(schema.StreamChunk{}, classifyError("mistral: stream failed", err))
+			return
+		}
 		consumeStreamChannel(ctx, ch, m.model, yield)
 	}
+}
+
+// drain discards the rest of ch in the background. mistral-go's reader
+// goroutine sends on an unbuffered channel and ignores context, so it would
+// block forever (holding the HTTP body) if the consumer stopped early.
+func drain(ch <-chan mistral.ChatCompletionStreamResponse) {
+	go func() {
+		for range ch { //nolint:revive // intentionally empty: discard remaining events
+		}
+	}()
 }
 
 // consumeStreamChannel reads from the Mistral stream channel and yields chunks.
@@ -92,6 +121,7 @@ func consumeStreamChannel(ctx context.Context, ch <-chan mistral.ChatCompletionS
 	for {
 		select {
 		case <-ctx.Done():
+			drain(ch)
 			yield(schema.StreamChunk{}, ctx.Err())
 			return
 		case chunk, ok := <-ch:
@@ -99,11 +129,13 @@ func consumeStreamChannel(ctx context.Context, ch <-chan mistral.ChatCompletionS
 				return
 			}
 			if chunk.Error != nil {
-				yield(schema.StreamChunk{}, chunk.Error)
+				drain(ch)
+				yield(schema.StreamChunk{}, classifyError("mistral: stream error", chunk.Error))
 				return
 			}
 			sc := convertStreamChunk(chunk, modelID)
 			if !yield(sc, nil) {
+				drain(ch)
 				return
 			}
 		}

@@ -13,10 +13,24 @@ import (
 	"math/rand/v2"
 	"net"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
+)
+
+const (
+	// maxRetryAfter caps how long a server-supplied Retry-After header can
+	// make the client sleep between attempts.
+	maxRetryAfter = 60 * time.Second
+
+	// maxErrorBodyBytes bounds how much of a non-2xx response body is read
+	// into an APIError.
+	maxErrorBodyBytes = 1 << 20 // 1 MiB
+
+	// maxResponseBytes bounds how much of a successful JSON response body is
+	// decoded by DoJSON.
+	maxResponseBytes = 64 << 20 // 64 MiB
 )
 
 // Client wraps net/http.Client with retry, context propagation, and typed helpers.
@@ -120,7 +134,7 @@ func (c *Client) Do(ctx context.Context, method, path string, body any, headers 
 
 	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
 	if err != nil {
-		return nil, fmt.Errorf("httpclient: create request: %w", err)
+		return nil, RedactError(fmt.Errorf("httpclient: create request: %w", err))
 	}
 
 	if body != nil {
@@ -134,61 +148,148 @@ func (c *Client) Do(ctx context.Context, method, path string, body any, headers 
 		req.Header.Set(k, v)
 	}
 
-	return c.http.Do(req)
+	resp, err := c.http.Do(req)
+	if err != nil {
+		// *url.Error renders the full request URL, which may carry an API key
+		// in its query string (e.g. Google's ?key=). Scrub it before the error
+		// can reach logs, spans or HTTP responses.
+		return nil, RedactError(err)
+	}
+	return resp, nil
 }
 
-// isRetryable returns true if the status code warrants a retry.
-func isRetryable(statusCode int) bool {
-	return statusCode == http.StatusTooManyRequests || statusCode == http.StatusServiceUnavailable
+// isIdempotent reports whether an HTTP method can be safely re-sent after the
+// request may already have reached the server (RFC 9110 section 9.2.2).
+func isIdempotent(method string) bool {
+	switch strings.ToUpper(method) {
+	case "", http.MethodGet, http.MethodHead, http.MethodOptions, http.MethodTrace,
+		http.MethodPut, http.MethodDelete:
+		return true
+	}
+	return false
 }
 
-// isNetworkError returns true if the error is a temporary or timeout network error.
-func isNetworkError(err error) bool {
-	if err == nil {
+// isRetryable returns true if the status code warrants a retry for method.
+// 429 and 503 mean the server did not process the request, so they are
+// retried for every method. 502 and 504 come from a gateway that may have
+// forwarded the request, so they are retried only for idempotent methods.
+func isRetryable(method string, statusCode int) bool {
+	switch statusCode {
+	case http.StatusTooManyRequests, http.StatusServiceUnavailable:
+		return true
+	case http.StatusBadGateway, http.StatusGatewayTimeout:
+		return isIdempotent(method)
+	}
+	return false
+}
+
+// transientErrnos are socket errors that indicate a transient network fault.
+var transientErrnos = []syscall.Errno{
+	syscall.ECONNREFUSED, syscall.ECONNRESET, syscall.ECONNABORTED,
+	syscall.EPIPE, syscall.ETIMEDOUT, syscall.EHOSTUNREACH, syscall.ENETUNREACH,
+	syscall.ENETDOWN, syscall.EAGAIN,
+}
+
+// IsNetworkError reports whether err is a transient transport-level failure
+// (timeout, refused or reset connection, DNS hiccup, connection closed
+// mid-response). Context cancellation is never a network error.
+//
+// It deliberately does not use the deprecated net.Error.Temporary, whose
+// answer is ill-defined (and false for ECONNREFUSED); transient conditions are
+// classified explicitly instead.
+func IsNetworkError(err error) bool {
+	if err == nil || errors.Is(err, context.Canceled) {
 		return false
 	}
 
-	// Unwrap url.Error if present (HTTP client wraps errors in url.Error).
-	var urlErr *url.Error
-	if errors.As(err, &urlErr) {
-		err = urlErr.Err
-	}
-
-	// Check for net.Error interface (Temporary/Timeout).
 	var netErr net.Error
-	if errors.As(err, &netErr) {
-		return netErr.Temporary() || netErr.Timeout() //nolint:staticcheck // SA1019: dropping Temporary() would stop retrying non-timeout temporary errors (e.g. EMFILE, ECONNABORTED); behavior must be preserved
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return true
 	}
-
-	// Check for net.OpError (connection refused, DNS failures, etc.).
+	for _, errno := range transientErrnos {
+		if errors.Is(err, errno) {
+			return true
+		}
+	}
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) {
+		return dnsErr.IsTimeout || dnsErr.IsTemporary
+	}
 	var opErr *net.OpError
 	if errors.As(err, &opErr) {
 		return true
 	}
-
-	// Check for EOF and unexpected EOF (connection closed unexpectedly).
 	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
 		return true
 	}
 
-	// Check for "connection reset by peer" and similar errors.
+	// Fallback for errors that lost their typed cause.
 	errStr := err.Error()
-	if strings.Contains(errStr, "connection reset") ||
+	return strings.Contains(errStr, "connection reset") ||
 		strings.Contains(errStr, "broken pipe") ||
-		strings.Contains(errStr, "connection refused") {
-		return true
-	}
-
-	return false
+		strings.Contains(errStr, "connection refused")
 }
 
-// retryDelay computes the delay for a retry attempt, respecting Retry-After headers.
+// isNetworkError is the internal alias kept for existing call sites.
+func isNetworkError(err error) bool { return IsNetworkError(err) }
+
+// requestNotSent reports whether err happened before any byte of the request
+// could have reached the server (dial or DNS failure, refused connection).
+func requestNotSent(err error) bool {
+	if errors.Is(err, syscall.ECONNREFUSED) {
+		return true
+	}
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) {
+		return true
+	}
+	var opErr *net.OpError
+	return errors.As(err, &opErr) && opErr.Op == "dial"
+}
+
+// shouldRetryNetwork reports whether a transport error is safe to retry for
+// method. Idempotent requests retry on any transient network error; other
+// methods (POST, PATCH) only when the request provably never left the client,
+// so a write is never duplicated.
+func shouldRetryNetwork(method string, err error) bool {
+	if !isNetworkError(err) {
+		return false
+	}
+	return isIdempotent(method) || requestNotSent(err)
+}
+
+// parseRetryAfter parses a Retry-After header in either delta-seconds or
+// HTTP-date form. It returns false when the header is absent or invalid.
+func parseRetryAfter(ra string, now time.Time) (time.Duration, bool) {
+	ra = strings.TrimSpace(ra)
+	if ra == "" {
+		return 0, false
+	}
+	if seconds, err := strconv.Atoi(ra); err == nil {
+		if seconds < 0 {
+			return 0, false
+		}
+		if seconds > int(maxRetryAfter/time.Second) {
+			return maxRetryAfter, true
+		}
+		return time.Duration(seconds) * time.Second, true
+	}
+	if t, err := http.ParseTime(ra); err == nil {
+		d := t.Sub(now)
+		if d < 0 {
+			d = 0
+		}
+		return d, true
+	}
+	return 0, false
+}
+
+// retryDelay computes the delay for a retry attempt, respecting Retry-After
+// headers (capped at maxRetryAfter).
 func retryDelay(resp *http.Response, baseBackoff time.Duration, attempt int) time.Duration {
 	if resp != nil {
-		if ra := resp.Header.Get("Retry-After"); ra != "" {
-			if seconds, err := strconv.Atoi(ra); err == nil {
-				return time.Duration(seconds) * time.Second
-			}
+		if d, ok := parseRetryAfter(resp.Header.Get("Retry-After"), time.Now()); ok {
+			return min(d, maxRetryAfter)
 		}
 	}
 	// Exponential backoff with jitter.
@@ -199,7 +300,10 @@ func retryDelay(resp *http.Response, baseBackoff time.Duration, attempt int) tim
 }
 
 // DoJSON sends an HTTP request and decodes the JSON response into T.
-// It retries on 429/503 and network errors with exponential backoff.
+// It retries on 429/503 (and 502/504 for idempotent methods) and on transient
+// network errors with exponential backoff. Network errors are retried for
+// non-idempotent methods (POST, PATCH) only when the request was never sent,
+// so writes are not duplicated. Server Retry-After values are capped at 60s.
 func DoJSON[T any](ctx context.Context, c *Client, method, path string, body any) (T, error) {
 	var zero T
 
@@ -220,21 +324,21 @@ func doJSONAttempt[T any](ctx context.Context, c *Client, method, path string, b
 
 	resp, err := c.Do(ctx, method, path, body, nil)
 	if err != nil {
-		return zero, err, !shouldRetryNetErr(ctx, c, err, attempt)
+		return zero, err, !shouldRetryNetErr(ctx, c, method, err, attempt)
 	}
 
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		return decodeJSONResponse[T](resp)
 	}
 
-	apiErr, shouldRetry := handleErrorResponse(ctx, c, resp, attempt)
+	apiErr, shouldRetry := handleErrorResponse(ctx, c, method, resp, attempt)
 	return zero, apiErr, !shouldRetry
 }
 
 // shouldRetryNetErr checks if a network error should be retried, and waits if so.
 // Returns true if the caller should retry (continue to next attempt).
-func shouldRetryNetErr(ctx context.Context, c *Client, err error, attempt int) bool {
-	if !isNetworkError(err) || attempt >= c.retries {
+func shouldRetryNetErr(ctx context.Context, c *Client, method string, err error, attempt int) bool {
+	if attempt >= c.retries || !shouldRetryNetwork(method, err) {
 		return false
 	}
 	return waitForRetry(ctx, nil, c.backoff, attempt)
@@ -244,7 +348,7 @@ func shouldRetryNetErr(ctx context.Context, c *Client, err error, attempt int) b
 func decodeJSONResponse[T any](resp *http.Response) (T, error, bool) {
 	defer resp.Body.Close()
 	var result T
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseBytes)).Decode(&result); err != nil {
 		return result, fmt.Errorf("httpclient: decode response: %w", err), true
 	}
 	return result, nil, true
@@ -252,11 +356,11 @@ func decodeJSONResponse[T any](resp *http.Response) (T, error, bool) {
 
 // handleErrorResponse processes a non-2xx response, retrying if appropriate.
 // Returns the error and whether the caller should retry.
-func handleErrorResponse(ctx context.Context, c *Client, resp *http.Response, attempt int) (error, bool) {
-	respBody, _ := io.ReadAll(resp.Body)
+func handleErrorResponse(ctx context.Context, c *Client, method string, resp *http.Response, attempt int) (error, bool) {
+	respBody := readErrorBody(resp.Body)
 	_ = resp.Body.Close() // #nosec G104 -- close error in error-handling path is not actionable
 
-	if isRetryable(resp.StatusCode) && attempt < c.retries {
+	if isRetryable(method, resp.StatusCode) && attempt < c.retries {
 		if waitForRetry(ctx, resp, c.backoff, attempt) {
 			return newAPIError(resp.StatusCode, respBody), true
 		}
@@ -280,6 +384,12 @@ func waitForRetry(ctx context.Context, resp *http.Response, backoff time.Duratio
 	case <-time.After(delay):
 		return true
 	}
+}
+
+// readErrorBody reads at most maxErrorBodyBytes of an error response body.
+func readErrorBody(r io.Reader) []byte {
+	b, _ := io.ReadAll(io.LimitReader(r, maxErrorBodyBytes))
+	return b
 }
 
 // newAPIError creates an APIError from a response status code and body,
@@ -333,11 +443,7 @@ func StreamSSEWithBody(ctx context.Context, c *Client, method, path string, body
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			body, _ := io.ReadAll(resp.Body)
-			yield(SSEEvent{}, &APIError{
-				StatusCode: resp.StatusCode,
-				Body:       string(body),
-			})
+			yield(SSEEvent{}, newAPIError(resp.StatusCode, readErrorBody(resp.Body)))
 			return
 		}
 

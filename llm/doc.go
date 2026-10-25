@@ -97,7 +97,8 @@
 // # Rate Limiting
 //
 // [WithProviderLimits] returns middleware that enforces requests-per-minute,
-// tokens-per-minute, and concurrency limits per provider.
+// tokens-per-minute (from reported response usage), and concurrency limits
+// per provider. Stream acquires its limits on first iteration.
 //
 // # Generate Options
 //

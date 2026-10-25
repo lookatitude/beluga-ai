@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -441,11 +442,13 @@ func TestIsNetworkError(t *testing.T) {
 		{"nil error", nil, false},
 		{"EOF", io.EOF, true},
 		{"unexpected EOF", io.ErrUnexpectedEOF, true},
-		// net.OpError implements net.Error, so it's caught by the net.Error check.
-		// With a non-temporary inner error, Temporary()/Timeout() returns false.
-		{"net.OpError non-temp", &net.OpError{Op: "dial", Net: "tcp", Err: errors.New("refused")}, false},
-		// With a temporary inner error, the net.Error check returns true.
-		{"net.OpError with temp", &net.OpError{Op: "dial", Net: "tcp", Err: &testNetError{temporary: true}}, true},
+		// A *net.OpError is a transport failure regardless of the deprecated
+		// Temporary() answer (which is false for ECONNREFUSED).
+		{"net.OpError dial", &net.OpError{Op: "dial", Net: "tcp", Err: errors.New("refused")}, true},
+		{"net.OpError ECONNREFUSED", &net.OpError{Op: "dial", Net: "tcp", Err: syscall.ECONNREFUSED}, true},
+		{"wrapped ECONNRESET", fmt.Errorf("read: %w", syscall.ECONNRESET), true},
+		{"DNS temporary", &net.DNSError{Err: "x", IsTemporary: true}, true},
+		{"DNS not found", &net.DNSError{Err: "no such host", IsNotFound: true}, false},
 		// url.Error unwrapping then net.Error check.
 		{"url.Error wrapping temp OpError", &url.Error{Op: "Get", URL: "http://x", Err: &net.OpError{Op: "dial", Net: "tcp", Err: &testNetError{timeout: true}}}, true},
 		{"connection reset string", errors.New("read: connection reset by peer"), true},
@@ -468,9 +471,9 @@ func TestIsNetworkError_NetError(t *testing.T) {
 		err := &testNetError{timeout: true}
 		assert.True(t, isNetworkError(err))
 	})
-	t.Run("temporary error", func(t *testing.T) {
+	t.Run("temporary-only error is not retried (Temporary is deprecated)", func(t *testing.T) {
 		err := &testNetError{temporary: true}
-		assert.True(t, isNetworkError(err))
+		assert.False(t, isNetworkError(err))
 	})
 	t.Run("non-temporary non-timeout net.Error", func(t *testing.T) {
 		err := &testNetError{}

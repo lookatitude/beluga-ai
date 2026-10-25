@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/internal/errclass"
 	"github.com/lookatitude/beluga-ai/v2/internal/jsonutil"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
@@ -73,7 +74,7 @@ func (s *StructuredOutput[T]) Generate(ctx context.Context, msgs []schema.Messag
 		text := resp.Text()
 		var result T
 		if err := json.Unmarshal([]byte(text), &result); err != nil {
-			lastErr = core.Errorf(core.ErrInvalidInput, "structured output: parse attempt %d: %w", attempt+1, err)
+			lastErr = errclass.Wrap(core.ErrInvalidInput, "structured output: parse attempt %d: %w", attempt+1, err)
 			// Add the failed response and parse error to messages for self-correction.
 			msgs = append(msgs,
 				schema.NewAIMessage(text),
