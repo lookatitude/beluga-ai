@@ -73,9 +73,9 @@ func (m *mockVersionedStore) CompareAndSwap(ctx context.Context, key string, exp
 func TestReducerStore_WithReducer(t *testing.T) {
 	inner := newMockVersionedStore()
 	rs := NewReducerStore(inner,
-		WithReducer("counter", func(old, new any) any {
+		WithReducer("counter", func(old, incoming any) any {
 			o, _ := old.(int)
-			n, _ := new.(int)
+			n, _ := incoming.(int)
 			return o + n
 		}),
 	)
@@ -98,7 +98,7 @@ func TestReducerStore_WithReducer(t *testing.T) {
 func TestReducerStore_NoReducerOverwrites(t *testing.T) {
 	inner := newMockVersionedStore()
 	rs := NewReducerStore(inner,
-		WithReducer("special", func(old, new any) any {
+		WithReducer("special", func(old, incoming any) any {
 			return "merged"
 		}),
 	)
@@ -116,13 +116,13 @@ func TestReducerStore_NoReducerOverwrites(t *testing.T) {
 func TestReducerStore_DefaultReducer(t *testing.T) {
 	inner := newMockVersionedStore()
 	rs := NewReducerStore(inner,
-		WithDefaultReducer(func(old, new any) any {
+		WithDefaultReducer(func(old, incoming any) any {
 			// Append reducer: builds a slice.
 			var s []any
 			if old != nil {
 				s, _ = old.([]any)
 			}
-			return append(s, new)
+			return append(s, incoming)
 		}),
 	)
 	defer rs.Close()
@@ -139,10 +139,10 @@ func TestReducerStore_DefaultReducer(t *testing.T) {
 func TestReducerStore_PerKeyOverridesDefault(t *testing.T) {
 	inner := newMockVersionedStore()
 	rs := NewReducerStore(inner,
-		WithDefaultReducer(func(old, new any) any {
+		WithDefaultReducer(func(old, incoming any) any {
 			return "default"
 		}),
-		WithReducer("special", func(old, new any) any {
+		WithReducer("special", func(old, incoming any) any {
 			return "specific"
 		}),
 	)

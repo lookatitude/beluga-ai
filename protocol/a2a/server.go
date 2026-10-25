@@ -21,7 +21,7 @@ const (
 
 // A2AServer exposes a Beluga agent as an A2A remote agent via HTTP.
 // It provides endpoints for the Agent Card, task creation, status, and cancellation.
-type A2AServer struct {
+type A2AServer struct { //nolint:revive // exported name is public API; renaming to remove the stutter would break callers
 	agent  agent.Agent
 	card   AgentCard
 	tasks  map[string]*Task
@@ -58,7 +58,8 @@ func (s *A2AServer) Serve(ctx context.Context, addr string) error {
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
-	ln, err := net.Listen("tcp", addr)
+	var lc net.ListenConfig
+	ln, err := lc.Listen(ctx, "tcp", addr)
 	if err != nil {
 		return core.Errorf(core.ErrProviderDown, "a2a/serve: %w", err)
 	}

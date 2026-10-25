@@ -5,16 +5,19 @@ import (
 	"time"
 )
 
+// streamChunkFieldsCase is one table case for TestStreamChunk_Fields.
+type streamChunkFieldsCase struct {
+	name          string
+	chunk         StreamChunk
+	wantDelta     string
+	wantToolCalls int
+	wantFinish    string
+	wantUsage     bool
+	wantModelID   string
+}
+
 func TestStreamChunk_Fields(t *testing.T) {
-	tests := []struct {
-		name          string
-		chunk         StreamChunk
-		wantDelta     string
-		wantToolCalls int
-		wantFinish    string
-		wantUsage     bool
-		wantModelID   string
-	}{
+	tests := []streamChunkFieldsCase{
 		{
 			name: "text_delta",
 			chunk: StreamChunk{
@@ -86,24 +89,28 @@ func TestStreamChunk_Fields(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.chunk.Delta != tt.wantDelta {
-				t.Errorf("Delta = %q, want %q", tt.chunk.Delta, tt.wantDelta)
-			}
-			if len(tt.chunk.ToolCalls) != tt.wantToolCalls {
-				t.Errorf("len(ToolCalls) = %d, want %d", len(tt.chunk.ToolCalls), tt.wantToolCalls)
-			}
-			if tt.chunk.FinishReason != tt.wantFinish {
-				t.Errorf("FinishReason = %q, want %q", tt.chunk.FinishReason, tt.wantFinish)
-			}
-			hasUsage := tt.chunk.Usage != nil
-			if hasUsage != tt.wantUsage {
-				t.Errorf("has Usage = %v, want %v", hasUsage, tt.wantUsage)
-			}
-			if tt.chunk.ModelID != tt.wantModelID {
-				t.Errorf("ModelID = %q, want %q", tt.chunk.ModelID, tt.wantModelID)
-			}
-		})
+		t.Run(tt.name, func(t *testing.T) { checkStreamChunkFields(t, tt) })
+	}
+}
+
+// checkStreamChunkFields asserts that tt.chunk matches every expectation in tt.
+func checkStreamChunkFields(t *testing.T, tt streamChunkFieldsCase) {
+	t.Helper()
+	if tt.chunk.Delta != tt.wantDelta {
+		t.Errorf("Delta = %q, want %q", tt.chunk.Delta, tt.wantDelta)
+	}
+	if len(tt.chunk.ToolCalls) != tt.wantToolCalls {
+		t.Errorf("len(ToolCalls) = %d, want %d", len(tt.chunk.ToolCalls), tt.wantToolCalls)
+	}
+	if tt.chunk.FinishReason != tt.wantFinish {
+		t.Errorf("FinishReason = %q, want %q", tt.chunk.FinishReason, tt.wantFinish)
+	}
+	hasUsage := tt.chunk.Usage != nil
+	if hasUsage != tt.wantUsage {
+		t.Errorf("has Usage = %v, want %v", hasUsage, tt.wantUsage)
+	}
+	if tt.chunk.ModelID != tt.wantModelID {
+		t.Errorf("ModelID = %q, want %q", tt.chunk.ModelID, tt.wantModelID)
 	}
 }
 

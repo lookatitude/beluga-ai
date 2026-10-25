@@ -165,171 +165,181 @@ func TestMapStream(t *testing.T) {
 }
 
 func TestFilterStream(t *testing.T) {
-	t.Run("filter_by_type", func(t *testing.T) {
-		input := []Event[string]{
-			{Type: EventData, Payload: "d1"},
-			{Type: EventToolCall, Payload: "tc1"},
-			{Type: EventData, Payload: "d2"},
-			{Type: EventDone, Payload: ""},
-		}
-		stream := makeStream(input)
+	t.Run("filter_by_type", testFilterStreamFilterByType)
+	t.Run("filter_all", testFilterStreamFilterAll)
+	t.Run("filter_none", testFilterStreamFilterNone)
+	t.Run("source_error_propagates", testFilterStreamSourceErrorPropagates)
+}
 
-		filtered := FilterStream(stream, func(e Event[string]) bool {
-			return e.Type == EventData
-		})
+func testFilterStreamFilterByType(t *testing.T) {
+	input := []Event[string]{
+		{Type: EventData, Payload: "d1"},
+		{Type: EventToolCall, Payload: "tc1"},
+		{Type: EventData, Payload: "d2"},
+		{Type: EventDone, Payload: ""},
+	}
+	stream := makeStream(input)
 
-		events, err := CollectStream(filtered)
-		if err != nil {
-			t.Fatalf("CollectStream() error = %v", err)
-		}
-		if len(events) != 2 {
-			t.Fatalf("len(events) = %d, want 2", len(events))
-		}
-		if events[0].Payload != "d1" || events[1].Payload != "d2" {
-			t.Errorf("filtered events = %v", events)
-		}
+	filtered := FilterStream(stream, func(e Event[string]) bool {
+		return e.Type == EventData
 	})
 
-	t.Run("filter_all", func(t *testing.T) {
-		input := []Event[string]{
-			{Type: EventData, Payload: "a"},
-			{Type: EventData, Payload: "b"},
-		}
-		stream := makeStream(input)
+	events, err := CollectStream(filtered)
+	if err != nil {
+		t.Fatalf("CollectStream() error = %v", err)
+	}
+	if len(events) != 2 {
+		t.Fatalf("len(events) = %d, want 2", len(events))
+	}
+	if events[0].Payload != "d1" || events[1].Payload != "d2" {
+		t.Errorf("filtered events = %v", events)
+	}
+}
 
-		filtered := FilterStream(stream, func(_ Event[string]) bool {
-			return false
-		})
+func testFilterStreamFilterAll(t *testing.T) {
+	input := []Event[string]{
+		{Type: EventData, Payload: "a"},
+		{Type: EventData, Payload: "b"},
+	}
+	stream := makeStream(input)
 
-		events, err := CollectStream(filtered)
-		if err != nil {
-			t.Fatalf("CollectStream() error = %v", err)
-		}
-		if len(events) != 0 {
-			t.Errorf("len(events) = %d, want 0", len(events))
-		}
+	filtered := FilterStream(stream, func(_ Event[string]) bool {
+		return false
 	})
 
-	t.Run("filter_none", func(t *testing.T) {
-		input := []Event[string]{
-			{Type: EventData, Payload: "a"},
-			{Type: EventData, Payload: "b"},
-		}
-		stream := makeStream(input)
+	events, err := CollectStream(filtered)
+	if err != nil {
+		t.Fatalf("CollectStream() error = %v", err)
+	}
+	if len(events) != 0 {
+		t.Errorf("len(events) = %d, want 0", len(events))
+	}
+}
 
-		filtered := FilterStream(stream, func(_ Event[string]) bool {
-			return true
-		})
+func testFilterStreamFilterNone(t *testing.T) {
+	input := []Event[string]{
+		{Type: EventData, Payload: "a"},
+		{Type: EventData, Payload: "b"},
+	}
+	stream := makeStream(input)
 
-		events, err := CollectStream(filtered)
-		if err != nil {
-			t.Fatalf("CollectStream() error = %v", err)
-		}
-		if len(events) != 2 {
-			t.Errorf("len(events) = %d, want 2", len(events))
-		}
+	filtered := FilterStream(stream, func(_ Event[string]) bool {
+		return true
 	})
 
-	t.Run("source_error_propagates", func(t *testing.T) {
-		input := []Event[string]{{Type: EventData, Payload: "a"}}
-		stream := makeErrorStream(input, fmt.Errorf("src err"))
+	events, err := CollectStream(filtered)
+	if err != nil {
+		t.Fatalf("CollectStream() error = %v", err)
+	}
+	if len(events) != 2 {
+		t.Errorf("len(events) = %d, want 2", len(events))
+	}
+}
 
-		filtered := FilterStream(stream, func(_ Event[string]) bool {
-			return true
-		})
+func testFilterStreamSourceErrorPropagates(t *testing.T) {
+	input := []Event[string]{{Type: EventData, Payload: "a"}}
+	stream := makeErrorStream(input, fmt.Errorf("src err"))
 
-		_, err := CollectStream(filtered)
-		if err == nil || err.Error() != "src err" {
-			t.Errorf("error = %v, want %q", err, "src err")
-		}
+	filtered := FilterStream(stream, func(_ Event[string]) bool {
+		return true
 	})
+
+	_, err := CollectStream(filtered)
+	if err == nil || err.Error() != "src err" {
+		t.Errorf("error = %v, want %q", err, "src err")
+	}
 }
 
 func TestBufferedStream(t *testing.T) {
-	t.Run("basic_buffering", func(t *testing.T) {
-		input := []Event[string]{
-			{Type: EventData, Payload: "a"},
-			{Type: EventData, Payload: "b"},
-			{Type: EventData, Payload: "c"},
+	t.Run("basic_buffering", testBufferedStreamBasicBuffering)
+	t.Run("cap_and_len", testBufferedStreamCapAndLen)
+	t.Run("bufsize_clamped_to_1", testBufferedStreamBufsizeClampedTo1)
+	t.Run("context_cancellation_stops_buffering", testBufferedStreamContextCancellationStopsBuffering)
+}
+
+func testBufferedStreamBasicBuffering(t *testing.T) {
+	input := []Event[string]{
+		{Type: EventData, Payload: "a"},
+		{Type: EventData, Payload: "b"},
+		{Type: EventData, Payload: "c"},
+	}
+	stream := makeStream(input)
+
+	ctx := context.Background()
+	bs := NewBufferedStream(ctx, stream, 10)
+
+	events, err := CollectStream(bs.Iter())
+	if err != nil {
+		t.Fatalf("CollectStream() error = %v", err)
+	}
+	if len(events) != 3 {
+		t.Fatalf("len(events) = %d, want 3", len(events))
+	}
+	if events[0].Payload != "a" || events[2].Payload != "c" {
+		t.Errorf("unexpected events: %v", events)
+	}
+}
+
+func testBufferedStreamCapAndLen(t *testing.T) {
+	stream := makeStream[string](nil)
+	ctx := context.Background()
+	bs := NewBufferedStream(ctx, stream, 5)
+
+	if bs.Cap() != 5 {
+		t.Errorf("Cap() = %d, want 5", bs.Cap())
+	}
+}
+
+func testBufferedStreamBufsizeClampedTo1(t *testing.T) {
+	stream := makeStream[string](nil)
+	ctx := context.Background()
+	bs := NewBufferedStream(ctx, stream, 0)
+
+	if bs.Cap() != 1 {
+		t.Errorf("Cap() = %d, want 1 (clamped from 0)", bs.Cap())
+	}
+}
+
+func testBufferedStreamContextCancellationStopsBuffering(t *testing.T) {
+	// A stream that produces events slowly. Cancelling the context
+	// should cause the buffered stream to stop producing.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	slowStream := func(yield func(Event[string], error) bool) {
+		for i := 0; i < 100; i++ {
+			if !yield(Event[string]{Type: EventData, Payload: fmt.Sprintf("e%d", i)}, nil) {
+				return
+			}
+			// Give the test goroutine a chance to cancel after first few events.
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
 		}
-		stream := makeStream(input)
+	}
 
-		ctx := context.Background()
-		bs := NewBufferedStream(ctx, stream, 10)
+	bs := NewBufferedStream(ctx, Stream[string](slowStream), 2)
 
-		events, err := CollectStream(bs.Iter())
+	// Read one event, then cancel.
+	count := 0
+	for _, err := range bs.Iter() {
 		if err != nil {
-			t.Fatalf("CollectStream() error = %v", err)
+			break
 		}
-		if len(events) != 3 {
-			t.Fatalf("len(events) = %d, want 3", len(events))
+		count++
+		if count == 1 {
+			cancel()
 		}
-		if events[0].Payload != "a" || events[2].Payload != "c" {
-			t.Errorf("unexpected events: %v", events)
-		}
-	})
-
-	t.Run("cap_and_len", func(t *testing.T) {
-		stream := makeStream[string](nil)
-		ctx := context.Background()
-		bs := NewBufferedStream(ctx, stream, 5)
-
-		if bs.Cap() != 5 {
-			t.Errorf("Cap() = %d, want 5", bs.Cap())
-		}
-	})
-
-	t.Run("bufsize_clamped_to_1", func(t *testing.T) {
-		stream := makeStream[string](nil)
-		ctx := context.Background()
-		bs := NewBufferedStream(ctx, stream, 0)
-
-		if bs.Cap() != 1 {
-			t.Errorf("Cap() = %d, want 1 (clamped from 0)", bs.Cap())
-		}
-	})
-
-	t.Run("context_cancellation_stops_buffering", func(t *testing.T) {
-		// A stream that produces events slowly. Cancelling the context
-		// should cause the buffered stream to stop producing.
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		slowStream := func(yield func(Event[string], error) bool) {
-			for i := 0; i < 100; i++ {
-				if !yield(Event[string]{Type: EventData, Payload: fmt.Sprintf("e%d", i)}, nil) {
-					return
-				}
-				// Give the test goroutine a chance to cancel after first few events.
-				select {
-				case <-ctx.Done():
-					return
-				default:
-				}
-			}
-		}
-
-		bs := NewBufferedStream(ctx, Stream[string](slowStream), 2)
-
-		// Read one event, then cancel.
-		count := 0
-		for _, err := range bs.Iter() {
-			if err != nil {
-				break
-			}
-			count++
-			if count == 1 {
-				cancel()
-			}
-		}
-		// We should get at least 1 event but not all 100.
-		if count < 1 {
-			t.Errorf("expected at least 1 event, got %d", count)
-		}
-		if count >= 100 {
-			t.Errorf("expected fewer than 100 events (context was cancelled), got %d", count)
-		}
-	})
+	}
+	// We should get at least 1 event but not all 100.
+	if count < 1 {
+		t.Errorf("expected at least 1 event, got %d", count)
+	}
+	if count >= 100 {
+		t.Errorf("expected fewer than 100 events (context was cancelled), got %d", count)
+	}
 }
 
 func TestEventType_Values(t *testing.T) {

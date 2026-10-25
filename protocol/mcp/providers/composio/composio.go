@@ -85,7 +85,7 @@ type executeRequest struct {
 type executeResponse struct {
 	Data       any    `json:"data"`
 	Error      string `json:"error,omitempty"`
-	Successful bool   `json:"successfull"`
+	Successful bool   `json:"successfull"` //nolint:misspell // matches the Composio API wire field name, which is spelled "successfull"
 }
 
 // ListTools queries the Composio API for available actions and returns them

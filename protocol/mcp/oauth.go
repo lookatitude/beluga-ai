@@ -282,7 +282,7 @@ func generatePKCE() (*pkceParams, error) {
 
 	verifier := base64.RawURLEncoding.EncodeToString(verifierBytes)
 
-	// S256: challenge = BASE64URL(SHA256(verifier))
+	// S256 method: the challenge is the base64url-encoded SHA-256 digest of the verifier.
 	hash := sha256.Sum256([]byte(verifier))
 	challenge := base64.RawURLEncoding.EncodeToString(hash[:])
 

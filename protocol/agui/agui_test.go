@@ -57,7 +57,7 @@ func TestHandleAgents(t *testing.T) {
 	}
 	h := NewHandler(agents)
 
-	req := httptest.NewRequest("GET", "/agui/agents", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "/agui/agents", nil)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 
@@ -78,7 +78,7 @@ func TestHandleManifest(t *testing.T) {
 	agents := []agent.Agent{&mockAgent{id: "a1", role: "Test"}}
 	h := NewHandler(agents, WithVersion("2.0"))
 
-	req := httptest.NewRequest("GET", "/agui/manifest", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "/agui/manifest", nil)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 
@@ -98,7 +98,7 @@ func TestHandleManifest(t *testing.T) {
 func TestHandleChat_NotFound(t *testing.T) {
 	h := NewHandler(nil)
 
-	req := httptest.NewRequest("POST", "/agui/chat/nonexistent", strings.NewReader(`{"input":"hi"}`))
+	req := httptest.NewRequestWithContext(t.Context(), "POST", "/agui/chat/nonexistent", strings.NewReader(`{"input":"hi"}`))
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 
@@ -110,7 +110,7 @@ func TestHandleChat_NotFound(t *testing.T) {
 func TestHandleChat_MissingAgentID(t *testing.T) {
 	h := NewHandler(nil)
 
-	req := httptest.NewRequest("POST", "/agui/chat/", strings.NewReader(`{"input":"hi"}`))
+	req := httptest.NewRequestWithContext(t.Context(), "POST", "/agui/chat/", strings.NewReader(`{"input":"hi"}`))
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 
@@ -200,7 +200,7 @@ func TestHandleChat_Success(t *testing.T) {
 	agents := []agent.Agent{&mockAgent{id: "a1", role: "Helper"}}
 	h := NewHandler(agents)
 
-	req := httptest.NewRequest("POST", "/agui/chat/a1", strings.NewReader(`{"input":"hi"}`))
+	req := httptest.NewRequestWithContext(t.Context(), "POST", "/agui/chat/a1", strings.NewReader(`{"input":"hi"}`))
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 
@@ -221,7 +221,7 @@ func TestHandleChat_StreamError(t *testing.T) {
 	agents := []agent.Agent{&mockAgent{id: "a1", role: "Helper", streamErr: errors.New("boom\nsecret")}}
 	h := NewHandler(agents)
 
-	req := httptest.NewRequest("POST", "/agui/chat/a1", strings.NewReader(`{"input":"hi"}`))
+	req := httptest.NewRequestWithContext(t.Context(), "POST", "/agui/chat/a1", strings.NewReader(`{"input":"hi"}`))
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 
@@ -241,7 +241,7 @@ func TestHandleChat_InvalidBody(t *testing.T) {
 	agents := []agent.Agent{&mockAgent{id: "a1", role: "Helper"}}
 	h := NewHandler(agents)
 
-	req := httptest.NewRequest("POST", "/agui/chat/a1", strings.NewReader(`{not-json`))
+	req := httptest.NewRequestWithContext(t.Context(), "POST", "/agui/chat/a1", strings.NewReader(`{not-json`))
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 
@@ -254,7 +254,7 @@ func TestHandleChat_WrongMethod(t *testing.T) {
 	agents := []agent.Agent{&mockAgent{id: "a1", role: "Helper"}}
 	h := NewHandler(agents)
 
-	req := httptest.NewRequest("GET", "/agui/chat/a1", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "/agui/chat/a1", nil)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 
@@ -270,7 +270,7 @@ func TestHandleChat_WrongMethod_NoOracle(t *testing.T) {
 	h := NewHandler(agents)
 
 	for _, id := range []string{"real", "ghost"} {
-		req := httptest.NewRequest("PUT", "/agui/chat/"+id, nil)
+		req := httptest.NewRequestWithContext(t.Context(), "PUT", "/agui/chat/"+id, nil)
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, req)
 		if w.Code != http.StatusMethodNotAllowed {
@@ -281,7 +281,7 @@ func TestHandleChat_WrongMethod_NoOracle(t *testing.T) {
 
 func TestHandleAgents_WrongMethod(t *testing.T) {
 	h := NewHandler(nil)
-	req := httptest.NewRequest("POST", "/agui/agents", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "POST", "/agui/agents", nil)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	if w.Code != http.StatusMethodNotAllowed {
@@ -291,7 +291,7 @@ func TestHandleAgents_WrongMethod(t *testing.T) {
 
 func TestHandleManifest_WrongMethod(t *testing.T) {
 	h := NewHandler(nil)
-	req := httptest.NewRequest("DELETE", "/agui/manifest", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "DELETE", "/agui/manifest", nil)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	if w.Code != http.StatusMethodNotAllowed {
@@ -301,7 +301,7 @@ func TestHandleManifest_WrongMethod(t *testing.T) {
 
 func TestServeHTTP_NotFound(t *testing.T) {
 	h := NewHandler(nil)
-	req := httptest.NewRequest("GET", "/agui/unknown", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "/agui/unknown", nil)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	if w.Code != http.StatusNotFound {

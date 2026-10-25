@@ -98,8 +98,8 @@ func TestBatchInvoke_MaxConcurrency(t *testing.T) {
 		}
 	}
 
-	if max := maxSeen.Load(); max > 2 {
-		t.Errorf("max concurrent = %d, want <= 2", max)
+	if peak := maxSeen.Load(); peak > 2 {
+		t.Errorf("max concurrent = %d, want <= 2", peak)
 	}
 }
 

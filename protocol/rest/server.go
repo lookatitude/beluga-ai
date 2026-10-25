@@ -15,7 +15,7 @@ import (
 )
 
 // RESTServer exposes Beluga agents as REST/SSE HTTP endpoints.
-type RESTServer struct {
+type RESTServer struct { //nolint:revive // exported name is public API; renaming to remove the stutter would break callers
 	agents map[string]agent.Agent
 	mu     sync.RWMutex
 }
@@ -57,7 +57,8 @@ func (s *RESTServer) Serve(ctx context.Context, addr string) error {
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
-	ln, err := net.Listen("tcp", addr)
+	var lc net.ListenConfig
+	ln, err := lc.Listen(ctx, "tcp", addr)
 	if err != nil {
 		return core.Errorf(core.ErrProviderDown, "rest/serve: %w", err)
 	}
@@ -194,7 +195,7 @@ func (s *RESTServer) handleStream(ctx context.Context, w http.ResponseWriter, r 
 			Text:    event.Text,
 			AgentID: event.AgentID,
 		})
-		if writeErr := sse.WriteEvent(SSEEvent{Event: string(event.Type), Data: string(data)}); writeErr != nil {
+		if sse.WriteEvent(SSEEvent{Event: string(event.Type), Data: string(data)}) != nil {
 			return
 		}
 	}

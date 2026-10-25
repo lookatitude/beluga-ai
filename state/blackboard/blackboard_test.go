@@ -214,9 +214,9 @@ func TestBlackboard_OwnershipNotEnforced(t *testing.T) {
 func TestBlackboard_Reducers(t *testing.T) {
 	bb, cleanup := newTestBlackboard(
 		WithReducers(
-			state.WithReducer("counter", func(old, new any) any {
+			state.WithReducer("counter", func(old, incoming any) any {
 				o, _ := old.(int)
-				n, _ := new.(int)
+				n, _ := incoming.(int)
 				return o + n
 			}),
 		),
@@ -299,9 +299,9 @@ func TestBlackboard_CloseIdempotent(t *testing.T) {
 func TestBlackboard_ConcurrentMultiAgent(t *testing.T) {
 	bb, cleanup := newTestBlackboard(
 		WithReducers(
-			state.WithReducer("shared", func(old, new any) any {
+			state.WithReducer("shared", func(old, incoming any) any {
 				o, _ := old.(int)
-				n, _ := new.(int)
+				n, _ := incoming.(int)
 				return o + n
 			}),
 		),
