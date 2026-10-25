@@ -208,7 +208,7 @@ The counts below reflect the actual directory tree. If a provider directory exis
 | Provider | Description |
 |---|---|
 | `gemini` | Package gemini provides the Gemini Live S2S provider for the Beluga AI voice pipeline. |
-| `nova` | Package nova provides the Amazon Nova S2S provider for the Beluga AI voice pipeline. |
+| `nova` | Package nova provides the Amazon Nova Sonic S2S provider for the Beluga AI voice pipeline. |
 | `openai` | Package openai provides the OpenAI Realtime S2S provider for the Beluga AI voice pipeline. |
 
 **Count:** 3
@@ -217,9 +217,9 @@ The counts below reflect the actual directory tree. If a provider directory exis
 
 | Provider | Description |
 |---|---|
-| `daily` | Package daily provides the Daily.co transport provider for the Beluga AI voice pipeline. |
-| `livekit` | Package livekit provides the LiveKit transport provider for the Beluga AI voice pipeline. |
-| `pipecat` | Package pipecat provides the Pipecat transport provider for the Beluga AI voice pipeline. |
+| `daily` | Package daily registers the "daily" transport name for Daily.co rooms in the Beluga AI voice pipeline. |
+| `livekit` | Package livekit registers the "livekit" transport name for LiveKit WebRTC rooms in the Beluga AI voice pipeline. |
+| `pipecat` | Package pipecat registers the "pipecat" transport name for Pipecat servers in the Beluga AI voice pipeline. |
 
 **Count:** 3
 
