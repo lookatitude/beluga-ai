@@ -64,15 +64,7 @@ func TestWorkerPoolBoundedConcurrency(t *testing.T) {
 				started <- struct{}{}
 
 				// Track the high-water mark.
-				for {
-					old := maxSeen.Load()
-					if cur <= old {
-						break
-					}
-					if maxSeen.CompareAndSwap(old, cur) {
-						break
-					}
-				}
+				storeMaxInt64(&maxSeen, cur)
 
 				// Block until the test releases all tasks.
 				select {
@@ -306,4 +298,14 @@ func BenchmarkWorkerPoolSubmit(b *testing.B) {
 	})
 
 	pool.Wait()
+}
+
+// storeMaxInt64 atomically raises m to v if v is greater than its current value.
+func storeMaxInt64(m *atomic.Int64, v int64) {
+	for {
+		cur := m.Load()
+		if v <= cur || m.CompareAndSwap(cur, v) {
+			return
+		}
+	}
 }

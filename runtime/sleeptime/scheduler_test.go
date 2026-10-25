@@ -14,12 +14,6 @@ type alwaysIdleDetector struct{}
 func (d *alwaysIdleDetector) IsIdle() bool { return true }
 func (d *alwaysIdleDetector) OnActivity()  {}
 
-// neverIdleDetector never reports idle.
-type neverIdleDetector struct{}
-
-func (d *neverIdleDetector) IsIdle() bool { return false }
-func (d *neverIdleDetector) OnActivity()  {}
-
 // toggleDetector can be switched between idle and active.
 type toggleDetector struct {
 	mu   sync.Mutex

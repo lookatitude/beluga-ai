@@ -30,7 +30,7 @@ type ResourceLimits struct {
 }
 
 // SandboxConfig configures a single code execution request.
-type SandboxConfig struct {
+type SandboxConfig struct { //nolint:revive // stutter: renaming would break the exported API
 	// Language is the programming language of the code to execute
 	// (e.g., "python", "javascript", "go", "bash").
 	Language string

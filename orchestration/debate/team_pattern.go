@@ -10,7 +10,7 @@ import (
 )
 
 // DebatePattern creates an OrchestrationPattern from a DebateOrchestrator.
-func DebatePattern(agents []agent.Agent, opts ...Option) orchestration.OrchestrationPattern {
+func DebatePattern(agents []agent.Agent, opts ...Option) orchestration.OrchestrationPattern { //nolint:revive // stutter: renaming would break the exported API
 	d := NewDebateOrchestrator(agents, opts...)
 	return &debatePatternAdapter{
 		orchestrator: d,

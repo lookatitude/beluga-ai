@@ -12,7 +12,7 @@ import (
 // SleeptimePlugin integrates the sleep-time compute scheduler with the
 // runtime plugin system. It wakes the scheduler on BeforeTurn (user activity)
 // and updates the session state on AfterTurn.
-type SleeptimePlugin struct {
+type SleeptimePlugin struct { //nolint:revive // stutter: renaming would break the exported API
 	scheduler *Scheduler
 }
 

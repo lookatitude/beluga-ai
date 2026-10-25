@@ -350,7 +350,7 @@ func (ge *GeneratorEvaluator) buildRefinementPrompt(originalPrompt, response str
 	sb.WriteString(response)
 	sb.WriteString("\n\nFeedback from evaluators:\n")
 	for i, c := range critiques {
-		sb.WriteString(fmt.Sprintf("- Evaluator %d (score: %.2f, approved: %v): %s\n", i+1, c.Score, c.Approved, c.Feedback))
+		fmt.Fprintf(&sb, "- Evaluator %d (score: %.2f, approved: %v): %s\n", i+1, c.Score, c.Approved, c.Feedback)
 	}
 	sb.WriteString("\nPlease revise your response addressing the feedback above.")
 	return sb.String()

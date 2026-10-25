@@ -3,7 +3,7 @@ package agentic
 import "github.com/lookatitude/beluga-ai/v2/guard"
 
 // AgenticRisk identifies one of the OWASP Top 10 risks for agentic applications.
-type AgenticRisk string
+type AgenticRisk string //nolint:revive // stutter: renaming would break the exported API
 
 const (
 	// RiskPromptInjection corresponds to AG01 -- prompt injection attacks.
@@ -81,7 +81,7 @@ type RiskAssessment struct {
 
 // AgenticGuardResult aggregates results from multiple agentic guards run
 // through an AgenticPipeline.
-type AgenticGuardResult struct {
+type AgenticGuardResult struct { //nolint:revive // stutter: renaming would break the exported API
 	// GuardResult is the overall outcome following the guard.GuardResult
 	// contract: Allowed is false if any guard blocked, Reason contains the
 	// first blocking reason.

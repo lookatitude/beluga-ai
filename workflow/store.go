@@ -4,7 +4,7 @@ import "context"
 
 // WorkflowStore is the interface for persisting workflow state.
 // Implementations provide durable storage for workflow execution history.
-type WorkflowStore interface {
+type WorkflowStore interface { //nolint:revive // stutter: renaming would break the exported API
 	// Save persists the workflow state.
 	Save(ctx context.Context, state WorkflowState) error
 

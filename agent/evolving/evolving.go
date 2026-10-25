@@ -121,7 +121,7 @@ func WithLogger(l *slog.Logger) Option {
 }
 
 // EvolvingAgent wraps a BaseAgent and adds self-improvement capabilities.
-type EvolvingAgent struct {
+type EvolvingAgent struct { //nolint:revive // stutter: renaming would break the exported API
 	inner        agent.Agent
 	opts         evolvingOptions
 	mu           sync.Mutex

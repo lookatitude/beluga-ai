@@ -407,7 +407,6 @@ func TestPluginChain_TableDriven(t *testing.T) {
 		wantText    string
 		inputEvents []agent.Event
 		wantEvents  int
-		injectErr   error
 		wantErr     bool
 	}
 

@@ -9,7 +9,7 @@ import (
 // WorkflowContext extends context.Context with workflow-specific operations.
 // It provides deterministic execution by recording activity results and
 // replaying them during recovery.
-type WorkflowContext interface {
+type WorkflowContext interface { //nolint:revive // stutter: renaming would break the exported API
 	context.Context
 
 	// ExecuteActivity runs an activity within the workflow. Results are

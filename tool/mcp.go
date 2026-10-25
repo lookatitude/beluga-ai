@@ -24,6 +24,14 @@ const maxResponseBodySize = 10 << 20
 // in returned errors.
 const maxRPCErrorMessageLen = 512
 
+const (
+	// mcpContentTypeJSON is the JSON media type used for MCP requests and
+	// expected in MCP responses.
+	mcpContentTypeJSON = "application/json"
+	// mcpSessionHeader is the Streamable HTTP header carrying the MCP session ID.
+	mcpSessionHeader = "Mcp-Session-Id"
+)
+
 // defaultMCPHTTPClient is used when no custom HTTP client is provided.
 var defaultMCPHTTPClient = &http.Client{Timeout: 30 * time.Second}
 
@@ -233,7 +241,7 @@ func (c *MCPClient) call(ctx context.Context, method string, params any, dst any
 	c.captureSessionID(resp)
 
 	ct := resp.Header.Get("Content-Type")
-	if !strings.Contains(ct, "application/json") {
+	if !strings.Contains(ct, mcpContentTypeJSON) {
 		return core.NewError(op, core.ErrInvalidInput,
 			fmt.Sprintf("unexpected Content-Type %q, expected application/json", ct), nil)
 	}
@@ -264,12 +272,12 @@ func (c *MCPClient) call(ctx context.Context, method string, params any, dst any
 
 // setHeaders applies standard MCP headers to an HTTP request.
 func (c *MCPClient) setHeaders(req *http.Request) {
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", mcpContentTypeJSON)
+	req.Header.Set("Accept", mcpContentTypeJSON)
 
 	c.mu.Lock()
 	if c.sessionID != "" {
-		req.Header.Set("Mcp-Session-Id", c.sessionID)
+		req.Header.Set(mcpSessionHeader, c.sessionID)
 	}
 	c.mu.Unlock()
 
@@ -298,7 +306,7 @@ func (c *MCPClient) checkStatusCode(op string, code int) error {
 
 // captureSessionID reads the Mcp-Session-Id header from the response.
 func (c *MCPClient) captureSessionID(resp *http.Response) {
-	if sid := resp.Header.Get("Mcp-Session-Id"); sid != "" {
+	if sid := resp.Header.Get(mcpSessionHeader); sid != "" {
 		c.mu.Lock()
 		c.sessionID = sid
 		c.mu.Unlock()
@@ -500,7 +508,7 @@ func (c *MCPClient) Close(ctx context.Context) error {
 	}
 
 	if sessionID != "" {
-		httpReq.Header.Set("Mcp-Session-Id", sessionID)
+		httpReq.Header.Set(mcpSessionHeader, sessionID)
 	}
 
 	for k, v := range c.opts.headers {

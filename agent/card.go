@@ -3,7 +3,7 @@ package agent
 // AgentCard describes an agent's capabilities for A2A (Agent-to-Agent)
 // protocol discovery. Cards are used by external systems to understand
 // what an agent can do and how to interact with it.
-type AgentCard struct {
+type AgentCard struct { //nolint:revive // stutter: renaming would break the exported API
 	// Name is the human-readable name of the agent.
 	Name string `json:"name"`
 	// Description explains what the agent does.

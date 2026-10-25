@@ -49,11 +49,11 @@ func (s *Store) List(_ context.Context, filter workflow.WorkflowFilter) ([]workf
 	defer s.mu.RUnlock()
 
 	var results []workflow.WorkflowState
-	for _, state := range s.workflows {
-		if filter.Status != "" && state.Status != filter.Status {
+	for id := range s.workflows {
+		if filter.Status != "" && s.workflows[id].Status != filter.Status {
 			continue
 		}
-		results = append(results, state)
+		results = append(results, s.workflows[id])
 		if filter.Limit > 0 && len(results) >= filter.Limit {
 			break
 		}

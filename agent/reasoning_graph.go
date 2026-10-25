@@ -188,11 +188,12 @@ func (g *ReasoningGraph) Neighbors(nodeID string) ([]*GraphNode, []GraphEdge) {
 
 	for _, e := range g.edges {
 		var neighborID string
-		if e.From == nodeID {
+		switch nodeID {
+		case e.From:
 			neighborID = e.To
-		} else if e.To == nodeID {
+		case e.To:
 			neighborID = e.From
-		} else {
+		default:
 			continue
 		}
 

@@ -263,7 +263,7 @@ func (p *Plugin) updateCapabilityScore(model *SelfModel, signals MonitoringSigna
 	if score.SampleCount == 0 {
 		score.SuccessRate = outcome
 	} else {
-		score.SuccessRate = score.SuccessRate + p.emaAlpha*(outcome-score.SuccessRate)
+		score.SuccessRate += p.emaAlpha * (outcome - score.SuccessRate)
 	}
 
 	// Latency EMA.
@@ -325,7 +325,7 @@ func buildHeuristicContext(heuristics []Heuristic) string {
 	sb.WriteString("[Metacognitive Heuristics]\n")
 	sb.WriteString("The following learned heuristics may help with this task:\n")
 	for i, h := range heuristics {
-		sb.WriteString(fmt.Sprintf("%d. [%s] %s\n", i+1, h.Source, h.Content))
+		fmt.Fprintf(&sb, "%d. [%s] %s\n", i+1, h.Source, h.Content)
 	}
 	return sb.String()
 }

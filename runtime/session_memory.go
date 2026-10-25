@@ -11,6 +11,9 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
 
+// msgSessionNotFound is the error message returned when a session ID is unknown.
+const msgSessionNotFound = "session not found"
+
 // Compile-time assertion that InMemorySessionService implements SessionService.
 var _ SessionService = (*InMemorySessionService)(nil)
 
@@ -129,7 +132,7 @@ func (s *InMemorySessionService) Get(ctx context.Context, sessionID string) (*Se
 
 	if !ok {
 		return nil, core.NewError("runtime.session.get", core.ErrNotFound,
-			"session not found", nil)
+			msgSessionNotFound, nil)
 	}
 
 	if !stored.ExpiresAt.IsZero() && time.Now().UTC().After(stored.ExpiresAt) {
@@ -156,7 +159,7 @@ func (s *InMemorySessionService) Update(ctx context.Context, session *Session) e
 
 	if _, ok := s.sessions[session.ID]; !ok {
 		return core.NewError("runtime.session.update", core.ErrNotFound,
-			"session not found", nil)
+			msgSessionNotFound, nil)
 	}
 
 	copied := cloneSession(session)
@@ -177,7 +180,7 @@ func (s *InMemorySessionService) Delete(ctx context.Context, sessionID string) e
 
 	if _, ok := s.sessions[sessionID]; !ok {
 		return core.NewError("runtime.session.delete", core.ErrNotFound,
-			"session not found", nil)
+			msgSessionNotFound, nil)
 	}
 
 	delete(s.sessions, sessionID)

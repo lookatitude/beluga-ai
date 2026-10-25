@@ -642,9 +642,8 @@ func TestMCPTool_ImplementsTool(t *testing.T) {
 	}
 
 	for _, tool := range tools {
-		// Verify that each tool implements the Tool interface.
-		var _ Tool = tool
-
+		// tools is []Tool, so interface compliance is enforced at compile
+		// time; check the runtime contract of each listed tool.
 		if tool.Name() == "" {
 			t.Error("tool name should not be empty")
 		}

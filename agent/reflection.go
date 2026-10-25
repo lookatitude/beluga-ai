@@ -151,8 +151,7 @@ func (p *ReflexionPlanner) generateWithReflection(ctx context.Context, state Pla
 	// Retry with reflection
 	retryMsgs := make([]schema.Message, 0, len(messages)+2)
 	retryMsgs = append(retryMsgs, messages...)
-	retryMsgs = append(retryMsgs, resp)
-	retryMsgs = append(retryMsgs, schema.NewHumanMessage(
+	retryMsgs = append(retryMsgs, resp, schema.NewHumanMessage(
 		fmt.Sprintf("Your previous response scored %.2f/1.0. Reflection: %s\nPlease try again with an improved response.", score, reflection),
 	))
 
