@@ -32,9 +32,22 @@
 //	if err != nil { ... }
 //	// result.Deployment, result.Service, result.HPA are ready to apply.
 //
+// # Health probes
+//
+// [NewHealthHandler] returns an http.Handler serving [HealthzPath] and
+// [ReadyzPath] backed by a [deploy.HealthEndpoint]; an operator binary mounts
+// it on the port probed by the k8s/helm chart. The repository does not yet
+// ship that binary or its container image (see k8s/helm/values.yaml).
+//
+// # Reserved labels
+//
+// The reconciler owns the labels listed by [ReservedLabelKeys] on every
+// generated Deployment and Service selector; user labels cannot override them.
+//
 // # No External Dependencies
 //
-// This package imports only the Go standard library and
-// github.com/lookatitude/beluga-ai/v2/core. It must never be imported by core
-// library packages.
+// This package imports only the Go standard library,
+// github.com/lookatitude/beluga-ai/v2/core and
+// github.com/lookatitude/beluga-ai/v2/deploy. It must never be imported by
+// library packages (k8s/ is an optional overlay).
 package operator

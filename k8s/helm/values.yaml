@@ -1,5 +1,27 @@
 # Default values for beluga-operator.
 # These values may be overridden by passing --set or -f <values-file> to helm install.
+#
+# PREVIEW CHART. The operator container image (ghcr.io/lookatitude/beluga-operator)
+# is NOT built or published by the Beluga repository yet, and the repository has
+# no operator main/binary: k8s/operator provides the reconcile logic and
+# operator.NewHealthHandler (the /healthz and /readyz handlers probed below) as
+# a library. With the defaults, `helm install` only installs the CRDs from
+# crds/. Enable the operator only with an image you built yourself.
+
+operator:
+  # enabled renders the operator Deployment, Service, ServiceAccount and RBAC.
+  # Defaults to false because no official operator image is published yet.
+  enabled: false
+  # watchNamespace, when set, replaces the cluster-wide ClusterRole/
+  # ClusterRoleBinding with a namespaced Role/RoleBinding in that namespace.
+  # The chart only scopes RBAC; your operator binary must be configured to
+  # watch the same namespace.
+  watchNamespace: ""
+
+rbac:
+  # create controls whether RBAC resources are rendered (requires
+  # operator.enabled=true). The operator gets no access to Secrets.
+  create: true
 
 # replicaCount is the desired number of operator pod replicas.
 replicaCount: 1
@@ -68,7 +90,9 @@ service:
   type: ClusterIP
   # port is the Service port exposed externally.
   port: 8080
-  # targetPort is the container port the Service forwards to.
+  # targetPort is the container port the Service forwards to. The liveness
+  # (/healthz) and readiness (/readyz) probes hit this port; the operator
+  # binary must serve operator.NewHealthHandler on it.
   targetPort: 8080
 
 # nodeSelector constrains operator pods to nodes matching these labels.
@@ -80,10 +104,14 @@ tolerations: []
 # affinity rules for operator pod scheduling.
 affinity: {}
 
-# leaderElection controls whether leader election is enabled (recommended for HA).
+# leaderElection grants the RBAC needed for Lease-based leader election
+# (a namespaced Role on coordination.k8s.io/leases). It does not configure the
+# operator process itself: no environment variables are passed, so your
+# operator binary must enable leader election through its own flags.
 leaderElection:
   enabled: true
-  # namespace is the namespace used for the leader election lock.
+  # namespace is the namespace holding the Lease. Defaults to the release
+  # namespace.
   namespace: ""
 
 # metrics configures Prometheus metrics exposure.
@@ -91,8 +119,15 @@ metrics:
   enabled: false
   port: 8081
 
-# webhook configures the admission webhook server.
+# webhook exposes an admission-webhook port and mounts its serving cert.
+# The chart does NOT create the TLS secret or any
+# Validating/MutatingWebhookConfiguration, and k8s/webhooks is a library
+# (no server). Enabling requires certSecretName to name an existing
+# kubernetes.io/tls secret (for example one issued by cert-manager).
 webhook:
   enabled: false
   port: 9443
+  # certDir is where the secret is mounted inside the container.
   certDir: /tmp/k8s-webhook-server/serving-certs
+  # certSecretName is required when enabled=true.
+  certSecretName: ""
