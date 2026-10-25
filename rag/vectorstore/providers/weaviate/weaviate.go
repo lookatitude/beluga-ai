@@ -90,7 +90,7 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 	objects := make([]map[string]any, len(docs))
 	for i, doc := range docs {
 		props := map[string]any{
-			"content":  doc.Content,
+			"content":    doc.Content,
 			"_beluga_id": doc.ID,
 		}
 		for k, v := range doc.Metadata {

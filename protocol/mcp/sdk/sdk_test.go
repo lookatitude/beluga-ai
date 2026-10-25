@@ -16,13 +16,13 @@ import (
 
 // mockTool is a simple tool implementation for testing.
 type mockTool struct {
-	name    string
-	desc    string
-	schema  map[string]any
-	execFn  func(ctx context.Context, input map[string]any) (*tool.Result, error)
+	name   string
+	desc   string
+	schema map[string]any
+	execFn func(ctx context.Context, input map[string]any) (*tool.Result, error)
 }
 
-func (t *mockTool) Name() string               { return t.name }
+func (t *mockTool) Name() string                { return t.name }
 func (t *mockTool) Description() string         { return t.desc }
 func (t *mockTool) InputSchema() map[string]any { return t.schema }
 func (t *mockTool) Execute(ctx context.Context, input map[string]any) (*tool.Result, error) {

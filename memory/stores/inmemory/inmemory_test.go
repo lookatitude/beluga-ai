@@ -422,7 +422,7 @@ func TestGraphStoreNeighborsNoDuplicates(t *testing.T) {
 
 	entities, relations, err := store.Neighbors(ctx, "A", 1)
 	require.NoError(t, err)
-	assert.Len(t, entities, 1) // B only once
+	assert.Len(t, entities, 1)  // B only once
 	assert.Len(t, relations, 2) // Both relations
 }
 

@@ -29,9 +29,9 @@ type mockAgent struct {
 	invokeFn func(ctx context.Context, input string) (string, error)
 }
 
-func (a *mockAgent) ID() string            { return a.id }
-func (a *mockAgent) Persona() agent.Persona { return a.persona }
-func (a *mockAgent) Tools() []tool.Tool     { return a.tools }
+func (a *mockAgent) ID() string              { return a.id }
+func (a *mockAgent) Persona() agent.Persona  { return a.persona }
+func (a *mockAgent) Tools() []tool.Tool      { return a.tools }
 func (a *mockAgent) Children() []agent.Agent { return nil }
 
 func (a *mockAgent) Invoke(ctx context.Context, input string, _ ...agent.Option) (string, error) {
@@ -96,7 +96,7 @@ type simpleTool struct {
 	desc string
 }
 
-func (t *simpleTool) Name() string               { return t.name }
+func (t *simpleTool) Name() string                { return t.name }
 func (t *simpleTool) Description() string         { return t.desc }
 func (t *simpleTool) InputSchema() map[string]any { return map[string]any{"type": "object"} }
 func (t *simpleTool) Execute(ctx context.Context, input map[string]any) (*tool.Result, error) {
@@ -392,7 +392,7 @@ func TestBelugaExecutor_Execute_AgentError(t *testing.T) {
 	}
 
 	err := executor.Execute(context.Background(), reqCtx, q)
-	require.NoError(t, err) // Returns nil even when agent errors
+	require.NoError(t, err)    // Returns nil even when agent errors
 	assert.Len(t, q.events, 2) // working + failed
 }
 

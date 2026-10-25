@@ -167,10 +167,10 @@ type mockAgent struct {
 	id string
 }
 
-func (a *mockAgent) ID() string                                { return a.id }
-func (a *mockAgent) Persona() Persona                          { return Persona{} }
-func (a *mockAgent) Tools() []tool.Tool                        { return nil }
-func (a *mockAgent) Children() []Agent                         { return nil }
+func (a *mockAgent) ID() string         { return a.id }
+func (a *mockAgent) Persona() Persona   { return Persona{} }
+func (a *mockAgent) Tools() []tool.Tool { return nil }
+func (a *mockAgent) Children() []Agent  { return nil }
 func (a *mockAgent) Invoke(ctx context.Context, input string, opts ...Option) (string, error) {
 	return "mock:" + input, nil
 }
@@ -187,10 +187,10 @@ type streamMockAgent struct {
 	result string
 }
 
-func (a *streamMockAgent) ID() string                 { return a.id }
-func (a *streamMockAgent) Persona() Persona           { return Persona{} }
-func (a *streamMockAgent) Tools() []tool.Tool         { return nil }
-func (a *streamMockAgent) Children() []Agent          { return nil }
+func (a *streamMockAgent) ID() string         { return a.id }
+func (a *streamMockAgent) Persona() Persona   { return Persona{} }
+func (a *streamMockAgent) Tools() []tool.Tool { return nil }
+func (a *streamMockAgent) Children() []Agent  { return nil }
 func (a *streamMockAgent) Invoke(ctx context.Context, input string, opts ...Option) (string, error) {
 	return a.result, nil
 }

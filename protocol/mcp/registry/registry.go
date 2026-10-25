@@ -201,8 +201,8 @@ func newRemoteTool(client MCPClientInterface, info mcp.ToolInfo) *remoteTool {
 	return &remoteTool{client: client, info: info}
 }
 
-func (t *remoteTool) Name() string              { return t.info.Name }
-func (t *remoteTool) Description() string        { return t.info.Description }
+func (t *remoteTool) Name() string                { return t.info.Name }
+func (t *remoteTool) Description() string         { return t.info.Description }
 func (t *remoteTool) InputSchema() map[string]any { return t.info.InputSchema }
 
 func (t *remoteTool) Execute(ctx context.Context, input map[string]any) (*tool.Result, error) {

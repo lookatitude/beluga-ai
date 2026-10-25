@@ -136,7 +136,7 @@ func TestManager_ShouldApprove(t *testing.T) {
 	})
 	// Never auto-approve delete tools
 	mgr.AddPolicy(ApprovalPolicy{
-		ToolPattern:    "delete_*",
+		ToolPattern:     "delete_*",
 		RequireExplicit: true,
 	})
 

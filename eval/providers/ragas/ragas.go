@@ -77,7 +77,7 @@ func New(opts ...Option) (*Metric, error) {
 
 // evaluateRequest is the RAGAS evaluation API request.
 type evaluateRequest struct {
-	MetricName string        `json:"metric_name"`
+	MetricName string          `json:"metric_name"`
 	Data       []evaluateDatum `json:"data"`
 }
 

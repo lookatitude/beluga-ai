@@ -66,14 +66,14 @@ func New(opts ...Option) (*Exporter, error) {
 
 // phoenixSpan represents a span in the Phoenix /v1/traces format.
 type phoenixSpan struct {
-	Name       string              `json:"name"`
-	Context    phoenixSpanContext  `json:"context"`
-	Kind       string              `json:"kind"`
-	StartTime  time.Time           `json:"start_time"`
-	EndTime    time.Time           `json:"end_time"`
-	Status     phoenixStatus       `json:"status"`
-	Attributes map[string]any      `json:"attributes,omitempty"`
-	Events     []phoenixSpanEvent  `json:"events,omitempty"`
+	Name       string             `json:"name"`
+	Context    phoenixSpanContext `json:"context"`
+	Kind       string             `json:"kind"`
+	StartTime  time.Time          `json:"start_time"`
+	EndTime    time.Time          `json:"end_time"`
+	Status     phoenixStatus      `json:"status"`
+	Attributes map[string]any     `json:"attributes,omitempty"`
+	Events     []phoenixSpanEvent `json:"events,omitempty"`
 }
 
 // phoenixSpanContext carries trace and span identifiers.
@@ -124,8 +124,8 @@ func (e *Exporter) ExportLLMCall(ctx context.Context, data o11y.LLMCallData) err
 	}
 
 	attrs := map[string]any{
-		"llm.model_name":   data.Model,
-		"llm.provider":     data.Provider,
+		"llm.model_name":             data.Model,
+		"llm.provider":               data.Provider,
 		"llm.token_count.prompt":     data.InputTokens,
 		"llm.token_count.completion": data.OutputTokens,
 		"llm.token_count.total":      data.InputTokens + data.OutputTokens,

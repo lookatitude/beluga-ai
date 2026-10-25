@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	defaultBaseURL     = "https://api.gladia.io/v2"
+	defaultBaseURL    = "https://api.gladia.io/v2"
 	headerGladiaKey   = "x-gladia-key"
 	headerContentType = "Content-Type"
 )
@@ -68,9 +68,9 @@ type transcriptionRequest struct {
 
 // transcriptionResponse is the response from the Gladia transcription endpoint.
 type transcriptionResponse struct {
-	ID         string `json:"id"`
-	ResultURL  string `json:"result_url"`
-	Status     string `json:"status"`
+	ID        string `json:"id"`
+	ResultURL string `json:"result_url"`
+	Status    string `json:"status"`
 }
 
 // transcriptionTranscription holds the transcription text within a result.
@@ -85,7 +85,7 @@ type transcriptionResultData struct {
 
 // transcriptionResult holds the final transcription result.
 type transcriptionResult struct {
-	Status string                `json:"status"`
+	Status string                  `json:"status"`
 	Result transcriptionResultData `json:"result"`
 }
 

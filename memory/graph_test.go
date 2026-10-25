@@ -132,10 +132,10 @@ func TestRelationComplexProperties(t *testing.T) {
 		To:   "person-2",
 		Type: "knows",
 		Properties: map[string]any{
-			"since":      "2020-01-15",
-			"strength":   0.85,
-			"mutual":     true,
-			"context":    []string{"work", "hobby"},
+			"since":    "2020-01-15",
+			"strength": 0.85,
+			"mutual":   true,
+			"context":  []string{"work", "hobby"},
 			"last_contact": map[string]any{
 				"date":   "2024-01-10",
 				"method": "email",

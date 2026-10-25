@@ -24,13 +24,13 @@ const (
 
 // modelDimensions maps known Sentence Transformers models to their dimensions.
 var modelDimensions = map[string]int{
-	"sentence-transformers/all-MiniLM-L6-v2":    384,
-	"sentence-transformers/all-MiniLM-L12-v2":   384,
-	"sentence-transformers/all-mpnet-base-v2":    768,
+	"sentence-transformers/all-MiniLM-L6-v2":        384,
+	"sentence-transformers/all-MiniLM-L12-v2":       384,
+	"sentence-transformers/all-mpnet-base-v2":       768,
 	"sentence-transformers/paraphrase-MiniLM-L6-v2": 384,
-	"BAAI/bge-small-en-v1.5":                    384,
-	"BAAI/bge-base-en-v1.5":                     768,
-	"BAAI/bge-large-en-v1.5":                    1024,
+	"BAAI/bge-small-en-v1.5":                        384,
+	"BAAI/bge-base-en-v1.5":                         768,
+	"BAAI/bge-large-en-v1.5":                        1024,
 }
 
 // Embedder implements embedding.Embedder using the HuggingFace Inference API.

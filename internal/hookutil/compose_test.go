@@ -94,7 +94,9 @@ func TestComposeErrorPassthrough1_Replaces(t *testing.T) {
 	// use a closure to capture replacement
 	var called string
 	hooks[0].fn1 = nil // not used here; wire directly
-	type h2 struct{ fn func(context.Context, string, error) error }
+	type h2 struct {
+		fn func(context.Context, string, error) error
+	}
 	h2hooks := []h2{{fn: func(_ context.Context, s string, _ error) error { called = s; return replacement }}}
 	fn := hookutil.ComposeErrorPassthrough1(h2hooks, func(h h2) func(context.Context, string, error) error { return h.fn })
 	if got := fn(ctx, "name", errors.New("orig")); got != replacement {

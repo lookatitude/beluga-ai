@@ -94,15 +94,15 @@ func TestToDefinition(t *testing.T) {
 
 // mockTool implements Tool for testing.
 type mockTool struct {
-	name        string
-	description string
-	inputSchema map[string]any
-	executeFn   func(input map[string]any) (*Result, error)
+	name         string
+	description  string
+	inputSchema  map[string]any
+	executeFn    func(input map[string]any) (*Result, error)
 	executeCtxFn func(ctx context.Context, input map[string]any) (*Result, error)
 }
 
-func (m *mockTool) Name() string              { return m.name }
-func (m *mockTool) Description() string        { return m.description }
+func (m *mockTool) Name() string                { return m.name }
+func (m *mockTool) Description() string         { return m.description }
 func (m *mockTool) InputSchema() map[string]any { return m.inputSchema }
 func (m *mockTool) Execute(ctx context.Context, input map[string]any) (*Result, error) {
 	if m.executeCtxFn != nil {

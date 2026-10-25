@@ -206,9 +206,9 @@ func TestTranscribe_WithResultURL(t *testing.T) {
 			json.NewEncoder(w).Encode(transcriptionResult{
 				Status: "done",
 				Result: transcriptionResultData{
-						Transcription: transcriptionTranscription{FullTranscript: "result via url"},
-					},
-					})
+					Transcription: transcriptionTranscription{FullTranscript: "result via url"},
+				},
+			})
 		}
 	}))
 	srvURL = srv.URL
@@ -270,9 +270,9 @@ func TestTranscribe_WithOption(t *testing.T) {
 			json.NewEncoder(w).Encode(transcriptionResult{
 				Status: "done",
 				Result: transcriptionResultData{
-						Transcription: transcriptionTranscription{FullTranscript: "hallo"},
-					},
-					})
+					Transcription: transcriptionTranscription{FullTranscript: "hallo"},
+				},
+			})
 		}
 	}))
 	defer srv.Close()
@@ -304,8 +304,8 @@ func TestTranscribeStream_SuccessfulStreaming(t *testing.T) {
 			return
 		}
 		ctx := r.Context()
-		conn.Read(ctx) //nolint:errcheck
-		wsjson.Write(ctx, conn, gladiaStreamMsg{Type: "transcript", Transcript: "hello", Confidence: 0.85, IsFinal: false, Duration: 0.5})       //nolint:errcheck
+		conn.Read(ctx)                                                                                                                          //nolint:errcheck
+		wsjson.Write(ctx, conn, gladiaStreamMsg{Type: "transcript", Transcript: "hello", Confidence: 0.85, IsFinal: false, Duration: 0.5})      //nolint:errcheck
 		wsjson.Write(ctx, conn, gladiaStreamMsg{Type: "transcript", Transcript: "hello world", Confidence: 0.95, IsFinal: true, Duration: 1.5}) //nolint:errcheck
 		conn.Close(websocket.StatusNormalClosure, "")                                                                                           //nolint:errcheck
 	}))
@@ -407,7 +407,7 @@ func TestTranscribeStream_WithLanguageAndSampleRate(t *testing.T) {
 	var receivedInit map[string]any
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/live" {
-			json.NewDecoder(r.Body).Decode(&receivedInit) //nolint:errcheck
+			json.NewDecoder(r.Body).Decode(&receivedInit)                                 //nolint:errcheck
 			json.NewEncoder(w).Encode(map[string]string{"url": "ws://" + r.Host + "/ws"}) //nolint:errcheck
 			return
 		}
@@ -419,7 +419,7 @@ func TestTranscribeStream_WithLanguageAndSampleRate(t *testing.T) {
 			return
 		}
 		defer conn.Close(websocket.StatusNormalClosure, "") //nolint:errcheck
-		wsjson.Write(r.Context(), conn, gladiaStreamMsg{   //nolint:errcheck
+		wsjson.Write(r.Context(), conn, gladiaStreamMsg{    //nolint:errcheck
 			Type: "transcript", Transcript: "test", IsFinal: true, Confidence: 0.9,
 		})
 	}))
@@ -501,7 +501,7 @@ func TestTranscribeStream_EmptyTranscriptSkipped(t *testing.T) {
 		}
 		defer conn.Close(websocket.StatusNormalClosure, "") //nolint:errcheck
 		ctx := r.Context()
-		wsjson.Write(ctx, conn, gladiaStreamMsg{Type: "transcript", Transcript: ""})                                                    //nolint:errcheck
+		wsjson.Write(ctx, conn, gladiaStreamMsg{Type: "transcript", Transcript: ""})                                       //nolint:errcheck
 		wsjson.Write(ctx, conn, gladiaStreamMsg{Type: "transcript", Transcript: "actual", IsFinal: true, Confidence: 0.9}) //nolint:errcheck
 	}))
 	defer srv.Close()
@@ -705,9 +705,9 @@ func TestTranscribeStream_NonJSONWSMessage(t *testing.T) {
 			return
 		}
 		ctx := r.Context()
-		conn.Write(ctx, websocket.MessageText, []byte("not json"))                                                                     //nolint:errcheck
+		conn.Write(ctx, websocket.MessageText, []byte("not json"))                                                              //nolint:errcheck
 		wsjson.Write(ctx, conn, gladiaStreamMsg{Type: "transcript", Transcript: "after noise", IsFinal: true, Confidence: 0.9}) //nolint:errcheck
-		conn.Close(websocket.StatusNormalClosure, "")                                                                                  //nolint:errcheck
+		conn.Close(websocket.StatusNormalClosure, "")                                                                           //nolint:errcheck
 	}))
 	defer srv.Close()
 

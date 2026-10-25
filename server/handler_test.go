@@ -197,10 +197,10 @@ type errorStreamAgent struct {
 	err error
 }
 
-func (a *errorStreamAgent) ID() string               { return a.id }
-func (a *errorStreamAgent) Persona() agent.Persona    { return agent.Persona{} }
-func (a *errorStreamAgent) Tools() []tool.Tool        { return nil }
-func (a *errorStreamAgent) Children() []agent.Agent   { return nil }
+func (a *errorStreamAgent) ID() string              { return a.id }
+func (a *errorStreamAgent) Persona() agent.Persona  { return agent.Persona{} }
+func (a *errorStreamAgent) Tools() []tool.Tool      { return nil }
+func (a *errorStreamAgent) Children() []agent.Agent { return nil }
 
 func (a *errorStreamAgent) Invoke(_ context.Context, _ string, _ ...agent.Option) (string, error) {
 	return "", a.err

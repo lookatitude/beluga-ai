@@ -27,13 +27,13 @@ func init() {
 
 // element represents a single extracted element from Unstructured API.
 type element struct {
-	Type     string `json:"type"`
+	Type      string `json:"type"`
 	ElementID string `json:"element_id"`
-	Text     string `json:"text"`
-	Metadata struct {
-		Filename    string `json:"filename"`
-		PageNumber  int    `json:"page_number"`
-		Languages   []string `json:"languages"`
+	Text      string `json:"text"`
+	Metadata  struct {
+		Filename   string   `json:"filename"`
+		PageNumber int      `json:"page_number"`
+		Languages  []string `json:"languages"`
 	} `json:"metadata"`
 }
 

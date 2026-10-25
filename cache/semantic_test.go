@@ -20,7 +20,7 @@ func newMockEmbedder() *mockEmbedder {
 		dims: 3,
 		vectors: map[string][]float32{
 			"hello":     {1, 0, 0},
-			"hi":        {0.95, 0.05, 0},   // very similar to "hello"
+			"hi":        {0.95, 0.05, 0},    // very similar to "hello"
 			"greetings": {0.90, 0.10, 0.05}, // similar to "hello"
 			"goodbye":   {0, 0, 1},          // orthogonal to "hello"
 			"farewell":  {0.05, 0, 0.95},    // similar to "goodbye"

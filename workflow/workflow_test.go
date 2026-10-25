@@ -78,7 +78,7 @@ func TestExecuteWithRetry_Success(t *testing.T) {
 	count := 0
 	err := executeWithRetry(context.Background(), RetryPolicy{
 		MaxAttempts:        3,
-		InitialInterval:   1 * time.Millisecond,
+		InitialInterval:    1 * time.Millisecond,
 		BackoffCoefficient: 2.0,
 	}, func(_ context.Context) error {
 		count++
@@ -98,7 +98,7 @@ func TestExecuteWithRetry_Success(t *testing.T) {
 func TestExecuteWithRetry_Exhausted(t *testing.T) {
 	err := executeWithRetry(context.Background(), RetryPolicy{
 		MaxAttempts:        2,
-		InitialInterval:   1 * time.Millisecond,
+		InitialInterval:    1 * time.Millisecond,
 		BackoffCoefficient: 2.0,
 	}, func(_ context.Context) error {
 		return fmt.Errorf("persistent error")
@@ -114,7 +114,7 @@ func TestExecuteWithRetry_ContextCancel(t *testing.T) {
 
 	err := executeWithRetry(ctx, RetryPolicy{
 		MaxAttempts:        5,
-		InitialInterval:   1 * time.Second,
+		InitialInterval:    1 * time.Second,
 		BackoffCoefficient: 2.0,
 	}, func(_ context.Context) error {
 		return fmt.Errorf("error")

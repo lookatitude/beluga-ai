@@ -18,10 +18,10 @@ type mockAgent struct {
 	err     error
 }
 
-func (m *mockAgent) ID() string                    { return m.id }
-func (m *mockAgent) Persona() agent.Persona        { return m.persona }
-func (m *mockAgent) Tools() []tool.Tool             { return nil }
-func (m *mockAgent) Children() []agent.Agent        { return nil }
+func (m *mockAgent) ID() string              { return m.id }
+func (m *mockAgent) Persona() agent.Persona  { return m.persona }
+func (m *mockAgent) Tools() []tool.Tool      { return nil }
+func (m *mockAgent) Children() []agent.Agent { return nil }
 
 func (m *mockAgent) Invoke(_ context.Context, _ string, _ ...agent.Option) (string, error) {
 	return m.result, m.err

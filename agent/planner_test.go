@@ -77,9 +77,9 @@ func TestAction_Fields(t *testing.T) {
 
 func TestObservation_Fields(t *testing.T) {
 	obs := Observation{
-		Action: Action{Type: ActionTool, Message: "test"},
-		Result: tool.TextResult("result text"),
-		Error:  nil,
+		Action:  Action{Type: ActionTool, Message: "test"},
+		Result:  tool.TextResult("result text"),
+		Error:   nil,
 		Latency: 100 * time.Millisecond,
 	}
 

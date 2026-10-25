@@ -58,8 +58,8 @@ func TestMockVectorStore_Add(t *testing.T) {
 		wantStored int
 	}{
 		{
-			name: "add single document",
-			docs: []schema.Document{{ID: "1", Content: "hello"}},
+			name:       "add single document",
+			docs:       []schema.Document{{ID: "1", Content: "hello"}},
 			embeddings: [][]float32{{1.0, 2.0}},
 			wantStored: 1,
 		},
@@ -186,11 +186,11 @@ func TestMockVectorStore_Delete(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		opts           []Option
-		ids            []string
-		wantErr        bool
-		wantRemaining  int
+		name          string
+		opts          []Option
+		ids           []string
+		wantErr       bool
+		wantRemaining int
 	}{
 		{
 			name:          "delete single document",

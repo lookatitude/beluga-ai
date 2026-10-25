@@ -315,9 +315,9 @@ func TestFromBsonM(t *testing.T) {
 
 // errorCollection is a mock that returns errors for all operations.
 type errorCollection struct {
-	insertErr  error
-	findErr    error
-	deleteErr  error
+	insertErr error
+	findErr   error
+	deleteErr error
 }
 
 func (e *errorCollection) InsertOne(_ context.Context, _ any, _ ...options.Lister[options.InsertOneOptions]) (*mongo.InsertOneResult, error) {

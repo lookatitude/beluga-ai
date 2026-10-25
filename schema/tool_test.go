@@ -4,11 +4,11 @@ import "testing"
 
 func TestToolCall_Fields(t *testing.T) {
 	tests := []struct {
-		name      string
-		tc        ToolCall
-		wantID    string
-		wantName  string
-		wantArgs  string
+		name     string
+		tc       ToolCall
+		wantID   string
+		wantName string
+		wantArgs string
 	}{
 		{
 			name:     "fully_populated",
@@ -166,11 +166,11 @@ func TestToolResult_ContentTypes(t *testing.T) {
 
 func TestToolDefinition_Fields(t *testing.T) {
 	tests := []struct {
-		name        string
-		td          ToolDefinition
-		wantName    string
-		wantDesc    string
-		wantSchema  bool
+		name       string
+		td         ToolDefinition
+		wantName   string
+		wantDesc   string
+		wantSchema bool
 	}{
 		{
 			name: "fully_populated",

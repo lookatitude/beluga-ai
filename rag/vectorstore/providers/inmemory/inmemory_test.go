@@ -233,7 +233,7 @@ func TestStore_Search_Euclidean(t *testing.T) {
 		{ID: "doc2", Content: "far"},
 	}
 	embeddings := [][]float32{
-		{1.0, 0.0, 0.0}, // Distance = 1.0 from query
+		{1.0, 0.0, 0.0},  // Distance = 1.0 from query
 		{10.0, 0.0, 0.0}, // Distance = 9.0 from query
 	}
 

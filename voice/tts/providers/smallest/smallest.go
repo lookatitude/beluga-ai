@@ -61,11 +61,11 @@ func New(cfg tts.Config) (*Engine, error) {
 
 // synthesizeRequest is the JSON body for the Smallest.ai TTS API.
 type synthesizeRequest struct {
-	Text    string  `json:"text"`
-	Voice   string  `json:"voice_id"`
-	Model   string  `json:"model,omitempty"`
-	Speed   float64 `json:"speed,omitempty"`
-	Format  string  `json:"sample_rate,omitempty"`
+	Text   string  `json:"text"`
+	Voice  string  `json:"voice_id"`
+	Model  string  `json:"model,omitempty"`
+	Speed  float64 `json:"speed,omitempty"`
+	Format string  `json:"sample_rate,omitempty"`
 }
 
 // Synthesize converts text to audio using the Smallest.ai TTS API.

@@ -14,10 +14,10 @@ type wrappedAgent struct {
 	prefix string
 }
 
-func (w *wrappedAgent) ID() string            { return w.inner.ID() }
-func (w *wrappedAgent) Persona() Persona      { return w.inner.Persona() }
-func (w *wrappedAgent) Tools() []tool.Tool    { return w.inner.Tools() }
-func (w *wrappedAgent) Children() []Agent     { return w.inner.Children() }
+func (w *wrappedAgent) ID() string         { return w.inner.ID() }
+func (w *wrappedAgent) Persona() Persona   { return w.inner.Persona() }
+func (w *wrappedAgent) Tools() []tool.Tool { return w.inner.Tools() }
+func (w *wrappedAgent) Children() []Agent  { return w.inner.Children() }
 func (w *wrappedAgent) Invoke(ctx context.Context, input string, opts ...Option) (string, error) {
 	result, err := w.inner.Invoke(ctx, w.prefix+input, opts...)
 	return w.prefix + result, err
@@ -102,10 +102,10 @@ type orderAgent struct {
 	order *[]string
 }
 
-func (o *orderAgent) ID() string            { return o.inner.ID() }
-func (o *orderAgent) Persona() Persona      { return o.inner.Persona() }
-func (o *orderAgent) Tools() []tool.Tool    { return o.inner.Tools() }
-func (o *orderAgent) Children() []Agent     { return o.inner.Children() }
+func (o *orderAgent) ID() string         { return o.inner.ID() }
+func (o *orderAgent) Persona() Persona   { return o.inner.Persona() }
+func (o *orderAgent) Tools() []tool.Tool { return o.inner.Tools() }
+func (o *orderAgent) Children() []Agent  { return o.inner.Children() }
 func (o *orderAgent) Invoke(ctx context.Context, input string, opts ...Option) (string, error) {
 	*o.order = append(*o.order, o.label)
 	return o.inner.Invoke(ctx, input, opts...)

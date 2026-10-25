@@ -7,13 +7,13 @@ import (
 
 func TestDocument_Fields(t *testing.T) {
 	tests := []struct {
-		name         string
-		doc          Document
-		wantID       string
-		wantContent  string
-		wantScore    float64
-		wantMeta     bool
-		wantEmbed    bool
+		name        string
+		doc         Document
+		wantID      string
+		wantContent string
+		wantScore   float64
+		wantMeta    bool
+		wantEmbed   bool
 	}{
 		{
 			name: "fully_populated",

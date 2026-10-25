@@ -174,12 +174,12 @@ func (e *Exporter) ExportLLMCall(ctx context.Context, data o11y.LLMCallData) err
 				Type:      "generation-create",
 				Timestamp: now,
 				Body: generationBody{
-					ID:      genID,
-					TraceID: traceID,
-					Name:    name,
-					Model:   data.Model,
-					Input:   data.Messages,
-					Output:  data.Response,
+					ID:        genID,
+					TraceID:   traceID,
+					Name:      name,
+					Model:     data.Model,
+					Input:     data.Messages,
+					Output:    data.Response,
 					StartTime: now.Add(-data.Duration),
 					EndTime:   now,
 					Usage: usageBody{

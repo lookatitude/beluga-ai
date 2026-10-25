@@ -24,9 +24,9 @@ const (
 
 // modelDimensions maps known Ollama embedding models to their default dimensions.
 var modelDimensions = map[string]int{
-	"nomic-embed-text":    768,
-	"mxbai-embed-large":   1024,
-	"all-minilm":          384,
+	"nomic-embed-text":       768,
+	"mxbai-embed-large":      1024,
+	"all-minilm":             384,
 	"snowflake-arctic-embed": 1024,
 }
 

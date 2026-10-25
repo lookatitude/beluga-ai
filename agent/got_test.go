@@ -579,7 +579,7 @@ func TestGoTPlanner_Registry_CreationWithExtra(t *testing.T) {
 	p, err := NewPlanner("graph-of-thought", PlannerConfig{
 		LLM: model,
 		Extra: map[string]any{
-			"controller":      customCtrl,
+			"controller":     customCtrl,
 			"max_operations": 15,
 		},
 	})

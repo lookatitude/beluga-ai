@@ -67,10 +67,10 @@ type uploadResponse struct {
 
 // transcriptRequest is the request body for creating a transcript.
 type transcriptRequest struct {
-	AudioURL    string `json:"audio_url"`
-	LanguageCode string `json:"language_code,omitempty"`
-	Punctuate    *bool  `json:"punctuate,omitempty"`
-	SpeakerLabels *bool `json:"speaker_labels,omitempty"`
+	AudioURL      string `json:"audio_url"`
+	LanguageCode  string `json:"language_code,omitempty"`
+	Punctuate     *bool  `json:"punctuate,omitempty"`
+	SpeakerLabels *bool  `json:"speaker_labels,omitempty"`
 }
 
 // transcriptResponse is the response from the transcript endpoint.
@@ -219,10 +219,10 @@ func (e *Engine) Transcribe(ctx context.Context, audio []byte, opts ...stt.Optio
 
 // realtimeMessage is a message from the AssemblyAI real-time WebSocket API.
 type realtimeMessage struct {
-	MessageType string `json:"message_type"`
-	Text        string `json:"text"`
-	AudioStart  int    `json:"audio_start"`
-	AudioEnd    int    `json:"audio_end"`
+	MessageType string  `json:"message_type"`
+	Text        string  `json:"text"`
+	AudioStart  int     `json:"audio_start"`
+	AudioEnd    int     `json:"audio_end"`
 	Confidence  float64 `json:"confidence"`
 	Words       []struct {
 		Text       string  `json:"text"`

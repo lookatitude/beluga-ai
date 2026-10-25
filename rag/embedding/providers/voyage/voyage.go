@@ -24,12 +24,12 @@ const (
 
 // modelDimensions maps known Voyage AI embedding models to their default dimensions.
 var modelDimensions = map[string]int{
-	"voyage-2":         1024,
-	"voyage-large-2":   1536,
-	"voyage-code-2":    1536,
+	"voyage-2":                1024,
+	"voyage-large-2":          1536,
+	"voyage-code-2":           1536,
 	"voyage-lite-02-instruct": 1024,
-	"voyage-3":         1024,
-	"voyage-3-lite":    512,
+	"voyage-3":                1024,
+	"voyage-3-lite":           512,
 }
 
 // Embedder implements embedding.Embedder using the Voyage AI Embed API.

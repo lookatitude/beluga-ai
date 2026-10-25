@@ -8,11 +8,11 @@ import (
 func TestSession_Fields(t *testing.T) {
 	now := time.Now()
 	tests := []struct {
-		name       string
-		session    Session
-		wantID     string
-		wantTurns  int
-		wantState  bool
+		name      string
+		session   Session
+		wantID    string
+		wantTurns int
+		wantState bool
 	}{
 		{
 			name: "fully_populated",
@@ -172,9 +172,9 @@ func TestSession_TurnAccess(t *testing.T) {
 func TestTurn_Fields(t *testing.T) {
 	now := time.Now()
 	tests := []struct {
-		name      string
-		turn      Turn
-		wantMeta  bool
+		name     string
+		turn     Turn
+		wantMeta bool
 	}{
 		{
 			name: "with_metadata",

@@ -11,11 +11,11 @@ import (
 
 func TestNew(t *testing.T) {
 	tests := []struct {
-		name       string
-		opts       []Option
-		wantDim    int
-		wantEmbs   int
-		wantErr    error
+		name     string
+		opts     []Option
+		wantDim  int
+		wantEmbs int
+		wantErr  error
 	}{
 		{
 			name:    "default configuration",
@@ -78,19 +78,19 @@ func TestMockEmbedder_Embed(t *testing.T) {
 			wantCalls: 1,
 		},
 		{
-			name: "preset embeddings single",
-			opts: []Option{WithEmbeddings([][]float32{{1.0, 2.0, 3.0}})},
-			texts: []string{"hello"},
-			wantLen: 1,
-			wantDim: 3,
+			name:      "preset embeddings single",
+			opts:      []Option{WithEmbeddings([][]float32{{1.0, 2.0, 3.0}})},
+			texts:     []string{"hello"},
+			wantLen:   1,
+			wantDim:   3,
 			wantCalls: 1,
 		},
 		{
-			name: "preset embeddings repeat",
-			opts: []Option{WithEmbeddings([][]float32{{1.0, 2.0}, {3.0, 4.0}})},
-			texts: []string{"a", "b", "c"},
-			wantLen: 3,
-			wantDim: 2,
+			name:      "preset embeddings repeat",
+			opts:      []Option{WithEmbeddings([][]float32{{1.0, 2.0}, {3.0, 4.0}})},
+			texts:     []string{"a", "b", "c"},
+			wantLen:   3,
+			wantDim:   2,
 			wantCalls: 1,
 		},
 		{
@@ -151,9 +151,9 @@ func TestMockEmbedder_EmbedSingle(t *testing.T) {
 			wantDim: 512,
 		},
 		{
-			name: "preset embedding",
-			opts: []Option{WithEmbeddings([][]float32{{1.0, 2.0, 3.0}})},
-			text: "hello",
+			name:    "preset embedding",
+			opts:    []Option{WithEmbeddings([][]float32{{1.0, 2.0, 3.0}})},
+			text:    "hello",
 			wantDim: 3,
 		},
 		{

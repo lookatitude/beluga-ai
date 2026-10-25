@@ -101,8 +101,8 @@ func TestEvalReport_Structure(t *testing.T) {
 
 func TestEvalReport_WithErrors(t *testing.T) {
 	report := eval.EvalReport{
-		Samples: []eval.SampleResult{},
-		Metrics: map[string]float64{},
+		Samples:  []eval.SampleResult{},
+		Metrics:  map[string]float64{},
 		Duration: 1 * time.Second,
 		Errors: []error{
 			assert.AnError,

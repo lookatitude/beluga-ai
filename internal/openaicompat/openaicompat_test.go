@@ -749,10 +749,10 @@ func TestGenerateWithAllMessageTypes(t *testing.T) {
 
 func TestToolChoice(t *testing.T) {
 	tests := []struct {
-		name     string
-		choice   llm.ToolChoice
-		wantKey  string
-		wantVal  string
+		name    string
+		choice  llm.ToolChoice
+		wantKey string
+		wantVal string
 	}{
 		{"auto", llm.ToolChoiceAuto, "tool_choice", "auto"},
 		{"none", llm.ToolChoiceNone, "tool_choice", "none"},
@@ -857,10 +857,10 @@ func TestResponseFormatJSONSchema(t *testing.T) {
 	defer ts.Close()
 
 	personSchema := map[string]any{
-		"name": "person_schema",
+		"name":        "person_schema",
 		"description": "A person object",
-		"strict": true,
-		"type": "object",
+		"strict":      true,
+		"type":        "object",
 		"properties": map[string]any{
 			"name": map[string]any{"type": "string"},
 			"age":  map[string]any{"type": "number"},

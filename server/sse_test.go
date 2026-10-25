@@ -47,33 +47,33 @@ func TestSSEWriter_WriteEvent(t *testing.T) {
 		expected string
 	}{
 		{
-			name:  "data only",
-			event: SSEEvent{Data: "hello"},
+			name:     "data only",
+			event:    SSEEvent{Data: "hello"},
 			expected: "data: hello\n\n",
 		},
 		{
-			name:  "event and data",
-			event: SSEEvent{Event: "message", Data: "hello"},
+			name:     "event and data",
+			event:    SSEEvent{Event: "message", Data: "hello"},
 			expected: "event: message\ndata: hello\n\n",
 		},
 		{
-			name:  "id, event, and data",
-			event: SSEEvent{ID: "1", Event: "message", Data: "hello"},
+			name:     "id, event, and data",
+			event:    SSEEvent{ID: "1", Event: "message", Data: "hello"},
 			expected: "id: 1\nevent: message\ndata: hello\n\n",
 		},
 		{
-			name:  "with retry",
-			event: SSEEvent{Event: "message", Data: "hello", Retry: 3000},
+			name:     "with retry",
+			event:    SSEEvent{Event: "message", Data: "hello", Retry: 3000},
 			expected: "event: message\nretry: 3000\ndata: hello\n\n",
 		},
 		{
-			name:  "multi-line data",
-			event: SSEEvent{Data: "line1\nline2\nline3"},
+			name:     "multi-line data",
+			event:    SSEEvent{Data: "line1\nline2\nline3"},
 			expected: "data: line1\ndata: line2\ndata: line3\n\n",
 		},
 		{
-			name:  "all fields",
-			event: SSEEvent{ID: "42", Event: "update", Data: "payload", Retry: 5000},
+			name:     "all fields",
+			event:    SSEEvent{ID: "42", Event: "update", Data: "payload", Retry: 5000},
 			expected: "id: 42\nevent: update\nretry: 5000\ndata: payload\n\n",
 		},
 	}
@@ -121,7 +121,7 @@ func TestSSEWriter_WriteHeartbeat(t *testing.T) {
 type noFlushWriter struct{}
 
 func (w *noFlushWriter) Header() http.Header         { return http.Header{} }
-func (w *noFlushWriter) Write(b []byte) (int, error)  { return len(b), nil }
+func (w *noFlushWriter) Write(b []byte) (int, error) { return len(b), nil }
 func (w *noFlushWriter) WriteHeader(statusCode int) { // no-op: stub writer/flusher for testing error paths
 }
 

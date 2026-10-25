@@ -410,9 +410,9 @@ func TestNewWithOptions(t *testing.T) {
 
 func TestParseSourceEdgeCases(t *testing.T) {
 	tests := []struct {
-		name     string
-		source   string
-		wantErr  string
+		name    string
+		source  string
+		wantErr string
 	}{
 		{
 			name:    "s3 with empty key",

@@ -192,13 +192,13 @@ func TestApplyMiddleware_Order(t *testing.T) {
 
 	mw1 := func(next Tool) Tool {
 		return &orderTool{
-			Tool: next,
+			Tool:   next,
 			before: func() { order = append(order, "mw1") },
 		}
 	}
 	mw2 := func(next Tool) Tool {
 		return &orderTool{
-			Tool: next,
+			Tool:   next,
 			before: func() { order = append(order, "mw2") },
 		}
 	}

@@ -22,12 +22,12 @@ func TestTraceExporter(t *testing.T) {
 	t.Run("mock exporter records call", func(t *testing.T) {
 		exp := &mockExporter{}
 		data := LLMCallData{
-			Model:       "gpt-4o",
-			Provider:    "openai",
-			InputTokens: 100,
+			Model:        "gpt-4o",
+			Provider:     "openai",
+			InputTokens:  100,
 			OutputTokens: 50,
-			Duration:    500 * time.Millisecond,
-			Cost:        0.002,
+			Duration:     500 * time.Millisecond,
+			Cost:         0.002,
 			Messages: []map[string]any{
 				{"role": "user", "content": "hello"},
 			},

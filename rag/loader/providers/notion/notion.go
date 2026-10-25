@@ -65,16 +65,16 @@ type block struct {
 	ID   string `json:"id"`
 	Type string `json:"type"`
 
-	Paragraph     *richTextBlock `json:"paragraph,omitempty"`
-	Heading1      *richTextBlock `json:"heading_1,omitempty"`
-	Heading2      *richTextBlock `json:"heading_2,omitempty"`
-	Heading3      *richTextBlock `json:"heading_3,omitempty"`
-	BulletedList  *richTextBlock `json:"bulleted_list_item,omitempty"`
-	NumberedList  *richTextBlock `json:"numbered_list_item,omitempty"`
-	Toggle        *richTextBlock `json:"toggle,omitempty"`
-	Quote         *richTextBlock `json:"quote,omitempty"`
-	Callout       *richTextBlock `json:"callout,omitempty"`
-	Code          *codeBlock     `json:"code,omitempty"`
+	Paragraph    *richTextBlock `json:"paragraph,omitempty"`
+	Heading1     *richTextBlock `json:"heading_1,omitempty"`
+	Heading2     *richTextBlock `json:"heading_2,omitempty"`
+	Heading3     *richTextBlock `json:"heading_3,omitempty"`
+	BulletedList *richTextBlock `json:"bulleted_list_item,omitempty"`
+	NumberedList *richTextBlock `json:"numbered_list_item,omitempty"`
+	Toggle       *richTextBlock `json:"toggle,omitempty"`
+	Quote        *richTextBlock `json:"quote,omitempty"`
+	Callout      *richTextBlock `json:"callout,omitempty"`
+	Code         *codeBlock     `json:"code,omitempty"`
 }
 
 // richTextBlock contains rich text content.
@@ -95,13 +95,13 @@ type richText struct {
 
 // pageResponse is the Notion page retrieval response.
 type pageResponse struct {
-	ID         string `json:"id"`
+	ID         string              `json:"id"`
 	Properties map[string]property `json:"properties"`
 }
 
 // property represents a Notion page property.
 type property struct {
-	Type  string `json:"type"`
+	Type  string     `json:"type"`
 	Title []richText `json:"title,omitempty"`
 }
 

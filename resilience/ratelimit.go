@@ -29,7 +29,7 @@ type ProviderLimits struct {
 type RateLimiter struct {
 	limits ProviderLimits
 
-	mu            sync.Mutex
+	mu sync.Mutex
 	// RPM token bucket state.
 	rpmTokens     float64
 	rpmLastRefill time.Time

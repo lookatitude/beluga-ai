@@ -85,9 +85,9 @@ type deepgramResponse struct {
 	Results struct {
 		Channels []struct {
 			Alternatives []struct {
-				Transcript string          `json:"transcript"`
-				Confidence float64         `json:"confidence"`
-				Words      []deepgramWord  `json:"words"`
+				Transcript string         `json:"transcript"`
+				Confidence float64        `json:"confidence"`
+				Words      []deepgramWord `json:"words"`
 			} `json:"alternatives"`
 		} `json:"channels"`
 	} `json:"results"`
