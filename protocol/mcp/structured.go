@@ -110,13 +110,7 @@ func validateType(value any, schemaType string, path string) error {
 			return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: expected number, got %T", pathOrRoot(path), value)
 		}
 	case "integer":
-		v, ok := value.(float64)
-		if !ok {
-			return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: expected integer, got %T", pathOrRoot(path), value)
-		}
-		if v != float64(int64(v)) {
-			return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: expected integer, got float", pathOrRoot(path))
-		}
+		return validateInteger(value, path)
 	case "boolean":
 		if _, ok := value.(bool); !ok {
 			return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: expected boolean, got %T", pathOrRoot(path), value)
@@ -126,47 +120,73 @@ func validateType(value any, schemaType string, path string) error {
 	return nil
 }
 
+// validateInteger checks that value is a JSON number with no fractional part.
+func validateInteger(value any, path string) error {
+	v, ok := value.(float64)
+	if !ok {
+		return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: expected integer, got %T", pathOrRoot(path), value)
+	}
+	if v != float64(int64(v)) {
+		return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: expected integer, got float", pathOrRoot(path))
+	}
+	return nil
+}
+
 // validateObject validates required properties and nested property schemas.
 func validateObject(value any, schema map[string]any, path string) error {
 	obj, ok := value.(map[string]any)
 	if !ok {
 		return nil
 	}
+	if err := validateRequired(obj, schema, path); err != nil {
+		return err
+	}
+	return validateProperties(obj, schema, path)
+}
 
-	// Check required properties.
-	if required, ok := schema["required"].([]any); ok {
-		for _, r := range required {
-			name, _ := r.(string)
-			if name == "" {
-				continue
-			}
-			if _, exists := obj[name]; !exists {
-				return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: missing required property %q", pathOrRoot(path), name)
-			}
+// validateRequired checks that every name in the schema's "required" list is
+// present in obj.
+func validateRequired(obj, schema map[string]any, path string) error {
+	required, ok := schema["required"].([]any)
+	if !ok {
+		return nil
+	}
+	for _, r := range required {
+		name, _ := r.(string)
+		if name == "" {
+			continue
+		}
+		if _, exists := obj[name]; !exists {
+			return core.Errorf(core.ErrInvalidInput, "mcp/structured: %s: missing required property %q", pathOrRoot(path), name)
 		}
 	}
+	return nil
+}
 
-	// Validate nested properties.
-	if properties, ok := schema["properties"].(map[string]any); ok {
-		for key, propSchema := range properties {
-			propValue, exists := obj[key]
-			if !exists {
-				continue
-			}
-			ps, ok := propSchema.(map[string]any)
-			if !ok {
-				continue
-			}
-			childPath := key
-			if path != "" {
-				childPath = path + "." + key
-			}
-			if err := validateValue(propValue, ps, childPath); err != nil {
-				return err
-			}
+// validateProperties validates each property present in obj against its
+// schema from the "properties" map, if one is declared.
+func validateProperties(obj, schema map[string]any, path string) error {
+	properties, ok := schema["properties"].(map[string]any)
+	if !ok {
+		return nil
+	}
+	for key, propSchema := range properties {
+		propValue, exists := obj[key]
+		if !exists {
+			continue
+		}
+		ps, ok := propSchema.(map[string]any)
+		if !ok {
+			continue
+		}
+		childPath := key
+		if path != "" {
+			childPath = path + "." + key
+		}
+		if err := validateValue(propValue, ps, childPath); err != nil {
+			return err
 		}
 	}
-
 	return nil
 }
 

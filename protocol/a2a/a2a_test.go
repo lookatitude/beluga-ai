@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"iter"
 	"net/http"
 	"net/http/httptest"
@@ -498,7 +499,7 @@ func TestServer_CardEndpoint_Direct(t *testing.T) {
 	_, ts := setupA2ATestServer()
 	defer ts.Close()
 
-	resp, err := http.Get(ts.URL + "/.well-known/agent.json")
+	resp, err := testGet(t, ts.URL+"/.well-known/agent.json")
 	if err != nil {
 		t.Fatalf("GET: %v", err)
 	}
@@ -543,7 +544,7 @@ func TestServer_GetTask_SlashInID(t *testing.T) {
 	defer ts.Close()
 
 	// GET /tasks/id/cancel should fail with not found (slash in path for GET).
-	resp, err := http.Get(ts.URL + "/tasks/someid/cancel")
+	resp, err := testGet(t, ts.URL+"/tasks/someid/cancel")
 	if err != nil {
 		t.Fatalf("GET: %v", err)
 	}
@@ -559,7 +560,7 @@ func TestServer_TaskAction_InvalidAction(t *testing.T) {
 	defer ts.Close()
 
 	// POST /tasks/id/invalid should return not found.
-	resp, err := http.Post(ts.URL+"/tasks/someid/invalid", "application/json", nil)
+	resp, err := testPost(t, ts.URL+"/tasks/someid/invalid", "application/json", nil)
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -575,7 +576,7 @@ func TestServer_TaskAction_NoAction(t *testing.T) {
 	defer ts.Close()
 
 	// POST /tasks/someid (no action) should not match the cancel handler.
-	resp, err := http.Post(ts.URL+"/tasks/someid", "application/json", nil)
+	resp, err := testPost(t, ts.URL+"/tasks/someid", "application/json", nil)
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -732,7 +733,7 @@ func TestServer_HandleGetTask_EmptyID(t *testing.T) {
 	defer ts.Close()
 
 	// GET /tasks/ with no task ID.
-	resp, err := http.Get(ts.URL + "/tasks/")
+	resp, err := testGet(t, ts.URL+"/tasks/")
 	if err != nil {
 		t.Fatalf("GET: %v", err)
 	}
@@ -747,7 +748,7 @@ func TestServer_HandleCreateTask_InvalidBody(t *testing.T) {
 	_, ts := setupA2ATestServer()
 	defer ts.Close()
 
-	resp, err := http.Post(ts.URL+"/tasks", "application/json", strings.NewReader("not json"))
+	resp, err := testPost(t, ts.URL+"/tasks", "application/json", strings.NewReader("not json"))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -922,4 +923,25 @@ func TestServer_Serve_ServerError(t *testing.T) {
 	// This should hit the net.Listen error path, not the srv.Serve error path.
 	// To test the srv.Serve non-ErrServerClosed path is extremely difficult
 	// as it requires the HTTP server to fail after starting, which is rare.
+}
+
+// testGet issues a GET request bound to the test's context using the default client.
+func testGet(t *testing.T, url string) (*http.Response, error) {
+	t.Helper()
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return http.DefaultClient.Do(req)
+}
+
+// testPost issues a POST request bound to the test's context using the default client.
+func testPost(t *testing.T, url, contentType string, body io.Reader) (*http.Response, error) {
+	t.Helper()
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", contentType)
+	return http.DefaultClient.Do(req)
 }

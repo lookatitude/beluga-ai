@@ -5,6 +5,23 @@ import (
 	"testing"
 )
 
+// assertZeroStringEvent fails the test if any field of e is not its zero value.
+func assertZeroStringEvent(t *testing.T, e *Event[string]) {
+	t.Helper()
+	if e.Type != "" {
+		t.Errorf("Type = %q, want empty string", e.Type)
+	}
+	if e.Payload != "" {
+		t.Errorf("Payload = %q, want zero value", e.Payload)
+	}
+	if e.Err != nil {
+		t.Errorf("Err = %v, want nil", e.Err)
+	}
+	if e.Meta != nil {
+		t.Errorf("Meta = %v, want nil", e.Meta)
+	}
+}
+
 // TestEventReset verifies that Reset zeroes every field of an Event.
 func TestEventReset(t *testing.T) {
 	tests := []struct {
@@ -52,19 +69,7 @@ func TestEventReset(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			e := tt.seed()
 			e.Reset()
-
-			if e.Type != "" {
-				t.Errorf("Type = %q, want empty string", e.Type)
-			}
-			if e.Payload != "" {
-				t.Errorf("Payload = %q, want zero value", e.Payload)
-			}
-			if e.Err != nil {
-				t.Errorf("Err = %v, want nil", e.Err)
-			}
-			if e.Meta != nil {
-				t.Errorf("Meta = %v, want nil", e.Meta)
-			}
+			assertZeroStringEvent(t, e)
 		})
 	}
 }
@@ -94,20 +99,7 @@ func TestAcquireReleaseEvent(t *testing.T) {
 			setup: func() *Event[string] {
 				return AcquireEvent[string]()
 			},
-			verify: func(t *testing.T, e *Event[string]) {
-				if e.Type != "" {
-					t.Errorf("Type = %q, want empty", e.Type)
-				}
-				if e.Payload != "" {
-					t.Errorf("Payload = %q, want zero", e.Payload)
-				}
-				if e.Err != nil {
-					t.Errorf("Err = %v, want nil", e.Err)
-				}
-				if e.Meta != nil {
-					t.Errorf("Meta = %v, want nil", e.Meta)
-				}
-			},
+			verify:  assertZeroStringEvent,
 			release: true,
 		},
 		{

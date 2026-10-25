@@ -51,7 +51,7 @@ const (
 )
 
 // StateChange describes a mutation to a key in the store.
-type StateChange struct {
+type StateChange struct { //nolint:revive // exported name is public API; renaming to remove the stutter would break callers
 	// Key is the affected key.
 	Key string
 	// OldValue is the previous value (nil if the key was new).

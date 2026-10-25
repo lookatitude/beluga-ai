@@ -166,7 +166,7 @@ func TestAgentCardEndpoint(t *testing.T) {
 	srv := httptest.NewServer(handler)
 	defer srv.Close()
 
-	resp, err := http.Get(srv.URL + "/.well-known/agent-card.json")
+	resp, err := testGet(t, srv.URL+"/.well-known/agent-card.json")
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
@@ -645,4 +645,14 @@ func TestNewRemoteAgent_CardError(t *testing.T) {
 	_, err := NewRemoteAgent(ctx, ts.URL)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "a2a/sdk")
+}
+
+// testGet issues a GET request bound to the test's context using the default client.
+func testGet(t *testing.T, url string) (*http.Response, error) {
+	t.Helper()
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return http.DefaultClient.Do(req)
 }

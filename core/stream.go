@@ -221,7 +221,6 @@ func channelToStream[T any](ch <-chan eventOrErr[T]) Stream[T] {
 type BufferedStream[T any] struct {
 	ch   chan eventOrErr[T]
 	done chan struct{}
-	once sync.Once
 }
 
 // NewBufferedStream starts consuming src into an internal buffer of the given

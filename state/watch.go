@@ -42,8 +42,13 @@ func WatchSeq(ctx context.Context, store Store, key string, opts ...WatchOption)
 	if o.bufSize <= 0 {
 		return inner
 	}
+	return bufferedWatch(ctx, inner, o.bufSize)
+}
 
-	// Relay events through an internal buffer to absorb brief consumer stalls.
+// bufferedWatch relays events from inner through an internal channel of the
+// given size to absorb brief consumer stalls. The relay goroutine stops after
+// forwarding an error, when inner is exhausted, or when ctx is canceled.
+func bufferedWatch(ctx context.Context, inner iter.Seq2[StateChange, error], bufSize int) iter.Seq2[StateChange, error] {
 	return func(yield func(StateChange, error) bool) {
 		relayCtx, cancel := context.WithCancel(ctx)
 		defer cancel()
@@ -52,7 +57,7 @@ func WatchSeq(ctx context.Context, store Store, key string, opts ...WatchOption)
 			change StateChange
 			err    error
 		}
-		relay := make(chan item, o.bufSize)
+		relay := make(chan item, bufSize)
 
 		go func() {
 			defer close(relay)

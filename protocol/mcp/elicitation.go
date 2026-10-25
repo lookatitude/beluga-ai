@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"slices"
 
 	"github.com/lookatitude/beluga-ai/v2/core"
 )
@@ -134,33 +135,41 @@ func ValidateElicitationResponse(req ElicitationRequest, resp ElicitationRespons
 
 	switch req.Type {
 	case ElicitationSelect:
-		if resp.Selected == "" {
-			return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: select response requires a selected value")
-		}
-		found := false
-		for _, opt := range req.Options {
-			if opt == resp.Selected {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: selected value %q is not among options", resp.Selected)
-		}
+		return validateSelectResponse(req, resp)
 	case ElicitationForm:
-		if resp.Values == nil {
-			return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: form response requires values")
-		}
-		for _, f := range req.Fields {
-			if f.Required {
-				if _, ok := resp.Values[f.Name]; !ok {
-					return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: required field %q is missing", f.Name)
-				}
-			}
-		}
+		return validateFormResponse(req, resp)
 	case ElicitationText, ElicitationConfirm:
 		// Accepted responses are valid as-is.
 	}
 
+	return nil
+}
+
+// validateSelectResponse checks that an accepted select response names one
+// of the request's options.
+func validateSelectResponse(req ElicitationRequest, resp ElicitationResponse) error {
+	if resp.Selected == "" {
+		return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: select response requires a selected value")
+	}
+	if !slices.Contains(req.Options, resp.Selected) {
+		return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: selected value %q is not among options", resp.Selected)
+	}
+	return nil
+}
+
+// validateFormResponse checks that an accepted form response carries a value
+// for every required field of the request.
+func validateFormResponse(req ElicitationRequest, resp ElicitationResponse) error {
+	if resp.Values == nil {
+		return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: form response requires values")
+	}
+	for _, f := range req.Fields {
+		if !f.Required {
+			continue
+		}
+		if _, ok := resp.Values[f.Name]; !ok {
+			return core.Errorf(core.ErrInvalidInput, "mcp/elicitation: required field %q is missing", f.Name)
+		}
+	}
 	return nil
 }

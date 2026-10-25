@@ -577,6 +577,6 @@ func TestParallel_Concurrent_Execution(t *testing.T) {
 // Verify Runnable interface compliance at compile time.
 func TestRunnable_InterfaceCompliance(t *testing.T) {
 	var _ Runnable = &mockRunnable{}
-	var _ Runnable = Pipe(&mockRunnable{}, &mockRunnable{})
-	var _ Runnable = Parallel(&mockRunnable{})
+	var _ = Pipe(&mockRunnable{}, &mockRunnable{})
+	var _ = Parallel(&mockRunnable{})
 }
