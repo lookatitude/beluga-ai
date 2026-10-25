@@ -1,6 +1,6 @@
 package eval
 
-import _ "embed"
+import _ "embed" // required for the //go:embed directive below
 
 //go:embed schema.json
 var datasetSchema []byte

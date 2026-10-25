@@ -17,6 +17,8 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/config"
 	"github.com/lookatitude/beluga-ai/v2/llm"
 
+	// Blank import registers the "mock" LLM provider via init() so the
+	// fixture runs offline without real provider credentials.
 	_ "github.com/lookatitude/beluga-ai/v2/llm/providers/mock"
 )
 

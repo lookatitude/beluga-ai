@@ -157,7 +157,7 @@ func isNetworkError(err error) bool {
 	// Check for net.Error interface (Temporary/Timeout).
 	var netErr net.Error
 	if errors.As(err, &netErr) {
-		return netErr.Temporary() || netErr.Timeout()
+		return netErr.Temporary() || netErr.Timeout() //nolint:staticcheck // SA1019: dropping Temporary() would stop retrying non-timeout temporary errors (e.g. EMFILE, ECONNABORTED); behavior must be preserved
 	}
 
 	// Check for net.OpError (connection refused, DNS failures, etc.).

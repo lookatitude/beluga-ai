@@ -9,7 +9,7 @@
 //	_ "github.com/lookatitude/beluga-ai/v2/llm/providers/ollama"
 //	_ "github.com/lookatitude/beluga-ai/v2/llm/providers/google"
 //
-// and update the provider name / model in the llm.New call below. See
+// and update the provider name in the llm.New call and the modelName constant below. See
 // framework/docs/reference/providers.md for the full list.
 package main
 
@@ -33,6 +33,10 @@ import (
 	// Register the __BELUGA_PROVIDER_NAME__ provider via init().
 	_ "__BELUGA_PROVIDER_IMPORT__"
 )
+
+// modelName is the LLM model shared by the interactive agent and the eval
+// harness (both the real-provider and the mock-provider paths).
+const modelName = "__BELUGA_MODEL_NAME__"
 
 // EchoInput is the typed input for the echo tool. Struct tags drive the
 // generated JSON Schema so the LLM sees a well-formed tool contract.
@@ -106,7 +110,7 @@ func main() {
 	model, err := llm.New("__BELUGA_PROVIDER_NAME__", config.ProviderConfig{
 		Provider: "__BELUGA_PROVIDER_NAME__",
 		APIKey:   apiKey,
-		Model:    "__BELUGA_MODEL_NAME__",
+		Model:    modelName,
 	})
 	if err != nil {
 		log.Fatalf("llm.New: %v", err)
@@ -185,7 +189,7 @@ func runEvalMode() {
 func buildEvalModel(sample eval.EvalSample) (llm.ChatModel, error) {
 	if os.Getenv("BELUGA_LLM_PROVIDER") == "mock" {
 		return mock.New(
-			config.ProviderConfig{Provider: "mock", Model: "__BELUGA_MODEL_NAME__"},
+			config.ProviderConfig{Provider: "mock", Model: modelName},
 			mock.WithFixtures(mock.FixturesFromTurns(sample.Turns)),
 		)
 	}
@@ -197,6 +201,6 @@ func buildEvalModel(sample eval.EvalSample) (llm.ChatModel, error) {
 	return llm.New("__BELUGA_PROVIDER_NAME__", config.ProviderConfig{
 		Provider: "__BELUGA_PROVIDER_NAME__",
 		APIKey:   apiKey,
-		Model:    "__BELUGA_MODEL_NAME__",
+		Model:    modelName,
 	})
 }

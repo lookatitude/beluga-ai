@@ -29,7 +29,7 @@ func GenerateSchema(v any) map[string]any {
 
 func generateType(t reflect.Type) map[string]any {
 	// Unwrap pointer types.
-	for t.Kind() == reflect.Ptr {
+	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 
@@ -124,11 +124,11 @@ func applyFieldTags(field reflect.StructField, prop map[string]any) {
 	if def := field.Tag.Get("default"); def != "" {
 		prop["default"] = def
 	}
-	if min := field.Tag.Get("minimum"); min != "" {
-		prop["minimum"] = min
+	if minimum := field.Tag.Get("minimum"); minimum != "" {
+		prop["minimum"] = minimum
 	}
-	if max := field.Tag.Get("maximum"); max != "" {
-		prop["maximum"] = max
+	if maximum := field.Tag.Get("maximum"); maximum != "" {
+		prop["maximum"] = maximum
 	}
 }
 

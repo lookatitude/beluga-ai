@@ -310,7 +310,7 @@ func TestCmdTest_Success(t *testing.T) {
 	lookPath = func(string) (string, error) { return "/usr/bin/true", nil }
 	execCommand = func(stdout, stderr io.Writer, name string, args ...string) *exec.Cmd {
 		// Always return a command that succeeds regardless of the OS.
-		return exec.Command("/bin/sh", "-c", "exit 0")
+		return exec.CommandContext(t.Context(), "/bin/sh", "-c", "exit 0")
 	}
 
 	if err := executeSubcommand(newTestCmd(), []string{"-v", "--race", "--pkg", "./..."}); err != nil {
@@ -333,7 +333,7 @@ func TestCmdTest_CanonicalEnv(t *testing.T) {
 
 	var cmdRef *exec.Cmd
 	execCommand = func(stdout, stderr io.Writer, name string, args ...string) *exec.Cmd {
-		c := exec.Command("/bin/sh", "-c", "exit 0")
+		c := exec.CommandContext(t.Context(), "/bin/sh", "-c", "exit 0")
 		cmdRef = c
 		return c
 	}
@@ -371,7 +371,7 @@ func TestCmdTest_BannerUsesCobraWriter(t *testing.T) {
 	}()
 	lookPath = func(string) (string, error) { return "/usr/bin/true", nil }
 	execCommand = func(stdout, stderr io.Writer, name string, args ...string) *exec.Cmd {
-		return exec.Command("/bin/sh", "-c", "exit 0")
+		return exec.CommandContext(t.Context(), "/bin/sh", "-c", "exit 0")
 	}
 
 	var out, errBuf bytes.Buffer
@@ -398,7 +398,7 @@ func TestCmdTest_RunFailure(t *testing.T) {
 	}()
 	lookPath = func(string) (string, error) { return "/usr/bin/false", nil }
 	execCommand = func(stdout, stderr io.Writer, name string, args ...string) *exec.Cmd {
-		return exec.Command("/bin/sh", "-c", "exit 1")
+		return exec.CommandContext(t.Context(), "/bin/sh", "-c", "exit 1")
 	}
 
 	if err := executeSubcommand(newTestCmd(), []string{"--pkg", "./..."}); err == nil {
@@ -630,7 +630,7 @@ func TestRoot_Test(t *testing.T) {
 	}()
 	lookPath = func(string) (string, error) { return "/usr/bin/true", nil }
 	execCommand = func(stdout, stderr io.Writer, name string, args ...string) *exec.Cmd {
-		return exec.Command("/bin/sh", "-c", "exit 0")
+		return exec.CommandContext(t.Context(), "/bin/sh", "-c", "exit 0")
 	}
 
 	_, errBuf, code := executeArgs([]string{"test", "--pkg", "./..."})

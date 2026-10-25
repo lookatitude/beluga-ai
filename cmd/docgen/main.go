@@ -469,8 +469,8 @@ func renderPage(p page) string {
 
 	// Frontmatter
 	sb.WriteString("---\n")
-	sb.WriteString(fmt.Sprintf("title: \"%s\"\n", escapeYAML(p.Title)))
-	sb.WriteString(fmt.Sprintf("description: \"%s\"\n", escapeYAML(p.Description)))
+	sb.WriteString(`title: "` + escapeYAML(p.Title) + "\"\n")
+	sb.WriteString(`description: "` + escapeYAML(p.Description) + "\"\n")
 	sb.WriteString("---\n\n")
 
 	for i, pkg := range p.Packages {
@@ -484,14 +484,14 @@ func renderPage(p page) string {
 				// Extract short provider name from import path
 				parts := strings.Split(pkg.ImportPath, "/")
 				provName := parts[len(parts)-1]
-				sb.WriteString(fmt.Sprintf("## %s\n\n", provName))
+				fmt.Fprintf(&sb, "## %s\n\n", provName)
 			} else {
-				sb.WriteString(fmt.Sprintf("## %s\n\n", pkg.PkgName))
+				fmt.Fprintf(&sb, "## %s\n\n", pkg.PkgName)
 			}
 		}
 
 		// Import path
-		sb.WriteString(fmt.Sprintf("```go\nimport \"%s\"\n```\n\n", pkg.ImportPath))
+		sb.WriteString("```go\nimport \"" + pkg.ImportPath + "\"\n```\n\n")
 
 		// Convert doc comment to markdown
 		md := godocToMarkdown(pkg.DocComment)
@@ -579,12 +579,12 @@ All streaming uses Go 1.23+ ` + "`iter.Seq2`" + `:
 
 // writeIndexSection writes one section of the index page: a heading and a table of matching pages.
 func writeIndexSection(sb *strings.Builder, heading string, filenames []string, pages []page) {
-	sb.WriteString(fmt.Sprintf("## %s\n\n| Package | Description |\n|---------|-------------|\n", heading))
+	fmt.Fprintf(sb, "## %s\n\n| Package | Description |\n|---------|-------------|\n", heading)
 	for _, pg := range pages {
 		for _, fp := range filenames {
 			if pg.Filename == fp {
 				slug := strings.TrimSuffix(pg.Filename, ".md")
-				sb.WriteString(fmt.Sprintf("| [%s](./%s/) | %s |\n", pg.Title, slug, pg.Description))
+				fmt.Fprintf(sb, "| [%s](./%s/) | %s |\n", pg.Title, slug, pg.Description)
 			}
 		}
 	}
