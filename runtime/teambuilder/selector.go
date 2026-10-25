@@ -54,6 +54,8 @@ var (
 
 // RegisterSelector registers a named selector factory. This is typically
 // called from init() in packages providing selector implementations.
+// Registering a name that is already registered replaces the previous
+// factory (the framework-wide duplicate policy).
 func RegisterSelector(name string, f SelectorFactory) {
 	selectorMu.Lock()
 	defer selectorMu.Unlock()

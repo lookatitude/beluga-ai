@@ -10,7 +10,7 @@
 //
 //	cfg := deploy.DockerfileConfig{
 //	    BaseImage:   "gcr.io/distroless/static-debian12",
-//	    GoVersion:   "1.23",
+//	    GoVersion:   "1.26",
 //	    AgentConfig: "config/agent.yaml",
 //	    Port:        8080,
 //	}
@@ -20,7 +20,10 @@
 //	}
 //	// Write dockerfile to disk or pass to a Docker client.
 //
-// Defaults: BaseImage = "gcr.io/distroless/static-debian12", GoVersion = "1.23".
+// Defaults: BaseImage = "gcr.io/distroless/static-debian12", GoVersion =
+// [DefaultGoVersion] (tracks the module's go directive), BuildPath = "."
+// (set "./cmd/agent" for the layout earlier releases hard-coded), User =
+// "nonroot:nonroot" on distroless bases and "65532:65532" otherwise.
 // Port must be in [1, 65535]. AgentConfig must not be empty, must not be an
 // absolute path, and must not contain path traversal sequences.
 //

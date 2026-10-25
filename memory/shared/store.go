@@ -36,8 +36,24 @@ type SharedStore interface { //nolint:revive // stutter accepted: renaming this 
 	UpdateProvenance(ctx context.Context, key string, prov *Provenance) error
 }
 
-// Compile-time check.
-var _ SharedStore = (*InMemorySharedStore)(nil)
+// ACLUpdater is an optional SharedStore extension that replaces only the
+// access-control fields (Readers, Writers, UnrestrictedRead,
+// UnrestrictedWrite) of an existing fragment, without touching its content,
+// version or conflict policy. [SharedMemory.Grant] and [SharedMemory.Revoke]
+// use it when the store implements it; otherwise they fall back to
+// WriteFragment, which for an AppendOnly fragment re-appends the content.
+type ACLUpdater interface {
+	// UpdateACL copies the access-control fields of frag onto the stored
+	// fragment with the same key. Returns core.ErrNotFound if the key does
+	// not exist.
+	UpdateACL(ctx context.Context, frag *Fragment) error
+}
+
+// Compile-time checks.
+var (
+	_ SharedStore = (*InMemorySharedStore)(nil)
+	_ ACLUpdater  = (*InMemorySharedStore)(nil)
+)
 
 // InMemorySharedStore is a thread-safe, in-memory implementation of SharedStore.
 // It is suitable for development and testing.
@@ -54,9 +70,11 @@ func NewInMemorySharedStore() *InMemorySharedStore {
 }
 
 // WriteFragment stores the fragment, incrementing its version if it already
-// exists. For RejectOnConflict policy, the write fails if the provided
-// fragment's version does not match the stored version. For AppendOnly,
-// the new content is appended to the existing content.
+// exists. The conflict policy applied to an update is the one stored with the
+// existing fragment (fixed at creation), never the incoming fragment's. For
+// RejectOnConflict policy, the write fails if the provided fragment's version
+// does not match the stored version. For AppendOnly, the new content is
+// appended to the existing content.
 func (s *InMemorySharedStore) WriteFragment(ctx context.Context, frag *Fragment) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
@@ -75,8 +93,14 @@ func (s *InMemorySharedStore) WriteFragment(ctx context.Context, frag *Fragment)
 		return nil
 	}
 
-	// Apply conflict policy.
-	switch frag.ConflictPolicy {
+	// Apply the stored conflict policy. Falling back to the incoming policy
+	// only for legacy fragments stored without one.
+	policy := existing.ConflictPolicy
+	if policy == "" {
+		policy = frag.ConflictPolicy
+		existing.ConflictPolicy = policy
+	}
+	switch policy {
 	case RejectOnConflict:
 		if frag.Version != existing.Version {
 			return core.NewError(
@@ -99,14 +123,39 @@ func (s *InMemorySharedStore) WriteFragment(ctx context.Context, frag *Fragment)
 	existing.Provenance = frag.Provenance
 	existing.Metadata = frag.Metadata
 	existing.Scope = frag.Scope
-	existing.Readers = frag.Readers
-	existing.Writers = frag.Writers
-	existing.ConflictPolicy = frag.ConflictPolicy
+	existing.Readers = cloneStrings(frag.Readers)
+	existing.Writers = cloneStrings(frag.Writers)
+	existing.UnrestrictedRead = frag.UnrestrictedRead
+	existing.UnrestrictedWrite = frag.UnrestrictedWrite
 
 	// Reflect the new version back to the caller.
 	frag.Version = existing.Version
 	frag.Content = existing.Content
+	frag.ConflictPolicy = existing.ConflictPolicy
 
+	return nil
+}
+
+// UpdateACL replaces only the access-control fields of an existing fragment.
+func (s *InMemorySharedStore) UpdateACL(ctx context.Context, frag *Fragment) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	existing, ok := s.fragments[frag.Key]
+	if !ok {
+		return core.NewError(
+			"shared.store.update_acl",
+			core.ErrNotFound,
+			fmt.Sprintf("fragment %q not found", frag.Key),
+			nil,
+		)
+	}
+	existing.Readers = cloneStrings(frag.Readers)
+	existing.Writers = cloneStrings(frag.Writers)
+	existing.UnrestrictedRead = frag.UnrestrictedRead
+	existing.UnrestrictedWrite = frag.UnrestrictedWrite
 	return nil
 }
 
@@ -195,14 +244,8 @@ func (s *InMemorySharedStore) DeleteFragment(ctx context.Context, key string) er
 // mutating the store's internal state.
 func cloneFragment(f *Fragment) *Fragment {
 	c := *f
-	if f.Readers != nil {
-		c.Readers = make([]string, len(f.Readers))
-		copy(c.Readers, f.Readers)
-	}
-	if f.Writers != nil {
-		c.Writers = make([]string, len(f.Writers))
-		copy(c.Writers, f.Writers)
-	}
+	c.Readers = cloneStrings(f.Readers)
+	c.Writers = cloneStrings(f.Writers)
 	if f.Metadata != nil {
 		c.Metadata = make(map[string]string, len(f.Metadata))
 		for k, v := range f.Metadata {
@@ -214,4 +257,14 @@ func cloneFragment(f *Fragment) *Fragment {
 		c.Provenance = &p
 	}
 	return &c
+}
+
+// cloneStrings returns a copy of s, preserving nil.
+func cloneStrings(s []string) []string {
+	if s == nil {
+		return nil
+	}
+	c := make([]string, len(s))
+	copy(c, s)
+	return c
 }

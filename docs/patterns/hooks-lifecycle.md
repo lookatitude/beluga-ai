@@ -17,14 +17,10 @@ The optional-function-field pattern is minimal, type-safe, and composes triviall
 
 ## How it works
 
-Canonical code from `tool/hooks.go:11-44` (see [`.guild/wiki/patterns/hooks.md`](../../.guild/wiki/patterns/hooks.md)):
+Canonical code from `tool/hooks.go` (see [`.guild/wiki/patterns/hooks.md`](../../.guild/wiki/patterns/hooks.md)):
 
 ```go
-// tool/hooks.go
-package tool
-
-import "context"
-
+// tool/hooks.go (excerpt; ComposeHooks delegates to internal/hookutil)
 type Hooks struct {
     // BeforeExecute is called before a tool executes. Returning an error aborts execution.
     BeforeExecute func(ctx context.Context, toolName string, input map[string]any) error
@@ -36,13 +32,27 @@ type Hooks struct {
     OnError func(ctx context.Context, toolName string, err error) error
 }
 
+// ComposeHooks: BeforeExecute hooks run in order and stop on the first
+// error; AfterExecute hooks run in order unconditionally; OnError hooks run in
+// order and the first non-nil return wins.
 func ComposeHooks(hooks ...Hooks) Hooks {
     h := append([]Hooks{}, hooks...)
     return Hooks{
-        BeforeExecute: /* compose in order; stop on first error */,
-        AfterExecute:  /* compose in order unconditionally */,
-        OnError:       /* compose in order; first non-nil return wins */,
+        BeforeExecute: hookutil.ComposeError2(h, func(hk Hooks) func(context.Context, string, map[string]any) error {
+            return hk.BeforeExecute
+        }),
+        AfterExecute: hookutil.ComposeVoid3(h, func(hk Hooks) func(context.Context, string, *Result, error) {
+            return hk.AfterExecute
+        }),
+        OnError: hookutil.ComposeErrorPassthrough1(h, func(hk Hooks) func(context.Context, string, error) error {
+            return hk.OnError
+        }),
     }
+}
+
+// WithHooks wraps a tool so that the hooks run around each Execute call.
+func WithHooks(t Tool, h Hooks) Tool {
+    return &hookedTool{tool: t, hooks: h}
 }
 ```
 
@@ -52,7 +62,7 @@ Key properties:
 - `ComposeHooks` returns a `Hooks` whose fields are all non-nil wrapper funcs — so callers don't have to nil-check even when they compose many.
 - Each wrapper loops through the component hooks and short-circuits on the first error.
 
-Inside an implementation:
+Inside the wrapper (`tool/hooks.go`):
 
 ```go
 func (h *hookedTool) Execute(ctx context.Context, input map[string]any) (*Result, error) {
@@ -119,16 +129,20 @@ package myhooks
 
 import (
     "context"
+    "sync"
     "sync/atomic"
+
     "github.com/lookatitude/beluga-ai/v2/core"
     "github.com/lookatitude/beluga-ai/v2/tool"
 )
 
+// CostTracker charges a fixed amount per tool call to the caller's tenant.
 type CostTracker struct {
-    perCallCost  int64 // in cents
-    totalByTenant sync.Map
+    PerCallCost   int64    // in cents
+    totalByTenant sync.Map // core.TenantID -> *int64
 }
 
+// ToolHooks returns hooks that record one charge per Execute.
 func (c *CostTracker) ToolHooks() tool.Hooks {
     return tool.Hooks{
         AfterExecute: func(ctx context.Context, toolName string, result *tool.Result, err error) {
@@ -136,14 +150,14 @@ func (c *CostTracker) ToolHooks() tool.Hooks {
             if tenant == "" {
                 return // no tenant, no charge
             }
-            // load-or-store and atomic add
             v, _ := c.totalByTenant.LoadOrStore(tenant, new(int64))
-            atomic.AddInt64(v.(*int64), c.perCallCost)
+            atomic.AddInt64(v.(*int64), c.PerCallCost)
         },
     }
 }
 
-func (c *CostTracker) Total(tenant string) int64 {
+// Total returns the amount charged to tenant so far.
+func (c *CostTracker) Total(tenant core.TenantID) int64 {
     v, ok := c.totalByTenant.Load(tenant)
     if !ok {
         return 0
@@ -155,9 +169,9 @@ func (c *CostTracker) Total(tenant string) int64 {
 Usage:
 
 ```go
-cost := &myhooks.CostTracker{perCallCost: 10}
+cost := &myhooks.CostTracker{PerCallCost: 10}
 hooks := tool.ComposeHooks(
-    myhooks.AuditHooks(logger),
+    auditHooks,
     cost.ToolHooks(),
 )
 wrappedTool := tool.WithHooks(myTool, hooks)

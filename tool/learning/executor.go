@@ -12,6 +12,11 @@ import (
 
 // CodeExecutor defines the interface for executing dynamically generated tool code.
 // Implementations control the sandboxing and safety guarantees of code execution.
+//
+// This package ships only NoopExecutor, so generated tools do not run real
+// code until the application supplies an executor. Implementations should
+// run the code on a tool/sandbox.Sandbox provider (the framework's common
+// execution backend) rather than spawning processes directly.
 type CodeExecutor interface {
 	// Execute runs the given code with the provided JSON input string and returns
 	// the output as a string. The code is expected to be a valid Go function body.

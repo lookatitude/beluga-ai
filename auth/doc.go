@@ -16,6 +16,8 @@
 // RBACPolicy implements role-based access control. Subjects are assigned one
 // or more roles via AssignRole, and authorization checks whether any assigned
 // role contains the requested permission.
+// RBAC decisions ignore the resource argument; combine RBAC with ABAC or
+// OPA when access must depend on the resource.
 //
 //	rbac := auth.NewRBACPolicy("main")
 //	rbac.AddRole(auth.Role{Name: "admin", Permissions: []auth.Permission{auth.PermToolExec}})

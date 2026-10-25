@@ -31,6 +31,8 @@ type CodeActAgent struct { //nolint:revive // stutter: renaming would break the 
 	planner       agent.Planner
 	llm           llm.ChatModel
 	maxIterations int
+	// allowedImports, when non-empty, is enforced by ExecuteCode.
+	allowedImports []string
 }
 
 // Compile-time interface check.
@@ -120,7 +122,12 @@ func WithAgentOption(opt agent.Option) AgentOption {
 	}
 }
 
-// WithAllowedCodeImports sets allowed imports for the planner.
+// WithAllowedCodeImports restricts the modules generated code may import.
+// The list is given to the planner's system prompt and is also enforced by
+// ExecuteCode for python and javascript: code that imports any other module,
+// or uses dynamic imports/eval, is rejected with ErrGuardBlocked before it
+// runs. The check is a static, best-effort scan and not a security boundary;
+// run untrusted code in an isolating executor regardless.
 func WithAllowedCodeImports(imports []string) AgentOption {
 	return func(o *agentOptions) {
 		o.allowedImports = imports
@@ -164,14 +171,15 @@ func NewCodeActAgent(id string, opts ...AgentOption) *CodeActAgent {
 	base := agent.New(id, baseOpts...)
 
 	return &CodeActAgent{
-		base:          base,
-		executor:      executor,
-		language:      o.language,
-		timeout:       o.timeout,
-		hooks:         o.hooks,
-		planner:       planner,
-		llm:           o.llm,
-		maxIterations: o.maxIterations,
+		base:           base,
+		executor:       executor,
+		language:       o.language,
+		allowedImports: o.allowedImports,
+		timeout:        o.timeout,
+		hooks:          o.hooks,
+		planner:        planner,
+		llm:            o.llm,
+		maxIterations:  o.maxIterations,
 	}
 }
 
@@ -405,6 +413,16 @@ func (a *CodeActAgent) ExecuteCode(ctx context.Context, action CodeAction) (Code
 	}
 	if action.Timeout == 0 {
 		action.Timeout = a.timeout
+	}
+
+	// Enforce the import allowlist before anything runs.
+	if err := checkImports(action.Language, action.Code, a.allowedImports); err != nil {
+		if a.hooks.OnError != nil {
+			err = a.hooks.OnError(ctx, action, err)
+		}
+		if err != nil {
+			return CodeResult{}, err
+		}
 	}
 
 	// BeforeExec hook

@@ -253,23 +253,23 @@ func TestCmdDev_PlaygroundOff(t *testing.T) {
 
 func TestCmdDeploy(t *testing.T) {
 	tests := []struct {
-		target  string
-		wantErr bool
+		target         string
+		notImplemented bool
 	}{
-		{"docker", false},
-		{"compose", false},
-		{"k8s", false},
-		{"invalid", true},
+		{"docker", true},
+		{"compose", true},
+		{"k8s", true},
+		{"invalid", false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.target, func(t *testing.T) {
 			err := executeSubcommand(newDeployCmd(), []string{"--target", tt.target})
-			if tt.wantErr && err == nil {
-				t.Error("expected error")
+			if err == nil {
+				t.Fatal("expected error")
 			}
-			if !tt.wantErr && err != nil {
-				t.Errorf("unexpected error: %v", err)
+			if got := errors.Is(err, errDeployNotImplemented); got != tt.notImplemented {
+				t.Errorf("errors.Is(err, errDeployNotImplemented) = %v, want %v (err=%v)", got, tt.notImplemented, err)
 			}
 		})
 	}
@@ -604,10 +604,16 @@ func TestRoot_Run_ForwardsChildExitCode(t *testing.T) {
 	}
 }
 
+// FI-46: the unimplemented deploy command must not exit 0.
 func TestRoot_Deploy(t *testing.T) {
-	_, errBuf, code := executeArgs([]string{"deploy", "--target", "docker"})
-	if code != 0 {
-		t.Errorf("want exit 0, got %d; stderr=%s", code, errBuf)
+	for _, target := range []string{"docker", "compose", "k8s"} {
+		_, errBuf, code := executeArgs([]string{"deploy", "--target", target})
+		if code != 1 {
+			t.Errorf("%s: want exit 1, got %d; stderr=%s", target, code, errBuf)
+		}
+		if !strings.Contains(errBuf, "not implemented") {
+			t.Errorf("%s: expected not-implemented message, got: %s", target, errBuf)
+		}
 	}
 }
 

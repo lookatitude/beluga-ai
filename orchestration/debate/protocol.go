@@ -45,6 +45,8 @@ var (
 
 // RegisterProtocol registers a named Protocol factory.
 // This should be called from init().
+// Registering a name that is already registered replaces the previous
+// factory (the framework-wide duplicate policy).
 func RegisterProtocol(name string, f ProtocolFactory) {
 	protocolMu.Lock()
 	defer protocolMu.Unlock()

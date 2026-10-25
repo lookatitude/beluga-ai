@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"iter"
 
 	anthropicSDK "github.com/anthropics/anthropic-sdk-go"
 	anthropicOption "github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/lookatitude/beluga-ai/v2/config"
 	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/internal/errclass"
 	"github.com/lookatitude/beluga-ai/v2/llm"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
@@ -63,9 +65,21 @@ func (m *Model) Generate(ctx context.Context, msgs []schema.Message, opts ...llm
 	}
 	resp, err := m.client.Messages.New(ctx, params)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "anthropic: generate failed: %w", err)
+		return nil, classifyError("anthropic: generate failed", err)
 	}
 	return convertResponse(resp), nil
+}
+
+// classifyError maps an Anthropic SDK error onto a typed core.Error by HTTP
+// status (429 -> rate limit, 5xx/529 -> provider down, 401/403 -> auth,
+// other 4xx -> invalid input), falling back to network/deadline detection.
+func classifyError(prefix string, err error) error {
+	status := 0
+	var apiErr *anthropicSDK.Error
+	if errors.As(err, &apiErr) {
+		status = apiErr.StatusCode
+	}
+	return errclass.Classify(prefix, status, err)
 }
 
 // Stream sends messages and returns an iterator of response chunks.
@@ -76,8 +90,9 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 			yield(schema.StreamChunk{}, err)
 		}
 	}
-	stream := m.client.Messages.NewStreaming(ctx, params)
 	return func(yield func(schema.StreamChunk, error) bool) {
+		// Issue the request lazily so an un-iterated stream holds no connection.
+		stream := m.client.Messages.NewStreaming(ctx, params)
 		defer stream.Close()
 		for stream.Next() {
 			event := stream.Current()
@@ -90,7 +105,7 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 			}
 		}
 		if err := stream.Err(); err != nil {
-			yield(schema.StreamChunk{}, err)
+			yield(schema.StreamChunk{}, classifyError("anthropic: stream failed", err))
 		}
 	}
 }

@@ -633,7 +633,7 @@ func TestSSEWriter_WriteEvent_MultilineData(t *testing.T) {
 		t.Fatalf("NewSSEWriter: %v", err)
 	}
 
-	// SSE spec allows data to be multiline, but our implementation writes it as a single data line.
+	// Per the SSE spec, multi-line data is written as one data: line per line.
 	if err := sw.WriteEvent(SSEEvent{Event: "msg", Data: "line1\nline2", ID: "123"}); err != nil {
 		t.Fatalf("WriteEvent: %v", err)
 	}
@@ -645,7 +645,7 @@ func TestSSEWriter_WriteEvent_MultilineData(t *testing.T) {
 	if !strings.Contains(output, "event: msg") {
 		t.Error("expected event line")
 	}
-	if !strings.Contains(output, "data: line1\nline2") {
+	if !strings.Contains(output, "data: line1\ndata: line2\n\n") {
 		t.Error("expected data line with multiline content")
 	}
 }

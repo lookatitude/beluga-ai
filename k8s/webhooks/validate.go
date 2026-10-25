@@ -45,9 +45,20 @@ func deny(reason string) ValidationResult {
 //   - Spec.Planner must be one of "react", "openai-functions", "plan-and-execute".
 //   - Spec.MaxIterations must be > 0.
 //   - Spec.Persona.Role must be non-empty.
+//   - Meta.Labels must not contain any of [operator.ReservedLabelKeys]
+//     ("app", "beluga-agent", "managed-by"); those are owned by the operator.
 func ValidateAgent(agent *operator.AgentResource) ValidationResult {
 	if agent == nil {
 		return deny("agent must not be nil")
+	}
+
+	for _, key := range operator.ReservedLabelKeys() {
+		if _, ok := agent.Meta.Labels[key]; ok {
+			return deny(fmt.Sprintf(
+				"metadata.labels[%q] is reserved for the beluga operator and must not be set",
+				key,
+			))
+		}
 	}
 
 	if strings.TrimSpace(agent.Spec.ModelRef) == "" {

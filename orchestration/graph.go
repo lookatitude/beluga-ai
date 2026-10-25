@@ -86,7 +86,7 @@ func (g *Graph) Invoke(ctx context.Context, input any, opts ...core.Option) (any
 
 		result, err := node.Invoke(ctx, value, opts...)
 		if err != nil {
-			return nil, core.Errorf(core.ErrProviderDown, "orchestration/graph: node %q: %w", current, err)
+			return nil, core.Wrapf(core.ErrInternal, "orchestration/graph: node %q: %w", current, err)
 		}
 		value = result
 
@@ -133,7 +133,7 @@ func (g *Graph) streamTraversal(ctx context.Context, input any, yield func(any, 
 
 		result, err := node.Invoke(ctx, value, opts...)
 		if err != nil {
-			yield(nil, core.Errorf(core.ErrProviderDown, "orchestration/graph: node %q: %w", current, err))
+			yield(nil, core.Wrapf(core.ErrInternal, "orchestration/graph: node %q: %w", current, err))
 			return
 		}
 		value = result

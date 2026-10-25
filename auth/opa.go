@@ -59,12 +59,25 @@ func NewOPAPolicy(name string, endpoint string, opts ...OPAOption) *OPAPolicy {
 // Name returns the policy name.
 func (p *OPAPolicy) Name() string { return p.name }
 
-// opaRequest is the JSON structure sent to OPA.
-type opaRequest struct {
+// opaInput is the authorization query exposed to Rego as `input`.
+type opaInput struct {
 	Subject    string `json:"subject"`
 	Permission string `json:"permission"`
 	Resource   string `json:"resource"`
 }
+
+// opaRequest is the JSON body sent to OPA. The v1 Data API
+// (POST /v1/data/<path>) only exposes the "input" member to policies, so the
+// query must be wrapped in this envelope.
+type opaRequest struct {
+	Input opaInput `json:"input"`
+}
+
+// maxOPAResponseBytes bounds how much of an OPA response is read.
+const maxOPAResponseBytes = 1 << 20
+
+// defaultOPAPolicyName is used by the registry factory when no name is set.
+const defaultOPAPolicyName = "opa"
 
 // opaResponse is the JSON structure received from OPA.
 type opaResponse struct {
@@ -72,18 +85,21 @@ type opaResponse struct {
 }
 
 // Authorize sends an authorization request to the OPA endpoint and returns
-// the decision. Returns (false, error) if the OPA call fails.
+// the decision. The request body is {"input": {"subject", "permission",
+// "resource"}}, so Rego policies read input.subject, input.permission and
+// input.resource. An undefined decision (no "result" in the response) is a
+// deny. Returns (false, error) if the OPA call fails.
 func (p *OPAPolicy) Authorize(ctx context.Context, subject string, permission Permission, resource string) (bool, error) {
 	// Create a context with timeout for the OPA request.
 	opaCtx, cancel := context.WithTimeout(ctx, p.timeout)
 	defer cancel()
 
 	// Build the request body.
-	req := opaRequest{
+	req := opaRequest{Input: opaInput{
 		Subject:    subject,
 		Permission: string(permission),
 		Resource:   resource,
-	}
+	}}
 	body, err := json.Marshal(req)
 	if err != nil {
 		return false, core.Errorf(core.ErrInvalidInput, "auth/opa: failed to marshal request: %w", err)
@@ -104,12 +120,12 @@ func (p *OPAPolicy) Authorize(ctx context.Context, subject string, permission Pe
 
 	// Check for HTTP errors.
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
 		return false, core.Errorf(core.ErrProviderDown, "auth/opa: OPA returned status %d: %s", resp.StatusCode, string(body))
 	}
 
 	// Parse the response.
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxOPAResponseBytes))
 	if err != nil {
 		return false, core.Errorf(core.ErrProviderDown, "auth/opa: failed to read response body: %w", err)
 	}
@@ -126,20 +142,27 @@ func (p *OPAPolicy) Authorize(ctx context.Context, subject string, permission Pe
 var _ Policy = (*OPAPolicy)(nil)
 
 func init() {
-	Register("opa", func(cfg Config) (Policy, error) {
-		endpoint, ok := cfg.Extra["endpoint"].(string)
-		if !ok {
-			return nil, core.Errorf(core.ErrInvalidInput, "auth: OPA policy requires 'endpoint' in config")
-		}
-		if endpoint == "" {
-			return nil, core.Errorf(core.ErrInvalidInput, "auth: OPA endpoint must not be empty")
-		}
+	Register("opa", newOPAFromConfig)
+}
 
-		var opts []OPAOption
-		if timeout, ok := cfg.Extra["timeout"].(float64); ok && timeout > 0 {
-			opts = append(opts, WithTimeout(time.Duration(timeout)*time.Second))
-		}
+// newOPAFromConfig is the registry factory for the "opa" policy.
+func newOPAFromConfig(cfg Config) (Policy, error) {
+	endpoint, ok := cfg.Extra["endpoint"].(string)
+	if !ok {
+		return nil, core.Errorf(core.ErrInvalidInput, "auth: OPA policy requires 'endpoint' in config")
+	}
+	if endpoint == "" {
+		return nil, core.Errorf(core.ErrInvalidInput, "auth: OPA endpoint must not be empty")
+	}
 
-		return NewOPAPolicy(cfg.Extra["name"].(string), endpoint, opts...), nil
-	})
+	var opts []OPAOption
+	if timeout, ok := cfg.Extra["timeout"].(float64); ok && timeout > 0 {
+		opts = append(opts, WithTimeout(time.Duration(timeout)*time.Second))
+	}
+
+	name, _ := cfg.Extra["name"].(string)
+	if name == "" {
+		name = defaultOPAPolicyName
+	}
+	return NewOPAPolicy(name, endpoint, opts...), nil
 }

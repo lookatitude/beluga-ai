@@ -34,6 +34,12 @@ type Engine struct {
 }
 
 // New creates a new PlayHT TTS engine.
+//
+// Deprecated: PlayHT discontinued its service and public API after its team
+// joined Meta in 2025 (reported shutdown 31 Dec 2025), so requests are
+// expected to fail. The provider is kept only so existing code compiles; it
+// will be removed in a future release. Migrate to another TTS provider such
+// as elevenlabs or cartesia.
 func New(cfg tts.Config) (*Engine, error) {
 	apiKey, _ := cfg.Extra["api_key"].(string)
 	if apiKey == "" {

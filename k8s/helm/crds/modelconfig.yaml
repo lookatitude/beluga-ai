@@ -1,0 +1,161 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: modelconfigs.beluga.ai
+  annotations:
+    beluga.ai/description: "Defines an LLM provider configuration including model selection, credentials, rate limits, and fallback."
+spec:
+  group: beluga.ai
+  scope: Namespaced
+  names:
+    plural: modelconfigs
+    singular: modelconfig
+    kind: ModelConfig
+    shortNames:
+      - mc
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Provider
+          type: string
+          jsonPath: .spec.provider
+        - name: Model
+          type: string
+          jsonPath: .spec.model
+        - name: Ready
+          type: string
+          jsonPath: .status.conditions[?(@.type=="Ready")].status
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          description: "ModelConfig is the Beluga AI custom resource representing an LLM provider configuration."
+          type: object
+          required:
+            - spec
+          properties:
+            apiVersion:
+              type: string
+              description: "APIVersion defines the versioned schema of this representation of an object."
+            kind:
+              type: string
+              description: "Kind is a string value representing the REST resource this object represents."
+            metadata:
+              type: object
+            spec:
+              description: "ModelConfigSpec defines the desired LLM provider configuration."
+              type: object
+              required:
+                - provider
+                - model
+              properties:
+                provider:
+                  description: "Provider is the LLM provider name as registered in the Beluga LLM registry (e.g. 'openai', 'anthropic', 'groq', 'ollama')."
+                  type: string
+                  minLength: 1
+                  maxLength: 64
+                model:
+                  description: "Model is the provider-specific model identifier (e.g. 'gpt-4o', 'claude-3-5-sonnet-20241022')."
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+                temperature:
+                  description: "Temperature controls response randomness. Range: 0.0 (deterministic) to 2.0 (very random). Defaults to 0.7."
+                  type: number
+                  minimum: 0.0
+                  maximum: 2.0
+                  default: 0.7
+                maxTokens:
+                  description: "MaxTokens caps the number of tokens in the model's response."
+                  type: integer
+                  minimum: 1
+                baseURL:
+                  description: "BaseURL overrides the default provider API endpoint (useful for self-hosted or proxied models)."
+                  type: string
+                  maxLength: 2048
+                apiKeyFrom:
+                  description: "ApiKeyFrom references a Kubernetes Secret key that contains the provider API key."
+                  type: object
+                  required:
+                    - secretKeyRef
+                  properties:
+                    secretKeyRef:
+                      description: "SecretKeyRef selects a key from a Kubernetes Secret in the same namespace."
+                      type: object
+                      required:
+                        - name
+                        - key
+                      properties:
+                        name:
+                          description: "Name is the name of the Kubernetes Secret."
+                          type: string
+                          minLength: 1
+                          maxLength: 253
+                        key:
+                          description: "Key is the key within the Secret that holds the API key value."
+                          type: string
+                          minLength: 1
+                          maxLength: 253
+                rateLimits:
+                  description: "RateLimits configures token-per-minute, requests-per-minute, and concurrency limits to stay within provider quotas."
+                  type: object
+                  properties:
+                    rpm:
+                      description: "RPM is the maximum requests per minute allowed against this model."
+                      type: integer
+                      minimum: 1
+                    tpm:
+                      description: "TPM is the maximum tokens per minute allowed against this model."
+                      type: integer
+                      minimum: 1
+                    maxConcurrent:
+                      description: "MaxConcurrent is the maximum number of in-flight requests allowed at any one time."
+                      type: integer
+                      minimum: 1
+                fallback:
+                  description: "Fallback designates an alternative ModelConfig to use when this model is unavailable or rate-limited."
+                  type: object
+                  properties:
+                    modelRef:
+                      description: "ModelRef is the name of a ModelConfig resource to fall back to."
+                      type: string
+                      minLength: 1
+                      maxLength: 253
+            status:
+              description: "ModelConfigStatus reflects the observed state of the ModelConfig."
+              type: object
+              properties:
+                conditions:
+                  description: "Conditions represent the latest available observations of the ModelConfig's state."
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - type
+                      - status
+                    properties:
+                      type:
+                        description: "Type of the condition (e.g. 'Ready')."
+                        type: string
+                      status:
+                        description: "Status is 'True', 'False', or 'Unknown'."
+                        type: string
+                      reason:
+                        description: "Reason is a short machine-readable reason for the condition."
+                        type: string
+                      message:
+                        description: "Message is a human-readable description of the condition."
+                        type: string
+                      lastTransitionTime:
+                        description: "LastTransitionTime is when the condition last transitioned."
+                        type: string
+                        format: date-time
+                observedGeneration:
+                  description: "ObservedGeneration is the most recent generation the operator has reconciled."
+                  type: integer
+                  format: int64

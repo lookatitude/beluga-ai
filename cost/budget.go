@@ -11,10 +11,14 @@ import (
 type BudgetAction string
 
 const (
-	// BudgetActionThrottle slows down subsequent requests.
+	// BudgetActionThrottle denies the request for now but marks the decision
+	// as Throttled, telling the caller to slow down and retry once the
+	// rolling window has room, rather than treating it as a hard failure.
+	// The checker itself does not sleep.
 	BudgetActionThrottle BudgetAction = "throttle"
 
-	// BudgetActionReject denies the request entirely.
+	// BudgetActionReject denies the request entirely. An empty Action is
+	// treated as BudgetActionReject.
 	BudgetActionReject BudgetAction = "reject"
 
 	// BudgetActionAlert sends a notification but still allows the request.
@@ -36,6 +40,7 @@ type Budget struct {
 	AlertThreshold float64
 
 	// Action is what the BudgetChecker should do when a limit is exceeded.
+	// Empty means BudgetActionReject.
 	Action BudgetAction
 }
 
@@ -51,6 +56,11 @@ type BudgetDecision struct {
 	// UsageRatio is the current consumption expressed as a fraction of the
 	// most-binding limit (0.0 = empty, 1.0 = exactly at the limit).
 	UsageRatio float64
+
+	// Throttled is set when a limit was exceeded and the budget's Action is
+	// BudgetActionThrottle: the request is not allowed now, and the caller
+	// should back off and retry later.
+	Throttled bool
 }
 
 // BudgetChecker evaluates an estimated Usage against a Budget and decides
@@ -79,83 +89,98 @@ func NewInMemoryBudgetChecker(tracker Tracker) *InMemoryBudgetChecker {
 }
 
 // Check evaluates the estimated usage against the budget by querying the
-// tracker for the rolling-window totals. It returns an error only if the
-// tracker query fails.
+// tracker for the rolling-window totals. Both windows (hourly tokens and
+// daily cost) are always evaluated and the most restrictive outcome wins:
+// an exceeded limit beats an alert, and among equals the higher usage ratio
+// is reported. Usage is scoped to estimated.TenantID exactly, so an empty
+// TenantID checks the default tenant only. The estimated token count is
+// estimated.Tokens(). It returns an error only if the tracker query fails.
 func (c *InMemoryBudgetChecker) Check(ctx context.Context, budget Budget, estimated Usage) (BudgetDecision, error) {
 	now := time.Now()
+	var windows []windowResult
 
 	// --- token-per-hour window ---
 	if budget.MaxTokensPerHour > 0 {
-		hourFilter := Filter{
-			TenantID: estimated.TenantID,
-			Since:    now.Add(-time.Hour),
-		}
-		summary, err := c.tracker.Query(ctx, hourFilter)
+		summary, err := c.query(ctx, estimated.TenantID, now.Add(-time.Hour), "failed to query hourly token usage")
 		if err != nil {
-			return BudgetDecision{}, core.NewError(
-				"cost.budgetchecker.check",
-				core.ErrInvalidInput,
-				"failed to query hourly token usage",
-				err,
-			)
+			return BudgetDecision{}, err
 		}
-
-		currentTotal := summary.TotalInputTokens + summary.TotalOutputTokens
-		projected := currentTotal + int64(estimated.TotalTokens)
-		ratio := float64(projected) / float64(budget.MaxTokensPerHour)
-
-		if projected > budget.MaxTokensPerHour {
-			return BudgetDecision{
-				Allowed:    budget.Action == BudgetActionAlert,
-				Reason:     "hourly token budget exceeded",
-				UsageRatio: ratio,
-			}, nil
-		}
-
-		if budget.AlertThreshold > 0 && ratio >= budget.AlertThreshold {
-			return BudgetDecision{
-				Allowed:    true,
-				Reason:     "approaching hourly token budget limit",
-				UsageRatio: ratio,
-			}, nil
-		}
+		projected := summary.TotalInputTokens + summary.TotalOutputTokens + int64(estimated.Tokens())
+		windows = append(windows, windowResult{
+			ratio:    float64(projected) / float64(budget.MaxTokensPerHour),
+			exceeded: projected > budget.MaxTokensPerHour,
+			over:     "hourly token budget exceeded",
+			near:     "approaching hourly token budget limit",
+		})
 	}
 
 	// --- cost-per-day window ---
 	if budget.MaxCostPerDay > 0 {
-		dayFilter := Filter{
-			TenantID: estimated.TenantID,
-			Since:    now.Add(-24 * time.Hour),
-		}
-		summary, err := c.tracker.Query(ctx, dayFilter)
+		summary, err := c.query(ctx, estimated.TenantID, now.Add(-24*time.Hour), "failed to query daily cost usage")
 		if err != nil {
-			return BudgetDecision{}, core.NewError(
-				"cost.budgetchecker.check",
-				core.ErrInvalidInput,
-				"failed to query daily cost usage",
-				err,
-			)
+			return BudgetDecision{}, err
 		}
-
 		projectedCost := summary.TotalCost + estimated.Cost
-		ratio := projectedCost / budget.MaxCostPerDay
+		windows = append(windows, windowResult{
+			ratio:    projectedCost / budget.MaxCostPerDay,
+			exceeded: projectedCost > budget.MaxCostPerDay,
+			over:     "daily cost budget exceeded",
+			near:     "approaching daily cost budget limit",
+		})
+	}
 
-		if projectedCost > budget.MaxCostPerDay {
-			return BudgetDecision{
-				Allowed:    budget.Action == BudgetActionAlert,
-				Reason:     "daily cost budget exceeded",
-				UsageRatio: ratio,
-			}, nil
+	return decide(budget, windows), nil
+}
+
+// windowResult is the outcome of evaluating one budget window.
+type windowResult struct {
+	ratio    float64
+	exceeded bool
+	over     string
+	near     string
+}
+
+// query fetches the summary for one tenant (matched exactly) since t.
+func (c *InMemoryBudgetChecker) query(ctx context.Context, tenantID string, since time.Time, msg string) (*Summary, error) {
+	summary, err := c.tracker.Query(ctx, Filter{TenantID: tenantID, ExactTenant: true, Since: since})
+	if err != nil {
+		return nil, core.NewError("cost.budgetchecker.check", core.CodeOf(err, core.ErrInvalidInput), msg, err)
+	}
+	return summary, nil
+}
+
+// decide combines the window results into the most restrictive decision.
+func decide(budget Budget, windows []windowResult) BudgetDecision {
+	var worstExceeded, worstNear *windowResult
+	maxRatio := 0.0
+	for i := range windows {
+		w := &windows[i]
+		if w.ratio > maxRatio {
+			maxRatio = w.ratio
 		}
-
-		if budget.AlertThreshold > 0 && ratio >= budget.AlertThreshold {
-			return BudgetDecision{
-				Allowed:    true,
-				Reason:     "approaching daily cost budget limit",
-				UsageRatio: ratio,
-			}, nil
+		switch {
+		case w.exceeded:
+			if worstExceeded == nil || w.ratio > worstExceeded.ratio {
+				worstExceeded = w
+			}
+		case budget.AlertThreshold > 0 && w.ratio >= budget.AlertThreshold:
+			if worstNear == nil || w.ratio > worstNear.ratio {
+				worstNear = w
+			}
 		}
 	}
 
-	return BudgetDecision{Allowed: true, UsageRatio: 0}, nil
+	switch {
+	case worstExceeded != nil:
+		return BudgetDecision{
+			Allowed:    budget.Action == BudgetActionAlert,
+			Reason:     worstExceeded.over,
+			UsageRatio: worstExceeded.ratio,
+			Throttled:  budget.Action == BudgetActionThrottle,
+		}
+	case worstNear != nil:
+		return BudgetDecision{Allowed: true, Reason: worstNear.near, UsageRatio: worstNear.ratio}
+	default:
+		return BudgetDecision{Allowed: true, UsageRatio: maxRatio}
+	}
 }

@@ -3,6 +3,7 @@ package bedrock
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"iter"
 	"math"
 
@@ -14,6 +15,7 @@ import (
 	brtypes "github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
 	cfgpkg "github.com/lookatitude/beluga-ai/v2/config"
 	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/internal/errclass"
 	"github.com/lookatitude/beluga-ai/v2/llm"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
@@ -64,7 +66,7 @@ func New(cfg cfgpkg.ProviderConfig) (*Model, error) {
 
 	awsCfg, err := awsconfig.LoadDefaultConfig(context.Background(), awsOpts...)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "bedrock: failed to load AWS config: %w", err)
+		return nil, core.Errorf(core.ErrInvalidInput, "bedrock: failed to load AWS config: %w", err)
 	}
 
 	var brOpts []func(*bedrockruntime.Options)
@@ -99,7 +101,7 @@ func (m *Model) Generate(ctx context.Context, msgs []schema.Message, opts ...llm
 	}
 	output, err := m.client.Converse(ctx, input)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "bedrock: converse failed: %w", err)
+		return nil, classifyError("bedrock: converse failed", err)
 	}
 	return convertOutput(output, m.modelID), nil
 }
@@ -122,7 +124,7 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 func consumeBedrockStream(ctx context.Context, client ConverseAPI, input *bedrockruntime.ConverseStreamInput, modelID string, yield func(schema.StreamChunk, error) bool) {
 	output, err := client.ConverseStream(ctx, input)
 	if err != nil {
-		yield(schema.StreamChunk{}, core.Errorf(core.ErrProviderDown, "bedrock: stream failed: %w", err))
+		yield(schema.StreamChunk{}, classifyError("bedrock: stream failed", err))
 		return
 	}
 	stream := output.GetStream()
@@ -141,8 +143,44 @@ func consumeBedrockStream(ctx context.Context, client ConverseAPI, input *bedroc
 		}
 	}
 	if err := stream.Err(); err != nil {
-		yield(schema.StreamChunk{}, core.Errorf(core.ErrProviderDown, "bedrock: stream error: %w", err))
+		yield(schema.StreamChunk{}, classifyError("bedrock: stream error", err))
 	}
+}
+
+// bedrockErrorStatus maps Bedrock exception names (smithy APIError codes) to
+// the HTTP status they represent. It covers errors that arrive on the event
+// stream, which carry no HTTP response of their own.
+var bedrockErrorStatus = map[string]int{
+	"AccessDeniedException":         403,
+	"UnrecognizedClientException":   403,
+	"ValidationException":           400,
+	"ResourceNotFoundException":     404,
+	"ModelTimeoutException":         408,
+	"ThrottlingException":           429,
+	"ServiceQuotaExceededException": 429,
+	"InternalServerException":       500,
+	"ModelStreamErrorException":     500,
+	"ModelErrorException":           500,
+	"ServiceUnavailableException":   503,
+	"ModelNotReadyException":        503,
+}
+
+// apiErrorCoder is satisfied by smithy-go's APIError.
+type apiErrorCoder interface {
+	ErrorCode() string
+}
+
+// classifyError maps an AWS SDK error onto a typed core.Error: the HTTP status
+// from the response when available, otherwise the Bedrock exception name.
+func classifyError(prefix string, err error) error {
+	status := errclass.StatusCode(err)
+	if status == 0 {
+		var coder apiErrorCoder
+		if errors.As(err, &coder) {
+			status = bedrockErrorStatus[coder.ErrorCode()]
+		}
+	}
+	return errclass.Classify(prefix, status, err)
 }
 
 // BindTools returns a new Model that includes the given tools in every request.

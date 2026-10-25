@@ -216,3 +216,60 @@ func TestBatchInvoke_PreservesOrder(t *testing.T) {
 		}
 	}
 }
+
+// TestBatchInvoke_RetryPolicyHonoured is a regression test for FWC-30:
+// BatchOptions.RetryPolicy used to be ignored.
+func TestBatchInvoke_RetryPolicyHonoured(t *testing.T) {
+	var calls atomic.Int32
+	fn := func(_ context.Context, in int) (int, error) {
+		if calls.Add(1) < 3 {
+			return 0, Errorf(ErrRateLimit, "slow down")
+		}
+		return in * 2, nil
+	}
+	res := BatchInvoke(context.Background(), fn, []int{21}, BatchOptions{
+		RetryPolicy: &RetryPolicy{MaxAttempts: 3, InitialBackoff: time.Millisecond, MaxBackoff: 2 * time.Millisecond, Jitter: true},
+	})
+	if res[0].Err != nil || res[0].Value != 42 {
+		t.Fatalf("result = %+v, want 42/nil", res[0])
+	}
+	if calls.Load() != 3 {
+		t.Errorf("calls = %d, want 3", calls.Load())
+	}
+}
+
+func TestBatchInvoke_RetryPolicySkipsNonRetryable(t *testing.T) {
+	var calls atomic.Int32
+	fn := func(_ context.Context, _ int) (int, error) {
+		calls.Add(1)
+		return 0, Errorf(ErrAuth, "denied")
+	}
+	res := BatchInvoke(context.Background(), fn, []int{1}, BatchOptions{
+		RetryPolicy: &RetryPolicy{MaxAttempts: 5, InitialBackoff: time.Millisecond},
+	})
+	if res[0].Err == nil || calls.Load() != 1 {
+		t.Fatalf("calls = %d err = %v, want 1 call and an error", calls.Load(), res[0].Err)
+	}
+}
+
+func TestBatchInvoke_RetryStopsOnCancel(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	var calls atomic.Int32
+	fn := func(_ context.Context, _ int) (int, error) {
+		calls.Add(1)
+		cancel()
+		return 0, Errorf(ErrTimeout, "slow")
+	}
+	res := BatchInvoke(ctx, fn, []int{1}, BatchOptions{
+		RetryPolicy: &RetryPolicy{MaxAttempts: 5, InitialBackoff: time.Hour},
+	})
+	if res[0].Err == nil || calls.Load() != 1 {
+		t.Fatalf("calls = %d err = %v", calls.Load(), res[0].Err)
+	}
+	if got := nextBackoff(time.Second, &RetryPolicy{MaxBackoff: 1500 * time.Millisecond}); got != 1500*time.Millisecond {
+		t.Errorf("nextBackoff cap = %v", got)
+	}
+	if !sleepCtx(context.Background(), 0) {
+		t.Error("sleepCtx(0) on live ctx should be true")
+	}
+}

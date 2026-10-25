@@ -15,6 +15,10 @@ import (
 // Independent calls execute concurrently (bounded by MaxConcurrency); calls whose
 // arguments reference the ID of an earlier call are deferred until that call's
 // result is available.
+//
+// ToolDAGExecutor is a standalone utility for custom agent loops. The
+// built-in Executor (and therefore BaseAgent) does not use it: it runs the
+// tool calls of a turn one after another, in order.
 type ToolDAGExecutor struct {
 	maxConcurrency      int
 	dependencyDetection bool
@@ -321,7 +325,7 @@ func runOneTool(ctx context.Context, call schema.ToolCall, registry *tool.Regist
 
 	t, err := registry.Get(call.Name)
 	if err != nil {
-		return tool.ErrorResult(core.Errorf(core.ErrNotFound, "tool %q not found: %w", call.Name, err))
+		return tool.ErrorResult(core.Wrapf(core.ErrNotFound, "tool %q not found: %w", call.Name, err))
 	}
 
 	var args map[string]any
@@ -333,7 +337,7 @@ func runOneTool(ctx context.Context, call schema.ToolCall, registry *tool.Regist
 
 	res, err := t.Execute(ctx, args)
 	if err != nil {
-		return tool.ErrorResult(core.Errorf(core.ErrProviderDown, "tool %q execution failed: %w", call.Name, err))
+		return tool.ErrorResult(core.Wrapf(core.ErrToolFailed, "tool %q execution failed: %w", call.Name, err))
 	}
 	return res
 }

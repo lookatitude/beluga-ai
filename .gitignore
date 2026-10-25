@@ -64,3 +64,6 @@ tmp-integration-*/
 .claude/agents/*/rules/learning-*.md
 .claude/agents/*/rules/build-*.md
 .claude/agents/*/rules/review-*.md
+
+# Claude Code session lock (runtime artifact)
+.claude/scheduled_tasks.lock

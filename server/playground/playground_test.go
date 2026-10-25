@@ -271,6 +271,9 @@ func TestDefaultStreamAdapter_StreamError(t *testing.T) {
 	if !strings.Contains(body, `"type":"error"`) {
 		t.Errorf("body missing error event: %q", body)
 	}
+	if strings.Contains(body, "deadline exceeded") || !strings.Contains(body, `"request_id"`) {
+		t.Errorf("error event must be generic with a request_id: %q", body)
+	}
 }
 
 // nonFlushingWriter wraps an http.ResponseWriter without exposing http.Flusher.

@@ -16,7 +16,10 @@ import (
 type Watcher interface {
 	// Watch starts watching for changes and calls callback whenever the
 	// configuration changes. It blocks until ctx is cancelled or an
-	// unrecoverable error occurs.
+	// unrecoverable error occurs. The callback argument's dynamic type is
+	// implementation-defined ([]byte for FileWatcher); the untyped
+	// parameter predates the no-interface{}-in-public-APIs rule and is kept
+	// for compatibility. FileWatcher.WatchBytes is the typed alternative.
 	Watch(ctx context.Context, callback func(newConfig any)) error
 
 	// Close releases resources held by the watcher.
@@ -47,7 +50,16 @@ type FileWatcher struct {
 
 // NewFileWatcher creates a FileWatcher that polls path every interval for
 // changes. The minimum interval is 100ms; smaller values are clamped.
+//
+// Deprecated: use NewPollingFileWatcher, which returns the concrete
+// *FileWatcher (and so exposes the typed WatchBytes).
 func NewFileWatcher(path string, interval time.Duration) Watcher {
+	return NewPollingFileWatcher(path, interval)
+}
+
+// NewPollingFileWatcher creates a FileWatcher that polls path every interval
+// for changes. The minimum interval is 100ms; smaller values are clamped.
+func NewPollingFileWatcher(path string, interval time.Duration) *FileWatcher {
 	if interval < 100*time.Millisecond {
 		interval = 100 * time.Millisecond
 	}
@@ -60,8 +72,16 @@ func NewFileWatcher(path string, interval time.Duration) Watcher {
 
 // Watch polls the file for changes until ctx is cancelled. When a change
 // is detected, callback is invoked with the raw file content as a []byte.
-// The caller can unmarshal the data as needed.
+// The caller can unmarshal the data as needed. WatchBytes is the typed
+// equivalent.
 func (w *FileWatcher) Watch(ctx context.Context, callback func(newConfig any)) error {
+	return w.WatchBytes(ctx, func(data []byte) { callback(data) })
+}
+
+// WatchBytes polls the file for changes until ctx is cancelled or the
+// watcher is closed, calling callback with the new file content each time
+// it changes.
+func (w *FileWatcher) WatchBytes(ctx context.Context, callback func(data []byte)) error {
 	// Compute initial hash so we only fire on actual changes.
 	data, err := os.ReadFile(w.path)
 	if err != nil {
@@ -98,7 +118,7 @@ func (w *FileWatcher) isClosed() bool {
 }
 
 // checkAndNotify reads the file, compares its hash, and invokes callback if changed.
-func (w *FileWatcher) checkAndNotify(callback func(newConfig any)) {
+func (w *FileWatcher) checkAndNotify(callback func(data []byte)) {
 	data, err := os.ReadFile(w.path)
 	if err != nil {
 		// File temporarily unavailable — skip this tick.

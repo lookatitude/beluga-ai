@@ -7,11 +7,21 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"sort"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
 	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
+	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore/internal/filterutil"
 	"github.com/lookatitude/beluga-ai/v2/schema"
+)
+
+const (
+	// maxResponseBytes bounds every response body read from the server.
+	maxResponseBytes = 32 << 20
+	// defaultTimeout is the timeout of the default HTTP client.
+	defaultTimeout = 30 * time.Second
 )
 
 func init() {
@@ -69,7 +79,7 @@ func WithHTTPClient(c HTTPClient) Option {
 // New creates a new ChromaDB Store.
 func New(baseURL string, opts ...Option) *Store {
 	s := &Store{
-		client:   http.DefaultClient,
+		client:   &http.Client{Timeout: defaultTimeout},
 		baseURL:  baseURL,
 		tenant:   "default_tenant",
 		database: "default_database",
@@ -107,7 +117,7 @@ func (s *Store) EnsureCollection(ctx context.Context) error {
 	}
 
 	resp, err := s.doJSON(ctx, http.MethodPost,
-		fmt.Sprintf("/api/v1/tenants/%s/databases/%s/collections", s.tenant, s.database), body)
+		s.databasePath()+"/collections", body)
 	if err != nil {
 		return fmt.Errorf("chroma: ensure collection: %w", err)
 	}
@@ -158,7 +168,7 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 	}
 
 	_, err = s.doJSON(ctx, http.MethodPost,
-		fmt.Sprintf("/api/v1/collections/%s/upsert", colID), body)
+		s.collectionPath(colID, "upsert"), body)
 	return err
 }
 
@@ -167,6 +177,9 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 	cfg := &vectorstore.SearchConfig{}
 	for _, opt := range opts {
 		opt(cfg)
+	}
+	if _, err := filterutil.Validate("chroma.search", cfg.Filter); err != nil {
+		return nil, err
 	}
 
 	colID, err := s.resolveCollectionID(ctx)
@@ -177,7 +190,7 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 	body := buildChromaQueryBody(query, k, cfg)
 
 	resp, err := s.doJSON(ctx, http.MethodPost,
-		fmt.Sprintf("/api/v1/collections/%s/query", colID), body)
+		s.collectionPath(colID, "query"), body)
 	if err != nil {
 		return nil, err
 	}
@@ -266,8 +279,19 @@ func (s *Store) Delete(ctx context.Context, ids []string) error {
 	}
 
 	_, err = s.doJSON(ctx, http.MethodPost,
-		fmt.Sprintf("/api/v1/collections/%s/delete", colID), body)
+		s.collectionPath(colID, "delete"), body)
 	return err
+}
+
+// databasePath returns the Chroma v2 API path of the configured database.
+// Chroma 1.x removed the /api/v1 surface (it answers 410 Gone).
+func (s *Store) databasePath() string {
+	return fmt.Sprintf("/api/v2/tenants/%s/databases/%s", url.PathEscape(s.tenant), url.PathEscape(s.database))
+}
+
+// collectionPath returns the v2 API path of a collection operation.
+func (s *Store) collectionPath(colID, op string) string {
+	return fmt.Sprintf("%s/collections/%s/%s", s.databasePath(), url.PathEscape(colID), op)
 }
 
 // resolveCollectionID returns the collection ID, ensuring the collection
@@ -310,7 +334,7 @@ func (s *Store) doJSON(ctx context.Context, method, path string, body any) ([]by
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 	if err != nil {
 		return nil, fmt.Errorf("chroma: read response: %w", err)
 	}

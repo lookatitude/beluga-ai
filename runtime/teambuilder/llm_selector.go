@@ -102,7 +102,7 @@ func (s *LLMSelector) SelectScored(ctx context.Context, task string, candidates 
 	structured := llm.NewStructured[selectionResponse](s.model, llm.WithMaxRetries(s.maxRetries))
 	resp, err := structured.Generate(ctx, msgs)
 	if err != nil {
-		return nil, core.NewError("teambuilder.llm_selector", core.ErrToolFailed,
+		return nil, core.NewError("teambuilder.llm_selector", core.CodeOf(err, core.ErrToolFailed),
 			"LLM selection failed", err)
 	}
 

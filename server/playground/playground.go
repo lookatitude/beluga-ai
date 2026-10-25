@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/server"
 )
 
 const contentTypeHeader = "Content-Type"
@@ -162,7 +163,8 @@ func (a *defaultStreamAdapter) WriteEvents(ctx context.Context, w http.ResponseW
 
 	for evt, err := range ag.Stream(ctx, input) {
 		if err != nil {
-			data, _ := json.Marshal(map[string]string{"type": "error", "text": err.Error()})
+			msg, code, id := server.SanitizeError(ctx, "playground", ag.ID(), err)
+			data, _ := json.Marshal(map[string]string{"type": "error", "text": msg, "code": code, "request_id": id})
 			fmt.Fprintf(w, "data: %s\n\n", data)
 			flusher.Flush()
 			return err

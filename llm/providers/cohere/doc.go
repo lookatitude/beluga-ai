@@ -19,7 +19,7 @@
 // # Usage
 //
 //	model, err := llm.New("cohere", config.ProviderConfig{
-//	    Model:  "command-r-plus",
+//	    Model:  "command-a-03-2025",
 //	    APIKey: "...",
 //	})
 //	if err != nil {
@@ -34,7 +34,7 @@
 //
 // The following [config.ProviderConfig] fields are used:
 //
-//   - Model: the Cohere model name (defaults to "command-r-plus")
+//   - Model: the Cohere model name (defaults to "command-a-03-2025")
 //   - APIKey: the Cohere API key (required)
 //   - BaseURL: optional, overrides the default Cohere API endpoint
 //

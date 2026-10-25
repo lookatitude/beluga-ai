@@ -77,14 +77,14 @@ func FrameLoop(handler FrameHandler) FrameProcessor
 Consuming the composed stream at the transport boundary is a plain range loop:
 
 ```go
-incoming := transport.Recv(ctx)
+incoming := tp.Recv(ctx) // tp is a transport.AudioTransport
 stream := voice.Chain(vad, stt, llm, tts).Process(ctx, incoming)
 
 for frame, err := range stream {
     if err != nil {
         return err
     }
-    if sendErr := transport.Send(ctx, frame); sendErr != nil {
+    if sendErr := tp.Send(ctx, frame); sendErr != nil {
         return sendErr
     }
 }
@@ -138,22 +138,30 @@ graph TD
 Transports expose `Recv` as an `iter.Seq2[Frame, error]` and `Send` as a per-frame method:
 
 ```go
-type Transport interface {
-    Recv(ctx context.Context) iter.Seq2[Frame, error]
-    Send(ctx context.Context, frame Frame) error
+// voice/transport/transport.go
+type AudioTransport interface {
+    Recv(ctx context.Context) iter.Seq2[voice.Frame, error]
+    Send(ctx context.Context, frame voice.Frame) error
+    AudioOut() io.Writer
     Close() error
 }
 ```
 
-Internally each provider (livekit, daily, pipecat, websocket) keeps a buffered `chan Frame` fed by its read loop and wraps it in an `iter.Seq2` closure that selects on the channel and `ctx.Done()` — the channel is an implementation detail, never part of the public API. Early dial failures are delivered as the first yielded pair `(Frame{}, err)` and end the stream.
+Internally each transport (livekit, daily, pipecat, and the built-in WebSocket one) keeps a buffered `chan Frame` fed by its read loop and wraps it in an `iter.Seq2` closure that selects on the channel and `ctx.Done()` — the channel is an implementation detail, never part of the public API. Early dial failures are delivered as the first yielded pair `(Frame{}, err)` and end the stream.
 
 Transports register in the usual way:
 
 ```go
-import _ "github.com/lookatitude/beluga-ai/v2/voice/transport/livekit"
+import _ "github.com/lookatitude/beluga-ai/v2/voice/transport/providers/livekit"
 
-tp, _ := voice.NewTransport("livekit", voice.Config{Room: "agent-123"})
+tp, err := transport.New("livekit", transport.Config{URL: livekitURL, Token: roomToken})
+if err != nil {
+    return err
+}
+defer tp.Close()
 ```
+
+The built-in WebSocket transport is constructed directly: `transport.NewWebSocketTransport(ctx, "wss://...")`.
 
 Same registry pattern. You can add a custom transport (WebTransport, gRPC streaming, whatever) and the rest of the pipeline is unaffected.
 
@@ -166,7 +174,7 @@ Same registry pattern. You can add a custom transport (WebTransport, gRPC stream
 
 ### A note on fan-in processors
 
-The voice pipeline is mostly linear, but `voice/s2s.AsFrameProcessor` fans two producers (an input-forwarding pump and an output-session pump) into a single consumer. Fan-in through iterators requires care: a single channel shared between two writers with `defer close()` on one of them trivially races under `-race`. The canonical fix, documented as C-005 in [`.guild/wiki/corrections.md`](../../.guild/wiki/corrections.md), is to split channels per writer and use the select-nil-channel trick to disable drained branches. If you write a new fan-in `FrameProcessor`, run its tests with `-race` and make each channel have exactly one writer.
+The voice pipeline is mostly linear, but `voice/s2s.AsFrameProcessor` fans two producers (an input-forwarding pump and an output-session pump) into a single consumer. Fan-in through iterators requires care: a single channel shared between two writers with `defer close()` on one of them trivially races under `-race`. The canonical fix, documented as C-005 in [`.guild/wiki/corrections/architecture.md`](../../.guild/wiki/corrections/architecture.md), is to split channels per writer and use the select-nil-channel trick to disable drained branches. If you write a new fan-in `FrameProcessor`, run its tests with `-race` and make each channel have exactly one writer.
 
 ## Common mistakes
 

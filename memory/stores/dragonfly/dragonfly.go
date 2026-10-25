@@ -1,33 +1,30 @@
 package dragonfly
 
 import (
-	"context"
-	"encoding/json"
-	"strings"
-	"sync/atomic"
-	"time"
+	goredis "github.com/redis/go-redis/v9"
 
 	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/memory"
-	"github.com/lookatitude/beluga-ai/v2/schema"
-	"github.com/redis/go-redis/v9"
+	redisstore "github.com/lookatitude/beluga-ai/v2/memory/stores/redis"
 )
+
+// defaultKey is the default sorted-set key, distinct from the Redis store's
+// default so both can share one server.
+const defaultKey = "beluga:dragonfly:messages"
 
 // Config holds configuration for the DragonflyDB MessageStore.
 type Config struct {
 	// Client is the Redis-compatible client to use. Required.
-	Client *redis.Client
-	// Key is the Redis key for the sorted set. Defaults to "beluga:dragonfly:messages".
+	Client *goredis.Client
+	// Key is the key for the sorted set. Defaults to "beluga:dragonfly:messages".
 	Key string
 }
 
 // MessageStore is a DragonflyDB-backed implementation of memory.MessageStore.
-// Messages are stored as JSON in a sorted set (ZSET) with the score set to a
-// monotonically increasing sequence number to preserve insertion order.
+// DragonflyDB speaks the Redis protocol, so it is a thin wrapper over the
+// Redis store ([redisstore.MessageStore]); all methods are promoted from it.
 type MessageStore struct {
-	client *redis.Client
-	key    string
-	seq    atomic.Int64
+	*redisstore.MessageStore
 }
 
 // New creates a new DragonflyDB MessageStore with the given config.
@@ -37,150 +34,13 @@ func New(cfg Config) (*MessageStore, error) {
 	}
 	key := cfg.Key
 	if key == "" {
-		key = "beluga:dragonfly:messages"
+		key = defaultKey
 	}
-	return &MessageStore{
-		client: cfg.Client,
-		key:    key,
-	}, nil
-}
-
-// Append adds a message to the store.
-func (s *MessageStore) Append(ctx context.Context, msg schema.Message) error {
-	data, err := marshalMessage(msg)
+	inner, err := redisstore.New(redisstore.Config{Client: cfg.Client, Key: key})
 	if err != nil {
-		return core.Errorf(core.ErrInvalidInput, "dragonfly: marshal message: %w", err)
-	}
-	score := float64(s.seq.Add(1))
-	return s.client.ZAdd(ctx, s.key, redis.Z{
-		Score:  score,
-		Member: string(data),
-	}).Err()
-}
-
-// Search finds messages whose text content contains the query as a
-// case-insensitive substring, returning at most k results.
-func (s *MessageStore) Search(ctx context.Context, query string, k int) ([]schema.Message, error) {
-	members, err := s.client.ZRange(ctx, s.key, 0, -1).Result() // full sorted set in score order
-	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "dragonfly: search: %w", err)
-	}
-
-	q := strings.ToLower(query)
-	var results []schema.Message
-	for _, member := range members {
-		msg, err := unmarshalMessage([]byte(member))
-		if err != nil {
-			continue
-		}
-		if q == "" || containsText(msg, q) {
-			results = append(results, msg)
-			if len(results) >= k {
-				break
-			}
-		}
-	}
-	return results, nil
-}
-
-// All returns all stored messages in chronological order.
-func (s *MessageStore) All(ctx context.Context) ([]schema.Message, error) {
-	members, err := s.client.ZRange(ctx, s.key, 0, -1).Result() // full sorted set in score order
-	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "dragonfly: all: %w", err)
-	}
-
-	msgs := make([]schema.Message, 0, len(members))
-	for _, member := range members {
-		msg, err := unmarshalMessage([]byte(member))
-		if err != nil {
-			continue
-		}
-		msgs = append(msgs, msg)
-	}
-	return msgs, nil
-}
-
-// Clear removes all messages from the store.
-func (s *MessageStore) Clear(ctx context.Context) error {
-	return s.client.Del(ctx, s.key).Err()
-}
-
-// containsText checks if any text part in the message contains the query.
-func containsText(msg schema.Message, lowerQuery string) bool {
-	for _, p := range msg.GetContent() {
-		if tp, ok := p.(schema.TextPart); ok {
-			if strings.Contains(strings.ToLower(tp.Text), lowerQuery) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// storedMessage is the JSON representation of a schema.Message.
-type storedMessage struct {
-	Role       string            `json:"role"`
-	Parts      []storedPart      `json:"parts"`
-	Metadata   map[string]any    `json:"metadata,omitempty"`
-	ToolCalls  []schema.ToolCall `json:"tool_calls,omitempty"`
-	ToolCallID string            `json:"tool_call_id,omitempty"`
-	ModelID    string            `json:"model_id,omitempty"`
-	Timestamp  time.Time         `json:"timestamp"`
-}
-
-// storedPart is the JSON representation of a schema.ContentPart.
-type storedPart struct {
-	Type string `json:"type"`
-	Text string `json:"text,omitempty"`
-}
-
-func marshalMessage(msg schema.Message) ([]byte, error) {
-	sm := storedMessage{
-		Role:     string(msg.GetRole()),
-		Metadata: msg.GetMetadata(),
-	}
-	for _, p := range msg.GetContent() {
-		sp := storedPart{Type: string(p.PartType())}
-		if tp, ok := p.(schema.TextPart); ok {
-			sp.Text = tp.Text
-		}
-		sm.Parts = append(sm.Parts, sp)
-	}
-	if ai, ok := msg.(*schema.AIMessage); ok {
-		sm.ToolCalls = ai.ToolCalls
-		sm.ModelID = ai.ModelID
-	}
-	if tm, ok := msg.(*schema.ToolMessage); ok {
-		sm.ToolCallID = tm.ToolCallID
-	}
-	sm.Timestamp = time.Now()
-	return json.Marshal(sm)
-}
-
-func unmarshalMessage(data []byte) (schema.Message, error) {
-	var sm storedMessage
-	if err := json.Unmarshal(data, &sm); err != nil {
 		return nil, err
 	}
-
-	parts := make([]schema.ContentPart, 0, len(sm.Parts))
-	for _, sp := range sm.Parts {
-		parts = append(parts, schema.TextPart{Text: sp.Text})
-	}
-
-	switch schema.Role(sm.Role) {
-	case schema.RoleSystem:
-		return &schema.SystemMessage{Parts: parts, Metadata: sm.Metadata}, nil
-	case schema.RoleHuman:
-		return &schema.HumanMessage{Parts: parts, Metadata: sm.Metadata}, nil
-	case schema.RoleAI:
-		return &schema.AIMessage{Parts: parts, ToolCalls: sm.ToolCalls, ModelID: sm.ModelID, Metadata: sm.Metadata}, nil
-	case schema.RoleTool:
-		return &schema.ToolMessage{ToolCallID: sm.ToolCallID, Parts: parts, Metadata: sm.Metadata}, nil
-	default:
-		return &schema.HumanMessage{Parts: parts, Metadata: sm.Metadata}, nil
-	}
+	return &MessageStore{MessageStore: inner}, nil
 }
 
 // Verify interface compliance.

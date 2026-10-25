@@ -2,7 +2,7 @@
 
 ## What it is
 
-`context.Context` is the first parameter of every public function and carries five things: **cancellation**, **tenant ID**, **session ID**, **auth claims**, and **OTel trace/span**. Typed helper functions (`WithTenant`, `GetTenant`, …) prevent key collisions between packages.
+`context.Context` is the first parameter of every public function and carries **cancellation**, the **tenant ID**, the **session ID**, the **request ID**, and the **OTel trace/span**. Typed helper functions (`core.WithTenant`/`GetTenant`, `core.WithSessionID`/`GetSessionID`, `core.WithRequestID`/`GetRequestID`) prevent key collisions between packages. Agent credentials travel the same way via `auth/credential.WithCredential`.
 
 ## Why we use it
 
@@ -18,68 +18,64 @@ Multi-tenancy, session isolation, tracing, and cancellation are all **per-reques
 
 ## How it works
 
+From `core/tenant.go` and `core/context.go`:
+
 ```go
-// core/context.go — conceptual
-package core
-
-import "context"
-
+// core/tenant.go (excerpt)
 type tenantKey struct{}
-type sessionKey struct{}
-type authKey struct{}
 
-// WithTenant attaches a tenant ID to the context.
-func WithTenant(ctx context.Context, tenant string) context.Context {
-    return context.WithValue(ctx, tenantKey{}, tenant)
+// TenantID uniquely identifies a tenant in a multi-tenant deployment.
+type TenantID string
+
+func WithTenant(ctx context.Context, id TenantID) context.Context {
+    return context.WithValue(ctx, tenantKey{}, id)
 }
 
-// GetTenant returns the tenant ID from context, or "" if absent.
-func GetTenant(ctx context.Context) string {
-    if v, ok := ctx.Value(tenantKey{}).(string); ok {
-        return v
-    }
-    return ""
+func GetTenant(ctx context.Context) TenantID {
+    id, _ := ctx.Value(tenantKey{}).(TenantID)
+    return id
 }
 
-// WithSession, GetSession, WithAuth, GetAuth follow the same shape.
+// core/context.go: WithSessionID/GetSessionID and WithRequestID/GetRequestID
+// follow the same shape, keyed by an unexported contextKey type.
 ```
 
-Key collision prevention: the context key is an unexported struct type (`tenantKey{}`). No other package can forge a colliding key without importing the unexported type.
+Key collision prevention: the context key is an unexported type (`tenantKey{}`). No other package can forge a colliding key without importing the unexported type.
 
 Usage across a call chain:
 
 ```go
 // handler.go
-func handleChat(w http.ResponseWriter, r *http.Request) {
-    ctx := r.Context()
-    ctx = core.WithTenant(ctx, extractTenant(r))
-    ctx = core.WithSession(ctx, extractSession(r))
-    ctx = core.WithAuth(ctx, extractAuth(r))
+func handleChat(a agent.Agent) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        ctx := r.Context()
+        ctx = core.WithTenant(ctx, core.TenantID(r.Header.Get("X-Tenant-ID")))
+        ctx = core.WithSessionID(ctx, r.Header.Get("X-Session-ID"))
 
-    // every downstream call sees the tenant/session/auth
-    resp, err := agent.Invoke(ctx, r.Body)
+        // every downstream call sees the tenant and session
+        answer, err := a.Invoke(ctx, r.FormValue("q"))
+        // ...
+    }
+}
+
+// a ChatModel implementation
+func (m *Model) Generate(ctx context.Context, msgs []schema.Message, opts ...llm.GenerateOption) (*schema.AIMessage, error) {
+    tenant := core.GetTenant(ctx)
+    if tenant == "" {
+        return nil, core.Errorf(core.ErrAuth, "myprovider: no tenant in context")
+    }
+    // use tenant for per-tenant rate limit, cost tracking, logging
     // ...
 }
 
-// llm/providers/openai.go
-func (p *Provider) Generate(ctx context.Context, req Request) (*Response, error) {
-    tenant := core.GetTenant(ctx)
-    if tenant == "" {
-        return nil, core.Errorf(core.ErrAuth, "openai: no tenant in context")
-    }
-    // use tenant for per-tenant rate limit, cost tracking, logging
-    ...
-}
-
-// memory/stores/redis.go
-func (s *Store) Save(ctx context.Context, msg schema.Message) error {
-    tenant := core.GetTenant(ctx)
-    key := fmt.Sprintf("%s:messages:%s", tenant, core.GetSession(ctx))
+// a store
+func (s *Store) Append(ctx context.Context, msg schema.Message) error {
+    key := fmt.Sprintf("%s:messages:%s", core.GetTenant(ctx), core.GetSessionID(ctx))
     return s.client.RPush(ctx, key, serialize(msg)).Err()
 }
 ```
 
-The Redis store automatically scopes by tenant because it reads the tenant from the context. Adding a new store? Just read `core.GetTenant(ctx)`.
+The store scopes by tenant because it reads the tenant from the context. Adding a new store? Read `core.GetTenant(ctx)`.
 
 ## Cancellation
 
@@ -106,15 +102,15 @@ func (t *httpTool) Execute(ctx context.Context, input map[string]any) (*Result, 
 OpenTelemetry uses `context.Context` to thread trace and span IDs:
 
 ```go
-func (p *Provider) Generate(ctx context.Context, req Request) (*Response, error) {
+func (m *Model) Generate(ctx context.Context, msgs []schema.Message, opts ...llm.GenerateOption) (*schema.AIMessage, error) {
     ctx, span := tracer.Start(ctx, "llm.generate",
         trace.WithAttributes(
-            attribute.String("gen_ai.system", "openai"),
-            attribute.String("gen_ai.request.model", req.Model),
+            attribute.String("gen_ai.system", "myprovider"),
+            attribute.String("gen_ai.request.model", m.model),
         ))
     defer span.End()
 
-    resp, err := p.callAPI(ctx, req) // downstream calls see the span via ctx
+    resp, err := m.callAPI(ctx, msgs) // downstream calls see the span via ctx
     if err != nil {
         span.RecordError(err)
         span.SetStatus(codes.Error, err.Error())
@@ -123,7 +119,7 @@ func (p *Provider) Generate(ctx context.Context, req Request) (*Response, error)
 }
 ```
 
-The `ctx` returned by `tracer.Start` has the new span attached. Pass it downstream. Downstream `tracer.Start` calls create child spans automatically. See [DOC-14](../architecture/14-observability.md).
+The `ctx` returned by `tracer.Start` has the new span attached. Pass it downstream. Downstream `tracer.Start` calls create child spans automatically. In practice, `llm.WithTracing()` adds this span for you. See [DOC-14](../architecture/14-observability.md).
 
 ## Where it's used
 
@@ -144,26 +140,27 @@ Every public function in Beluga. It's a hard rule:
 
 ## Example: implementing your own
 
-Adding a `RequestID` to the context that propagates through all layers:
+`core` already ships `WithRequestID`/`GetRequestID`. Here is the same shape for a value of your own, a feature-flag set:
 
 ```go
-package mycore
+package flags
 
 import "context"
 
-type requestIDKey struct{}
+type flagsKey struct{}
 
-// WithRequestID attaches a request ID to the context.
-func WithRequestID(ctx context.Context, id string) context.Context {
-    return context.WithValue(ctx, requestIDKey{}, id)
+// Set is an immutable set of enabled feature flags.
+type Set map[string]bool
+
+// With attaches a flag set to the context.
+func With(ctx context.Context, s Set) context.Context {
+    return context.WithValue(ctx, flagsKey{}, s)
 }
 
-// GetRequestID returns the request ID from the context, or "" if absent.
-func GetRequestID(ctx context.Context) string {
-    if v, ok := ctx.Value(requestIDKey{}).(string); ok {
-        return v
-    }
-    return ""
+// Enabled reports whether flag is on in ctx's flag set.
+func Enabled(ctx context.Context, flag string) bool {
+    s, _ := ctx.Value(flagsKey{}).(Set)
+    return s[flag]
 }
 ```
 
@@ -177,21 +174,23 @@ func requestIDMiddleware(next http.Handler) http.Handler {
         if id == "" {
             id = uuid.NewString()
         }
-        ctx := mycore.WithRequestID(r.Context(), id)
+        ctx := core.WithRequestID(r.Context(), id)
+        ctx = flags.With(ctx, flags.Set{"new-planner": r.Header.Get("X-Beta") == "1"})
         w.Header().Set("X-Request-ID", id)
         next.ServeHTTP(w, r.WithContext(ctx))
     })
 }
 
 // anywhere downstream
-func (t *tool) Execute(ctx context.Context, in map[string]any) (*Result, error) {
-    rid := mycore.GetRequestID(ctx)
-    slog.InfoContext(ctx, "tool start", slog.String("request_id", rid))
+func (t *myTool) Execute(ctx context.Context, in map[string]any) (*tool.Result, error) {
+    slog.InfoContext(ctx, "tool start",
+        slog.String("request_id", core.GetRequestID(ctx)),
+        slog.Bool("new_planner", flags.Enabled(ctx, "new-planner")))
     // ...
 }
 ```
 
-Every layer in the stack sees the request ID through the same context. No signature changes, no global state.
+Every layer in the stack sees the request ID and the flags through the same context. No signature changes, no global state.
 
 ## Related
 

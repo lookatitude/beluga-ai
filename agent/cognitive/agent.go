@@ -127,7 +127,7 @@ func (a *DualProcessAgent) Invoke(ctx context.Context, input string, opts ...age
 	// Score complexity
 	score, err := a.scorer.Score(ctx, input)
 	if err != nil {
-		return "", core.Errorf(core.ErrProviderDown, "cognitive: scoring failed: %w", err)
+		return "", core.Wrapf(core.ErrInternal, "cognitive: scoring failed: %w", err)
 	}
 
 	// If clearly complex, go directly to S2. This matches the Stream path,
@@ -201,7 +201,7 @@ func (a *DualProcessAgent) Stream(ctx context.Context, input string, opts ...age
 			yield(agent.Event{
 				Type:    agent.EventError,
 				AgentID: a.id,
-			}, core.Errorf(core.ErrProviderDown, "cognitive: scoring failed: %w", err))
+			}, core.Wrapf(core.ErrInternal, "cognitive: scoring failed: %w", err))
 			return
 		}
 

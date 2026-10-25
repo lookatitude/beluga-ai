@@ -122,7 +122,7 @@ func (t *Team) Invoke(ctx context.Context, input string, opts ...agent.Option) (
 			}
 			lastStageText.WriteString(event.Text)
 		case agent.EventError:
-			lastErr = core.NewError("runtime.team.invoke", core.ErrToolFailed,
+			lastErr = core.NewError("runtime.team.invoke", core.ErrInternal,
 				fmt.Sprintf("team %q: agent error: %s", t.id, event.Text), nil)
 		}
 	}
@@ -165,7 +165,7 @@ func (p *pipelinePattern) Execute(ctx context.Context, agents []agent.Agent, inp
 		for i, a := range agents {
 			select {
 			case <-ctx.Done():
-				yield(agent.Event{}, ctx.Err())
+				yield(agent.Event{}, core.NewError("runtime.team.pipeline", core.CodeOf(ctx.Err(), core.ErrCanceled), "pipeline cancelled", ctx.Err()))
 				return
 			default:
 			}
@@ -175,7 +175,7 @@ func (p *pipelinePattern) Execute(ctx context.Context, agents []agent.Agent, inp
 			// events from multiple internal stages.
 			result, err := a.Invoke(ctx, currentInput)
 			if err != nil {
-				if !yield(agent.Event{}, core.NewError("runtime.team.pipeline", core.ErrToolFailed,
+				if !yield(agent.Event{}, core.NewError("runtime.team.pipeline", core.CodeOf(err, core.ErrInternal),
 					fmt.Sprintf("pipeline stage %d (%s) failed", i, a.ID()), err)) {
 					return
 				}
@@ -248,7 +248,7 @@ func (s *supervisorPattern) Execute(ctx context.Context, agents []agent.Agent, i
 
 		for event, err := range s.coordinator.Stream(ctx, desc.String()) {
 			if err != nil {
-				if !yield(agent.Event{}, core.NewError("runtime.team.supervisor", core.ErrToolFailed,
+				if !yield(agent.Event{}, core.NewError("runtime.team.supervisor", core.CodeOf(err, core.ErrInternal),
 					"supervisor coordinator failed", err)) {
 					return
 				}
@@ -293,7 +293,7 @@ func (sg *scatterGatherPattern) Execute(ctx context.Context, agents []agent.Agen
 		// Pass combined results to the aggregator
 		for event, err := range sg.aggregator.Stream(ctx, combined) {
 			if err != nil {
-				yield(agent.Event{}, core.NewError("runtime.team.scatter", core.ErrToolFailed,
+				yield(agent.Event{}, core.NewError("runtime.team.scatter", core.CodeOf(err, core.ErrInternal),
 					"scatter aggregator failed", err))
 				return
 			}
@@ -343,7 +343,7 @@ func combineScatterResults(results []scatterResult) (string, error) {
 	combined.WriteString("Agent outputs:\n")
 	for _, r := range results {
 		if r.err != nil {
-			return "", core.NewError("runtime.team.scatter", core.ErrToolFailed,
+			return "", core.NewError("runtime.team.scatter", core.CodeOf(r.err, core.ErrInternal),
 				fmt.Sprintf("scatter agent %s failed", r.agentID), r.err)
 		}
 		fmt.Fprintf(&combined, "\n--- %s ---\n%s\n", r.agentID, r.output)

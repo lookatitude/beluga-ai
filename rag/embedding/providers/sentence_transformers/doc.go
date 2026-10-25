@@ -29,7 +29,8 @@
 // ProviderConfig fields:
 //   - APIKey — HuggingFace API token (required)
 //   - Model — model name (default: "sentence-transformers/all-MiniLM-L6-v2")
-//   - BaseURL — API base URL (default: "https://api-inference.huggingface.co")
+//   - BaseURL — API base URL (default: "https://router.huggingface.co/hf-inference");
+//     requests go to <BaseURL>/models/<model>/pipeline/feature-extraction
 //   - Timeout — request timeout
 //   - Options["dimensions"] — override output dimensionality
 package sentencetransformers

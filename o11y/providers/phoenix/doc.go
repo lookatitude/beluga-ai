@@ -2,8 +2,24 @@
 // observability system. It implements the [o11y.TraceExporter] interface and
 // sends LLM call data to an Arize Phoenix instance via its HTTP API.
 //
-// Phoenix uses OTel-compatible spans, so this exporter translates LLM call
-// data into the Phoenix /v1/traces JSON format.
+// This exporter translates LLM call data into a JSON span document and POSTs
+// it to {BaseURL}/v1/traces.
+//
+// # Compatibility warning
+//
+// A stock Phoenix server's /v1/traces endpoint is an OTLP/HTTP collector: it
+// accepts OTLP (protobuf) ExportTraceServiceRequest bodies, not the JSON shape
+// this exporter sends, so exports to an unmodified Phoenix instance are
+// expected to be rejected. To send traces to Phoenix today, use the
+// framework's OpenTelemetry pipeline instead of this package:
+//
+//	// OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:6006
+//	shutdown, err := o11y.BootstrapFromEnv(ctx, "my-agent")
+//
+// o11y.BootstrapFromEnv installs the OTLP/HTTP exporter, which appends
+// /v1/traces and speaks the protocol Phoenix expects. Keep this package only
+// for a proxy or shim that accepts the JSON format documented on
+// [Exporter.ExportLLMCall].
 //
 // # Usage
 //

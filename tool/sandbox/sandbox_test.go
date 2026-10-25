@@ -543,7 +543,7 @@ func TestLimitedWriter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var buf bytes.Buffer
-			w := &limitedWriter{buf: &buf, max: tt.max}
+			w := &limitedWriter{buf: &buf, budget: &outputBudget{remaining: tt.max}}
 			for _, s := range tt.writes {
 				_, err := w.Write([]byte(s))
 				assert.NoError(t, err)

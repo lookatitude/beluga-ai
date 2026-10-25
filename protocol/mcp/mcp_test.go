@@ -83,11 +83,13 @@ func TestServer_Initialize(t *testing.T) {
 	if caps.Tools == nil {
 		t.Error("expected tools capability")
 	}
-	if caps.Resources == nil {
-		t.Error("expected resources capability")
+	// resources/read and prompts/get are not implemented, so the server
+	// must not advertise the Resources/Prompts capabilities.
+	if caps.Resources != nil {
+		t.Error("resources capability must not be advertised")
 	}
-	if caps.Prompts == nil {
-		t.Error("expected prompts capability")
+	if caps.Prompts != nil {
+		t.Error("prompts capability must not be advertised")
 	}
 }
 

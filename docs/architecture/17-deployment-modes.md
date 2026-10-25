@@ -41,19 +41,34 @@ package main
 
 import (
     "context"
+    "fmt"
+    "log"
+    "os"
+
     "github.com/lookatitude/beluga-ai/v2/agent"
+    "github.com/lookatitude/beluga-ai/v2/config"
     "github.com/lookatitude/beluga-ai/v2/llm"
     _ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
 )
 
 func main() {
-    model, _ := llm.New("openai", llm.Config{Model: "gpt-4o"})
-    a := agent.NewLLMAgent(
+    model, err := llm.New("openai", config.ProviderConfig{
+        Provider: "openai",
+        APIKey:   os.Getenv("OPENAI_API_KEY"),
+        Model:    "gpt-4o",
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    a := agent.New("assistant",
         agent.WithPersona(agent.Persona{Role: "assistant"}),
         agent.WithLLM(model),
     )
-    out, _ := a.Invoke(context.Background(), "Hello")
-    println(out.(string))
+    out, err := a.Invoke(context.Background(), "Hello")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(out)
 }
 ```
 
@@ -65,16 +80,14 @@ Use when: you're building a CLI, a desktop app, an embedded tool, or a unit test
 graph TD
   subgraph Host[Docker host]
     R[Beluga runner container]
-    Redis[Redis]
-    NATS[NATS]
+    OT[OTel collector]
   end
   Client --> R
-  R --> Redis
-  R --> NATS
+  R --> OT
   R --> LLM[External LLM API]
 ```
 
-Wrap a `Runner` in a container, add Redis for sessions and NATS for event bus, compose them. This is the typical "one-box production" setup.
+Wrap a `Runner` in a container behind a small HTTP handler, add an OTel collector, compose them. This is the typical "one-box production" setup. The Runner's default session service is in memory; for sessions shared across restarts or replicas, implement `runtime.SessionService` over a store such as Redis.
 
 Typical `docker-compose.yml`:
 
@@ -83,15 +96,12 @@ services:
   agent:
     image: myorg/beluga-agent:v1
     environment:
-      REDIS_URL: redis://redis:6379
-      NATS_URL: nats://nats:4222
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     ports: ["8080:8080"]
-    depends_on: [redis, nats]
-  redis:
-    image: redis:7-alpine
-  nats:
-    image: nats:2-alpine
+    depends_on: [otel-collector]
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
 ```
 
 Use when: you want production-grade hosting without a Kubernetes cluster. Works well for single-tenant SaaS and internal tools.
@@ -102,43 +112,38 @@ See [Deploy on Docker guide](../guides/deploy-docker.md).
 
 ```mermaid
 graph TD
-  CR[Agent CRD] --> Op[Beluga Operator]
-  Op --> Dep[Deployment]
-  Op --> Svc[Service]
-  Op --> HPA[HorizontalPodAutoscaler]
-  Op --> NP[NetworkPolicy]
-  Op --> SM[ServiceMonitor]
+  CR[Agent CR] --> Rec[operator.Reconciler]
+  Rec --> Dep[Deployment]
+  Rec --> Svc[Service]
+  Rec --> HPA[HorizontalPodAutoscaler]
   Dep --> Pod1[Runner pod 1]
-  Dep --> Pod2[Runner pod 2]
-  Dep --> Pod3[Runner pod N]
+  Dep --> Pod2[Runner pod N]
   Pod1 --> Card[/.well-known/agent.json]
 ```
 
-Define an `Agent` custom resource. The Beluga operator reconciles it into a Deployment, Service, HPA, NetworkPolicy, and ServiceMonitor. The AgentCard is served at `/.well-known/agent.json` on every pod.
+Define an `Agent` custom resource (`beluga.ai/v1alpha1`). `k8s/operator`'s `Reconciler` computes the Deployment, Service and optional HPA for it as plain structs. A controller that watches the cluster and applies them is not shipped yet, and NetworkPolicy/ServiceMonitor generation is not implemented; see the [Kubernetes guide](../guides/deploy-kubernetes.md) status note.
 
 ```yaml
-apiVersion: beluga.ai/v1
+apiVersion: beluga.ai/v1alpha1
 kind: Agent
 metadata:
   name: research-assistant
 spec:
   replicas: 3
   image: myorg/research-agent:v2.1.0
-  llm:
-    provider: openai
-    model: gpt-4o
-  memory:
-    provider: redis
-    url: redis://redis.default.svc:6379
+  persona:
+    role: research assistant
+  planner: react
+  maxIterations: 10
+  modelRef: openai-gpt4o
   resources:
     requests: { cpu: 500m, memory: 1Gi }
-    limits: { cpu: 2, memory: 4Gi }
-  autoscale:
-    min: 2
-    max: 10
+    limits: { cpu: "2", memory: 4Gi }
+  scaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
 ```
-
-Reconcile loop: validate → resolve config references → build Deployment/Service/HPA/NetworkPolicy/ServiceMonitor → register the AgentCard.
 
 Use when: you're running multi-tenant or high-volume production, you need autoscaling, you already have a Kubernetes platform.
 
@@ -148,15 +153,16 @@ See [Deploy on Kubernetes guide](../guides/deploy-kubernetes.md).
 
 ```mermaid
 graph LR
-  Client --> Runner[Runner]
-  Runner --> TC[Temporal cluster]
-  TC --> W[Temporal worker · Beluga agent]
+  Client --> App[Your service]
+  App --> Ex[workflow.DurableExecutor]
+  Ex --> TC[Temporal cluster]
+  TC --> W[Temporal worker]
   W --> LLM
   W --> Tool
   TC --> EL[Event log · persistent]
 ```
 
-The Runner hands the agent loop off to a Temporal workflow. Each activity (LLM call, tool execute) is recorded in Temporal's event log. Crashes are recovered by replay.
+Write the agent loop as a `workflow.WorkflowFunc`, with LLM and tool calls as activities, and run it through a `workflow.DurableExecutor`. `workflow/providers/temporal` starts workflows on Temporal and forwards signals, queries and cancellation, but does not yet ship the worker side; see the [Temporal guide](../guides/deploy-temporal.md) status note. The Runner does not hand its loop to a workflow engine by itself.
 
 Use when:
 - Workflows run for minutes, hours, or days.

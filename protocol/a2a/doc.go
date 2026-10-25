@@ -1,9 +1,26 @@
-// Package a2a implements the Agent-to-Agent (A2A) protocol for multi-agent
-// collaboration. It provides an A2A server that exposes a Beluga agent as a
-// remote agent with an Agent Card, task lifecycle management, and HTTP endpoints,
-// as well as a client for connecting to remote A2A agents.
+// Package a2a provides a lightweight, Beluga-specific agent-to-agent transport
+// inspired by the Agent-to-Agent (A2A) protocol. It provides a server that
+// exposes a Beluga agent as a remote agent with an Agent Card, task lifecycle
+// management, and HTTP endpoints, as well as a client for it.
 //
-// The A2A protocol enables agents to discover each other via Agent Cards served
+// # Legacy, non-interoperable wire format
+//
+// The server and client in this package speak a custom REST shape
+// (POST /tasks, GET /tasks/{id}, POST /tasks/{id}/cancel). This is NOT the
+// A2A protocol specification, which uses JSON-RPC methods such as
+// message/send and tasks/get. They only interoperate with each other, not
+// with third-party A2A agents or clients. For spec-compliant A2A, use
+// protocol/a2a/sdk, which is backed by the official a2a-go SDK.
+//
+// The server bounds its resources: finished tasks are evicted after
+// WithTaskTTL (default 15m), concurrent executions are limited by
+// WithMaxConcurrentTasks (default 64; excess requests get HTTP 503), each
+// execution is bounded by WithTaskTimeout (default 10m), and request bodies
+// are capped at 1 MiB. Internal agent errors are logged server-side and
+// reported to callers only as a generic message with a request_id. The server
+// performs no authentication; wrap Handler with auth middleware.
+//
+// This transport enables agents to discover each other via Agent Cards served
 // at /.well-known/agent.json, submit tasks asynchronously, poll for task status,
 // and cancel running tasks. Tasks follow a lifecycle: submitted -> working ->
 // completed/failed/canceled.
@@ -17,7 +34,10 @@
 //	    Name:     "assistant",
 //	    Endpoint: "http://localhost:9090",
 //	}
-//	srv := a2a.NewServer(myAgent, card)
+//	srv := a2a.NewServer(myAgent, card,
+//	    a2a.WithTaskTTL(5*time.Minute),
+//	    a2a.WithMaxConcurrentTasks(16),
+//	)
 //	srv.Serve(ctx, ":9090")
 //
 // The server exposes the following HTTP endpoints:

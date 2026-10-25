@@ -351,11 +351,9 @@ func TestFailoverRouter_Stream_AllModelsFail(t *testing.T) {
 	if gotErr == nil {
 		t.Fatal("expected error when all models fail")
 	}
-	var coreErr *core.Error
-	if !errors.As(gotErr, &coreErr) {
-		t.Fatalf("expected core.Error, got %T", gotErr)
-	}
-	if coreErr.Code != core.ErrProviderDown {
-		t.Errorf("expected ErrProviderDown, got %v", coreErr.Code)
+	// The last model's error is surfaced with its own code (as Generate does),
+	// rather than being re-wrapped under a different code without a cause.
+	if !errors.Is(gotErr, retryableErr) {
+		t.Fatalf("expected last model error %v, got %v", retryableErr, gotErr)
 	}
 }

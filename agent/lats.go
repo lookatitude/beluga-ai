@@ -409,7 +409,7 @@ func (p *LATSPlanner) synthesize(ctx context.Context, state PlannerState, path [
 
 	resp, err := model.Generate(ctx, msgs)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "lats synthesize: %w", err)
+		return nil, core.Wrapf(core.ErrProviderDown, "lats synthesize: %w", err)
 	}
 
 	return parseAIResponse(resp), nil

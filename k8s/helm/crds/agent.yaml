@@ -1,0 +1,280 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: agents.beluga.ai
+  annotations:
+    beluga.ai/description: "Defines a single AI agent with persona, planner, model, tools, memory, and guard references."
+spec:
+  group: beluga.ai
+  scope: Namespaced
+  names:
+    plural: agents
+    singular: agent
+    kind: Agent
+    shortNames:
+      - ag
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Planner
+          type: string
+          jsonPath: .spec.planner
+        - name: ModelRef
+          type: string
+          jsonPath: .spec.modelRef
+        - name: Ready
+          type: string
+          jsonPath: .status.conditions[?(@.type=="Ready")].status
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          description: "Agent is the Beluga AI custom resource representing a single AI agent instance."
+          type: object
+          required:
+            - spec
+          properties:
+            apiVersion:
+              type: string
+              description: "APIVersion defines the versioned schema of this representation of an object."
+            kind:
+              type: string
+              description: "Kind is a string value representing the REST resource this object represents."
+            metadata:
+              type: object
+            spec:
+              description: "AgentSpec defines the desired state of an Agent."
+              type: object
+              required:
+                - modelRef
+              properties:
+                persona:
+                  description: "Persona defines the role, goal, and backstory of the agent, used for system prompt construction."
+                  type: object
+                  properties:
+                    role:
+                      description: "Role is the agent's functional title (e.g. 'Senior Researcher')."
+                      type: string
+                      maxLength: 256
+                    goal:
+                      description: "Goal describes the primary objective the agent is designed to achieve."
+                      type: string
+                      maxLength: 1024
+                    backstory:
+                      description: "Backstory provides narrative context that shapes the agent's reasoning style."
+                      type: string
+                      maxLength: 4096
+                planner:
+                  description: "Planner specifies the planning strategy used by the agent. Supported values: react, reflexion, selfdiscover, tot, got, lats, moa."
+                  type: string
+                  default: react
+                  enum:
+                    - react
+                    - reflexion
+                    - selfdiscover
+                    - tot
+                    - got
+                    - lats
+                    - moa
+                maxIterations:
+                  description: "MaxIterations caps the number of plan-act cycles the agent may execute per invocation."
+                  type: integer
+                  default: 10
+                  minimum: 1
+                  maximum: 100
+                modelRef:
+                  description: "ModelRef is the name of a ModelConfig resource in the same namespace that supplies the LLM configuration."
+                  type: string
+                  minLength: 1
+                  maxLength: 253
+                toolRefs:
+                  description: "ToolRefs lists the names of ToolServer resources whose tools are made available to this agent."
+                  type: array
+                  items:
+                    type: string
+                    minLength: 1
+                    maxLength: 253
+                  x-kubernetes-list-type: set
+                memoryRef:
+                  description: "MemoryRef is the name of a MemoryStore resource that provides the agent's 3-tier memory backend."
+                  type: string
+                  maxLength: 253
+                guardRef:
+                  description: "GuardRef is the name of a GuardPolicy resource that enforces input, output, and tool safety checks."
+                  type: string
+                  maxLength: 253
+                handoffs:
+                  description: "Handoffs defines agent-to-agent transfer targets, automatically exposed as transfer_to_{name} tools."
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - targetRef
+                    properties:
+                      targetRef:
+                        description: "TargetRef is the name of the Agent resource to transfer control to."
+                        type: string
+                        minLength: 1
+                        maxLength: 253
+                      description:
+                        description: "Description explains to the LLM when this handoff should be triggered."
+                        type: string
+                        maxLength: 1024
+                resources:
+                  description: "Resources defines the CPU and memory requests and limits for the agent pod."
+                  type: object
+                  properties:
+                    requests:
+                      description: "Requests are the minimum resources required by the agent container."
+                      type: object
+                      properties:
+                        cpu:
+                          description: "CPU request (e.g. '250m')."
+                          type: string
+                        memory:
+                          description: "Memory request (e.g. '256Mi')."
+                          type: string
+                    limits:
+                      description: "Limits are the maximum resources the agent container may consume."
+                      type: object
+                      properties:
+                        cpu:
+                          description: "CPU limit (e.g. '1')."
+                          type: string
+                        memory:
+                          description: "Memory limit (e.g. '1Gi')."
+                          type: string
+                scaling:
+                  description: "Scaling configures the Horizontal Pod Autoscaler for this agent."
+                  type: object
+                  properties:
+                    minReplicas:
+                      description: "MinReplicas is the lower bound for the HPA replica count."
+                      type: integer
+                      minimum: 0
+                      default: 1
+                    maxReplicas:
+                      description: "MaxReplicas is the upper bound for the HPA replica count."
+                      type: integer
+                      minimum: 1
+                      default: 10
+                    metrics:
+                      description: "Metrics lists the HPA scaling metrics (e.g. custom queue-depth metric)."
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          type:
+                            description: "Type of scaling metric (e.g. 'custom', 'cpu', 'memory')."
+                            type: string
+                          name:
+                            description: "Name of the metric (e.g. 'beluga_agent_queue_depth')."
+                            type: string
+                          targetValue:
+                            description: "TargetValue is the threshold at which scaling is triggered."
+                            type: integer
+                costPolicy:
+                  description: "CostPolicy enforces token and monetary spend limits for this agent."
+                  type: object
+                  properties:
+                    maxTokensPerHour:
+                      description: "MaxTokensPerHour is the maximum number of tokens this agent may consume per hour."
+                      type: integer
+                      minimum: 0
+                    maxCostPerDay:
+                      description: "MaxCostPerDay is the maximum monetary cost per day (e.g. '$25.00')."
+                      type: string
+                    alertAt:
+                      description: "AlertAt is the spend percentage at which an alert is emitted (e.g. '80%')."
+                      type: string
+                    action:
+                      description: "Action specifies what happens when a limit is reached. Supported: throttle, block."
+                      type: string
+                      enum:
+                        - throttle
+                        - block
+                probes:
+                  description: "Probes configures the liveness and readiness HTTP probe paths and periods."
+                  type: object
+                  properties:
+                    liveness:
+                      description: "Liveness probe configuration for the agent container."
+                      type: object
+                      properties:
+                        path:
+                          description: "Path is the HTTP path for the liveness probe (e.g. '/healthz')."
+                          type: string
+                          default: /healthz
+                        period:
+                          description: "Period is the probe interval (e.g. '10s')."
+                          type: string
+                          default: 10s
+                    readiness:
+                      description: "Readiness probe configuration for the agent container."
+                      type: object
+                      properties:
+                        path:
+                          description: "Path is the HTTP path for the readiness probe (e.g. '/readyz')."
+                          type: string
+                          default: /readyz
+                        period:
+                          description: "Period is the probe interval (e.g. '5s')."
+                          type: string
+                          default: 5s
+                observability:
+                  description: "Observability controls which telemetry signals are emitted by this agent."
+                  type: object
+                  properties:
+                    tracing:
+                      description: "Tracing enables OTel trace export for this agent."
+                      type: boolean
+                      default: true
+                    metrics:
+                      description: "Metrics enables Prometheus metrics export for this agent."
+                      type: boolean
+                      default: true
+                    auditLog:
+                      description: "AuditLog enables structured audit logging for all agent decisions."
+                      type: boolean
+                      default: false
+            status:
+              description: "AgentStatus reflects the observed state of the Agent."
+              type: object
+              properties:
+                conditions:
+                  description: "Conditions represent the latest available observations of the agent's state."
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - type
+                      - status
+                    properties:
+                      type:
+                        description: "Type of the condition (e.g. 'Ready')."
+                        type: string
+                      status:
+                        description: "Status is 'True', 'False', or 'Unknown'."
+                        type: string
+                      reason:
+                        description: "Reason is a short machine-readable reason for the condition."
+                        type: string
+                      message:
+                        description: "Message is a human-readable description of the condition."
+                        type: string
+                      lastTransitionTime:
+                        description: "LastTransitionTime is when the condition last transitioned."
+                        type: string
+                        format: date-time
+                readyReplicas:
+                  description: "ReadyReplicas is the number of agent pods currently ready."
+                  type: integer
+                observedGeneration:
+                  description: "ObservedGeneration is the most recent generation the operator has reconciled."
+                  type: integer
+                  format: int64

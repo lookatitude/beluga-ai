@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 	pgvec "github.com/pgvector/pgvector-go"
@@ -18,6 +21,21 @@ func init() {
 	vectorstore.Register("pgvector", func(cfg config.ProviderConfig) (vectorstore.VectorStore, error) {
 		return NewFromConfig(cfg)
 	})
+}
+
+// validTableName matches SQL identifiers: letter/underscore followed by
+// letters, digits, or underscores. The table name is interpolated into
+// DDL/DML via fmt.Sprintf, so anything else is rejected.
+var validTableName = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
+
+// validateTable returns a core.Error with ErrInvalidInput when table is not
+// a safe SQL identifier.
+func validateTable(table string) error {
+	if !validTableName.MatchString(table) {
+		return core.Errorf(core.ErrInvalidInput,
+			"pgvector: invalid table name %q (must match ^[a-zA-Z_][a-zA-Z0-9_]*$)", table)
+	}
+	return nil
 }
 
 // Pool abstracts pgx pool operations for testability.
@@ -31,6 +49,15 @@ type Store struct {
 	pool      Pool
 	table     string
 	dimension int
+
+	// initErr records a configuration error detected by New (which cannot
+	// return an error without breaking its signature). Every method that
+	// touches the database returns it instead of issuing SQL.
+	initErr error
+
+	// owned is the connection pool created by NewFromConfig. It is closed by
+	// Close. It is nil when the pool was supplied by the caller via New.
+	owned *pgxpool.Pool
 }
 
 // Compile-time interface check.
@@ -39,7 +66,10 @@ var _ vectorstore.VectorStore = (*Store)(nil)
 // Option configures a Store.
 type Option func(*Store)
 
-// WithTable sets the table name. Defaults to "documents".
+// WithTable sets the table name. Defaults to "documents". The name must match
+// ^[a-zA-Z_][a-zA-Z0-9_]*$; an invalid name makes NewFromConfig fail with
+// core.ErrInvalidInput, and makes every method of a Store built with New
+// return that error.
 func WithTable(table string) Option {
 	return func(s *Store) {
 		s.table = table
@@ -53,7 +83,12 @@ func WithDimension(dim int) Option {
 	}
 }
 
-// New creates a new pgvector Store with the given pool and options.
+// New creates a new pgvector Store with the given pool and options. The pool
+// is owned by the caller: Close does not close it.
+//
+// If the options are invalid (for example a table name that is not a safe
+// SQL identifier) the returned Store issues no SQL and every method returns a
+// core.Error with code ErrInvalidInput.
 func New(pool Pool, opts ...Option) *Store {
 	s := &Store{
 		pool:      pool,
@@ -63,48 +98,62 @@ func New(pool Pool, opts ...Option) *Store {
 	for _, opt := range opts {
 		opt(s)
 	}
+	s.initErr = validateTable(s.table)
 	return s
 }
 
 // NewFromConfig creates a Store from a ProviderConfig. The base_url field
 // should contain the PostgreSQL connection string.
+//
+// The Store owns a concurrency-safe pgxpool.Pool; call Close to release it.
+// Connections are established lazily, so an unreachable server surfaces on
+// the first operation rather than here.
 func NewFromConfig(cfg config.ProviderConfig) (*Store, error) {
 	if cfg.BaseURL == "" {
 		return nil, fmt.Errorf("pgvector: base_url (connection string) is required")
 	}
 
-	pool, err := pgx.Connect(context.Background(), cfg.BaseURL)
-	if err != nil {
-		return nil, fmt.Errorf("pgvector: connect: %w", err)
-	}
-
 	var opts []Option
 	if table, ok := config.GetOption[string](cfg, "table"); ok {
+		if err := validateTable(table); err != nil {
+			return nil, err
+		}
 		opts = append(opts, WithTable(table))
 	}
 	if dim, ok := config.GetOption[float64](cfg, "dimension"); ok {
 		opts = append(opts, WithDimension(int(dim)))
 	}
 
-	return New(&connWrapper{conn: pool}, opts...), nil
+	pool, err := pgxpool.New(context.Background(), cfg.BaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("pgvector: connect: %w", err)
+	}
+
+	s := New(pool, opts...)
+	if s.initErr != nil {
+		pool.Close()
+		return nil, s.initErr
+	}
+	s.owned = pool
+	return s, nil
 }
 
-// connWrapper wraps pgx.Conn to implement Pool.
-type connWrapper struct {
-	conn *pgx.Conn
-}
-
-func (w *connWrapper) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
-	return w.conn.Exec(ctx, sql, args...)
-}
-
-func (w *connWrapper) Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
-	return w.conn.Query(ctx, sql, args...)
+// Close releases the connection pool created by NewFromConfig. It is a no-op
+// for a Store built with New, whose pool belongs to the caller. Close is
+// safe to call more than once.
+func (s *Store) Close() error {
+	if s.owned != nil {
+		s.owned.Close()
+	}
+	return nil
 }
 
 // EnsureTable creates the documents table and vector extension if they
 // do not exist.
 func (s *Store) EnsureTable(ctx context.Context) error {
+	if s.initErr != nil {
+		return s.initErr
+	}
 	_, err := s.pool.Exec(ctx, "CREATE EXTENSION IF NOT EXISTS vector")
 	if err != nil {
 		return fmt.Errorf("pgvector: create extension: %w", err)
@@ -127,6 +176,9 @@ func (s *Store) EnsureTable(ctx context.Context) error {
 // Add inserts documents with their embeddings into the store. The docs and
 // embeddings slices must have the same length.
 func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]float32) error {
+	if s.initErr != nil {
+		return s.initErr
+	}
 	if len(docs) != len(embeddings) {
 		return fmt.Errorf("pgvector: docs length (%d) != embeddings length (%d)", len(docs), len(embeddings))
 	}
@@ -155,6 +207,9 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 // Search finds the k most similar documents to the query vector. Results
 // are returned in descending order of similarity with their Score field populated.
 func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vectorstore.SearchOption) ([]schema.Document, error) {
+	if s.initErr != nil {
+		return nil, s.initErr
+	}
 	cfg := &vectorstore.SearchConfig{}
 	for _, opt := range opts {
 		opt(cfg)
@@ -235,6 +290,9 @@ func scanPgvectorRows(rows pgx.Rows, threshold float64) ([]schema.Document, erro
 
 // Delete removes documents with the given IDs from the store.
 func (s *Store) Delete(ctx context.Context, ids []string) error {
+	if s.initErr != nil {
+		return s.initErr
+	}
 	if len(ids) == 0 {
 		return nil
 	}

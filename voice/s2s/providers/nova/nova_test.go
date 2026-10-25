@@ -4,14 +4,12 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"iter"
-	"net/http"
-	"net/http/httptest"
-	"strings"
+	"errors"
+	"io"
+	"sync"
 	"testing"
 	"time"
 
-	"github.com/coder/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -19,774 +17,294 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/voice/s2s"
 )
 
-// recvChan adapts an iter.Seq2[SessionEvent, error] iterator into a channel
-// for use with select-timeout tests. The caller must invoke stop() to release
-// the pull goroutine when done.
-type recvResult struct {
-	event s2s.SessionEvent
-	err   error
-	ok    bool
+// fakeStream is an in-memory eventStream.
+type fakeStream struct {
+	mu      sync.Mutex
+	sent    []map[string]map[string]any
+	in      chan []byte
+	recvErr error
+	sendErr error
+	closed  bool
+	once    sync.Once
 }
 
-func startRecv(seq iter.Seq2[s2s.SessionEvent, error]) (<-chan recvResult, func()) {
-	out := make(chan recvResult, 8)
-	go func() {
-		defer close(out)
-		for event, err := range seq {
-			out <- recvResult{event: event, err: err, ok: true}
-		}
-	}()
-	return out, func() {
-		// Intentionally empty: stop is a no-op retained for API symmetry;
-		// cancellation happens via the iterator's ctx (passed to session.Recv).
+func newFakeStream() *fakeStream { return &fakeStream{in: make(chan []byte, 32)} }
+
+func (f *fakeStream) Send(_ context.Context, payload []byte) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.sendErr != nil {
+		return f.sendErr
 	}
+	var env struct {
+		Event map[string]map[string]any `json:"event"`
+	}
+	if err := json.Unmarshal(payload, &env); err != nil {
+		return err
+	}
+	f.sent = append(f.sent, env.Event)
+	return nil
+}
+
+func (f *fakeStream) Recv() ([]byte, error) {
+	b, ok := <-f.in
+	if !ok {
+		f.mu.Lock()
+		defer f.mu.Unlock()
+		if f.recvErr != nil {
+			return nil, f.recvErr
+		}
+		return nil, io.EOF
+	}
+	return b, nil
+}
+
+func (f *fakeStream) Close() error {
+	f.once.Do(func() {
+		f.mu.Lock()
+		f.closed = true
+		f.mu.Unlock()
+		close(f.in)
+	})
+	return nil
+}
+
+// names returns the event names sent so far, in order.
+func (f *fakeStream) names() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	var out []string
+	for _, ev := range f.sent {
+		for k := range ev {
+			out = append(out, k)
+		}
+	}
+	return out
+}
+
+func (f *fakeStream) event(i int) (string, map[string]any) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for k, v := range f.sent[i] {
+		return k, v
+	}
+	return "", nil
+}
+
+func (f *fakeStream) push(t *testing.T, name string, body map[string]any) {
+	t.Helper()
+	b, err := json.Marshal(map[string]any{"event": map[string]any{name: body}})
+	require.NoError(t, err)
+	f.in <- b
+}
+
+func startFake(t *testing.T, cfg s2s.Config, opts ...s2s.Option) (*fakeStream, s2s.Session) {
+	t.Helper()
+	fs := newFakeStream()
+	var gotModel string
+	e := newEngine("us-east-1", cfg, func(_ context.Context, model string) (eventStream, error) {
+		gotModel = model
+		return fs, nil
+	})
+	sess, err := e.Start(context.Background(), opts...)
+	require.NoError(t, err)
+	if cfg.Model != "" {
+		assert.Equal(t, cfg.Model, gotModel)
+	}
+	t.Cleanup(func() { _ = sess.Close() })
+	return fs, sess
+}
+
+func collect(t *testing.T, sess s2s.Session, n int) []s2s.SessionEvent {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	var out []s2s.SessionEvent
+	for ev, err := range sess.Recv(ctx) {
+		require.NoError(t, err)
+		out = append(out, ev)
+		if len(out) == n {
+			break
+		}
+	}
+	return out
 }
 
 func TestNew(t *testing.T) {
-	t.Run("default config", func(t *testing.T) {
-		e, err := New(s2s.Config{})
-		require.NoError(t, err)
-		assert.Equal(t, defaultModel, e.cfg.Model)
-		assert.Equal(t, defaultRegion, e.region)
-	})
+	e, err := New(s2s.Config{Extra: map[string]any{
+		"region": "eu-west-1", "access_key_id": "AKID", "secret_access_key": "secret",
+		"base_url": "https://bedrock-runtime.eu-west-1.amazonaws.com",
+	}})
+	require.NoError(t, err)
+	assert.Equal(t, "eu-west-1", e.region)
+	assert.Equal(t, defaultModel, e.cfg.Model)
 
-	t.Run("custom config", func(t *testing.T) {
-		e, err := New(s2s.Config{
-			Model: "custom-model",
-			Extra: map[string]any{"region": "eu-west-1"},
-		})
-		require.NoError(t, err)
-		assert.Equal(t, "custom-model", e.cfg.Model)
-		assert.Equal(t, "eu-west-1", e.region)
-	})
-
-	t.Run("custom base url", func(t *testing.T) {
-		e, err := New(s2s.Config{
-			Extra: map[string]any{
-				"base_url": "wss://custom.bedrock.aws/model/test",
-			},
-		})
-		require.NoError(t, err)
-		assert.Equal(t, "wss://custom.bedrock.aws/model/test", e.baseURL)
-	})
+	e, err = New(s2s.Config{Model: "amazon.nova-2-sonic-v1:0"})
+	require.NoError(t, err)
+	assert.Equal(t, defaultRegion, e.region)
+	assert.Equal(t, "amazon.nova-2-sonic-v1:0", e.cfg.Model)
 }
 
-func newWSServer(t *testing.T, handler func(*websocket.Conn)) *httptest.Server {
-	t.Helper()
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		conn, err := websocket.Accept(w, r, nil)
-		if err != nil {
-			t.Logf("websocket accept error: %v", err)
-			return
-		}
-		handler(conn)
-	}))
-}
-
-func TestStartAndRecv(t *testing.T) {
-	t.Run("receive audio output", func(t *testing.T) {
-		audioData := []byte("test-pcm-audio")
-		encodedAudio := base64.StdEncoding.EncodeToString(audioData)
-
-		srv := newWSServer(t, func(conn *websocket.Conn) {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-
-			// Read setup.
-			_, data, err := conn.Read(ctx)
-			if err != nil {
-				return
-			}
-			var msg map[string]any
-			json.Unmarshal(data, &msg)
-			assert.Equal(t, "sessionStart", msg["type"])
-
-			// Send audio delta.
-			event := novaServerEvent{
-				Type:       "contentBlockDelta",
-				AudioChunk: encodedAudio,
-			}
-			eventData, _ := json.Marshal(event)
-			conn.Write(ctx, websocket.MessageText, eventData)
-
-			// Send turn end.
-			endEvent := novaServerEvent{Type: "contentBlockStop"}
-			endData, _ := json.Marshal(endEvent)
-			conn.Write(ctx, websocket.MessageText, endData)
-
-			time.Sleep(100 * time.Millisecond)
-			conn.Close(websocket.StatusNormalClosure, "")
-		})
-		defer srv.Close()
-
-		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
-		e, err := New(s2s.Config{
-			Extra: map[string]any{"base_url": wsURL},
-		})
-		require.NoError(t, err)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		session, err := e.Start(ctx)
-		require.NoError(t, err)
-		defer session.Close()
-
-		recvCh, stopRecv := startRecv(session.Recv(ctx))
-		defer stopRecv()
-		var events []s2s.SessionEvent
-		timeout := time.After(3 * time.Second)
-	collect1:
-		for {
-			select {
-			case r, chOk := <-recvCh:
-				if !chOk || !r.ok {
-					break collect1
-				}
-				require.NoError(t, r.err)
-				events = append(events, r.event)
-				if r.event.Type == s2s.EventTurnEnd {
-					break collect1
-				}
-			case <-timeout:
-				break collect1
-			}
-		}
-		require.GreaterOrEqual(t, len(events), 2)
-		assert.Equal(t, s2s.EventAudioOutput, events[0].Type)
-		assert.Equal(t, audioData, events[0].Audio)
-		assert.Equal(t, s2s.EventTurnEnd, events[len(events)-1].Type)
-	})
-
-	t.Run("receive tool call", func(t *testing.T) {
-		srv := newWSServer(t, func(conn *websocket.Conn) {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-
-			conn.Read(ctx)
-
-			event := novaServerEvent{
-				Type: "toolUse",
-				ToolUse: &novaToolUse{
-					ToolUseID: "tu_123",
-					Name:      "get_weather",
-					Input:     json.RawMessage(`{"city":"NYC"}`),
-				},
-			}
-			data, _ := json.Marshal(event)
-			conn.Write(ctx, websocket.MessageText, data)
-
-			time.Sleep(100 * time.Millisecond)
-			conn.Close(websocket.StatusNormalClosure, "")
-		})
-		defer srv.Close()
-
-		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
-		e, err := New(s2s.Config{
-			Extra: map[string]any{"base_url": wsURL},
-		})
-		require.NoError(t, err)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		session, err := e.Start(ctx)
-		require.NoError(t, err)
-		defer session.Close()
-
-		recvCh, stopRecv := startRecv(session.Recv(ctx))
-		defer stopRecv()
-		select {
-		case r := <-recvCh:
-			require.True(t, r.ok)
-			require.NoError(t, r.err)
-			assert.Equal(t, s2s.EventToolCall, r.event.Type)
-			require.NotNil(t, r.event.ToolCall)
-			assert.Equal(t, "tu_123", r.event.ToolCall.ID)
-			assert.Equal(t, "get_weather", r.event.ToolCall.Name)
-		case <-time.After(3 * time.Second):
-			t.Fatal("timeout waiting for tool call event")
-		}
-	})
-}
-
-func TestSendAudio(t *testing.T) {
-	srv := newWSServer(t, func(conn *websocket.Conn) {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		conn.Read(ctx)
-
-		_, data, err := conn.Read(ctx)
-		if err != nil {
-			return
-		}
-		var msg map[string]any
-		json.Unmarshal(data, &msg)
-		assert.Equal(t, "inputAudio", msg["type"])
-		assert.NotEmpty(t, msg["audioChunk"])
-
-		conn.Close(websocket.StatusNormalClosure, "")
-	})
-	defer srv.Close()
-
-	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
-	e, err := New(s2s.Config{
-		Extra: map[string]any{"base_url": wsURL},
-	})
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	session, err := e.Start(ctx)
-	require.NoError(t, err)
-	defer session.Close()
-
-	err = session.SendAudio(ctx, []byte("audio-data"))
-	require.NoError(t, err)
-}
-
-func TestSendToolResult(t *testing.T) {
-	srv := newWSServer(t, func(conn *websocket.Conn) {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		conn.Read(ctx)
-
-		_, data, _ := conn.Read(ctx)
-		var msg map[string]any
-		json.Unmarshal(data, &msg)
-		assert.Equal(t, "toolResult", msg["type"])
-		tr := msg["toolResult"].(map[string]any)
-		assert.Equal(t, "tu_123", tr["toolUseId"])
-
-		conn.Close(websocket.StatusNormalClosure, "")
-	})
-	defer srv.Close()
-
-	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
-	e, err := New(s2s.Config{
-		Extra: map[string]any{"base_url": wsURL},
-	})
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	session, err := e.Start(ctx)
-	require.NoError(t, err)
-	defer session.Close()
-
-	err = session.SendToolResult(ctx, schema.ToolResult{
-		CallID: "tu_123",
-		Content: []schema.ContentPart{
-			schema.TextPart{Text: "72F sunny"},
-		},
-	})
-	require.NoError(t, err)
-}
-
-func TestInterrupt(t *testing.T) {
-	srv := newWSServer(t, func(conn *websocket.Conn) {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		conn.Read(ctx)
-
-		_, data, _ := conn.Read(ctx)
-		var msg map[string]any
-		json.Unmarshal(data, &msg)
-		assert.Equal(t, "inputAudioInterrupt", msg["type"])
-
-		conn.Close(websocket.StatusNormalClosure, "")
-	})
-	defer srv.Close()
-
-	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
-	e, err := New(s2s.Config{
-		Extra: map[string]any{"base_url": wsURL},
-	})
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	session, err := e.Start(ctx)
-	require.NoError(t, err)
-	defer session.Close()
-
-	err = session.Interrupt(ctx)
-	require.NoError(t, err)
-}
-
-func TestSendText(t *testing.T) {
-	srv := newWSServer(t, func(conn *websocket.Conn) {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		// Read setup.
-		conn.Read(ctx)
-
-		// Read text message.
-		_, data, err := conn.Read(ctx)
-		if err != nil {
-			return
-		}
-		var msg map[string]any
-		json.Unmarshal(data, &msg)
-		assert.Equal(t, "inputText", msg["type"])
-		content := msg["content"].([]any)
-		require.Len(t, content, 1)
-		first := content[0].(map[string]any)
-		assert.Equal(t, "hello nova", first["text"])
-
-		conn.Close(websocket.StatusNormalClosure, "")
-	})
-	defer srv.Close()
-
-	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
-	e, err := New(s2s.Config{
-		Extra: map[string]any{"base_url": wsURL},
-	})
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	session, err := e.Start(ctx)
-	require.NoError(t, err)
-	defer session.Close()
-
-	err = session.SendText(ctx, "hello nova")
-	require.NoError(t, err)
-}
-
-func TestStartWithOptions(t *testing.T) {
-	t.Run("with instructions and tools", func(t *testing.T) {
-		srv := newWSServer(t, func(conn *websocket.Conn) {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-
-			// Read setup and verify it contains instructions and tools.
-			_, data, err := conn.Read(ctx)
-			if err != nil {
-				return
-			}
-			var msg map[string]any
-			json.Unmarshal(data, &msg)
-			assert.Equal(t, "sessionStart", msg["type"])
-
-			// Verify instructions.
-			system := msg["system"].([]any)
-			require.Len(t, system, 1)
-			first := system[0].(map[string]any)
-			assert.Equal(t, "You are a helpful assistant", first["text"])
-
-			// Verify tool config.
-			toolConfig := msg["toolConfig"].(map[string]any)
-			tools := toolConfig["tools"].([]any)
-			require.Len(t, tools, 1)
-			toolSpec := tools[0].(map[string]any)["toolSpec"].(map[string]any)
-			assert.Equal(t, "get_weather", toolSpec["name"])
-
-			time.Sleep(100 * time.Millisecond)
-			conn.Close(websocket.StatusNormalClosure, "")
-		})
-		defer srv.Close()
-
-		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
-		e, err := New(s2s.Config{
-			Extra: map[string]any{"base_url": wsURL},
-		})
-		require.NoError(t, err)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		session, err := e.Start(ctx,
-			s2s.WithInstructions("You are a helpful assistant"),
-			s2s.WithTools([]schema.ToolDefinition{
-				{
-					Name:        "get_weather",
-					Description: "Get weather for a city",
-					InputSchema: map[string]any{
-						"type": "object",
-						"properties": map[string]any{
-							"city": map[string]any{"type": "string"},
-						},
-					},
-				},
-			}),
-		)
-		require.NoError(t, err)
-		defer session.Close()
-	})
-}
-
-func TestReadLoopEvents(t *testing.T) {
-	t.Run("text output in contentBlockDelta", func(t *testing.T) {
-		srv := newWSServer(t, func(conn *websocket.Conn) {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-
-			conn.Read(ctx) // setup
-
-			// Send text delta.
-			event := novaServerEvent{
-				Type: "contentBlockDelta",
-				Text: "Hello from Nova",
-			}
-			data, _ := json.Marshal(event)
-			conn.Write(ctx, websocket.MessageText, data)
-
-			time.Sleep(100 * time.Millisecond)
-			conn.Close(websocket.StatusNormalClosure, "")
-		})
-		defer srv.Close()
-
-		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
-		e, err := New(s2s.Config{
-			Extra: map[string]any{"base_url": wsURL},
-		})
-		require.NoError(t, err)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		session, err := e.Start(ctx)
-		require.NoError(t, err)
-		defer session.Close()
-
-		recvCh, stopRecv := startRecv(session.Recv(ctx))
-		defer stopRecv()
-		select {
-		case r := <-recvCh:
-			require.True(t, r.ok)
-			require.NoError(t, r.err)
-			assert.Equal(t, s2s.EventTextOutput, r.event.Type)
-			assert.Equal(t, "Hello from Nova", r.event.Text)
-		case <-time.After(3 * time.Second):
-			t.Fatal("timeout waiting for text event")
-		}
-	})
-
-	t.Run("input transcript", func(t *testing.T) {
-		srv := newWSServer(t, func(conn *websocket.Conn) {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-
-			conn.Read(ctx) // setup
-
-			event := novaServerEvent{
-				Type:       "inputTranscript",
-				Transcript: "user said hello",
-			}
-			data, _ := json.Marshal(event)
-			conn.Write(ctx, websocket.MessageText, data)
-
-			time.Sleep(100 * time.Millisecond)
-			conn.Close(websocket.StatusNormalClosure, "")
-		})
-		defer srv.Close()
-
-		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
-		e, err := New(s2s.Config{
-			Extra: map[string]any{"base_url": wsURL},
-		})
-		require.NoError(t, err)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		session, err := e.Start(ctx)
-		require.NoError(t, err)
-		defer session.Close()
-
-		recvCh, stopRecv := startRecv(session.Recv(ctx))
-		defer stopRecv()
-		select {
-		case r := <-recvCh:
-			require.True(t, r.ok)
-			require.NoError(t, r.err)
-			assert.Equal(t, s2s.EventTranscript, r.event.Type)
-			assert.Equal(t, "user said hello", r.event.Text)
-		case <-time.After(3 * time.Second):
-			t.Fatal("timeout waiting for transcript event")
-		}
-	})
-
-	t.Run("error event", func(t *testing.T) {
-		srv := newWSServer(t, func(conn *websocket.Conn) {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-
-			conn.Read(ctx) // setup
-
-			event := novaServerEvent{
-				Type:  "error",
-				Error: &novaError{Message: "rate limit exceeded"},
-			}
-			data, _ := json.Marshal(event)
-			conn.Write(ctx, websocket.MessageText, data)
-
-			time.Sleep(100 * time.Millisecond)
-			conn.Close(websocket.StatusNormalClosure, "")
-		})
-		defer srv.Close()
-
-		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
-		e, err := New(s2s.Config{
-			Extra: map[string]any{"base_url": wsURL},
-		})
-		require.NoError(t, err)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		session, err := e.Start(ctx)
-		require.NoError(t, err)
-		defer session.Close()
-
-		recvCh, stopRecv := startRecv(session.Recv(ctx))
-		defer stopRecv()
-		select {
-		case r := <-recvCh:
-			require.True(t, r.ok)
-			require.NoError(t, r.err)
-			assert.Equal(t, s2s.EventError, r.event.Type)
-			assert.Contains(t, r.event.Error.Error(), "rate limit exceeded")
-		case <-time.After(3 * time.Second):
-			t.Fatal("timeout waiting for error event")
-		}
-	})
-
-	t.Run("error event with nil error field", func(t *testing.T) {
-		srv := newWSServer(t, func(conn *websocket.Conn) {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-
-			conn.Read(ctx) // setup
-
-			event := novaServerEvent{
-				Type: "error",
-			}
-			data, _ := json.Marshal(event)
-			conn.Write(ctx, websocket.MessageText, data)
-
-			time.Sleep(100 * time.Millisecond)
-			conn.Close(websocket.StatusNormalClosure, "")
-		})
-		defer srv.Close()
-
-		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
-		e, err := New(s2s.Config{
-			Extra: map[string]any{"base_url": wsURL},
-		})
-		require.NoError(t, err)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		session, err := e.Start(ctx)
-		require.NoError(t, err)
-		defer session.Close()
-
-		recvCh, stopRecv := startRecv(session.Recv(ctx))
-		defer stopRecv()
-		select {
-		case r := <-recvCh:
-			require.True(t, r.ok)
-			require.NoError(t, r.err)
-			assert.Equal(t, s2s.EventError, r.event.Type)
-			assert.Contains(t, r.event.Error.Error(), "unknown error")
-		case <-time.After(3 * time.Second):
-			t.Fatal("timeout waiting for error event")
-		}
-	})
-
-	t.Run("messageStop event", func(t *testing.T) {
-		srv := newWSServer(t, func(conn *websocket.Conn) {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-
-			conn.Read(ctx) // setup
-
-			event := novaServerEvent{Type: "messageStop"}
-			data, _ := json.Marshal(event)
-			conn.Write(ctx, websocket.MessageText, data)
-
-			time.Sleep(100 * time.Millisecond)
-			conn.Close(websocket.StatusNormalClosure, "")
-		})
-		defer srv.Close()
-
-		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
-		e, err := New(s2s.Config{
-			Extra: map[string]any{"base_url": wsURL},
-		})
-		require.NoError(t, err)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		session, err := e.Start(ctx)
-		require.NoError(t, err)
-		defer session.Close()
-
-		recvCh, stopRecv := startRecv(session.Recv(ctx))
-		defer stopRecv()
-		select {
-		case r := <-recvCh:
-			require.True(t, r.ok)
-			require.NoError(t, r.err)
-			assert.Equal(t, s2s.EventTurnEnd, r.event.Type)
-		case <-time.After(3 * time.Second):
-			t.Fatal("timeout waiting for messageStop event")
-		}
-	})
-
-	t.Run("connection error emits error event", func(t *testing.T) {
-		srv := newWSServer(t, func(conn *websocket.Conn) {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-
-			conn.Read(ctx) // setup
-
-			// Close abruptly without normal closure.
-			conn.Close(websocket.StatusInternalError, "server crash")
-		})
-		defer srv.Close()
-
-		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
-		e, err := New(s2s.Config{
-			Extra: map[string]any{"base_url": wsURL},
-		})
-		require.NoError(t, err)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		session, err := e.Start(ctx)
-		require.NoError(t, err)
-		defer session.Close()
-
-		recvCh, stopRecv := startRecv(session.Recv(ctx))
-		defer stopRecv()
-		select {
-		case r := <-recvCh:
-			require.True(t, r.ok)
-			require.NoError(t, r.err)
-			assert.Equal(t, s2s.EventError, r.event.Type)
-			assert.Contains(t, r.event.Error.Error(), "nova: read:")
-		case <-time.After(3 * time.Second):
-			t.Fatal("timeout waiting for connection error event")
-		}
-	})
-
-	t.Run("audio and text in same contentBlockDelta", func(t *testing.T) {
-		audioData := []byte("pcm-data")
-		encodedAudio := base64.StdEncoding.EncodeToString(audioData)
-
-		srv := newWSServer(t, func(conn *websocket.Conn) {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-
-			conn.Read(ctx) // setup
-
-			// Send event with both audio and text.
-			event := novaServerEvent{
-				Type:       "contentBlockDelta",
-				AudioChunk: encodedAudio,
-				Text:       "caption text",
-			}
-			data, _ := json.Marshal(event)
-			conn.Write(ctx, websocket.MessageText, data)
-
-			time.Sleep(100 * time.Millisecond)
-			conn.Close(websocket.StatusNormalClosure, "")
-		})
-		defer srv.Close()
-
-		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
-		e, err := New(s2s.Config{
-			Extra: map[string]any{"base_url": wsURL},
-		})
-		require.NoError(t, err)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		session, err := e.Start(ctx)
-		require.NoError(t, err)
-		defer session.Close()
-
-		recvCh, stopRecv := startRecv(session.Recv(ctx))
-		defer stopRecv()
-		var events []s2s.SessionEvent
-		timeout := time.After(3 * time.Second)
-	collect2:
-		for {
-			select {
-			case r, chOk := <-recvCh:
-				if !chOk || !r.ok {
-					break collect2
-				}
-				require.NoError(t, r.err)
-				events = append(events, r.event)
-				if len(events) >= 2 {
-					break collect2
-				}
-			case <-timeout:
-				break collect2
-			}
-		}
-		require.Len(t, events, 2)
-		assert.Equal(t, s2s.EventAudioOutput, events[0].Type)
-		assert.Equal(t, audioData, events[0].Audio)
-		assert.Equal(t, s2s.EventTextOutput, events[1].Type)
-		assert.Equal(t, "caption text", events[1].Text)
-	})
-}
-
-func TestStartDialError(t *testing.T) {
-	e, err := New(s2s.Config{
-		Extra: map[string]any{"base_url": "ws://127.0.0.1:1"},
-	})
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
-	_, err = e.Start(ctx)
+// FI-12: the legacy unsigned WebSocket endpoint must not be accepted.
+func TestNew_RejectsWebSocketBaseURL(t *testing.T) {
+	_, err := New(s2s.Config{Extra: map[string]any{"base_url": "wss://bedrock-runtime.us-east-1.amazonaws.com/model/x/converse-stream"}})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "nova: websocket dial:")
+}
+
+func TestStart_SendsPreamble(t *testing.T) {
+	fs, _ := startFake(t, s2s.Config{
+		Model:        defaultModel,
+		Voice:        "tiffany",
+		Instructions: "be brief",
+		SampleRate:   8000,
+		Tools: []schema.ToolDefinition{{
+			Name: "lookup", Description: "find", InputSchema: map[string]any{"type": "object"},
+		}},
+	})
+	assert.Equal(t, []string{"sessionStart", "promptStart", "contentStart", "textInput", "contentEnd", "contentStart"}, fs.names())
+
+	_, prompt := fs.event(1)
+	audioOut := prompt["audioOutputConfiguration"].(map[string]any)
+	assert.Equal(t, "tiffany", audioOut["voiceId"])
+	tools := prompt["toolConfiguration"].(map[string]any)["tools"].([]any)
+	spec := tools[0].(map[string]any)["toolSpec"].(map[string]any)
+	assert.Equal(t, "lookup", spec["name"])
+	assert.Equal(t, `{"type":"object"}`, spec["inputSchema"].(map[string]any)["json"])
+
+	_, sys := fs.event(2)
+	assert.Equal(t, "SYSTEM", sys["role"])
+	_, txt := fs.event(3)
+	assert.Equal(t, "be brief", txt["content"])
+
+	_, audio := fs.event(5)
+	assert.Equal(t, "AUDIO", audio["type"])
+	assert.Equal(t, true, audio["interactive"])
+	assert.EqualValues(t, 8000, audio["audioInputConfiguration"].(map[string]any)["sampleRateHertz"])
+}
+
+func TestStart_DefaultsWithoutInstructionsOrTools(t *testing.T) {
+	fs, _ := startFake(t, s2s.Config{}, s2s.WithVoice("amy"))
+	assert.Equal(t, []string{"sessionStart", "promptStart", "contentStart"}, fs.names())
+	_, prompt := fs.event(1)
+	assert.Nil(t, prompt["toolConfiguration"])
+	assert.Equal(t, "amy", prompt["audioOutputConfiguration"].(map[string]any)["voiceId"])
+	_, audio := fs.event(2)
+	assert.EqualValues(t, defaultInputSampleRate, audio["audioInputConfiguration"].(map[string]any)["sampleRateHertz"])
+}
+
+func TestStart_OpenError(t *testing.T) {
+	e := newEngine("us-east-1", s2s.Config{}, func(context.Context, string) (eventStream, error) {
+		return nil, errors.New("no creds")
+	})
+	_, err := e.Start(context.Background())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "open bidirectional stream")
+}
+
+func TestStart_PreambleError(t *testing.T) {
+	fs := newFakeStream()
+	fs.sendErr = errors.New("broken")
+	e := newEngine("us-east-1", s2s.Config{}, func(context.Context, string) (eventStream, error) { return fs, nil })
+	_, err := e.Start(context.Background())
+	require.Error(t, err)
+	assert.True(t, fs.closed)
+}
+
+func TestSendMethods(t *testing.T) {
+	fs, sess := startFake(t, s2s.Config{})
+	ctx := context.Background()
+	base := len(fs.names())
+
+	require.NoError(t, sess.SendAudio(ctx, []byte{1, 2, 3}))
+	name, body := fs.event(base)
+	assert.Equal(t, "audioInput", name)
+	assert.Equal(t, base64.StdEncoding.EncodeToString([]byte{1, 2, 3}), body["content"])
+
+	require.NoError(t, sess.SendText(ctx, "hello"))
+	assert.Equal(t, []string{"contentStart", "textInput", "contentEnd"}, fs.names()[base+1:base+4])
+	_, start := fs.event(base + 1)
+	assert.Equal(t, "USER", start["role"])
+
+	require.NoError(t, sess.SendToolResult(ctx, schema.ToolResult{
+		CallID:  "tu-1",
+		Content: []schema.ContentPart{schema.TextPart{Text: "42"}},
+	}))
+	_, tstart := fs.event(base + 4)
+	assert.Equal(t, "TOOL", tstart["type"])
+	assert.Equal(t, "tu-1", tstart["toolResultInputConfiguration"].(map[string]any)["toolUseId"])
+	_, tres := fs.event(base + 5)
+	assert.Equal(t, "42", tres["content"])
+
+	require.NoError(t, sess.Interrupt(ctx))
+}
+
+func TestClose_EndsSessionAndRejectsSends(t *testing.T) {
+	fs, sess := startFake(t, s2s.Config{})
+	require.NoError(t, sess.Close())
+	require.NoError(t, sess.Close())
+	names := fs.names()
+	assert.Equal(t, []string{"contentEnd", "promptEnd", "sessionEnd"}, names[len(names)-3:])
+	assert.True(t, fs.closed)
+	assert.Error(t, sess.SendAudio(context.Background(), []byte{1}))
+	assert.Error(t, sess.Interrupt(context.Background()))
+}
+
+func TestRecv_TranslatesOutputEvents(t *testing.T) {
+	fs, sess := startFake(t, s2s.Config{})
+	audio := []byte{9, 8, 7}
+
+	fs.push(t, "contentStart", map[string]any{"contentId": "c1", "role": "USER", "type": "TEXT"})
+	fs.push(t, "textOutput", map[string]any{"contentId": "c1", "role": "USER", "content": "what time"})
+	fs.push(t, "contentStart", map[string]any{"contentId": "c2", "role": "ASSISTANT", "type": "TEXT",
+		"additionalModelFields": `{"generationStage":"SPECULATIVE"}`})
+	fs.push(t, "textOutput", map[string]any{"contentId": "c2", "role": "ASSISTANT", "content": "draft"})
+	fs.push(t, "contentEnd", map[string]any{"contentId": "c2", "stopReason": "PARTIAL_TURN"})
+	fs.push(t, "contentStart", map[string]any{"contentId": "c3", "role": "ASSISTANT", "type": "TEXT",
+		"additionalModelFields": `{"generationStage":"FINAL"}`})
+	fs.push(t, "textOutput", map[string]any{"contentId": "c3", "role": "ASSISTANT", "content": "noon"})
+	fs.push(t, "audioOutput", map[string]any{"content": base64.StdEncoding.EncodeToString(audio)})
+	fs.push(t, "audioOutput", map[string]any{"content": "!!not base64"})
+	fs.in <- []byte("not json")
+	fs.push(t, "toolUse", map[string]any{"toolUseId": "t1", "toolName": "clock", "content": `{"tz":"UTC"}`})
+	fs.push(t, "contentEnd", map[string]any{"contentId": "c3", "stopReason": "END_TURN"})
+
+	events := collect(t, sess, 5)
+	require.Len(t, events, 5)
+	assert.Equal(t, s2s.SessionEvent{Type: s2s.EventTranscript, Text: "what time"}, events[0])
+	assert.Equal(t, s2s.SessionEvent{Type: s2s.EventTextOutput, Text: "noon"}, events[1])
+	assert.Equal(t, s2s.EventAudioOutput, events[2].Type)
+	assert.Equal(t, audio, events[2].Audio)
+	assert.Equal(t, s2s.EventToolCall, events[3].Type)
+	assert.Equal(t, &schema.ToolCall{ID: "t1", Name: "clock", Arguments: `{"tz":"UTC"}`}, events[3].ToolCall)
+	assert.Equal(t, s2s.EventTurnEnd, events[4].Type)
+}
+
+func TestRecv_StreamErrorSurfaces(t *testing.T) {
+	fs, sess := startFake(t, s2s.Config{})
+	fs.mu.Lock()
+	fs.recvErr = errors.New("throttled")
+	fs.mu.Unlock()
+	close(fs.in)
+	fs.once.Do(func() {})
+
+	events := collect(t, sess, 1)
+	require.Len(t, events, 1)
+	assert.Equal(t, s2s.EventError, events[0].Type)
+	assert.ErrorContains(t, events[0].Error, "throttled")
+}
+
+func TestRecv_ContextCancel(t *testing.T) {
+	_, sess := startFake(t, s2s.Config{})
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	for range sess.Recv(ctx) {
+		t.Fatal("expected no events after cancel")
+	}
 }
 
 func TestRegistry(t *testing.T) {
-	t.Run("registered as nova", func(t *testing.T) {
-		names := s2s.List()
-		found := false
-		for _, name := range names {
-			if name == "nova" {
-				found = true
-				break
-			}
-		}
-		assert.True(t, found, "expected 'nova' in registered providers: %v", names)
-	})
-
-	t.Run("duplicate registration panics", func(t *testing.T) {
-		assert.Panics(t, func() {
-			s2s.Register("nova", func(cfg s2s.Config) (s2s.S2S, error) {
-				return nil, nil
-			})
-		})
-	})
-
-	t.Run("factory creates engine", func(t *testing.T) {
-		engine, err := s2s.New("nova", s2s.Config{})
-		require.NoError(t, err)
-		assert.NotNil(t, engine)
-	})
+	assert.Contains(t, s2s.List(), "nova")
+	engine, err := s2s.New("nova", s2s.Config{})
+	require.NoError(t, err)
+	assert.NotNil(t, engine)
 }

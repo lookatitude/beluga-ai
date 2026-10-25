@@ -110,7 +110,7 @@ mgr = prompt.ApplyMiddleware(mgr, prompt.WithTracing())
 **Prevention rule:** After any multi-package refactor, run `/wiki-learn all` before the next `/promote` or `/blog` task to keep the wiki current.
 **Confidence:** HIGH — stale count confirmed by comparing log.md scan date against commit timestamps.
 
-### C-013 | 2026-04-12 | docs-writer | llm · RESOLVED 2026-04-12
+### C-013 | 2026-04-12 | docs-writer | llm · RESOLVED 2026-04-12 · REOPENED and re-resolved 2026-10-25
 **Symptom:** Concept-section doc examples used four non-existent APIs: `llm.Config{}`, `llm.WithRetry(n)`, `ChatModel.SetHooks(...)`, and `ChatModel.Invoke(ctx, msgs)`. All four caused compile errors.
 **Root cause:** The docs were written from architecture docs and wiki patterns without verifying against the actual `llm` package source. The architecture docs describe the *pattern* generically (registry takes a `Config`, middleware includes retry, hooks attach to the model) — but the concrete `llm` package uses `config.ProviderConfig` as the registry argument, does not export `WithRetry`, applies hooks via `WithHooks(Hooks) Middleware` (not `SetHooks`), and exposes `Generate` not `Invoke` on `ChatModel`.
 **Correction:**
@@ -122,24 +122,34 @@ mgr = prompt.ApplyMiddleware(mgr, prompt.WithTracing())
 - `llm.ChatModel.Stream` returns `iter.Seq2[schema.StreamChunk, error]` directly, not `core.Stream[T]` — consumer variables should be `chunk, err` not `event, err`
 **Prevention rule:** Before writing any doc example that calls a package API, read the package's primary `.go` file (not just the architecture docs). Architecture docs describe canonical patterns — concrete packages may use different field names, constructor signatures, or omit certain middleware. Run `go build` on every example before committing.
 **Confidence:** HIGH — all 17 examples compiled clean after fixes; verified by `go build ./...` in a local replace-directive module.
+**Reopened 2026-10-25:** the same four symbols (`llm.Config`, `llm.WithRetry`, `llm.WithRateLimit`, `SetHooks`) were still in `docs/architecture/03-extensibility-patterns.md` (always loaded via CLAUDE.md), README, 15-resilience, configuration.md and comparison.md. The 2026-04-12 fix had covered only the concept pages. Fixed on branch `fix/review-docs`; every complete Go block in docs/ (outside `docs/consultations/`) now builds in a replace-directive harness. Prevention: run that harness in CI (hand-off to the CI lane).
 
-### C-014 | 2026-04-12 | docs-writer | docs/architecture · drift
+### C-014 | 2026-04-12 | docs-writer | docs/architecture · drift · RESOLVED 2026-10-25
 **Symptom:** `docs/architecture/01-overview.md:15`, `docs/architecture/04-data-flow.md`, `docs/architecture/README.md:72`, and `docs/.redesign/marketing-brief.md:170` reference `docs/beluga_full_layered_architecture.svg` and `docs/beluga_request_lifecycle.svg`. Neither file exists in the working tree — `find docs/ -maxdepth 2 -name "*.svg"` returns nothing. The files were deleted during the DOC-01 rewrite but the markdown references were not updated.
 **Root cause:** No static check scans markdown image references against filesystem state. `doc-check` currently validates code example compilation but not asset existence.
 **Correction:** Either (a) restore the SVGs from git history and retheme to brand palette, or (b) delete the `![](...)` lines and let the adjacent mermaid fences do the work. Recommendation is (b) — the mermaid fence at `01-overview.md:45` is the same 7-layer graph, and `LayerStack.astro` on the marketing homepage already covers the visual. Single-source from markdown.
 **Prevention rule:** Extend `/doc-check` (and/or add a `.claude/hooks/` pre-commit check) to grep `!\[[^]]*\]\(([^)]+\.(svg|png|jpg|gif))\)` across `docs/`, resolve the path relative to the markdown file, and fail when the asset is missing. One-line ripgrep → one-line stat loop. Catches this class of drift permanently.
 **Confidence:** HIGH — four independent references verified, zero SVG files found via Glob.
+**Resolution 2026-10-25:** option (b) applied: the `![](...svg)` lines and the architecture README "Visual sources" links were removed; `docs/.redesign/` was deleted.
 
-### C-015 | 2026-04-12 | docs-writer | docs/website/src/lib/mermaid · version drift
+### C-015 | 2026-04-12 | docs-writer | docs/website/src/lib/mermaid · version drift · SUPERSEDED 2026-10-25 (website moved to beluga-website; `docs/website/` no longer exists here)
 **Symptom:** When proposing a mermaid theme for the Beluga website, the initial draft used v10-era `themeVariables` keys (`arrowheadColor`, `loopTextColor`) and described behaviour as "mermaid 10+". The actual installed version is `mermaid@11.12.3` per `docs/website/package.json`. In v11, `arrowheadColor` was removed (arrowheads inherit `lineColor`) and `loopTextColor` was deprecated in favour of `noteTextColor` inheritance. The keys would compile (because `themeVariables` is typed as `any` in v11) but silently no-op.
 **Root cause:** Same shape as C-013: pattern-matching a library API from memory against its documented shape, without checking the installed version's `*.d.ts` in `node_modules/`. "Mermaid has `arrowheadColor`" is generic, version-free knowledge — but the task was version-specific.
 **Correction:** Before writing configuration or example code for any website library, read `docs/website/node_modules/<pkg>/dist/*.d.ts` (TypeScript) or `package.json` + the installed source (JS). Go equivalent: read the actual package source at `go.mod`-pinned version, not generic package documentation.
 **Prevention rule:** Amend `.claude/rules/website.md` § "Before editing" to include: "Verify library API shape against `node_modules/<pkg>/dist/*.d.ts` at the version pinned in `package.json`. Generic documentation is version-free; your task is not." Matching the existing C-013 rule for Go packages, this closes the same hole on the JS side.
 **Confidence:** HIGH — version verified via `grep '"mermaid"' docs/website/package.json` → `^11.12.3`; type shape verified via `config.type.d.ts`.
 
-### C-017 | 2026-04-12 | docs-writer | docs/website · mermaid diagram divergence
+### C-017 | 2026-04-12 | docs-writer | docs/website · mermaid diagram divergence · SUPERSEDED 2026-10-25 (website content lives in beluga-website; `docs/.redesign/` deleted)
 **Symptom:** Three website pages (`voice/voice-ai.md`, `memory/memory-system.md`, `reference/architecture/packages.md`) each contained a simplified or structurally different mermaid diagram compared to the canonical source in `docs/architecture/`. The website diagrams had been written independently of the architecture docs and had diverged: `voice-ai.md` used a flat `graph LR` with collapsed labels; `memory-system.md` showed a flat 3-node chain without tier subgraphs; `packages.md` used a custom `graph TB` with different subgraph groupings than DOC-18's 7-layer model.
 **Root cause:** Website pages were authored from the architecture docs' *prose* descriptions, not by copying the mermaid fences directly. Each author re-drew the diagram from understanding, producing a structurally valid but non-canonical variant. No automated check enforces "website diagram == architecture source diagram."
 **Correction:** When embedding a diagram designated as canonical (from `docs/.redesign/diagram-inventory.md` or any future inventory), always copy the fence verbatim from the source file — never redraw. If the target page already has a mermaid block for the same concept, replace it; do not add a second block.
 **Prevention rule:** Before inserting a mermaid diagram into a website page, grep the target file for an existing ` ```mermaid ` fence. If one exists, confirm it matches the canonical source. If it differs, replace rather than insert. Add this check to `/doc-check`.
 **Confidence:** HIGH — three independent instances confirmed during diagram-embedding sweep on 2026-04-12. Replacement edits verified by `npx astro build` (0 warnings).
+
+### C-018 | 2026-10-25 | docs-audit | docs/** · RESOLVED 2026-10-25
+**Symptom:** A review compiled every complete ```go block in the docs: 10 of 46 built. Guides, patterns and architecture docs used APIs that never existed or were renamed (`llm.Provider`, `agent.NewLLMAgent`, `runtime.WithRESTEndpoint`, `core.NewStream`, `config.FromFile`, `workflow/backends/temporal`, ...). `docs/reference/interfaces.md` and `configuration.md` (16 env vars nothing reads) were hand-written and wrong.
+**Root cause:** Docs were written from design intent, and nothing in CI compiles doc code. Generated references (providers.md) stayed close to the code; hand-written ones drifted.
+**Correction:** Guides and patterns rewritten against the source; interfaces.md generated with go/ast; configuration.md lists only env vars found by `grep -rn 'Getenv\|LookupEnv'`. Excerpts of framework internals carry no `package` clause and say which file they come from; complete blocks must build.
+**Prevention rule:** `.claude/rules/documentation.md` already requires compiling examples. Add a CI job that extracts complete blocks and builds them against the tree (harness: extract blocks with a `package` clause, group same-file `package main` companions, `go build` + `go vet` with a `replace` to the repo).
+**Confidence:** HIGH.
+

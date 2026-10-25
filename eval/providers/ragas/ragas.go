@@ -47,6 +47,10 @@ func WithTimeout(d time.Duration) Option {
 }
 
 // New creates a new RAGAS metric evaluator.
+//
+// RAGAS has no server of its own: the metric POSTs to {BaseURL}/api/v1/evaluate
+// on a user-provided shim service (default BaseURL "http://localhost:8080").
+// See the package documentation for the exact request/response contract.
 func New(opts ...Option) (*Metric, error) {
 	cfg := &config{
 		baseURL:    "http://localhost:8080",

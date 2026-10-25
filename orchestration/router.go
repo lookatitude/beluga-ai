@@ -48,7 +48,7 @@ func (r *Router) Invoke(ctx context.Context, input any, opts ...core.Option) (an
 	}
 	result, err := handler.Invoke(ctx, input, opts...)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "orchestration/router: %w", err)
+		return nil, core.Wrapf(core.ErrInternal, "orchestration/router: %w", err)
 	}
 	return result, nil
 }
@@ -76,7 +76,7 @@ func (r *Router) Stream(ctx context.Context, input any, opts ...core.Option) ite
 func (r *Router) resolve(ctx context.Context, input any) (core.Runnable, error) {
 	route, err := r.classifier(ctx, input)
 	if err != nil {
-		return nil, core.Errorf(core.ErrProviderDown, "orchestration/router: classifier: %w", err)
+		return nil, core.Wrapf(core.ErrInternal, "orchestration/router: classifier: %w", err)
 	}
 
 	handler, ok := r.routes[route]

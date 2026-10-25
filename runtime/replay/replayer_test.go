@@ -231,3 +231,22 @@ func TestReplayer_ProcessorError(t *testing.T) {
 	require.ErrorAs(t, err, &coreErr)
 	assert.Equal(t, core.ErrToolFailed, coreErr.Code)
 }
+
+// TestReplayer_ProcessorErrorKeepsCode is a regression test for FWC-03: a
+// classified processor error was re-coded as tool_failed.
+func TestReplayer_ProcessorErrorKeepsCode(t *testing.T) {
+	cp := &Checkpoint{
+		ID: "cp-err", SessionID: "sess-1", TurnIndex: -1,
+		Turns: []schema.Turn{{Input: schema.NewHumanMessage("t0"), Output: schema.NewAIMessage("r0"), Timestamp: time.Now()}},
+		State: map[string]any{},
+	}
+	proc := func(context.Context, map[string]any, schema.Message, *schema.AIMessage) ([]schema.AgentEvent, error) {
+		return nil, core.Errorf(core.ErrBudgetExhausted, "out of budget")
+	}
+	_, err := NewReplayer(WithProcessor(proc)).Replay(context.Background(), cp, func(int) (*schema.AIMessage, error) {
+		return schema.NewAIMessage("resp"), nil
+	})
+	var coreErr *core.Error
+	require.ErrorAs(t, err, &coreErr)
+	assert.Equal(t, core.ErrBudgetExhausted, coreErr.Code)
+}

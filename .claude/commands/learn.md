@@ -15,7 +15,7 @@ Capture learning: $ARGUMENTS
 - Confidence (HIGH / MEDIUM / LOW)
 
 ### Step 2 — Record
-Append a C-NNN entry to `.guild/wiki/corrections.md`:
+Append a C-NNN entry to the matching category file under `.guild/wiki/corrections/` (`architecture.md`, `docs-drift.md` or `workflow.md`), using the next ID from the lookup table in `corrections/README.md`, and add the new ID to that table:
 
 ```
 ### C-NNN | YYYY-MM-DD | <workflow> | <package>

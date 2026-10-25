@@ -553,9 +553,9 @@ func TestExtractResultText(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := extractResultText(tt.result)
+			got := resultText(tt.result)
 			if got != tt.want {
-				t.Errorf("extractResultText() = %q, want %q", got, tt.want)
+				t.Errorf("resultText() = %q, want %q", got, tt.want)
 			}
 		})
 	}
@@ -628,26 +628,6 @@ func TestExecutor_Run_ToolExecuteError(t *testing.T) {
 
 	if !gotToolResult {
 		t.Error("expected error tool result")
-	}
-}
-
-// TestExecutor_buildMessages_NonToolObservation tests buildMessages skipping non-tool observations.
-func TestExecutor_buildMessages_NonToolObservation(t *testing.T) {
-	e := NewExecutor()
-	state := PlannerState{
-		Input:    "test",
-		Messages: []schema.Message{schema.NewHumanMessage("initial")},
-		Observations: []Observation{
-			{
-				Action: Action{Type: ActionRespond, Message: "response"},
-			},
-		},
-	}
-
-	msgs := e.buildMessages(state)
-	// Should only have the initial message (non-tool observations are skipped)
-	if len(msgs) != 1 {
-		t.Errorf("expected 1 message, got %d", len(msgs))
 	}
 }
 

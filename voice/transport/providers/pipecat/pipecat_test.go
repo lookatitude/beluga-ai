@@ -2,99 +2,52 @@ package pipecat
 
 import (
 	"context"
+	"errors"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lookatitude/beluga-ai/v2/voice"
 	"github.com/lookatitude/beluga-ai/v2/voice/transport"
 )
 
-func TestNew(t *testing.T) {
-	t.Run("missing url", func(t *testing.T) {
-		_, err := New(transport.Config{})
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "URL is required")
-	})
-
-	t.Run("valid config", func(t *testing.T) {
-		tr, err := New(transport.Config{
-			URL: "ws://localhost:8765",
-		})
-		require.NoError(t, err)
-		assert.Equal(t, "ws://localhost:8765", tr.url)
-		assert.Equal(t, 16000, tr.sampleRate)
-	})
-
-	t.Run("custom sample rate", func(t *testing.T) {
-		tr, err := New(transport.Config{
-			URL:        "ws://localhost:8765",
-			SampleRate: 24000,
-		})
-		require.NoError(t, err)
-		assert.Equal(t, 24000, tr.sampleRate)
-	})
-}
-
-func TestRecv(t *testing.T) {
-	t.Run("returns iterator", func(t *testing.T) {
-		tr, _ := New(transport.Config{URL: "ws://localhost:8765"})
-		ctx, cancel := context.WithCancel(context.Background())
-		cancel()
-		for _, err := range tr.Recv(ctx) {
-			assert.NoError(t, err)
+// FI-11: the stub must not report success.
+func TestNew_NotImplemented(t *testing.T) {
+	for _, cfg := range []transport.Config{{}, {URL: "wss://example", Token: "t"}} {
+		tr, err := New(cfg)
+		if tr != nil {
+			t.Fatal("expected nil transport")
 		}
-	})
-
-	t.Run("error when closed", func(t *testing.T) {
-		tr, _ := New(transport.Config{URL: "ws://localhost:8765"})
-		tr.Close()
-		var gotErr error
-		for _, err := range tr.Recv(context.Background()) {
-			if err != nil {
-				gotErr = err
-				break
-			}
-		}
-		require.Error(t, gotErr)
-	})
-}
-
-func TestSend(t *testing.T) {
-	t.Run("send frame", func(t *testing.T) {
-		tr, _ := New(transport.Config{URL: "ws://localhost:8765"})
-		err := tr.Send(context.Background(), voice.NewAudioFrame([]byte("audio"), 16000))
-		require.NoError(t, err)
-	})
-
-	t.Run("error when closed", func(t *testing.T) {
-		tr, _ := New(transport.Config{URL: "ws://localhost:8765"})
-		tr.Close()
-		err := tr.Send(context.Background(), voice.NewAudioFrame([]byte("audio"), 16000))
-		require.Error(t, err)
-	})
-}
-
-func TestClose(t *testing.T) {
-	tr, _ := New(transport.Config{URL: "ws://localhost:8765"})
-	err := tr.Close()
-	require.NoError(t, err)
-	assert.True(t, tr.closed)
-
-	// Close again should be safe.
-	err = tr.Close()
-	require.NoError(t, err)
-}
-
-func TestRegistry(t *testing.T) {
-	names := transport.List()
-	found := false
-	for _, name := range names {
-		if name == "pipecat" {
-			found = true
-			break
+		if !errors.Is(err, transport.ErrNotImplemented) || !errors.Is(err, errors.ErrUnsupported) {
+			t.Fatalf("err = %v, want ErrNotImplemented", err)
 		}
 	}
-	assert.True(t, found, "expected 'pipecat' in registered transports: %v", names)
+}
+
+func TestRegistry_NotImplemented(t *testing.T) {
+	_, err := transport.New("pipecat", transport.Config{URL: "wss://example", Token: "t"})
+	if !errors.Is(err, transport.ErrNotImplemented) {
+		t.Fatalf("err = %v, want ErrNotImplemented", err)
+	}
+}
+
+func TestTransportMethods_ReportNotImplemented(t *testing.T) {
+	var tr Transport
+	if err := tr.Send(context.Background(), voice.Frame{}); !errors.Is(err, transport.ErrNotImplemented) {
+		t.Errorf("Send err = %v", err)
+	}
+	if _, err := tr.AudioOut().Write([]byte("x")); !errors.Is(err, transport.ErrNotImplemented) {
+		t.Errorf("AudioOut err = %v", err)
+	}
+	n := 0
+	for _, err := range tr.Recv(context.Background()) {
+		n++
+		if !errors.Is(err, transport.ErrNotImplemented) {
+			t.Errorf("Recv err = %v", err)
+		}
+	}
+	if n != 1 {
+		t.Errorf("Recv yielded %d items, want 1", n)
+	}
+	if err := tr.Close(); err != nil {
+		t.Errorf("Close err = %v", err)
+	}
 }

@@ -38,19 +38,24 @@ func WatchSeq(ctx context.Context, store Store, key string, opts ...WatchOption)
 		opt(&o)
 	}
 
-	inner := store.Watch(ctx, key)
 	if o.bufSize <= 0 {
-		return inner
+		return store.Watch(ctx, key)
 	}
-	return bufferedWatch(ctx, inner, o.bufSize)
+	// Subscribe eagerly with a context the iterator cancels when it returns,
+	// so the relay goroutine (blocked inside inner) is released when the
+	// consumer stops.
+	relayCtx, cancel := context.WithCancel(ctx)
+	inner := store.Watch(relayCtx, key)
+	return bufferedWatch(ctx, relayCtx, cancel, inner, o.bufSize)
 }
 
 // bufferedWatch relays events from inner through an internal channel of the
-// given size to absorb brief consumer stalls. The relay goroutine stops after
-// forwarding an error, when inner is exhausted, or when ctx is canceled.
-func bufferedWatch(ctx context.Context, inner iter.Seq2[StateChange, error], bufSize int) iter.Seq2[StateChange, error] {
+// given size to absorb brief consumer stalls. inner must be bound to
+// relayCtx; cancel cancels relayCtx and is called when the iterator returns.
+// The relay goroutine stops after forwarding an error, when inner is
+// exhausted, or when relayCtx is canceled.
+func bufferedWatch(ctx, relayCtx context.Context, cancel context.CancelFunc, inner iter.Seq2[StateChange, error], bufSize int) iter.Seq2[StateChange, error] {
 	return func(yield func(StateChange, error) bool) {
-		relayCtx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
 		type item struct {

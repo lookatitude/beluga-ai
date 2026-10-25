@@ -105,7 +105,7 @@ func (m *DefaultManager) ShouldApprove(_ context.Context, toolName string, confi
 	for _, p := range m.policies {
 		matched, err := path.Match(p.ToolPattern, toolName)
 		if err != nil {
-			return false, core.Errorf(core.ErrInvalidInput, "hitl/should_approve: %w", err)
+			return false, core.Wrapf(core.ErrInvalidInput, "hitl/should_approve: %w", err)
 		}
 		if !matched {
 			continue
@@ -150,10 +150,10 @@ func (m *DefaultManager) checkAutoApproval(ctx context.Context, req InteractionR
 	if err != nil {
 		if m.hooks.OnError != nil {
 			if e := m.hooks.OnError(ctx, err); e != nil {
-				return nil, core.Errorf(core.ErrInvalidInput, errHitlRequest, e)
+				return nil, core.Wrapf(core.ErrInvalidInput, errHitlRequest, e)
 			}
 		}
-		return nil, core.Errorf(core.ErrInvalidInput, errHitlRequest, err)
+		return nil, core.Wrapf(core.ErrInvalidInput, errHitlRequest, err)
 	}
 	if !autoApprove {
 		return nil, nil
@@ -208,7 +208,7 @@ func (m *DefaultManager) awaitResponse(ctx context.Context, req InteractionReque
 		if m.hooks.OnTimeout != nil {
 			m.hooks.OnTimeout(ctx, req)
 		}
-		return nil, core.Errorf(core.ErrTimeout, errHitlRequest, timeoutCtx.Err())
+		return nil, core.Wrapf(core.ErrTimeout, errHitlRequest, timeoutCtx.Err())
 	}
 }
 
@@ -232,7 +232,7 @@ func (m *DefaultManager) RequestInteraction(ctx context.Context, req Interaction
 
 	if m.hooks.OnRequest != nil {
 		if err := m.hooks.OnRequest(ctx, req); err != nil {
-			return nil, core.Errorf(core.ErrInvalidInput, "hitl/request: on_request hook: %w", err)
+			return nil, core.Wrapf(core.ErrInvalidInput, "hitl/request: on_request hook: %w", err)
 		}
 	}
 

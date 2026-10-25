@@ -164,38 +164,47 @@ func (fr *FailoverRouter) Generate(ctx context.Context, msgs []schema.Message, o
 	return nil, lastErr
 }
 
-// tryStreamModel attempts to stream from a single model. Returns true if the
-// model failed with a retryable error and should fall over to the next model.
-// Returns false if streaming completed or the consumer stopped.
-func tryStreamModel(model ChatModel, ctx context.Context, msgs []schema.Message, opts []GenerateOption, yield func(schema.StreamChunk, error) bool) (failover bool) {
-	inner := model.Stream(ctx, msgs, opts...)
-	for chunk, err := range inner {
-		if err != nil && core.IsRetryable(err) {
-			return true
+// tryStreamModel attempts to stream from a single model. It returns
+// failover=true, with the error, only when the model failed with a retryable
+// error before yielding any chunk to the consumer. Once output has been
+// forwarded, an error is surfaced to the consumer instead of failing over, so
+// the consumer never sees partial output from one model followed by another
+// model's answer. failover=false means streaming completed, the consumer
+// stopped, or the error was surfaced.
+func tryStreamModel(model ChatModel, ctx context.Context, msgs []schema.Message, opts []GenerateOption, yield func(schema.StreamChunk, error) bool) (failover bool, err error) {
+	yielded := false
+	for chunk, cerr := range model.Stream(ctx, msgs, opts...) {
+		if cerr != nil && !yielded && core.IsRetryable(cerr) {
+			return true, cerr
 		}
-		if !yield(chunk, err) {
-			return false
-		}
-		if err != nil {
-			return false
+		yielded = true
+		if !yield(chunk, cerr) || cerr != nil {
+			return false, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
-// Stream tries each model in order. If the first chunk from a model is an
-// error and it is retryable, the next model is tried.
+// Stream tries each model in order. If a model fails with a retryable error
+// before producing any chunk, the next model is tried. If every model fails
+// that way, the last model's error is yielded (keeping its error code).
 func (fr *FailoverRouter) Stream(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) iter.Seq2[schema.StreamChunk, error] {
 	return func(yield func(schema.StreamChunk, error) bool) {
+		var lastErr error
 		for _, model := range fr.models {
 			if len(fr.tools) > 0 {
 				model = model.BindTools(fr.tools)
 			}
-			if !tryStreamModel(model, ctx, msgs, opts, yield) {
+			failover, err := tryStreamModel(model, ctx, msgs, opts, yield)
+			if !failover {
 				return
 			}
+			lastErr = err
 		}
-		yield(schema.StreamChunk{}, core.NewError("llm.failover", core.ErrProviderDown, "all models failed", nil))
+		if lastErr == nil {
+			lastErr = core.NewError("llm.failover", core.ErrProviderDown, "all models failed", nil)
+		}
+		yield(schema.StreamChunk{}, lastErr)
 	}
 }
 

@@ -20,7 +20,7 @@ Short summary: what was done, key outcomes, files changed.
 Migrated from v1 agent setup to unified self-evolving multi-agent system.
 Created 10 agents, 15 commands, 5 rules files, two-tier knowledge system,
 per-agent + global learning pipeline, and 4 enforcement hooks.
-See `docs/superpowers/specs/2026-04-11-beluga-agent-system-design.md`.
+The design spec (`docs/superpowers/specs/2026-04-11-beluga-agent-system-design.md`) was removed in 2026-10; see git history.
 
 ## 2026-04-11 — wiki-learn Full Scan
 

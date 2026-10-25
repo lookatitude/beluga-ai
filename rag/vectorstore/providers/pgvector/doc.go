@@ -20,8 +20,15 @@
 //
 // ProviderConfig fields:
 //   - BaseURL — PostgreSQL connection string (required)
-//   - Options["table"] — table name (default: "documents")
+//   - Options["table"] — table name (default: "documents"); must match
+//     ^[a-zA-Z_][a-zA-Z0-9_]*$ or construction fails with core.ErrInvalidInput
 //   - Options["dimension"] — vector dimension (default: 1536)
+//
+// # Connection Lifecycle
+//
+// [NewFromConfig] creates a concurrency-safe pgxpool.Pool owned by the
+// Store; call [Store.Close] to release it. A Store built with [New] uses the
+// caller's pool, and Close leaves it open.
 //
 // # Table Management
 //

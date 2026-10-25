@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://pkg.go.dev/github.com/lookatitude/beluga-ai/v2"><img src="https://pkg.go.dev/badge/github.com/lookatitude/beluga-ai/v2.svg" alt="Go Reference"></a>
   <a href="https://goreportcard.com/report/github.com/lookatitude/beluga-ai/v2"><img src="https://goreportcard.com/badge/github.com/lookatitude/beluga-ai/v2" alt="Go Report Card"></a>
-  <img src="https://img.shields.io/badge/go-%3E%3D1.23-blue" alt="Go Version">
+  <img src="https://img.shields.io/badge/go-%3E%3D1.26-blue" alt="Go Version">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/architecture-7--layer-orange" alt="Architecture">
   <img src="https://img.shields.io/badge/streaming-iter.Seq2-informational" alt="Streaming">
@@ -30,7 +30,7 @@
 
 Beluga AI is a **Go-native framework** for building, deploying, and operating agentic AI systems. It ships every building block a real production agent needs — LLM abstraction, tool calling, multi-agent orchestration, memory, RAG, voice, guards, durable workflows, evaluation, and observability — organised behind a small set of **consistent extension patterns** so the whole framework is learnable in an afternoon.
 
-Beluga distills production patterns from **Google ADK**, **OpenAI Agents SDK**, **LangGraph**, **ByteDance Eino**, **MemGPT**, and **LiveKit** into idiomatic Go 1.23+ code. Streams are `iter.Seq2[Event[T], error]` — no channels, no callbacks, no hidden goroutines. Every pluggable component follows the same contract: **interface → registry → middleware → hooks**.
+Beluga distills production patterns from **Google ADK**, **OpenAI Agents SDK**, **LangGraph**, **ByteDance Eino**, **MemGPT**, and **LiveKit** into idiomatic Go code (Go 1.26+). Streams are `iter.Seq2[Event[T], error]` — no channels, no callbacks, no hidden goroutines. Every pluggable component follows the same contract: **interface → registry → hooks → middleware**.
 
 > Zero-config imports, zero runtime reflection, zero `interface{}` in public APIs, and zero external deps in `core/` and `schema/` beyond stdlib + OpenTelemetry.
 
@@ -40,9 +40,9 @@ Beluga distills production patterns from **Google ADK**, **OpenAI Agents SDK**, 
 
 - **Go-native, end-to-end.** You don't drop into Python for the "agent brain" and Go for the server. One language, one binary, one deploy.
 - **Production first.** OTel GenAI spans at every boundary. Circuit breakers, hedging, rate limits, and cost accounting are middleware — not roadmap items.
-- **Uniform extension model.** Learn one pattern (`Register` → `New` → wrap with `ApplyMiddleware` → compose `Hooks`) and every package is immediately approachable.
+- **Uniform extension model.** Learn one pattern (`Register` → `New` → compose `Hooks` → wrap with `ApplyMiddleware`) and every package is immediately approachable.
 - **Streaming you can reason about.** `iter.Seq2[Event[T], error]` composes like any other Go iterator. Cancellation propagates through `context.Context` — no leaked goroutines, ever.
-- **No magic.** No reflection-based registration, no YAML provider lists, no hidden globals. Imports do what they say; `init()` registers providers; `go vet` catches the layering rule.
+- **No magic.** No reflection-based registration, no YAML provider lists, no hidden globals. Imports do what they say; `init()` registers providers; `/arch-validate` checks the layering rule.
 - **Batteries without lock-in.** Use one capability or all of them. `core/` compiles without a single cloud SDK on your `GOPATH`.
 
 <br>
@@ -58,57 +58,57 @@ Unified `ChatModel` interface across [**22 LLM providers**](docs/reference/provi
 ### Agent Framework
 Pluggable reasoning via the `Planner` interface: **ReAct**, **Reflexion**, **Self-Discover**, **Tree-of-Thought**, **Graph-of-Thought**, **LATS**, **MindMap**, and **Mixture of Agents** — all shipped, all swappable, all behind the same 4-method interface.
 
-### Code-as-Action Agents (CodeAct) <sup>[planned](docs/feature-status.md)</sup>
-Agents that generate and execute code as their primary action — strictly sandboxed, deterministic, and composable with the standard `Planner` + `Executor` loop. The right tool when "call tool X with args Y" is too coarse.
+### Code-as-Action Agents (CodeAct) <sup>[beta](docs/feature-status.md)</sup>
+Agents that generate code as their primary action and run it through a pluggable `CodeExecutor`, inside the standard `Planner` + `Executor` loop (registered as the `codeact` planner). The right tool when "call tool X with args Y" is too coarse.
 
 ### Tool System
-Wrap any Go function as a tool with **automatic JSON Schema** generation from struct tags. First-class MCP client. Parallel DAG execution for independent calls. Built-in tools for HTTP, SQL, shell, filesystem, GitHub, and arXiv, each with allowlist enforcement.
+Wrap any Go function as a tool with **automatic JSON Schema** generation from struct tags. First-class MCP client and MCP tool registry. Parallel DAG execution for independent calls. Timeout, retry and tracing middleware, plus lifecycle hooks. There is no built-in tool library: tools come from your own functions or from MCP servers.
 
-### Computer Use & Browser Automation <sup>[planned](docs/feature-status.md)</sup>
-Native **Computer Use** tools for agents that drive real browsers: click, type, scroll, screenshot, navigate, key-press — all behind allowlisted hosts and capability checks. Works with both screenshot-based models (Anthropic Computer Use) and structured-action backends.
+### Computer Use & Browser Automation <sup>[beta](docs/feature-status.md)</sup>
+**Computer Use** interfaces for agents that drive screens and browsers: screenshot, click, type, scroll, behind URL allowlists and action rate limits. A `ScreenAnalyzer` uses a multimodal LLM to describe screenshots.
 
 ### Multi-Agent Orchestration
 Five first-class patterns — **Supervisor**, **Handoff**, **Scatter-Gather**, **Pipeline**, **Blackboard** — plus DAG workflows and conditional routing. Teams *are* agents (recursive composition), and handoffs appear as auto-generated `transfer_to_{name}` tools.
 
 ### RAG Pipeline
-**Hybrid search** (vector + BM25 + RRF fusion) by default. Advanced retrieval: **CRAG**, **Adaptive RAG**, **HyDE**, **SEAL-RAG**, **GraphRAG**. 12+ vector stores, 8+ embedding providers, contextual-retrieval ingestion with automatic chunking and enrichment.
+**Hybrid search** (vector + BM25 + RRF fusion) by default. Advanced retrieval: **CRAG**, **Adaptive RAG**, **HyDE**, multi-query, sub-question, reranking, plus experimental **RAPTOR**, **ColBERT** and Text2SQL/Text2Cypher retrievers. 13 vector stores, 9 embedding providers, 8 document-loader providers, and recursive, markdown and token splitters.
 
 ### Voice AI
-Frame-based pipeline in three modes — **cascading** (STT → LLM → TTS), **speech-to-speech** (OpenAI Realtime, Gemini Live, Amazon Nova), and hybrid. Silero VAD, semantic turn detection, sub-800 ms end-to-end target.
+Frame-based pipeline in three modes — **cascading** (STT → LLM → TTS), **speech-to-speech** (OpenAI Realtime, Gemini Live, Amazon Nova), and hybrid. Silero and WebRTC VAD; WebSocket, LiveKit, Daily and Pipecat transports.
 
 </td><td width="50%" valign="top">
 
 ### Memory
-**MemGPT three-tier model**: *Core* (always in context, self-editable), *Recall* (searchable conversation history), *Archival* (vector + graph long-term knowledge). Hybrid store for ~90% token savings versus naive context-stuffing.
+**MemGPT three-tier model**: *Core* (always in context, self-editable), *Recall* (searchable conversation history), *Archival* (vector + graph long-term knowledge). Graph stores (Neo4j, Memgraph) alongside Redis, Postgres, SQLite, MongoDB and Dragonfly.
 
 ### Protocol Interop
-**MCP** server and client (Streamable HTTP). **A2A** server and client (protobuf + gRPC) with `AgentCard` discovery at `/.well-known/agent.json`. REST/SSE/WebSocket/gRPC adapters for Gin, Fiber, Echo, Chi, and Connect-Go.
+**MCP** server and client (Streamable HTTP). **A2A** server and client over HTTP with `AgentCard` discovery at `/.well-known/agent.json`. REST/SSE server, and HTTP adapters for Gin, Fiber, Echo, Chi, gRPC, Connect-Go and Huma.
 
 ### Safety & Guards
-Three-stage guard pipeline: **Input → Output → Tool**. Prompt-injection detection, PII redaction, content moderation, Spotlighting for untrusted content isolation, capability-based sandboxing with default-deny. Providers for Lakera, NeMo Guardrails, LLM Guard, Guardrails AI, Azure AI Content Safety.
+Three-stage guard pipeline: **Input → Output → Tool**. Prompt-injection detection, PII redaction, content moderation, Spotlighting for untrusted content isolation. Providers for Lakera, NeMo Guardrails, LLM Guard, Guardrails AI, Azure AI Content Safety.
 
 ### Durable Execution
-Built-in workflow engine separating deterministic orchestration from non-deterministic activities (LLM calls, tool invocations). **Survives crashes, rate limits, and human-in-the-loop pauses.** Temporal and NATS providers ship in the box.
+Workflow engine interface separating deterministic orchestration from non-deterministic activities (LLM calls, tool invocations), with signals for human-in-the-loop pauses. The built-in executor runs in process; durability across restarts comes from a backend such as Temporal. Providers: Temporal, NATS, Dapr, Inngest, Kafka, in-memory.
 
 ### Evaluation
-CI/CD-integrated evaluation runner with built-in metrics (faithfulness, relevance, hallucination, toxicity, latency, cost) and Ragas/Braintrust/DeepEval providers. A dedicated **LLM-as-Judge** sub-package with rubric-based scoring and batch evaluation is <sup>[planned](docs/feature-status.md)</sup>.
+CI/CD-integrated evaluation runner with built-in metrics (faithfulness, relevance, hallucination, toxicity, latency, cost) and Ragas/Braintrust/DeepEval providers. A dedicated **LLM-as-Judge** sub-package (`eval/judge`) adds rubric-based scoring, batch evaluation and consistency checks <sup>[beta](docs/feature-status.md)</sup>.
 
 ### Resilience
-Circuit breakers, hedged requests, adaptive retry with jitter, provider-aware rate limiting (RPM, TPM, concurrent) — all composable as middleware on any `ChatModel`, `Tool`, or `Retriever`.
+Circuit breakers, hedged requests, retry with exponential backoff and jitter, and RPM/TPM/concurrency rate limiting in `resilience/`, usable around any call. `llm` adds rate-limit and fallback middleware for `ChatModel`; `tool` adds timeout and retry middleware.
 
 ### Observability
-**OpenTelemetry GenAI** semantic conventions baked into every boundary via a `WithTracing()` middleware shipped by every extensible package. Traces, metrics, structured slog. Adapters for Langfuse and Arize Phoenix.
+**OpenTelemetry GenAI** semantic conventions baked into every boundary via a `WithTracing()` middleware shipped by every extensible package. Traces, metrics, structured slog. Exporters for Langfuse, LangSmith, Opik and Arize Phoenix.
 
-### CLI & Scaffolding (`beluga`) <sup>[planned](docs/feature-status.md)</sup>
-One-command project scaffolding, provider tests, and development helpers. `beluga new my-agent`, `beluga test llm openai`, `beluga run ./agent.yaml` — ergonomic bootstrap for new contributors. Not yet merged to `main`; see [PR #234](https://github.com/lookatitude/beluga-ai/pull/234).
+### CLI & Scaffolding (`beluga`) <sup>[beta](docs/feature-status.md)</sup>
+Project scaffolding and a dev loop: `beluga init my-agent`, `beluga new agent Researcher`, `beluga run`, `beluga dev` (rebuild on save), `beluga test`, `beluga eval`, `beluga providers`. See the [CLI reference](docs/reference/cli.md).
 
-### Agent Playground <sup>[planned](docs/feature-status.md)</sup>
-A built-in **chat UI** and playground for inspecting agents live — tool calls, planner traces, memory state, and token usage without wiring your own frontend. Not yet merged to `main`; see [PR #232](https://github.com/lookatitude/beluga-ai/pull/232).
+### Agent Playground <sup>[beta](docs/feature-status.md)</sup>
+A built-in **chat UI** (`server/playground`) that streams agent events over SSE, and a loopback dev playground in `beluga dev` that shows OTel spans, the child's stderr and token/cost counters without wiring your own frontend.
 
 </td></tr>
 </table>
 
-**Plus:** generics-based configuration with hot-reload (file, Consul, etcd, K8s) · RBAC/ABAC/capability-based auth with multi-tenant context scoping · HITL approval policies with Slack/email/webhook dispatch · prompt management and versioning with cache-aware templating.
+**Plus:** generics-based configuration (`config.Load[T]`, env overrides, polling file watcher for hot-reload) · RBAC/ABAC/OPA/capability-based auth with multi-tenant context scoping · HITL approval policies with log and webhook notifiers · prompt management and versioning with cache-aware templating.
 
 <br>
 
@@ -187,7 +187,15 @@ func main() {
 }
 ```
 
-> **Coming soon:** a `beluga` CLI is planned ([PR #234](https://github.com/lookatitude/beluga-ai/pull/234)) that will provide `beluga new`, `beluga test`, and `beluga run` commands. It is not yet available on `main`.
+Or scaffold a project with the CLI:
+
+```bash
+go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@latest
+beluga init my-agent
+cd my-agent && export OPENAI_API_KEY=sk-... && go run .
+```
+
+`beluga init` writes a `main.go`, a `Makefile`, a `Dockerfile`, an eval smoke dataset and a CI workflow. See the [CLI reference](docs/reference/cli.md) and the [first-agent guide](docs/guides/first-agent.md).
 
 <br>
 
@@ -203,7 +211,7 @@ Import only the providers you need — they self-register via `init()`:
 import (
     _ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
     _ "github.com/lookatitude/beluga-ai/v2/llm/providers/anthropic"
-    _ "github.com/lookatitude/beluga-ai/v2/llm/providers/gemini"
+    _ "github.com/lookatitude/beluga-ai/v2/llm/providers/google"
     _ "github.com/lookatitude/beluga-ai/v2/rag/embedding/providers/openai"
     _ "github.com/lookatitude/beluga-ai/v2/rag/vectorstore/providers/pgvector"
 )
@@ -221,7 +229,7 @@ store, err    := vectorstore.New("pgvector", cfg)
 
 ## Architecture
 
-Beluga is organised in **seven layers**. Data flows downward through typed event streams; each layer depends only on the layers below it — a rule enforced by `/arch-validate` and by `go vet`.
+Beluga is organised in **seven layers**. Data flows downward through typed event streams; each layer depends only on the layers below it, a rule checked by `/arch-validate`.
 
 ```
   Layer 7 — Application             User code · CLIs · API servers · K8s CRDs
@@ -229,7 +237,7 @@ Beluga is organised in **seven layers**. Data flows downward through typed event
   Layer 5 — Orchestration           Supervisor · Handoff · Scatter-Gather · Pipeline · Blackboard
   Layer 4 — Protocol gateway        MCP · A2A · REST/SSE · gRPC · WebSocket
   Layer 3 — Capability              LLM · Tool · Memory · RAG · Voice · Guard · Prompt · Eval · Cache · HITL
-  Layer 2 — Cross-cutting           Resilience · Auth · Audit · Cost · State · Sandbox · Workflow
+  Layer 2 — Cross-cutting           Resilience · Auth · Audit · Cost · State · Workflow
   Layer 1 — Foundation              core · schema · config · o11y
 ```
 
@@ -244,19 +252,18 @@ Every extensible package follows the same four-ring contract — learn it once, 
 type ChatModel interface { /* ... */ }
 
 // Ring 2: Registry — Register() in init(), New() at runtime
-llm.Register("openai", factory)
+llm.Register("openai", factory) // factory: func(config.ProviderConfig) (llm.ChatModel, error)
 model, err := llm.New("openai", cfg)
 
-// Ring 3: Middleware — func(T) T, applied outside-in
-model = llm.ApplyMiddleware(model,
-    llm.WithRetry(3),
-    llm.WithRateLimit(rpm, tpm),
-    llm.WithTracing(),        // OTel GenAI spans, shipped by every package
-    llm.WithCache(cache),
-)
+// Ring 3: Hooks — fine-grained lifecycle callbacks, nil-safe, composable
+hooks := llm.ComposeHooks(auditHooks, costHooks)
 
-// Ring 4: Hooks — fine-grained lifecycle callbacks, nil-safe
-model.SetHooks(llm.ComposeHooks(auditHooks, costHooks, guardrailHooks))
+// Ring 4: Middleware — func(T) T; the first one listed is the outermost
+model = llm.ApplyMiddleware(model,
+    llm.WithTracing(), // OTel GenAI spans, shipped by every extensible package
+    llm.WithProviderLimits(llm.ProviderLimits{RPM: 60, MaxConcurrent: 4}),
+    llm.WithHooks(hooks),
+)
 ```
 
 ### Package Map
@@ -268,25 +275,26 @@ model.SetHooks(llm.ComposeHooks(auditHooks, costHooks, guardrailHooks))
 beluga-ai/
 ├── core/             Foundation: Stream, Runnable, Lifecycle, Errors, Tenant
 ├── schema/           Shared types: Message, ContentPart, Tool, Document, Session
-├── config/           Configuration: Load[T], Validate, hot-reload (file/Consul/etcd/K8s)
+├── config/           Configuration: Load[T], LoadFromEnv, Validate, FileWatcher
 ├── o11y/             Observability: OTel GenAI conventions, slog, adapters
 ├── llm/              ChatModel, routing, structured output, context manager
-│   └── providers/    openai, anthropic, gemini, bedrock, azure, ollama, groq,
+│   └── providers/    openai, anthropic, google, bedrock, azure, ollama, groq,
 │                     mistral, deepseek, xai, cohere, together, fireworks, …
 ├── tool/             Tool, FuncTool, MCP client, registry, middleware, hooks
 │   ├── sandbox/      Capability-based tool sandboxing
-│   ├── computeruse/  Browser and computer-use tools [planned — PR #218]
+│   ├── computeruse/  Browser and computer-use tools [beta]
 │   └── learning/     Tool-use telemetry and feedback loops
 ├── memory/           3-tier MemGPT model + graph store
-│   └── stores/       inmemory, redis, postgres, sqlite, neo4j, memgraph
+│   └── stores/       inmemory, redis, postgres, sqlite, mongodb, dragonfly, neo4j, memgraph
 ├── rag/
 │   ├── embedding/    Embedder interface + providers
-│   ├── vectorstore/  12+ providers (pgvector, pinecone, weaviate, qdrant, …)
-│   ├── retriever/    Hybrid, CRAG, HyDE, Adaptive, SEAL-RAG, GraphRAG, ensemble
-│   ├── loader/       PDF, HTML, web, CSV, JSON, docx, Confluence, Notion
-│   └── splitter/     Recursive + markdown splitters
+│   ├── vectorstore/  13 providers (pgvector, pinecone, weaviate, qdrant, …)
+│   ├── retriever/    Hybrid, CRAG, HyDE, Adaptive, multi-query, ensemble, rerank
+│   ├── loader/       text, markdown, CSV, JSON + Firecrawl, Docling, Unstructured,
+│   │                 Confluence, Notion, GitHub, GDrive, cloud storage
+│   └── splitter/     Recursive, markdown and token splitters
 ├── agent/            BaseAgent, Planner (ReAct, ToT, GoT, LATS, MoA, MindMap, …)
-│   ├── codeact/      Code-as-Action agents (CodeAct pattern) [planned — PR #243]
+│   ├── codeact/      Code-as-Action agents (CodeAct pattern) [beta]
 │   ├── cognitive/    Cognitive architectures [experimental]
 │   ├── metacognitive/ Self-reflective planners [experimental]
 │   ├── evolving/     Self-modifying agents [experimental]
@@ -295,30 +303,33 @@ beluga-ai/
 │   └── workflow/     SequentialAgent, ParallelAgent, LoopAgent
 ├── voice/
 │   ├── stt/          Deepgram, AssemblyAI, Whisper, ElevenLabs, Groq, Gladia
-│   ├── tts/          ElevenLabs, Cartesia, OpenAI, PlayHT, Groq, Fish, LMNT
+│   ├── tts/          ElevenLabs, Cartesia, PlayHT, Groq, Fish, LMNT, Smallest
 │   ├── s2s/          OpenAI Realtime, Gemini Live, Amazon Nova
-│   └── transport/    WebSocket, LiveKit, Daily
+│   ├── vad/          Silero, WebRTC
+│   └── transport/    WebSocket, LiveKit, Daily, Pipecat
 ├── orchestration/    Supervisor, Handoff, Scatter-Gather, Pipeline, Blackboard, Router
-├── workflow/         Durable execution engine + Temporal, NATS providers
-├── protocol/         MCP server/client, A2A server/client, REST
+├── workflow/         Workflow engine + Temporal, NATS, Dapr, Inngest, Kafka providers
+├── protocol/         MCP server/client, A2A server/client, REST/SSE, AG-UI
 ├── guard/            Input → Output → Tool guard pipeline (Lakera, NeMo, LLM Guard, …)
 ├── resilience/       Circuit breaker, hedge, retry, rate limit
 ├── cache/            Exact, semantic, prompt caches
-├── hitl/             Confidence-based approval, Slack/email/webhook dispatch
+├── hitl/             Confidence-based approval, log and webhook notifiers
 ├── auth/             RBAC, ABAC, capability-based, OPA integration
 ├── eval/
 │   ├── metrics/      Faithfulness, relevance, hallucination, toxicity, cost, latency
-│   ├── judge/        LLM-as-Judge with rubrics and consistency checks
+│   ├── judge/        LLM-as-Judge with rubrics and consistency checks [beta]
 │   ├── trajectory/   Trajectory evaluation
 │   ├── simulation/   Simulated user interactions
 │   ├── redteam/      Adversarial evaluation
 │   └── providers/    Ragas, Braintrust, DeepEval
 ├── state/            Shared agent state with Watch
 ├── prompt/           Prompt management and versioning
-├── server/           HTTP adapters: Gin, Fiber, Echo, Chi, gRPC, Connect-Go
-├── cmd/beluga/       `beluga` CLI — scaffold, test providers, run playground [planned — PR #234]
-├── website/          Documentation site + Agent Playground UI [planned — PR #232]
-└── internal/         syncutil, jsonutil, testutil (mocks for every interface)
+├── server/           HTTP adapters: Gin, Fiber, Echo, Chi, gRPC, Connect-Go, Huma;
+│                     playground/ chat UI [beta]
+├── runtime/          Runner, Team, plugins, replay, sleep-time compute
+├── cmd/beluga/       `beluga` CLI: init, new, run, dev, test, eval [beta]
+├── k8s/              Optional Kubernetes overlay (operator, CRDs, Helm, webhooks)
+└── internal/         httpclient, openaicompat, syncutil, jsonutil, testutil (test mocks)
 ```
 
 </details>
@@ -334,7 +345,7 @@ Full documentation, tutorials, and API reference live at **[beluga-ai.org](https
 | **[Getting Started](https://beluga-ai.org/docs/getting-started)** | Installation, quick start, first agent |
 | **[Guides](https://beluga-ai.org/docs/guides)** | LLM providers, agents, tools, RAG, voice, memory, orchestration |
 | **[Cookbooks](https://beluga-ai.org/docs/cookbooks)** | Multi-agent customer service, RAG pipeline, voice assistant |
-| **[Architecture](docs/architecture/README.md)** | 18 deep-dive documents — design decisions, extensibility patterns, data flows |
+| **[Architecture](docs/architecture/README.md)** | 21 deep-dive documents — design decisions, extensibility patterns, data flows |
 | **[Patterns](docs/patterns/README.md)** | The 8 reusable patterns every Beluga package uses |
 | **[Reference](docs/reference/providers.md)** | Providers catalog, configuration surface, glossary |
 
@@ -342,13 +353,13 @@ Full documentation, tutorials, and API reference live at **[beluga-ai.org](https
 
 ## Contributing
 
-**We want to build Beluga with you.** The codebase is big but navigable — every package uses the same four-ring extension pattern, every interface is ≤ 4 methods, every package has a `doc.go`, and every public API has a test alongside it.
+**We want to build Beluga with you.** The codebase is big but navigable — every package uses the same four-ring extension pattern, every interface is ≤ 4 methods, every library package has a `doc.go`, and every public API has a test alongside it.
 
 ### Great first contributions
 
 - **Add a provider.** Implement a new LLM, embedding, vector store, STT/TTS, or guard provider. [Provider Template](docs/patterns/provider-template.md) walks through it end-to-end — you'll only touch one subdirectory.
 - **Write a cookbook.** Real-world end-to-end examples help other users more than anything. See [`docs/guides/`](docs/guides/) for the house style.
-- **Ship a built-in tool.** New entries under `tool/builtin/` (calendar, drive, browser, database — pick your itch).
+- **Ship a tool.** There is no built-in tool library yet; a well-tested `tool.NewFuncTool` package or MCP server integration is a welcome start.
 - **Expand the eval suite.** New metrics in `eval/metrics/` or new judges in `eval/judge/`.
 - **Improve docs.** If something confused you, a PR fixing the wording is a high-value contribution.
 
@@ -367,7 +378,7 @@ Full documentation, tutorials, and API reference live at **[beluga-ai.org](https
    gosec -quiet ./...
    govulncheck ./...
    ```
-4. **Follow the layering rule.** Layer N imports only from Layers 1…N−1. `go vet` and [`/arch-validate`](.claude/commands/arch-validate.md) enforce it.
+4. **Follow the layering rule.** Layer N imports only from Layers 1…N−1. [`/arch-validate`](.claude/commands/arch-validate.md) checks it.
 5. **OpenTelemetry GenAI spans at every boundary.** The `WithTracing()` middleware pattern is non-optional — see [DOC-14](docs/architecture/14-observability.md).
 6. **No `interface{}` in public APIs.** Use generics.
 

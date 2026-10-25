@@ -8,6 +8,7 @@ import (
 	"io"
 	"iter"
 	"net/http"
+	"net/url"
 
 	"github.com/lookatitude/beluga-ai/v2/voice/tts"
 )
@@ -15,7 +16,7 @@ import (
 const (
 	defaultBaseURL = "https://api.elevenlabs.io/v1"
 	defaultVoice   = "21m00Tcm4TlvDq8ikWAM" // Rachel
-	defaultModel   = "eleven_monolingual_v1"
+	defaultModel   = "eleven_multilingual_v2"
 )
 
 var _ tts.TTS = (*Engine)(nil) // compile-time interface check
@@ -92,7 +93,9 @@ func (e *Engine) Synthesize(ctx context.Context, text string, opts ...tts.Option
 		return nil, fmt.Errorf("elevenlabs tts: marshal request: %w", err)
 	}
 
-	u := fmt.Sprintf("%s/text-to-speech/%s", e.baseURL, cfg.Voice)
+	// The voice ID is a path segment: escape it so "../" or "?" in a
+	// configured voice cannot redirect the authenticated request.
+	u := fmt.Sprintf("%s/text-to-speech/%s", e.baseURL, url.PathEscape(cfg.Voice))
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(data))
 	if err != nil {
 		return nil, fmt.Errorf("elevenlabs tts: create request: %w", err)

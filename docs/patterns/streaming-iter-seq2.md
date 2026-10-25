@@ -2,7 +2,7 @@
 
 ## What it is
 
-Beluga streams use Go 1.23's `iter.Seq2[T, error]` — a pull-based iterator that integrates with the `for … range` syntax and propagates backpressure. Every streaming component returns a `*core.Stream[Event[T]]` that wraps an `iter.Seq2`. Channels never appear in public API boundaries.
+Beluga streams use `iter.Seq2[T, error]` (added in Go 1.23), a pull-based iterator that integrates with the `for … range` syntax and propagates backpressure. Public streaming APIs return a plain `iter.Seq2`: `llm.ChatModel.Stream` returns `iter.Seq2[schema.StreamChunk, error]`, `agent.Agent.Stream` returns `iter.Seq2[agent.Event, error]`. `core.Stream[T]` is a type alias for `iter.Seq2[core.Event[T], error]` used by the generic stream helpers. Channels never appear in public API boundaries.
 
 ## Why we use it
 
@@ -17,73 +17,55 @@ LLM tokens, tool observations, voice frames, retrieval results — all of these 
 
 ## How it works
 
-Canonical code from `core/stream.go:49-56` (see [`.guild/wiki/patterns/streaming.md`](../../.guild/wiki/patterns/streaming.md)):
+From `core/stream.go`:
 
 ```go
-// core/stream.go
-package core
-
-import "iter"
-
-type Stream[T any] struct {
-    name   string
-    chunks iter.Seq2[int, T]
+// core/stream.go (excerpt)
+type Event[T any] struct {
+    Type    EventType // EventData, EventToolCall, EventToolResult, EventHandoff, EventDone, EventError
+    Payload T
+    Err     error
+    Meta    map[string]any
 }
 
-func (s *Stream[T]) Range(yield func(int, T) bool) {
-    for idx, chunk := range s.chunks {
-        if !yield(idx, chunk) {
-            break
-        }
-    }
-}
+// Stream is a pull-based event iterator built on iter.Seq2.
+type Stream[T any] = iter.Seq2[Event[T], error]
 ```
 
 Consumer:
 
 ```go
-for idx, chunk := range stream.Range {
-    // do something with chunk
+for chunk, err := range model.Stream(ctx, msgs) {
+    if err != nil {
+        return err // the producer yields at most one error, then stops
+    }
+    fmt.Print(chunk.Delta)
     if somethingBad {
-        break // producer sees yield==false next iteration and cleans up
+        break // yield returns false; the producer must stop and clean up
     }
 }
 ```
 
-Producer (an LLM wrapper):
+Producer (an `llm.ChatModel.Stream` over a vendor SDK stream):
 
 ```go
-func (c *Client) Stream(ctx context.Context, req Request) *core.Stream[Event[Token]] {
-    return core.NewStream("openai.stream", func(yield func(int, Event[Token]) bool) {
-        resp, err := c.client.ChatStream(ctx, req)
+func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.GenerateOption) iter.Seq2[schema.StreamChunk, error] {
+    return func(yield func(schema.StreamChunk, error) bool) {
+        stream, err := m.client.ChatStream(ctx, toRequest(msgs, opts))
         if err != nil {
-            yield(0, Event[Token]{Err: err, Type: EventError})
+            yield(schema.StreamChunk{}, core.Errorf(core.ErrProviderDown, "myprovider: %w", err))
             return
         }
-        defer resp.Close()
-        idx := 0
-        for {
-            select {
-            case <-ctx.Done():
-                yield(idx, Event[Token]{Err: ctx.Err(), Type: EventError})
-                return
-            default:
-            }
-            tok, err := resp.Next()
-            if err == io.EOF {
-                yield(idx, Event[Token]{Type: EventDone})
-                return
-            }
-            if err != nil {
-                yield(idx, Event[Token]{Err: err, Type: EventError})
-                return
-            }
-            if !yield(idx, Event[Token]{Payload: tok, Type: EventData}) {
+        defer stream.Close()
+        for stream.Next() {
+            if !yield(schema.StreamChunk{Delta: stream.Current().Text}, nil) {
                 return // consumer quit early; clean up
             }
-            idx++
         }
-    })
+        if err := stream.Err(); err != nil {
+            yield(schema.StreamChunk{}, err)
+        }
+    }
 }
 ```
 
@@ -91,56 +73,34 @@ The `yield` return value is the backpressure signal: if it returns `false`, the 
 
 ## Stream operations
 
-Four core compositions:
+`core` ships these helpers for `core.Stream[T]`:
 
-### Pipe — transform
+| Function | Purpose |
+|---|---|
+| `core.CollectStream(s)` | Drain into a `[]Event[T]`, returning the first error. |
+| `core.MapStream(s, fn)` | Transform each event (`func(Event[T]) (Event[U], error)`). |
+| `core.FilterStream(s, keep)` | Drop events for which `keep` returns false. |
+| `core.MergeStreams(ctx, s...)` | Fan-in: interleave several streams in arrival order. |
+| `core.FanOut(ctx, s, n)` | Broadcast one stream to `n` independent consumers. |
+| `core.NewBufferedStream(ctx, s, size)` | Decouple producer and consumer speed with a bounded buffer. |
 
-```go
-// conceptual
-func Pipe[A, B any](in *Stream[A], fn func(A) B) *Stream[B]
-```
-
-Applies `fn` to every event of `in`. If the source ends, the pipe ends.
-
-### Parallel — fan-out
-
-```go
-func Parallel[A, B any](in *Stream[A], fn func(context.Context, A) (B, error), n int) *Stream[B]
-```
-
-Runs `fn` on each event in parallel across `n` workers. Results are emitted in completion order (not input order) — if you need ordered output, use `Pipe` with a sequential function.
-
-### Merge — fan-in
-
-```go
-func Merge[T any](streams ...*Stream[T]) *Stream[T]
-```
-
-Merges multiple streams into one. Used by scatter-gather orchestration.
-
-### Copy — broadcast
-
-```go
-func Copy[T any](in *Stream[T], n int) []*Stream[T]
-```
-
-Broadcasts one stream to `n` consumers. Each consumer gets its own view; internally this buffers as much as needed to serve the slowest consumer.
+For composing `core.Runnable` values (not streams), use `core.Pipe(a, b)` and `core.Parallel(rs...)`.
 
 ## Where it's used
 
-- `core` — `Stream[T]`, base operations.
-- `llm` — `ChatModel.Stream` returns a token stream.
-- `agent` — `Agent.Stream` returns an event stream.
-- `voice` — `FrameProcessor` pipelines use channel-backed streams internally but expose `*Stream` at boundaries.
-- `tool` — streaming tools return `*Stream[Chunk]`.
-- `rag/retriever` — some retrievers (streaming retrieval, HyDE) return streams.
+- `core` — `Event[T]`, `Stream[T]` and the helpers above.
+- `llm` — `ChatModel.Stream` returns `iter.Seq2[schema.StreamChunk, error]`.
+- `agent` — `Agent.Stream` returns `iter.Seq2[agent.Event, error]`.
+- `voice` — `FrameProcessor.Process` takes and returns `iter.Seq2[voice.Frame, error]`; channels are used only inside implementations.
+- `workflow` — `WorkflowContext.ReceiveSignal` returns `iter.Seq2[any, error]`.
+- `core.Runnable.Stream` returns `iter.Seq2[any, error]`.
 
 ## Common mistakes
 
-- **Returning channels in public APIs.** Don't. Use `*Stream[T]`. Channels belong inside your implementation, not on the boundary.
-- **Ignoring the `yield` return.** A producer that keeps yielding after `yield(…) == false` leaks work. Always check and return.
+- **Returning channels in public APIs.** Don't. Return an `iter.Seq2`. Channels belong inside your implementation, not on the boundary.
+- **Ignoring the `yield` return.** A producer that keeps yielding after `yield(…) == false` violates the iterator contract (the runtime panics) and leaks work. Always check and return.
 - **Not respecting `ctx.Done()`.** A producer that doesn't check the context hangs forever on cancellation. Every blocking call must be context-aware.
-- **Yielding partial state as final.** `EventDone` means the stream is over. Don't use it for checkpoints — use a custom `EventType` for mid-stream notifications.
+- **Yielding after an error.** Yield the error once and return. Consumers stop at the first non-nil error.
 - **Mutating chunks after yielding.** The consumer may still be reading. If you need to reuse a buffer, copy before yielding.
 
 ## Example: implementing your own
@@ -152,62 +112,71 @@ package paginated
 
 import (
     "context"
-    "io"
+    "encoding/json"
+    "iter"
+    "net/http"
+
     "github.com/lookatitude/beluga-ai/v2/core"
 )
 
-type Page struct {
-    Items []Item
-    Total int
-    Next  string
+// Item is one result row.
+type Item struct {
+    ID   string `json:"id"`
+    Name string `json:"name"`
 }
 
-func Fetch(ctx context.Context, client *http.Client, startURL string) *core.Stream[core.Event[Page]] {
-    return core.NewStream("paginated.fetch", func(yield func(int, core.Event[Page]) bool) {
+// Page is one page of results.
+type Page struct {
+    Items []Item `json:"items"`
+    Total int    `json:"total"`
+    Next  string `json:"next"`
+}
+
+// Fetch follows Next links and yields each page.
+func Fetch(ctx context.Context, client *http.Client, startURL string) iter.Seq2[Page, error] {
+    return func(yield func(Page, error) bool) {
         url := startURL
-        idx := 0
         for url != "" {
-            select {
-            case <-ctx.Done():
-                yield(idx, core.Event[Page]{Err: ctx.Err(), Type: core.EventError})
+            req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+            if err != nil {
+                yield(Page{}, core.Errorf(core.ErrInvalidInput, "paginated: %w", err))
                 return
-            default:
             }
-            req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
             resp, err := client.Do(req)
             if err != nil {
-                yield(idx, core.Event[Page]{Err: err, Type: core.EventError})
+                yield(Page{}, core.Errorf(core.ErrProviderDown, "paginated: %w", err))
                 return
             }
             var page Page
-            _ = json.NewDecoder(resp.Body).Decode(&page)
+            err = json.NewDecoder(resp.Body).Decode(&page)
             _ = resp.Body.Close()
-            if !yield(idx, core.Event[Page]{Payload: page, Type: core.EventData}) {
+            if err != nil {
+                yield(Page{}, core.Errorf(core.ErrProviderDown, "paginated: decode: %w", err))
                 return
             }
-            idx++
+            if !yield(page, nil) {
+                return
+            }
             url = page.Next
         }
-        yield(idx, core.Event[Page]{Type: core.EventDone})
-    })
+    }
 }
 ```
 
 Consumer:
 
 ```go
-for _, ev := range paginated.Fetch(ctx, client, url).Range {
-    if ev.Err != nil {
-        return ev.Err
+for page, err := range paginated.Fetch(ctx, client, url) {
+    if err != nil {
+        return err
     }
-    if ev.Type == core.EventDone {
-        break
-    }
-    for _, item := range ev.Payload.Items {
-        // process
+    for _, item := range page.Items {
+        process(item)
     }
 }
 ```
+
+`http.NewRequestWithContext` makes each request respect cancellation, so the loop needs no separate `ctx.Done()` check.
 
 ## Related
 

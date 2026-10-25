@@ -204,8 +204,11 @@ func TestAdapter_InvokeError(t *testing.T) {
 	if err := json.Unmarshal(resp, &invokeResp); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
-	if invokeResp.Error != "test error" {
-		t.Fatalf("expected 'test error', got %q", invokeResp.Error)
+	if invokeResp.Error == "" || strings.Contains(invokeResp.Error, "test error") {
+		t.Fatalf("expected a generic error without internal text, got %q", invokeResp.Error)
+	}
+	if invokeResp.RequestID == "" {
+		t.Fatal("expected request_id on error response")
 	}
 }
 
@@ -470,8 +473,11 @@ func TestAdapter_StreamError(t *testing.T) {
 	if se.Type != "error" {
 		t.Errorf("expected type='error', got %q", se.Type)
 	}
-	if !strings.Contains(se.Text, "stream error") {
-		t.Errorf("expected error text to contain 'stream error', got %q", se.Text)
+	if strings.Contains(se.Text, "stream error") {
+		t.Errorf("internal error text leaked to client: %q", se.Text)
+	}
+	if se.RequestID == "" {
+		t.Error("expected request_id on error event")
 	}
 }
 

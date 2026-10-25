@@ -36,6 +36,7 @@ type agentConfig struct {
 	children      []Agent
 	metadata      map[string]any
 	contract      *schema.Contract
+	history       []schema.Message
 }
 
 // defaultConfig returns the default agent configuration.
@@ -140,5 +141,16 @@ func WithMetadata(meta map[string]any) Option {
 func WithContract(ct *schema.Contract) Option {
 	return func(c *agentConfig) {
 		c.contract = ct
+	}
+}
+
+// WithHistory supplies earlier conversation messages (for example the turns
+// of a session) that BaseAgent places between the persona system message and
+// the new user input. It is typically passed per call to Stream or Invoke;
+// runtime.Runner uses it to give the agent the session's prior turns.
+// Agents that build their own prompt may ignore it.
+func WithHistory(msgs []schema.Message) Option {
+	return func(c *agentConfig) {
+		c.history = msgs
 	}
 }

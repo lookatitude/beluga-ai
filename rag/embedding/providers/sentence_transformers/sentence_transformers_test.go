@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/rag/embedding"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -240,7 +241,51 @@ func TestEmbed_CustomModelPath(t *testing.T) {
 
 	_, err = emb.Embed(context.Background(), []string{"hello"})
 	require.NoError(t, err)
-	assert.Contains(t, requestPath, "pipeline/feature-extraction/BAAI/bge-large-en-v1.5")
+	assert.Equal(t, "/models/BAAI/bge-large-en-v1.5/pipeline/feature-extraction", requestPath)
+}
+
+func TestNew_DefaultEndpoint(t *testing.T) {
+	emb, err := New(config.ProviderConfig{APIKey: "test-key"})
+	require.NoError(t, err)
+
+	assert.Equal(t, "https://router.huggingface.co/hf-inference", defaultBaseURL)
+	assert.Equal(t,
+		"https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction",
+		defaultBaseURL+"/"+emb.path)
+}
+
+func TestNew_InvalidModelPath(t *testing.T) {
+	tests := []string{"../admin", "org/../../x", "org//name", "/leading", "trailing/", "."}
+	for _, model := range tests {
+		t.Run(model, func(t *testing.T) {
+			_, err := New(config.ProviderConfig{APIKey: "test-key", Model: model})
+			require.Error(t, err)
+			var cerr *core.Error
+			require.ErrorAs(t, err, &cerr)
+			assert.Equal(t, core.ErrInvalidInput, cerr.Code)
+		})
+	}
+}
+
+func TestEmbed_ModelPathEscaped(t *testing.T) {
+	var (
+		rawPath  string
+		rawQuery string
+	)
+	ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		rawPath = r.URL.EscapedPath()
+		rawQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `[[0.1]]`)
+	})
+
+	emb, err := New(config.ProviderConfig{APIKey: "test-key", BaseURL: ts.URL, Model: "org/evil?x=1#f"})
+	require.NoError(t, err)
+
+	_, err = emb.Embed(context.Background(), []string{"hello"})
+	require.NoError(t, err)
+	assert.Equal(t, "/models/org/evil%3Fx=1%23f/pipeline/feature-extraction", rawPath)
+	assert.Empty(t, rawQuery)
 }
 
 func TestRegistry_Integration(t *testing.T) {
@@ -296,4 +341,32 @@ func TestNew_CustomModelNotInMap(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Equal(t, defaultDimensions, emb.Dimensions())
+}
+
+func TestEmbed_MalformedResponse(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+	}{
+		{"too_few", `[[0.1]]`},
+		{"too_many", `[[0.1],[0.2],[0.3]]`},
+		{"null_entry", `[[0.1],null]`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, tt.body)
+			})
+			emb, err := New(config.ProviderConfig{APIKey: "test-key", BaseURL: ts.URL})
+			require.NoError(t, err)
+
+			vecs, err := emb.Embed(context.Background(), []string{"a", "b"})
+			require.Error(t, err)
+			assert.Nil(t, vecs)
+			var cerr *core.Error
+			require.ErrorAs(t, err, &cerr)
+			assert.Equal(t, core.ErrProviderDown, cerr.Code)
+		})
+	}
 }

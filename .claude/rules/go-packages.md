@@ -26,7 +26,7 @@ go build ./...                    # compile
 go vet ./...                      # stdlib static analysis
 go test -race ./...               # tests with race detector
 go mod tidy && git diff --exit-code go.mod go.sum
-gofmt -l . | grep -v ".claude/worktrees"
+test -z "$(gofmt -l $(git ls-files '*.go'))"   # fails if any tracked file is unformatted
 golangci-lint run ./...           # primary linter
 gosec -quiet ./...                # security scanner
 govulncheck ./...                 # known-CVE scanner
@@ -47,7 +47,7 @@ pushing and waiting for CI to fail.
 - `G404` — use `crypto/rand` not `math/rand` for anything security-sensitive
 - `errcheck` unhandled errors — use `_ = fn()` when intentional,
   otherwise propagate with `core.Errorf(code, "...: %w", err)`
-- `G601` — context cancellation function must be called (always `defer cancel()`)
+- `govet lostcancel` (not gosec) — the cancel func from `context.WithCancel/WithTimeout` must be called (always `defer cancel()`)
 
 ## Anti-rationalization
 
@@ -81,23 +81,24 @@ pushing and waiting for CI to fail.
 ## Configuration
 
 - Use functional options `WithX()` for all configurable types.
-- Never require config structs in constructors — use variadic options.
+- Never require config structs in constructors — use variadic options. Registry factories are the exception: they take `config.ProviderConfig`.
 - Validate config at construction time, not at usage time.
 - Sensible defaults for every option — zero-config must work.
 
 ## Registry Pattern (ALL extensible packages)
 
-Every extensible package MUST follow this exact pattern:
+Every provider-backed extensible package MUST follow this pattern (`tool` is the exception: it uses an instance `tool.Registry`):
 
 ```go
 var registry = make(map[string]Factory)
 
 func Register(name string, f Factory) { registry[name] = f }  // called in init()
-func New(name string, cfg Config) (Interface, error) { ... }   // factory lookup
+func New(name string, cfg config.ProviderConfig) (Interface, error) { ... } // factory lookup
 func List() []string { ... }                                    // discovery
 ```
 
 - Registration happens only in `init()`. No runtime mutations.
+- Existing registries differ on duplicates (`workflow`, `hitl`, `guard` panic; others overwrite). New registries should panic on a duplicate or empty name.
 - `New()` returns a typed error if the name is not registered.
 
 ## Streaming
@@ -110,7 +111,7 @@ func List() []string { ... }                                    // discovery
 ## Middleware
 
 - Signature: `func(T) T` where T is the interface being wrapped.
-- Apply outside-in (last added runs first).
+- `ApplyMiddleware(x, a, b, c)` makes the first one listed (`a`) the outermost wrapper, so it runs first.
 - Middleware must preserve the full interface contract.
 
 ## Hooks
@@ -157,4 +158,4 @@ func List() []string { ... }                                    // discovery
 - Test: happy path, error paths, edge cases, context cancellation.
 - Integration tests use `//go:build integration`.
 - Benchmarks for hot paths.
-- Use `internal/testutil/` mocks — every interface has a mock.
+- Use `internal/testutil/` mocks where one exists; add one when you need it.

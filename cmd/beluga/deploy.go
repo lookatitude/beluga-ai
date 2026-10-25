@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -21,12 +22,12 @@ func newDeployCmd() *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:           "deploy [flags]",
-		Short:         "Generate deployment artifacts",
+		Short:         "Generate deployment artifacts (not implemented yet; exits non-zero)",
 		Args:          cobra.NoArgs,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runDeploy(target, config, output)
+			return runDeploy(target)
 		},
 	}
 	cmd.Flags().StringVar(&target, "target", "docker", "deployment target (docker, compose, k8s)")
@@ -35,26 +36,19 @@ func newDeployCmd() *cobra.Command {
 	return cmd
 }
 
-// runDeploy executes the deploy workflow with pre-parsed flag values.
-func runDeploy(target, config, output string) error {
-	fmt.Printf("[stub] Would generate %s deployment artifacts\n", target)
-	fmt.Printf("  Config: %s\n", config)
-	fmt.Printf("  Output: %s\n", output)
+// errDeployNotImplemented is returned for every valid target: artifact
+// generation is not implemented yet, so the command must not report success.
+var errDeployNotImplemented = errors.New("deploy: artifact generation is not implemented yet; no files were written " +
+	"(use the scaffolded Dockerfile, or deploy.GenerateDockerfile / deploy.GenerateCompose from Go)")
 
+// runDeploy validates the flags and reports that artifact generation is not
+// implemented. It exits non-zero so scripts and CI do not mistake the
+// placeholder for a successful deploy.
+func runDeploy(target string) error {
 	switch target {
-	case "docker":
-		fmt.Printf("[stub] would write Dockerfile to %s\n", output)
-		fmt.Println("Build with: docker build -t my-agent .")
-	case "compose":
-		fmt.Printf("[stub] would write docker-compose.yml to %s\n", output)
-		fmt.Println("Run with: docker compose up")
-	case "k8s":
-		fmt.Printf("[stub] would write k8s/deployment.yaml, k8s/service.yaml to %s\n", output)
-		fmt.Println("Apply with: kubectl apply -f k8s/")
+	case "docker", "compose", "k8s":
 	default:
 		return fmt.Errorf("unknown deployment target: %s (supported: docker, compose, k8s)", target)
 	}
-
-	fmt.Println("\nnote: artifact generation is not yet implemented; no files were written.")
-	return nil
+	return fmt.Errorf("%s target: %w", target, errDeployNotImplemented)
 }

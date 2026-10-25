@@ -537,3 +537,14 @@ func TestTemplateWithMetadata(t *testing.T) {
 	assert.NotNil(t, tmpl.Metadata)
 	assert.Equal(t, "test-author", tmpl.Metadata["author"])
 }
+
+func TestRegisteredFileProvider(t *testing.T) {
+	dir := t.TempDir()
+	m, err := prompt.New("file", prompt.Config{Extra: map[string]any{"dir": dir}})
+	if err != nil || m == nil {
+		t.Fatalf("prompt.New(file) = %v, %v", m, err)
+	}
+	if _, err := prompt.New("file", prompt.Config{}); err == nil {
+		t.Error("expected error without dir")
+	}
+}

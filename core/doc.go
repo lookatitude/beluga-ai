@@ -91,6 +91,18 @@
 //	    // safe to retry
 //	}
 //
+// IsRetryable looks at the outermost *Error in the chain, so when an error
+// from another component is propagated with extra context it must keep the
+// original code. Use [Wrapf] for that: it inherits the code of a wrapped
+// *Error, maps context cancellation to the non-retryable [ErrCanceled] (and
+// deadline expiry to [ErrTimeout]), and otherwise uses the fallback code.
+// [Errorf] always applies the code it is given.
+//
+//	return core.Wrapf(core.ErrInternal, "pipeline stage %d: %w", i, err)
+//
+// [ErrProviderDown] is for genuine upstream availability failures only;
+// [ErrInternal] covers failures that carry no better classification.
+//
 // # Functional Options
 //
 // The [Option] interface and [OptionFunc] adapter implement the functional

@@ -62,12 +62,13 @@ Every extensible package in Beluga now exposes a `WithTracing()` Ring 4 middlewa
 
 ```go
 import (
+    "github.com/lookatitude/beluga-ai/v2/config"
     "github.com/lookatitude/beluga-ai/v2/memory"
     _ "github.com/lookatitude/beluga-ai/v2/memory/stores/inmemory"
 )
 
 func buildMemory() (memory.Memory, error) {
-    base, err := memory.New("inmemory", memory.Config{})
+    base, err := memory.New("inmemory", config.ProviderConfig{Provider: "inmemory"})
     if err != nil {
         return nil, err
     }

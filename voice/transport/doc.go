@@ -12,7 +12,7 @@
 // The [AudioTransport] interface provides bidirectional audio I/O:
 //
 //	type AudioTransport interface {
-//	    Recv(ctx context.Context) (<-chan voice.Frame, error)
+//	    Recv(ctx context.Context) iter.Seq2[voice.Frame, error]
 //	    Send(ctx context.Context, frame voice.Frame) error
 //	    AudioOut() io.Writer
 //	    Close() error
@@ -26,8 +26,10 @@
 //	import _ "github.com/lookatitude/beluga-ai/v2/voice/transport"
 //
 //	t, err := transport.New("websocket", transport.Config{URL: "ws://..."})
-//	frames, err := t.Recv(ctx)
-//	for frame := range frames {
+//	for frame, err := range t.Recv(ctx) {
+//	    if err != nil {
+//	        break
+//	    }
 //	    // process incoming audio frame
 //	}
 //
@@ -50,8 +52,8 @@
 //
 // # Available Providers
 //
-//   - websocket — Built-in WebSocket transport (voice/transport)
-//   - livekit — LiveKit WebRTC rooms (voice/transport/providers/livekit)
-//   - daily — Daily.co rooms (voice/transport/providers/daily)
-//   - pipecat — Pipecat server (voice/transport/providers/pipecat)
+//   - websocket — Built-in WebSocket transport (voice/transport), the only working transport today.
+//   - livekit, daily, pipecat — registered names only; NOT IMPLEMENTED.
+//     transport.New returns an error wrapping [ErrNotImplemented]
+//     (voice/transport/providers/{livekit,daily,pipecat}).
 package transport

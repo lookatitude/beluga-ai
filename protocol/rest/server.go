@@ -3,15 +3,15 @@ package rest
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/lookatitude/beluga-ai/v2/agent"
 	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/protocol/internal/httpsafe"
 )
 
 // RESTServer exposes Beluga agents as REST/SSE HTTP endpoints.
@@ -50,11 +50,20 @@ func (s *RESTServer) Handler() http.Handler {
 
 // Serve starts the REST server on the given address. It blocks until the context
 // is canceled or an error occurs.
+//
+// The server uses a 10s ReadHeaderTimeout, a 30s ReadTimeout and a 120s
+// IdleTimeout. WriteTimeout is left at zero because SSE streams are
+// long-lived. Request bodies are limited to 1 MiB.
 func (s *RESTServer) Serve(ctx context.Context, addr string) error {
 	srv := &http.Server{
 		Addr:              addr,
 		Handler:           s.Handler(),
-		ReadHeaderTimeout: 10 * time.Second,
+		ReadHeaderTimeout: httpsafe.DefaultReadHeaderTimeout,
+		ReadTimeout:       httpsafe.DefaultReadTimeout,
+		IdleTimeout:       httpsafe.DefaultIdleTimeout,
+		// WriteTimeout is intentionally 0: the /stream endpoint serves
+		// long-lived SSE responses that a write deadline would truncate.
+		// Per-request lifetime is bounded by the request context instead.
 	}
 
 	var lc net.ListenConfig
@@ -102,11 +111,63 @@ type StreamEvent struct {
 	Type    string `json:"type"`
 	Text    string `json:"text,omitempty"`
 	AgentID string `json:"agent_id,omitempty"`
+	// RequestID is set on "error" events: it correlates the generic
+	// client-facing message with the detailed server-side log entry.
+	RequestID string `json:"request_id,omitempty"`
+}
+
+// errorResponse is the JSON error body returned by the REST server.
+type errorResponse struct {
+	Error     string `json:"error"`
+	RequestID string `json:"request_id,omitempty"`
+}
+
+// writeJSONError writes a JSON error body with Content-Type
+// application/json. The body is produced by json.Marshal, so message is
+// always correctly escaped.
+func writeJSONError(w http.ResponseWriter, status int, message, requestID string) {
+	body, err := json.Marshal(errorResponse{Error: message, RequestID: requestID})
+	if err != nil {
+		body = []byte(`{"error":"internal error"}`)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	if requestID != "" {
+		w.Header().Set(httpsafe.RequestIDHeader, requestID)
+	}
+	w.WriteHeader(status)
+	_, _ = w.Write(append(body, '\n'))
+}
+
+// writeInternalError logs err server-side with a fresh correlation ID and
+// returns a generic message carrying only that ID to the client.
+func writeInternalError(w http.ResponseWriter, agentPath string, err error) {
+	reqID := httpsafe.NewRequestID()
+	slog.Error("rest: agent invoke failed",
+		"request_id", reqID,
+		"agent", httpsafe.LogValue(agentPath),
+		"err", httpsafe.LogValue(err.Error()))
+	writeJSONError(w, http.StatusInternalServerError, httpsafe.GenericInternalError, reqID)
+}
+
+// decodeBody decodes a JSON request body bounded by
+// httpsafe.DefaultMaxBodyBytes. On failure it writes the error response
+// (413 for oversized bodies, 400 otherwise) and returns false.
+func decodeBody(w http.ResponseWriter, r *http.Request, dst any) bool {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, httpsafe.DefaultMaxBodyBytes)).Decode(dst); err != nil {
+		if httpsafe.IsBodyTooLarge(err) {
+			writeJSONError(w, http.StatusRequestEntityTooLarge, "request body too large", "")
+			return false
+		}
+		writeJSONError(w, http.StatusBadRequest, "invalid request body", "")
+		return false
+	}
+	return true
 }
 
 func (s *RESTServer) handleRequest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed", "")
 		return
 	}
 
@@ -114,7 +175,7 @@ func (s *RESTServer) handleRequest(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/")
 	lastSlash := strings.LastIndex(path, "/")
 	if lastSlash < 0 {
-		http.Error(w, `{"error":"invalid path, expected /{path}/{invoke|stream}"}`, http.StatusNotFound)
+		writeJSONError(w, http.StatusNotFound, "invalid path, expected /{path}/{invoke|stream}", "")
 		return
 	}
 
@@ -126,35 +187,34 @@ func (s *RESTServer) handleRequest(w http.ResponseWriter, r *http.Request) {
 	s.mu.RUnlock()
 
 	if !ok {
-		http.Error(w, `{"error":"agent not found"}`, http.StatusNotFound)
+		writeJSONError(w, http.StatusNotFound, "agent not found", "")
 		return
 	}
 
 	switch action {
 	case "invoke":
-		s.handleInvoke(r.Context(), w, r, a)
+		s.handleInvoke(r.Context(), w, r, agentPath, a)
 	case "stream":
-		s.handleStream(r.Context(), w, r, a)
+		s.handleStream(r.Context(), w, r, agentPath, a)
 	default:
-		http.Error(w, `{"error":"unknown action, expected invoke or stream"}`, http.StatusNotFound)
+		writeJSONError(w, http.StatusNotFound, "unknown action, expected invoke or stream", "")
 	}
 }
 
-func (s *RESTServer) handleInvoke(ctx context.Context, w http.ResponseWriter, r *http.Request, a agent.Agent) {
+func (s *RESTServer) handleInvoke(ctx context.Context, w http.ResponseWriter, r *http.Request, agentPath string, a agent.Agent) {
 	var req InvokeRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+	if !decodeBody(w, r, &req) {
 		return
 	}
 
 	if req.Input == "" {
-		http.Error(w, `{"error":"input is required"}`, http.StatusBadRequest)
+		writeJSONError(w, http.StatusBadRequest, "input is required", "")
 		return
 	}
 
 	result, err := a.Invoke(ctx, req.Input)
 	if err != nil {
-		http.Error(w, fmt.Sprintf(`{"error":%q}`, err.Error()), http.StatusInternalServerError)
+		writeInternalError(w, agentPath, err)
 		return
 	}
 
@@ -163,27 +223,31 @@ func (s *RESTServer) handleInvoke(ctx context.Context, w http.ResponseWriter, r 
 	_ = json.NewEncoder(w).Encode(InvokeResponse{Result: result})
 }
 
-func (s *RESTServer) handleStream(ctx context.Context, w http.ResponseWriter, r *http.Request, a agent.Agent) {
+func (s *RESTServer) handleStream(ctx context.Context, w http.ResponseWriter, r *http.Request, agentPath string, a agent.Agent) {
 	var req StreamRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+	if !decodeBody(w, r, &req) {
 		return
 	}
 
 	if req.Input == "" {
-		http.Error(w, `{"error":"input is required"}`, http.StatusBadRequest)
+		writeJSONError(w, http.StatusBadRequest, "input is required", "")
 		return
 	}
 
 	sse, err := NewSSEWriter(w)
 	if err != nil {
-		http.Error(w, `{"error":"streaming not supported"}`, http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "streaming not supported", "")
 		return
 	}
 
 	for event, err := range a.Stream(ctx, req.Input) {
 		if err != nil {
-			data, _ := json.Marshal(StreamEvent{Type: "error", Text: err.Error()})
+			reqID := httpsafe.NewRequestID()
+			slog.Error("rest: agent stream failed",
+				"request_id", reqID,
+				"agent", httpsafe.LogValue(agentPath),
+				"err", httpsafe.LogValue(err.Error()))
+			data, _ := json.Marshal(StreamEvent{Type: "error", Text: httpsafe.GenericInternalError, RequestID: reqID})
 			// Ignore the write error: we are already in an error path
 			// and about to return anyway.
 			_ = sse.WriteEvent(SSEEvent{Event: "error", Data: string(data)})

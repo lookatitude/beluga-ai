@@ -31,6 +31,8 @@ var (
 
 // RegisterSandbox registers a sandbox factory under the given name.
 // This is typically called from an init() function.
+// Registering a name that is already registered replaces the previous
+// factory (the framework-wide duplicate policy).
 func RegisterSandbox(name string, f Factory) {
 	mu.Lock()
 	defer mu.Unlock()

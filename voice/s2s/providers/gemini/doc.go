@@ -12,7 +12,7 @@
 // # Usage
 //
 //	engine, err := s2s.New("gemini_live", s2s.Config{
-//	    Model: "gemini-2.0-flash-exp",
+//	    Model: "gemini-3.8-live",
 //	    Extra: map[string]any{"api_key": "..."},
 //	})
 //	session, err := engine.Start(ctx)
@@ -22,10 +22,12 @@
 //
 // Required configuration in Config.Extra:
 //
-//   - api_key — Google AI API key (required)
+//   - api_key — Google AI API key (required). It is sent in the
+//     x-goog-api-key handshake header, not as a ?key= URL parameter, so it
+//     cannot leak through dial errors or logged URLs.
 //   - base_url — Custom WebSocket endpoint (optional, defaults to Gemini Live production URL)
 //
-// The default model is "gemini-2.0-flash-exp". Voice, instructions, and tools
+// The default model is "gemini-3.8-live". Voice, instructions, and tools
 // are passed through [s2s.Config] fields.
 //
 // # Exported Types

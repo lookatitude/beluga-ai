@@ -347,3 +347,41 @@ func textOf(msg schema.Message) string {
 	}
 	return strings.Join(parts, " ")
 }
+
+// FI-28: a second store instance (restart or replica) must not reuse
+// scores, so the history keeps its order.
+func TestAppend_OrderSurvivesRestartAndReplicas(t *testing.T) {
+	ctx := context.Background()
+	mr := miniredis.RunT(t)
+	newStore := func() *MessageStore {
+		s, err := New(Config{Client: goredis.NewClient(&goredis.Options{Addr: mr.Addr()})})
+		require.NoError(t, err)
+		return s
+	}
+	a := newStore()
+	require.NoError(t, a.Append(ctx, schema.NewHumanMessage("one")))
+	require.NoError(t, a.Append(ctx, schema.NewHumanMessage("two")))
+
+	b := newStore() // "restarted" process
+	require.NoError(t, b.Append(ctx, schema.NewHumanMessage("three")))
+	require.NoError(t, a.Append(ctx, schema.NewHumanMessage("four")))
+
+	all, err := b.All(ctx)
+	require.NoError(t, err)
+	var texts []string
+	for _, m := range all {
+		texts = append(texts, m.GetContent()[0].(schema.TextPart).Text)
+	}
+	assert.Equal(t, []string{"one", "two", "three", "four"}, texts)
+
+	require.NoError(t, a.Clear(ctx))
+	assert.False(t, mr.Exists("beluga:messages:seq"))
+}
+
+func TestAppend_SequenceError(t *testing.T) {
+	mr := miniredis.RunT(t)
+	s, err := New(Config{Client: goredis.NewClient(&goredis.Options{Addr: mr.Addr()})})
+	require.NoError(t, err)
+	require.NoError(t, mr.Set("beluga:messages:seq", "not-a-number"))
+	require.Error(t, s.Append(context.Background(), schema.NewHumanMessage("x")))
+}

@@ -39,16 +39,10 @@ func ToolActivity(executor func(ctx context.Context, name string, args map[strin
 // HumanActivity creates an ActivityFunc that requests human interaction via
 // a hitl.Manager. It creates an interaction request and blocks until a human
 // responds or the context expires.
+//
+// Deprecated: use hitl.Activity, which behaves the same. HumanActivity makes
+// workflow (layer 2) import hitl (layer 3), an upward dependency; it will be
+// removed in the next major version.
 func HumanActivity(mgr hitl.Manager) ActivityFunc {
-	return func(ctx context.Context, input any) (any, error) {
-		req, ok := input.(hitl.InteractionRequest)
-		if !ok {
-			return nil, core.Errorf(core.ErrInvalidInput, "workflow/human_activity: expected hitl.InteractionRequest, got %T", input)
-		}
-		resp, err := mgr.RequestInteraction(ctx, req)
-		if err != nil {
-			return nil, core.Errorf(core.ErrProviderDown, "workflow/human_activity: %w", err)
-		}
-		return resp, nil
-	}
+	return hitl.Activity(mgr)
 }

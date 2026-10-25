@@ -15,7 +15,7 @@
 // # Usage
 //
 //	model, err := llm.New("anthropic", config.ProviderConfig{
-//	    Model:  "claude-sonnet-4-5-20250929",
+//	    Model:  "claude-sonnet-5-5",
 //	    APIKey: "sk-ant-...",
 //	})
 //	if err != nil {
@@ -30,7 +30,7 @@
 //
 // The following [config.ProviderConfig] fields are used:
 //
-//   - Model: the Anthropic model name (required; e.g. "claude-sonnet-4-5-20250929", "claude-haiku-4-5-20251001")
+//   - Model: the Anthropic model name (required; e.g. "claude-sonnet-5-5", "claude-haiku-5-5")
 //   - APIKey: the Anthropic API key
 //   - BaseURL: optional, defaults to Anthropic's API endpoint
 //   - Timeout: optional request timeout

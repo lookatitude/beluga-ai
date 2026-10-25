@@ -2,10 +2,10 @@ package inmemory
 
 import (
 	"context"
-	"fmt"
 	"iter"
 	"sync"
 
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/state"
 )
 
@@ -43,14 +43,14 @@ func New() *Store {
 // does not exist.
 func (s *Store) Get(ctx context.Context, key string) (any, error) {
 	if err := ctx.Err(); err != nil {
-		return nil, fmt.Errorf("state/get: %w", err)
+		return nil, core.Wrapf(core.ErrTimeout, "state/get: %w", err)
 	}
 
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	if s.closed {
-		return nil, fmt.Errorf("state/get: store is closed")
+		return nil, core.Errorf(core.ErrInvalidInput, "state/get: %w", state.ErrStoreClosed)
 	}
 
 	e, ok := s.data[key]
@@ -64,14 +64,14 @@ func (s *Store) Get(ctx context.Context, key string) (any, error) {
 // Returns (nil, 0, nil) if the key does not exist.
 func (s *Store) GetVersioned(ctx context.Context, key string) (any, uint64, error) {
 	if err := ctx.Err(); err != nil {
-		return nil, 0, fmt.Errorf("state/get_versioned: %w", err)
+		return nil, 0, core.Wrapf(core.ErrTimeout, "state/get_versioned: %w", err)
 	}
 
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	if s.closed {
-		return nil, 0, fmt.Errorf("state/get_versioned: store is closed")
+		return nil, 0, core.Errorf(core.ErrInvalidInput, "state/get_versioned: %w", state.ErrStoreClosed)
 	}
 
 	e, ok := s.data[key]
@@ -84,14 +84,14 @@ func (s *Store) GetVersioned(ctx context.Context, key string) (any, uint64, erro
 // Set stores a value under the given key, incrementing the version counter.
 func (s *Store) Set(ctx context.Context, key string, value any) error {
 	if err := ctx.Err(); err != nil {
-		return fmt.Errorf("state/set: %w", err)
+		return core.Wrapf(core.ErrTimeout, "state/set: %w", err)
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if s.closed {
-		return fmt.Errorf("state/set: store is closed")
+		return core.Errorf(core.ErrInvalidInput, "state/set: %w", state.ErrStoreClosed)
 	}
 
 	e := s.data[key]
@@ -116,14 +116,14 @@ func (s *Store) Set(ctx context.Context, key string, value any) error {
 // expectedVersion must be 0.
 func (s *Store) CompareAndSwap(ctx context.Context, key string, expectedVersion uint64, value any) (uint64, error) {
 	if err := ctx.Err(); err != nil {
-		return 0, fmt.Errorf("state/cas: %w", err)
+		return 0, core.Wrapf(core.ErrTimeout, "state/cas: %w", err)
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if s.closed {
-		return 0, fmt.Errorf("state/cas: store is closed")
+		return 0, core.Errorf(core.ErrInvalidInput, "state/cas: %w", state.ErrStoreClosed)
 	}
 
 	e, exists := s.data[key]
@@ -155,14 +155,14 @@ func (s *Store) CompareAndSwap(ctx context.Context, key string, expectedVersion 
 // Delete removes the given key. Deleting a non-existent key is a no-op.
 func (s *Store) Delete(ctx context.Context, key string) error {
 	if err := ctx.Err(); err != nil {
-		return fmt.Errorf("state/delete: %w", err)
+		return core.Wrapf(core.ErrTimeout, "state/delete: %w", err)
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if s.closed {
-		return fmt.Errorf("state/delete: store is closed")
+		return core.Errorf(core.ErrInvalidInput, "state/delete: %w", state.ErrStoreClosed)
 	}
 
 	e, exists := s.data[key]
@@ -195,7 +195,7 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 // StateChange together with a non-nil error.
 func (s *Store) Watch(ctx context.Context, key string) iter.Seq2[state.StateChange, error] {
 	if err := ctx.Err(); err != nil {
-		wrapped := fmt.Errorf("state/watch: %w", err)
+		wrapped := core.Wrapf(core.ErrTimeout, "state/watch: %w", err)
 		return func(yield func(state.StateChange, error) bool) {
 			yield(state.StateChange{}, wrapped)
 		}
@@ -204,7 +204,7 @@ func (s *Store) Watch(ctx context.Context, key string) iter.Seq2[state.StateChan
 	s.mu.Lock()
 	if s.closed {
 		s.mu.Unlock()
-		err := fmt.Errorf("state/watch: store is closed")
+		err := core.Errorf(core.ErrInvalidInput, "state/watch: %w", state.ErrStoreClosed)
 		return func(yield func(state.StateChange, error) bool) {
 			yield(state.StateChange{}, err)
 		}
@@ -215,20 +215,25 @@ func (s *Store) Watch(ctx context.Context, key string) iter.Seq2[state.StateChan
 	s.mu.Unlock()
 
 	var unsubOnce sync.Once
+	stop := make(chan struct{})
 	unsub := func() {
 		unsubOnce.Do(func() {
+			close(stop)
 			s.removeWatcherOrphan(key, ch)
 		})
 	}
 
 	// Background goroutine unsubscribes when ctx is cancelled or the store
 	// is closed, so callers who never iterate still release the watcher slot.
+	// It also exits as soon as the iterator unsubscribes (stop), so a
+	// consumer that breaks out does not leave it running.
 	go func() {
 		select {
 		case <-ctx.Done():
 			unsub()
 		case <-s.done:
 			unsub()
+		case <-stop:
 		}
 	}()
 

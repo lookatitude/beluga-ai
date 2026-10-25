@@ -7,10 +7,21 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
+	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore/internal/filterutil"
 	"github.com/lookatitude/beluga-ai/v2/schema"
+)
+
+const (
+	// maxResponseBytes bounds every response body read from Milvus.
+	maxResponseBytes = 32 << 20
+	// defaultTimeout is the timeout of the default HTTP client.
+	defaultTimeout = 30 * time.Second
 )
 
 func init() {
@@ -62,7 +73,7 @@ func WithHTTPClient(c HTTPClient) Option {
 // New creates a new Milvus Store.
 func New(baseURL string, opts ...Option) *Store {
 	s := &Store{
-		client:     http.DefaultClient,
+		client:     &http.Client{Timeout: defaultTimeout},
 		baseURL:    baseURL,
 		collection: "documents",
 		dimension:  1536,
@@ -126,7 +137,10 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 		opt(cfg)
 	}
 
-	body := buildSearchBody(s.collection, query, k, cfg)
+	body, err := buildSearchBody(s.collection, query, k, cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	respBody, err := s.doJSON(ctx, http.MethodPost, "/v2/vectordb/entities/search", body)
 	if err != nil {
@@ -137,7 +151,7 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 }
 
 // buildSearchBody constructs the JSON body for a Milvus search request.
-func buildSearchBody(collection string, query []float32, k int, cfg *vectorstore.SearchConfig) map[string]any {
+func buildSearchBody(collection string, query []float32, k int, cfg *vectorstore.SearchConfig) (map[string]any, error) {
 	body := map[string]any{
 		"collectionName": collection,
 		"data":           [][]float64{float32SliceToFloat64(query)},
@@ -146,21 +160,74 @@ func buildSearchBody(collection string, query []float32, k int, cfg *vectorstore
 	}
 
 	if len(cfg.Filter) > 0 {
-		body["filter"] = buildMetadataFilter(cfg.Filter)
+		expr, err := buildMetadataFilter(cfg.Filter)
+		if err != nil {
+			return nil, err
+		}
+		body["filter"] = expr
 	}
-	return body
+	return body, nil
 }
 
-// buildMetadataFilter constructs a Milvus filter expression from metadata key-value pairs.
-func buildMetadataFilter(filter map[string]any) string {
-	expr := ""
-	for key, val := range filter {
-		if expr != "" {
-			expr += " and "
-		}
-		expr += fmt.Sprintf(`%s == "%v"`, key, val)
+// buildMetadataFilter constructs a Milvus boolean filter expression from
+// metadata key-value pairs. Keys must be safe identifiers; string values are
+// emitted as escaped double-quoted literals, bools and numbers as bare
+// literals, so a value can never rewrite the predicate.
+func buildMetadataFilter(filter map[string]any) (string, error) {
+	keys, err := filterutil.Validate("milvus.search", filter)
+	if err != nil {
+		return "", err
 	}
-	return expr
+	parts := make([]string, 0, len(keys))
+	for _, key := range keys {
+		parts = append(parts, fmt.Sprintf("%s == %s", key, milvusLiteral(filter[key])))
+	}
+	return strings.Join(parts, " and "), nil
+}
+
+// milvusLiteral renders a scalar as a Milvus expression literal.
+func milvusLiteral(v any) string {
+	switch x := v.(type) {
+	case string:
+		return quoteMilvusString(x)
+	case bool:
+		if x {
+			return "true"
+		}
+		return "false"
+	default:
+		return fmt.Sprintf("%v", x)
+	}
+}
+
+// quoteMilvusString returns s as a double-quoted Milvus string literal with
+// backslashes, quotes and control characters escaped.
+func quoteMilvusString(s string) string {
+	var b strings.Builder
+	b.Grow(len(s) + 2)
+	b.WriteByte('"')
+	for _, r := range s {
+		switch r {
+		case '\\':
+			b.WriteString(`\\`)
+		case '"':
+			b.WriteString(`\"`)
+		case '\n':
+			b.WriteString(`\n`)
+		case '\r':
+			b.WriteString(`\r`)
+		case '\t':
+			b.WriteString(`\t`)
+		default:
+			if r < 0x20 {
+				fmt.Fprintf(&b, `\u%04x`, r)
+				continue
+			}
+			b.WriteRune(r)
+		}
+	}
+	b.WriteByte('"')
+	return b.String()
 }
 
 // parseSearchResponse parses a Milvus search response body into documents.
@@ -268,7 +335,7 @@ func (s *Store) doJSON(ctx context.Context, method, path string, body any) ([]by
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 	if err != nil {
 		return nil, fmt.Errorf("milvus: read response: %w", err)
 	}
@@ -276,8 +343,28 @@ func (s *Store) doJSON(ctx context.Context, method, path string, body any) ([]by
 	if resp.StatusCode >= 400 {
 		return nil, fmt.Errorf("milvus: %s %s returned %d: %s", method, path, resp.StatusCode, string(respBody))
 	}
+	if err := apiError(method, path, respBody); err != nil {
+		return nil, err
+	}
 
 	return respBody, nil
+}
+
+// apiError reports a Milvus REST v2 error, which arrives as HTTP 200 with a
+// non-zero "code" (success is 0, or 200 on some server versions).
+func apiError(method, path string, respBody []byte) error {
+	var env struct {
+		Code    *int   `json:"code"`
+		Message string `json:"message"`
+	}
+	if err := json.Unmarshal(respBody, &env); err != nil || env.Code == nil {
+		return nil
+	}
+	if *env.Code == 0 || *env.Code == http.StatusOK {
+		return nil
+	}
+	return core.NewError("milvus.request", core.ErrToolFailed,
+		fmt.Sprintf("%s %s: code %d: %s", method, path, *env.Code, env.Message), nil)
 }
 
 // buildIDFilter creates a Milvus filter expression for the given IDs.
@@ -287,7 +374,7 @@ func buildIDFilter(ids []string) string {
 		if i > 0 {
 			filter += ","
 		}
-		filter += fmt.Sprintf(`%q`, id)
+		filter += quoteMilvusString(id)
 	}
 	filter += "]"
 	return filter

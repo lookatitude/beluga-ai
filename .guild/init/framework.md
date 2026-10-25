@@ -25,8 +25,9 @@ storage_layout_version: 2
 ## Existing knowledge
 - The legacy `.wiki/` was moved into `.guild/wiki/` on 2026-10-25 with its folder
   structure kept (`patterns/`, `architecture/`, `corrections/`, `index.md`, `log.md`).
-  Raw captures with sha256 live under `.guild/knowledge/sources/wiki-*/`. The hooks
-  (`wiki-query.sh`, `post-task-learn.sh`) and all agents/commands now read `.guild/wiki/`.
+  Raw captures with sha256 live under `.guild/knowledge/sources/wiki-*/`. The
+  `wiki-query.sh` hook and all agents/commands now read `.guild/wiki/` (the unwired
+  `post-*-learn.sh` hooks were removed later).
 
 ## Reviews
 - G-init cross-host review: **skipped** by policy (`review: local`).

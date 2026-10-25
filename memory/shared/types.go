@@ -66,16 +66,32 @@ type Fragment struct {
 	// Provenance records the cryptographic lineage of writes.
 	Provenance *Provenance
 
-	// ConflictPolicy determines how concurrent writes are resolved.
+	// ConflictPolicy determines how concurrent writes are resolved. It is
+	// fixed when the fragment is created; the policy on later incoming
+	// writes is ignored so a writer cannot downgrade RejectOnConflict.
 	ConflictPolicy ConflictPolicy
 
-	// Readers lists agent IDs allowed to read this fragment.
-	// An empty list means unrestricted read access.
+	// Readers lists agent IDs allowed to read this fragment. An empty list
+	// grants nobody read access unless UnrestrictedRead is set. When a
+	// fragment is created through [SharedMemory.Write] with an empty list
+	// and UnrestrictedRead unset, the list defaults to the author only.
 	Readers []string
 
-	// Writers lists agent IDs allowed to write this fragment.
-	// An empty list means unrestricted write access.
+	// Writers lists agent IDs allowed to write this fragment. An empty list
+	// grants nobody write access unless UnrestrictedWrite is set. When a
+	// fragment is created through [SharedMemory.Write] with an empty list
+	// and UnrestrictedWrite unset, the list defaults to the author only.
 	Writers []string
+
+	// UnrestrictedRead grants read access to every agent regardless of
+	// Readers. It is fixed at creation time; it is never inferred from an
+	// empty Readers list, so revoking the last reader denies everyone.
+	UnrestrictedRead bool
+
+	// UnrestrictedWrite grants write access to every agent regardless of
+	// Writers. It is fixed at creation time; it is never inferred from an
+	// empty Writers list, so revoking the last writer denies everyone.
+	UnrestrictedWrite bool
 
 	// CreatedAt is the time the fragment was first created.
 	CreatedAt time.Time

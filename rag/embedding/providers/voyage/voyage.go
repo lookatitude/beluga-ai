@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/internal/httpclient"
 	"github.com/lookatitude/beluga-ai/v2/rag/embedding"
 )
@@ -124,11 +125,26 @@ func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 		return nil, fmt.Errorf("voyage embedding: %w", err)
 	}
 
+	if len(resp.Data) != len(texts) {
+		return nil, core.Errorf(core.ErrProviderDown,
+			"voyage embedding: got %d embeddings for %d inputs", len(resp.Data), len(texts))
+	}
+
+	// Place results by their reported index; reject out-of-range or
+	// duplicate indices rather than panicking or returning nil slots.
 	result := make([][]float32, len(texts))
 	for _, d := range resp.Data {
-		if d.Index < len(result) {
-			result[d.Index] = d.Embedding
+		if d.Index < 0 || d.Index >= len(result) {
+			return nil, core.Errorf(core.ErrProviderDown,
+				"voyage embedding: response index %d out of range [0,%d)", d.Index, len(result))
 		}
+		if result[d.Index] != nil {
+			return nil, core.Errorf(core.ErrProviderDown, "voyage embedding: duplicate response index %d", d.Index)
+		}
+		if d.Embedding == nil {
+			return nil, core.Errorf(core.ErrProviderDown, "voyage embedding: missing embedding for index %d", d.Index)
+		}
+		result[d.Index] = d.Embedding
 	}
 
 	return result, nil

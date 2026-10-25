@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -259,5 +260,28 @@ func TestApp_Shutdown_TwiceIsNoop(t *testing.T) {
 	// Second shutdown is a no-op because running is false.
 	if err := app.Shutdown(context.Background()); err != nil {
 		t.Errorf("second Shutdown() error = %v, want nil", err)
+	}
+}
+
+// TestApp_Shutdown_ErrorsAreInspectable is a regression test for FWC-37: the
+// combined shutdown error used %v, so errors.Is could not see the causes.
+func TestApp_Shutdown_ErrorsAreInspectable(t *testing.T) {
+	errC1 := errors.New("c1 stop failed")
+	errC2 := Errorf(ErrTimeout, "c2 stop timed out")
+	app := NewApp()
+	app.Register(
+		&mockComponent{name: "c1", stopErr: errC1},
+		&mockComponent{name: "c2", stopErr: errC2},
+	)
+	if err := app.Start(context.Background()); err != nil {
+		t.Fatalf("Start() error = %v", err)
+	}
+	err := app.Shutdown(context.Background())
+	if !errors.Is(err, errC1) {
+		t.Errorf("errors.Is(err, c1) = false for %v", err)
+	}
+	var ce *Error
+	if !errors.As(err, &ce) || ce.Code != ErrTimeout {
+		t.Errorf("errors.As did not find the c2 *Error: %v", err)
 	}
 }

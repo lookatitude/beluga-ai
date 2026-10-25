@@ -392,15 +392,18 @@ func TestRegister_NilFactory(t *testing.T) {
 	Register("nil-factory-test", nil)
 }
 
-func TestRegister_Duplicate(t *testing.T) {
-	defer func() {
-		r := recover()
-		if r == nil {
-			t.Fatal("expected panic for duplicate registration")
-		}
-	}()
-	// "default" is already registered in init().
-	Register("default", func(cfg Config) (Manager, error) { return nil, nil })
+// TestRegister_DuplicateOverwrites checks hitl follows the framework-wide
+// duplicate policy (FWC-25): a second registration replaces the first.
+func TestRegister_DuplicateOverwrites(t *testing.T) {
+	var calls int
+	Register("dup-test", func(cfg Config) (Manager, error) { return NewManager(), nil })
+	Register("dup-test", func(cfg Config) (Manager, error) { calls++; return NewManager(), nil })
+	if _, err := New("dup-test", Config{}); err != nil {
+		t.Fatal(err)
+	}
+	if calls != 1 {
+		t.Errorf("second factory calls = %d, want 1", calls)
+	}
 }
 
 func TestShouldApprove_UnknownActionRisk(t *testing.T) {

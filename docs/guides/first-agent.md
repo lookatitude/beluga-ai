@@ -1,7 +1,7 @@
 # First Agent — 20 minutes from zero to streaming output
 
 **You will build:** a single-LLM agent with a typed calculator tool that streams its answer back one chunk at a time.
-**Prerequisites:** Go 1.23+, an API key for an LLM provider registered in this build (OpenAI, Anthropic, Ollama, etc.).
+**Prerequisites:** Go 1.26+, an API key for an LLM provider registered in this build (OpenAI, Anthropic, Ollama, etc.).
 **Related:** [DOC-02 Core Primitives](../architecture/02-core-primitives.md), [DOC-05 Agent Anatomy](../architecture/05-agent-anatomy.md), [Provider Template](../patterns/provider-template.md).
 
 Every code block below has been compile-verified against the current tree using a `replace` directive against this repository. You can paste the blocks into a fresh module and run them unchanged.
@@ -14,7 +14,7 @@ go mod init example.com/first-agent
 go get github.com/lookatitude/beluga-ai/v2@latest
 ```
 
-Beluga requires Go 1.23 or newer (streaming uses `iter.Seq2`, introduced in the 1.23 stdlib).
+Beluga requires Go 1.26 or newer (the `go` directive in its `go.mod`). Streaming uses `iter.Seq2`, which arrived in Go 1.23.
 
 ## 2. Pick a provider and set credentials
 
@@ -115,7 +115,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 
