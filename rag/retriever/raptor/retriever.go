@@ -24,7 +24,7 @@ func init() {
 // RAPTORRetriever implements retriever.Retriever using collapsed tree search.
 // It flattens all tree nodes across all levels and performs cosine similarity
 // against the query embedding to find the most relevant nodes.
-type RAPTORRetriever struct {
+type RAPTORRetriever struct { //nolint:revive // stutter accepted: renaming this exported type is a breaking API change
 	tree     *Tree
 	embedder embedding.Embedder
 	topK     int
@@ -35,7 +35,7 @@ type RAPTORRetriever struct {
 var _ retriever.Retriever = (*RAPTORRetriever)(nil)
 
 // RAPTOROption configures a RAPTORRetriever.
-type RAPTOROption func(*RAPTORRetriever)
+type RAPTOROption func(*RAPTORRetriever) //nolint:revive // stutter accepted: renaming this exported type is a breaking API change
 
 // WithTree sets the pre-built RAPTOR tree for retrieval.
 func WithTree(t *Tree) RAPTOROption {
@@ -94,59 +94,67 @@ func (r *RAPTORRetriever) Retrieve(ctx context.Context, query string, opts ...re
 	}
 
 	if r.tree == nil || len(r.tree.Nodes) == 0 {
-		err := core.Errorf(core.ErrInvalidInput, "raptor: retrieve: tree is empty or not set")
-		if r.hooks.AfterRetrieve != nil {
-			r.hooks.AfterRetrieve(ctx, nil, err)
-		}
-		return nil, err
+		return nil, r.fail(ctx, core.Errorf(core.ErrInvalidInput, "raptor: retrieve: tree is empty or not set"))
 	}
 
 	if r.embedder == nil {
-		err := core.Errorf(core.ErrInvalidInput, "raptor: retrieve: embedder is required")
-		if r.hooks.AfterRetrieve != nil {
-			r.hooks.AfterRetrieve(ctx, nil, err)
-		}
-		return nil, err
+		return nil, r.fail(ctx, core.Errorf(core.ErrInvalidInput, "raptor: retrieve: embedder is required"))
 	}
 
 	queryEmb, err := r.embedder.EmbedSingle(ctx, query)
 	if err != nil {
-		err = core.Errorf(core.ErrProviderDown, "raptor: retrieve: embed query: %w", err)
-		if r.hooks.AfterRetrieve != nil {
-			r.hooks.AfterRetrieve(ctx, nil, err)
-		}
-		return nil, err
+		return nil, r.fail(ctx, core.Errorf(core.ErrProviderDown, "raptor: retrieve: embed query: %w", err))
 	}
 
-	// Collapsed tree search: score all nodes across all levels.
-	type scored struct {
-		node  *TreeNode
-		score float64
+	docs := r.collapsedSearch(queryEmb, cfg.Threshold, cfg.TopK)
+
+	if r.hooks.AfterRetrieve != nil {
+		r.hooks.AfterRetrieve(ctx, docs, nil)
 	}
 
+	return docs, nil
+}
+
+// fail reports err to the AfterRetrieve hook (if set) and returns it.
+func (r *RAPTORRetriever) fail(ctx context.Context, err error) error {
+	if r.hooks.AfterRetrieve != nil {
+		r.hooks.AfterRetrieve(ctx, nil, err)
+	}
+	return err
+}
+
+// scoredNode pairs a tree node with its similarity to the query.
+type scoredNode struct {
+	node  *TreeNode
+	score float64
+}
+
+// collapsedSearch scores every node across all tree levels against queryEmb,
+// drops nodes below threshold (when threshold > 0), and returns the topK most
+// similar nodes as documents in descending score order.
+func (r *RAPTORRetriever) collapsedSearch(queryEmb []float32, threshold float64, topK int) []schema.Document {
 	allNodes := r.tree.AllNodes()
-	scored_ := make([]scored, 0, len(allNodes))
+	candidates := make([]scoredNode, 0, len(allNodes))
 	for _, node := range allNodes {
 		sim := cosineSimilarity(queryEmb, node.Embedding)
-		if cfg.Threshold > 0 && sim < cfg.Threshold {
+		if threshold > 0 && sim < threshold {
 			continue
 		}
-		scored_ = append(scored_, scored{node: node, score: sim})
+		candidates = append(candidates, scoredNode{node: node, score: sim})
 	}
 
 	// Sort by descending score.
-	sort.Slice(scored_, func(i, j int) bool {
-		return scored_[i].score > scored_[j].score
+	sort.Slice(candidates, func(i, j int) bool {
+		return candidates[i].score > candidates[j].score
 	})
 
-	topK := cfg.TopK
-	if topK > len(scored_) {
-		topK = len(scored_)
+	if topK > len(candidates) {
+		topK = len(candidates)
 	}
 
 	docs := make([]schema.Document, topK)
 	for i := 0; i < topK; i++ {
-		s := scored_[i]
+		s := candidates[i]
 		metadata := make(map[string]any)
 		for k, v := range s.node.Metadata {
 			metadata[k] = v
@@ -161,12 +169,7 @@ func (r *RAPTORRetriever) Retrieve(ctx context.Context, query string, opts ...re
 			Metadata: metadata,
 		}
 	}
-
-	if r.hooks.AfterRetrieve != nil {
-		r.hooks.AfterRetrieve(ctx, docs, nil)
-	}
-
-	return docs, nil
+	return docs
 }
 
 // cosineSimilarity computes the cosine similarity between two vectors.

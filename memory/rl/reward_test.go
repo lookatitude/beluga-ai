@@ -95,35 +95,47 @@ func TestSimpleReward_Compute(t *testing.T) {
 
 			rewards, err := reward.Compute(ctx, ep)
 			if tt.wantErr {
-				if err == nil {
-					t.Fatal("expected error, got nil")
-				}
-				var coreErr *core.Error
-				if !isErrorType(err, &coreErr) {
-					t.Errorf("expected core.Error, got %T", err)
-				}
+				assertCoreError(t, err)
 				return
 			}
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-
-			if tt.numSteps == 0 {
-				if rewards != nil {
-					t.Errorf("expected nil rewards for empty steps, got %v", rewards)
-				}
-				return
-			}
-
-			if len(rewards) != tt.numSteps {
-				t.Fatalf("rewards len = %d, want %d", len(rewards), tt.numSteps)
-			}
-			for i, r := range rewards {
-				if r != tt.wantReward {
-					t.Errorf("rewards[%d] = %v, want %v", i, r, tt.wantReward)
-				}
-			}
+			assertUniformRewards(t, rewards, tt.numSteps, tt.wantReward)
 		})
+	}
+}
+
+// assertCoreError fails the test unless err is a non-nil *core.Error.
+func assertCoreError(t *testing.T, err error) {
+	t.Helper()
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var coreErr *core.Error
+	if !isErrorType(err, &coreErr) {
+		t.Errorf("expected core.Error, got %T", err)
+	}
+}
+
+// assertUniformRewards checks that rewards has numSteps entries all equal to
+// want, or is nil when numSteps is zero.
+func assertUniformRewards(t *testing.T, rewards []float64, numSteps int, want float64) {
+	t.Helper()
+	if numSteps == 0 {
+		if rewards != nil {
+			t.Errorf("expected nil rewards for empty steps, got %v", rewards)
+		}
+		return
+	}
+
+	if len(rewards) != numSteps {
+		t.Fatalf("rewards len = %d, want %d", len(rewards), numSteps)
+	}
+	for i, r := range rewards {
+		if r != want {
+			t.Errorf("rewards[%d] = %v, want %v", i, r, want)
+		}
 	}
 }
 

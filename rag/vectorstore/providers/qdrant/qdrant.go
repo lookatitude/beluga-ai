@@ -111,7 +111,8 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 	}
 
 	points := make([]map[string]any, len(docs))
-	for i, doc := range docs {
+	for i, emb := range embeddings {
+		doc := &docs[i]
 		payload := map[string]any{
 			"content": doc.Content,
 		}
@@ -121,7 +122,7 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 
 		points[i] = map[string]any{
 			"id":      doc.ID,
-			"vector":  float32SliceToFloat64(embeddings[i]),
+			"vector":  float32SliceToFloat64(emb),
 			"payload": payload,
 		}
 	}

@@ -115,31 +115,18 @@ func (r *QueryRewriter) Retrieve(ctx context.Context, query string, opts ...Opti
 			return nil, core.Errorf(core.ErrProviderDown, "retriever: rewrite retrieve (attempt %d): %w", attempt, err)
 		}
 
-		if len(docs) == 0 && attempt < r.maxRewrites {
-			rewritten, err := r.rewriteQuery(ctx, query, currentQuery, attempt)
-			if err != nil {
-				return nil, core.Errorf(core.ErrProviderDown, "retriever: rewrite query: %w", err)
+		// Stop on the final attempt, or once relevance is good enough.
+		if attempt >= r.maxRewrites || (len(docs) > 0 && r.averageRelevance(docs) >= r.relevanceThreshold) {
+			if len(docs) == 0 {
+				docs = nil
 			}
-			currentQuery = rewritten
-			continue
-		}
-
-		if len(docs) == 0 {
-			if r.hooks.AfterRetrieve != nil {
-				r.hooks.AfterRetrieve(ctx, nil, nil)
-			}
-			return nil, nil
-		}
-
-		avgScore := r.averageRelevance(docs)
-		if avgScore >= r.relevanceThreshold || attempt >= r.maxRewrites {
 			if r.hooks.AfterRetrieve != nil {
 				r.hooks.AfterRetrieve(ctx, docs, nil)
 			}
 			return docs, nil
 		}
 
-		// Relevance too low — rewrite the query.
+		// No docs or relevance too low — rewrite the query.
 		rewritten, err := r.rewriteQuery(ctx, query, currentQuery, attempt)
 		if err != nil {
 			return nil, core.Errorf(core.ErrProviderDown, "retriever: rewrite query: %w", err)

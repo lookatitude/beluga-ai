@@ -46,6 +46,46 @@ func (c *KMeansClusterer) Cluster(ctx context.Context, embeddings [][]float32) (
 		return [][]int{{0}}, nil
 	}
 
+	k := c.resolveK(n)
+
+	maxIter := c.MaxIterations
+	if maxIter <= 0 {
+		maxIter = 100
+	}
+
+	rng := c.newRNG()
+
+	dim, err := commonDimension(embeddings)
+	if err != nil {
+		return nil, err
+	}
+
+	// K-means++ initialization.
+	centroids, err := kmeansPlusPlusInit(ctx, embeddings, k, rng)
+	if err != nil {
+		return nil, err
+	}
+
+	// Lloyd's iterations.
+	assignments := make([]int, n)
+	for iter := 0; iter < maxIter; iter++ {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
+		if !assignNearest(embeddings, centroids, assignments) {
+			break
+		}
+		centroids = recomputeCentroids(embeddings, assignments, centroids, dim)
+	}
+
+	return groupByCluster(assignments, k), nil
+}
+
+// resolveK returns the configured K, or sqrt(n/2) when K <= 0, clamped to [2, n].
+func (c *KMeansClusterer) resolveK(n int) int {
 	k := c.K
 	if k <= 0 {
 		k = int(math.Sqrt(float64(n) / 2.0))
@@ -56,27 +96,34 @@ func (c *KMeansClusterer) Cluster(ctx context.Context, embeddings [][]float32) (
 	if k > n {
 		k = n
 	}
+	return k
+}
 
-	maxIter := c.MaxIterations
-	if maxIter <= 0 {
-		maxIter = 100
-	}
-
-	var rng *rand.Rand
+// newRNG returns a PRNG seeded from Seed, or from a random seed when Seed is zero.
+func (c *KMeansClusterer) newRNG() *rand.Rand {
 	if c.Seed != 0 {
-		rng = rand.New(rand.NewPCG(c.Seed, 0)) //#nosec G404 -- non-crypto PRNG for K-means++ initialization
-	} else {
-		rng = rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64())) //#nosec G404 -- non-crypto PRNG for K-means++ initialization
+		return rand.New(rand.NewPCG(c.Seed, 0)) //#nosec G404 -- non-crypto PRNG for K-means++ initialization
 	}
+	return rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64())) //#nosec G404 -- non-crypto PRNG for K-means++ initialization
+}
 
+// commonDimension returns the dimension shared by all embeddings, or an error
+// naming the first embedding whose dimension differs from embeddings[0].
+func commonDimension(embeddings [][]float32) (int, error) {
 	dim := len(embeddings[0])
 	for i, e := range embeddings[1:] {
 		if len(e) != dim {
-			return nil, core.Errorf(core.ErrInvalidInput, "raptor: cluster: embedding %d has dimension %d, want %d", i+1, len(e), dim)
+			return 0, core.Errorf(core.ErrInvalidInput, "raptor: cluster: embedding %d has dimension %d, want %d", i+1, len(e), dim)
 		}
 	}
+	return dim, nil
+}
 
-	// K-means++ initialization.
+// kmeansPlusPlusInit picks k initial centroids using K-means++: the first is
+// uniform at random, each next one is sampled proportionally to its squared
+// distance from the nearest centroid chosen so far.
+func kmeansPlusPlusInit(ctx context.Context, embeddings [][]float32, k int, rng *rand.Rand) ([][]float32, error) {
+	n := len(embeddings)
 	centroids := make([][]float32, k)
 	centroids[0] = copyVec(embeddings[rng.IntN(n)]) //#nosec G404 -- non-crypto PRNG
 
@@ -104,78 +151,81 @@ func (c *KMeansClusterer) Cluster(ctx context.Context, embeddings [][]float32) (
 		}
 
 		r := rng.Float64() * totalDist //#nosec G404 -- non-crypto PRNG
-		var cumulative float64
-		chosen := n - 1
-		for j := 0; j < n; j++ {
-			cumulative += dist[j]
-			if cumulative >= r {
-				chosen = j
-				break
-			}
-		}
-		centroids[i] = copyVec(embeddings[chosen])
+		centroids[i] = copyVec(embeddings[sampleIndex(dist, r)])
 	}
+	return centroids, nil
+}
 
-	// Lloyd's iterations.
-	assignments := make([]int, n)
-	for iter := 0; iter < maxIter; iter++ {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		default:
+// sampleIndex returns the first index whose cumulative weight reaches r, or
+// the last index if none does.
+func sampleIndex(weights []float64, r float64) int {
+	var cumulative float64
+	for j, w := range weights {
+		cumulative += w
+		if cumulative >= r {
+			return j
 		}
-
-		changed := false
-		for j := 0; j < n; j++ {
-			best := 0
-			bestDist := euclideanDistSq(embeddings[j], centroids[0])
-			for ci := 1; ci < k; ci++ {
-				d := euclideanDistSq(embeddings[j], centroids[ci])
-				if d < bestDist {
-					bestDist = d
-					best = ci
-				}
-			}
-			if assignments[j] != best {
-				assignments[j] = best
-				changed = true
-			}
-		}
-
-		if !changed {
-			break
-		}
-
-		// Recompute centroids.
-		newCentroids := make([][]float32, k)
-		counts := make([]int, k)
-		for ci := 0; ci < k; ci++ {
-			newCentroids[ci] = make([]float32, dim)
-		}
-		for j := 0; j < n; j++ {
-			ci := assignments[j]
-			counts[ci]++
-			for d := 0; d < dim; d++ {
-				newCentroids[ci][d] += embeddings[j][d]
-			}
-		}
-		for ci := 0; ci < k; ci++ {
-			if counts[ci] > 0 {
-				for d := 0; d < dim; d++ {
-					newCentroids[ci][d] /= float32(counts[ci])
-				}
-			} else {
-				// Keep old centroid for empty clusters.
-				newCentroids[ci] = centroids[ci]
-			}
-		}
-		centroids = newCentroids
 	}
+	return len(weights) - 1
+}
 
-	// Build result, omitting empty clusters.
-	clusters := make(map[int][]int, k)
-	for j := 0; j < n; j++ {
+// assignNearest assigns each embedding to its nearest centroid (ties go to the
+// lowest index), updating assignments in place. It reports whether any
+// assignment changed.
+func assignNearest(embeddings, centroids [][]float32, assignments []int) bool {
+	changed := false
+	for j, e := range embeddings {
+		best := 0
+		bestDist := euclideanDistSq(e, centroids[0])
+		for ci := 1; ci < len(centroids); ci++ {
+			d := euclideanDistSq(e, centroids[ci])
+			if d < bestDist {
+				bestDist = d
+				best = ci
+			}
+		}
+		if assignments[j] != best {
+			assignments[j] = best
+			changed = true
+		}
+	}
+	return changed
+}
+
+// recomputeCentroids returns the mean of each cluster's members. Clusters with
+// no members keep their previous centroid.
+func recomputeCentroids(embeddings [][]float32, assignments []int, centroids [][]float32, dim int) [][]float32 {
+	k := len(centroids)
+	newCentroids := make([][]float32, k)
+	counts := make([]int, k)
+	for ci := 0; ci < k; ci++ {
+		newCentroids[ci] = make([]float32, dim)
+	}
+	for j, e := range embeddings {
 		ci := assignments[j]
+		counts[ci]++
+		for d := 0; d < dim; d++ {
+			newCentroids[ci][d] += e[d]
+		}
+	}
+	for ci := 0; ci < k; ci++ {
+		if counts[ci] == 0 {
+			// Keep old centroid for empty clusters.
+			newCentroids[ci] = centroids[ci]
+			continue
+		}
+		for d := 0; d < dim; d++ {
+			newCentroids[ci][d] /= float32(counts[ci])
+		}
+	}
+	return newCentroids
+}
+
+// groupByCluster converts per-embedding assignments into one index slice per
+// non-empty cluster, ordered by cluster ID.
+func groupByCluster(assignments []int, k int) [][]int {
+	clusters := make(map[int][]int, k)
+	for j, ci := range assignments {
 		clusters[ci] = append(clusters[ci], j)
 	}
 
@@ -188,8 +238,7 @@ func (c *KMeansClusterer) Cluster(ctx context.Context, embeddings [][]float32) (
 	for _, ci := range keys {
 		result = append(result, clusters[ci])
 	}
-
-	return result, nil
+	return result
 }
 
 // euclideanDistSq returns the squared Euclidean distance between two vectors.

@@ -65,16 +65,25 @@ func New(cfg config.ProviderConfig) (*Loader, error) {
 
 // pageResponse is the Confluence content API response for a single page.
 type pageResponse struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
-	Body  struct {
-		Storage struct {
-			Value string `json:"value"`
-		} `json:"storage"`
-	} `json:"body"`
-	Space struct {
-		Key string `json:"key"`
-	} `json:"space"`
+	ID    string    `json:"id"`
+	Title string    `json:"title"`
+	Body  pageBody  `json:"body"`
+	Space pageSpace `json:"space"`
+}
+
+// pageBody holds the page body representations requested via expand=body.storage.
+type pageBody struct {
+	Storage pageStorage `json:"storage"`
+}
+
+// pageStorage is the storage-format (XHTML) representation of a page body.
+type pageStorage struct {
+	Value string `json:"value"`
+}
+
+// pageSpace identifies the space a page belongs to.
+type pageSpace struct {
+	Key string `json:"key"`
 }
 
 // Load fetches a Confluence page by its ID. The source should be the page ID

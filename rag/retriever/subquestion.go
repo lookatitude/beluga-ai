@@ -85,30 +85,42 @@ func parseSubQuestions(text string, available []string) []SubQuestion {
 
 	var questions []SubQuestion
 	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-
-		parts := strings.SplitN(line, "|", 2)
-		if len(parts) == 2 {
-			name := strings.TrimSpace(parts[0])
-			q := strings.TrimSpace(parts[1])
-			if _, ok := availSet[name]; !ok {
-				name = fallback
-			}
-			if q != "" {
-				questions = append(questions, SubQuestion{Question: q, Retriever: name})
-			}
-		} else {
-			// No pipe — treat whole line as a question routed to fallback.
-			if fallback != "" {
-				questions = append(questions, SubQuestion{Question: line, Retriever: fallback})
-			}
+		if sq, ok := parseSubQuestionLine(line, availSet, fallback); ok {
+			questions = append(questions, sq)
 		}
 	}
 
 	return questions
+}
+
+// parseSubQuestionLine parses one "retriever_name|question" line. Unknown
+// retriever names are routed to fallback; a line without a pipe becomes a
+// question routed to fallback (only when fallback is non-empty). It reports
+// false for blank lines and lines that yield no question.
+func parseSubQuestionLine(line string, availSet map[string]struct{}, fallback string) (SubQuestion, bool) {
+	line = strings.TrimSpace(line)
+	if line == "" {
+		return SubQuestion{}, false
+	}
+
+	parts := strings.SplitN(line, "|", 2)
+	if len(parts) != 2 {
+		// No pipe — treat whole line as a question routed to fallback.
+		if fallback == "" {
+			return SubQuestion{}, false
+		}
+		return SubQuestion{Question: line, Retriever: fallback}, true
+	}
+
+	name := strings.TrimSpace(parts[0])
+	q := strings.TrimSpace(parts[1])
+	if _, ok := availSet[name]; !ok {
+		name = fallback
+	}
+	if q == "" {
+		return SubQuestion{}, false
+	}
+	return SubQuestion{Question: q, Retriever: name}, true
 }
 
 // SubQuestionRetriever decomposes complex queries into sub-questions, routes
@@ -229,19 +241,7 @@ func (r *SubQuestionRetriever) Retrieve(ctx context.Context, query string, opts 
 			return nil, core.Errorf(core.ErrProviderDown, "retriever: subquestion retrieve %q via %q: %w", sq.Question, sq.Retriever, err)
 		}
 
-		for _, doc := range docs {
-			key := doc.ID
-			if key == "" {
-				// Use a bounded content hash as the dedup key so that very
-				// large documents do not allocate oversized map keys.
-				sum := sha256.Sum256([]byte(doc.Content))
-				key = hex.EncodeToString(sum[:])
-			}
-			if _, exists := seen[key]; !exists {
-				seen[key] = struct{}{}
-				results = append(results, doc)
-			}
-		}
+		results = appendUniqueDocs(results, docs, seen)
 	}
 
 	if r.hooks.AfterRetrieve != nil {
@@ -249,4 +249,24 @@ func (r *SubQuestionRetriever) Retrieve(ctx context.Context, query string, opts 
 	}
 
 	return results, nil
+}
+
+// appendUniqueDocs appends to results each doc whose dedup key (its ID, or a
+// SHA-256 of its content when the ID is empty) is not yet in seen, recording
+// the key. It returns the extended slice.
+func appendUniqueDocs(results, docs []schema.Document, seen map[string]struct{}) []schema.Document {
+	for _, doc := range docs {
+		key := doc.ID
+		if key == "" {
+			// Use a bounded content hash as the dedup key so that very
+			// large documents do not allocate oversized map keys.
+			sum := sha256.Sum256([]byte(doc.Content))
+			key = hex.EncodeToString(sum[:])
+		}
+		if _, exists := seen[key]; !exists {
+			seen[key] = struct{}{}
+			results = append(results, doc)
+		}
+	}
+	return results
 }

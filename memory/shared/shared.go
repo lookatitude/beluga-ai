@@ -10,6 +10,14 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/core"
 )
 
+// Operation names attached to errors returned by SharedMemory methods.
+const (
+	opNameWrite  = "shared.write"
+	opNameRead   = "shared.read"
+	opNameGrant  = "shared.grant"
+	opNameRevoke = "shared.revoke"
+)
+
 // options holds configuration for SharedMemory.
 type options struct {
 	defaultScope      Scope
@@ -43,7 +51,7 @@ func WithProvenanceEnabled(enabled bool) Option {
 
 // SharedMemory orchestrates access-controlled, provenance-tracked shared
 // memory on top of a SharedStore backend.
-type SharedMemory struct {
+type SharedMemory struct { //nolint:revive // stutter accepted: renaming this exported type is a breaking API change
 	store SharedStore
 	opts  options
 
@@ -73,10 +81,10 @@ func NewSharedMemory(store SharedStore, opts ...Option) *SharedMemory {
 // provenance record is computed and attached to the fragment.
 func (sm *SharedMemory) Write(ctx context.Context, frag *Fragment) error {
 	if frag.Key == "" {
-		return core.NewError("shared.write", core.ErrInvalidInput, "fragment key must not be empty", nil)
+		return core.NewError(opNameWrite, core.ErrInvalidInput, "fragment key must not be empty", nil)
 	}
 	if frag.AuthorID == "" {
-		return core.NewError("shared.write", core.ErrInvalidInput, "fragment author ID must not be empty", nil)
+		return core.NewError(opNameWrite, core.ErrInvalidInput, "fragment author ID must not be empty", nil)
 	}
 
 	// Apply defaults.
@@ -96,7 +104,7 @@ func (sm *SharedMemory) Write(ctx context.Context, frag *Fragment) error {
 				sm.opts.hooks.OnDenied(ctx, frag.Key, frag.AuthorID, PermWrite)
 			}
 			return core.NewError(
-				"shared.write",
+				opNameWrite,
 				core.ErrAuth,
 				fmt.Sprintf("agent %q is not authorized to write fragment %q", frag.AuthorID, frag.Key),
 				nil,
@@ -104,15 +112,7 @@ func (sm *SharedMemory) Write(ctx context.Context, frag *Fragment) error {
 		}
 	}
 
-	now := time.Now()
-	if frag.CreatedAt.IsZero() {
-		if existing != nil {
-			frag.CreatedAt = existing.CreatedAt
-		} else {
-			frag.CreatedAt = now
-		}
-	}
-	frag.UpdatedAt = now
+	stampTimes(frag, existing)
 
 	if err := sm.store.WriteFragment(ctx, frag); err != nil {
 		return err
@@ -125,12 +125,7 @@ func (sm *SharedMemory) Write(ctx context.Context, frag *Fragment) error {
 	// version. We then patch only the Provenance field on the stored
 	// fragment via UpdateProvenance so the version is not bumped again.
 	if sm.opts.provenanceEnabled {
-		var parentHash [32]byte
-		if existing != nil && existing.Provenance != nil {
-			parentHash = existing.Provenance.ContentHash
-		}
-		frag.Provenance = ComputeProvenance(frag.Content, frag.AuthorID, parentHash)
-		if err := sm.store.UpdateProvenance(ctx, frag.Key, frag.Provenance); err != nil {
+		if err := sm.attachProvenance(ctx, frag, existing); err != nil {
 			return err
 		}
 	}
@@ -148,14 +143,40 @@ func (sm *SharedMemory) Write(ctx context.Context, frag *Fragment) error {
 	return nil
 }
 
+// stampTimes sets frag.UpdatedAt to now and, when frag.CreatedAt is unset,
+// inherits it from the existing fragment (if any) or sets it to now.
+func stampTimes(frag, existing *Fragment) {
+	now := time.Now()
+	if frag.CreatedAt.IsZero() {
+		if existing != nil {
+			frag.CreatedAt = existing.CreatedAt
+		} else {
+			frag.CreatedAt = now
+		}
+	}
+	frag.UpdatedAt = now
+}
+
+// attachProvenance computes the provenance of the stored fragment, chaining it
+// to the existing fragment's content hash, and persists it without bumping the
+// fragment version.
+func (sm *SharedMemory) attachProvenance(ctx context.Context, frag, existing *Fragment) error {
+	var parentHash [32]byte
+	if existing != nil && existing.Provenance != nil {
+		parentHash = existing.Provenance.ContentHash
+	}
+	frag.Provenance = ComputeProvenance(frag.Content, frag.AuthorID, parentHash)
+	return sm.store.UpdateProvenance(ctx, frag.Key, frag.Provenance)
+}
+
 // Read retrieves a fragment by key after checking that the caller has read
 // access.
 func (sm *SharedMemory) Read(ctx context.Context, key string, agentID string) (*Fragment, error) {
 	if key == "" {
-		return nil, core.NewError("shared.read", core.ErrInvalidInput, "key must not be empty", nil)
+		return nil, core.NewError(opNameRead, core.ErrInvalidInput, "key must not be empty", nil)
 	}
 	if agentID == "" {
-		return nil, core.NewError("shared.read", core.ErrInvalidInput, "agent ID must not be empty", nil)
+		return nil, core.NewError(opNameRead, core.ErrInvalidInput, "agent ID must not be empty", nil)
 	}
 
 	frag, err := sm.store.ReadFragment(ctx, key)
@@ -168,7 +189,7 @@ func (sm *SharedMemory) Read(ctx context.Context, key string, agentID string) (*
 			sm.opts.hooks.OnDenied(ctx, key, agentID, PermRead)
 		}
 		return nil, core.NewError(
-			"shared.read",
+			opNameRead,
 			core.ErrAuth,
 			fmt.Sprintf("agent %q is not authorized to read fragment %q", agentID, key),
 			nil,
@@ -296,7 +317,7 @@ func (sm *SharedMemory) Watch(ctx context.Context, key string) iter.Seq2[Fragmen
 // identified by key. The grantor must have write access to the fragment.
 func (sm *SharedMemory) Grant(ctx context.Context, key string, grantor string, agentID string, perm Permission) error {
 	if key == "" || agentID == "" {
-		return core.NewError("shared.grant", core.ErrInvalidInput, "key and agent ID must not be empty", nil)
+		return core.NewError(opNameGrant, core.ErrInvalidInput, "key and agent ID must not be empty", nil)
 	}
 
 	frag, err := sm.store.ReadFragment(ctx, key)
@@ -309,7 +330,7 @@ func (sm *SharedMemory) Grant(ctx context.Context, key string, grantor string, a
 			sm.opts.hooks.OnDenied(ctx, key, grantor, PermWrite)
 		}
 		return core.NewError(
-			"shared.grant",
+			opNameGrant,
 			core.ErrAuth,
 			fmt.Sprintf("agent %q is not authorized to grant permissions on fragment %q", grantor, key),
 			nil,
@@ -326,7 +347,7 @@ func (sm *SharedMemory) Grant(ctx context.Context, key string, grantor string, a
 			frag.Writers = append(frag.Writers, agentID)
 		}
 	default:
-		return core.NewError("shared.grant", core.ErrInvalidInput, fmt.Sprintf("unknown permission %q", perm), nil)
+		return core.NewError(opNameGrant, core.ErrInvalidInput, fmt.Sprintf("unknown permission %q", perm), nil)
 	}
 
 	if err := sm.store.WriteFragment(ctx, frag); err != nil {
@@ -350,7 +371,7 @@ func (sm *SharedMemory) Grant(ctx context.Context, key string, grantor string, a
 // identified by key. The revoker must have write access to the fragment.
 func (sm *SharedMemory) Revoke(ctx context.Context, key string, revoker string, agentID string, perm Permission) error {
 	if key == "" || agentID == "" {
-		return core.NewError("shared.revoke", core.ErrInvalidInput, "key and agent ID must not be empty", nil)
+		return core.NewError(opNameRevoke, core.ErrInvalidInput, "key and agent ID must not be empty", nil)
 	}
 
 	frag, err := sm.store.ReadFragment(ctx, key)
@@ -363,7 +384,7 @@ func (sm *SharedMemory) Revoke(ctx context.Context, key string, revoker string, 
 			sm.opts.hooks.OnDenied(ctx, key, revoker, PermWrite)
 		}
 		return core.NewError(
-			"shared.revoke",
+			opNameRevoke,
 			core.ErrAuth,
 			fmt.Sprintf("agent %q is not authorized to revoke permissions on fragment %q", revoker, key),
 			nil,
@@ -376,7 +397,7 @@ func (sm *SharedMemory) Revoke(ctx context.Context, key string, revoker string, 
 	case PermWrite:
 		frag.Writers = removeFromSlice(frag.Writers, agentID)
 	default:
-		return core.NewError("shared.revoke", core.ErrInvalidInput, fmt.Sprintf("unknown permission %q", perm), nil)
+		return core.NewError(opNameRevoke, core.ErrInvalidInput, fmt.Sprintf("unknown permission %q", perm), nil)
 	}
 
 	if err := sm.store.WriteFragment(ctx, frag); err != nil {

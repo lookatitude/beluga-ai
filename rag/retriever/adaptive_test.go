@@ -15,9 +15,9 @@ import (
 func TestNewAdaptiveRetriever_WithBothRetrievers(t *testing.T) {
 	model := &mockChatModel{}
 	simple := &mockRetriever{}
-	complex := &mockRetriever{}
+	complexRet := &mockRetriever{}
 
-	r := retriever.NewAdaptiveRetriever(model, simple, complex)
+	r := retriever.NewAdaptiveRetriever(model, simple, complexRet)
 	require.NotNil(t, r)
 }
 
@@ -68,14 +68,14 @@ func TestAdaptiveRetriever_Retrieve_Simple(t *testing.T) {
 		},
 	}
 
-	complex := &mockRetriever{
+	complexRet := &mockRetriever{
 		retrieveFn: func(ctx context.Context, query string, opts ...retriever.Option) ([]schema.Document, error) {
 			t.Error("complex retriever should not be called for simple classification")
 			return nil, nil
 		},
 	}
 
-	r := retriever.NewAdaptiveRetriever(model, simple, complex)
+	r := retriever.NewAdaptiveRetriever(model, simple, complexRet)
 	docs, err := r.Retrieve(context.Background(), "what is Go?")
 
 	require.NoError(t, err)
@@ -99,14 +99,14 @@ func TestAdaptiveRetriever_Retrieve_Complex(t *testing.T) {
 
 	complexDocs := makeDocs("complex1", "complex2")
 	var complexCalled bool
-	complex := &mockRetriever{
+	complexRet := &mockRetriever{
 		retrieveFn: func(ctx context.Context, query string, opts ...retriever.Option) ([]schema.Document, error) {
 			complexCalled = true
 			return complexDocs, nil
 		},
 	}
 
-	r := retriever.NewAdaptiveRetriever(model, simple, complex)
+	r := retriever.NewAdaptiveRetriever(model, simple, complexRet)
 	docs, err := r.Retrieve(context.Background(), "compare Go and Rust concurrency models")
 
 	require.NoError(t, err)
@@ -131,9 +131,9 @@ func TestAdaptiveRetriever_Retrieve_UnrecognizedClassification(t *testing.T) {
 		},
 	}
 
-	complex := &mockRetriever{}
+	complexRet := &mockRetriever{}
 
-	r := retriever.NewAdaptiveRetriever(model, simple, complex)
+	r := retriever.NewAdaptiveRetriever(model, simple, complexRet)
 	docs, err := r.Retrieve(context.Background(), "query")
 
 	require.NoError(t, err)
@@ -150,9 +150,9 @@ func TestAdaptiveRetriever_Retrieve_ClassificationError(t *testing.T) {
 	}
 
 	simple := &mockRetriever{}
-	complex := &mockRetriever{}
+	complexRet := &mockRetriever{}
 
-	r := retriever.NewAdaptiveRetriever(model, simple, complex)
+	r := retriever.NewAdaptiveRetriever(model, simple, complexRet)
 	_, err := r.Retrieve(context.Background(), "query")
 
 	require.Error(t, err)
@@ -190,13 +190,13 @@ func TestAdaptiveRetriever_Retrieve_ComplexRetrieverError(t *testing.T) {
 	simple := &mockRetriever{}
 
 	expectedErr := errors.New("complex retriever failure")
-	complex := &mockRetriever{
+	complexRet := &mockRetriever{
 		retrieveFn: func(ctx context.Context, query string, opts ...retriever.Option) ([]schema.Document, error) {
 			return nil, expectedErr
 		},
 	}
 
-	r := retriever.NewAdaptiveRetriever(model, simple, complex)
+	r := retriever.NewAdaptiveRetriever(model, simple, complexRet)
 	_, err := r.Retrieve(context.Background(), "query")
 
 	require.Error(t, err)
@@ -304,14 +304,14 @@ func TestAdaptiveRetriever_ClassifyQuery_Complex_VariantResponse(t *testing.T) {
 
 	complexDocs := makeDocs("complex1")
 	var complexCalled bool
-	complex := &mockRetriever{
+	complexRet := &mockRetriever{
 		retrieveFn: func(ctx context.Context, query string, opts ...retriever.Option) ([]schema.Document, error) {
 			complexCalled = true
 			return complexDocs, nil
 		},
 	}
 
-	r := retriever.NewAdaptiveRetriever(model, simple, complex)
+	r := retriever.NewAdaptiveRetriever(model, simple, complexRet)
 	docs, err := r.Retrieve(context.Background(), "query")
 
 	require.NoError(t, err)

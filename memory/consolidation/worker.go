@@ -252,7 +252,8 @@ func (w *Worker) runCycle(ctx context.Context) CycleMetrics {
 
 // partitionDecisions splits decisions into records to prune and records to compress.
 func (w *Worker) partitionDecisions(decisions []Decision) (toPrune, toCompress []Record) {
-	for _, d := range decisions {
+	for i := range decisions {
+		d := &decisions[i]
 		switch d.Action {
 		case ActionPrune:
 			toPrune = append(toPrune, d.Record)
@@ -296,8 +297,8 @@ func (w *Worker) applyPrune(ctx context.Context, metrics *CycleMetrics, toPrune 
 		return
 	}
 	ids := make([]string, len(toPrune))
-	for i, r := range toPrune {
-		ids[i] = r.ID
+	for i := range toPrune {
+		ids[i] = toPrune[i].ID
 	}
 	if err := w.store.DeleteRecords(ctx, ids); err != nil {
 		metrics.Errors = append(metrics.Errors, core.Errorf(core.ErrProviderDown, "delete: %w", err))
@@ -309,14 +310,14 @@ func (w *Worker) applyPrune(ctx context.Context, metrics *CycleMetrics, toPrune 
 	}
 }
 
-// jitter returns a random duration in [0, max) using crypto/rand.
-func (w *Worker) jitter(max time.Duration) time.Duration {
-	if max <= 0 {
+// jitter returns a random duration in [0, maxDur) using crypto/rand.
+func (w *Worker) jitter(maxDur time.Duration) time.Duration {
+	if maxDur <= 0 {
 		return 0
 	}
-	n, err := rand.Int(rand.Reader, big.NewInt(int64(max)))
+	n, err := rand.Int(rand.Reader, big.NewInt(int64(maxDur)))
 	if err != nil {
-		return max / 2 // fallback to half on error
+		return maxDur / 2 // fallback to half on error
 	}
 	return time.Duration(n.Int64())
 }

@@ -20,7 +20,7 @@ func init() {
 // retrieval. It encodes queries into per-token embeddings via a
 // [embedding.MultiVectorEmbedder] and searches a [ColBERTIndex] using MaxSim
 // scoring.
-type ColBERTRetriever struct {
+type ColBERTRetriever struct { //nolint:revive // stutter accepted: renaming this exported type is a breaking API change
 	embedder embedding.MultiVectorEmbedder
 	index    ColBERTIndex
 	topK     int
@@ -31,7 +31,7 @@ type ColBERTRetriever struct {
 var _ retriever.Retriever = (*ColBERTRetriever)(nil)
 
 // ColBERTOption configures a ColBERTRetriever.
-type ColBERTOption func(*ColBERTRetriever)
+type ColBERTOption func(*ColBERTRetriever) //nolint:revive // stutter accepted: renaming this exported type is a breaking API change
 
 // WithEmbedder sets the multi-vector embedder used to encode queries into
 // per-token embeddings.

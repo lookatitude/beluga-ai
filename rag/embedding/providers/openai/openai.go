@@ -98,7 +98,8 @@ func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 	}
 
 	result := make([][]float32, len(texts))
-	for _, emb := range resp.Data {
+	for i := range resp.Data {
+		emb := &resp.Data[i]
 		if emb.Index >= int64(len(texts)) {
 			continue
 		}

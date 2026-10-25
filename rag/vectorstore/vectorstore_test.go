@@ -70,6 +70,20 @@ func newTestStore(t *testing.T) vectorstore.VectorStore {
 	return store
 }
 
+// searchExpect runs store.Search and fails the test on error or when the
+// number of results differs from wantLen.
+func searchExpect(t *testing.T, ctx context.Context, store vectorstore.VectorStore, query []float32, k, wantLen int, opts ...vectorstore.SearchOption) []schema.Document {
+	t.Helper()
+	results, err := store.Search(ctx, query, k, opts...)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(results) != wantLen {
+		t.Fatalf("expected %d results, got %d", wantLen, len(results))
+	}
+	return results
+}
+
 func TestAdd_And_Search(t *testing.T) {
 	store := newTestStore(t)
 	ctx := context.Background()
@@ -92,13 +106,7 @@ func TestAdd_And_Search(t *testing.T) {
 
 	t.Run("search by similarity", func(t *testing.T) {
 		query := []float32{1.0, 0.0, 0.0}
-		results, err := store.Search(ctx, query, 2)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if len(results) != 2 {
-			t.Fatalf("expected 2 results, got %d", len(results))
-		}
+		results := searchExpect(t, ctx, store, query, 2, 2)
 		// Doc "1" should be most similar to query.
 		if results[0].ID != "1" {
 			t.Fatalf("expected first result to be doc '1', got %q", results[0].ID)
@@ -110,13 +118,7 @@ func TestAdd_And_Search(t *testing.T) {
 
 	t.Run("search with filter", func(t *testing.T) {
 		query := []float32{1.0, 0.0, 0.0}
-		results, err := store.Search(ctx, query, 10, vectorstore.WithFilter(map[string]any{"topic": "farewell"}))
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if len(results) != 1 {
-			t.Fatalf("expected 1 result, got %d", len(results))
-		}
+		results := searchExpect(t, ctx, store, query, 10, 1, vectorstore.WithFilter(map[string]any{"topic": "farewell"}))
 		if results[0].ID != "2" {
 			t.Fatalf("expected result to be doc '2', got %q", results[0].ID)
 		}
@@ -126,14 +128,8 @@ func TestAdd_And_Search(t *testing.T) {
 		// Query perpendicular to doc "2", moderately close to "1" and "3".
 		// Use a very high threshold so only perfect match (doc "1") passes.
 		query := []float32{1.0, 0.0, 0.0}
-		results, err := store.Search(ctx, query, 10, vectorstore.WithThreshold(0.999))
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
 		// Only doc "1" has cosine similarity of exactly 1.0 to the query.
-		if len(results) != 1 {
-			t.Fatalf("expected 1 result with threshold 0.999, got %d", len(results))
-		}
+		results := searchExpect(t, ctx, store, query, 10, 1, vectorstore.WithThreshold(0.999))
 		if results[0].ID != "1" {
 			t.Fatalf("expected result to be doc '1', got %q", results[0].ID)
 		}
@@ -141,13 +137,7 @@ func TestAdd_And_Search(t *testing.T) {
 
 	t.Run("search k larger than store", func(t *testing.T) {
 		query := []float32{1.0, 0.0, 0.0}
-		results, err := store.Search(ctx, query, 100)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if len(results) != 3 {
-			t.Fatalf("expected 3 results, got %d", len(results))
-		}
+		searchExpect(t, ctx, store, query, 100, 3)
 	})
 }
 

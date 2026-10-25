@@ -52,24 +52,6 @@ func (m *mockEmbedder) EmbedSingle(_ context.Context, _ string) ([]float32, erro
 
 func (m *mockEmbedder) Dimensions() int { return m.dims }
 
-// mockVectorStore returns preconfigured search results.
-type mockVectorStore struct {
-	docs []schema.Document
-}
-
-func (m *mockVectorStore) Add(_ context.Context, _ []schema.Document, _ [][]float32) error {
-	return nil
-}
-
-func (m *mockVectorStore) Search(_ context.Context, _ []float32, k int, _ ...interface{ applySearchConfig() }) ([]schema.Document, error) {
-	// This won't match the real interface. We'll use the proper vectorstore.SearchOption below.
-	return nil, nil
-}
-
-func (m *mockVectorStore) Delete(_ context.Context, _ []string) error {
-	return nil
-}
-
 // mockChatModel satisfies llm.ChatModel for testing.
 type mockChatModel struct {
 	response *schema.AIMessage
@@ -623,10 +605,10 @@ func TestCRAGRetriever_EmptyInner(t *testing.T) {
 
 func TestAdaptiveRetriever_Simple(t *testing.T) {
 	simple := &mockRetriever{docs: makeDocs("s1")}
-	complex := &mockRetriever{docs: makeDocs("c1")}
+	complexRet := &mockRetriever{docs: makeDocs("c1")}
 	model := &mockChatModel{response: schema.NewAIMessage("simple")}
 
-	r := NewAdaptiveRetriever(model, simple, complex)
+	r := NewAdaptiveRetriever(model, simple, complexRet)
 	docs, err := r.Retrieve(context.Background(), "what is Go?")
 	if err != nil {
 		t.Fatal(err)
@@ -638,10 +620,10 @@ func TestAdaptiveRetriever_Simple(t *testing.T) {
 
 func TestAdaptiveRetriever_Complex(t *testing.T) {
 	simple := &mockRetriever{docs: makeDocs("s1")}
-	complex := &mockRetriever{docs: makeDocs("c1")}
+	complexRet := &mockRetriever{docs: makeDocs("c1")}
 	model := &mockChatModel{response: schema.NewAIMessage("complex")}
 
-	r := NewAdaptiveRetriever(model, simple, complex)
+	r := NewAdaptiveRetriever(model, simple, complexRet)
 	docs, err := r.Retrieve(context.Background(), "compare Go and Rust concurrency models")
 	if err != nil {
 		t.Fatal(err)

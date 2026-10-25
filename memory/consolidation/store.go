@@ -11,7 +11,7 @@ import (
 // ConsolidationStore is the storage interface used by the consolidation
 // worker to read, update, and delete memory records. Implementations must
 // be safe for concurrent use.
-type ConsolidationStore interface {
+type ConsolidationStore interface { //nolint:revive // stutter accepted: renaming this exported type is a breaking API change
 	// ListRecords returns up to limit records starting from offset.
 	ListRecords(ctx context.Context, offset, limit int) ([]Record, error)
 
@@ -117,9 +117,10 @@ func (s *InMemoryConsolidationStore) DeleteRecords(ctx context.Context, ids []st
 func (s *InMemoryConsolidationStore) UpdateRecords(ctx context.Context, records []Record) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	for _, r := range records {
+	for i := range records {
+		r := &records[i]
 		if _, exists := s.records[r.ID]; exists {
-			s.records[r.ID] = r
+			s.records[r.ID] = *r
 		}
 	}
 	return nil

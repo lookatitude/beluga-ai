@@ -204,12 +204,13 @@ func (s *InMemoryStore) Query(ctx context.Context, query string) ([]memory.Graph
 		}
 	}
 
-	for _, r := range s.relations {
+	for i := range s.relations {
+		r := &s.relations[i]
 		if r.ExpiredAt != nil {
 			continue // skip system-expired relations
 		}
 		if strings.Contains(strings.ToLower(r.Type), q) {
-			relations = append(relations, r)
+			relations = append(relations, *r)
 		}
 	}
 
@@ -263,22 +264,40 @@ func (s *InMemoryStore) expandFrontier(
 ) ([]string, []memory.Entity, []memory.Relation) {
 	var nextFrontier []string
 	for _, nodeID := range frontier {
-		for _, rel := range s.relations {
-			if rel.ExpiredAt != nil {
-				continue
-			}
-			neighborID := neighborOf(rel, nodeID)
-			if neighborID == "" {
-				continue
-			}
-			resultRelations = deduplicateRelation(rel, relSeen, resultRelations)
-			if !visited[neighborID] {
-				visited[neighborID] = true
-				if e, ok := s.entities[neighborID]; ok {
-					resultEntities = append(resultEntities, e)
-					nextFrontier = append(nextFrontier, neighborID)
-				}
-			}
+		nextFrontier, resultEntities, resultRelations = s.expandNode(
+			nodeID, visited, relSeen, nextFrontier, resultEntities, resultRelations)
+	}
+	return nextFrontier, resultEntities, resultRelations
+}
+
+// expandNode visits every non-expired relation touching nodeID, recording each
+// relation once and appending newly discovered known entities to the result
+// and to nextFrontier. It returns the updated slices.
+func (s *InMemoryStore) expandNode(
+	nodeID string,
+	visited map[string]bool,
+	relSeen map[string]bool,
+	nextFrontier []string,
+	resultEntities []memory.Entity,
+	resultRelations []memory.Relation,
+) ([]string, []memory.Entity, []memory.Relation) {
+	for i := range s.relations {
+		rel := &s.relations[i]
+		if rel.ExpiredAt != nil {
+			continue
+		}
+		neighborID := neighborOf(*rel, nodeID)
+		if neighborID == "" {
+			continue
+		}
+		resultRelations = deduplicateRelation(*rel, relSeen, resultRelations)
+		if visited[neighborID] {
+			continue
+		}
+		visited[neighborID] = true
+		if e, ok := s.entities[neighborID]; ok {
+			resultEntities = append(resultEntities, e)
+			nextFrontier = append(nextFrontier, neighborID)
 		}
 	}
 	return nextFrontier, resultEntities, resultRelations
@@ -353,13 +372,14 @@ func (s *InMemoryStore) filterEntitiesAsOf(q string, validTime time.Time) []memo
 // filterRelationsAsOf returns relations valid at validTime matching the query, up to limit.
 func (s *InMemoryStore) filterRelationsAsOf(q string, validTime time.Time, limit int) []memory.Relation {
 	var relations []memory.Relation
-	for _, r := range s.relations {
+	for i := range s.relations {
+		r := &s.relations[i]
 		if r.ExpiredAt != nil {
 			continue
 		}
 		if !r.ValidAt.After(validTime) && (r.InvalidAt == nil || r.InvalidAt.After(validTime)) {
 			if q == "" || strings.Contains(strings.ToLower(r.Type), q) {
-				relations = append(relations, r)
+				relations = append(relations, *r)
 				if len(relations) >= limit {
 					break
 				}
@@ -417,9 +437,10 @@ func (s *InMemoryStore) History(ctx context.Context, fromID, toID string) ([]mem
 	defer s.mu.RUnlock()
 
 	var result []memory.Relation
-	for _, r := range s.relations {
+	for i := range s.relations {
+		r := &s.relations[i]
 		if r.From == fromID && r.To == toID {
-			result = append(result, r)
+			result = append(result, *r)
 		}
 	}
 
