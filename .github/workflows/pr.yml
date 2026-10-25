@@ -1,13 +1,34 @@
 name: PR Checks
 
+# `.github/**` is deliberately NOT ignored: workflow-only PRs (including
+# Dependabot github-actions bumps) must run CI and actionlint too.
 on:
   pull_request:
     branches: [main]
     paths-ignore:
-      - ".github/**"
       - ".claude/**"
 
+permissions:
+  contents: read
+
 jobs:
+  actionlint:
+    name: Lint workflows (actionlint)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      # rhysd/actionlint:1.7.7, pinned by digest. The image bundles
+      # shellcheck, so `run:` scripts are checked as well. shellcheck
+      # info/style notes are reported but do not fail the job.
+      - name: Run actionlint
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            rhysd/actionlint@sha256:887a259a5a534f3c4f36cb02dca341673c6089431057242cdc931e9f133147e9 \
+            -color -shellcheck="shellcheck -S warning"
+
   ci:
     name: CI Checks
     permissions:
@@ -21,13 +42,14 @@ jobs:
       security-events: write
     uses: ./.github/workflows/_security-checks.yml
     secrets:
-      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
   sonarcloud:
     name: SonarCloud Analysis
     needs: ci
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     if: |
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.actor != 'dependabot[bot]'
