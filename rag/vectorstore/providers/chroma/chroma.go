@@ -117,7 +117,7 @@ func (s *Store) EnsureCollection(ctx context.Context) error {
 	}
 
 	resp, err := s.doJSON(ctx, http.MethodPost,
-		fmt.Sprintf("/api/v1/tenants/%s/databases/%s/collections", url.PathEscape(s.tenant), url.PathEscape(s.database)), body)
+		s.databasePath()+"/collections", body)
 	if err != nil {
 		return fmt.Errorf("chroma: ensure collection: %w", err)
 	}
@@ -168,7 +168,7 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 	}
 
 	_, err = s.doJSON(ctx, http.MethodPost,
-		fmt.Sprintf("/api/v1/collections/%s/upsert", url.PathEscape(colID)), body)
+		s.collectionPath(colID, "upsert"), body)
 	return err
 }
 
@@ -190,7 +190,7 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 	body := buildChromaQueryBody(query, k, cfg)
 
 	resp, err := s.doJSON(ctx, http.MethodPost,
-		fmt.Sprintf("/api/v1/collections/%s/query", url.PathEscape(colID)), body)
+		s.collectionPath(colID, "query"), body)
 	if err != nil {
 		return nil, err
 	}
@@ -279,8 +279,19 @@ func (s *Store) Delete(ctx context.Context, ids []string) error {
 	}
 
 	_, err = s.doJSON(ctx, http.MethodPost,
-		fmt.Sprintf("/api/v1/collections/%s/delete", url.PathEscape(colID)), body)
+		s.collectionPath(colID, "delete"), body)
 	return err
+}
+
+// databasePath returns the Chroma v2 API path of the configured database.
+// Chroma 1.x removed the /api/v1 surface (it answers 410 Gone).
+func (s *Store) databasePath() string {
+	return fmt.Sprintf("/api/v2/tenants/%s/databases/%s", url.PathEscape(s.tenant), url.PathEscape(s.database))
+}
+
+// collectionPath returns the v2 API path of a collection operation.
+func (s *Store) collectionPath(colID, op string) string {
+	return fmt.Sprintf("%s/collections/%s/%s", s.databasePath(), url.PathEscape(colID), op)
 }
 
 // resolveCollectionID returns the collection ID, ensuring the collection

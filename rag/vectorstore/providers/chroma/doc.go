@@ -1,5 +1,5 @@
 // Package chroma provides a VectorStore backed by ChromaDB. It communicates
-// with ChromaDB via its HTTP REST API.
+// with ChromaDB via its v2 HTTP REST API (/api/v2, required by Chroma 1.x).
 //
 // # Registration
 //
