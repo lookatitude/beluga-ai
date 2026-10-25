@@ -1,6 +1,6 @@
 # Reference: CLI
 
-The `beluga` command-line tool is the reference Layer 7 application shipped with the framework. It is a cobra-based CLI with eight subcommands: `version`, `providers`, `init`, `run`, `dev`, `test`, `eval`, and `deploy`.
+The `beluga` command-line tool is the reference Layer 7 application shipped with the framework. It is a cobra-based CLI with nine subcommands: `version`, `providers`, `init`, `new`, `run`, `dev`, `test`, `eval`, and `deploy`.
 
 Source: [`cmd/beluga/`](../../cmd/beluga/).
 
@@ -29,7 +29,7 @@ Print the framework version, the Go runtime version, and the compiled-in provide
 
 ```
 beluga (devel)
-go1.25.9
+go1.27.3
 providers: llm=3 embedding=2 vectorstore=1 memory=4
 ```
 
@@ -62,14 +62,40 @@ Unsupported formats return exit 1 with `"unsupported output format"` on stderr.
 
 ### `beluga init`
 
-Scaffold a new Beluga agent project.
+Scaffold a new Beluga agent project in `./<project-name>`.
+
+```bash
+beluga init my-agent
+cd my-agent && export OPENAI_API_KEY=... && go run .
+```
+
+The project name must be lowercase letters, digits, and hyphens (2-64 characters), starting with a letter and ending with a letter or digit.
 
 | Flag | Default | Purpose |
 |---|---|---|
-| `--name` | derived from `--dir` | Project name (used to generate the agent ID). |
-| `--dir` | `.` | Output directory. Rejects path traversal (`..`) and absolute paths outside the CWD. |
+| `--template` | `basic` | Template name. `basic` is the only template shipped today. |
+| `--module` | `example.com/<project-name>` | Go module path written to `go.mod`. |
+| `--force` | `false` | Overwrite existing files in a non-empty target directory. |
 
-Creates `agents/`, `tools/`, `config/agent.json`, and `main.go`.
+The `basic` template writes `go.mod`, `main.go`, `Makefile`, `Dockerfile`, `.env.example`, `.gitignore`, `.beluga/project.yaml`, `.beluga/eval.yaml`, `.beluga/eval.smoke.json`, and `.github/workflows/ci.yml`. Source: [`cmd/beluga/scaffold/templates/basic/`](../../cmd/beluga/scaffold/templates/basic/).
+
+### `beluga new`
+
+Add a component stub to an existing project. Run it from inside a directory scaffolded by `beluga init`; the project root is the nearest ancestor with `go.mod` and `.beluga/project.yaml`.
+
+```bash
+beluga new agent Researcher     # writes researcher.go + researcher_test.go
+beluga new tool WebLookup       # writes web_lookup.go + web_lookup_test.go
+beluga new planner Cautious     # writes cautious.go + cautious_test.go
+```
+
+| Subcommand | Generates |
+|---|---|
+| `agent <Name>` | An agent stub whose `Invoke` returns a `core.ErrNotFound` "not implemented" error, plus a skipped test. |
+| `tool <Name>` | A tool stub plus a skipped test. |
+| `planner <Name>` | A planner stub plus a skipped test. |
+
+`<Name>` must be PascalCase ASCII (`^[A-Z][A-Za-z0-9]*$`, at most 64 bytes); file names are its snake_case form. If the CLI version differs from the framework version pinned in the project's `go.mod`, `beluga new` prints a warning on stderr and continues. Source: [`cmd/beluga/new.go`](../../cmd/beluga/new.go).
 
 ### `beluga run`
 
