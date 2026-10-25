@@ -1,24 +1,30 @@
 name: Security Checks
 
+# Blocking scanners: Trivy (HIGH/CRITICAL), Gitleaks, go-licenses,
+# govulncheck and gosec. Each of these fails its job on findings, so the
+# release-tag job in main.yml (which needs this workflow) cannot cut a
+# release while any of them is red.
+#
+# Snyk is not run here. The Snyk GitHub App already posts the
+# `security/snyk` and `license/snyk` checks on every PR, and the CLI token
+# this job used was rejected (SNYK-0005), so the job only ever reported
+# "unknown". The SNYK_TOKEN secret input is still accepted (and ignored) so
+# existing callers keep working.
+
 on:
   workflow_call:
     secrets:
       SNYK_TOKEN:
+        description: "Unused. Kept so existing callers that pass it do not break."
         required: false
       GITLEAKS_LICENSE:
         required: false
     outputs:
-      snyk_status:
-        description: "Snyk scan status"
-        value: ${{ jobs.snyk.outputs.snyk_status }}
-      snyk_vulns:
-        description: "Number of Snyk vulnerabilities"
-        value: ${{ jobs.snyk.outputs.snyk_vulns }}
       trivy_status:
         description: "Trivy scan status"
         value: ${{ jobs.trivy.outputs.trivy_status }}
       trivy_findings:
-        description: "Number of Trivy findings"
+        description: "Number of Trivy HIGH/CRITICAL findings"
         value: ${{ jobs.trivy.outputs.trivy_findings }}
       govulncheck_status:
         description: "govulncheck scan status"
@@ -41,50 +47,14 @@ on:
   schedule:
     - cron: "0 4 * * 1" # Weekly Monday 4am UTC
 
+permissions:
+  contents: read
+
 env:
   GO_VERSION: "1.27.3"
+  GOTOOLCHAIN: local
 
 jobs:
-  snyk:
-    name: Snyk Vulnerability Scan
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    outputs:
-      snyk_status: ${{ steps.snyk_result.outputs.status }}
-      snyk_vulns: ${{ steps.snyk_result.outputs.vulns }}
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-go@v7
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Run Snyk
-        id: snyk_scan
-        uses: snyk/actions/golang@11b673cfb4b0dc0d860a1323caa199d54950dcce # master 2026-10-25
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=high --json-file-output=snyk-report.json
-
-      - name: Parse Snyk results
-        id: snyk_result
-        if: always()
-        env:
-          SNYK_OUTCOME: ${{ steps.snyk_scan.outcome }}
-        run: |
-          if [ "$SNYK_OUTCOME" = "success" ]; then
-            echo "status=clean" >> "$GITHUB_OUTPUT"
-            echo "vulns=0" >> "$GITHUB_OUTPUT"
-          else
-            VULNS=$(jq '.vulnerabilities | length // 0' snyk-report.json 2>/dev/null || echo "unknown")
-            echo "status=vulnerabilities-found" >> "$GITHUB_OUTPUT"
-            echo "vulns=${VULNS}" >> "$GITHUB_OUTPUT"
-          fi
-
   trivy:
     name: Trivy Vulnerability Scan
     runs-on: ubuntu-latest
@@ -97,44 +67,70 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Run Trivy filesystem scan
+      # Report pass: every severity goes to the Security tab. Never fails.
+      #
+      # cmd/beluga/devloop/testdata holds fixture modules whose go.mod pins
+      # old indirect versions. They `replace` the framework with the in-tree
+      # copy, so at build time MVS resolves to the framework's own (scanned)
+      # versions. Scanning them only produces noise on versions that are
+      # never built.
+      - name: Run Trivy filesystem scan (SARIF report)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: "fs"
           scan-ref: "."
           format: "sarif"
           output: "trivy-results.sarif"
-          severity: "CRITICAL,HIGH"
+          skip-dirs: "cmd/beluga/devloop/testdata"
+          exit-code: "0"
 
       - name: Upload Trivy SARIF to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && hashFiles('trivy-results.sarif') != ''
         with:
           sarif_file: "trivy-results.sarif"
           category: "trivy"
 
-      - name: Parse Trivy results
-        id: trivy_result
-        if: always()
-        run: |
-          if [ -f trivy-results.sarif ]; then
-            FINDINGS=$(jq '[.runs[].results[]] | length // 0' trivy-results.sarif 2>/dev/null || echo "0")
-          else
-            FINDINGS=0
-          fi
-          if [ "$FINDINGS" -gt 0 ]; then
-            echo "status=findings-detected" >> $GITHUB_OUTPUT
-          else
-            echo "status=clean" >> $GITHUB_OUTPUT
-          fi
-          echo "findings=${FINDINGS}" >> $GITHUB_OUTPUT
-
       - name: Upload Trivy SARIF artifact
-        if: always()
+        if: always() && hashFiles('trivy-results.sarif') != ''
         uses: actions/upload-artifact@v7
         with:
           name: trivy-sarif
           path: trivy-results.sarif
+
+      # Gate pass: a separate table-format run, because with SARIF output the
+      # action drops the severity filter, and the exit code would then trip
+      # on LOW/MEDIUM findings too.
+      - name: Run Trivy gate (fail on HIGH/CRITICAL)
+        id: trivy_gate
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "json"
+          output: "trivy-gate.json"
+          severity: "CRITICAL,HIGH"
+          skip-dirs: "cmd/beluga/devloop/testdata"
+          exit-code: "1"
+          skip-setup-trivy: true
+
+      - name: Parse Trivy results
+        id: trivy_result
+        if: always()
+        env:
+          GATE_OUTCOME: ${{ steps.trivy_gate.outcome }}
+        run: |
+          if [ -f trivy-gate.json ]; then
+            FINDINGS=$(jq '[.Results[]?.Vulnerabilities[]?, .Results[]?.Secrets[]?] | length' trivy-gate.json 2>/dev/null || echo "0")
+          else
+            FINDINGS=0
+          fi
+          if [ "$GATE_OUTCOME" = "success" ]; then
+            echo "status=clean" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=findings-detected" >> "$GITHUB_OUTPUT"
+          fi
+          echo "findings=${FINDINGS}" >> "$GITHUB_OUTPUT"
 
   gitleaks:
     name: Gitleaks Secret Detection
@@ -150,8 +146,9 @@ jobs:
 
       - name: Run Gitleaks
         id: gitleaks_scan
+        # Blocking. Known placeholder "secrets" in historical test fixtures
+        # and docs are allow-listed by fingerprint in .gitleaksignore.
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
-        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
@@ -186,30 +183,33 @@ jobs:
       - name: Install go-licenses
         run: go install github.com/google/go-licenses/v2@v2.0.1
 
+      # Blocking. scripts/check-licenses.sh holds the allow-list, the
+      # reviewed --ignore entries, and the violation count (exit code is
+      # the verdict; stderr noise is not counted).
       - name: Check license compliance
         id: license_check
-        continue-on-error: true
-        run: |
-          go-licenses check ./... \
-            --allowed_licenses=MIT,Apache-2.0,BSD-2-Clause,BSD-3-Clause,ISC,MPL-2.0 \
-            2> license-errors.txt || true
+        run: scripts/check-licenses.sh
 
       - name: Generate license inventory
+        if: always()
         run: |
           go-licenses csv ./... > licenses.csv 2>/dev/null || true
 
       - name: Parse license results
         id: licenses_result
         if: always()
+        env:
+          CHECK_RC: ${{ steps.license_check.outputs.rc }}
+          CHECK_VIOLATIONS: ${{ steps.license_check.outputs.violations }}
         run: |
-          if [ -s license-errors.txt ]; then
-            VIOLATIONS=$(wc -l < license-errors.txt | tr -d ' ')
-            echo "status=violations-found" >> $GITHUB_OUTPUT
-            echo "violations=${VIOLATIONS}" >> $GITHUB_OUTPUT
+          VIOLATIONS=$(printf '%s' "${CHECK_VIOLATIONS}" | tr -dc '0-9')
+          VIOLATIONS=${VIOLATIONS:-0}
+          if [ "${CHECK_RC:-1}" = "0" ]; then
+            echo "status=compliant" >> "$GITHUB_OUTPUT"
           else
-            echo "status=compliant" >> $GITHUB_OUTPUT
-            echo "violations=0" >> $GITHUB_OUTPUT
+            echo "status=violations-found" >> "$GITHUB_OUTPUT"
           fi
+          echo "violations=${VIOLATIONS}" >> "$GITHUB_OUTPUT"
 
       - name: Upload license inventory
         if: always()
@@ -233,9 +233,12 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
+      # Blocking. `shell: bash` runs with -o pipefail, so govulncheck's
+      # exit code survives the pipe into tee (the default `bash -e` shell
+      # would report tee's 0).
       - name: Run govulncheck
         id: scan
-        continue-on-error: true
+        shell: bash
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
           govulncheck ./... 2>&1 | tee govulncheck-output.txt
@@ -250,7 +253,9 @@ jobs:
             echo "status=clean" >> "$GITHUB_OUTPUT"
             echo "vulns=0" >> "$GITHUB_OUTPUT"
           else
-            VULNS=$(grep -c "^Vulnerability #" govulncheck-output.txt 2>/dev/null || echo "unknown")
+            VULNS=$(grep -c "^Vulnerability #" govulncheck-output.txt 2>/dev/null || true)
+            VULNS=$(printf '%s' "${VULNS}" | tr -dc '0-9')
+            VULNS=${VULNS:-unknown}
             echo "status=vulnerabilities-found" >> "$GITHUB_OUTPUT"
             echo "vulns=${VULNS}" >> "$GITHUB_OUTPUT"
           fi
@@ -272,10 +277,11 @@ jobs:
 
       - name: Run gosec
         id: gosec_scan
+        # Blocking: no -no-fail, so findings fail the step. The SARIF file
+        # is still written, and the steps below upload it with always().
         uses: securego/gosec@223e19b8856e00f02cc67804499a83f77e208f3c # v2.25.0
-        continue-on-error: true
         with:
-          args: -no-fail -fmt sarif -out gosec-results.sarif ./...
+          args: -fmt sarif -out gosec-results.sarif ./...
 
       - name: Sanitize gosec SARIF
         if: always() && hashFiles('gosec-results.sarif') != ''
@@ -302,14 +308,16 @@ jobs:
       - name: Set gosec status
         id: result
         if: always()
+        env:
+          GOSEC_OUTCOME: ${{ steps.gosec_scan.outcome }}
         run: |
           if [ -f gosec-results.sarif ]; then
             FINDINGS=$(jq '[.runs[].results[]] | length // 0' gosec-results.sarif 2>/dev/null || echo "0")
           else
             FINDINGS=0
           fi
-          if [ "$FINDINGS" -gt 0 ]; then
-            echo "status=findings-detected" >> $GITHUB_OUTPUT
+          if [ "$GOSEC_OUTCOME" = "success" ] && [ "${FINDINGS:-0}" -eq 0 ]; then
+            echo "status=clean" >> "$GITHUB_OUTPUT"
           else
-            echo "status=clean" >> $GITHUB_OUTPUT
+            echo "status=findings-detected" >> "$GITHUB_OUTPUT"
           fi

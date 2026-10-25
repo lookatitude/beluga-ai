@@ -1,0 +1,20 @@
+# Gitleaks allow-list (fingerprints: <commit>:<file>:<rule>:<line>).
+# Each entry was checked by hand on 2026-10-25 and is a placeholder value in a
+# test fixture or docs example (e.g. sk-1234567890abcdef, test-api-key-12345,
+# curl -H "Authorization: Bearer $TOKEN"), not a real credential.
+# Add new entries only after the same check; never for a real secret (rotate it).
+32112b6a1c5e653842a2ef867d8e8514075f6410:guard/agentic/exfiltration_guard_test.go:generic-api-key:44
+45528e1bdce7eb4a7bb8ab5f4a4cda900c89a459:docs/cookbook/config-masking-secrets-logs.md:generic-api-key:266
+45528e1bdce7eb4a7bb8ab5f4a4cda900c89a459:docs/tutorials/foundation/config-environment-secrets.md:generic-api-key:125
+76b0bcfd8724b8b4aa249ddb3d82e76f4280e814:rag/loader/providers/docling/docling_test.go:generic-api-key:258
+96135aab2fee179f2061d52b14dbb531f5d13654:guard/agentic/exfiltration_guard_test.go:generic-api-key:44
+a2174d1072c03783076ca1f7454dd5cdd098c13b:pkg/embeddings/testdata/configs.yaml:generic-api-key:39
+a2174d1072c03783076ca1f7454dd5cdd098c13b:pkg/embeddings/testdata/configs.yaml:generic-api-key:67
+a2174d1072c03783076ca1f7454dd5cdd098c13b:pkg/embeddings/testdata/configs.yaml:generic-api-key:7
+af84bfff8f0c37b1029afb1086211fa77fd5364b:pkg/integration_tests/tests/provider_compatibility_test.go:generic-api-key:44
+c077ba0609ad0f1f7fef45e414617dcfe42176b6:guard/agentic/exfiltration_guard_test.go:generic-api-key:44
+e4595c282f96753ef0042948e231384bd5900723:rag/loader/providers/docling/docling_test.go:generic-api-key:258
+fc931fc5c0888572e7d8d6c6b8027060237daa67:docs/website/src/content/docs/cookbook/config-secret-masking.md:generic-api-key:243
+fc931fc5c0888572e7d8d6c6b8027060237daa67:docs/website/src/content/docs/cookbook/infrastructure-recipes.md:generic-api-key:172
+fc931fc5c0888572e7d8d6c6b8027060237daa67:docs/website/src/content/docs/tutorials/server/rest-deployment.md:curl-auth-header:232
+fc931fc5c0888572e7d8d6c6b8027060237daa67:docs/website/src/content/docs/tutorials/server/rest-deployment.md:curl-auth-header:241
