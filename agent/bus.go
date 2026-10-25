@@ -19,7 +19,9 @@ type AgentEvent struct { //nolint:revive // stutter: renaming would break the ex
 	Timestamp time.Time
 }
 
-// EventBus is the interface for agent-to-agent async messaging.
+// EventBus is the interface for agent-to-agent publish/subscribe messaging.
+// Whether delivery is synchronous or asynchronous is up to the
+// implementation; InMemoryBus delivers synchronously.
 type EventBus interface {
 	// Publish sends an event to the given topic.
 	Publish(ctx context.Context, topic string, event AgentEvent) error
@@ -38,7 +40,11 @@ type Unsubscriber interface {
 // Deprecated: Use Unsubscriber instead.
 type Subscription = Unsubscriber
 
-// InMemoryBus is an in-process EventBus implementation using channels.
+// InMemoryBus is an in-process EventBus implementation. Publish calls every
+// subscriber's handler synchronously, in subscription order, on the
+// publishing goroutine, and returns after the last handler returns; a slow
+// handler therefore delays the publisher. Handlers that need to do slow work
+// should hand it off to their own goroutine.
 type InMemoryBus struct {
 	mu          sync.RWMutex
 	subscribers map[string][]subscriber
@@ -57,7 +63,8 @@ func NewInMemoryBus() *InMemoryBus {
 	}
 }
 
-// Publish sends an event to all subscribers on the topic.
+// Publish delivers an event to all subscribers on the topic, calling their
+// handlers synchronously before it returns.
 func (b *InMemoryBus) Publish(ctx context.Context, topic string, event AgentEvent) error {
 	if err := ctx.Err(); err != nil {
 		return err

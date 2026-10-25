@@ -15,6 +15,10 @@ import (
 // Independent calls execute concurrently (bounded by MaxConcurrency); calls whose
 // arguments reference the ID of an earlier call are deferred until that call's
 // result is available.
+//
+// ToolDAGExecutor is a standalone utility for custom agent loops. The
+// built-in Executor (and therefore BaseAgent) does not use it: it runs the
+// tool calls of a turn one after another, in order.
 type ToolDAGExecutor struct {
 	maxConcurrency      int
 	dependencyDetection bool
