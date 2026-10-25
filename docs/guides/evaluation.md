@@ -54,7 +54,7 @@ Point your editor's JSON-Schema setting at that file to get autocomplete and val
 
 ## 2. Run the mock-mode smoke eval
 
-The scaffolded `Makefile` ships an `eval-ci` target that pins the five canonical env vars for a deterministic, zero-cost smoke. It invokes the `beluga` binary on PATH (same convention as `beluga dev` / `beluga run` / `beluga test`), so install the CLI once per environment first — `go install` inside your project picks the beluga version pinned by your `go.mod`:
+The scaffolded `Makefile` ships an `eval-ci` target that pins `BELUGA_LLM_PROVIDER=mock` and `OTEL_SDK_DISABLED=true` for a zero-cost smoke (it also sets `BELUGA_DETERMINISTIC` and `BELUGA_SEED`, which nothing reads yet). It invokes the `beluga` binary on PATH (same convention as `beluga dev` / `beluga run` / `beluga test`), so install the CLI once per environment first — `go install` inside your project picks the beluga version pinned by your `go.mod`:
 
 ```bash
 go install github.com/lookatitude/beluga-ai/v2/cmd/beluga
@@ -177,8 +177,10 @@ eval-real:
     - name: Run real-provider eval
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      run: beluga eval --max-rows 20 --max-cost 5.00 .beluga/eval.smoke.json
+      run: beluga eval --max-rows 20 .beluga/eval.smoke.json
 ```
+
+`--max-rows` is the only cost bound today. `--max-cost` is accepted but reserved and has no effect yet (see the [CLI reference](../reference/cli.md#beluga-eval)), so do not rely on it as a spending cap.
 
 The template's structure — `if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'` plus `secrets.OPENAI_API_KEY` — is the opt-in gate. Tier-1 stays the only evaluation on PRs until Tier-2 is explicitly uncommented; a GitHub Actions `schedule:` trigger alone is not an opt-in gate because it still runs without human review.
 

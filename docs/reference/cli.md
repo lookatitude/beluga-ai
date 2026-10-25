@@ -150,7 +150,7 @@ Run agent tests via `go test`. Resolves the toolchain via `exec.LookPath("go")` 
 
 | Key | Value | Purpose |
 |---|---|---|
-| `BELUGA_ENV` | `test` | Selects the test profile in `config.Load` and disables production-only middleware. |
+| `BELUGA_ENV` | `test` | Marks a test run. The library does not read it, and the scaffolded `main.go` only branches on `BELUGA_ENV=eval`; your code can check it. |
 | `BELUGA_LLM_PROVIDER` | `mock` | Routes `llm.New` to the deterministic [mock provider](../../llm/providers/mock/) so tests run offline, no API key required. |
 | `OTEL_SDK_DISABLED` | `true` | `o11y.BootstrapFromEnv` skips exporter initialisation and returns a no-op shutdown, so `go test -v` output stays clean. |
 
@@ -247,7 +247,7 @@ See [`cmd/beluga/scaffold/templates/basic/.beluga/eval.yaml.tmpl`](../../cmd/bel
 
 Passing `--format junit` additionally writes `<report>.junit.xml` alongside (a single `<testsuite>` wrapping every sample; per-row `exec_error` or `exact_match=0` become `<failure>` children), consumable by [`dorny/test-reporter`](https://github.com/dorny/test-reporter) for PR-check annotations. Source: [`cmd/beluga/eval/render.go`](../../cmd/beluga/eval/render.go).
 
-**CI integration.** The scaffolded `Makefile` ships an `eval-ci` target that pins the five canonical env vars so CI gets deterministic, mock-provider pass/fail signal without API keys. The target invokes the `beluga` binary on PATH — matching the convention of `beluga dev` / `beluga run` / `beluga test` — so install it once per environment:
+**CI integration.** The scaffolded `Makefile` ships an `eval-ci` target that pins `BELUGA_LLM_PROVIDER=mock` and `OTEL_SDK_DISABLED=true` so CI gets a mock-provider pass/fail signal without API keys (it also sets `BELUGA_DETERMINISTIC` and `BELUGA_SEED`, which nothing reads yet). The target invokes the `beluga` binary on PATH — matching the convention of `beluga dev` / `beluga run` / `beluga test` — so install it once per environment:
 
 ```
 go install github.com/lookatitude/beluga-ai/v2/cmd/beluga

@@ -79,7 +79,7 @@ beluga test -v
 
 | Key | Value | Effect |
 |---|---|---|
-| `BELUGA_ENV` | `test` | Selects the test profile in `config.Load`; disables production-only middleware. |
+| `BELUGA_ENV` | `test` | Marks a test run. The library does not read it, and the scaffolded `main.go` only branches on `BELUGA_ENV=eval`; your code can check it. |
 | `BELUGA_LLM_PROVIDER` | `mock` | Routes `llm.New` to the [mock provider](../../llm/providers/mock/) — no API key, no network, no flakes. |
 | `OTEL_SDK_DISABLED` | `true` | `o11y.BootstrapFromEnv` returns the no-op shutdown so `go test -v` output is not polluted with span JSON. |
 
