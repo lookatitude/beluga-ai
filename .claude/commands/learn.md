@@ -15,7 +15,7 @@ Capture learning: $ARGUMENTS
 - Confidence (HIGH / MEDIUM / LOW)
 
 ### Step 2 — Record
-Append a C-NNN entry to `.wiki/corrections.md`:
+Append a C-NNN entry to `.guild/wiki/corrections.md`:
 
 ```
 ### C-NNN | YYYY-MM-DD | <workflow> | <package>
@@ -30,10 +30,10 @@ Confidence: HIGH/MEDIUM/LOW
 If the correction reveals a pattern to enforce, update the relevant `.claude/rules/<file>.md`.
 
 ### Step 4 — Update patterns (if applicable)
-If the correction reveals a canonical implementation approach, `@agent-architect` updates `.wiki/patterns/<relevant>.md`.
+If the correction reveals a canonical implementation approach, `@agent-architect` updates `.guild/wiki/patterns/<relevant>.md`.
 
 ### Step 5 — Propose CLAUDE.md update (if mature)
 If this correction has been seen ≥3 times or is HIGH confidence: propose a `CLAUDE.md` rule addition for human approval. Never auto-write to `CLAUDE.md` — human decides.
 
 ### Step 6 — Log
-Append to `.wiki/log.md`.
+Append to `.guild/wiki/log.md`.

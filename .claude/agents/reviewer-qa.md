@@ -29,7 +29,7 @@ Validate that the implementation meets every acceptance criterion from the Archi
 
 ## Before starting (retrieval protocol)
 
-1. Read `.wiki/index.md` retrieval routing table.
+1. Read `.guild/wiki/index.md` retrieval routing table.
 2. Run `.claude/hooks/wiki-query.sh <package>` for the target package.
 3. Read accumulated rules in `.claude/agents/reviewer-qa/rules/`.
 4. Read the Architect's acceptance criteria from the dispatch context.

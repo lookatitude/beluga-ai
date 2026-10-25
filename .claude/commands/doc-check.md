@@ -15,7 +15,7 @@ For each doc file:
 - Do code examples compile? Verify with `go build` on a throwaway file.
 - Do documented interfaces match actual code?
 - Any undocumented exported types/functions?
-- Do "common mistakes" match `.wiki/corrections.md`?
+- Do "common mistakes" match `.guild/wiki/corrections.md`?
 
 ### Step 3 — Fix
 `@agent-docs-writer` updates inaccurate documentation.
@@ -24,4 +24,4 @@ For each doc file:
 `@agent-architect` verifies technical accuracy of changes.
 
 ### Step 5 — Log
-Append to `.wiki/log.md`.
+Append to `.guild/wiki/log.md`.

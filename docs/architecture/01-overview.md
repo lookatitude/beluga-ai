@@ -62,10 +62,10 @@ Only downward arrows exist. If you find an upward import, it's a bug. [DOC-18](.
 
 Zero external dependencies beyond the Go stdlib and OpenTelemetry. Contains:
 
-- **`core`** — `Stream[T]`, `Event[T]`, `Runnable`, `core.Error` with `ErrorCode`, context helpers. See [`.wiki/patterns/error-handling.md`](../../.wiki/patterns/error-handling.md).
+- **`core`** — `Stream[T]`, `Event[T]`, `Runnable`, `core.Error` with `ErrorCode`, context helpers. See [`.guild/wiki/patterns/error-handling.md`](../../.guild/wiki/patterns/error-handling.md).
 - **`schema`** — wire types: `Message`, `ContentPart`, `Tool`, `Document`, `Session`.
 - **`config`** — generic `Load[T]`, validation, hot-reload.
-- **`o11y`** — OTel GenAI conventions (`gen_ai.*` attributes), span wrappers, slog adapters. See [`.wiki/patterns/otel-instrumentation.md`](../../.wiki/patterns/otel-instrumentation.md).
+- **`o11y`** — OTel GenAI conventions (`gen_ai.*` attributes), span wrappers, slog adapters. See [`.guild/wiki/patterns/otel-instrumentation.md`](../../.guild/wiki/patterns/otel-instrumentation.md).
 
 **Rule:** Nothing in Layer 1 imports anything above it.
 
@@ -209,7 +209,7 @@ See [DOC-07](./07-orchestration-patterns.md).
 
 ### 1. Streaming first
 
-`Invoke()` is a convenience wrapper around `Stream()` + collect. The primary path is a type-safe `iter.Seq2[Event[T], error]` — see [`core/stream.go`](../../.wiki/patterns/streaming.md) for the canonical `Stream[T]` definition. Channels never appear in public APIs.
+`Invoke()` is a convenience wrapper around `Stream()` + collect. The primary path is a type-safe `iter.Seq2[Event[T], error]` — see [`core/stream.go`](../../.guild/wiki/patterns/streaming.md) for the canonical `Stream[T]` definition. Channels never appear in public APIs.
 
 **Why:** streaming matches how LLMs actually emit tokens, avoids goroutine leaks that plague channel-based designs, and composes cleanly via `Pipe`, `Parallel`, and `Merge`.
 
@@ -269,4 +269,4 @@ Every pluggable package looks like this:
 - [03 — Extensibility Patterns](./03-extensibility-patterns.md) — the 4 mechanisms.
 - [04 — Data Flow](./04-data-flow.md) — complete request lifecycle.
 - [18 — Package Dependency Map](./18-package-dependency-map.md) — enforces the layering rule.
-- [`.wiki/architecture/invariants.md`](../../.wiki/architecture/invariants.md) — the ten invariants with source references.
+- [`.guild/wiki/architecture/invariants.md`](../../.guild/wiki/architecture/invariants.md) — the ten invariants with source references.

@@ -1,0 +1,82 @@
+---
+type: standard
+title: "Corrections \u2014 Workflow"
+description: "Migrated from .wiki/corrections/workflow.md."
+owner: orchestrator
+confidence: high
+trust_tier: reviewed
+importance: high
+source_refs: [wiki-corrections-workflow]
+created_at: 2026-04-18
+updated_at: 2026-10-25
+expires_at: null
+supersedes: null
+sensitivity: internal
+recall_importance: 3
+---
+# Corrections — Workflow
+
+> Migrated from `.wiki/corrections/workflow.md` on 2026-10-25 (Guild 3.x; structure kept). Verbatim original: `.guild/knowledge/sources/wiki-corrections-workflow/original.md` (sha256 `3dadc8b31236…`).
+
+Scope: coordinator + agent-workflow findings — retrieval protocol, worktree awareness, docs-only task routing.
+
+See [README.md](./README.md) for format + promotion-pipeline rules.
+
+---
+
+### C-008 | 2026-04-12 | docs-writer | worktree-awareness
+**Symptom:** When running inside a git worktree at `.claude/worktrees/agent-ada144bd/`, Write tool calls used absolute paths rooted at the main repository (`/home/miguelp/Projects/lookatitude/beluga-ai/`) instead of the worktree. Files were written to the main checkout, not to the branch being prepared. `git status` in the worktree showed "nothing to commit" despite apparent file edits.
+**Root cause:** The agent's working directory (`pwd`) was the worktree, but absolute paths were explicitly constructed using the known main repo root. The Write tool honors the path given without inferring which git worktree should be active.
+**Correction:** When operating in a git worktree, always derive the base path from `pwd` (which returns the worktree root), not from any hardcoded repo root. Verify with `git status` in the worktree after every Write/Edit call to confirm the file is tracked.
+**Prevention rule:** In any worktree session, run `git status --short` after the first Write/Edit to confirm modified files appear. If `git status` is clean after a write, the write landed in the wrong tree.
+**Confidence:** HIGH — reproducible; discovered by checking `git status` which was clean despite edits.
+
+### C-016 | 2026-04-12 | coordinator | retrieval-protocol · docs-only tasks
+**Symptom:** A pure-documentation task (cataloguing 78 mermaid diagrams across 18 architecture docs for website placement) skipped the 3-step retrieval protocol — went directly to grep + Read without first consulting `.guild/wiki/index.md` or running `.claude/hooks/wiki-query.sh`. The stop-hook reviewer flagged this as a retrieval protocol miss.
+**Root cause:** Retrieval protocol is perceived as code-only ("why would I check invariants for a docs task?"). But documentation tasks are the *most* prone to drift because they lack compile-time feedback, and the wiki contains corrections (C-012, C-013) that directly alter the output. In this case, querying the wiki surfaced: (a) `.guild/wiki/architecture/package-map.md` is stale for the observability sweep, meaning the span-hierarchy diagram's target page should cite DOC-14 not the wiki; (b) five diagrams anchor directly to invariants in `.guild/wiki/architecture/invariants.md`, which changes how their captions should be written.
+**Correction:** Retrieval protocol is mandatory for *any* task that touches `docs/architecture/` or references `file:line` anchors, regardless of whether code is being written.
+**Prevention rule:** Amend `.claude/rules/documentation.md` § "Sources to consult before writing" to make the 3-step protocol explicit and ordered: (1) `.guild/wiki/index.md`, (2) `bash .claude/hooks/wiki-query.sh <topic>`, (3) targeted `.guild/wiki/patterns/*.md` or `.guild/wiki/architecture/*.md` files. Only then fall through to grep/Read on `docs/`.
+**Confidence:** HIGH — empirically confirmed: post-hoc wiki query surfaced C-012 and C-013 which each changed specific cells in the output report.
+
+### C-017 | 2026-04-21 | parallel-agent dispatch | SonarCloud sweep semantics-preservation
+**Symptom:** A parallel 7-agent SonarCloud sweep (PR #318, 234 issues) dispatched worktree-isolated agents to refactor for S3776/S1192/S8196/S8209 rules. Three agents introduced regressions: (a) a new `UsageCount++` mutation inside a CC-reduction refactor of `agent/metacognitive/store.go:SearchHeuristics`, racing with a pre-existing lock-free `copyModel()` in `Load()`; (b) 8 exported interface renames without `type OldName = NewName` compat aliases; (c) an S8209 "use available ctx" fix that swapped `context.Background()` for the caller's ctx in `memory/consolidation/worker.go`, regressing daemon-lifecycle isolation that the original code-comment explicitly called out; (d) two new gosec G101 false-positives from S1192 string-extraction of constants containing `credential`.
+**Root cause:** Agent dispatch prompts described the target issue-set but did not enumerate the semantics-preservation invariants that a human reviewer would hold. Agents treat the linter recommendation as authoritative. `go build ./...` passes all the regressions; only `go test -race` caught (a), only Greptile caught (b), only a design-intent code-comment caught (c), only the NEXT gosec pass caught (d).
+**Correction:** Every parallel-agent dispatch prompt for a SonarCloud-style bulk refactor must include, inline (not by reference), the semantics-preservation rules: preserve observable behavior verbatim; add back-compat aliases for exported renames; defer to pre-existing code comments when the linter contradicts them; add `#nosec G101` to extracted credential/token/key-adjacent constants; run `go test -race` on affected packages before declaring done.
+**Prevention rule:** A template for future dispatches lives in workspace `.guild/wiki/standards/corrections.md` W-012 — the five "Prevention rules" there MUST be pasted into the dispatch prompt body. Agents running in worktrees do not inherit parent-session wiki access, so inlining is load-bearing. The dispatcher (workspace-coordinator or framework coordinator) is responsible for composing the prompt; a shortcut is to start from W-012 rules 1-5 verbatim.
+**Confidence:** HIGH — PR #318 showed all four regression classes end-to-end; the fix commits (`2a397db3`, `5c3b9e95`, `ca4dfb53`) landed the remediations.
+
+### C-018 | 2026-04-21 | developer-go | pre-push PR-review-parity pass
+**Symptom:** PR #314 (DX-1 S2 scaffolding) landed with multiple waves of Greptile + SonarCloud findings that a local pre-push pass would have caught: non-deterministic `for k, v := range map[...]...` write of two scaffolded files (no rollback on partial failure), a dead exported accessor `BuiltinTemplatesFS()` with an incorrect doc-comment, a misleading "second branch" doc-comment on a single-branch regex, a `curl | tar` binary download without checksum verification, and a `.gitignore` missing `tmp-integration-*/` entry. None of these fail the "Before commit" gate (they compile + vet + test clean). They all fail external review.
+**Root cause:** The "Before commit" gate is a correctness floor, not a PR-review parity gate. Greptile and SonarCloud scan for patterns orthogonal to the compiler — ordering guarantees, supply-chain hygiene, doc-comment accuracy, rollback safety. These are catchable by a checklist self-review over the diff, but only if the checklist exists at pre-push time.
+**Correction:** Extend `.claude/rules/workflow.md` with a "Before push" gate that enumerates the recurring Greptile-regression patterns as a self-review checklist, plus a recommended (non-blocking) `sonar verify --file` invocation for SonarCloud parity where the sonar CLI is available. First-pass-clean PRs reduce reviewer load and shorten merge latency.
+**Prevention rule:** The "Before push" section in `.claude/rules/workflow.md` is now mandatory for any branch that will open or update a PR. It must be run per-diff (not per-repo), and the Greptile-pattern checklist MUST cover: non-deterministic map writes, mutable action tags, unpinned curl downloads without SHA256 check, exported renames without aliases, dead exported accessors, and refactors whose semantics differ from the pre-existing behavior. See `.guild/wiki/hotspot-triage.md` for scaffolded-template hotspot patterns that require a post-scan `sonar api` follow-up rather than a code fix.
+**Confidence:** HIGH — PR #314's Greptile + SonarCloud review cycles cost two full CI rounds + one wakeup window; every finding on both reviews matches a pattern now listed in the "Before push" gate.
+
+### C-020 | 2026-04-22 | framework-lead | brief file-path verification before editing
+**Symptom:** During PR #326 (DX-1 S4) plan-ack, framework-lead probed the repo to resolve the brief's File-level plan rows and found that the brief referenced `framework/eval/dataset.go` for `EvalSample` schema extension, but `EvalSample` is actually declared in `framework/eval/eval.go:24`. The brief was authored from specialist synthesis without grep-verifying the live file locations; the File-level plan's exact-path cells are human-written and can drift from the codebase between the specialist pass and the implementation pass (especially when the repo has been refactored post-synthesis). A teammate who blindly trusts the brief's path cells risks a no-op Edit (tool errors) or worse — creating a new file that shadows the intended one.
+**Root cause:** Brief File-level plan cells are generated during synthesis by the PM-hat without a mandatory grep-verify step; specialist docs typically describe the _concept_ without claiming the _file_. The "canonical file for concept X" step is assumed.
+**Correction:** Teammates MUST `rg <symbol>` or `ls <path>` before their first Edit on each brief-referenced file. Mismatches flagged via SendMessage with the proposed correction; no silent-reinterpretation of paths.
+**Prevention rule:** Add to every framework-lead dispatch prompt: "Grep-verify every file path in the brief's File-level plan at plan-ack time. A mismatch is not a blocker — it's a `SendMessage` to team-lead proposing the corrected path." See workspace-coordinator practice: also grep-verify when authoring the brief's File-level plan before handoff, to catch the drift earlier.
+**Confidence:** HIGH — observed on PR #326; framework-lead's Q1 plan-ack question caught the discrepancy cleanly.
+
+### C-021 | 2026-04-22 | framework-lead | scaffolded Makefile must not use `go run <modpath>`
+**Symptom:** During PR #326, framework-lead initially wrote the scaffolded `Makefile.tmpl` `eval-ci` target with `go run github.com/lookatitude/beluga-ai/v2/cmd/beluga eval ...`. This fails in scaffolded projects because scaffolded projects have their own `go.mod` with the framework in `require` (or via a `replace` directive for dev), but `go run <modpath>` uses the Go module-proxy resolution path which may pick up a different version than the one the scaffolded project depends on. Specifically: if the scaffolded project pins `v2.11.0` but the module proxy has `v2.12.0`, `go run github.com/lookatitude/beluga-ai/v2/cmd/beluga` resolves to `v2.12.0`'s CLI — which may or may not understand the scaffolded project's config. Worse: if the scaffolded project uses a `replace ... => ../..` directive (for framework-dev users), `go run <modpath>` ignores the replace and fetches from the proxy.
+**Root cause:** `go run <modpath>` has different resolution semantics from `go run ./cmd/beluga` (the latter is tied to the current module graph; the former uses the proxy). Scaffolded projects are their own module, so `go run <modpath>` escapes the local module graph intent.
+**Correction:** Scaffolded `Makefile.tmpl` must invoke the `beluga` binary on `$PATH` with a fail-fast check if the binary is missing. Example:
+```make
+.PHONY: eval-ci
+eval-ci:
+	@command -v beluga >/dev/null 2>&1 || { echo "error: beluga CLI not on PATH. Install via 'go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@latest'"; exit 1; }
+	BELUGA_LLM_PROVIDER=mock BELUGA_DETERMINISTIC=1 BELUGA_SEED=42 OTEL_SDK_DISABLED=true \
+		beluga eval .beluga/eval.smoke.json
+```
+This matches the S3 `test-ci` pattern (which uses `go test -race ./...` — local to the scaffolded module — not `go run <modpath>`) and keeps the scaffolded project's module graph authoritative.
+**Prevention rule:** For ANY scaffolded `Makefile.tmpl` or `ci.yml.tmpl` target that invokes the framework's `beluga` CLI: use the binary on `$PATH` with a fail-fast, never `go run <modpath>`. Document in the scaffolded `README.md.tmpl` that users must `go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@latest` before running `make eval-ci` / `make test-ci`. The framework's own in-repo workflows (`eval-integration.yml`, `devloop-integration.yml`) can use `go run ./cmd/beluga` because they're inside the framework module graph — but this is the opposite of scaffolded-project context.
+**Confidence:** HIGH — caught mid-implementation in PR #326; fix commit `8721a366` named `fix(scaffold)+ci(eval): invoke beluga binary on PATH, not 'go run <modpath>'`.
+
+### C-019 | 2026-04-21 | coordinator | silent push-without-upstream
+**Symptom:** On branch `feat/loo-149-cli-scaffolding` during PR #314 iteration, three separate `git push` invocations returned exit code 0 (CLI wrapper printed `ok <branch>`) with the hint `"To have this happen automatically for branches without a tracking upstream, see 'push.autoSetupRemote' …"` — but the remote never received the commits. Only discovered 20 minutes later by noticing SonarCloud reported line numbers from a stale SHA.
+**Root cause:** `git push` with no arguments on a branch that has no tracking upstream is a no-op on some git + `push.default` combinations. The hint message is visible but not blocking, and exit code 0 makes shell-wrapper "success" indicators misleading.
+**Correction:** Do not trust `git push` exit code alone. After every push that matters (PR iterations, release branches), verify `git rev-list --left-right --count origin/<branch>...HEAD` returns `0 0` — or equivalently, `gh pr view <n> --json headRefOid` returns the expected SHA.
+**Prevention rule:** Workspace `.guild/wiki/standards/corrections.md` W-013 covers this cross-repo. Local-repo practice: use `git push origin <local>:<remote>` explicitly on the first push of a new branch, confirm `git branch -vv` shows `[origin/<branch>]`, then subsequent `git push` is safe. After each push, one `git fetch && git rev-list --left-right --count origin/<branch>...HEAD` is a 2-second sanity check.
+**Confidence:** HIGH — observed on PR #314, commits `14939ee9` and `7ecac643` both required explicit `origin <local>:<remote>` pushes.

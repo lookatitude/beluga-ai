@@ -2,7 +2,7 @@
 
 **Audience:** Anyone running Beluga in production or handling untrusted input.
 **Prerequisites:** [04 — Data Flow](./04-data-flow.md), [08 — Runner and Lifecycle](./08-runner-and-lifecycle.md).
-**Related:** [`.wiki/patterns/security-guards.md`](../../.wiki/patterns/security-guards.md), [`.claude/rules/security.md`](../../.claude/rules/security.md).
+**Related:** [`.guild/wiki/patterns/security-guards.md`](../../.guild/wiki/patterns/security-guards.md), [`.claude/rules/security.md`](../../.claude/rules/security.md).
 
 ## Overview
 
@@ -51,7 +51,7 @@ Run after the executor finishes:
 - **PII redaction** — strip PII that leaked into the response.
 - **Schema enforcement** — if the caller declared an output schema, enforce it.
 
-**Invariant:** all three stages must run. Skipping any one leaves a class of attacks unguarded. See [`.wiki/architecture/invariants.md#9`](../../.wiki/architecture/invariants.md) for the canonical reference.
+**Invariant:** all three stages must run. Skipping any one leaves a class of attacks unguarded. See [`.guild/wiki/architecture/invariants.md#9`](../../.guild/wiki/architecture/invariants.md) for the canonical reference.
 
 ## The Guard interface
 
@@ -410,6 +410,6 @@ degrader.RecordEvent(ctx, degradation.SecurityEvent{
 ## Related reading
 
 - [04 — Data Flow](./04-data-flow.md) — where each guard stage fires in a turn.
-- [`.wiki/patterns/security-guards.md`](../../.wiki/patterns/security-guards.md) — canonical code references.
+- [`.guild/wiki/patterns/security-guards.md`](../../.guild/wiki/patterns/security-guards.md) — canonical code references.
 - [`.claude/rules/security.md`](../../.claude/rules/security.md) — enforced security rules for developers.
 - [14 — Observability](./14-observability.md) — auditing and trace scrubbing.

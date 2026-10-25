@@ -2,7 +2,7 @@
 
 **Audience:** Contributors and architects enforcing the layering rule.
 **Prerequisites:** [01 — Overview](./01-overview.md).
-**Related:** [`.wiki/architecture/package-map.md`](../../.wiki/architecture/package-map.md), [`.wiki/architecture/invariants.md`](../../.wiki/architecture/invariants.md).
+**Related:** [`.guild/wiki/architecture/package-map.md`](../../.guild/wiki/architecture/package-map.md), [`.guild/wiki/architecture/invariants.md`](../../.guild/wiki/architecture/invariants.md).
 
 ## Overview
 
@@ -86,7 +86,7 @@ graph TD
 
 ## Detailed dependencies by package
 
-Use [`.wiki/architecture/package-map.md`](../../.wiki/architecture/package-map.md) as the live, scan-backed reference. The summary:
+Use [`.guild/wiki/architecture/package-map.md`](../../.guild/wiki/architecture/package-map.md) as the live, scan-backed reference. The summary:
 
 ### Layer 1 — Foundation (`core`, `schema`, `config`, `o11y`)
 
@@ -214,5 +214,5 @@ Run `/arch-validate all` to scan the current code for violations.
 ## Related reading
 
 - [01 — Overview](./01-overview.md) — the 7-layer model at a higher level.
-- [`.wiki/architecture/package-map.md`](../../.wiki/architecture/package-map.md) — live, scan-backed package details.
-- [`.wiki/architecture/invariants.md`](../../.wiki/architecture/invariants.md) — the invariants list, including the layering rule.
+- [`.guild/wiki/architecture/package-map.md`](../../.guild/wiki/architecture/package-map.md) — live, scan-backed package details.
+- [`.guild/wiki/architecture/invariants.md`](../../.guild/wiki/architecture/invariants.md) — the invariants list, including the layering rule.

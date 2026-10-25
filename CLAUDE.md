@@ -6,7 +6,7 @@ Go-native agentic AI framework. `github.com/lookatitude/beluga-ai/v2`. Go 1.23+.
 
 This repo owns the **engineering layer** of the Beluga project: code, tech docs, and releases. It does **not** own website content, marketing, blog posts, runnable example programs, or cross-repo strategy — those live in sibling repos (`beluga-website`, `beluga-examples`) and in the private workspace repo (`beluga.git`).
 
-When working on cross-repo concerns (release flow fan-out, website dispatch, shared incident learnings, feature-brief coordination), consult the **workspace wiki** at `../.guild/wiki/context/workspace-router.md` and the workspace `CLAUDE.md` at `../CLAUDE.md` — they're only visible when this repo is checked out inside the multi-repo workspace. Anything code-grounded or framework-specific stays here, in this repo's `.wiki/` and `docs/`.
+When working on cross-repo concerns (release flow fan-out, website dispatch, shared incident learnings, feature-brief coordination), consult the **workspace wiki** at `../.guild/wiki/context/workspace-router.md` and the workspace `CLAUDE.md` at `../CLAUDE.md` — they're only visible when this repo is checked out inside the multi-repo workspace. Anything code-grounded or framework-specific stays here, in this repo's `.guild/wiki/` and `docs/`.
 
 ## Critical rules
 
@@ -48,7 +48,7 @@ before commit. See `.claude/rules/go-packages.md` for gosec focus areas.
 
 1. File-scoped rules in `.claude/rules/` auto-load for the files you touch.
 2. Run `.claude/hooks/wiki-query.sh <package>` — returns relevant wiki index entries, corrections, and pattern files in one call.
-3. Read `.wiki/index.md` retrieval routing table; read the targeted files for your task type.
+3. Read `.guild/wiki/index.md` retrieval routing table; read the targeted files for your task type.
 4. Read existing code in the target package — match style exactly.
 5. Write a failing test first, then make it pass (Red/Green TDD).
 
@@ -65,8 +65,8 @@ before commit. See `.claude/rules/go-packages.md` for gosec focus areas.
 | `/document $TARGET` | Write package docs, tutorials, API reference |
 | `/dependency-audit` | gosec + govulncheck + update safe deps |
 | `/new-feature $DESC` | Composite pipeline: plan → develop → security-review → document |
-| `/learn $DESCRIPTION` | Capture a correction into `.wiki/corrections.md` |
-| `/wiki-learn [$PATH\|all]` | Extract patterns and architecture from the codebase into `.wiki/` |
+| `/learn $DESCRIPTION` | Capture a correction into `.guild/wiki/corrections.md` |
+| `/wiki-learn [$PATH\|all]` | Extract patterns and architecture from the codebase into `.guild/wiki/` |
 | `/arch-validate $PACKAGE` | Validate code against architecture invariants |
 | `/arch-update $CHANGE` | Update architecture docs + ADRs after significant changes |
 | `/status` | Package health snapshot |
@@ -99,4 +99,4 @@ Agents under `.claude/agents/` include a **Prompting baseline (Claude 4.x)** sec
 
 ## Learning pipeline
 
-Per-agent `.claude/agents/<name>/rules/` (automatic, fast) → `.wiki/corrections.md` (curated) → `.claude/rules/<file>.md` (enforced) → `CLAUDE.md` (always-loaded, human-approved).
+Per-agent `.claude/agents/<name>/rules/` (automatic, fast) → `.guild/wiki/corrections.md` (curated) → `.claude/rules/<file>.md` (enforced) → `CLAUDE.md` (always-loaded, human-approved).

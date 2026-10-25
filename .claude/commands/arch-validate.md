@@ -1,6 +1,6 @@
 ---
 name: arch-validate
-description: Validate code against the 10 architecture invariants in .wiki/architecture/invariants.md. Reports PASS/FAIL per invariant with file:line evidence.
+description: Validate code against the 10 architecture invariants in .guild/wiki/architecture/invariants.md. Reports PASS/FAIL per invariant with file:line evidence.
 ---
 
 Validate architecture for: $ARGUMENTS (package path or "all")
@@ -8,7 +8,7 @@ Validate architecture for: $ARGUMENTS (package path or "all")
 ## Workflow
 
 ### Step 1 — Load invariants
-`@agent-architect` reads `.wiki/architecture/invariants.md` and the target package(s).
+`@agent-architect` reads `.guild/wiki/architecture/invariants.md` and the target package(s).
 
 ### Step 2 — Scan
 For each invariant, scan the target for violations:
@@ -43,4 +43,4 @@ COMPLIANT / VIOLATIONS FOUND (N)
 ```
 
 ### Step 4 — Learning
-If violations are found, `@agent-coordinator` appends a correction entry to `.wiki/corrections.md` and (if HIGH confidence) proposes a rule update.
+If violations are found, `@agent-coordinator` appends a correction entry to `.guild/wiki/corrections.md` and (if HIGH confidence) proposes a rule update.

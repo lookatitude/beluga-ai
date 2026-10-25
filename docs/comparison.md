@@ -181,7 +181,7 @@ for event, err := range a.Stream(ctx, "summarise this document") {
 }
 ```
 
-Evidence: `agent/agent.go:36` — `Stream(...) iter.Seq2[Event, error]`. Streaming pattern: `.wiki/patterns/streaming.md`.
+Evidence: `agent/agent.go:36` — `Stream(...) iter.Seq2[Event, error]`. Streaming pattern: `.guild/wiki/patterns/streaming.md`.
 
 Competitor comparison: LangChainGo — uses channels for streaming (leak risk, awkward composition). Eino — callback/channel hybrid. ADK-Go — not documented as `iter.Seq2`.
 

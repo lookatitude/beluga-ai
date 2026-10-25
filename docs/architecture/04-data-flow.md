@@ -185,7 +185,7 @@ Two error paths coexist:
 1. **Application errors** — a tool fails, the LLM hallucinates a bad schema, the retrieval returns nothing. These become `Observation`s and feed back to the planner. The agent can recover.
 2. **Infrastructure errors** — network blip, rate limit, 503. These fire at the middleware level. `core.IsRetryable(err)` is true → retry middleware transparently retries. The planner never sees them.
 
-See [`patterns/error-handling.md`](../patterns/error-handling.md) and [`.wiki/patterns/error-handling.md`](../../.wiki/patterns/error-handling.md).
+See [`patterns/error-handling.md`](../patterns/error-handling.md) and [`.guild/wiki/patterns/error-handling.md`](../../.guild/wiki/patterns/error-handling.md).
 
 ## Handoff flow
 

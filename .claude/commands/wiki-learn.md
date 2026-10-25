@@ -1,6 +1,6 @@
 ---
 name: wiki-learn
-description: Extract patterns, architecture, and invariants from the codebase into .wiki/. Populates patterns/, package-map.md, and invariants.md with real file:line references.
+description: Extract patterns, architecture, and invariants from the codebase into .guild/wiki/. Populates patterns/, package-map.md, and invariants.md with real file:line references.
 ---
 
 Wiki-learn scope: $ARGUMENTS (default: "all"; otherwise a package path)
@@ -28,21 +28,21 @@ Output: structured JSON or markdown scratch file in `raw/research/wiki-scan-<dat
 ### Step 3 — Distill (docs-writer)
 `@agent-docs-writer` turns the scan into wiki content:
 
-For each pattern in `.wiki/patterns/`:
+For each pattern in `.guild/wiki/patterns/`:
 - "Canonical example" — real `file:line` reference + 10-line snippet
 - "Variations" — distinct real usages
 - "Anti-patterns" — preserved + any new ones from the scan
 
-For `.wiki/architecture/package-map.md`:
+For `.guild/wiki/architecture/package-map.md`:
 - One section per top-level package with purpose, key types, registry, deps, canonical file, test coverage.
 
-For `.wiki/architecture/invariants.md`:
+For `.guild/wiki/architecture/invariants.md`:
 - Keep the 10 invariants + add a real file:line reference for each.
 
 ### Step 4 — Index (coordinator)
 `@agent-coordinator`:
-- Updates `.wiki/index.md` — refreshes the "Last scanned" timestamp and adjusts the retrieval routing table if new patterns were discovered.
-- Appends a `/wiki-learn` entry to `.wiki/log.md`.
+- Updates `.guild/wiki/index.md` — refreshes the "Last scanned" timestamp and adjusts the retrieval routing table if new patterns were discovered.
+- Appends a `/wiki-learn` entry to `.guild/wiki/log.md`.
 
 ## Modes
 
@@ -51,4 +51,4 @@ For `.wiki/architecture/invariants.md`:
 
 ## Output
 
-Updated `.wiki/` directory with real code references. Scan artifacts in `raw/research/wiki-scan-<date>.md`.
+Updated `.guild/wiki/` directory with real code references. Scan artifacts in `raw/research/wiki-scan-<date>.md`.

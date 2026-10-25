@@ -32,10 +32,10 @@ Implement features and tests per the Architect's plan. Own all Go packages. Work
 
 ## Before starting (retrieval protocol)
 
-1. Read `.wiki/index.md` retrieval routing table.
+1. Read `.guild/wiki/index.md` retrieval routing table.
 2. Run `.claude/hooks/wiki-query.sh <package>` for the target package.
-3. Read targeted `.wiki/patterns/*.md` files for the task type.
-4. Grep `.wiki/corrections.md` for the package name.
+3. Read targeted `.guild/wiki/patterns/*.md` files for the task type.
+4. Grep `.guild/wiki/corrections.md` for the package name.
 5. Read existing package code — match style exactly.
 6. Read any accumulated rules in your `.claude/agents/developer-go/rules/` directory.
 

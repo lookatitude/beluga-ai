@@ -2,7 +2,7 @@
 
 Every public interface in Beluga, grouped by layer. This is a lookup reference — for the "why" behind each interface, follow the links to the architecture docs.
 
-For live `file:line` anchors, see [`.wiki/architecture/package-map.md`](../../.wiki/architecture/package-map.md).
+For live `file:line` anchors, see [`.guild/wiki/architecture/package-map.md`](../../.guild/wiki/architecture/package-map.md).
 
 ## Layer 1 — Foundation
 
@@ -277,4 +277,4 @@ go doc github.com/lookatitude/beluga-ai/v2/<package>
 
 - [03 — Extensibility Patterns](../architecture/03-extensibility-patterns.md) — how these interfaces compose.
 - [18 — Package Dependency Map](../architecture/18-package-dependency-map.md) — which layer each lives in.
-- [`.wiki/architecture/package-map.md`](../../.wiki/architecture/package-map.md) — live source references.
+- [`.guild/wiki/architecture/package-map.md`](../../.guild/wiki/architecture/package-map.md) — live source references.

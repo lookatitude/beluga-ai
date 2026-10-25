@@ -27,4 +27,4 @@ For each CRITICAL or HIGH issue:
 Both passes must be clean consecutively. If Pass 2 finds something Pass 1 missed → fix → restart from Step 4.
 
 ### Step 6 — Learning
-`@agent-coordinator` captures findings to `.wiki/corrections.md`. Updates `.claude/rules/security.md` if new patterns emerge. Saves review report to `raw/reviews/security-<date>.md`. Appends to `.wiki/log.md`.
+`@agent-coordinator` captures findings to `.guild/wiki/corrections.md`. Updates `.claude/rules/security.md` if new patterns emerge. Saves review report to `raw/reviews/security-<date>.md`. Appends to `.guild/wiki/log.md`.

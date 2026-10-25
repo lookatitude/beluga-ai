@@ -26,9 +26,9 @@ Investigate topics assigned by the Architect. Return structured, evidence-based 
 
 ## Before starting (retrieval protocol)
 
-1. Read `.wiki/index.md` and the retrieval routing table.
+1. Read `.guild/wiki/index.md` and the retrieval routing table.
 2. Run `.claude/hooks/wiki-query.sh <topic>` for the research topic.
-3. Read existing `.wiki/competitors/*.md` when evaluating external approaches.
+3. Read existing `.guild/wiki/competitors/*.md` when evaluating external approaches.
 4. Check `raw/research/` for prior research on the same topic.
 
 ## Method

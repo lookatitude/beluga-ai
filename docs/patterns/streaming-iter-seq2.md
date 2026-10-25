@@ -17,7 +17,7 @@ LLM tokens, tool observations, voice frames, retrieval results — all of these 
 
 ## How it works
 
-Canonical code from `core/stream.go:49-56` (see [`.wiki/patterns/streaming.md`](../../.wiki/patterns/streaming.md)):
+Canonical code from `core/stream.go:49-56` (see [`.guild/wiki/patterns/streaming.md`](../../.guild/wiki/patterns/streaming.md)):
 
 ```go
 // core/stream.go
@@ -212,5 +212,5 @@ for _, ev := range paginated.Fetch(ctx, client, url).Range {
 ## Related
 
 - [02 — Core Primitives](../architecture/02-core-primitives.md) — `Event[T]` and `Stream[T]` in detail.
-- [`.wiki/patterns/streaming.md`](../../.wiki/patterns/streaming.md) — canonical code references.
+- [`.guild/wiki/patterns/streaming.md`](../../.guild/wiki/patterns/streaming.md) — canonical code references.
 - [11 — Voice Pipeline](../architecture/11-voice-pipeline.md) — streaming at audio rate.

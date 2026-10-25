@@ -12,7 +12,7 @@ Key terms used across Beluga AI v2 documentation. Terms are grouped by topic and
 
 **Handoff.** Transfer of control from one agent to another via an auto-generated `transfer_to_{name}` tool. See [DOC-05](../architecture/05-agent-anatomy.md#handoffs-are-tools).
 
-**Invariant.** One of ten non-negotiable design rules. Violations are architectural defects. See [`.wiki/architecture/invariants.md`](../../.wiki/architecture/invariants.md).
+**Invariant.** One of ten non-negotiable design rules. Violations are architectural defects. See [`.guild/wiki/architecture/invariants.md`](../../.guild/wiki/architecture/invariants.md).
 
 **Persona.** Role + goal + backstory + traits, rendered into the system prompt. See [DOC-05](../architecture/05-agent-anatomy.md#persona-model).
 
@@ -190,5 +190,5 @@ See [DOC-15](../architecture/15-resilience.md).
 ## Related
 
 - [01 — Overview](../architecture/01-overview.md)
-- [`.wiki/architecture/invariants.md`](../../.wiki/architecture/invariants.md)
+- [`.guild/wiki/architecture/invariants.md`](../../.guild/wiki/architecture/invariants.md)
 - [`./interfaces.md`](./interfaces.md)

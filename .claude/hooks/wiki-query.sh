@@ -2,8 +2,8 @@
 # wiki-query.sh — Retrieval helper for agents.
 #
 # Given a topic (usually a package name or concept), prints:
-#   - Matching entries from .wiki/index.md
-#   - Matching corrections from .wiki/corrections.md
+#   - Matching entries from .guild/wiki/index.md
+#   - Matching corrections from .guild/wiki/corrections.md
 #   - Matching pattern files
 #   - Matching package-map entry
 #
@@ -18,7 +18,7 @@ fi
 
 TOPIC="$1"
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-WIKI_DIR="$REPO_ROOT/.wiki"
+WIKI_DIR="$REPO_ROOT/.guild/wiki"
 
 if [ ! -d "$WIKI_DIR" ]; then
     echo "ERROR: $WIKI_DIR does not exist. Run /wiki-learn to populate." >&2
