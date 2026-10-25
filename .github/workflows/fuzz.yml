@@ -1,83 +1,83 @@
 name: Fuzzing
 
+# Nightly Go native fuzzing via scripts/fuzz.sh (shared with `make fuzz`):
+# targets are discovered with `go test -list`, and each one is fuzzed in
+# its own package (`-fuzz` only accepts a single package). When the repo has no fuzz targets the job says so in the run
+# summary and stops; it does not report a fuzz run that never happened.
+
 on:
   schedule:
     - cron: "0 2 * * *" # Nightly at 2am UTC
   workflow_dispatch:
     inputs:
       fuzz_time:
-        description: "Fuzz duration per target (e.g. 5m, 30m)"
+        description: "Fuzz duration per target (e.g. 30s, 5m, 1h)"
         required: false
         default: "5m"
 
 permissions:
   contents: read
-  issues: write
 
 env:
   GO_VERSION: "1.27.3"
+  GOTOOLCHAIN: local
 
 jobs:
   fuzz:
     name: Go Native Fuzzing
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@v7
 
+      # Cheap pre-check before installing Go: no `func Fuzz` anywhere means
+      # there is nothing to fuzz.
+      - name: Check for fuzz targets
+        id: precheck
+        run: |
+          if grep -rqs --include='*_test.go' -E '^func Fuzz[A-Za-z0-9_]*\(' .; then
+            echo "has_targets=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_targets=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No fuzz targets (func FuzzXxx) in the repository; skipping the fuzz run."
+            echo "### Fuzzing skipped: the repository has no fuzz targets." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - uses: actions/setup-go@v7
+        if: steps.precheck.outputs.has_targets == 'true'
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: Find fuzz targets
-        id: find_targets
-        run: |
-          TARGETS=$(grep -r "func Fuzz" --include="*_test.go" -l . 2>/dev/null || true)
-          if [ -z "$TARGETS" ]; then
-            echo "No fuzz targets found"
-            echo "has_targets=false" >> $GITHUB_OUTPUT
-          else
-            echo "Found fuzz targets:"
-            echo "$TARGETS"
-            echo "has_targets=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Run fuzz tests
-        if: steps.find_targets.outputs.has_targets == 'true'
+      - name: Run fuzz targets
+        if: steps.precheck.outputs.has_targets == 'true'
         id: fuzz_run
-        continue-on-error: true
-        run: |
-          FUZZ_TIME="${{ github.event.inputs.fuzz_time || '5m' }}"
-          FAILED=0
+        env:
+          # Passed through env and validated, never interpolated into the
+          # script (workflow_dispatch input).
+          FUZZ_TIME: ${{ inputs.fuzz_time || '5m' }}
+        # scripts/fuzz.sh validates FUZZ_TIME, discovers targets with
+        # `go test -list`, fuzzes each one in its own package and writes
+        # fuzz_failures to $GITHUB_OUTPUT.
+        run: scripts/fuzz.sh "$FUZZ_TIME" -race
 
-          for dir in $(grep -r "func Fuzz" --include="*_test.go" -l . | xargs -I{} dirname {} | sort -u); do
-            echo "=== Fuzzing $dir ==="
-            for target in $(grep -h "func Fuzz" "$dir"/*_test.go 2>/dev/null | sed 's/func \(Fuzz[a-zA-Z0-9_]*\).*/\1/'); do
-              echo "--- Target: $target ---"
-              if ! go test "./$dir" -fuzz="^${target}$" -fuzztime="$FUZZ_TIME" -race 2>&1; then
-                FAILED=$((FAILED + 1))
-                echo "FAILED: $dir/$target"
-              fi
-            done
-          done
-
-          if [ "$FAILED" -gt 0 ]; then
-            echo "fuzz_failures=$FAILED" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-
+      # A crashing target fails the step above, so `failure()` fires here.
       - name: Upload fuzz corpus on failure
-        if: failure()
+        if: failure() && steps.fuzz_run.outcome == 'failure'
         uses: actions/upload-artifact@v7
         with:
           name: fuzz-corpus
           path: "**/testdata/fuzz/**"
 
       - name: Create issue on fuzz failure
-        if: failure() && steps.find_targets.outputs.has_targets == 'true'
+        if: failure() && steps.fuzz_run.outcome == 'failure'
         uses: actions/github-script@v9
+        env:
+          FUZZ_FAILURES: ${{ steps.fuzz_run.outputs.fuzz_failures }}
         with:
           script: |
-            const failures = '${{ steps.fuzz_run.outputs.fuzz_failures }}' || 'unknown';
+            const failures = process.env.FUZZ_FAILURES || 'unknown';
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
