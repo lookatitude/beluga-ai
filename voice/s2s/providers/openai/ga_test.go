@@ -76,5 +76,5 @@ func TestStart_GARealtimeProtocol(t *testing.T) {
 	assert.Equal(t, s2s.SessionEvent{Type: s2s.EventTextOutput, Text: "hi"}, got[1])
 	assert.Equal(t, s2s.EventTurnEnd, got[2].Type)
 	assert.Empty(t, betaHeader)
-	assert.Equal(t, "gpt-realtime", model)
+	assert.Equal(t, "gpt-realtime-2.1", model)
 }

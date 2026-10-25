@@ -16,7 +16,7 @@ import (
 
 const (
 	defaultBaseURL = "wss://api.openai.com/v1/realtime"
-	defaultModel   = "gpt-realtime"
+	defaultModel   = "gpt-realtime-2.1"
 )
 
 var _ s2s.S2S = (*Engine)(nil) // compile-time interface check
