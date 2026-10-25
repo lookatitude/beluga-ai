@@ -33,11 +33,40 @@ var writeKeywords = []string{
 	"UPSERT",  // CockroachDB, SQLite
 	"GRANT",   // DCL: mutates permissions
 	"REVOKE",  // DCL: mutates permissions
+	// Procedure calls, file/network I/O and dynamic SQL. These can write,
+	// exfiltrate or reach the network even inside a "read" statement.
+	"CALL",     // Cypher CALL apoc.* / dbms.*, SQL stored procedures
+	"LOAD",     // Cypher LOAD CSV FROM 'http://…', MySQL LOAD DATA
+	"COPY",     // PostgreSQL COPY … TO PROGRAM / FROM
+	"EXEC",     // SQL Server / Sybase dynamic execution
+	"EXECUTE",  // dynamic SQL
+	"INTO",     // SELECT … INTO OUTFILE / INTO new_table
+	"OUTFILE",  // MySQL file write
+	"DUMPFILE", // MySQL file write
+	"FOREACH",  // Cypher write loops
+	"ATTACH",   // SQLite ATTACH DATABASE
+	"PRAGMA",   // SQLite configuration
+	"APOC",     // Neo4j APOC procedures/functions (many write)
+	"DBMS",     // Neo4j administration procedures
+	"PG_READ_FILE",
+	"PG_READ_BINARY_FILE",
+	"PG_LS_DIR",
+	"LO_IMPORT",
+	"LO_EXPORT",
+	"DBLINK",
 }
 
 // ReadOnlyExecutor wraps a QueryExecutor and rejects any query containing
-// write keywords. It provides a safety layer to prevent accidental mutations
-// from LLM-generated queries.
+// write, procedure-call or file/network I/O keywords.
+//
+// It is a best-effort keyword denylist, NOT a security boundary: query
+// languages are too large to filter reliably, and it may also reject
+// harmless queries whose string literals contain a listed word. The real
+// control for LLM-generated queries is a read-only database role or session
+// (for example neo4j.AccessModeRead, or SET TRANSACTION READ ONLY with a role
+// that has no file or extension privileges). Use ReadOnlyExecutor in
+// addition to that, never instead of it. StructuredRetriever does not apply
+// it automatically.
 type ReadOnlyExecutor struct {
 	inner QueryExecutor
 }
@@ -75,13 +104,15 @@ func validateReadOnly(query string) error {
 	return nil
 }
 
-// tokenize splits an uppercased query string into tokens by whitespace and
-// common SQL/Cypher punctuation, allowing keyword matching without substring
+// tokenize splits an uppercased query string into tokens by whitespace,
+// SQL/Cypher punctuation, dots (so APOC.CREATE.NODE yields CREATE), quotes
+// and comment markers, allowing keyword matching without substring
 // false positives.
 func tokenize(s string) []string {
 	return strings.FieldsFunc(s, func(r rune) bool {
 		switch r {
-		case ' ', '\t', '\n', '\r', '(', ')', ',', ';', '{', '}', '[', ']':
+		case ' ', '\t', '\n', '\r', '(', ')', ',', ';', '{', '}', '[', ']',
+			'.', '\'', '"', '`', '-', '/', '*', '+', '=', '<', '>', '|', ':':
 			return true
 		}
 		return false
