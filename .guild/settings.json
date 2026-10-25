@@ -1,7 +1,7 @@
 {
   "rigor": "standard",
   "auto_approve": [],
-  "review": "local",
+  "review": "cross",
   "host": "auto",
   "host_mode": null,
   "roles": {
@@ -14,7 +14,7 @@
   "index": "auto",
   "record_status_runs": true,
   "codex_skip_enforcement": "warn",
-  "agent_mode": "auto",
+  "agent_mode": "team",
   "workspace": {
     "mode": "auto"
   },
@@ -141,7 +141,7 @@
     "auto_create_policy": "on_approval"
   },
   "statusline": false,
-  "adversarial_review_provider": "auto",
+  "adversarial_review_provider": "codex-plugin",
   "loops": null,
   "loop_cap": 16,
   "codex_cap": 5,
@@ -153,7 +153,7 @@
       "size": null,
       "always_include": []
     },
-    "review_workflow": "standard",
+    "review_workflow": "cross",
     "skill_policy": "standard",
     "gates": {
       "auto_approve": []
