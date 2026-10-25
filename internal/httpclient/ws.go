@@ -22,7 +22,7 @@ func DialWS(ctx context.Context, url string, headers http.Header) (*WSConn, erro
 	}
 	conn, _, err := websocket.Dial(ctx, url, opts) //nolint:bodyclose // coder/websocket docs: callers never need to close the handshake resp.Body
 	if err != nil {
-		return nil, fmt.Errorf("httpclient: websocket dial: %w", err)
+		return nil, RedactError(fmt.Errorf("httpclient: websocket dial: %w", err))
 	}
 	return &WSConn{conn: conn}, nil
 }
