@@ -382,7 +382,7 @@ Full documentation, tutorials, and API reference live at **[beluga-ai.org](https
 5. **OpenTelemetry GenAI spans at every boundary.** The `WithTracing()` middleware pattern is non-optional — see [DOC-14](docs/architecture/14-observability.md).
 6. **No `interface{}` in public APIs.** Use generics.
 
-Full contributor guide: [`CLAUDE.md`](CLAUDE.md) (AI-agent and human contributors alike) and [`.claude/rules/`](.claude/rules/).
+Full contributor guide: [`AGENTS.md`](AGENTS.md) (AI-agent and human contributors alike) and [`.claude/rules/`](.claude/rules/).
 
 ### Development setup
 

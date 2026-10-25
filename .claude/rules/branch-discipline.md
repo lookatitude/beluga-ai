@@ -1,7 +1,7 @@
 # Branch Discipline
 
 Branch-and-PR discipline for the framework repo. This file mirrors the
-mandatory rules already stated in `CLAUDE.md` and `workflow.md`, and adds the
+mandatory rules already stated in `AGENTS.md` and `workflow.md`, and adds the
 Linear-integrated branch-naming convention introduced in A1.
 
 ## Rules

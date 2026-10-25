@@ -50,7 +50,7 @@ The framework is built around ten architectural invariants documented in [`.guil
 
 ## Not documentation
 
-- [`../CLAUDE.md`](../CLAUDE.md) — instructions for the AI agent team that maintains this codebase.
+- [`../AGENTS.md`](../AGENTS.md) — instructions for the AI agent team that maintains this codebase.
 - [`../.claude/`](../.claude/) — agent, command, hook, and rule definitions.
 - [`../.guild/wiki/`](../.guild/wiki/) — extracted codebase knowledge for agent retrieval.
 - [`./consultations/`](./consultations/) — point-in-time specialist consultations produced by `/consult`. Historical records; their code is not maintained against the current API.

@@ -28,7 +28,7 @@ Run `/document <feature>` then `/doc-check <affected-packages>`.
 - Updates `.guild/wiki/index.md` with any new pages.
 - Checks `.guild/wiki/corrections/` for entries missing prevention rules.
 - Verifies `.guild/wiki/log.md` is current.
-- Proposes `CLAUDE.md` updates for any mature patterns (human approves).
+- Proposes `AGENTS.md` updates for any mature patterns (human approves).
 
 ## Promotion (handed off to website)
 
