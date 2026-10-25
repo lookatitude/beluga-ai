@@ -271,7 +271,7 @@ go test -race ./...
 go mod tidy && git diff --exit-code go.mod go.sum
 
 # Formatting
-gofmt -l . | grep -v ".claude/worktrees"
+test -z "$(gofmt -l $(git ls-files '*.go'))"   # fails if any tracked file is unformatted
 
 # Linters and security scanners
 golangci-lint run ./...

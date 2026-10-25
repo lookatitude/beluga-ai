@@ -27,7 +27,7 @@ Other great first contributions:
 - **Write a cookbook** — realistic end-to-end examples in `docs/guides/`
 - **Improve docs** — if something confused you, fix the wording and open a PR
 - **Add eval metrics** — new metrics go in `eval/metrics/`
-- **Add a built-in tool** — new tools go in `tool/<name>/`
+- **Add a tool** — there is no built-in tool library yet; propose one in an issue first
 - **Fix a bug** — search [open issues](https://github.com/lookatitude/beluga-ai/issues) labelled `good first issue`
 
 ---
@@ -39,7 +39,7 @@ Other great first contributions:
 - **Go 1.26+** — uses `iter.Seq2` for streaming
 - **Git**
 - **Make** (optional but recommended)
-- **golangci-lint** — `go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest`
+- **golangci-lint v2** (CI pins v2.15.0) — `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0`
 - **gosec** — `go install github.com/securego/gosec/v2/cmd/gosec@latest`
 - **govulncheck** — `go install golang.org/x/vuln/cmd/govulncheck@latest`
 
@@ -72,51 +72,51 @@ go test -race ./...
 
 ## The extension model (learn in 2 minutes)
 
-Every extensible package in Beluga follows the same 4-ring contract. Learn it once, apply it to any of the 13 pluggable packages.
+Extensible packages in Beluga follow the same 4-ring contract. The examples use `llm`, which has all four rings; `tool` has the same interface, hooks and middleware but an instance registry (`tool.NewRegistry()` with `Add`/`Get`/`List`) instead of package-level `Register`/`New`.
 
 **Ring 1 — Interface** (≤ 4 methods, compile-time check required):
 
 ```go
-type Tool interface {
-    Name()        string
-    Description() string
-    InputSchema() map[string]any
-    Execute(ctx context.Context, input map[string]any) (*Result, error)
+type ChatModel interface {
+    Generate(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) (*schema.AIMessage, error)
+    Stream(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) iter.Seq2[schema.StreamChunk, error]
+    BindTools(tools []schema.ToolDefinition) ChatModel
+    ModelID() string
 }
 
 // Every implementation must include this:
-var _ Tool = (*MyTool)(nil)
+var _ llm.ChatModel = (*Model)(nil)
 ```
 
 **Ring 2 — Registry** (`Register` / `New` / `List`):
 
 ```go
-// Providers self-register in init():
+// Providers self-register in init(). The factory is
+// func(cfg config.ProviderConfig) (llm.ChatModel, error).
 func init() {
-    if err := tool.Register("my_tool", newFactory()); err != nil {
-        panic(err) // duplicate registration = programming error
-    }
+    llm.Register("my_provider", New)
 }
 
-// Users construct via the registry, never directly:
-t, err := tool.New("my_tool", tool.Config{})
+// Users construct via the registry:
+m, err := llm.New("my_provider", config.ProviderConfig{Provider: "my_provider", Model: "my-model"})
 ```
 
 **Ring 3 — Hooks** (nil-safe, composable):
 
 ```go
-// Hooks fire at lifecycle points, e.g. before/after tool execution.
+// Hooks fire at lifecycle points, e.g. before/after Generate.
 // All fields are optional — nil means skip.
-hooks := tool.ComposeHooks(auditHooks, metricsHooks)
+hooks := llm.ComposeHooks(auditHooks, metricsHooks)
 ```
 
 **Ring 4 — Middleware** (`func(T) T`, applied outside-in):
 
 ```go
-wrapped := tool.ApplyMiddleware(base,
-    tool.WithRetry(3),
-    tool.WithRateLimit(100),
-    tool.WithTracing(),
+// The first middleware listed is the outermost.
+wrapped := llm.ApplyMiddleware(m,
+    llm.WithTracing(),
+    llm.WithProviderLimits(llm.ProviderLimits{RPM: 100}),
+    llm.WithHooks(hooks),
 )
 ```
 
@@ -138,7 +138,7 @@ Layer 2 — Cross-cutting     (resilience, auth, audit, cost, state, workflow)
 Layer 1 — Foundation        (core, schema, config, o11y)
 ```
 
-`go vet` catches import cycles. `arch-validate` enforces the full rule. Never add an upward import — refactor the caller instead.
+The compiler rejects import cycles. `/arch-validate` checks the layer rule; [DOC-18](docs/architecture/18-package-dependency-map.md) lists the known exceptions. Never add an upward import — refactor the caller instead.
 
 Full details: [DOC-18 Package Dependency Map](docs/architecture/18-package-dependency-map.md).
 
@@ -153,13 +153,13 @@ go build ./...
 go vet ./...
 go test -race ./...
 go mod tidy && git diff --exit-code go.mod go.sum
-gofmt -l . | grep -v ".claude/worktrees"
+test -z "$(gofmt -l $(git ls-files '*.go'))"   # fails if any tracked file is unformatted
 golangci-lint run ./...
 gosec -quiet ./...
 govulncheck ./...
 ```
 
-`make check` runs lint, test, and tidy (commands 2–4). Run `go build ./...`, `gofmt`, `gosec`, and `govulncheck` separately.
+`make check` runs `make lint`, `make test` and `make tidy`. golangci-lint v2 also enforces gofmt and goimports as formatters. Run `go build ./...`, `gosec`, and `govulncheck` separately.
 
 ---
 
