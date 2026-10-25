@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/v2/core"
@@ -36,8 +37,11 @@ func WithWorkDir(dir string) ProcessOption {
 }
 
 // WithEnv sets the environment variables for the executed process.
-// Each entry is in the form "KEY=VALUE". If nil, the process inherits
-// a minimal environment.
+// Each entry is in the form "KEY=VALUE" and the list replaces the default
+// environment entirely. If nil or empty, the process gets a minimal
+// environment (see [MinimalEnv]) and does NOT inherit the parent's
+// environment, so secrets such as provider API keys are not exposed to the
+// executed code.
 func WithEnv(env []string) ProcessOption {
 	return func(o *processOptions) { o.env = env }
 }
@@ -53,9 +57,16 @@ func WithProcessHooks(h Hooks) ProcessOption {
 //
 // WARNING: This implementation is for DEVELOPMENT AND TESTING ONLY. It does NOT
 // provide kernel-level isolation (no seccomp, no namespaces, no cgroups). The
-// executed code runs with the same privileges as the parent process. Do NOT use
-// this in production with untrusted code. For production use, register a
-// container-based sandbox provider.
+// executed code runs with the same privileges as the parent process and can
+// read any file that process can. Do NOT use this in production with untrusted
+// code. The framework does not ship an isolating provider yet: for production
+// implement [Sandbox] on top of a container or VM runtime and register it with
+// [RegisterSandbox].
+//
+// The child process gets a minimal environment by default (see [WithEnv]).
+// ProcessSandbox cannot enforce network policies or memory/CPU limits, so
+// Execute rejects SandboxConfig values that request them instead of silently
+// ignoring them.
 type ProcessSandbox struct {
 	opts processOptions
 }
@@ -123,13 +134,16 @@ func (s *ProcessSandbox) Execute(ctx context.Context, code string, cfg SandboxCo
 
 	if len(s.opts.env) > 0 {
 		cmd.Env = s.opts.env
+	} else {
+		cmd.Env = MinimalEnv(tmpDir)
 	}
 
 	var stdout, stderr bytes.Buffer
 	stdout.Grow(4096)
 	stderr.Grow(4096)
-	cmd.Stdout = &limitedWriter{buf: &stdout, max: maxOutput}
-	cmd.Stderr = &limitedWriter{buf: &stderr, max: maxOutput}
+	budget := &outputBudget{remaining: maxOutput}
+	cmd.Stdout = &limitedWriter{buf: &stdout, budget: budget}
+	cmd.Stderr = &limitedWriter{buf: &stderr, budget: budget}
 
 	start := time.Now()
 	runErr := cmd.Run()
@@ -164,6 +178,16 @@ func (s *ProcessSandbox) preflight(ctx context.Context, code string, cfg Sandbox
 			opSandboxExecute,
 			core.ErrInvalidInput,
 			fmt.Sprintf("ProcessSandbox cannot enforce NetworkPolicy %q; use a container-based provider", cfg.NetworkPolicy),
+			nil,
+		)
+	}
+
+	// Nor can it enforce memory or CPU limits.
+	if cfg.Resources.MemoryMB > 0 || cfg.Resources.CPUs > 0 {
+		return languageSpec{}, core.NewError(
+			opSandboxExecute,
+			core.ErrInvalidInput,
+			"ProcessSandbox cannot enforce Resources.MemoryMB or Resources.CPUs; use an isolating provider",
 			nil,
 		)
 	}
@@ -268,19 +292,54 @@ func resolveLanguage(name string) (languageSpec, error) {
 	return lang, nil
 }
 
-// limitedWriter wraps a bytes.Buffer and stops writing after max bytes.
+// MinimalEnv returns the environment ProcessSandbox gives a child process
+// when no explicit environment is configured: the parent's PATH (so
+// interpreters can be found), HOME and TMPDIR pointing at the execution's
+// temporary directory, and a UTF-8 locale. On Windows SYSTEMROOT is also
+// kept because many programs fail without it. Nothing else from the parent
+// environment is passed on.
+func MinimalEnv(dir string) []string {
+	env := []string{
+		"PATH=" + os.Getenv("PATH"),
+		"HOME=" + dir,
+		"TMPDIR=" + dir,
+		"LANG=C.UTF-8",
+	}
+	if root := os.Getenv("SYSTEMROOT"); root != "" {
+		env = append(env, "SYSTEMROOT="+root)
+	}
+	return env
+}
+
+// outputBudget is the byte budget shared by stdout and stderr, so
+// MaxOutputBytes limits their combined size.
+type outputBudget struct {
+	mu        sync.Mutex
+	remaining int
+}
+
+// take reserves up to n bytes and returns how many may be written.
+func (b *outputBudget) take(n int) int {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if n > b.remaining {
+		n = b.remaining
+	}
+	b.remaining -= n
+	return n
+}
+
+// limitedWriter writes into buf while the shared budget lasts and silently
+// discards the rest.
 type limitedWriter struct {
-	buf *bytes.Buffer
-	max int
+	buf    *bytes.Buffer
+	budget *outputBudget
 }
 
 func (w *limitedWriter) Write(p []byte) (int, error) {
-	remaining := w.max - w.buf.Len()
-	if remaining <= 0 {
-		return len(p), nil // Discard silently — still report full write to avoid cmd error.
+	if n := w.budget.take(len(p)); n > 0 {
+		w.buf.Write(p[:n])
 	}
-	if len(p) > remaining {
-		p = p[:remaining]
-	}
-	return w.buf.Write(p)
+	// Always report a full write so the command does not fail on truncation.
+	return len(p), nil
 }
