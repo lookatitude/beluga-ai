@@ -7,11 +7,37 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"regexp"
+	"strings"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
+	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore/internal/filterutil"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
+
+const (
+	// maxResponseBytes bounds every response body read from Weaviate.
+	maxResponseBytes = 32 << 20
+	// defaultTimeout is the timeout of the default HTTP client.
+	defaultTimeout = 30 * time.Second
+)
+
+// classPattern is Weaviate's class-name grammar. The class is interpolated
+// into GraphQL and URL paths, so anything else is rejected.
+var classPattern = regexp.MustCompile(`^[A-Z][_0-9A-Za-z]*$`)
+
+// idNamespace is the UUIDv5 namespace used to derive Weaviate object UUIDs
+// from document IDs.
+var idNamespace = uuid.NewSHA1(uuid.NameSpaceURL, []byte("https://github.com/lookatitude/beluga-ai/rag/vectorstore/weaviate"))
+
+// reservedProps are object properties the store manages itself; document
+// metadata must not overwrite them.
+var reservedProps = map[string]bool{"content": true, "_beluga_id": true, "_additional": true}
 
 func init() {
 	vectorstore.Register("weaviate", func(cfg config.ProviderConfig) (vectorstore.VectorStore, error) {
@@ -56,7 +82,7 @@ func WithHTTPClient(c HTTPClient) Option {
 // New creates a new Weaviate Store.
 func New(baseURL string, opts ...Option) *Store {
 	s := &Store{
-		client:  http.DefaultClient,
+		client:  &http.Client{Timeout: defaultTimeout},
 		baseURL: baseURL,
 		class:   "Document",
 	}
@@ -86,6 +112,9 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 	if len(docs) != len(embeddings) {
 		return fmt.Errorf("weaviate: docs length (%d) != embeddings length (%d)", len(docs), len(embeddings))
 	}
+	if err := s.validateClass("weaviate.add"); err != nil {
+		return err
+	}
 
 	objects := make([]map[string]any, len(docs))
 	for i, emb := range embeddings {
@@ -95,6 +124,10 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 			"_beluga_id": doc.ID,
 		}
 		for k, v := range doc.Metadata {
+			if reservedProps[k] {
+				return core.NewError("weaviate.add", core.ErrInvalidInput,
+					fmt.Sprintf("document %q: metadata key %q is reserved", doc.ID, k), nil)
+			}
 			props[k] = v
 		}
 
@@ -109,8 +142,52 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 	body := map[string]any{
 		"objects": objects,
 	}
-	_, err := s.doJSON(ctx, http.MethodPost, "/v1/batch/objects", body)
-	return err
+	respBody, err := s.doJSON(ctx, http.MethodPost, "/v1/batch/objects", body)
+	if err != nil {
+		return err
+	}
+	return batchErrors(respBody)
+}
+
+// batchErrors returns an error when a /v1/batch/objects response (HTTP 200)
+// reports per-object failures.
+func batchErrors(respBody []byte) error {
+	var items []struct {
+		ID     string `json:"id"`
+		Result struct {
+			Errors *struct {
+				Error []struct {
+					Message string `json:"message"`
+				} `json:"error"`
+			} `json:"errors"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal(respBody, &items); err != nil {
+		return fmt.Errorf("weaviate: unmarshal batch response: %w", err)
+	}
+	var msgs []string
+	for _, it := range items {
+		if it.Result.Errors == nil {
+			continue
+		}
+		for _, e := range it.Result.Errors.Error {
+			msgs = append(msgs, fmt.Sprintf("%s: %s", it.ID, e.Message))
+		}
+	}
+	if len(msgs) > 0 {
+		return core.NewError("weaviate.add", core.ErrToolFailed,
+			fmt.Sprintf("batch insert failed for %d object(s): %s", len(msgs), strings.Join(msgs, "; ")), nil)
+	}
+	return nil
+}
+
+// validateClass rejects class names that are not valid Weaviate identifiers.
+func (s *Store) validateClass(op string) error {
+	if !classPattern.MatchString(s.class) {
+		return core.NewError(op, core.ErrInvalidInput,
+			fmt.Sprintf("invalid class name %q: must match %s", s.class, classPattern.String()), nil)
+	}
+	return nil
 }
 
 // Search finds the k most similar documents to the query vector.
@@ -120,7 +197,14 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 		opt(cfg)
 	}
 
-	graphQL := buildGraphQLQuery(s.class, query, k, cfg)
+	if err := s.validateClass("weaviate.search"); err != nil {
+		return nil, err
+	}
+	whereClause, err := buildWhereClause(cfg.Filter)
+	if err != nil {
+		return nil, err
+	}
+	graphQL := buildGraphQLQuery(s.class, query, k, cfg.Threshold, whereClause)
 	body := map[string]any{"query": graphQL}
 
 	respBody, err := s.doJSON(ctx, http.MethodPost, "/v1/graphql", body)
@@ -140,11 +224,10 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 }
 
 // buildGraphQLQuery constructs the GraphQL query for a Weaviate nearVector search.
-func buildGraphQLQuery(class string, query []float32, k int, cfg *vectorstore.SearchConfig) string {
-	whereClause := buildWhereClause(cfg.Filter)
+func buildGraphQLQuery(class string, query []float32, k int, threshold float64, whereClause string) string {
 	distanceClause := ""
-	if cfg.Threshold > 0 {
-		distanceClause = fmt.Sprintf(`, distance: %f`, 1.0-cfg.Threshold)
+	if threshold > 0 {
+		distanceClause = fmt.Sprintf(`, distance: %f`, 1.0-threshold)
 	}
 
 	return fmt.Sprintf(`{
@@ -165,21 +248,49 @@ func buildGraphQLQuery(class string, query []float32, k int, cfg *vectorstore.Se
 	}`, class, k, float32SliceToJSONArray(query), distanceClause, whereClause)
 }
 
-// buildWhereClause constructs a Weaviate GraphQL where clause from filter metadata.
-func buildWhereClause(filter map[string]any) string {
+// buildWhereClause constructs a Weaviate GraphQL where clause from filter
+// metadata. Keys must be safe identifiers and values scalars; string values
+// are emitted as JSON string literals (valid GraphQL string syntax), so a
+// value can never terminate the literal and inject operands.
+func buildWhereClause(filter map[string]any) (string, error) {
 	if len(filter) == 0 {
-		return ""
+		return "", nil
 	}
-	operands := make([]string, 0, len(filter))
-	for key, val := range filter {
-		operands = append(operands, fmt.Sprintf(
-			`{path:[%q],operator:Equal,valueText:"%v"}`, key, val))
+	keys, err := filterutil.Validate("weaviate.search", filter)
+	if err != nil {
+		return "", err
+	}
+	operands := make([]string, 0, len(keys))
+	for _, key := range keys {
+		field, lit, err := whereValue(filter[key])
+		if err != nil {
+			return "", err
+		}
+		operands = append(operands, fmt.Sprintf(`{path:[%q],operator:Equal,%s:%s}`, key, field, lit))
 	}
 	if len(operands) == 1 {
-		return fmt.Sprintf(`, where: %s`, operands[0])
+		return fmt.Sprintf(`, where: %s`, operands[0]), nil
 	}
 	return fmt.Sprintf(`, where: {operator:And,operands:[%s]}`,
-		joinStrings(operands, ","))
+		joinStrings(operands, ",")), nil
+}
+
+// whereValue returns the Weaviate value field and literal for a scalar.
+func whereValue(v any) (field, literal string, err error) {
+	switch x := v.(type) {
+	case string:
+		b, err := json.Marshal(x)
+		if err != nil {
+			return "", "", fmt.Errorf("weaviate: encode filter value: %w", err)
+		}
+		return "valueText", string(b), nil
+	case bool:
+		return "valueBoolean", fmt.Sprintf("%t", x), nil
+	case float32, float64:
+		return "valueNumber", fmt.Sprintf("%v", x), nil
+	default: // integer kinds; filterutil.Validate admits only scalars
+		return "valueInt", fmt.Sprintf("%d", x), nil
+	}
 }
 
 // extractClassResults parses the raw Weaviate GraphQL response and extracts the class results array.
@@ -187,6 +298,18 @@ func extractClassResults(respBody []byte, class string) ([]any, error) {
 	var raw map[string]any
 	if err := json.Unmarshal(respBody, &raw); err != nil {
 		return nil, fmt.Errorf("weaviate: unmarshal response: %w", err)
+	}
+	if errs, ok := raw["errors"].([]any); ok && len(errs) > 0 {
+		msgs := make([]string, 0, len(errs))
+		for _, e := range errs {
+			if m, ok := e.(map[string]any); ok {
+				if msg, ok := m["message"].(string); ok {
+					msgs = append(msgs, msg)
+				}
+			}
+		}
+		return nil, core.NewError("weaviate.search", core.ErrToolFailed,
+			"graphql error: "+strings.Join(msgs, "; "), nil)
 	}
 	dataMap, ok := raw["data"].(map[string]any)
 	if !ok {
@@ -254,9 +377,12 @@ func (s *Store) Delete(ctx context.Context, ids []string) error {
 		return nil
 	}
 
+	if err := s.validateClass("weaviate.delete"); err != nil {
+		return err
+	}
 	for _, id := range ids {
 		_, err := s.doJSON(ctx, http.MethodDelete,
-			fmt.Sprintf("/v1/objects/%s/%s", s.class, uuidFromID(id)), nil)
+			fmt.Sprintf("/v1/objects/%s/%s", url.PathEscape(s.class), uuidFromID(id)), nil)
 		if err != nil {
 			return err
 		}
@@ -290,7 +416,7 @@ func (s *Store) doJSON(ctx context.Context, method, path string, body any) ([]by
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 	if err != nil {
 		return nil, fmt.Errorf("weaviate: read response: %w", err)
 	}
@@ -302,18 +428,15 @@ func (s *Store) doJSON(ctx context.Context, method, path string, body any) ([]by
 	return respBody, nil
 }
 
-// uuidFromID generates a deterministic UUID v5 from a document ID string.
-// This provides a stable mapping from arbitrary IDs to Weaviate's UUID format.
+// uuidFromID derives a deterministic, name-based UUIDv5 (SHA-1) from the
+// full document ID, giving a stable, collision-resistant mapping from
+// arbitrary IDs to Weaviate's UUID format.
+//
+// Objects written by releases before this change used a truncated hex
+// encoding of the ID; re-index them (Add again, then delete the old objects
+// by their legacy UUID) after upgrading.
 func uuidFromID(id string) string {
-	// Use a simple deterministic UUID format based on the ID.
-	// Pad or hash to fill UUID format: 8-4-4-4-12 hex digits.
-	h := fmt.Sprintf("%032x", []byte(id))
-	if len(h) < 32 {
-		h += "00000000000000000000000000000000"
-		h = h[:32]
-	}
-	h = h[:32]
-	return fmt.Sprintf("%s-%s-%s-%s-%s", h[:8], h[8:12], h[12:16], h[16:20], h[20:32])
+	return uuid.NewSHA1(idNamespace, []byte(id)).String()
 }
 
 // float32SliceToFloat64 converts []float32 to []float64 for JSON serialization.
