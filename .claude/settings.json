@@ -65,7 +65,6 @@
           {
             "type": "prompt",
             "prompt": "You are gating file edits in a Beluga AI development session. Default to ALLOW. Block ONLY if the change introduces a concrete Go-code security issue: (a) a hardcoded API key / password / token / private key in a `.go` source file (NOT test fixtures, NOT example strings, NOT env-var names); (b) SQL string concatenation using user input in a `.go` file (e.g. `db.Query(\"SELECT … \" + userInput)`); (c) `os/exec.Command` called with an interpolated user-controlled string in a `.go` file; (d) MD5/SHA1 used for password hashing, HMAC, or signatures in a `.go` file; (e) use of `unsafe` package without a `//nolint:unsafe` justification comment; (f) a path-traversal pattern reading a file by joining user input without `filepath.Clean` + allowlist check. Do NOT block for: edits to `.claude/settings.json`, `.claude/hooks/*`, wrapper/config scripts, markdown docs, CSS/Astro/TypeScript/website files, test files, example strings that contain `example-token` / `xxx` / `fake-…`, absolute paths pointing at user-owned files under `/home/miguelp/` or `~/.claude/`, or anything with 'config' / 'settings' / 'hook' / 'wrapper' in the filename. If the file being edited is not a `.go` source file under the project tree, ALLOW. If unsure, ALLOW. Tool input: $ARGUMENTS",
-            "model": "claude-haiku-4-5-20251001",
             "timeout": 15
           }
         ]
@@ -76,7 +75,6 @@
           {
             "type": "prompt",
             "prompt": "You are gating Bash commands in a Beluga AI development session. Default to ALLOW. Only block commands that match one of these hard-danger patterns: (a) `rm -rf /`, `rm -rf /*`, `rm -rf ~`, `rm -rf $HOME`; (b) `curl … | bash` or `curl … | sh` or `wget … | bash` or `wget … | sh` (remote code execution); (c) `git push --force` / `git push -f` targeting `main`, `master`, `release/*`, `develop`; (d) `git reset --hard` on `main`/`master` in the main repo worktree; (e) `chmod 777`, `chmod -R 777`; (f) commands that clearly exfiltrate secrets (e.g. `cat ~/.ssh/id_* | curl …`); (g) destructive operations on system paths outside `/home/miguelp/` and `/tmp/` (e.g. `/etc`, `/usr`, `/var`, `/boot`). EXPLICITLY ALLOW (do not block for these reasons alone): reads/writes anywhere under `/tmp/`, `~/.claude/`, and the project tree; `rtk` and `rtk proxy` commands (project-standard token-savings wrapper); bulk loops over worktrees or branches; `git worktree remove --force`, `git branch -D`, `git stash drop`, `git push --delete origin <branch>`, `git push --force-with-lease` to non-protected branches; `go` toolchain, `pnpm`, `npm`, `gh`, `sonar`, `jq`, `awk`, `sed`, `find`, `grep`, `xargs`; pipes, subshells, heredocs, and multi-step shell loops are fine. Do NOT block on speculative 'could be unsafe', 'non-standard tool', 'information disclosure via /tmp logs', or 'bypasses hooks'. Block only for the enumerated patterns above. Command: $ARGUMENTS",
-            "model": "claude-haiku-4-5-20251001",
             "timeout": 10
           }
         ]
@@ -101,7 +99,6 @@
           {
             "type": "prompt",
             "prompt": "The subagent just finished. Verify: (1) Did it complete ALL assigned tasks from its dispatch prompt? (2) Did it run tests if it wrote code? (3) Did it note any corrections or new patterns discovered? (4) Did it use the 3-step retrieval protocol (index.md, wiki-query.sh — or an equivalent Grep of .guild/wiki/ for agents without Bash — and targeted files)? (5) It must NOT have pushed, opened or merged a PR, or written to Linear/Sonar/Notion — those belong to the coordinator (main session). If any item is missing or incomplete, respond with decision:block and list what's missing. Otherwise respond with decision:approve.",
-            "model": "claude-haiku-4-5-20251001",
             "timeout": 15
           }
         ]
