@@ -54,18 +54,23 @@ func NewSSEWriter(w http.ResponseWriter) (*SSEWriter, error) {
 func (sw *SSEWriter) WriteEvent(event SSEEvent) error {
 	var b strings.Builder
 
-	if event.ID != "" {
-		fmt.Fprintf(&b, "id: %s\n", event.ID)
+	// Single-line fields must not contain CR or LF, otherwise a caller-
+	// controlled value could inject extra SSE fields or events.
+	if id := sanitizeSSEField(event.ID); id != "" {
+		fmt.Fprintf(&b, "id: %s\n", id)
 	}
-	if event.Event != "" {
-		fmt.Fprintf(&b, "event: %s\n", event.Event)
+	if ev := sanitizeSSEField(event.Event); ev != "" {
+		fmt.Fprintf(&b, "event: %s\n", ev)
 	}
 	if event.Retry > 0 {
 		fmt.Fprintf(&b, "retry: %d\n", event.Retry)
 	}
 
-	// Data field: split on newlines per SSE spec.
-	lines := strings.Split(event.Data, "\n")
+	// Data field: split on newlines per SSE spec. CRLF and lone CR are line
+	// terminators in SSE too, so normalise them first.
+	data := strings.ReplaceAll(event.Data, "\r\n", "\n")
+	data = strings.ReplaceAll(data, "\r", "\n")
+	lines := strings.Split(data, "\n")
 	for _, line := range lines {
 		fmt.Fprintf(&b, "data: %s\n", line)
 	}
@@ -88,4 +93,9 @@ func (sw *SSEWriter) WriteHeartbeat() error {
 	}
 	sw.flusher.Flush()
 	return nil
+}
+
+// sanitizeSSEField removes CR and LF from a single-line SSE field value.
+func sanitizeSSEField(v string) string {
+	return strings.NewReplacer("\r", "", "\n", "").Replace(v)
 }

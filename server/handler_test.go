@@ -144,8 +144,11 @@ func TestHandleStream_StreamError(t *testing.T) {
 	if !strings.Contains(respBody, "event: error") {
 		t.Errorf("expected 'event: error' in response body, got:\n%s", respBody)
 	}
-	if !strings.Contains(respBody, "stream failed") {
-		t.Errorf("expected 'stream failed' in response body, got:\n%s", respBody)
+	if strings.Contains(respBody, "stream failed") {
+		t.Errorf("internal error text leaked to client:\n%s", respBody)
+	}
+	if !strings.Contains(respBody, msgAgentFailed) || !strings.Contains(respBody, `"request_id"`) {
+		t.Errorf("expected generic error with request_id, got:\n%s", respBody)
 	}
 }
 

@@ -27,6 +27,10 @@ type InvokeRequest struct {
 type InvokeResponse struct {
 	Result string `json:"result"`
 	Error  string `json:"error,omitempty"`
+	// Code is the core.ErrorCode of a failed invocation, when known.
+	Code string `json:"code,omitempty"`
+	// RequestID correlates a client-visible error with the server log entry.
+	RequestID string `json:"request_id,omitempty"`
 }
 
 // StreamEvent is an event emitted during gRPC streaming.
@@ -35,6 +39,10 @@ type StreamEvent struct {
 	Text     string         `json:"text,omitempty"`
 	AgentID  string         `json:"agent_id,omitempty"`
 	Metadata map[string]any `json:"metadata,omitempty"`
+	// Code is the core.ErrorCode of an "error" event, when known.
+	Code string `json:"code,omitempty"`
+	// RequestID correlates an "error" event with the server log entry.
+	RequestID string `json:"request_id,omitempty"`
 }
 
 // jsonCodec is a gRPC codec that uses JSON encoding.
@@ -200,7 +208,7 @@ var agentServiceDesc = grpc.ServiceDesc{
 func (a *Adapter) invoke(ctx context.Context, reqBytes []byte) (*rawBytes, error) {
 	var req InvokeRequest
 	if err := json.Unmarshal(reqBytes, &req); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid request: %v", err)
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
 	ag, err := a.getAgent(req.Path)
@@ -210,7 +218,8 @@ func (a *Adapter) invoke(ctx context.Context, reqBytes []byte) (*rawBytes, error
 
 	result, err := ag.Invoke(ctx, req.Input)
 	if err != nil {
-		resp := InvokeResponse{Error: err.Error()}
+		msg, code, id := server.SanitizeError(ctx, "invoke", ag.ID(), err)
+		resp := InvokeResponse{Error: msg, Code: code, RequestID: id}
 		data, _ := json.Marshal(resp)
 		rb := rawBytes(data)
 		return &rb, nil
@@ -226,7 +235,7 @@ func (a *Adapter) invoke(ctx context.Context, reqBytes []byte) (*rawBytes, error
 func (a *Adapter) stream(reqBytes []byte, ss grpc.ServerStream) error {
 	var req InvokeRequest
 	if err := json.Unmarshal(reqBytes, &req); err != nil {
-		return status.Errorf(codes.InvalidArgument, "invalid request: %v", err)
+		return status.Error(codes.InvalidArgument, "invalid request")
 	}
 
 	ag, err := a.getAgent(req.Path)
@@ -236,7 +245,8 @@ func (a *Adapter) stream(reqBytes []byte, ss grpc.ServerStream) error {
 
 	for event, err := range ag.Stream(ss.Context(), req.Input) {
 		if err != nil {
-			errEvent := StreamEvent{Type: "error", Text: err.Error()}
+			msg, code, id := server.SanitizeError(ss.Context(), "stream", ag.ID(), err)
+			errEvent := StreamEvent{Type: "error", Text: msg, Code: code, RequestID: id}
 			data, _ := json.Marshal(errEvent)
 			rb := rawBytes(data)
 			if sendErr := ss.SendMsg(&rb); sendErr != nil {
