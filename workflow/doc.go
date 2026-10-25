@@ -1,9 +1,15 @@
 // Package workflow provides a durable execution engine for the Beluga AI framework.
 //
 // It enables reliable, long-running workflows with activity execution, signal
-// handling, retry policies, and event-sourced state persistence. The package
-// provides its own built-in execution engine and supports external providers
-// (Temporal, Dapr, Inngest, Kafka, NATS) via the registry pattern.
+// handling, retry policies, and recorded state history. The package provides
+// its own built-in, in-process execution engine ([DefaultExecutor]) and
+// supports external providers (Temporal, Dapr, Inngest, Kafka, NATS) via the
+// registry pattern.
+//
+// Durability depends on the backend. The built-in DefaultExecutor records
+// history and saves it to a [WorkflowStore], but does not replay or resume a
+// workflow after a process restart; use an engine provider such as Temporal
+// when executions must survive restarts.
 //
 // # Core Interfaces
 //
@@ -102,7 +108,10 @@
 // # Event-Sourced State
 //
 // Workflow execution is recorded as a sequence of [HistoryEvent] values in
-// [WorkflowState]. This enables replay-based recovery and audit trails.
+// [WorkflowState]. DefaultExecutor records workflow start/end, activity
+// start/completion/failure and delivered signals, which gives an audit trail
+// of each run. Replay-based recovery from that history is provided by
+// engine providers, not by DefaultExecutor.
 //
 // # Registry
 //
