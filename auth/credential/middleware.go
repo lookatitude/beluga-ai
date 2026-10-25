@@ -11,7 +11,7 @@ import (
 // authorization. It extracts the credential from the context, validates that it
 // is not expired or revoked, and checks that it contains the requested
 // permission. If any check fails, authorization is denied.
-func CredentialMiddleware() auth.Middleware {
+func CredentialMiddleware() auth.Middleware { //nolint:revive // stuttering name is part of the published v2 API; renaming would break callers
 	return func(next auth.Policy) auth.Policy {
 		return &credentialPolicy{next: next}
 	}

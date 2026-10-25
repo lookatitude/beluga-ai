@@ -20,7 +20,7 @@ func TestHandleInvoke(t *testing.T) {
 		handler := NewAgentHandler(a)
 
 		body := `{"input":"hi"}`
-		req := httptest.NewRequest(http.MethodPost, "/invoke", strings.NewReader(body))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/invoke", strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
@@ -47,7 +47,7 @@ func TestHandleInvoke(t *testing.T) {
 		handler := NewAgentHandler(a)
 
 		body := `{"input":"hi"}`
-		req := httptest.NewRequest(http.MethodPost, "/invoke", strings.NewReader(body))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/invoke", strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
@@ -70,7 +70,7 @@ func TestHandleInvoke(t *testing.T) {
 		a := &mockAgent{id: "test", result: "ok"}
 		handler := NewAgentHandler(a)
 
-		req := httptest.NewRequest(http.MethodPost, "/invoke", strings.NewReader("{invalid"))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/invoke", strings.NewReader("{invalid"))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
@@ -85,7 +85,7 @@ func TestHandleInvoke(t *testing.T) {
 		a := &mockAgent{id: "test", result: "ok"}
 		handler := NewAgentHandler(a)
 
-		req := httptest.NewRequest(http.MethodGet, "/invoke", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/invoke", nil)
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -98,7 +98,7 @@ func TestHandleInvoke(t *testing.T) {
 
 func doStreamRequest(t *testing.T, handler http.Handler, body string) *httptest.ResponseRecorder {
 	t.Helper()
-	req := httptest.NewRequest(http.MethodPost, "/stream", strings.NewReader(body))
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/stream", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
@@ -153,7 +153,7 @@ func TestHandleStream_InvalidJSON(t *testing.T) {
 	a := &mockAgent{id: "test"}
 	handler := NewAgentHandler(a)
 
-	req := httptest.NewRequest(http.MethodPost, "/stream", strings.NewReader("{bad"))
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/stream", strings.NewReader("{bad"))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)

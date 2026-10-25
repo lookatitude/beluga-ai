@@ -112,7 +112,7 @@ func TestAdapter_Invoke(t *testing.T) {
 	}
 
 	body, _ := json.Marshal(server.InvokeRequest{Input: "hi"})
-	req, _ := http.NewRequest(http.MethodPost, "http://localhost/chat/invoke", bytes.NewReader(body))
+	req, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, "http://localhost/chat/invoke", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := a.App().Test(req)
@@ -149,7 +149,7 @@ func TestAdapter_Stream(t *testing.T) {
 	}
 
 	body, _ := json.Marshal(server.InvokeRequest{Input: "hi"})
-	req, _ := http.NewRequest(http.MethodPost, "http://localhost/chat/stream", bytes.NewReader(body))
+	req, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, "http://localhost/chat/stream", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := a.App().Test(req)
@@ -174,7 +174,7 @@ func TestAdapter_CustomHandler(t *testing.T) {
 		t.Fatalf("RegisterHandler: %v", err)
 	}
 
-	req, _ := http.NewRequest(http.MethodGet, "http://localhost/health", nil)
+	req, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/health", nil)
 	resp, err := a.App().Test(req)
 	if err != nil {
 		t.Fatalf("Test: %v", err)
@@ -199,7 +199,7 @@ func TestAdapter_ServeAndShutdown(t *testing.T) {
 	ag := &mockAgent{id: "test", result: "hello"}
 	a.RegisterAgent("/chat", ag)
 
-	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}
@@ -215,7 +215,12 @@ func TestAdapter_ServeAndShutdown(t *testing.T) {
 	time.Sleep(200 * time.Millisecond)
 
 	body, _ := json.Marshal(server.InvokeRequest{Input: "hi"})
-	resp, err := http.Post("http://"+addr+"/chat/invoke", "application/json", bytes.NewReader(body))
+	postReq, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "http://"+addr+"/chat/invoke", bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("NewRequest: %v", err)
+	}
+	postReq.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(postReq)
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}

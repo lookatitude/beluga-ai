@@ -118,7 +118,7 @@ func startTestServer(t *testing.T, ag agent.Agent) (*Adapter, string, func()) {
 		t.Fatalf("RegisterAgent: %v", err)
 	}
 
-	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}
@@ -479,7 +479,7 @@ func TestAdapter_Shutdown_WithTimeout(t *testing.T) {
 	a := New(server.Config{})
 
 	// Get a random port.
-	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}

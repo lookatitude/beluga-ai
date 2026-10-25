@@ -105,7 +105,8 @@ func (a *Adapter) RegisterHandler(path string, handler http.Handler) error {
 // Serve starts the gRPC server on the given address. It blocks until the
 // server is stopped or the context is canceled.
 func (a *Adapter) Serve(ctx context.Context, addr string) error {
-	lis, err := net.Listen("tcp", addr)
+	var lc net.ListenConfig
+	lis, err := lc.Listen(ctx, "tcp", addr)
 	if err != nil {
 		return fmt.Errorf("server/grpc: listen error: %w", err)
 	}

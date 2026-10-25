@@ -21,7 +21,7 @@ func TestComposeHooks_BeforeRequest(t *testing.T) {
 		}}
 
 		composed := ComposeHooks(h1, h2)
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		if err := composed.BeforeRequest(context.Background(), r); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -42,7 +42,7 @@ func TestComposeHooks_BeforeRequest(t *testing.T) {
 		}}
 
 		composed := ComposeHooks(h1, h2)
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		if err := composed.BeforeRequest(context.Background(), r); err == nil {
 			t.Fatal("expected error")
 		}
@@ -58,7 +58,7 @@ func TestComposeHooks_BeforeRequest(t *testing.T) {
 		}}
 
 		composed := ComposeHooks(h1, h2)
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		if err := composed.BeforeRequest(context.Background(), r); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -76,7 +76,7 @@ func TestComposeHooks_AfterRequest(t *testing.T) {
 		}}
 
 		composed := ComposeHooks(h1, h2)
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		composed.AfterRequest(context.Background(), r, 200)
 
 		if len(codes) != 2 || codes[0] != 200 || codes[1] != 1200 {
@@ -92,7 +92,7 @@ func TestComposeHooks_AfterRequest(t *testing.T) {
 		}}
 
 		composed := ComposeHooks(h1, h2)
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		composed.AfterRequest(context.Background(), r, 200)
 
 		if !called {
