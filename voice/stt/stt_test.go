@@ -39,6 +39,7 @@ func (m *mockSTT) TranscribeStream(ctx context.Context, audioStream iter.Seq2[[]
 
 func TestRegistry_RegisterAndNew(t *testing.T) {
 	// Register a mock provider.
+	t.Cleanup(func() { unregisterForTest("mock-stt") })
 	Register("mock-stt", func(cfg Config) (STT, error) {
 		return &mockSTT{}, nil
 	})
@@ -70,15 +71,18 @@ func TestRegistry_PanicOnEmptyName(t *testing.T) {
 
 func TestRegistry_PanicOnNilFactory(t *testing.T) {
 	assert.Panics(t, func() {
+		t.Cleanup(func() { unregisterForTest("test-stt-nil-factory") })
 		Register("test-stt-nil-factory", nil)
 	})
 }
 
 func TestRegistry_PanicOnDuplicate(t *testing.T) {
+	t.Cleanup(func() { unregisterForTest("test-stt-dup-check") })
 	Register("test-stt-dup-check", func(cfg Config) (STT, error) {
 		return &mockSTT{}, nil
 	})
 	assert.Panics(t, func() {
+		t.Cleanup(func() { unregisterForTest("test-stt-dup-check") })
 		Register("test-stt-dup-check", func(cfg Config) (STT, error) {
 			return &mockSTT{}, nil
 		})
@@ -87,6 +91,7 @@ func TestRegistry_PanicOnDuplicate(t *testing.T) {
 
 func TestList(t *testing.T) {
 	// Register a test provider.
+	t.Cleanup(func() { unregisterForTest("test-stt-list") })
 	Register("test-stt-list", func(cfg Config) (STT, error) {
 		return &mockSTT{}, nil
 	})

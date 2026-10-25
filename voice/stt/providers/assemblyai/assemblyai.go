@@ -8,6 +8,9 @@ import (
 	"io"
 	"iter"
 	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/coder/websocket"
@@ -16,7 +19,9 @@ import (
 
 const (
 	defaultBaseURL = "https://api.assemblyai.com/v2"
-	defaultWSURL   = "wss://api.assemblyai.com/v2/realtime/ws"
+	// defaultWSURL is the Universal-Streaming (v3) endpoint. The v2
+	// real-time endpoint (wss://api.assemblyai.com/v2/realtime/ws) is retired.
+	defaultWSURL = "wss://streaming.assemblyai.com/v3/ws"
 )
 
 var _ stt.STT = (*Engine)(nil) // compile-time interface check
@@ -217,27 +222,54 @@ func (e *Engine) Transcribe(ctx context.Context, audio []byte, opts ...stt.Optio
 	return e.pollTranscript(ctx, txResult)
 }
 
-// realtimeMessage is a message from the AssemblyAI real-time WebSocket API.
-type realtimeMessage struct {
-	MessageType string  `json:"message_type"`
+// streamWord is a word in a v3 Turn message. Times are milliseconds from the
+// start of the audio stream.
+type streamWord struct {
 	Text        string  `json:"text"`
-	AudioStart  int     `json:"audio_start"`
-	AudioEnd    int     `json:"audio_end"`
+	Start       int     `json:"start"`
+	End         int     `json:"end"`
 	Confidence  float64 `json:"confidence"`
-	Words       []struct {
-		Text       string  `json:"text"`
-		Start      int     `json:"start"`
-		End        int     `json:"end"`
-		Confidence float64 `json:"confidence"`
-	} `json:"words"`
+	WordIsFinal bool    `json:"word_is_final"`
 }
 
-// dialStream opens a WebSocket connection to AssemblyAI's real-time endpoint.
-func (e *Engine) dialStream(ctx context.Context, cfg stt.Config) (*websocket.Conn, error) {
-	wsEndpoint := e.wsURL + "?sample_rate=16000"
-	if cfg.SampleRate > 0 {
-		wsEndpoint = fmt.Sprintf("%s?sample_rate=%d", e.wsURL, cfg.SampleRate)
+// turnMessage is a Universal-Streaming (v3) server message. Only "Turn"
+// messages carry transcripts; "Begin" and "Termination" are ignored.
+type turnMessage struct {
+	Type            string       `json:"type"`
+	Transcript      string       `json:"transcript"`
+	EndOfTurn       bool         `json:"end_of_turn"`
+	TurnIsFormatted bool         `json:"turn_is_formatted"`
+	Words           []streamWord `json:"words"`
+}
+
+// streamSpeechModel picks the v3 speech_model: cfg.Model when set, otherwise
+// the English model for empty/English languages and the multilingual model
+// for anything else.
+func streamSpeechModel(cfg stt.Config) string {
+	if cfg.Model != "" {
+		return cfg.Model
 	}
+	lang := strings.ToLower(cfg.Language)
+	if lang == "" || lang == "en" || strings.HasPrefix(lang, "en-") {
+		return "universal-streaming-english"
+	}
+	return "universal-streaming-multilingual"
+}
+
+// dialStream opens a WebSocket connection to AssemblyAI's Universal-Streaming
+// (v3) endpoint. The API key goes in the Authorization header (no Bearer
+// prefix), never in the URL.
+func (e *Engine) dialStream(ctx context.Context, cfg stt.Config) (*websocket.Conn, error) {
+	rate := cfg.SampleRate
+	if rate <= 0 {
+		rate = 16000
+	}
+	q := url.Values{}
+	q.Set("sample_rate", strconv.Itoa(rate))
+	q.Set("encoding", "pcm_s16le")
+	q.Set("format_turns", "true")
+	q.Set("speech_model", streamSpeechModel(cfg))
+	wsEndpoint := e.wsURL + "?" + q.Encode()
 
 	headers := http.Header{}
 	headers.Set("Authorization", e.apiKey)
@@ -251,20 +283,19 @@ func (e *Engine) dialStream(ctx context.Context, cfg stt.Config) (*websocket.Con
 	return conn, nil
 }
 
-// parseStreamMessage parses an AssemblyAI real-time message into a TranscriptEvent.
-// Returns the event and whether it should be emitted.
+// parseStreamMessage parses a v3 Turn message into a TranscriptEvent.
+// Returns the event and whether it should be emitted. A turn is final once
+// it has ended and the formatted transcript has arrived (format_turns=true).
 func (e *Engine) parseStreamMessage(data []byte, language string) (stt.TranscriptEvent, bool) {
-	var msg realtimeMessage
-	if json.Unmarshal(data, &msg) != nil {
-		return stt.TranscriptEvent{}, false
-	}
-	if msg.Text == "" {
+	var msg turnMessage
+	if json.Unmarshal(data, &msg) != nil || msg.Type != "Turn" || msg.Transcript == "" {
 		return stt.TranscriptEvent{}, false
 	}
 
-	isFinal := msg.MessageType == "FinalTranscript"
-
-	var words []stt.Word
+	var (
+		words []stt.Word
+		sum   float64
+	)
 	for _, w := range msg.Words {
 		words = append(words, stt.Word{
 			Text:       w.Text,
@@ -272,16 +303,19 @@ func (e *Engine) parseStreamMessage(data []byte, language string) (stt.Transcrip
 			End:        time.Duration(w.End) * time.Millisecond,
 			Confidence: w.Confidence,
 		})
+		sum += w.Confidence
 	}
-
-	return stt.TranscriptEvent{
-		Text:       msg.Text,
-		IsFinal:    isFinal,
-		Confidence: msg.Confidence,
-		Timestamp:  time.Duration(msg.AudioStart) * time.Millisecond,
-		Language:   language,
-		Words:      words,
-	}, true
+	ev := stt.TranscriptEvent{
+		Text:     msg.Transcript,
+		IsFinal:  msg.EndOfTurn && msg.TurnIsFormatted,
+		Language: language,
+		Words:    words,
+	}
+	if len(msg.Words) > 0 {
+		ev.Confidence = sum / float64(len(msg.Words))
+		ev.Timestamp = time.Duration(msg.Words[0].Start) * time.Millisecond
+	}
+	return ev, true
 }
 
 // readStreamMessages reads WebSocket messages and sends parsed events to the channel.
@@ -290,39 +324,48 @@ func (e *Engine) readStreamMessages(ctx context.Context, conn *websocket.Conn, l
 	for {
 		_, data, readErr := conn.Read(ctx)
 		if readErr != nil {
-			if ctx.Err() == nil {
-				errs <- fmt.Errorf("assemblyai: websocket read: %w", readErr)
+			if ctx.Err() == nil && websocket.CloseStatus(readErr) != websocket.StatusNormalClosure {
+				select {
+				case errs <- fmt.Errorf("assemblyai: websocket read: %w", readErr):
+				default:
+				}
 			}
 			return
 		}
 		if event, ok := e.parseStreamMessage(data, language); ok {
-			events <- event
+			select {
+			case events <- event:
+			case <-ctx.Done():
+				return
+			}
 		}
 	}
 }
 
-// sendAudioStream sends audio chunks as JSON messages and signals session end.
+// sendAudioStream sends audio chunks as binary messages and then the v3
+// Terminate message.
 func (e *Engine) sendAudioStream(ctx context.Context, conn *websocket.Conn, audioStream iter.Seq2[[]byte, error], errs chan<- error) {
 	for chunk, streamErr := range audioStream {
 		if streamErr != nil {
 			errs <- streamErr
 			return
 		}
-		msg := map[string]any{"audio_data": chunk}
-		data, _ := json.Marshal(msg)
-		if writeErr := conn.Write(ctx, websocket.MessageText, data); writeErr != nil {
+		if writeErr := conn.Write(ctx, websocket.MessageBinary, chunk); writeErr != nil {
 			if ctx.Err() == nil {
-				errs <- fmt.Errorf("assemblyai: websocket write: %w", writeErr)
+				select {
+				case errs <- fmt.Errorf("assemblyai: websocket write: %w", writeErr):
+				default:
+				}
 			}
 			return
 		}
 	}
 	// Signal end of stream.
-	_ = conn.Write(ctx, websocket.MessageText, []byte(`{"terminate_session": true}`)) // #nosec G104 -- best-effort terminate; connection cleanup continues regardless
+	_ = conn.Write(ctx, websocket.MessageText, []byte(`{"type":"Terminate"}`)) // #nosec G104 -- best-effort terminate; connection cleanup continues regardless
 }
 
 // TranscribeStream converts streaming audio to transcript events
-// using AssemblyAI's real-time WebSocket API.
+// using AssemblyAI's Universal-Streaming (v3) WebSocket API.
 func (e *Engine) TranscribeStream(ctx context.Context, audioStream iter.Seq2[[]byte, error], opts ...stt.Option) iter.Seq2[stt.TranscriptEvent, error] {
 	return func(yield func(stt.TranscriptEvent, error) bool) {
 		cfg := e.cfg

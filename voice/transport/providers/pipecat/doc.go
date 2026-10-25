@@ -1,28 +1,21 @@
-// Package pipecat provides the Pipecat transport provider for the Beluga AI
-// voice pipeline. It implements the [transport.AudioTransport] interface for
-// bidirectional audio I/O through a Pipecat server over WebSocket.
+// Package pipecat registers the "pipecat" transport name for Pipecat servers in the
+// Beluga AI voice pipeline.
 //
-// # Registration
+// # Status: not implemented
 //
-// This package registers itself as "pipecat" with the transport registry.
-// Import it with a blank identifier to enable:
+// This provider is a placeholder. It does not connect to Pipecat:
+// [New] (and transport.New("pipecat", ...)) always returns an error wrapping
+// [transport.ErrNotImplemented], which in turn wraps errors.ErrUnsupported.
+// Earlier releases returned a transport that silently discarded audio and
+// never produced frames; that fake success was removed.
+//
+// Use the built-in "websocket" transport (voice/transport) until a real
+// Pipecat integration is available.
 //
 //	import _ "github.com/lookatitude/beluga-ai/v2/voice/transport/providers/pipecat"
 //
-// # Usage
-//
-//	t, err := transport.New("pipecat", transport.Config{
-//	    URL: "ws://localhost:8765",
-//	})
-//	frames, err := t.Recv(ctx)
-//
-// # Configuration
-//
-// The transport requires a Pipecat server WebSocket URL. Default sample rate
-// is 16000 Hz.
-//
-// # Exported Types
-//
-//   - [Transport] — implements transport.AudioTransport for Pipecat
-//   - [New] — constructor accepting transport.Config
+//	_, err := transport.New("pipecat", transport.Config{URL: "..."})
+//	if errors.Is(err, transport.ErrNotImplemented) {
+//	    // fall back to another transport
+//	}
 package pipecat

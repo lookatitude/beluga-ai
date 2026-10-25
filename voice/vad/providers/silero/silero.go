@@ -5,9 +5,9 @@ package silero
 import (
 	"context"
 	"encoding/binary"
-	"fmt"
 	"sync"
 
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/voice"
 )
 
@@ -58,14 +58,15 @@ type Config struct {
 	// SampleRate is the audio sample rate (8000 or 16000).
 	SampleRate int
 
-	// ModelPath is the path to the Silero VAD ONNX model file.
-	// If empty, uses a built-in simple energy-based fallback.
+	// ModelPath is reserved for a future ONNX-backed implementation. Loading
+	// the Silero ONNX model is NOT supported yet: New returns an error when
+	// ModelPath is set rather than silently ignoring it.
 	ModelPath string
 }
 
-// VAD implements voice.ActivityDetector using the Silero VAD model.
-// When the ONNX model is not available, it falls back to an energy-based
-// detector with the Silero-calibrated threshold.
+// VAD implements voice.ActivityDetector with an RMS-energy detector whose
+// threshold is calibrated to approximate Silero VAD sensitivity. It does not
+// run the Silero neural model.
 type VAD struct {
 	threshold   float64
 	sampleRate  int
@@ -73,9 +74,13 @@ type VAD struct {
 	mu          sync.Mutex // protects wasSpeaking
 }
 
-// New creates a new Silero VAD. If the ONNX model cannot be loaded,
-// it uses an energy-based fallback that approximates Silero's behavior.
+// New creates the energy-based VAD. It returns an error when cfg.ModelPath
+// is set, because ONNX model loading is not implemented.
 func New(cfg Config) (*VAD, error) {
+	if cfg.ModelPath != "" {
+		return nil, core.Errorf(core.ErrInvalidInput,
+			"silero: ModelPath is not supported: this provider is an energy-based approximation and cannot load the Silero ONNX model")
+	}
 	if cfg.Threshold <= 0 || cfg.Threshold > 1.0 {
 		cfg.Threshold = defaultThreshold
 	}
@@ -138,30 +143,14 @@ func (v *VAD) computeSpeechProbability(audio []byte) float64 {
 	}
 
 	var sumSquares float64
-	var maxAbs float64
 	for i := range numSamples {
 		sample := int16(binary.LittleEndian.Uint16(audio[i*2 : i*2+2])) // #nosec G115 -- PCM audio: uint16→int16 reinterpretation is intentional
 		val := float64(sample)
 		sumSquares += val * val
-		abs := val
-		if abs < 0 {
-			abs = -abs
-		}
-		if abs > maxAbs {
-			maxAbs = abs
-		}
 	}
 
-	// Normalize RMS to [0, 1] range using max int16 value.
-	rms := fmt.Sprintf("%.0f", sumSquares) // suppress unused warning
-	_ = rms
-	rmsVal := 0.0
-	if numSamples > 0 {
-		rmsVal = (sumSquares / float64(numSamples))
-	}
-	if rmsVal > 0 {
-		rmsVal /= (32768.0 * 32768.0) // normalize
-	}
+	// Mean square energy normalised to [0, 1] by the int16 range.
+	rmsVal := sumSquares / float64(numSamples) / (32768.0 * 32768.0)
 
 	// Sigmoid-like mapping to speech probability.
 	// Calibrated to approximate Silero VAD output.

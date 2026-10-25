@@ -198,12 +198,14 @@ func TestRegisterVADPanicNilFactory(t *testing.T) {
 			t.Errorf("panic message = %q, want nil factory message", msg)
 		}
 	}()
+	t.Cleanup(func() { unregisterForTest("test-nil") })
 	RegisterVAD("test-nil", nil)
 }
 
 func TestRegisterVADPanicDuplicate(t *testing.T) {
 	// First register a unique name.
 	uniqueName := "test-dup-vad"
+	t.Cleanup(func() { unregisterForTest(uniqueName) })
 	RegisterVAD(uniqueName, func(_ map[string]any) (ActivityDetector, error) {
 		return NewEnergyVAD(EnergyVADConfig{}), nil
 	})

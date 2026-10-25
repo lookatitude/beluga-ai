@@ -14,7 +14,7 @@
 //
 //	engine, err := s2s.New("openai_realtime", s2s.Config{
 //	    Voice: "alloy",
-//	    Model: "gpt-4o-realtime-preview",
+//	    Model: "gpt-realtime",
 //	    Extra: map[string]any{"api_key": "sk-..."},
 //	})
 //	session, err := engine.Start(ctx)
@@ -27,9 +27,12 @@
 //   - api_key — OpenAI API key (required)
 //   - base_url — Custom WebSocket endpoint (optional, defaults to wss://api.openai.com/v1/realtime)
 //
-// The default model is "gpt-4o-realtime-preview" and the default voice is
+// The default model is "gpt-realtime" and the default voice is
 // "alloy". Instructions and tools are passed through [s2s.Config] fields.
-// Audio uses PCM16 format with server-side VAD for turn detection.
+// Audio uses 24 kHz PCM16 ("audio/pcm") with server-side VAD for turn
+// detection. Sessions use the GA Realtime API (session.type "realtime", no
+// OpenAI-Beta header); both GA (response.output_audio.*) and preview
+// (response.audio.*) server event names are understood.
 //
 // # Exported Types
 //

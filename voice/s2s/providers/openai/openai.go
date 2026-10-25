@@ -16,7 +16,7 @@ import (
 
 const (
 	defaultBaseURL = "wss://api.openai.com/v1/realtime"
-	defaultModel   = "gpt-4o-realtime-preview"
+	defaultModel   = "gpt-realtime"
 )
 
 var _ s2s.S2S = (*Engine)(nil) // compile-time interface check
@@ -70,7 +70,8 @@ func (e *Engine) Start(ctx context.Context, opts ...s2s.Option) (s2s.Session, er
 	wsURL := fmt.Sprintf("%s?model=%s", e.baseURL, cfg.Model)
 	headers := http.Header{}
 	headers.Set("Authorization", "Bearer "+e.apiKey)
-	headers.Set("OpenAI-Beta", "realtime=v1")
+	// No "OpenAI-Beta: realtime=v1" header: the session targets the GA
+	// Realtime API (session.type "realtime").
 
 	conn, _, err := websocket.Dial(ctx, wsURL, &websocket.DialOptions{ //nolint:bodyclose // coder/websocket nils resp.Body on success and closes it on error
 		HTTPHeader: headers,
@@ -128,14 +129,22 @@ type serverError struct {
 }
 
 func (s *realtimeSession) sendSessionUpdate(ctx context.Context) error {
+	output := map[string]any{"format": map[string]any{"type": "audio/pcm", "rate": 24000}}
+	if s.cfg.Voice != "" {
+		output["voice"] = s.cfg.Voice
+	}
 	msg := map[string]any{
 		"type": "session.update",
 		"session": map[string]any{
-			"modalities":          []string{"audio", "text"},
-			"voice":               s.cfg.Voice,
-			"input_audio_format":  "pcm16",
-			"output_audio_format": "pcm16",
-			"turn_detection":      map[string]any{"type": "server_vad"},
+			"type":              "realtime",
+			"output_modalities": []string{"audio"},
+			"audio": map[string]any{
+				"input": map[string]any{
+					"format":         map[string]any{"type": "audio/pcm", "rate": 24000},
+					"turn_detection": map[string]any{"type": "server_vad"},
+				},
+				"output": output,
+			},
 		},
 	}
 
@@ -168,9 +177,11 @@ func (s *realtimeSession) sendSessionUpdate(ctx context.Context) error {
 // handleServerEvent dispatches a parsed server event to the appropriate handler.
 func (s *realtimeSession) handleServerEvent(event serverEvent) {
 	switch event.Type {
-	case "response.audio.delta":
+	// GA event names first; the beta names are kept for servers (for example
+	// Azure deployments) that still speak the preview protocol.
+	case "response.output_audio.delta", "response.audio.delta":
 		s.handleAudioDelta(event)
-	case "response.audio_transcript.delta":
+	case "response.output_audio_transcript.delta", "response.audio_transcript.delta", "response.output_text.delta":
 		if event.Delta != "" {
 			s.events <- s2s.SessionEvent{Type: s2s.EventTextOutput, Text: event.Delta}
 		}
