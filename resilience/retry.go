@@ -29,8 +29,10 @@ type RetryPolicy struct {
 	// Jitter adds random ±25 % variation to the computed backoff when true.
 	Jitter bool
 
-	// RetryableErrors restricts retries to these error codes. When empty,
-	// core.IsRetryable decides whether an error is retryable.
+	// RetryableErrors adds error codes that should be retried in addition
+	// to the built-in retryable codes (rate_limit, timeout,
+	// provider_unavailable), which are always retried. It extends the set; it
+	// cannot restrict it. When empty, core.IsRetryable alone decides.
 	RetryableErrors []core.ErrorCode
 }
 
