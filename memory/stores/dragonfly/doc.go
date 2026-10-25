@@ -1,6 +1,6 @@
 // Package dragonfly provides a DragonflyDB-backed implementation of [memory.MessageStore].
-// DragonflyDB is fully Redis-compatible, so this implementation uses the same
-// go-redis client library and sorted set storage approach as the Redis store.
+// DragonflyDB is fully Redis-compatible, so this package is a thin wrapper
+// over memory/stores/redis that only changes the default key.
 //
 // # Usage
 //
@@ -26,8 +26,8 @@
 // identical to the Redis store but uses a distinct default key prefix
 // ("beluga:dragonfly:messages") to avoid collisions in mixed deployments.
 //
-// Messages are stored as JSON in a sorted set (ZSET) with a monotonically
-// increasing sequence number as the score to preserve insertion order.
+// Messages are stored as JSON in a sorted set (ZSET). Scores come from an
+// INCR counter at "<key>:seq", so order survives restarts and replicas.
 //
 // This implementation requires github.com/redis/go-redis/v9.
 package dragonfly

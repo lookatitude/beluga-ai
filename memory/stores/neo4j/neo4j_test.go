@@ -3,6 +3,7 @@ package neo4j
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 
@@ -19,6 +20,7 @@ type mockRunner struct {
 	readErr  error
 	closeErr error
 	closed   bool
+	lastRead string
 }
 
 type writeCall struct {
@@ -33,9 +35,10 @@ func (r *mockRunner) executeWrite(_ context.Context, cypher string, params map[s
 	return r.writeErr
 }
 
-func (r *mockRunner) executeRead(_ context.Context, _ string, _ map[string]any) ([]record, error) {
+func (r *mockRunner) executeRead(_ context.Context, cypher string, _ map[string]any) ([]record, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	r.lastRead = cypher
 	if r.readErr != nil {
 		return nil, r.readErr
 	}
@@ -705,4 +708,25 @@ func TestNeighbors_DirectRelWrapper(t *testing.T) {
 	assert.Len(t, relations, 1)
 	assert.Equal(t, "bob", entities[0].ID)
 	assert.Equal(t, "knows", relations[0].Type)
+}
+
+// FI-40: caller-controlled depth must be clamped and results limited.
+func TestNeighbors_DepthClampedAndLimited(t *testing.T) {
+	tests := []struct {
+		depth int
+		want  string
+	}{
+		{-3, "[r*1..1]"},
+		{3, "[r*1..3]"},
+		{1000000, "[r*1..5]"},
+	}
+	for _, tt := range tests {
+		store, runner := newMockStore()
+		if _, _, err := store.Neighbors(context.Background(), "alice", tt.depth); err != nil {
+			t.Fatalf("Neighbors: %v", err)
+		}
+		if !strings.Contains(runner.lastRead, tt.want) || !strings.Contains(runner.lastRead, "LIMIT 1000") {
+			t.Errorf("depth %d: query %q, want %s and LIMIT 1000", tt.depth, runner.lastRead, tt.want)
+		}
+	}
 }
