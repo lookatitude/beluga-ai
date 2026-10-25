@@ -28,4 +28,21 @@
 //
 // Use [Store.EnsureIndex] to create the Elasticsearch index with the
 // appropriate dense_vector mapping if it does not exist.
+//
+// # Metadata
+//
+// Document metadata is stored under a "metadata" object, so metadata keys
+// never collide with the "content" and "embedding" fields. EnsureIndex maps
+// every string under "metadata" to "keyword", and metadata filters are
+// exact-match term queries on "metadata.<key>". Filter keys must match
+// ^[A-Za-z_][A-Za-z0-9_.-]*$ or Search returns core.ErrInvalidInput.
+//
+// Indexes written by earlier versions stored metadata as top-level fields.
+// Search still returns those fields as metadata, but filters only match the
+// nested layout, so such indexes should be re-indexed.
+//
+// # HTTP Client
+//
+// The default HTTP client has a 30 second timeout; supply another with
+// [WithHTTPClient]. Response bodies larger than 32 MiB are rejected.
 package elasticsearch

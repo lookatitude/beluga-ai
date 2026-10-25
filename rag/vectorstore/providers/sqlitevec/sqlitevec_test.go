@@ -6,10 +6,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 	"github.com/stretchr/testify/assert"
@@ -538,4 +540,101 @@ func TestStore_Add_NilMetadata(t *testing.T) {
 func TestRegistry_FactoryCreatesStore(t *testing.T) {
 	names := vectorstore.List()
 	assert.Contains(t, names, "sqlitevec")
+}
+
+func TestNew_InvalidTableName(t *testing.T) {
+	db, err := sql.Open("sqlite3", ":memory:")
+	require.NoError(t, err)
+	defer db.Close()
+
+	for _, table := range []string{
+		"docs; DROP TABLE users",
+		"docs--",
+		"1docs",
+		"my-docs",
+		"main.docs",
+		"",
+		"docs(id)",
+	} {
+		t.Run(table, func(t *testing.T) {
+			_, err := New(WithDB(db), WithTable(table))
+			require.Error(t, err)
+			var cerr *core.Error
+			require.ErrorAs(t, err, &cerr)
+			assert.Equal(t, core.ErrInvalidInput, cerr.Code)
+		})
+	}
+}
+
+func TestNewFromConfig_InvalidTableName(t *testing.T) {
+	_, err := NewFromConfig(config.ProviderConfig{
+		BaseURL: ":memory:",
+		Options: map[string]any{"table": "x; DROP TABLE y"},
+	})
+	require.Error(t, err)
+	var cerr *core.Error
+	require.ErrorAs(t, err, &cerr)
+	assert.Equal(t, core.ErrInvalidInput, cerr.Code)
+}
+
+// TestStore_Search_FilterReturnsK is a regression test: many non-matching
+// documents sit closer to the query than the matching ones. Before the fix
+// the metadata filter was applied after vec0 limited results to k, so the
+// search returned zero matches instead of k.
+func TestStore_Search_FilterReturnsK(t *testing.T) {
+	store := newTestStore(t)
+	ctx := context.Background()
+
+	const (
+		nonMatching = 60 // > k*10, forces at least one over-fetch growth pass
+		matching    = 5
+		k           = 3
+	)
+	var docs []schema.Document
+	var embs [][]float32
+	for i := 0; i < nonMatching; i++ {
+		docs = append(docs, schema.Document{
+			ID: fmt.Sprintf("near-%d", i), Content: "near",
+			Metadata: map[string]any{"category": "B"},
+		})
+		embs = append(embs, []float32{1.0, float32(i) * 0.001, 0.0})
+	}
+	for i := 0; i < matching; i++ {
+		docs = append(docs, schema.Document{
+			ID: fmt.Sprintf("far-%d", i), Content: "far",
+			Metadata: map[string]any{"category": "A"},
+		})
+		embs = append(embs, []float32{0.0, float32(i) * 0.001, 1.0})
+	}
+	require.NoError(t, store.Add(ctx, docs, embs))
+
+	results, err := store.Search(ctx, []float32{1.0, 0.0, 0.0}, k,
+		vectorstore.WithFilter(map[string]any{"category": "A"}))
+	require.NoError(t, err)
+	require.Len(t, results, k)
+	for i, doc := range results {
+		assert.Equal(t, "A", doc.Metadata["category"])
+		if i > 0 {
+			assert.GreaterOrEqual(t, results[i-1].Score, doc.Score, "results must stay ordered")
+		}
+	}
+}
+
+func TestStore_Search_FilterFewerMatchesThanK(t *testing.T) {
+	store := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, store.Add(ctx,
+		[]schema.Document{
+			{ID: "a", Content: "a", Metadata: map[string]any{"category": "A"}},
+			{ID: "b", Content: "b", Metadata: map[string]any{"category": "B"}},
+		},
+		[][]float32{{0, 0, 1}, {1, 0, 0}},
+	))
+
+	results, err := store.Search(ctx, []float32{1, 0, 0}, 5,
+		vectorstore.WithFilter(map[string]any{"category": "A"}))
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, "a", results[0].ID)
 }

@@ -25,6 +25,14 @@
 //
 // ProviderConfig fields:
 //   - BaseURL — path to the SQLite database file (required)
-//   - Options["table"] — table name (default: "documents")
+//   - Options["table"] — table name (default: "documents"); must match
+//     ^[a-zA-Z_][a-zA-Z0-9_]*$ or construction fails with core.ErrInvalidInput
 //   - Options["dimension"] — vector dimension (default: 1536)
+//
+// # Metadata Filtering
+//
+// vec0 applies its KNN limit before the JOIN with the metadata table, so
+// metadata filters are evaluated on the KNN candidates. A filtered search
+// over-fetches (k*10, growing 4x per pass, capped at vec0's maximum k of
+// 4096) until it has k matching documents or runs out of candidates.
 package sqlitevec

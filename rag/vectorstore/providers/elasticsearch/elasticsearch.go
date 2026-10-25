@@ -7,8 +7,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 )
@@ -18,6 +21,27 @@ func init() {
 		return NewFromConfig(cfg)
 	})
 }
+
+const (
+	// defaultTimeout bounds every request made with the default HTTP client.
+	defaultTimeout = 30 * time.Second
+
+	// metadataField is the object field under which document metadata is
+	// stored, so user keys cannot collide with "content" or "embedding".
+	metadataField = "metadata"
+)
+
+// maxResponseBytes caps how much of a response body is read (32 MiB).
+// It is a variable so tests can lower it.
+var maxResponseBytes int64 = 32 << 20
+
+// validFilterKey restricts metadata filter keys to safe field-name
+// characters. Keys are used as Elasticsearch field paths under "metadata.".
+var validFilterKey = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_.-]*$`)
+
+// validIndexName is a conservative subset of Elasticsearch's index-name
+// rules. The index is interpolated into request paths and bulk metadata.
+var validIndexName = regexp.MustCompile(`^[a-z0-9][a-z0-9_.-]{0,254}$`)
 
 // HTTPClient abstracts HTTP calls for testability.
 type HTTPClient interface {
@@ -54,7 +78,8 @@ func WithAPIKey(key string) Option {
 	return func(s *Store) { s.apiKey = key }
 }
 
-// WithHTTPClient sets a custom HTTP client.
+// WithHTTPClient sets a custom HTTP client. The default is an *http.Client
+// with a 30 second timeout.
 func WithHTTPClient(c HTTPClient) Option {
 	return func(s *Store) { s.client = c }
 }
@@ -62,7 +87,7 @@ func WithHTTPClient(c HTTPClient) Option {
 // New creates a new Elasticsearch Store.
 func New(baseURL string, opts ...Option) *Store {
 	s := &Store{
-		client:    http.DefaultClient,
+		client:    &http.Client{Timeout: defaultTimeout},
 		baseURL:   baseURL,
 		index:     "documents",
 		dimension: 1536,
@@ -92,10 +117,27 @@ func NewFromConfig(cfg config.ProviderConfig) (*Store, error) {
 }
 
 // EnsureIndex creates the Elasticsearch index with vector mapping if it does not exist.
+//
+// Metadata is stored under the "metadata" object; a dynamic template maps
+// every string inside it to "keyword" so exact-match filters work on values
+// containing capitals or spaces.
 func (s *Store) EnsureIndex(ctx context.Context) error {
 	body := map[string]any{
 		"mappings": map[string]any{
+			"dynamic_templates": []map[string]any{
+				{
+					"metadata_strings_as_keyword": map[string]any{
+						"path_match":         metadataField + ".*",
+						"match_mapping_type": "string",
+						"mapping":            map[string]any{"type": "keyword"},
+					},
+				},
+			},
 			"properties": map[string]any{
+				metadataField: map[string]any{
+					"type":    "object",
+					"dynamic": true,
+				},
 				"content": map[string]any{
 					"type": "text",
 				},
@@ -140,8 +182,8 @@ func (s *Store) Add(ctx context.Context, docs []schema.Document, embeddings [][]
 			"content":   doc.Content,
 			"embedding": float32SliceToFloat64(embeddings[i]),
 		}
-		for k, v := range doc.Metadata {
-			body[k] = v
+		if len(doc.Metadata) > 0 {
+			body[metadataField] = doc.Metadata
 		}
 		bodyBytes, err := json.Marshal(body)
 		if err != nil {
@@ -170,15 +212,11 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 	}
 
 	if len(cfg.Filter) > 0 {
-		musts := make([]map[string]any, 0, len(cfg.Filter))
-		for key, val := range cfg.Filter {
-			musts = append(musts, map[string]any{
-				"term": map[string]any{key: val},
-			})
+		filter, err := buildFilter(cfg.Filter)
+		if err != nil {
+			return nil, err
 		}
-		knnQuery["filter"] = map[string]any{
-			"bool": map[string]any{"must": musts},
-		}
+		knnQuery["filter"] = filter
 	}
 
 	if cfg.Threshold > 0 {
@@ -216,6 +254,23 @@ func (s *Store) Search(ctx context.Context, query []float32, k int, opts ...vect
 	}
 
 	return docs, nil
+}
+
+// buildFilter converts metadata filters into a bool/must of term queries on
+// "metadata.<key>". Keys that are not safe field names are rejected with
+// core.ErrInvalidInput.
+func buildFilter(filter map[string]any) (map[string]any, error) {
+	musts := make([]map[string]any, 0, len(filter))
+	for key, val := range filter {
+		if !validFilterKey.MatchString(key) {
+			return nil, core.Errorf(core.ErrInvalidInput,
+				"elasticsearch: invalid filter key %q (must match ^[A-Za-z_][A-Za-z0-9_.-]*$)", key)
+		}
+		musts = append(musts, map[string]any{
+			"term": map[string]any{metadataField + "." + key: val},
+		})
+	}
+	return map[string]any{"bool": map[string]any{"must": musts}}, nil
 }
 
 // Delete removes documents with the given IDs from the store.
@@ -260,6 +315,10 @@ func (s *Store) doJSON(ctx context.Context, method, path string, body any) ([]by
 
 // doJSONRaw performs an HTTP request with raw bytes and a given content type.
 func (s *Store) doJSONRaw(ctx context.Context, method, path string, data []byte, contentType string) ([]byte, error) {
+	if !validIndexName.MatchString(s.index) || s.index == "." || s.index == ".." {
+		return nil, core.NewError("elasticsearch.request", core.ErrInvalidInput,
+			fmt.Sprintf("invalid index name %q", s.index), nil)
+	}
 	var bodyReader io.Reader
 	if data != nil {
 		bodyReader = bytes.NewReader(data)
@@ -280,9 +339,12 @@ func (s *Store) doJSONRaw(ctx context.Context, method, path string, data []byte,
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes+1))
 	if err != nil {
 		return nil, fmt.Errorf("elasticsearch: read response: %w", err)
+	}
+	if int64(len(respBody)) > maxResponseBytes {
+		return nil, fmt.Errorf("elasticsearch: %s %s response exceeds %d bytes", method, path, maxResponseBytes)
 	}
 
 	if resp.StatusCode >= 400 {
@@ -293,6 +355,9 @@ func (s *Store) doJSONRaw(ctx context.Context, method, path string, data []byte,
 }
 
 // sourceToDocument converts an Elasticsearch hit to a schema.Document.
+// Metadata is read from the "metadata" object. Documents indexed by earlier
+// versions stored metadata as top-level fields; those are still returned as a
+// fallback, with nested values taking precedence.
 func sourceToDocument(id string, score float64, source map[string]any) schema.Document {
 	doc := schema.Document{
 		ID:       id,
@@ -302,10 +367,15 @@ func sourceToDocument(id string, score float64, source map[string]any) schema.Do
 	if content, ok := source["content"].(string); ok {
 		doc.Content = content
 	}
+	nested, hasNested := source[metadataField].(map[string]any)
 	for k, v := range source {
-		if k != "content" && k != "embedding" {
-			doc.Metadata[k] = v
+		if k == "content" || k == "embedding" || (hasNested && k == metadataField) {
+			continue
 		}
+		doc.Metadata[k] = v
+	}
+	for k, v := range nested {
+		doc.Metadata[k] = v
 	}
 	return doc
 }

@@ -6,9 +6,12 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
 	"github.com/lookatitude/beluga-ai/v2/rag/vectorstore"
 	"github.com/lookatitude/beluga-ai/v2/schema"
 	"github.com/stretchr/testify/assert"
@@ -412,4 +415,202 @@ func TestStore_Search_NoMetadata(t *testing.T) {
 	require.Len(t, results, 1)
 	assert.Equal(t, "test", results[0].Content)
 	assert.Empty(t, results[0].Metadata)
+}
+
+// bulkDocs parses an NDJSON bulk body and returns the document lines (the
+// odd lines following each action line).
+func bulkDocs(t *testing.T, body string) []map[string]any {
+	t.Helper()
+	lines := strings.Split(strings.TrimSpace(body), "\n")
+	require.Equal(t, 0, len(lines)%2, "bulk body must be action/doc pairs")
+	var docs []map[string]any
+	for i := 1; i < len(lines); i += 2 {
+		var d map[string]any
+		require.NoError(t, json.Unmarshal([]byte(lines[i]), &d))
+		docs = append(docs, d)
+	}
+	return docs
+}
+
+// TestStore_Add_NestsMetadata is a regression test: metadata used to be
+// merged into the top-level document, so keys named "content" or
+// "embedding" overwrote the document's own fields.
+func TestStore_Add_NestsMetadata(t *testing.T) {
+	var receivedBody string
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		receivedBody = string(body)
+		w.Write([]byte(`{"errors":false,"items":[]}`))
+	})
+	defer srv.Close()
+
+	err := store.Add(context.Background(),
+		[]schema.Document{
+			{ID: "doc1", Content: "real content", Metadata: map[string]any{
+				"content":   "spoofed",
+				"embedding": "spoofed",
+				"Category":  "Machine Learning",
+			}},
+			{ID: "doc2", Content: "no meta"},
+		},
+		[][]float32{{0.1, 0.2, 0.3}, {0.4, 0.5, 0.6}},
+	)
+	require.NoError(t, err)
+
+	docs := bulkDocs(t, receivedBody)
+	require.Len(t, docs, 2)
+
+	assert.Equal(t, "real content", docs[0]["content"])
+	assert.IsType(t, []any{}, docs[0]["embedding"])
+	assert.NotContains(t, docs[0], "Category", "metadata must not be top-level")
+	meta, ok := docs[0]["metadata"].(map[string]any)
+	require.True(t, ok, "metadata must be nested under \"metadata\"")
+	assert.Equal(t, "spoofed", meta["content"])
+	assert.Equal(t, "spoofed", meta["embedding"])
+	assert.Equal(t, "Machine Learning", meta["Category"])
+
+	assert.NotContains(t, docs[1], "metadata")
+}
+
+func TestStore_EnsureIndex_MetadataKeywordMapping(t *testing.T) {
+	var body map[string]any
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		w.Write([]byte(`{"acknowledged":true}`))
+	})
+	defer srv.Close()
+
+	require.NoError(t, store.EnsureIndex(context.Background()))
+
+	mappings := body["mappings"].(map[string]any)
+	props := mappings["properties"].(map[string]any)
+	meta := props["metadata"].(map[string]any)
+	assert.Equal(t, "object", meta["type"])
+	assert.Equal(t, true, meta["dynamic"])
+
+	templates := mappings["dynamic_templates"].([]any)
+	require.Len(t, templates, 1)
+	tmpl := templates[0].(map[string]any)["metadata_strings_as_keyword"].(map[string]any)
+	assert.Equal(t, "metadata.*", tmpl["path_match"])
+	assert.Equal(t, "string", tmpl["match_mapping_type"])
+	assert.Equal(t, map[string]any{"type": "keyword"}, tmpl["mapping"])
+}
+
+// TestStore_Search_FilterOnNestedMetadata is a regression test: term filters
+// targeted top-level (analyzed text) fields, so values with capitals or
+// spaces never matched.
+func TestStore_Search_FilterOnNestedMetadata(t *testing.T) {
+	var receivedBody map[string]any
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&receivedBody))
+		w.Write([]byte(`{"hits":{"hits":[]}}`))
+	})
+	defer srv.Close()
+
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5,
+		vectorstore.WithFilter(map[string]any{"Category": "Machine Learning"}))
+	require.NoError(t, err)
+
+	knn := receivedBody["knn"].(map[string]any)
+	musts := knn["filter"].(map[string]any)["bool"].(map[string]any)["must"].([]any)
+	require.Len(t, musts, 1)
+	term := musts[0].(map[string]any)["term"].(map[string]any)
+	assert.Equal(t, map[string]any{"metadata.Category": "Machine Learning"}, term)
+}
+
+func TestStore_Search_InvalidFilterKey(t *testing.T) {
+	called := false
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		w.Write([]byte(`{"hits":{"hits":[]}}`))
+	})
+	defer srv.Close()
+
+	for _, key := range []string{"", "a b", "*", "1abc", "a\"b", "metadata\n", "a:b"} {
+		t.Run(key, func(t *testing.T) {
+			_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5,
+				vectorstore.WithFilter(map[string]any{key: "x"}))
+			require.Error(t, err)
+			var cerr *core.Error
+			require.ErrorAs(t, err, &cerr)
+			assert.Equal(t, core.ErrInvalidInput, cerr.Code)
+		})
+	}
+	assert.False(t, called, "invalid filter keys must be rejected before any request")
+}
+
+func TestSourceToDocument(t *testing.T) {
+	tests := []struct {
+		name     string
+		source   map[string]any
+		wantMeta map[string]any
+	}{
+		{
+			name: "nested metadata",
+			source: map[string]any{
+				"content":  "c",
+				"metadata": map[string]any{"category": "A", "content": "meta-content"},
+			},
+			wantMeta: map[string]any{"category": "A", "content": "meta-content"},
+		},
+		{
+			name:     "legacy top-level metadata",
+			source:   map[string]any{"content": "c", "category": "A"},
+			wantMeta: map[string]any{"category": "A"},
+		},
+		{
+			name: "nested takes precedence over legacy",
+			source: map[string]any{
+				"content":  "c",
+				"category": "legacy",
+				"lang":     "en",
+				"metadata": map[string]any{"category": "nested"},
+			},
+			wantMeta: map[string]any{"category": "nested", "lang": "en"},
+		},
+		{
+			name:     "legacy non-object metadata key",
+			source:   map[string]any{"content": "c", "metadata": "plain"},
+			wantMeta: map[string]any{"metadata": "plain"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			doc := sourceToDocument("id", 1, tt.source)
+			assert.Equal(t, "c", doc.Content)
+			assert.Equal(t, tt.wantMeta, doc.Metadata)
+		})
+	}
+}
+
+func TestNew_DefaultClientHasTimeout(t *testing.T) {
+	store := New("http://localhost:9200")
+	c, ok := store.client.(*http.Client)
+	require.True(t, ok)
+	assert.NotSame(t, http.DefaultClient, c)
+	assert.Equal(t, 30*time.Second, c.Timeout)
+}
+
+func TestStore_ResponseBodyLimit(t *testing.T) {
+	old := maxResponseBytes
+	maxResponseBytes = 16
+	t.Cleanup(func() { maxResponseBytes = old })
+
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"hits":{"hits":[]},"padding":"xxxxxxxxxxxxxxxx"}`))
+	})
+	defer srv.Close()
+
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "exceeds 16 bytes")
+}
+
+func TestStore_InvalidIndexName(t *testing.T) {
+	for _, idx := range []string{"../_cluster", "Docs", "a/b", "a?x", "..", "", "_x"} {
+		store := New("http://127.0.0.1:1", WithIndex(idx))
+		_, err := store.Search(context.Background(), []float32{1}, 1)
+		require.Error(t, err, idx)
+		assert.Contains(t, err.Error(), "invalid index name")
+	}
 }
