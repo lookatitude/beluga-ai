@@ -20,7 +20,7 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-          check-latest: false
+          check-latest: true
           cache: true
 
       - name: Install golangci-lint
@@ -49,7 +49,7 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-          check-latest: false
+          check-latest: true
           cache: true
 
       # Install the beluga CLI at the exact framework version pinned in this
