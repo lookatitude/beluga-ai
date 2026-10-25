@@ -1,0 +1,292 @@
+{
+  "rigor": "standard",
+  "auto_approve": [],
+  "review": "local",
+  "host": "auto",
+  "host_mode": null,
+  "roles": {
+    "host": null,
+    "advisory": null,
+    "adversarial": null
+  },
+  "host_profiles": {},
+  "initiative_default": null,
+  "index": "auto",
+  "record_status_runs": true,
+  "codex_skip_enforcement": "warn",
+  "agent_mode": "auto",
+  "workspace": {
+    "mode": "auto"
+  },
+  "models": {
+    "enabled": true,
+    "tiers": {
+      "cheap": {
+        "claude-code-cli": "haiku",
+        "codex-cli": null,
+        "pi-cli": null,
+        "antigravity-cli": null,
+        "agents-file": null,
+        "claude-code-app": null,
+        "claude-code-web": null,
+        "codex-app": null,
+        "claude-ai-connector": null,
+        "cursor": null,
+        "github-copilot": null,
+        "opencode": null,
+        "rovo-dev": null,
+        "kiro": null,
+        "qoder": null,
+        "trae": null
+      },
+      "mid": {
+        "claude-code-cli": "sonnet",
+        "codex-cli": null,
+        "pi-cli": null,
+        "antigravity-cli": null,
+        "agents-file": null,
+        "claude-code-app": null,
+        "claude-code-web": null,
+        "codex-app": null,
+        "claude-ai-connector": null,
+        "cursor": null,
+        "github-copilot": null,
+        "opencode": null,
+        "rovo-dev": null,
+        "kiro": null,
+        "qoder": null,
+        "trae": null
+      },
+      "powerful": {
+        "claude-code-cli": "opus",
+        "codex-cli": null,
+        "pi-cli": null,
+        "antigravity-cli": null,
+        "agents-file": null,
+        "claude-code-app": null,
+        "claude-code-web": null,
+        "codex-app": null,
+        "claude-ai-connector": null,
+        "cursor": null,
+        "github-copilot": null,
+        "opencode": null,
+        "rovo-dev": null,
+        "kiro": null,
+        "qoder": null,
+        "trae": null
+      }
+    },
+    "scoreWeights": {
+      "workType": 0,
+      "blastRadius": 1,
+      "dependsOn": 1,
+      "security": 1,
+      "priorEscalation": 1
+    },
+    "thresholds": {
+      "mid": 1,
+      "powerful": 3
+    },
+    "advisorRounds": 2,
+    "escalationMarkers": [
+      "I'm not sure",
+      "unclear",
+      "cannot determine",
+      "I don't know",
+      "ambiguous",
+      "uncertain",
+      "not enough information"
+    ],
+    "recallBeforeRead": true,
+    "recallScoreThreshold": 0.4,
+    "structuredOutputRequired": true,
+    "cacheTTL": {
+      "coordinator": "1h",
+      "leaf": "5m"
+    },
+    "importanceGate": 3,
+    "compositeRecall": true,
+    "importanceAtIngest": true,
+    "ingestSimilarityGate": 0.8,
+    "shortOutputThreshold": {},
+    "knowledge": {
+      "maxDepth": 8,
+      "maxBranching": 12,
+      "minTopicImportance": 0.4,
+      "relMinConf": 0.5,
+      "maxFiles": 3000,
+      "maxTokens": 1000000,
+      "batchSize": 20
+    }
+  },
+  "security": {
+    "bypass_permissions_policy": "audit"
+  },
+  "secrets_policy": {
+    "env_allowlist": [],
+    "redaction_patterns": [],
+    "fail_mode_durable": "closed",
+    "fail_mode_telemetry": "open"
+  },
+  "mcp": {
+    "tool_description_hashes": {},
+    "stdio_available": true,
+    "http_available": false,
+    "bridge_package": null
+  },
+  "capability": {
+    "resolver_mode": "observe",
+    "suggestion_budget": 4,
+    "starter_roles": [],
+    "auto_create_policy": "on_approval"
+  },
+  "statusline": false,
+  "adversarial_review_provider": "auto",
+  "loops": null,
+  "loop_cap": 16,
+  "codex_cap": 5,
+  "model_policy": null,
+  "defaults": {
+    "auto_learn": false,
+    "adversarial": "on",
+    "team": {
+      "size": null,
+      "always_include": []
+    },
+    "review_workflow": "standard",
+    "skill_policy": "standard",
+    "gates": {
+      "auto_approve": []
+    },
+    "wiki": {
+      "share_mode": "team",
+      "autopromote": true
+    },
+    "quality": {
+      "budget": {
+        "per_class_minutes": 10,
+        "total_minutes": 30
+      }
+    },
+    "reporting": "standard",
+    "index": {
+      "enabled": true,
+      "kg_node_threshold": 2000,
+      "kg_size_threshold_mb": 1,
+      "links_edge_threshold": 2000,
+      "runs_threshold": 20,
+      "wiki_file_threshold": 500
+    },
+    "cross_host": {
+      "enabled": false,
+      "hosts": {},
+      "fallback_to_claude": true
+    },
+    "retry": {
+      "max_attempts": 1,
+      "backoff": "exponential"
+    },
+    "resume": {
+      "enabled": true
+    },
+    "heartbeat_timeout_ms": 600000,
+    "capability_manifest_ttl_s": 3600,
+    "update": {
+      "mode": "notify",
+      "cadence_hours": 24
+    },
+    "allowed_tools": [],
+    "lean_lead": {
+      "enabled": true,
+      "hands_on_edit_threshold": 8
+    },
+    "lifecycle_gate": {
+      "enabled": true,
+      "adhoc_activity_threshold": 20
+    },
+    "dispatch": {
+      "block_unmarked_lanes": false
+    }
+  },
+  "_help": {
+    "rigor": "quick | standard | deep — profile knob; expands loops/caps/review depth",
+    "auto_approve": "[] | [spec,plan,build,qa] | [all] — opt-in autonomy; destructive/network/spend STILL ask. qa (G-14/SC-9): auto-proceed ONLY on a computed ReleaseGate PASS — a BLOCK-override and the always-ask hard set still prompt. No ops token (rails stay interactive by design).",
+    "review": "local | cross | off — cross engages the Claude<->Codex adversarial review broker",
+    "host": "canonical host id | legacy alias | auto — co-equal host adapter selection",
+    "roles": "per-run role pins {host,advisory,adversarial}; null = resolve via the role model (capability-matrix), or pin a canonical registry host_id. Legacy aliases normalize to canonical ids. Top-level `host` stays the dispatch-host selector; the v2 registry ids also key roles.*/host_profiles.*.",
+    "host_profiles": "per-host config-render overrides keyed by host_id; {} = none (defaults render from the host-registry capability rows). CLOSED entry shape: { models?: {cheap?,mid?,powerful?}, enabled?: bool }.",
+    "initiative_default": "null | <initiative-id> — attach runs to a durable initiative",
+    "index": "auto | off — optional SQLite read-through cache (auto = lazy-build past measured slowness)",
+    "record_status_runs": "bool (default true) — OQ6 (SC-B): /guild:status records a lightweight run (run.yaml + provenance.json, runs/-only; never wiki/decisions/indexes). false = revert to historical pure-read (no run written). Default-safe-when-absent.",
+    "codex_skip_enforcement": "\"warn\" | \"block\" (default \"warn\") — FU-E codex-skip enforcement: warn surfaces the block sentinel (.guild/codex-skip-streak.json) at G-gates without stopping dispatch; block hard-refuses dispatch at the gate until the streak is cleared. Referenced by guild:codex-review and guild:review-broker.",
+    "agent_mode": "team | agent | subagent | auto (default) — execution backend (D5 dispatch ladder). auto: $TMUX→team(in-session); tmux-installed→team(new-session); independent-agents-supported→agent; else→subagent.",
+    "workspace.mode": "auto (default) | on | off — workspace federation mode (guild.workspace.v1). auto: detect by immediate-child rule (.git/.guild). on: force workspace. off: force regular. Depth is hard-fixed at 1 — no max_depth knob. Overridden by --mode flag on workspace/detect.ts.",
+    "loops": "null | none|spec|plan|implementation|all|<csv> — power-user; null = derive from rigor",
+    "loop_cap": "int 1-256 — max rounds per adversarial loop",
+    "codex_cap": "int 1-10 — max rounds per Codex review gate",
+    "model_policy": "null | guild.model_policy.v2 object — durable operator model-routing preferences (purpose routes over selectors, never inventory). null = not configured (legacy tier maps drive generic preferences for the migration window); an object must pass the closed-key §5 validator or the whole policy is rejected at load.",
+    "defaults.auto_learn": "bool (default false) — when true, /guild init runs the full learn-* pipeline at bootstrap (D3). Precedence: --learn CLI flag > settings.json > built-in(false).",
+    "defaults.adversarial": "on | off — (off REJECTED for Guild self-build)",
+    "defaults.team.size": "null (default) | <positive int> — LEGACY migration-window scheduling input (team-contracts §6): read as a concurrency hint clamped by verified backend capacity; NEVER a logical team-size cap (the logical team is uncapped, guild.team_proposal.v2); fails validation after the two-release window",
+    "defaults.team.always_include": "[] | subset of the specialist roles",
+    "defaults.review_workflow": "standard | cross | minimal — default review depth",
+    "defaults.skill_policy": "standard | conservative — default skill-usage",
+    "defaults.gates.auto_approve": "[] | [spec,plan,build,qa,all] — default approval-gate posture. qa auto-proceeds ONLY on a computed ReleaseGate PASS (BLOCK-override still prompts); never ops",
+    "defaults.wiki.share_mode": "team | private — wiki share mode (moved here from legacy project.yaml)",
+    "defaults.wiki.autopromote": "true | false (default true) — harvest auto-promotes decisions on this cwd; false = candidates-only (KTD35)",
+    "defaults.quality.budget.per_class_minutes": "int > 0 — per-check-class wall-clock cap",
+    "defaults.quality.budget.total_minutes": "int > 0 — whole-phase wall-clock cap",
+    "defaults.reporting": "standard | quiet | verbose — default task/progress reporting",
+    "models.enabled": "bool (default true) — master toggle for cost-tiering. false = all lanes run at mid (current v2 behavior).",
+    "models.tiers": "{cheap|mid|powerful: {<canonical-host-id>: value}} — host-agnostic tier→model map. Each host value is string | {model, effort?, reasoning?, thinking?, verbosity?} | null. Object form pins a model PLUS host-defined effort/reasoning/thinking/verbosity axes, e.g. powerful: {\"claude-code-cli\": {model: \"opus\", effort: \"high\", reasoning: \"xhigh\"}}. Closed sub-keys: only model/effort/reasoning/thinking/verbosity are accepted inside the object form. null host slot = no model for that tier on that host (fall through to host mapping). Defaults: cheap=haiku, mid=sonnet, powerful=opus (plain strings). Legacy host aliases normalize to canonical ids; non-Claude host slots default to null until configured. Consumers unpack the union ONLY via resolveTierModel() (read-guild-config.ts).",
+    "models.scoreWeights": "object (signal→int) — auto-score rubric weights (ADR §2). Signals: workType, blastRadius, dependsOn, security, priorEscalation. Ship fixed; tunable per-repo.",
+    "models.thresholds": "{mid:int, powerful:int} — score-band cutoffs (ADR §2). Default {mid:1, powerful:3}. score<mid→cheap; mid≤score<powerful→mid; score≥powerful→powerful.",
+    "models.advisorRounds": "int > 0 (default 2) — max advisor consults per lane before recording inconclusive (ADR §3).",
+    "models.escalationMarkers": "string[] — uncertainty phrases that trigger advisor escalation (ADR §3). Defaults: [\"I'm not sure\", \"unclear\", \"cannot determine\", ...].",
+    "models.recallBeforeRead": "bool (default true) — enforce recall-before-read: query wiki before opening a file (ADR §4).",
+    "models.recallScoreThreshold": "float 0–1 (default 0.4) — min BM25 recall score to skip a full file read (ADR §4).",
+    "models.structuredOutputRequired": "bool (default true) — reject non-guild.handoff.v2 agent returns (ADR §5).",
+    "models.cacheTTL.coordinator": "\"1h\" | \"5m\" | \"off\" (default \"1h\") — coordinator prompt-cache TTL hint (ADR §9).",
+    "models.cacheTTL.leaf": "\"1h\" | \"5m\" | \"off\" (default \"5m\") — leaf-agent prompt-cache TTL hint (ADR §9).",
+    "models.importanceGate": "int 1–5 (default 3) — min wiki importance level for routine recall (ADR §6).",
+    "models.compositeRecall": "bool (default true) — composite recall scoring (docs/v2/knowledge-memory.html §Recall scoring). true = wiki recall ranks by relevance × recency × importance and filters pages scoring below models.importanceGate. Because this requires raw BM25 scores, it bypasses the SQLite FTS read-through cache and uses file-BM25 for bundle recall. false = legacy BM25-only ranking with the SQLite cache eligible above defaults.index.wiki_file_threshold.",
+    "models.importanceAtIngest": "bool (default true) — write-time importance-at-ingest scorer (docs/v2/knowledge-memory.html §Importance-at-ingest). true = the ingest/learn path stamps each wiki page with a 1–5 recall_importance: score so recall reads a stable stored weight. false = recall derives the weight from the page category at query time.",
+    "models.ingestSimilarityGate": "float 0–1 (default 0.80) — BM25 top-1 similarity threshold for the wiki ingest anomaly gate (D-INGEST-GATE). If a candidate page scores ≥ this against existing pages, guild:wiki-ingest pauses: supersede / skip / proceed — never silently overwrites.",
+    "models.shortOutputThreshold": "object (default {}) — O-3 short-output advisor trigger buckets (D-OBS-3). Shape: { [task_type]: { [tier]: number } } where numbers are output-token floors. Empty map ⇒ O-3 trigger is silent for all (task_type, tier) buckets. Values are proposed by benchmark/src/calibrate-o3-cli.ts after ≥30 samples per bucket; operator reviews and lands them here — nothing auto-writes this key.",
+    "security.bypass_permissions_policy": "\"deny\" | \"audit\" | \"allow\" (default \"audit\") — bypassPermissions governance during Guild-managed runs (D-BYPASS). deny: hard-block + security event (forced under auto_approve / autonomous_after_plan_approval). audit: surfaces always-ask channel + security event (default for interactive mode). allow: opt-in for interactive mode only. Guild cannot govern bypass outside its own run lifecycle.",
+    "secrets_policy.env_allowlist": "string[] (default []) — env var names explicitly permitted in agent-context injection. All others are redacted before context assembly.",
+    "secrets_policy.redaction_patterns": "string[] (default []) — regex patterns applied as the first stage of the 3-stage secrets scrubber (prefix regexes → Shannon-entropy → file-path context). Run over all .guild/ artifact writes.",
+    "secrets_policy.fail_mode_durable": "\"closed\" | \"open\" (default \"closed\") — on scrub failure for durable shared-git artifacts (handoff, provenance, wiki, review): closed = block the write + surface always-ask; open = warn + proceed.",
+    "secrets_policy.fail_mode_telemetry": "\"open\" | \"closed\" (default \"open\") — on scrub failure for local gitignored telemetry writes (runs/<id>/logs/*.jsonl): open = warn + security event + proceed; closed = block.",
+    "mcp.tool_description_hashes": "object (default {}) — map of MCP tool-name → SHA-256 hash of the tool description string (description only; see hooks/lib/security/mcp-hash-pin.ts hashDescription), pinned at /guild:config init time (D-MCP PI-6). PreToolUse compares the live hash per call. Drift triggers a warn+gate-on-approval. Re-pin via /guild:config update-mcp-hashes.",
+    "defaults.index.enabled": "bool (default true) — master switch for the lazy index.sqlite cache. false = always direct-parse, no index.sqlite ever written. Equivalent to the /guild:stats --no-index one-shot, made persistent.",
+    "defaults.index.kg_node_threshold": "int (default 2000) — populate kg_nodes/kg_edges tables when knowledge-graph.json has more than N nodes.",
+    "defaults.index.kg_size_threshold_mb": "number (default 1) — populate kg_nodes/kg_edges tables when knowledge-graph.json exceeds N MB.",
+    "defaults.index.links_edge_threshold": "int (default 2000) — populate kl_edges table when knowledge-links.json has more than N edges.",
+    "defaults.index.runs_threshold": "int (default 20) — populate run_provenance table when runs/*/provenance.json count exceeds N.",
+    "defaults.index.wiki_file_threshold": "int (default 500) — populate wiki_fts table when wiki/** file count exceeds N. Below threshold, guild-memory BM25 grep path is used unchanged.",
+    "defaults.cross_host.enabled": "bool (default false) — THE local-vs-remote switch. false (default) ⇒ EVERYTHING RUNS LOCALLY (single-host, byte-identical to today; no SSH, ever). true ⇒ a specialist may run on a remote host, but ONLY when ALL of: (1) this is true, (2) the specialist is routed to a remote host (team.yaml `host:` / capability routing), (3) that host has an endpoint in defaults.cross_host.hosts, and (4) the pre-dispatch capability probe confirms the host has the brand CLI + tmux (missing ⇒ fail-fast, nothing spawned). Otherwise the lane stays local (or falls back to Claude per fallback_to_claude). Env override: GUILD_CROSS_HOST_ENABLED=1 (env wins). SECURITY: enables SSH dispatch — ssh keys/agent only, no passwords.",
+    "defaults.cross_host.hosts": "object { <host_id>: { address: string, port?: number, user?: string } } — SSH endpoint config keyed by guild.host_capability.v1 host_id. SECURITY: address/port/user ONLY — NO secrets, NO passwords. Auth via ssh keys/agent. Non-standard ports: prefer ~/.ssh/config Host entries over the port field.",
+    "statusline": "bool (default false) — enable the Guild status-line pane (R-009). When true, the skill orchestrator sets GUILD_STATUSLINE=1 in the session env before invoking the launcher; statusline-guild.sh reads the flag to enable the tmux status pane. CLI flag: --statusline. Config: config set statusline true --scope project",
+    "mcp.stdio_available": "bool (default true) — MCP stdio transport available (R-019, FDC-13). true for Claude Code CLI/Desktop; consumed by hooks/lib/security/config.ts McpAvailability.",
+    "mcp.http_available": "bool (default false) — MCP HTTP transport available (R-019, FDC-13). true for Claude Code Web and some enterprise setups.",
+    "mcp.bridge_package": "string|null (default null) — MCP bridge package name for restricted-transport envs (R-019, FDC-13). null = no bridge. Used by pi-adapter and antigravity connectors.",
+    "adversarial_review_provider": "\"auto\" | <provider-id> (default \"auto\") — pin the cross-review provider (R-008, v2-cross-host-orchestration ADR). Only honored when review=cross. \"auto\" ⇒ provider-detect.ts selects the best available provider. Explicit IDs: \"codex-plugin\", \"codex-cli\". Set via: config set adversarial_review_provider codex-plugin",
+    "defaults.cross_host.fallback_to_claude": "bool (default true) — CR-3 level-4 Claude-only fallback (v2-cross-host-orchestration ADR CR-3). When true, the host-router falls back to the Claude host if no non-Claude host can satisfy a lane. Consumed by host-router.ts RouteOptions.fallbackToClaude.",
+    "defaults.retry.max_attempts": "int ≥ 1 (default 1) — max retry attempts per lane on transient failure (v2-runtime-and-execution-model.md §retry). 1 = no retry.",
+    "defaults.retry.backoff": "\"immediate\" | \"linear\" | \"exponential\" (default \"exponential\") — backoff strategy between retries.",
+    "defaults.resume.enabled": "bool (default true) — enable lane resume from checkpoint on failure (v2-runtime-and-execution-model.md §resume).",
+    "defaults.heartbeat_timeout_ms": "int > 0 (default 600000 ms = 10 min) — staleness threshold for the heartbeat sentinel. hooks/lib/heartbeat.ts:153 reads this via tolerant reader (fallback = DEFAULT_HEARTBEAT_TIMEOUT_MS). Adding to the closed-key set lets config validate accept it and config set write it.",
+    "defaults.capability_manifest_ttl_s": "number > 0 (default 3600 s = 1 hour) — host capability manifest freshness TTL (v2-cross-host-orchestration ADR CR-5). Consumed by host-router.ts RouteOptions.manifestTtlS.",
+    "defaults.update": "{ mode: \"auto\"|\"notify\"|\"off\" (default \"notify\"), cadence_hours: number > 0 (default 24) } — channel-aware update-check behavior. Consumed by hooks/update-check.ts (SessionStart signal + background cache refresh) and guild-run update. Dev/symlink installs are always excluded.",
+    "defaults.allowed_tools": "string[] (default []) — explicit allowed-tools list (guild-boundary-config-and-tracking.md Decision F). Replaces, not extends, the shared tool allow-list. [] ⇒ no restriction.",
+    "host_mode": "read_only|ask|accept_edits|auto|bypass_all|null (default null) — the sanctioned, schema-registered P1-L10 host-autonomy override (permission-policy-schema.ts HOST_MODES). null = no override (host default \"ask\" applies, lifted to bypass_all for unattended local tmux team panes per issue #54's resolveTeamPaneHostMode). NEVER lifts a Guild lifecycle gate (host_mode ⊥ guild_gates orthogonality invariant) — see permission-policy.ts. NOT under security. — the #54 lane reverted an ad-hoc security.host_mode key for bypassing this schema; this is the registered replacement.",
+    "defaults.lean_lead.enabled": "bool (default true) — master toggle for the lean-lead inline-shortcut-expired advisory (hooks/lib/lean-lead-guard.ts, SKILL.md \"Inline shortcut under high autonomy\").",
+    "defaults.lean_lead.hands_on_edit_threshold": "int >= 1 (default 8) — direct lead Edit/Write ops (while lanes are open) before the advisory fires. A non-positive/non-integer override is ignored (guard degrades to default).",
+    "defaults.lifecycle_gate.enabled": "bool (default true) — master toggle for the lifecycle-gate ad-hoc-activity advisory (hooks/lib/lifecycle-gate.ts).",
+    "defaults.lifecycle_gate.adhoc_activity_threshold": "int >= 1 (default 20) — ad-hoc (non-skill) activity count before the lifecycle-gate advisory fires. A non-positive/non-integer override is ignored (guard degrades to default).",
+    "defaults.dispatch.block_unmarked_lanes": "bool (default false) — STRICT mode for the #56 backend-degradation guard (hooks/lib/backend-degradation.ts). When true, a Guild lane dispatch carrying NO structured producer marker (prompt_only evidence) is BLOCKED under a resolved team backend instead of merely recorded. Default false keeps the no-false-positive-on-a-quoted-brief invariant: a lane brief merely QUOTED in a prompt grades prompt_only too. The GUILD_BLOCK_UNMARKED_LANES env var overrides this per session, in BOTH directions.",
+    "_precedence": "CLI flag > --rigor profile > settings.json > built-in default. For model tier: --model-tier=cheap|mid|powerful > per-lane plan override > models.tiers/thresholds > built-in.",
+    "_docs": "Canonical schema: architecture/command-surface.md §4.4. Regenerate with: /guild config init"
+  }
+}
