@@ -30,7 +30,8 @@ type Hooks struct {
 	OnReasoning func(ctx context.Context, delta string)
 
 	// OnError is called when an error occurs. The returned error replaces the
-	// original; returning nil suppresses the error.
+	// original; returning nil suppresses the error. When Generate's error is
+	// suppressed, Generate returns an empty, non-nil *schema.AIMessage.
 	OnError func(ctx context.Context, err error) error
 }
 

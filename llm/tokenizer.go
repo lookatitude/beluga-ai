@@ -73,17 +73,12 @@ func (t *SimpleTokenizer) Encode(text string) []int {
 	return tokens
 }
 
-// Decode joins token IDs into a placeholder string. Since SimpleTokenizer
-// does not maintain a real vocabulary, this returns a space-separated
-// list of token indices.
+// Decode returns a placeholder string with one "x" per token, separated by
+// spaces. SimpleTokenizer has no vocabulary, so the original text cannot be
+// recovered; Decode only preserves the token count.
 func (t *SimpleTokenizer) Decode(tokens []int) string {
 	if len(tokens) == 0 {
 		return ""
 	}
-	parts := make([]string, len(tokens))
-	for i, tok := range tokens {
-		parts[i] = strings.Repeat("x", 1) // placeholder
-		_ = tok
-	}
-	return strings.Join(parts, " ")
+	return strings.TrimSuffix(strings.Repeat("x ", len(tokens)), " ")
 }
