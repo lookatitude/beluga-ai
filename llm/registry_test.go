@@ -6,24 +6,38 @@ import (
 	"github.com/lookatitude/beluga-ai/v2/config"
 )
 
-func TestRegisterAndNew(t *testing.T) {
-	// Save and restore registry state.
+// isolateRegistry snapshots the global provider registry, clears it for the
+// test, and restores the snapshot when the test finishes.
+func isolateRegistry(t *testing.T) {
+	t.Helper()
 	registryMu.Lock()
 	orig := make(map[string]Factory, len(registry))
 	for k, v := range registry {
 		orig[k] = v
 	}
+	registry = make(map[string]Factory)
 	registryMu.Unlock()
 	t.Cleanup(func() {
 		registryMu.Lock()
 		registry = orig
 		registryMu.Unlock()
 	})
+}
 
-	// Clear the registry for a clean test.
-	registryMu.Lock()
-	registry = make(map[string]Factory)
-	registryMu.Unlock()
+// assertErrContains fails the test when err is nil or, if substr is
+// non-empty, when err's message does not contain substr.
+func assertErrContains(t *testing.T, err error, substr string) {
+	t.Helper()
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if substr != "" && !containsStr(err.Error(), substr) {
+		t.Errorf("error %q should contain %q", err.Error(), substr)
+	}
+}
+
+func TestRegisterAndNew(t *testing.T) {
+	isolateRegistry(t)
 
 	tests := []struct {
 		name        string
@@ -60,12 +74,7 @@ func TestRegisterAndNew(t *testing.T) {
 
 			model, err := New(tt.lookupName, config.ProviderConfig{Model: "test-model"})
 			if tt.wantErr {
-				if err == nil {
-					t.Fatal("expected error, got nil")
-				}
-				if tt.errContains != "" && !containsStr(err.Error(), tt.errContains) {
-					t.Errorf("error %q should contain %q", err.Error(), tt.errContains)
-				}
+				assertErrContains(t, err, tt.errContains)
 				return
 			}
 			if err != nil {
@@ -79,21 +88,7 @@ func TestRegisterAndNew(t *testing.T) {
 }
 
 func TestList(t *testing.T) {
-	registryMu.Lock()
-	orig := make(map[string]Factory, len(registry))
-	for k, v := range registry {
-		orig[k] = v
-	}
-	registryMu.Unlock()
-	t.Cleanup(func() {
-		registryMu.Lock()
-		registry = orig
-		registryMu.Unlock()
-	})
-
-	registryMu.Lock()
-	registry = make(map[string]Factory)
-	registryMu.Unlock()
+	isolateRegistry(t)
 
 	// Empty registry.
 	if got := List(); len(got) != 0 {
@@ -119,21 +114,7 @@ func TestList(t *testing.T) {
 }
 
 func TestRegisterOverwrite(t *testing.T) {
-	registryMu.Lock()
-	orig := make(map[string]Factory, len(registry))
-	for k, v := range registry {
-		orig[k] = v
-	}
-	registryMu.Unlock()
-	t.Cleanup(func() {
-		registryMu.Lock()
-		registry = orig
-		registryMu.Unlock()
-	})
-
-	registryMu.Lock()
-	registry = make(map[string]Factory)
-	registryMu.Unlock()
+	isolateRegistry(t)
 
 	Register("dup", func(cfg config.ProviderConfig) (ChatModel, error) {
 		return &stubModel{id: "first"}, nil

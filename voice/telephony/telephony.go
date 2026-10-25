@@ -26,7 +26,7 @@ type CallRouter interface {
 }
 
 // TelephonyProvider is the main interface for telephony service providers.
-type TelephonyProvider interface {
+type TelephonyProvider interface { //nolint:revive // stutter kept: renaming would break the exported API
 	// PlaceCall initiates an outbound call.
 	PlaceCall(ctx context.Context, req CallRequest) (*Call, error)
 	// HangUp terminates an active call.

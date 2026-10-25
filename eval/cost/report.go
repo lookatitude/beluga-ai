@@ -7,7 +7,7 @@ import (
 
 // CostReport provides aggregated cost analysis with optimization
 // recommendations.
-type CostReport struct {
+type CostReport struct { //nolint:revive // stutter kept: renaming would break the exported API
 	// TotalCost is the sum of all sample costs in dollars.
 	TotalCost float64
 

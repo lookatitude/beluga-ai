@@ -30,8 +30,7 @@ func init() {
 
 		zcrThreshold := defaultZCRThreshold
 		if v, ok := cfg["zcr_threshold"]; ok {
-			switch t := v.(type) {
-			case float64:
+			if t, ok := v.(float64); ok {
 				zcrThreshold = t
 			}
 		}

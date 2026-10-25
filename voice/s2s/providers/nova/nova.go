@@ -66,7 +66,7 @@ func (e *Engine) Start(ctx context.Context, opts ...s2s.Option) (s2s.Session, er
 		opt(&cfg)
 	}
 
-	conn, _, err := websocket.Dial(ctx, e.baseURL, &websocket.DialOptions{
+	conn, _, err := websocket.Dial(ctx, e.baseURL, &websocket.DialOptions{ //nolint:bodyclose // coder/websocket nils resp.Body on success and closes it on error
 		HTTPHeader: http.Header{},
 	})
 	if err != nil {

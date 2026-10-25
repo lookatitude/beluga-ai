@@ -148,7 +148,8 @@ func (c *DefaultCollector) Build(_ context.Context) (*ExecutionGraph, error) {
 
 	startTime := events[0].Timestamp
 	endTime := events[0].Timestamp.Add(events[0].Duration)
-	for _, e := range events[1:] {
+	for i := 1; i < len(events); i++ {
+		e := &events[i]
 		if e.Timestamp.Before(startTime) {
 			startTime = e.Timestamp
 		}
@@ -164,7 +165,8 @@ func (c *DefaultCollector) Build(_ context.Context) (*ExecutionGraph, error) {
 	}
 
 	var extraRoots int
-	for _, e := range events {
+	for i := range events {
+		e := &events[i]
 		node := Node{
 			ID:        e.ID,
 			Label:     e.Label,
@@ -177,14 +179,15 @@ func (c *DefaultCollector) Build(_ context.Context) (*ExecutionGraph, error) {
 		}
 		graph.Nodes = append(graph.Nodes, node)
 
-		if e.ParentID != "" {
+		switch {
+		case e.ParentID != "":
 			graph.Edges = append(graph.Edges, Edge{
 				From: e.ParentID,
 				To:   e.ID,
 			})
-		} else if graph.RootNodeID == "" {
+		case graph.RootNodeID == "":
 			graph.RootNodeID = e.ID
-		} else {
+		default:
 			extraRoots++
 		}
 	}
@@ -225,7 +228,7 @@ func (r *DOTRenderer) Render(_ context.Context, graph *ExecutionGraph) ([]byte, 
 	for _, n := range nodes {
 		color := nodeColor(n.Status)
 		label := fmt.Sprintf("%s\\n[%s] %s", n.Label, n.Type, n.Duration.Round(time.Millisecond))
-		b.WriteString(fmt.Sprintf("  %q [label=%q, style=\"rounded,filled\", fillcolor=%q];\n", n.ID, label, color))
+		fmt.Fprintf(&b, "  %q [label=%q, style=\"rounded,filled\", fillcolor=%q];\n", n.ID, label, color)
 	}
 
 	b.WriteString("\n")
@@ -241,9 +244,9 @@ func (r *DOTRenderer) Render(_ context.Context, graph *ExecutionGraph) ([]byte, 
 
 	for _, e := range edges {
 		if e.Label != "" {
-			b.WriteString(fmt.Sprintf("  %q -> %q [label=%q];\n", e.From, e.To, e.Label))
+			fmt.Fprintf(&b, "  %q -> %q [label=%q];\n", e.From, e.To, e.Label)
 		} else {
-			b.WriteString(fmt.Sprintf("  %q -> %q;\n", e.From, e.To))
+			fmt.Fprintf(&b, "  %q -> %q;\n", e.From, e.To)
 		}
 	}
 

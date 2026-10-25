@@ -9,9 +9,7 @@ import (
 const defaultBaseURL = "https://api.deepseek.com/v1"
 
 func init() {
-	llm.Register("deepseek", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
-		return New(cfg)
-	})
+	llm.Register("deepseek", New)
 }
 
 // New creates a new DeepSeek ChatModel.

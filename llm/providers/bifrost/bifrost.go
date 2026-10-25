@@ -8,9 +8,7 @@ import (
 )
 
 func init() {
-	llm.Register("bifrost", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
-		return New(cfg)
-	})
+	llm.Register("bifrost", New)
 }
 
 // New creates a new Bifrost ChatModel.

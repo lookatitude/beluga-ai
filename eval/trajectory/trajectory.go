@@ -92,7 +92,8 @@ type Trajectory struct {
 func (t *Trajectory) ActualTools() []string {
 	seen := make(map[string]bool)
 	var tools []string
-	for _, s := range t.Steps {
+	for i := range t.Steps {
+		s := &t.Steps[i]
 		if s.Type == StepToolCall && s.Action.ToolName != "" {
 			if !seen[s.Action.ToolName] {
 				seen[s.Action.ToolName] = true

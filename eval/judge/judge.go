@@ -44,7 +44,7 @@ type judgeOptions struct {
 }
 
 // JudgeOption configures a JudgeMetric.
-type JudgeOption func(*judgeOptions)
+type JudgeOption func(*judgeOptions) //nolint:revive // stutter kept: renaming would break the exported API
 
 // WithRubric sets the evaluation rubric.
 func WithRubric(r *Rubric) JudgeOption {
@@ -77,7 +77,7 @@ func WithSystemMessage(msg string) JudgeOption {
 // JudgeMetric evaluates samples using an LLM as judge against a structured
 // rubric. It implements eval.Metric, returning a weighted average score
 // across all rubric criteria.
-type JudgeMetric struct {
+type JudgeMetric struct { //nolint:revive // stutter kept: renaming would break the exported API
 	opts judgeOptions
 }
 

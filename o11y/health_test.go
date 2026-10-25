@@ -37,10 +37,7 @@ func TestHealthRegistry(t *testing.T) {
 		reg := NewHealthRegistry()
 		reg.Register("db", alwaysHealthy{})
 
-		results := reg.CheckAll(context.Background())
-		if len(results) != 1 {
-			t.Fatalf("expected 1 result, got %d", len(results))
-		}
+		results := requireResultCount(t, reg.CheckAll(context.Background()), 1)
 		if results[0].Status != Healthy {
 			t.Errorf("expected Healthy, got %s", results[0].Status)
 		}
@@ -58,15 +55,9 @@ func TestHealthRegistry(t *testing.T) {
 		reg.Register("cache", alwaysHealthy{})
 		reg.Register("llm", alwaysUnhealthy{})
 
-		results := reg.CheckAll(context.Background())
-		if len(results) != 3 {
-			t.Fatalf("expected 3 results, got %d", len(results))
-		}
+		results := requireResultCount(t, reg.CheckAll(context.Background()), 3)
 
-		statuses := make(map[HealthStatus]int)
-		for _, r := range results {
-			statuses[r.Status]++
-		}
+		statuses := countStatuses(results)
 		if statuses[Healthy] != 2 {
 			t.Errorf("expected 2 healthy, got %d", statuses[Healthy])
 		}
@@ -80,14 +71,30 @@ func TestHealthRegistry(t *testing.T) {
 		reg.Register("db", alwaysUnhealthy{})
 		reg.Register("db", alwaysHealthy{})
 
-		results := reg.CheckAll(context.Background())
-		if len(results) != 1 {
-			t.Fatalf("expected 1 result, got %d", len(results))
-		}
+		results := requireResultCount(t, reg.CheckAll(context.Background()), 1)
 		if results[0].Status != Healthy {
 			t.Errorf("expected Healthy after replacement, got %s", results[0].Status)
 		}
 	})
+}
+
+// requireResultCount fails the test immediately unless results has exactly
+// want entries, and returns results for further assertions.
+func requireResultCount(t *testing.T, results []HealthResult, want int) []HealthResult {
+	t.Helper()
+	if len(results) != want {
+		t.Fatalf("expected %d results, got %d", want, len(results))
+	}
+	return results
+}
+
+// countStatuses tallies results by HealthStatus.
+func countStatuses(results []HealthResult) map[HealthStatus]int {
+	statuses := make(map[HealthStatus]int)
+	for _, r := range results {
+		statuses[r.Status]++
+	}
+	return statuses
 }
 
 func TestHealthCheckerFunc(t *testing.T) {

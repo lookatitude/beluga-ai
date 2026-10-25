@@ -169,9 +169,9 @@ func coerceFixtures(raw any) ([]Fixture, error) {
 // scope the file to a trusted location.
 func loadFixturesFile(path string) ([]Fixture, error) {
 	cleaned := filepath.Clean(path)
-	// #nosec G304 -- path is supplied by the developer via config or env;
+	// #nosec G304 G703 -- path is supplied by the developer via config or env;
 	// the mock provider is test-only and never sees untrusted input.
-	data, err := os.ReadFile(cleaned)
+	data, err := os.ReadFile(cleaned) //nolint:gosec // G304/G703: operator-supplied fixtures path (config/env) in a test-only provider; not reachable from untrusted input
 	if err != nil {
 		return nil, core.Errorf(core.ErrInvalidInput, "mock: read fixtures file %q: %w", cleaned, err)
 	}

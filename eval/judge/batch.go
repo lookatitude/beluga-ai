@@ -81,7 +81,7 @@ func (b *BatchJudge) Evaluate(ctx context.Context, samples []eval.EvalSample) (*
 	var wg sync.WaitGroup
 
 dispatch:
-	for i, sample := range samples {
+	for i := range samples {
 		if ctx.Err() != nil {
 			break
 		}
@@ -112,7 +112,7 @@ dispatch:
 			if b.opts.onResult != nil {
 				b.opts.onResult(idx, score, err)
 			}
-		}(i, sample)
+		}(i, samples[i])
 	}
 
 	wg.Wait()

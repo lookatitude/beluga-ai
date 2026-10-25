@@ -63,7 +63,8 @@ func (ts *ToolSelection) ScoreTrajectory(_ context.Context, t trajectory.Traject
 
 	// Per-step scores for tool_call steps.
 	var stepScores []trajectory.StepScore
-	for _, step := range t.Steps {
+	for i := range t.Steps {
+		step := &t.Steps[i]
 		if step.Type == trajectory.StepToolCall {
 			score := 0.0
 			reason := "unexpected tool"

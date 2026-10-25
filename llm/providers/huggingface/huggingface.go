@@ -9,9 +9,7 @@ import (
 const defaultBaseURL = "https://api-inference.huggingface.co/v1"
 
 func init() {
-	llm.Register("huggingface", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
-		return New(cfg)
-	})
+	llm.Register("huggingface", New)
 }
 
 // New creates a new HuggingFace ChatModel.

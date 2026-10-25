@@ -13,9 +13,7 @@ import (
 const defaultAPIVersion = "2024-10-21"
 
 func init() {
-	llm.Register("azure", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
-		return New(cfg)
-	})
+	llm.Register("azure", New)
 }
 
 // New creates a new Azure OpenAI ChatModel.

@@ -9,9 +9,7 @@ import (
 const defaultBaseURL = "https://api.perplexity.ai"
 
 func init() {
-	llm.Register("perplexity", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
-		return New(cfg)
-	})
+	llm.Register("perplexity", New)
 }
 
 // New creates a new Perplexity ChatModel.

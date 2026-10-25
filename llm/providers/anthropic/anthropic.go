@@ -270,7 +270,8 @@ func convertResponse(resp *anthropicSDK.Message) *schema.AIMessage {
 			CachedTokens: int(resp.Usage.CacheReadInputTokens),
 		},
 	}
-	for _, block := range resp.Content {
+	for i := range resp.Content {
+		block := &resp.Content[i]
 		switch block.Type {
 		case "text":
 			ai.Parts = append(ai.Parts, schema.TextPart{Text: block.Text})
@@ -290,9 +291,10 @@ func convertStreamEvent(event anthropicSDK.MessageStreamEventUnion, modelID stri
 	switch event.Type {
 	case "content_block_delta":
 		chunk := &schema.StreamChunk{ModelID: modelID}
-		if event.Delta.Type == "text_delta" {
+		switch event.Delta.Type {
+		case "text_delta":
 			chunk.Delta = event.Delta.Text
-		} else if event.Delta.Type == "input_json_delta" {
+		case "input_json_delta":
 			chunk.ToolCalls = []schema.ToolCall{{
 				Arguments: event.Delta.PartialJSON,
 			}}

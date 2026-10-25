@@ -9,9 +9,7 @@ import (
 const defaultBaseURL = "https://api.x.ai/v1"
 
 func init() {
-	llm.Register("xai", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
-		return New(cfg)
-	})
+	llm.Register("xai", New)
 }
 
 // New creates a new xAI Grok ChatModel.

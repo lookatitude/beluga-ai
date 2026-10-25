@@ -12,7 +12,7 @@ import (
 
 // ContextStep is a single step in the context engineering pipeline.
 // Each step transforms the context items in some way.
-type ContextStep interface {
+type ContextStep interface { //nolint:revive // stutter kept: renaming would break the exported API
 	// Process transforms the context items and returns the result.
 	Process(ctx gocontext.Context, items []ContextItem) ([]ContextItem, error)
 	// Name returns the step name for logging and debugging.
@@ -28,7 +28,7 @@ type Executor interface {
 
 // ContextItem is a single piece of context that may be included in the
 // LLM prompt. Items have a score for ranking.
-type ContextItem struct {
+type ContextItem struct { //nolint:revive // stutter kept: renaming would break the exported API
 	// ID uniquely identifies this item.
 	ID string
 	// Type classifies the item (e.g., "message", "document", "tool_result").

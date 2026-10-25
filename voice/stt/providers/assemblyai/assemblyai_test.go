@@ -197,10 +197,10 @@ func TestTranscribe_CreateTranscriptHTTPError(t *testing.T) {
 
 func TestTranscribe_CreateTranscriptDecodeError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/upload":
+		switch r.URL.Path {
+		case "/upload":
 			json.NewEncoder(w).Encode(uploadResponse{UploadURL: "https://cdn.test/x"}) //nolint:errcheck
-		case r.URL.Path == "/transcript":
+		case "/transcript":
 			w.Write([]byte("not json")) //nolint:errcheck
 		}
 	}))
@@ -253,10 +253,10 @@ func TestTranscribe_UploadHTTPFailed(t *testing.T) {
 
 func TestTranscribe_CreateTranscriptHTTPFailed(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/upload":
+		switch r.URL.Path {
+		case "/upload":
 			json.NewEncoder(w).Encode(uploadResponse{UploadURL: "https://cdn.test/x"}) //nolint:errcheck
-		case r.URL.Path == "/transcript":
+		case "/transcript":
 			hj, ok := w.(http.Hijacker)
 			if !ok {
 				return

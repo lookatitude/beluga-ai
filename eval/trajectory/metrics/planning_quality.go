@@ -90,7 +90,8 @@ func (pq *PlanningQuality) ScoreTrajectory(_ context.Context, t trajectory.Traje
 	redundantCount := 0
 	var stepScores []trajectory.StepScore
 
-	for _, step := range t.Steps {
+	for i := range t.Steps {
+		step := &t.Steps[i]
 		if step.Type == trajectory.StepToolCall {
 			sig := toolSig{name: step.Action.ToolName, args: step.Action.ToolArgs}
 			seen[sig]++
@@ -113,7 +114,8 @@ func (pq *PlanningQuality) ScoreTrajectory(_ context.Context, t trajectory.Traje
 
 	// Redundancy score: 1.0 means no redundancy.
 	toolCallCount := 0
-	for _, step := range t.Steps {
+	for i := range t.Steps {
+		step := &t.Steps[i]
 		if step.Type == trajectory.StepToolCall {
 			toolCallCount++
 		}
@@ -125,7 +127,8 @@ func (pq *PlanningQuality) ScoreTrajectory(_ context.Context, t trajectory.Traje
 
 	// Goal achievement: did the trajectory end with a finish step and produce output?
 	goalAchieved := false
-	for _, step := range t.Steps {
+	for i := range t.Steps {
+		step := &t.Steps[i]
 		if step.Type == trajectory.StepFinish {
 			goalAchieved = true
 			break
