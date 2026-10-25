@@ -34,27 +34,27 @@ type StderrLine struct {
 // older ones. Snapshot returns a defensive copy oldest-first. It is
 // safe for concurrent use.
 type ringBuffer[T any] struct {
-	mu   sync.Mutex
-	buf  []T
-	cap  int
-	head int
-	size int
+	mu       sync.Mutex
+	buf      []T
+	capacity int
+	head     int
+	size     int
 }
 
-func newRingBuffer[T any](cap int) *ringBuffer[T] {
-	return &ringBuffer[T]{buf: make([]T, cap), cap: cap}
+func newRingBuffer[T any](capacity int) *ringBuffer[T] {
+	return &ringBuffer[T]{buf: make([]T, capacity), capacity: capacity}
 }
 
 func (r *ringBuffer[T]) push(v T) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.size < r.cap {
-		r.buf[(r.head+r.size)%r.cap] = v
+	if r.size < r.capacity {
+		r.buf[(r.head+r.size)%r.capacity] = v
 		r.size++
 		return
 	}
 	r.buf[r.head] = v
-	r.head = (r.head + 1) % r.cap
+	r.head = (r.head + 1) % r.capacity
 }
 
 func (r *ringBuffer[T]) snapshot() []T {
@@ -62,7 +62,7 @@ func (r *ringBuffer[T]) snapshot() []T {
 	defer r.mu.Unlock()
 	out := make([]T, r.size)
 	for i := 0; i < r.size; i++ {
-		out[i] = r.buf[(r.head+i)%r.cap]
+		out[i] = r.buf[(r.head+i)%r.capacity]
 	}
 	return out
 }

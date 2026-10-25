@@ -145,7 +145,8 @@ func ConvertResponse(resp *openai.ChatCompletion) *schema.AIMessage {
 	}
 	if len(choice.Message.ToolCalls) > 0 {
 		ai.ToolCalls = make([]schema.ToolCall, len(choice.Message.ToolCalls))
-		for i, tc := range choice.Message.ToolCalls {
+		for i := range choice.Message.ToolCalls {
+			tc := &choice.Message.ToolCalls[i]
 			ai.ToolCalls[i] = schema.ToolCall{
 				ID:        tc.ID,
 				Name:      tc.Function.Name,

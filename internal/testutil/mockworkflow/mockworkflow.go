@@ -13,7 +13,7 @@ var _ workflow.WorkflowStore = (*MockWorkflowStore)(nil)
 
 // MockWorkflowStore is a configurable mock for the WorkflowStore interface.
 // It stores workflow states in-memory and tracks all method calls.
-type MockWorkflowStore struct {
+type MockWorkflowStore struct { //nolint:revive // exported: renaming to Store would break existing test callers (no exported API changes)
 	mu sync.Mutex
 
 	states   map[string]workflow.WorkflowState
@@ -48,8 +48,8 @@ func New(opts ...Option) *MockWorkflowStore {
 // WithStates pre-loads the mock with the given workflow states.
 func WithStates(states []workflow.WorkflowState) Option {
 	return func(m *MockWorkflowStore) {
-		for _, state := range states {
-			m.states[state.WorkflowID] = state
+		for i := range states {
+			m.states[states[i].WorkflowID] = states[i]
 		}
 	}
 }
@@ -152,12 +152,12 @@ func (m *MockWorkflowStore) List(ctx context.Context, filter workflow.WorkflowFi
 	}
 
 	var results []workflow.WorkflowState
-	for _, state := range m.states {
+	for id := range m.states {
 		// Apply status filter if specified
-		if filter.Status != "" && state.Status != filter.Status {
+		if filter.Status != "" && m.states[id].Status != filter.Status {
 			continue
 		}
-		results = append(results, state)
+		results = append(results, m.states[id])
 	}
 
 	// Apply limit if specified
@@ -242,8 +242,8 @@ func (m *MockWorkflowStore) States() []workflow.WorkflowState {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	result := make([]workflow.WorkflowState, 0, len(m.states))
-	for _, state := range m.states {
-		result = append(result, state)
+	for id := range m.states {
+		result = append(result, m.states[id])
 	}
 	return result
 }

@@ -115,13 +115,12 @@ var builderFunc = devloop.BuildBinary
 
 // execCommand is indirected for testing so unit tests can stub
 // per-row subprocess execution.
-var execCommand = func(ctx context.Context, name string, args ...string) *exec.Cmd {
-	// #nosec G204 -- name is always an absolute path produced by
-	// devloop.BuildBinary under os.TempDir(). args is empty — the
-	// child receives its sample exclusively via the BELUGA_EVAL_SAMPLE_JSON
-	// env var, never via argv. No shell is involved.
-	return exec.CommandContext(ctx, name, args...) //nolint:gosec // G204: see nosec justification above
-}
+//
+// The binary passed at the call site is always an absolute path produced by
+// devloop.BuildBinary under os.TempDir(), and no args are passed — the child
+// receives its sample exclusively via the BELUGA_EVAL_SAMPLE_JSON env var,
+// never via argv. No shell is involved.
+var execCommand = exec.CommandContext
 
 // Run is the CLI entry point. It loads the dataset, resolves metrics,
 // builds the user binary once, execs it per row, parses the populated
@@ -488,7 +487,8 @@ func toCLIReport(rep *eval.EvalReport, runID string, ds *eval.Dataset, path stri
 		Samples:     make([]SampleReport, len(rep.Samples)),
 		Skipped:     skipped,
 	}
-	for i, s := range rep.Samples {
+	for i := range rep.Samples {
+		s := &rep.Samples[i]
 		sr := SampleReport{
 			Index:    i,
 			RowID:    fmt.Sprintf("%s-%04d", runID, i),

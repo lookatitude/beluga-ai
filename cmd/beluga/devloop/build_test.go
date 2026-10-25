@@ -23,12 +23,12 @@ func TestBuildBinary_StubbedExec(t *testing.T) {
 	}
 	var gotArgs []string
 	var gotDir string
-	execCommand = func(_ context.Context, _, _ io.Writer, _ string, args ...string) *exec.Cmd {
+	execCommand = func(ctx context.Context, _, _ io.Writer, _ string, args ...string) *exec.Cmd {
 		gotArgs = append([]string(nil), args...)
 		// produce a cmd that reports gotDir via its Dir after Run
-		c := exec.Command("true") // runnable on unix; windows path below
+		c := exec.CommandContext(ctx, "true") // runnable on unix; windows path below
 		if runtime.GOOS == "windows" {
-			c = exec.Command("cmd", "/c", "exit", "0")
+			c = exec.CommandContext(ctx, "cmd", "/c", "exit", "0")
 		}
 		return c
 	}
@@ -63,12 +63,12 @@ func TestBuildBinary_DeterministicFilenamePerRoot(t *testing.T) {
 
 	lookPath = func(string) (string, error) { return "/usr/bin/go", nil }
 	captured := make([]string, 0, 2)
-	execCommand = func(_ context.Context, _, _ io.Writer, _ string, args ...string) *exec.Cmd {
+	execCommand = func(ctx context.Context, _, _ io.Writer, _ string, args ...string) *exec.Cmd {
 		captured = append(captured, args[2])
 		if runtime.GOOS == "windows" {
-			return exec.Command("cmd", "/c", "exit", "0")
+			return exec.CommandContext(ctx, "cmd", "/c", "exit", "0")
 		}
-		return exec.Command("true")
+		return exec.CommandContext(ctx, "true")
 	}
 
 	proj := t.TempDir()

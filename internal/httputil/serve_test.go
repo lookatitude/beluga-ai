@@ -17,7 +17,7 @@ var echoHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 // listener so the address can be reused in tests.
 func freeAddr(t *testing.T) string {
 	t.Helper()
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	l, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("freeAddr: %v", err)
 	}
@@ -43,7 +43,12 @@ func TestServerLifecycle_ServeAndShutdownViaContext(t *testing.T) {
 	}
 
 	// Verify the server is serving.
-	resp, err := http.Get("http://" + addr + "/")
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://"+addr+"/", http.NoBody)
+	if err != nil {
+		cancel()
+		t.Fatalf("new request: %v", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		cancel()
 		t.Fatalf("GET: %v", err)
@@ -104,7 +109,7 @@ func TestServerLifecycle_Shutdown_ExplicitCall(t *testing.T) {
 
 func TestServerLifecycle_ServeListenError(t *testing.T) {
 	// Occupy a port so the second ListenAndServe fails immediately.
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	l, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}
@@ -123,7 +128,7 @@ func TestServerLifecycle_ServeListenError(t *testing.T) {
 
 func TestServerLifecycle_ErrPrefixInErrors(t *testing.T) {
 	// Occupy a port to force a listen error and check the prefix is present.
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	l, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}
@@ -180,7 +185,8 @@ func TestServerLifecycle_TimeoutsForwarded(t *testing.T) {
 func waitForServer(addr string, timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
-		conn, err := net.DialTimeout("tcp", addr, 50*time.Millisecond)
+		d := net.Dialer{Timeout: 50 * time.Millisecond}
+		conn, err := d.DialContext(context.Background(), "tcp", addr)
 		if err == nil {
 			conn.Close()
 			return nil

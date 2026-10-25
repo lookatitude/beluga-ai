@@ -34,7 +34,8 @@ func convertChunk(chunk openai.ChatCompletionChunk, modelID string) schema.Strea
 		sc.FinishReason = chunk.Choices[0].FinishReason
 		if len(delta.ToolCalls) > 0 {
 			sc.ToolCalls = make([]schema.ToolCall, len(delta.ToolCalls))
-			for i, tc := range delta.ToolCalls {
+			for i := range delta.ToolCalls {
+				tc := &delta.ToolCalls[i]
 				sc.ToolCalls[i] = schema.ToolCall{
 					ID:        tc.ID,
 					Name:      tc.Function.Name,

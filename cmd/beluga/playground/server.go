@@ -95,7 +95,8 @@ func New(cfg Config) (*Server, error) {
 // the listener is ready; the actual server loop runs in a goroutine.
 func (s *Server) Start() error {
 	addr := fmt.Sprintf("127.0.0.1:%d", s.cfg.Port)
-	ln, err := net.Listen("tcp", addr)
+	var lc net.ListenConfig
+	ln, err := lc.Listen(context.Background(), "tcp", addr)
 	if err != nil {
 		return fmt.Errorf("listen %s: %w", addr, err)
 	}

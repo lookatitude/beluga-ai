@@ -495,7 +495,10 @@ func (e *testNetError) Temporary() bool { return e.temporary }
 func TestDo_MarshalError(t *testing.T) {
 	c := New(WithBaseURL("http://localhost"))
 	// Channels cannot be JSON marshaled.
-	_, err := c.Do(context.Background(), http.MethodPost, "/test", make(chan int), nil)
+	resp, err := c.Do(context.Background(), http.MethodPost, "/test", make(chan int), nil)
+	if resp != nil {
+		_ = resp.Body.Close()
+	}
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "marshal body")
 }

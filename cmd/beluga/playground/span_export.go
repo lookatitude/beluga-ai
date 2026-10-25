@@ -115,7 +115,7 @@ func stringValue(v attribute.Value) string {
 	case attribute.STRING:
 		return v.AsString()
 	default:
-		return v.Emit()
+		return v.String()
 	}
 }
 
