@@ -69,5 +69,5 @@ When a new scaffolder template lands and trips a recurring hotspot pattern:
 
 ## Related
 
-- Workspace `.wiki/corrections.md` W-014 — discovery of the `sonar` CLI as the correct mutation path for hotspot state transitions.
+- Workspace `.guild/wiki/standards/corrections.md` W-014 — discovery of the `sonar` CLI as the correct mutation path for hotspot state transitions.
 - `.claude/rules/workflow.md` — the "Before push" gate that references this file for scaffolded-template diffs.

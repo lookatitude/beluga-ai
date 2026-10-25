@@ -59,12 +59,12 @@ separately. New findings in files you DID change MUST be fixed before commit.
 
 PRs are expected to pass **both** SonarCloud quality gate **and** Greptile review on first submission. Most regressions that ship back after `git push` fall into a small set of recurring patterns that are cheap to catch locally. Run this pre-push pass on every changed file:
 
-1. **Verify `git rev-list --left-right --count origin/<branch>...HEAD` is `0 0` after every push.** If it shows `N 0`, the push silently skipped (no tracking or `push.autoSetupRemote` disabled). Use `git push origin <branch>:<branch>` explicitly for new branches. See workspace `.wiki/corrections.md` W-013.
+1. **Verify `git rev-list --left-right --count origin/<branch>...HEAD` is `0 0` after every push.** If it shows `N 0`, the push silently skipped (no tracking or `push.autoSetupRemote` disabled). Use `git push origin <branch>:<branch>` explicitly for new branches. See workspace `.guild/wiki/standards/corrections.md` W-013.
 2. **Greptile-pattern self-review on every file in the diff:**
    - Non-deterministic `for k, v := range map[...]...` writes with partial-failure risk → replace with a slice of pairs + rollback.
    - GitHub Actions uses mutable `@vN` tags on any new workflow that will exist as a security-scanned artifact (scaffolded CI templates, release workflows) → pin to a full SHA OR document that repo-wide `@vN` convention is deliberate.
    - `curl | tar` or `curl | sh` of binaries without `--proto '=https' --tlsv1.2` and without a `sha256sum -c` checksum verification step.
-   - Exported interfaces renamed without `type OldName = NewName` back-compat aliases (S8196). See workspace `.wiki/corrections.md` W-012 rule 2.
+   - Exported interfaces renamed without `type OldName = NewName` back-compat aliases (S8196). See workspace `.guild/wiki/standards/corrections.md` W-012 rule 2.
    - Dead exported accessor that could be unexported or removed (no external callers in `grep -rn <Name> .`).
    - Refactors that change observable behavior without a test asserting the new behavior — especially CC-reduction refactors that introduce new mutations.
 3. **SonarCloud parity (STRONGLY RECOMMENDED, not blocking):** `sonar verify --file <changed-file>` per touched file catches S3776 (cognitive complexity), S1192 (duplicate literals), S8196 (interface naming), and S8193 (unnecessary vars) locally, before the full CI scan runs. Skip for doc-only or generated-file changes.
