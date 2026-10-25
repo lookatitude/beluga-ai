@@ -13,6 +13,8 @@ consults:
   - research/briefs/2026-04-19-dx1-s2-cli-scaffolding/specialist-observability-expert.md
 ---
 
+> **Historical record.** This consultation captures a design discussion at the date in its file name. Its code sketches predate the shipped API (some use the pre-`/v2` module path) and are not maintained; see `docs/reference/interfaces.md` and the guides for current usage.
+
 ## Design: LOO-149 — CLI scaffolding (beluga init + beluga new)
 
 S2 ships `beluga init <project-name>` and `beluga new agent|tool|planner <Name>` by introducing a self-contained `cmd/beluga/scaffold/` subpackage with a named-template registry (`Registry{map[string]fs.FS}`), a stdlib-only renderer that uses `strings.ReplaceAll` + `__BELUGA_*__` sentinels gated by `go/format.Source`, and one populated template (`basic`) structurally isomorphic to `examples/first-agent/main.go` — OpenAI + `gpt-4o-mini`, echo tool, implicit ReAct planner, no OTel wiring. The surface is 19 files: 5 Go source in `scaffold/` + 9 `.tmpl` files under `templates/basic/` + 1 golden directory + 4 Go source in `cmd/beluga/` (new `new*.go` + rewritten `init.go`) + 1 CI workflow + 1 doc subsection. The single highest-risk change is **deleting the 93-line `runInit` body in `cmd/beluga/init.go:37-130` in its entirety**: the pre-existing stub generates `main.go` missing `llm.New`, the provider blank import, and `config.ProviderConfig` — it will not compile against the canonical Layer 7 shape. There is no incremental migration path; it is a delete-and-replace (brief Risk #7, systems-architect §Risk #1).
