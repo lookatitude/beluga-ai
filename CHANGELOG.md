@@ -2,6 +2,68 @@
 
 All notable changes to Beluga AI are documented here.
 
+## [2.13.12] - 2026-10-25
+
+### Documentation
+
+- Make every doc match the code — interfaces, guides, config, feature status, Go 1.26 (#383)
+
+## [2.13.11] - 2026-10-25
+
+### Bug Fixes
+
+- **agent,core,runtime,workflow**: Agent-loop, stream, error-code and runtime fixes from the full review (#379)
+- **llm,httpclient**: HTTP-status error classification, credential redaction, rate-limit slot leak (#380)
+- **rag,memory**: Shared-memory ACLs, vector-store filter injection, SSRF, key leaks, MongoDB driver (#381)
+- **server,auth,guard,voice,protocol,k8s,cmd**: Routing, signed memory, OPA, fail-closed guards, Nova, Helm RBAC (#382)
+
+## [2.13.10] - 2026-10-25
+
+### Bug Fixes
+
+- **lint**: Clear leftover SonarCloud issues and make golangci-lint blocking (#378)
+
+## [2.13.9] - 2026-10-25
+
+### Bug Fixes
+
+- **lint**: Clean golangci-lint and Sonar findings in cmd and internal (#372)
+- **lint**: Clean golangci-lint, gosec and Sonar findings in llm, voice, eval, o11y, config, cost, hitl (#373)
+- **lint**: Clean golangci-lint, gosec and Sonar findings in memory and rag (#374)
+
+## [2.13.8] - 2026-10-25
+
+### Bug Fixes
+
+- **lint**: Clean golangci-lint and Sonar findings in server, auth, k8s, deploy (#369)
+- **lint**: Clean golangci-lint and Sonar findings in protocol, prompt, core, state, resilience, cache, schema (#370)
+- **lint**: Clean golangci-lint and Sonar findings in agent, orchestration, runtime, workflow, tool, guard, audit (#371)
+
+### Miscellaneous
+
+- **guild**: Codex as adversarial reviewer, team-first dispatch (#376)
+
+## [2.13.7] - 2026-10-25
+
+### Miscellaneous
+
+- **lint**: Migrate golangci-lint to v2, gofmt the tree, fix the CI lint step (#368)
+
+## [2.13.6] - 2026-10-25
+
+### Bug Fixes
+
+- **ci**: Pin third-party actions to commit SHAs and Go tools to fixed versions (#366)
+
+### Miscellaneous
+
+- **release**: Update CHANGELOG.md for v2.13.5 [skip ci] (#363)
+- **deps**: Upgrade Go, all modules, actions and CI tools to latest (#367)
+
+### Ci
+
+- Skip auto-release for docs- and Guild-only changes (#365)
+
 ## [2.13.5] - 2026-10-25
 
 ### Documentation
