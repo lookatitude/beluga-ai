@@ -12,8 +12,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.10
 	github.com/aws/aws-sdk-go-v2/service/bedrockruntime v1.63.7
 	github.com/coder/websocket v1.8.15
-	github.com/cohere-ai/cohere-go/v2 v2.20.0
-	github.com/danielgtaylor/huma/v2 v2.39.1
+	github.com/cohere-ai/cohere-go/v2 v2.20.1
+	github.com/danielgtaylor/huma/v2 v2.40.0
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/gage-technologies/mistral-go v1.1.0
 	github.com/gin-gonic/gin v1.12.0
@@ -21,8 +21,8 @@ require (
 	github.com/gofiber/fiber/v3 v3.6.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.10.0
-	github.com/labstack/echo/v4 v4.16.2
-	github.com/mattn/go-sqlite3 v1.14.52
+	github.com/labstack/echo/v4 v4.16.3
+	github.com/mattn/go-sqlite3 v1.14.53
 	github.com/mendableai/firecrawl-go v1.0.0
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/nats-io/nats.go v1.55.0
@@ -33,7 +33,7 @@ require (
 	github.com/redis/go-redis/v9 v9.23.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
-	go.mongodb.org/mongo-driver/v2 v2.9.2
+	go.mongodb.org/mongo-driver/v2 v2.9.3
 	go.opentelemetry.io/otel v1.47.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.47.0
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.47.0
@@ -46,7 +46,7 @@ require (
 	google.golang.org/genai v1.76.0
 	google.golang.org/grpc v1.84.0
 	gopkg.in/yaml.v3 v3.0.1
-	modernc.org/sqlite v1.61.0
+	modernc.org/sqlite v1.61.1
 )
 
 require (
